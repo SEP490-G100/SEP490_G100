@@ -1,0 +1,6 @@
+@Nanny_BackEnd_HostAddress = http://localhost:5005
+
+GET {{Nanny_BackEnd_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

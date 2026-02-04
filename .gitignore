@@ -1,0 +1,27 @@
+# ===== Build output =====
+**/bin/
+**/obj/
+
+# ===== Visual Studio =====
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# ===== Logs =====
+*.log
+logs/
+
+# ===== Environment / Secrets =====
+.env
+.env.*
+
+# ===== Appsettings with secrets =====
+**/appsettings.Development.json
+**/appsettings.Staging.json
+**/appsettings.Production.json
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
