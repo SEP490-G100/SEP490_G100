@@ -33,4 +33,4 @@ jobs:
         run: dotnet restore "UI/WebSite/WebSite.sln"
 
       - name: Build UI
-        run: dotnet build "UI/Nanny_UI/WebSite.sln" --no-restore
+        run: dotnet build "UI/WebSite/WebSite.sln" --no-restore
