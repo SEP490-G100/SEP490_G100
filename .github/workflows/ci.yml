@@ -1,0 +1,36 @@
+# This workflow will build a .NET project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
+name: CI
+
+on:
+  push:
+    branches: [ "develop", "main" ]
+  pull_request:
+    branches: [ "develop", "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      # --- Backend ---
+      - name: Restore Backend
+        run: dotnet restore "Backend/Nanny_BackEnd/Nanny_BackEnd.sln"
+
+      - name: Build Backend
+        run: dotnet build "Backend/Nanny_BackEnd/Nanny_BackEnd.sln" --no-restore
+
+      # --- UI ---
+      - name: Restore UI
+        run: dotnet restore "UI/WebSite/WebSite.sln"
+
+      - name: Build UI
+        run: dotnet build "UI/WebSite/WebSite.sln" --no-restore
