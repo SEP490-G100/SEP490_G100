@@ -10,15 +10,15 @@ SEP490 Group 100 – ASP.NET Core Backend API (JWT, Swagger) and ASP.NET MVC UI,
 
 \## Structure
 
-\- Backend: `Backend/Nanny\_BackEnd` (ASP.NET Core Web API, JWT, Swagger)
+\- Backend: `Backend/Nanny_BackEnd` (ASP.NET Core Web API, JWT, Swagger)
 
-\- UI: `UI/Nanny\_UI` (ASP.NET MVC/Razor)
+\- UI: `UI/Nanny_UI` (ASP.NET MVC/Razor)
 
 
 
 \## Run Backend (Swagger)
 
-Open solution: `Backend/Nanny\_BackEnd/Nanny\_BackEnd.sln`
+Open solution: `SEP490_G100\Backend\Nanny_BackEnd\Nanny_BackEnd.sln`
 
 \- Swagger: https://localhost:5001/swagger
 
@@ -26,17 +26,39 @@ Open solution: `Backend/Nanny\_BackEnd/Nanny\_BackEnd.sln`
 
 \## Run UI
 
-Open solution: `UI/Nanny\_UI/Nanny\_UI.sln`
+Open solution: `SEP490_G100\UI\Nanny_UI\Nanny_UI.sln`
 
+## 🌿 Git Workflow & Contribution Guide
 
+To keep the repository clean and manageable, all members must follow the workflow below.
 
-\## Config
+### 📌 Branch Strategy
 
-Do not commit secrets. Use:
+- `main`
+  - Stable branch
+  - Used for demo, presentation, and final submission
+  - ❌ Do NOT push directly to this branch
 
-\- `.env` (local, not committed)
+- `develop`
+  - Development integration branch
+  - All features are merged here first
 
-\- `appsettings.Development.json` (local, not committed)
+- `feature/*`
+  - Feature branches for individual tasks
+  - Each member works on their own feature branch
+
+### 📂 Branch Naming Convention
+
+When creating a new branch, use the following format:
+
+- `feature/login-api`
+- `feature/jwt-auth`
+- `feature/user-crud`
+- `feature/ui-login`
+- `feature/ui-dashboard`
+
+Format:
+
 
 
 
