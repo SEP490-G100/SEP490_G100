@@ -27,7 +27,6 @@
 
   <ItemGroup>
     <Folder Include="Controllers\" />
-    <Folder Include="DTO\Nanny\" />
     <Folder Include="DTO\Admin\" />
     <Folder Include="DTO\Moderator\" />
     <Folder Include="DTO\Guest\" />
