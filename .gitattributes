@@ -1,0 +1,10 @@
+# Normalize all text files to LF in repo
+* text=auto
+
+# Explicit for common files
+*.cs     text eol=lf
+*.cshtml text eol=lf
+*.json   text eol=lf
+*.yml    text eol=lf
+*.yaml   text eol=lf
+*.md     text eol=lf
