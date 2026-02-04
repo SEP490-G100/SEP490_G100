@@ -30,7 +30,7 @@ jobs:
 
       # --- UI ---
       - name: Restore UI
-        run: dotnet restore "UI/Nanny_UI/Nanny_UI.sln"
+        run: dotnet restore "UI/WebSite/WebSite.sln"
 
       - name: Build UI
-        run: dotnet build "UI/Nanny_UI/Nanny_UI.sln" --no-restore
+        run: dotnet build "UI/Nanny_UI/WebSite.sln" --no-restore
