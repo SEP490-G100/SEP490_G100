@@ -1,151 +1,105 @@
-﻿<section class="py-20 bg-background-light dark:bg-background-dark scroll-section dir-down">
+﻿<section class="py-20 bg-background-light dark:bg-background-dark scroll-section dir-down" style="background-color: #fff6f2">
     <div class="max-w-7xl mx-auto px-6 lg:px-10">
 
-        <!-- Mascot + charity -->
-        <div class="text-center mb-16 sec-reveal">
-            <div class="relative inline-block mb-5">
-                <div class="w-20 h-20 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-4xl shadow-glow mx-auto">
-                    🧒
+        <!-- Mascot + charity (Redesigned as a Social Impact Banner) -->
+        <div class="max-w-5xl mx-auto mb-20 sec-reveal">
+            <div class="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-gray-800/80 dark:to-gray-800/40 rounded-[2.5rem] p-8 sm:p-10 border border-orange-100/50 dark:border-gray-700/50 shadow-card flex flex-col sm:flex-row items-center gap-8 relative overflow-hidden group">
+
+                <!-- Background Decoration -->
+                <div class="absolute -right-20 -top-20 w-64 h-64 bg-gradient-to-br from-orange-200/40 to-amber-200/20 dark:from-orange-900/10 dark:to-orange-800/5 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-700"></div>
+
+                <!-- Mascot / Icon -->
+                <div class="relative flex-shrink-0 z-10 w-full sm:w-auto flex justify-center">
+                    <div class="relative">
+                        <div class="w-24 h-24 rounded-3xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-5xl shadow-glow transform group-hover:-translate-y-2 group-hover:rotate-6 transition-all duration-300">
+                            🧒
+                        </div>
+                        <div class="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 rounded-xl flex items-center justify-center border-4 border-orange-50 dark:border-gray-800 shadow-sm">
+                            <span class="material-icons-round text-white text-[16px]">favorite</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="absolute -bottom-1 -right-1 w-7 h-7 bg-green-500 rounded-full flex items-center justify-center">
-                    <span class="material-icons-round text-white text-sm">favorite</span>
+
+                <!-- Content -->
+                <div class="text-center sm:text-left z-10 flex-1">
+                    <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-100/80 dark:bg-orange-900/30 text-primary dark:text-orange-400 text-xs font-bold uppercase tracking-wider mb-3">
+                        <span class="material-icons-round text-[14px]">volunteer_activism</span>
+                        Trách Nhiệm Cộng Đồng
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-3">Chung tay vì tương lai trẻ thơ</h3>
+                    <p class="text-base text-gray-600 dark:text-gray-400 leading-relaxed max-w-2xl mx-auto sm:mx-0">
+                        NannyMatch tự hào đồng hành cùng <strong class="text-gray-900 dark:text-white font-bold">Quỹ Bảo vệ Trẻ em Việt Nam</strong>.
+                        Chúng tôi cam kết luôn trích một phần lợi nhuận từ mỗi kết nối thành công để hỗ trợ y tế và giáo dục cho trẻ em có hoàn cảnh khó khăn.
+                    </p>
+                    <div class="mt-5">
+                        <a href="#" class="inline-flex items-center gap-2 text-primary hover:text-primaryDark font-bold hover:underline transition-colors decoration-2 underline-offset-4 group/link">
+                            Tìm hiểu thêm về dự án
+                            <span class="material-icons-round text-sm transform group-hover/link:translate-x-1 transition-transform">arrow_forward</span>
+                        </a>
+                    </div>
                 </div>
             </div>
-            <p class="text-sm text-gray-500 dark:text-gray-400 max-w-sm mx-auto leading-relaxed">
-                NannyMatch đồng hành cùng <strong class="text-gray-800 dark:text-white">
-                    Quỹ Bảo vệ Trẻ em Việt
-                    Nam
-                </strong>
-                — chung tay vì tương lai của các bé.
-                <a href="#" class="text-primary hover:text-primaryDark font-semibold ml-1 hover:underline">
-                    Tìm hiểu
-                    thêm →
-                </a>
-            </p>
         </div>
 
-        <!-- Divider -->
-        <div class="border-t border-gray-200 dark:border-gray-700 mb-14"></div>
-
-        <!-- 3-col links -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-10 sec-reveal">
-
-            <!-- Col 1 -->
-            <div class="space-y-4">
-                <div class="flex items-center gap-2 mb-4">
-                    <div class="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-                        <span class="material-icons-round text-primary text-base">manage_search</span>
+        <!-- 3-col links in a premium card -->
+        <div class="bg-white dark:bg-gray-800/80 rounded-[2.5rem] p-8 lg:p-12 shadow-card border border-gray-100 dark:border-gray-700/50 sec-reveal">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 lg:gap-16">
+                <!-- Col 1 -->
+                <div class="space-y-6">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-100 to-amber-50 dark:from-orange-900/40 dark:to-orange-800/20 flex items-center justify-center shadow-sm">
+                            <span class="material-icons-round text-primary text-xl">manage_search</span>
+                        </div>
+                        <h4 class="font-bold text-gray-900 dark:text-white text-base">Bạn đang tìm kiếm gì?</h4>
                     </div>
-                    <h4 class="font-bold text-gray-900 dark:text-white text-sm">Bạn đang tìm kiếm gì?</h4>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                    <a href="#"
-                       class="inline-block px-3 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:border-primary hover:text-primary transition-all">
-                        Bảo
-                        mẫu
-                    </a>
-                    <a href="#"
-                       class="inline-block px-3 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:border-primary hover:text-primary transition-all">
-                        Bảo
-                        mẫu toàn thời gian
-                    </a>
-                    <a href="#"
-                       class="inline-block px-3 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:border-primary hover:text-primary transition-all">
-                        Chăm
-                        sóc người cao tuổi
-                    </a>
-                    <a href="#"
-                       class="inline-block px-3 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:border-primary hover:text-primary transition-all">
-                        Việc
-                        làm bảo mẫu
-                    </a>
-                    <a href="#"
-                       class="inline-block px-3 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:border-primary hover:text-primary transition-all">
-                        Dạy
-                        kèm tại nhà
-                    </a>
-                    <a href="#"
-                       class="inline-block px-3 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:border-primary hover:text-primary transition-all">
-                        Chăm
-                        sóc đặc biệt
-                    </a>
-                </div>
-            </div>
-
-            <!-- Col 2 -->
-            <div class="space-y-4">
-                <div class="flex items-center gap-2 mb-4">
-                    <div class="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-                        <span class="material-icons-round text-primary text-base">location_on</span>
+                    <div class="flex flex-wrap gap-2.5">
+                        <a href="#" class="inline-flex items-center px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-700/50 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-primary hover:text-white dark:hover:bg-primary transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 border border-transparent hover:border-orange-400/30">Bảo mẫu</a>
+                        <a href="#" class="inline-flex items-center px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-700/50 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-primary hover:text-white dark:hover:bg-primary transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 border border-transparent hover:border-orange-400/30">Bảo mẫu toàn thời gian</a>
+                        <a href="#" class="inline-flex items-center px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-700/50 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-primary hover:text-white dark:hover:bg-primary transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 border border-transparent hover:border-orange-400/30">Chăm sóc người cao tuổi</a>
+                        <a href="#" class="inline-flex items-center px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-700/50 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-primary hover:text-white dark:hover:bg-primary transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 border border-transparent hover:border-orange-400/30">Việc làm bảo mẫu</a>
+                        <a href="#" class="inline-flex items-center px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-700/50 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-primary hover:text-white dark:hover:bg-primary transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 border border-transparent hover:border-orange-400/30">Dạy kèm tại nhà</a>
+                        <a href="#" class="inline-flex items-center px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-700/50 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-primary hover:text-white dark:hover:bg-primary transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 border border-transparent hover:border-orange-400/30">Chăm sóc đặc biệt</a>
                     </div>
-                    <h4 class="font-bold text-gray-900 dark:text-white text-sm">Dịch vụ chăm sóc khắp nơi</h4>
                 </div>
-                <div class="flex flex-wrap gap-2">
-                    <a href="#"
-                       class="inline-block px-3 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:border-primary hover:text-primary transition-all">
-                        Hồ
-                        Chí Minh
-                    </a>
-                    <a href="#"
-                       class="inline-block px-3 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:border-primary hover:text-primary transition-all">
-                        Hà
-                        Nội
-                    </a>
-                    <a href="#"
-                       class="inline-block px-3 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:border-primary hover:text-primary transition-all">
-                        Đà
-                        Nẵng
-                    </a>
-                    <a href="#"
-                       class="inline-block px-3 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:border-primary hover:text-primary transition-all">
-                        Hải
-                        Phòng
-                    </a>
-                    <a href="#"
-                       class="inline-block px-3 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:border-primary hover:text-primary transition-all">
-                        Thủ
-                        Đức
-                    </a>
-                    <a href="#"
-                       class="inline-block px-3 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:border-primary hover:text-primary transition-all">
-                        Nha
-                        Trang
-                    </a>
-                    <a href="#"
-                       class="inline-block px-3 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:border-primary hover:text-primary transition-all">
-                        Đà
-                        Lạt
-                    </a>
-                    <a href="#"
-                       class="inline-block px-3 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:border-primary hover:text-primary transition-all">
-                        Phú
-                        Quốc
-                    </a>
-                    <a href="#"
-                       class="inline-block px-3 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:border-primary hover:text-primary transition-all">
-                        Phan
-                        Thiết
-                    </a>
-                </div>
-            </div>
 
-            <!-- Col 3 -->
-            <div>
-                <div class="flex items-center gap-2 mb-4">
-                    <div class="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-                        <span class="material-icons-round text-primary text-base">business_center</span>
+                <!-- Col 2 -->
+                <div class="space-y-6">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-100 to-amber-50 dark:from-orange-900/40 dark:to-orange-800/20 flex items-center justify-center shadow-sm">
+                            <span class="material-icons-round text-primary text-xl">location_on</span>
+                        </div>
+                        <h4 class="font-bold text-gray-900 dark:text-white text-base">Dịch vụ chăm sóc khắp nơi</h4>
                     </div>
-                    <h4 class="font-bold text-gray-900 dark:text-white text-sm">Doanh nghiệp cần bảo mẫu?</h4>
+                    <div class="flex flex-wrap gap-2.5">
+                        <a href="#" class="inline-flex items-center px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-700/50 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-primary hover:text-white dark:hover:bg-primary transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 border border-transparent hover:border-orange-400/30">Hồ Chí Minh</a>
+                        <a href="#" class="inline-flex items-center px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-700/50 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-primary hover:text-white dark:hover:bg-primary transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 border border-transparent hover:border-orange-400/30">Hà Nội</a>
+                        <a href="#" class="inline-flex items-center px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-700/50 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-primary hover:text-white dark:hover:bg-primary transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 border border-transparent hover:border-orange-400/30">Đà Nẵng</a>
+                        <a href="#" class="inline-flex items-center px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-700/50 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-primary hover:text-white dark:hover:bg-primary transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 border border-transparent hover:border-orange-400/30">Hải Phòng</a>
+                        <a href="#" class="inline-flex items-center px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-700/50 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-primary hover:text-white dark:hover:bg-primary transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 border border-transparent hover:border-orange-400/30">Thủ Đức</a>
+                        <a href="#" class="inline-flex items-center px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-700/50 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-primary hover:text-white dark:hover:bg-primary transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 border border-transparent hover:border-orange-400/30">Nha Trang</a>
+                        <a href="#" class="inline-flex items-center px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-700/50 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-primary hover:text-white dark:hover:bg-primary transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 border border-transparent hover:border-orange-400/30">Đà Lạt</a>
+                        <a href="#" class="inline-flex items-center px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-700/50 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-primary hover:text-white dark:hover:bg-primary transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 border border-transparent hover:border-orange-400/30">Phú Quốc</a>
+                        <a href="#" class="inline-flex items-center px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-700/50 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-primary hover:text-white dark:hover:bg-primary transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 border border-transparent hover:border-orange-400/30">Phan Thiết</a>
+                    </div>
                 </div>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mb-5 leading-relaxed">
-                    Cung cấp phúc lợi chăm sóc
-                    trẻ cho nhân viên — tiết kiệm thời gian, tăng năng suất làm việc.
-                </p>
-                <a href="#"
-                   class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold border-2 border-primary/30 bg-orange-50 dark:bg-orange-900/20 text-primary hover:bg-primary hover:text-white hover:border-primary transition-all duration-200">
-                    <span class="material-icons-round text-base">corporate_fare</span>
-                    NannyMatch cho Doanh nghiệp
-                </a>
+
+                <!-- Col 3 -->
+                <div class="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/10 p-8 rounded-2xl border border-orange-100/60 dark:border-orange-500/10 h-full flex flex-col justify-center shadow-sm relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors duration-500"></div>
+                    <div class="relative z-10 space-y-5 text-center">
+                        <div class="w-12 h-12 mx-auto rounded-xl bg-white dark:bg-gray-800 flex items-center justify-center shadow-sm">
+                            <span class="material-icons-round text-primary text-2xl">business_center</span>
+                        </div>
+                        <h4 class="font-bold text-gray-900 dark:text-white text-lg">Doanh nghiệp cần bảo mẫu?</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed max-w-xs mx-auto">
+                            Cung cấp phúc lợi chăm sóc trực tiếp cho nhân viên — tiết kiệm tối đa thời gian, tăng năng suất làm việc nhóm.
+                        </p>
+                        <a href="#" class="inline-flex items-center justify-center w-full gap-2 px-6 py-3 rounded-xl text-sm font-bold bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 hover:bg-primary hover:border-primary hover:text-white transition-all duration-300 hover:shadow-md hover:-translate-y-1 mt-2">
+                            <span class="material-icons-round text-base">corporate_fare</span>
+                            Khám Phá Dịch Vụ
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
