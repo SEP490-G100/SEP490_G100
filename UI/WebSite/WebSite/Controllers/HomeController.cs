@@ -13,15 +13,12 @@ namespace WebSite.Controllers
             _logger = logger;
         }
 
+        
         public IActionResult Index()
         {
-            return View();
+            return View("_Services");
         }
-
-        public IActionResult Privacy()
-        {
-            return View();
-        }
+   
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
