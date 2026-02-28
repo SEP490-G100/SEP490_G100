@@ -51,13 +51,13 @@
         <div class="max-w-7xl mx-auto px-6 lg:px-10">
             <div class="flex justify-between items-center h-[72px]">
                 <!-- Logo -->
-                <div class="flex items-center gap-3">
+                <a href="/" class="flex items-center gap-3 hover:opacity-90 transition-opacity">
                     <div class="w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center bg-gradient-to-br from-orange-100 to-orange-50 shadow-sm">
-                        <img src="img/nanny-logo.jpg" alt="NannyMatch Logo" class="w-full h-full object-contain" />
+                        <img src="~/img/nanny-logo.jpg" alt="NannyMatch Logo" class="w-full h-full object-contain" />
                     </div>
                     <span class="text-xl font-bold tracking-tight"
                           style="font-family:'Quicksand',sans-serif; background:linear-gradient(135deg,#EA580C,#F97316); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent">NannyMatch</span>
-                </div>
+                </a>
                 <!-- Search -->
                 <div class="hidden md:flex flex-1 max-w-sm mx-10 relative">
                     <span class="material-icons-round absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-[18px]">search</span>
@@ -66,16 +66,69 @@
                 </div>
                 <!-- Actions -->
                 <div class="flex items-center gap-3">
-                    <a class="hidden sm:block text-sm text-gray-600 dark:text-gray-300 font-semibold hover:text-primary transition-colors px-3 py-2 rounded-lg hover:bg-orange-50 dark:hover:bg-gray-800"
-                       href="#">Đăng nhập</a>
-                    <a class="bg-primary hover:bg-primaryDark text-white px-5 py-2 rounded-xl text-sm font-bold shadow-glow transition-all hover:scale-105 active:scale-95"
-                       href="#">Đăng ký miễn phí</a>
+                    @if (User.Identity != null && User.Identity.IsAuthenticated)
+                    {
+                        <div class="relative" id="userDropdown">
+                            <button onclick="document.getElementById('dropdownMenu').classList.toggle('hidden')"
+                                    class="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-orange-50 dark:hover:bg-gray-800 transition-all">
+                                <div class="w-8 h-8 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                                    @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value?.Substring(0, 1).ToUpper())
+                                </div>
+                                <span class="hidden sm:block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                    @User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value
+                                </span>
+                                <span class="material-icons-round text-gray-400 text-lg">expand_more</span>
+                            </button>
+
+                            <div id="dropdownMenu" class="hidden absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-1 z-50">
+                                <div class="px-3 py-2 border-b border-gray-100 dark:border-gray-700 mb-1">
+                                    <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                                        @User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value @User.FindFirst(System.Security.Claims.ClaimTypes.Surname)?.Value
+                                    </p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate">@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</p>
+                                </div>
+
+                                @if (User.FindFirst("AuthProvider")?.Value != "google")
+                                {
+                                    <a href="/Auth/ChangePassword" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        <span class="material-icons-round text-base">password</span>
+                                        Đổi mật khẩu
+                                    </a>
+                                }
+
+                                <div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
+                                <form asp-controller="Auth" asp-action="Logout" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="flex cursor-pointer items-center gap-2 w-full rounded-md px-2 py-1.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-gray-700">
+                                        <span class="material-icons-round text-base">logout</span>
+                                        Đăng xuất
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <script>
+                            document.addEventListener('click', function(e) {
+                                var dropdown = document.getElementById('userDropdown');
+                                var menu = document.getElementById('dropdownMenu');
+                                if (dropdown && !dropdown.contains(e.target)) menu.classList.add('hidden');
+                            });
+                        </script>
+                    }
+                    else
+                    {
+                        <a class="hidden sm:block text-sm text-gray-600 dark:text-gray-300 font-semibold hover:text-primary transition-colors px-3 py-2 rounded-lg hover:bg-orange-50 dark:hover:bg-gray-800"
+                           href="/Auth/Login">Đăng nhập</a>
+                        <a class="bg-primary hover:bg-primaryDark text-white px-5 py-2 rounded-xl text-sm font-bold shadow-glow transition-all hover:scale-105 active:scale-95"
+                           href="/Auth/Register">Đăng ký miễn phí</a>
+                    }
                 </div>
             </div>
         </div>
     </nav>
 
-
+    @if (ViewContext.RouteData.Values["controller"]?.ToString() == "Home")
+    {
     <header class="relative overflow-hidden pt-24 pb-28 lg:pt-32 lg:pb-36">
         <canvas class="hero-beam-canvas" id="heroBeamCanvas" aria-hidden="true"></canvas>
 
@@ -169,6 +222,7 @@
             </div>
         </div>
     </header>
+    }
 
     <!--============ BODY ===========-->
     <div class="container-fluid p-0">
@@ -266,56 +320,86 @@
     </footer>
 
 
-    <!-- ━━━ NANNY LOADER OVERLAY ━━━ -->
-    <div id="nanny-loader">
-        <div class="bg-shapes">
-            <div class="shape"></div>
-            <div class="shape"></div>
-            <div class="shape"></div>
-            <div class="shape"></div>
-            <div class="shape"></div>
-            <div class="sparkle">✨</div>
-            <div class="sparkle">⭐</div>
-            <div class="sparkle">💫</div>
-            <div class="sparkle">✨</div>
-            <div class="sparkle">🌟</div>
-            <div class="sparkle">⭐</div>
+    <!-- ━━━ NANNY LOADER ━━━ -->
+    <div id="nanny-loader" aria-hidden="true">
+        <style>
+            #nanny-loader {
+                position: fixed; inset: 0; z-index: 9999;
+                display: flex; flex-direction: column; align-items: center; justify-content: center;
+                background: #fff;
+                transition: opacity 0.6s ease, visibility 0.6s ease;
+            }
+            #nanny-loader.exit-fade { opacity: 0; visibility: hidden; pointer-events: none; }
+
+            .nl-ring-wrap {
+                position: relative; width: 130px; height: 130px;
+                display: flex; align-items: center; justify-content: center;
+                margin-bottom: 28px;
+            }
+            .nl-pulse {
+                position: absolute; inset: -12px;
+                border-radius: 50%;
+                border: 2.5px solid #F97316;
+                opacity: 0;
+                animation: nlPulse 2s ease-out infinite;
+            }
+            .nl-pulse:nth-child(2) { animation-delay: 0.7s; }
+            .nl-pulse:nth-child(3) { animation-delay: 1.4s; }
+
+            .nl-orbit {
+                position: absolute; inset: -22px;
+                border-radius: 50%;
+                border: 2px solid transparent;
+                border-top-color: #F97316;
+                border-right-color: #FDBA74;
+                animation: nlOrbit 1.4s linear infinite;
+            }
+            .nl-logo {
+                width: 90px; height: 90px;
+                border-radius: 50%;
+                object-fit: cover;
+                box-shadow: 0 4px 20px rgba(249,115,22,0.25);
+            }
+            .nl-brand {
+                font-family: 'Quicksand', sans-serif;
+                font-size: 1.75rem; font-weight: 700;
+                background: linear-gradient(135deg, #EA580C, #F97316);
+                -webkit-background-clip: text; background-clip: text;
+                -webkit-text-fill-color: transparent;
+                letter-spacing: -0.5px;
+                animation: nlFadeUp 0.6s ease both;
+                animation-delay: 0.2s; opacity: 0;
+            }
+            .nl-tag {
+                margin-top: 8px;
+                font-size: 0.8rem; color: #9CA3AF;
+                letter-spacing: 0.03em;
+                animation: nlFadeUp 0.6s ease both;
+                animation-delay: 0.4s; opacity: 0;
+            }
+            @@keyframes nlPulse {
+                0%   { transform: scale(0.95); opacity: 0.5; }
+                70%  { transform: scale(1.35); opacity: 0; }
+                100% { opacity: 0; }
+            }
+            @@keyframes nlOrbit {
+                to { transform: rotate(360deg); }
+            }
+            @@keyframes nlFadeUp {
+                from { opacity: 0; transform: translateY(10px); }
+                to   { opacity: 1; transform: translateY(0); }
+            }
+        </style>
+
+        <div class="nl-ring-wrap">
+            <div class="nl-pulse"></div>
+            <div class="nl-pulse"></div>
+            <div class="nl-pulse"></div>
+            <div class="nl-orbit"></div>
+            <img src="/img/nanny-logo.jpg" alt="NannyMatch" class="nl-logo" />
         </div>
-
-        <div class="loader-card">
-            <!-- Logo -->
-            <div class="logo-wrap">
-                <div class="logo-ring"></div>
-                <div class="logo-bg"></div>
-                <div class="logo-svg">
-                    <img src="img/nanny-logo.jpg" alt="NannyMatch Logo"
-                         style="width:110px;height:110px;object-fit:contain;border-radius:50%;" />
-                </div>
-            </div>
-
-            <div class="brand-name">Nanny<span class="accent">Match</span></div>
-            <div class="brand-tag">🏠 Kết nối gia đình – Tin tưởng vào mỗi nụ cười 💕</div>
-
-            <div class="progress-section">
-                <div class="progress-status">
-                    <span class="status-text" id="nl-statusText">Đang khởi động...</span>
-                    <span class="status-pct" id="nl-statusPct">0%</span>
-                </div>
-                <div class="track">
-                    <div class="fill" id="nl-fillBar"></div>
-                </div>
-            </div>
-
-            <div class="dots">
-                <div class="dot"></div>
-                <div class="dot"></div>
-                <div class="dot"></div>
-            </div>
-
-            <div class="tip-text" id="nl-tipText">
-                💡 Mẹo: <span>Tìm Nanny đã xác minh gần bạn chỉ trong 30 giây.</span>
-            </div>
-        </div>
+        <div class="nl-brand">NannyMatch</div>
+        <div class="nl-tag">Kết nối gia đình – Tin tưởng vào mỗi nụ cười</div>
     </div>
 
     <script src="~/js/HomePage.js" asp-append-version="true"></script>
