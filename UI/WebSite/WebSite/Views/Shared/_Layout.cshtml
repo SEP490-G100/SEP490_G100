@@ -45,7 +45,11 @@
             }
     </style>
 </head>
-<body class="font-display bg-background-light dark:bg-background-dark text-gray-800 dark:text-gray-200 transition-colors duration-300" style="background-color: #f9fafb; color: #1f2937;">
+@{
+    var isHomePage = (ViewContext.RouteData.Values["controller"]?.ToString() == "Home" &&
+                      ViewContext.RouteData.Values["action"]?.ToString() == "Index");
+}
+<body class="font-display bg-background-light dark:bg-background-dark text-gray-800 dark:text-gray-200 transition-colors duration-300" style="background-color: #f9fafb; color: #1f2937;" data-page="@(isHomePage ? "home" : "other")">
     <nav class="sticky top-0 z-50 bg-white/95 dark:bg-card-dark/95 backdrop-blur-lg border-b border-gray-100/80 dark:border-gray-800"
          style="box-shadow:0 1px 24px rgba(0,0,0,0.06)">
         <div class="max-w-7xl mx-auto px-6 lg:px-10">
@@ -320,87 +324,60 @@
     </footer>
 
 
-    <!-- ━━━ NANNY LOADER ━━━ -->
-    <div id="nanny-loader" aria-hidden="true">
-        <style>
-            #nanny-loader {
-                position: fixed; inset: 0; z-index: 9999;
-                display: flex; flex-direction: column; align-items: center; justify-content: center;
-                background: #fff;
-                transition: opacity 0.6s ease, visibility 0.6s ease;
-            }
-            #nanny-loader.exit-fade { opacity: 0; visibility: hidden; pointer-events: none; }
+    <!-- ━━━ NANNY LOADER OVERLAY (chỉ hiện ở trang chủ) ━━━ -->
+    @if (isHomePage)
+    {
+        <div id="nanny-loader">
+            <div class="bg-shapes">
+                <div class="shape"></div>
+                <div class="shape"></div>
+                <div class="shape"></div>
+                <div class="shape"></div>
+                <div class="shape"></div>
+                <div class="sparkle">✨</div>
+                <div class="sparkle">⭐</div>
+                <div class="sparkle">💫</div>
+                <div class="sparkle">✨</div>
+                <div class="sparkle">🌟</div>
+                <div class="sparkle">⭐</div>
+            </div>
 
-            .nl-ring-wrap {
-                position: relative; width: 130px; height: 130px;
-                display: flex; align-items: center; justify-content: center;
-                margin-bottom: 28px;
-            }
-            .nl-pulse {
-                position: absolute; inset: -12px;
-                border-radius: 50%;
-                border: 2.5px solid #F97316;
-                opacity: 0;
-                animation: nlPulse 2s ease-out infinite;
-            }
-            .nl-pulse:nth-child(2) { animation-delay: 0.7s; }
-            .nl-pulse:nth-child(3) { animation-delay: 1.4s; }
+            <div class="loader-card">
+                <!-- Logo -->
+                <div class="logo-wrap">
+                    <div class="logo-ring"></div>
+                    <div class="logo-bg"></div>
+                    <div class="logo-svg">
+                        <img src="img/nanny-logo.jpg" alt="NannyMatch Logo"
+                             style="width:110px;height:110px;object-fit:contain;border-radius:50%;" />
+                    </div>
+                </div>
 
-            .nl-orbit {
-                position: absolute; inset: -22px;
-                border-radius: 50%;
-                border: 2px solid transparent;
-                border-top-color: #F97316;
-                border-right-color: #FDBA74;
-                animation: nlOrbit 1.4s linear infinite;
-            }
-            .nl-logo {
-                width: 90px; height: 90px;
-                border-radius: 50%;
-                object-fit: cover;
-                box-shadow: 0 4px 20px rgba(249,115,22,0.25);
-            }
-            .nl-brand {
-                font-family: 'Quicksand', sans-serif;
-                font-size: 1.75rem; font-weight: 700;
-                background: linear-gradient(135deg, #EA580C, #F97316);
-                -webkit-background-clip: text; background-clip: text;
-                -webkit-text-fill-color: transparent;
-                letter-spacing: -0.5px;
-                animation: nlFadeUp 0.6s ease both;
-                animation-delay: 0.2s; opacity: 0;
-            }
-            .nl-tag {
-                margin-top: 8px;
-                font-size: 0.8rem; color: #9CA3AF;
-                letter-spacing: 0.03em;
-                animation: nlFadeUp 0.6s ease both;
-                animation-delay: 0.4s; opacity: 0;
-            }
-            @@keyframes nlPulse {
-                0%   { transform: scale(0.95); opacity: 0.5; }
-                70%  { transform: scale(1.35); opacity: 0; }
-                100% { opacity: 0; }
-            }
-            @@keyframes nlOrbit {
-                to { transform: rotate(360deg); }
-            }
-            @@keyframes nlFadeUp {
-                from { opacity: 0; transform: translateY(10px); }
-                to   { opacity: 1; transform: translateY(0); }
-            }
-        </style>
+                <div class="brand-name">Nanny<span class="accent">Match</span></div>
+                <div class="brand-tag">🏠 Kết nối gia đình – Tin tưởng vào mỗi nụ cười 💕</div>
 
-        <div class="nl-ring-wrap">
-            <div class="nl-pulse"></div>
-            <div class="nl-pulse"></div>
-            <div class="nl-pulse"></div>
-            <div class="nl-orbit"></div>
-            <img src="/img/nanny-logo.jpg" alt="NannyMatch" class="nl-logo" />
+                <div class="progress-section">
+                    <div class="progress-status">
+                        <span class="status-text" id="nl-statusText">Đang khởi động...</span>
+                        <span class="status-pct" id="nl-statusPct">0%</span>
+                    </div>
+                    <div class="track">
+                        <div class="fill" id="nl-fillBar"></div>
+                    </div>
+                </div>
+
+                <div class="dots">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+
+                <div class="tip-text" id="nl-tipText">
+                    💡 Mẹo: <span>Tìm Nanny đã xác minh gần bạn chỉ trong 30 giây.</span>
+                </div>
+            </div>
         </div>
-        <div class="nl-brand">NannyMatch</div>
-        <div class="nl-tag">Kết nối gia đình – Tin tưởng vào mỗi nụ cười</div>
-    </div>
+    }
 
     <script src="~/js/HomePage.js" asp-append-version="true"></script>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
