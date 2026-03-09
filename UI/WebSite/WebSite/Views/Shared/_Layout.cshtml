@@ -81,12 +81,12 @@
                             </button>
 
                             <div id="dropdownMenu" class="hidden absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-1 z-50">
-                                <div class="px-3 py-2 border-b border-gray-100 dark:border-gray-700 mb-1">
+                                <a href="@Url.Action("Index", "Profile")" class="flex flex-col px-3 py-2 border-b border-gray-100 dark:border-gray-700 mb-1 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-all cursor-pointer">
                                     <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">
                                         @User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value @User.FindFirst(System.Security.Claims.ClaimTypes.Surname)?.Value
                                     </p>
                                     <p class="text-xs text-gray-500 dark:text-gray-400 truncate">@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</p>
-                                </div>
+                                </a>
 
                                 @if (User.FindFirst("AuthProvider")?.Value != "google")
                                 {
