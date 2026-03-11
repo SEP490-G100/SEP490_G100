@@ -70,6 +70,9 @@ builder.Services.AddHttpClient();
 builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<RefreshTokenRepository>();
 builder.Services.AddScoped<OtpRepository>();
+// Search feature (SD1B)
+builder.Services.AddScoped<JobRepository>();
+builder.Services.AddScoped<FavoriteRepository>();
 
 // DI — Services
 builder.Services.AddScoped<JwtService>();
@@ -77,6 +80,8 @@ builder.Services.AddScoped<OtpService>();
 builder.Services.AddScoped<EmailService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddSingleton<PasswordValidator>();
+// Search feature (SD1B)
+builder.Services.AddScoped<JobService>();
 
 var app = builder.Build();
 
