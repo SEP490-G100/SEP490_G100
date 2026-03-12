@@ -7,6 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="DTO\**" />
+    <Content Remove="DTO\**" />
+    <EmbeddedResource Remove="DTO\**" />
+    <None Remove="DTO\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageReference Include="FluentValidation.AspNetCore" Version="8.6.3" />
     <PackageReference Include="Google.Apis.Auth" Version="1.73.0" />
@@ -35,10 +42,6 @@
 
   <ItemGroup>
     <Folder Include="Controllers\" />
-    <Folder Include="DTO\Admin\" />
-    <Folder Include="DTO\Moderator\" />
-    <Folder Include="DTO\Guest\" />
-    <Folder Include="DTO\Parent\" />
   </ItemGroup>
 
 </Project>

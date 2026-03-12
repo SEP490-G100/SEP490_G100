@@ -23,7 +23,7 @@ public class EmailService
         _smtpPassword = s["SmtpPassword"]!;
     }
 
-    public async Task SendOtpEmailAsync(string toEmail, string otpCode, string purpose)
+    public async Task sendOtpEmail(string toEmail, string otpCode, string purpose)
     {
         var subject = purpose switch
         {
@@ -33,7 +33,7 @@ public class EmailService
         };
 
         var body = BuildOtpBody(subject, otpCode);
-        await SendAsync(toEmail, subject, body);
+        await send(toEmail, subject, body);
     }
 
     private static string BuildOtpBody(string subject, string otpCode) => $"""
@@ -47,7 +47,7 @@ public class EmailService
         </div>
         """;
 
-    private async Task SendAsync(string toEmail, string subject, string htmlBody)
+    private async Task send(string toEmail, string subject, string htmlBody)
     {
         var message = new MimeMessage();
         message.From.Add(new MailboxAddress(_fromName, _fromEmail));

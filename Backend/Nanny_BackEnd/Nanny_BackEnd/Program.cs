@@ -71,11 +71,21 @@ builder.Services.AddCors(options =>
         policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
 
 builder.Services.AddHttpClient();
+// Nominatim (OpenStreetMap geocoding) — User-Agent bắt buộc theo ToS
+builder.Services.AddHttpClient("Nominatim", c =>
+{
+    c.BaseAddress = new Uri("https://nominatim.openstreetmap.org");
+    c.DefaultRequestHeaders.UserAgent.ParseAdd("NannyMatchApp/1.0 (contact@nannymatch.vn)");
+    c.Timeout = TimeSpan.FromSeconds(5);
+});
 
 // DI — Repositories
 builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<RefreshTokenRepository>();
 builder.Services.AddScoped<OtpRepository>();
+// Search feature (SD1B)
+builder.Services.AddScoped<JobRepository>();
+builder.Services.AddScoped<FavoriteRepository>();
 
 // DI — Services
 builder.Services.AddScoped<JwtService>();
@@ -84,6 +94,9 @@ builder.Services.AddScoped<EmailService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ProfileService>();
 builder.Services.AddSingleton<PasswordValidator>();
+// Search feature (SD1B)
+builder.Services.AddScoped<JobService>();
+builder.Services.AddScoped<GeocodingService>();
 
 var app = builder.Build();
 
