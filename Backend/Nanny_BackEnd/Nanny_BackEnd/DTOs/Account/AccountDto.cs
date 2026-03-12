@@ -44,3 +44,22 @@ public class UpdateAccountRequest
     public int Status { get; set; }
     public string? PhoneNumber { get; set; }
 }
+
+/// <summary>Admin tạo tài khoản Moderator mới</summary>
+public class CreateModeratorRequest
+{
+    public string Email { get; set; } = null!;
+    public string Password { get; set; } = null!;
+    public string FirstName { get; set; } = null!;
+    public string LastName { get; set; } = null!;
+    public string? PhoneNumber { get; set; }
+}
+
+/// <summary>Admin cập nhật thông tin Moderator</summary>
+public class UpdateModeratorRequest
+{
+    public string FirstName { get; set; } = null!;
+    public string LastName { get; set; } = null!;
+    public string? PhoneNumber { get; set; }
+    public int Status { get; set; }
+}
