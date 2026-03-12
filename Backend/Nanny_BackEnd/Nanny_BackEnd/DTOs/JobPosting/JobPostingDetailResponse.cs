@@ -9,14 +9,8 @@ public class JobPostingDetailResponse
     public string Description { get; set; } = "";
     public int JobType { get; set; }
     public decimal? SalaryMin { get; set; }
-    public decimal? SalaryMax { get; set; }
-    public int SalaryType { get; set; }
+ 
     public bool SalaryNegotiable { get; set; }
-    public DateOnly? StartDate { get; set; }
-    public DateOnly? EndDate { get; set; }
-    public string? WorkingHoursStart { get; set; }
-    public string? WorkingHoursEnd { get; set; }
-    public string? WorkingDays { get; set; }
     public int? NumberOfChildren { get; set; }
     public string? Location { get; set; }
     public string? City { get; set; }
@@ -29,6 +23,5 @@ public class JobPostingDetailResponse
     public DateTime? ExpiresAt { get; set; }
     public DateTime? ClosedAt { get; set; }
     public DateTime CreatedAt { get; set; }
-    public List<string> RequiredSkills { get; set; } = [];
     public int ApplicationCount { get; set; }
 }

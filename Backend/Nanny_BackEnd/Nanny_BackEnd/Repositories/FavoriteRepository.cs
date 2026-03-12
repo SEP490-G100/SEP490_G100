@@ -10,13 +10,13 @@ public class FavoriteRepository
 
     public FavoriteRepository(Sep490NannyDbContext db) => _db = db;
 
-    public async Task<bool> IsFavoriteJobAsync(Guid nannyProfileId, Guid jobPostingId) =>
+    public async Task<bool> isFavoriteJob(Guid nannyProfileId, Guid jobPostingId) =>
         await _db.FavoriteJobPostings.AnyAsync(f =>
             f.NannyProfileId == nannyProfileId &&
             f.JobPostingId == jobPostingId &&
             !f.IsDeleted);
 
-    public async Task AddFavoriteJobAsync(Guid nannyProfileId, Guid jobPostingId)
+    public async Task addFavoriteJob(Guid nannyProfileId, Guid jobPostingId)
     {
         _db.FavoriteJobPostings.Add(new FavoriteJobPosting
         {

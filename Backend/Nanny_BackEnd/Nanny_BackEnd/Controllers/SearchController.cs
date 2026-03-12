@@ -28,7 +28,14 @@ public class SearchController : ControllerBase
     {
         try
         {
-            var result = await _jobSvc.findJobs(request);
+            var currentUserId = TryGetCurrentUserId();
+            var canSeeNannyOnlyJobs = User.IsInRole("Nanny");
+            var result = await _jobSvc.findJobs(
+                request,
+                request.NannyLat,
+                request.NannyLng,
+                currentUserId,
+                canSeeNannyOnlyJobs);
             return Ok(new { success = true, data = result, total = result.Count });
         }
         catch (Exception ex) { return StatusCode(500, Fail(ex.Message)); }
@@ -61,6 +68,13 @@ public class SearchController : ControllerBase
         var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                ?? User.FindFirst("sub")?.Value;
         return Guid.Parse(sub!);
+    }
+
+    private Guid? TryGetCurrentUserId()
+    {
+        var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+               ?? User.FindFirst("sub")?.Value;
+        return Guid.TryParse(sub, out var userId) ? userId : null;
     }
 
     private static object Fail(string message) => new { success = false, message };

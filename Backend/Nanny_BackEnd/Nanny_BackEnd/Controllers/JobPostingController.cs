@@ -9,18 +9,6 @@ using Nanny_BackEnd.Services;
 
 namespace Nanny_BackEnd.Controllers;
 
-/// <summary>
-/// JobPostingController — Quản lý tin đăng tuyển dụng bảo mẫu.
-///
-/// Endpoint summary:
-///   GET    /api/job-postings                   → Tìm kiếm + lọc (công khai)
-///   GET    /api/job-postings/my                → Danh sách của tôi (Parent)
-///   GET    /api/job-postings/{id}              → Chi tiết (công khai)
-///   POST   /api/job-postings                   → Tạo mới (Parent)
-///   PUT    /api/job-postings/{id}              → Cập nhật (Parent - chủ sở hữu)
-///   PATCH  /api/job-postings/{id}/toggle-publish → Publish/Unpublish (Parent - chủ sở hữu)
-///   DELETE /api/job-postings/{id}              → Xoá (Parent - chủ sở hữu)
-/// </summary>
 [ApiController]
 [Route("api/job-postings")]
 public class JobPostingController : ControllerBase
@@ -35,37 +23,26 @@ public class JobPostingController : ControllerBase
     }
 
 
-    [AllowAnonymous]
-    [HttpGet]
-    public async Task<IActionResult> GetList([FromQuery] SearchJobRequest filters)
-    {
-        // Không cần ModelState vì SearchJobRequest không có [Required]
-        var result = await _jobSvc.findJobs(filters);
-        return Ok(Success(result, result.Count));
-    }
 
     [Authorize]
     [HttpGet("my")]
     public async Task<IActionResult> GetMyJobs()
     {
-        var parent = await GetParentAsync();
+        var parent = await getParent();
         if (parent is null) return BadRequest(Fail("Tài khoản hiện tại không phải Phụ Huynh."));
 
-        var result = await _jobSvc.GetMyJobsAsync(parent.Id);
+        var result = await _jobSvc.getMyJobs(parent.Id);
         return Ok(Success(result, result.Count));
     }
 
 
+    // GET /api/job-postings?title=c%E1%BA%A7n+b%E1%BA%A3o+m%E1%BA%ABu
     [AllowAnonymous]
-    [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetDetail(Guid id)
+    [HttpGet]
+    public async Task<IActionResult> SearchByTitle([FromQuery] string? title)
     {
-        try
-        {
-            var result = await _jobSvc.GetDetailAsync(id);
-            return Ok(Success(result));
-        }
-        catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
+        var result = await _jobSvc.searchByTitle(title);
+        return Ok(Success(result, result.Count));
     }
 
 
@@ -77,14 +54,13 @@ public class JobPostingController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(FailValidation(ModelState));
 
-        var parent = await GetParentAsync();
+        var parent = await getParent();
         if (parent is null) return BadRequest(Fail("Tài khoản hiện tại không phải Phụ Huynh."));
 
         try
         {
-            var jobId = await _jobSvc.CreateAsync(parent.Id, request);
-            return CreatedAtAction(nameof(GetDetail), new { id = jobId },
-                new { success = true, message = "Tạo tin đăng thành công.", data = new { id = jobId } });
+            var jobId = await _jobSvc.createJob(parent.Id, request);
+            return Ok(new { success = true, message = "Tạo tin đăng thành công.", data = new { id = jobId } });
         }
         catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
     }
@@ -96,12 +72,12 @@ public class JobPostingController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(FailValidation(ModelState));
 
-        var parent = await GetParentAsync();
+        var parent = await getParent();
         if (parent is null) return BadRequest(Fail("Tài khoản hiện tại không phải Phụ Huynh."));
 
         try
         {
-            await _jobSvc.UpdateAsync(id, parent.Id, request);
+            await _jobSvc.updateJob(id, parent.Id, request);
             return Ok(new { success = true, message = "Cập nhật tin đăng thành công." });
         }
         catch (KeyNotFoundException ex)         { return NotFound(Fail(ex.Message)); }
@@ -110,27 +86,12 @@ public class JobPostingController : ControllerBase
     }
 
 
-    [Authorize]
-    [HttpPatch("{id:guid}/toggle-publish")]
-    public async Task<IActionResult> TogglePublish(Guid id)
-    {
-        var parent = await GetParentAsync();
-        if (parent is null) return BadRequest(Fail("Tài khoản hiện tại không phải Phụ Huynh."));
-
-        try
-        {
-            var message = await _jobSvc.togglePublish(id, parent.Id);
-            return Ok(new { success = true, message });
-        }
-        catch (KeyNotFoundException ex)        { return NotFound(Fail(ex.Message)); }
-        catch (UnauthorizedAccessException ex) { return StatusCode(403, Fail(ex.Message)); }
-    }
 
     [Authorize]
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {
-        var parent = await GetParentAsync();
+        var parent = await getParent();
         if (parent is null) return BadRequest(Fail("Tài khoản hiện tại không phải Phụ Huynh."));
 
         try
@@ -144,7 +105,7 @@ public class JobPostingController : ControllerBase
     }
 
 
-    private async Task<Models.ParentProfile?> GetParentAsync()
+    private async Task<Models.ParentProfile?> getParent()
     {
         var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                ?? User.FindFirst("sub")?.Value;

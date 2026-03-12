@@ -10,23 +10,23 @@ public class UserRepository
 
     public UserRepository(Sep490NannyDbContext db) => _db = db;
 
-    public async Task<User?> FindByEmailAsync(string email) =>
+    public async Task<User?> findByEmail(string email) =>
         await _db.Users.FirstOrDefaultAsync(u => u.Email == email && !u.IsDeleted);
 
-    public async Task<User?> FindByGoogleIdAsync(string googleId) =>
+    public async Task<User?> findByGoogleId(string googleId) =>
         await _db.Users.FirstOrDefaultAsync(u => u.GoogleId == googleId && !u.IsDeleted);
 
-    public async Task<User?> FindByIdAsync(Guid id) =>
+    public async Task<User?> findById(Guid id) =>
         await _db.Users.FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
 
-    public async Task<List<string>> GetRolesAsync(Guid userId) =>
+    public async Task<List<string>> getRoles(Guid userId) =>
         await _db.UserRoles
             .Where(ur => ur.UserId == userId && !ur.IsDeleted)
             .Include(ur => ur.Role)
             .Select(ur => ur.Role.Name)
             .ToListAsync();
 
-    public async Task AssignRoleAsync(Guid userId, string roleName)
+    public async Task assignRole(Guid userId, string roleName)
     {
         var role = await _db.Roles.FirstOrDefaultAsync(r => r.Name == roleName && !r.IsDeleted);
         if (role == null) return;
@@ -42,5 +42,16 @@ public class UserRepository
 
     public void Add(User user) => _db.Users.Add(user);
 
-    public async Task SaveChangesAsync() => await _db.SaveChangesAsync();
+    public async Task addParentProfile(Guid userId)
+    {
+        _db.ParentProfiles.Add(new ParentProfile
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = userId
+        });
+    }
+
+    public async Task saveChanges() => await _db.SaveChangesAsync();
 }

@@ -19,10 +19,15 @@ public class AuthController : ControllerBase
     {
         try
         {
-            var result = await _auth.RegisterAsync(request);
+            var result = await _auth.register(request);
             return Ok(new { success = true, message = "Đăng ký thành công. Vui lòng xác thực email.", data = result });
         }
         catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
+        catch (Exception ex)
+        {
+            var detail = ex.InnerException?.Message ?? ex.Message;
+            return StatusCode(500, Fail($"Lỗi hệ thống: {detail}"));
+        }
     }
 
     [HttpPost("login")]
@@ -30,7 +35,7 @@ public class AuthController : ControllerBase
     {
         try
         {
-            var result = await _auth.LoginAsync(request);
+            var result = await _auth.login(request);
             return Ok(new { success = true, data = result });
         }
         catch (UnauthorizedAccessException ex) { return Unauthorized(Fail(ex.Message)); }
@@ -41,7 +46,7 @@ public class AuthController : ControllerBase
     {
         try
         {
-            var result = await _auth.RefreshTokenAsync(request);
+            var result = await _auth.refreshToken(request);
             return Ok(new { success = true, data = result });
         }
         catch (UnauthorizedAccessException ex) { return Unauthorized(Fail(ex.Message)); }
@@ -52,7 +57,7 @@ public class AuthController : ControllerBase
     {
         try
         {
-            var result = await _auth.GoogleLoginAsync(request);
+            var result = await _auth.googleLogin(request);
             return Ok(new { success = true, data = result });
         }
         catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
@@ -63,7 +68,7 @@ public class AuthController : ControllerBase
     {
         try
         {
-            var result = await _auth.GoogleLoginWithCodeAsync(request);
+            var result = await _auth.googleLoginWithCode(request);
             return Ok(new { success = true, data = result });
         }
         catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
@@ -75,7 +80,7 @@ public class AuthController : ControllerBase
     {
         try
         {
-            await _auth.ChangePasswordAsync(GetCurrentUserId(), request);
+            await _auth.changePassword(GetCurrentUserId(), request);
             return Ok(new { success = true, message = "Đổi mật khẩu thành công." });
         }
         catch (UnauthorizedAccessException ex) { return Unauthorized(Fail(ex.Message)); }
@@ -85,7 +90,7 @@ public class AuthController : ControllerBase
     [HttpPost("forgot-password")]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
     {
-        var (success, message) = await _auth.ForgotPasswordAsync(request.Email);
+        var (success, message) = await _auth.forgotPassword(request.Email);
         return success ? Ok(new { success = true, message }) : BadRequest(Fail(message));
     }
 
@@ -94,7 +99,7 @@ public class AuthController : ControllerBase
     {
         try
         {
-            await _auth.ResetPasswordAsync(request);
+            await _auth.resetPassword(request);
             return Ok(new { success = true, message = "Đặt lại mật khẩu thành công." });
         }
         catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
@@ -103,7 +108,7 @@ public class AuthController : ControllerBase
     [HttpPost("resend-verify")]
     public async Task<IActionResult> ResendVerifyEmail([FromBody] ResendVerifyRequest request)
     {
-        await _auth.ResendVerifyEmailAsync(request.Email);
+        await _auth.resendVerifyEmail(request.Email);
         return Ok(new { success = true, message = "Nếu email tồn tại và chưa xác thực, mã OTP mới đã được gửi." });
     }
 
@@ -112,7 +117,7 @@ public class AuthController : ControllerBase
     {
         try
         {
-            await _auth.VerifyEmailAsync(request);
+            await _auth.verifyEmail(request);
             return Ok(new { success = true, message = "Xác thực email thành công." });
         }
         catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
@@ -121,7 +126,7 @@ public class AuthController : ControllerBase
     [HttpPost("logout")]
     public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
     {
-        await _auth.LogoutAsync(request.RefreshToken);
+        await _auth.logout(request.RefreshToken);
         return Ok(new { success = true, message = "Đăng xuất thành công." });
     }
 

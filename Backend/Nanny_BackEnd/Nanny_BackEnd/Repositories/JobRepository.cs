@@ -12,13 +12,24 @@ public class JobRepository
     public JobRepository(Sep490NannyDbContext db) => _db = db;
 
 
-    public async Task<List<JobPosting>> searchJobPosting(SearchJobRequest filters)
+    public async Task<List<JobPosting>> searchJobPosting(
+        SearchJobRequest filters,
+        Guid? currentUserId = null,
+        bool canSeeNannyOnlyJobs = false)
     {
         var query = _db.JobPostings
-            .Where(j => !j.IsDeleted && j.Status == 1 && j.ModerationStatus == 2)
+            .Where(j => !j.IsDeleted)
             .Include(j => j.JobRequirements).ThenInclude(jr => jr.Skill)
             .Include(j => j.ParentProfile).ThenInclude(p => p.User)
             .AsQueryable();
+
+        query = query.Where(j =>
+            j.ModerationStatus == 2 &&
+            (
+                j.Status == 1 ||
+                (canSeeNannyOnlyJobs && j.Status == 0) ||
+                (currentUserId.HasValue && j.ParentProfile != null && j.ParentProfile.UserId == currentUserId.Value)
+            ));
 
         if (!string.IsNullOrWhiteSpace(filters.City))
             query = query.Where(j => j.City != null &&
@@ -31,16 +42,30 @@ public class JobRepository
         if (filters.JobType.HasValue)
             query = query.Where(j => j.JobType == filters.JobType);
 
-        if (filters.SkillId.HasValue)
-            query = query.Where(j => j.JobRequirements.Any(jr => jr.SkillId == filters.SkillId));
-
         if (filters.SalaryMin.HasValue)
-            query = query.Where(j => j.SalaryMax >= filters.SalaryMin || j.SalaryNegotiable);
+            query = query.Where(j => j.SalaryMin >= filters.SalaryMin || j.SalaryNegotiable);
 
         var skip = (filters.Page - 1) * filters.PageSize;
         return await query
-            .OrderByDescending(j => j.PublishedAt)
+            .OrderByDescending(j => j.PublishedAt ?? j.CreatedAt)
             .Skip(skip).Take(filters.PageSize)
+            .ToListAsync();
+    }
+
+    /// <summary>Tìm theo tiêu đề. Nếu title rỗng → trả tất cả.</summary>
+    public async Task<List<JobPosting>> searchByTitle(string? title)
+    {
+        var query = _db.JobPostings
+            .Where(j => !j.IsDeleted && j.Status == 1 && j.ModerationStatus == 2)
+            .Include(j => j.ParentProfile).ThenInclude(p => p.User)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(title))
+            query = query.Where(j => j.Title.ToLower().Contains(title.ToLower()));
+
+        return await query
+            .OrderByDescending(j => j.PublishedAt ?? j.CreatedAt)
+            .Take(50)
             .ToListAsync();
     }
 
@@ -110,5 +135,13 @@ public class JobRepository
     public void AddRequirements(IEnumerable<JobRequirement> reqs) =>
         _db.JobRequirements.AddRange(reqs);
 
-    public async Task SaveChangesAsync() => await _db.SaveChangesAsync();
+    public async Task<int> countJobPostingsInCurrentMonth(Guid parentProfileId)
+    {
+        var startOfMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        return await _db.JobPostings
+            .Where(j => j.ParentProfileId == parentProfileId && j.CreatedAt >= startOfMonth && !j.IsDeleted)
+            .CountAsync();
+    }
+
+    public async Task saveChanges() => await _db.SaveChangesAsync();
 }
