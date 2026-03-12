@@ -16,6 +16,10 @@
                     colors: {
                         primary: '#F97316',
                         primaryDark: '#EA580C',
+                    },
+                    boxShadow: {
+                        'card': '0 4px 24px rgba(0,0,0,0.07)',
+                        'soft': '0 8px 32px rgba(0,0,0,0.08)',
                     }
                 }
             }
@@ -122,32 +126,37 @@
         <div id="mainContent" class="flex flex-col flex-1 min-w-0 transition-all duration-300" style="margin-left: 260px;">
 
             <!-- Top Header Bar -->
-            <header class="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-gray-200/80 flex items-center justify-between px-6 h-16"
-                    style="box-shadow:0 1px 12px rgba(0,0,0,0.06);">
-                <div class="flex items-center gap-4">
-                    <button id="sidebarToggle" onclick="toggleSidebar()"
-                            class="w-9 h-9 rounded-xl hover:bg-gray-100 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-all">
-                        <span class="material-icons-round">menu</span>
-                    </button>
-                    <div class="flex items-center gap-2 text-sm text-gray-400">
-                        <span>NannyMatch</span>
-                        <span class="material-icons-round text-sm">chevron_right</span>
-                        <span class="font-semibold text-gray-700">@ViewData["Title"]</span>
-                    </div>
-                </div>
-
-                <div class="flex items-center gap-3">
-                    <button class="relative w-9 h-9 rounded-xl hover:bg-gray-100 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-all">
-                        <span class="material-icons-round">notifications_none</span>
-                        <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
-                    </button>
-                    <div class="flex items-center gap-2 pl-3 border-l border-gray-200">
-                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-sm">
-                            @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value?.Substring(0, 1).ToUpper() ?? "M")
+            <header class="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-gray-100 flex flex-col"
+                    style="box-shadow:0 2px 20px rgba(249,115,22,0.07);">
+                <!-- Shimmer accent line -->
+                <div class="mod-topbar-accent"></div>
+                <!-- Header row -->
+                <div class="flex items-center justify-between px-6 h-15" style="height:60px;">
+                    <div class="flex items-center gap-4">
+                        <button id="sidebarToggle" onclick="toggleSidebar()"
+                                class="w-9 h-9 rounded-xl hover:bg-orange-50 flex items-center justify-center text-gray-400 hover:text-orange-500 transition-all">
+                            <span class="material-icons-round">menu</span>
+                        </button>
+                        <div class="flex items-center gap-2 text-sm">
+                            <span class="text-gray-400">NannyMatch</span>
+                            <span class="material-icons-round text-gray-300 text-sm">chevron_right</span>
+                            <span class="font-bold" style="background:linear-gradient(135deg,#F97316,#EA580C);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">@ViewData["Title"]</span>
                         </div>
-                        <span class="text-sm font-semibold text-gray-700 hidden sm:block">
-                            @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? "Moderator")
-                        </span>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <button class="relative w-9 h-9 rounded-xl hover:bg-orange-50 flex items-center justify-center text-gray-400 hover:text-orange-500 transition-all">
+                            <span class="material-icons-round">notifications_none</span>
+                            <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
+                        </button>
+                        <div class="flex items-center gap-2 pl-3 border-l border-gray-100">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
+                                @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value?.Substring(0, 1).ToUpper() ?? "M")
+                            </div>
+                            <span class="text-sm font-semibold text-gray-700 hidden sm:block">
+                                @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? "Moderator")
+                            </span>
+                        </div>
                     </div>
                 </div>
             </header>

@@ -61,7 +61,7 @@ public class ModeratorController : Controller
             status:   status,
             search:   search,
             page:     page,
-            pageSize: 10);
+            pageSize: 3);
 
         if (result == null)
         {
@@ -139,7 +139,7 @@ public class ModeratorController : Controller
         if (status.HasValue)                     qs.Add($"status={status.Value}");
         if (!string.IsNullOrWhiteSpace(search))  qs.Add($"search={Uri.EscapeDataString(search)}");
 
-        var url     = $"/api/accounts?{string.Join("&", qs)}";
+        var url     = $"/api/account?{string.Join("&", qs)}";
         var request = new HttpRequestMessage(HttpMethod.Get, url);
         if (!string.IsNullOrEmpty(token))
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);

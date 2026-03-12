@@ -9,7 +9,7 @@ namespace Nanny_BackEnd.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Moderator,Admin")]
+//[Authorize(Roles = "Moderator,Admin")]
 public class AccountController : ControllerBase
 {
     private readonly Sep490NannyDbContext _db;
@@ -30,8 +30,14 @@ public class AccountController : ControllerBase
         if (page < 1) page = 1;
         if (pageSize < 1 || pageSize > 100) pageSize = 10;
 
+        // Các role bị loại trừ khỏi danh sách quản lý (Moderator chỉ quản lý Nanny và Parent)
+        var excludedRoles = new[] { "Moderator", "Admin" };
+
         var query = _db.Users
             .Where(u => !u.IsDeleted)
+            .Where(u => u.UserRoles.Any(ur =>
+                !ur.IsDeleted &&
+                !excludedRoles.Contains(ur.Role.Name)))
             .AsQueryable();
 
         // Filter by status
@@ -48,8 +54,9 @@ public class AccountController : ControllerBase
                 u.LastName.ToLower().Contains(s));
         }
 
-        // Filter by role
-        if (!string.IsNullOrWhiteSpace(role))
+        // Filter by role — chỉ cho phép Parent hoặc Nanny
+        var allowedRoles = new[] { "Parent", "Nanny" };
+        if (!string.IsNullOrWhiteSpace(role) && allowedRoles.Contains(role))
         {
             query = query.Where(u =>
                 u.UserRoles.Any(ur =>
