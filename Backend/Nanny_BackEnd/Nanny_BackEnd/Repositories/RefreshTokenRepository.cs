@@ -12,11 +12,11 @@ public class RefreshTokenRepository
 
     public void Add(RefreshToken token) => _db.RefreshTokens.Add(token);
 
-    public async Task<RefreshToken?> FindByTokenAsync(string token) =>
+    public async Task<RefreshToken?> findByToken(string token) =>
         await _db.RefreshTokens.FirstOrDefaultAsync(rt =>
             rt.Token == token && !rt.IsDeleted);
 
-    public async Task RevokeAllForUserAsync(Guid userId)
+    public async Task revokeAllForUser(Guid userId)
     {
         var tokens = await _db.RefreshTokens
             .Where(rt => rt.UserId == userId && !rt.IsRevoked && !rt.IsDeleted)
@@ -29,5 +29,5 @@ public class RefreshTokenRepository
         }
     }
 
-    public async Task SaveChangesAsync() => await _db.SaveChangesAsync();
+    public async Task saveChanges() => await _db.SaveChangesAsync();
 }
