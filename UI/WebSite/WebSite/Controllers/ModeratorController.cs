@@ -28,7 +28,7 @@ public class ModeratorController : Controller
         var allUsers  = await FetchAccountsAsync(page: 1, pageSize: 1);
         var parents   = await FetchAccountsAsync(role: "Parent",    page: 1, pageSize: 1);
         var nannies   = await FetchAccountsAsync(role: "Nanny",     page: 1, pageSize: 1);
-        var inactive  = await FetchAccountsAsync(status: 1,         page: 1, pageSize: 1);
+        var inactive  = await FetchAccountsAsync(status: 0,         page: 1, pageSize: 1);
 
         // Recent accounts (for activity feed)
         var recent    = await FetchAccountsAsync(page: 1, pageSize: 5);
@@ -80,16 +80,16 @@ public class ModeratorController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ToggleStatus(Guid id, int newStatus)
     {
-        var token = HttpContext.Session.GetString("AccessToken");
-        if (string.IsNullOrEmpty(token))
-            return Json(new { success = false, message = "Phiên đăng nhập hết hạn." });
-
         var body    = JsonSerializer.Serialize(new { status = newStatus });
-        var request = new HttpRequestMessage(HttpMethod.Patch, $"/api/accounts/{id}/status")
+        var request = new HttpRequestMessage(HttpMethod.Patch, $"/api/account/{id}/status")
         {
-            Content = new StringContent(body, Encoding.UTF8, "application/json"),
-            Headers = { Authorization = new AuthenticationHeaderValue("Bearer", token) }
+            Content = new StringContent(body, Encoding.UTF8, "application/json")
         };
+
+        // Gắn token nếu có
+        var token = HttpContext.Session.GetString("AccessToken");
+        if (!string.IsNullOrEmpty(token))
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         try
         {
@@ -110,6 +110,81 @@ public class ModeratorController : Controller
     }
 
     // ──────────────────────────────────────────────
+    // GET /Moderator/EditAccount/{id}
+    // ──────────────────────────────────────────────
+    public async Task<IActionResult> EditAccount(Guid id)
+    {
+        var token   = HttpContext.Session.GetString("AccessToken");
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/account/{id}");
+        if (!string.IsNullOrEmpty(token))
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        try
+        {
+            var response = await _http.SendAsync(request);
+            var json     = await response.Content.ReadAsStringAsync();
+            var result   = JsonSerializer.Deserialize<ApiResult<AccountDto>>(json, JsonOpts);
+            if (result?.Success != true || result.Data == null)
+            {
+                TempData["Error"] = "Không tìm thấy tài khoản.";
+                return RedirectToAction(nameof(ManageAccount));
+            }
+            return View(result.Data);
+        }
+        catch
+        {
+            TempData["Error"] = "Lỗi kết nối đến API.";
+            return RedirectToAction(nameof(ManageAccount));
+        }
+    }
+
+    // ──────────────────────────────────────────────
+    // POST /Moderator/EditAccount/{id}
+    // ──────────────────────────────────────────────
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditAccount(Guid id, EditAccountRequest model)
+    {
+        var body    = JsonSerializer.Serialize(new { status = model.Status, phoneNumber = model.PhoneNumber });
+        var request = new HttpRequestMessage(HttpMethod.Patch, $"/api/account/{id}")
+        {
+            Content = new StringContent(body, Encoding.UTF8, "application/json")
+        };
+        var token = HttpContext.Session.GetString("AccessToken");
+        if (!string.IsNullOrEmpty(token))
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        try
+        {
+            var response = await _http.SendAsync(request);
+            var json     = await response.Content.ReadAsStringAsync();
+
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                TempData["Error"] = $"API trả về response rỗng (HTTP {(int)response.StatusCode}).";
+                return RedirectToAction(nameof(EditAccount), new { id });
+            }
+
+            var result = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
+            if (result?.Success == true)
+            {
+                TempData["Success"] = result.Message ?? "Cập nhật thành công.";
+                return RedirectToAction(nameof(ManageAccount));
+            }
+            else
+            {
+                TempData["Error"] = result?.Message ?? $"Cập nhật thất bại (HTTP {(int)response.StatusCode}).";
+                return RedirectToAction(nameof(EditAccount), new { id });
+            }
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = $"Lỗi kết nối: {ex.Message}";
+            return RedirectToAction(nameof(EditAccount), new { id });
+        }
+    }
+
+    // ──────────────────────────────────────────────
     // Placeholder views (will be implemented later)
     // ──────────────────────────────────────────────
     public IActionResult ViewReports()       => View();
@@ -117,6 +192,7 @@ public class ModeratorController : Controller
     public IActionResult ManageBlogs()       => View();
     public IActionResult ManageFAQ()         => View();
     public IActionResult ModerateJobPostings() => View();
+
 
     // ──────────────────────────────────────────────
     // Private helpers

@@ -113,18 +113,26 @@ public class AccountController : ControllerBase
             .Where(u => u.Id == id && !u.IsDeleted)
             .Select(u => new AccountDto
             {
-                Id            = u.Id,
-                FirstName     = u.FirstName,
-                LastName      = u.LastName,
-                Email         = u.Email,
-                PhoneNumber   = u.PhoneNumber,
-                AvatarUrl     = u.AvatarUrl,
-                City          = u.City,
-                Status        = u.Status,
+                Id             = u.Id,
+                FirstName      = u.FirstName,
+                LastName       = u.LastName,
+                Email          = u.Email,
+                PhoneNumber    = u.PhoneNumber,
+                AvatarUrl      = u.AvatarUrl,
+                DateOfBirth    = u.DateOfBirth,
+                Gender         = u.Gender,
+                Address        = u.Address,
+                City           = u.City,
+                District       = u.District,
+                Ward           = u.Ward,
+                Status         = u.Status,
                 EmailConfirmed = u.EmailConfirmed,
-                CreatedAt     = u.CreatedAt,
-                LastLoginAt   = u.LastLoginAt,
-                Roles         = u.UserRoles
+                CreatedAt      = u.CreatedAt,
+                CreatedBy      = u.CreatedBy,
+                UpdatedAt      = u.UpdatedAt,
+                UpdatedBy      = u.UpdatedBy,
+                LastLoginAt    = u.LastLoginAt,
+                Roles          = u.UserRoles
                     .Where(ur => !ur.IsDeleted)
                     .Select(ur => ur.Role.Name)
                     .ToList()
@@ -138,8 +146,48 @@ public class AccountController : ControllerBase
     }
 
     /// <summary>
-    /// PATCH /api/accounts/{id}/status
-    /// Body: { "status": 0 } = Active, { "status": 1 } = Inactive
+    /// PATCH /api/account/{id}
+    /// Moderator cập nhật Status và PhoneNumber của tài khoản
+    /// </summary>
+    [HttpPatch("{id:guid}")]
+    public async Task<IActionResult> UpdateAccount(Guid id, [FromBody] UpdateAccountRequest request)
+    {
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
+        if (user == null)
+            return NotFound(new { success = false, message = "Không tìm thấy tài khoản." });
+
+        // Chỉ cho phép cập nhật Nanny hoặc Parent
+        var excludedRoles = new[] { "Moderator", "Admin" };
+        var roles = _db.UserRoles
+            .Where(ur => ur.UserId == id && !ur.IsDeleted)
+            .Select(ur => ur.Role.Name);
+        if (await roles.AnyAsync(r => excludedRoles.Contains(r)))
+            return StatusCode(403, new { success = false, message = "Không có quyền cập nhật tài khoản Moderator/Admin." });
+
+        if (request.Status != 0 && request.Status != 1)
+            return BadRequest(new { success = false, message = "Status không hợp lệ. Chỉ chấp nhận 0 (Inactive) hoặc 1 (Active)." });
+
+        // Validate phone number: bỏ trống OK, có nhập thì phải là 10-11 chữ số
+        if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
+        {
+            var phone = request.PhoneNumber.Trim();
+            if (!System.Text.RegularExpressions.Regex.IsMatch(phone, @"^\d{10,11}$"))
+                return BadRequest(new { success = false, message = "Số điện thoại phải là chuỗi số từ 10 đến 11 chữ số." });
+            request.PhoneNumber = phone; // lưu đã trim
+        }
+
+        user.Status      = request.Status;
+        user.PhoneNumber = string.IsNullOrWhiteSpace(request.PhoneNumber) ? null : request.PhoneNumber;
+        user.UpdatedAt   = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync();
+
+        return Ok(new { success = true, message = "Cập nhật tài khoản thành công." });
+    }
+
+    /// <summary>
+    /// PATCH /api/account/{id}/status
+    /// Body: { "status": 1 } = Active, { "status": 0 } = Inactive
     /// </summary>
     [HttpPatch("{id:guid}/status")]
     public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateAccountStatusRequest request)

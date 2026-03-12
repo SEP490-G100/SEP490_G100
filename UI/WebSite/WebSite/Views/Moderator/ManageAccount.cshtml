@@ -193,30 +193,24 @@
                         </td>
                         <td>
                             <div class="flex items-center justify-center gap-1.5">
-                                <!-- View -->
-                                <button onclick="viewAccount('@acc.Id')" title="View details"
-                                        id="view-@acc.Id"
-                                        data-id="@acc.Id"
-                                        data-name="@acc.FullName"
-                                        data-email="@acc.Email"
-                                        data-role="@acc.PrimaryRole"
-                                        data-status="@statusLabel"
-                                        data-joined="@acc.CreatedAt.ToString("MMM dd, yyyy")"
-                                        data-avatar-bg="@avatarBg"
-                                        class="w-8 h-8 rounded-xl hover:bg-blue-50 hover:text-blue-600 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-blue-200">
-                                    <span class="material-icons-round text-base">visibility</span>
-                                </button>
+                                <!-- View / Edit -->
+                                <a href="/Moderator/EditAccount/@acc.Id" title="View & Edit"
+                                   class="w-8 h-8 rounded-xl hover:bg-blue-50 hover:text-blue-600 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-blue-200">
+                                    <span class="material-icons-round text-base">edit</span>
+                                </a>
                                 <!-- Toggle Status -->
                                 @if (acc.Status == 1)
                                 {
-                                    <button onclick="toggleStatus('@acc.Id', '@acc.FullName', 0)" title="Deactivate"
+                                    <button id="toggle-btn-@acc.Id"
+                                            onclick="toggleStatus('@acc.Id', '@acc.FullName', 0)" title="Deactivate"
                                             class="w-8 h-8 rounded-xl hover:bg-red-50 hover:text-red-500 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-red-200">
                                         <span class="material-icons-round text-base">block</span>
                                     </button>
                                 }
                                 else
                                 {
-                                    <button onclick="toggleStatus('@acc.Id', '@acc.FullName', 1)" title="Activate"
+                                    <button id="toggle-btn-@acc.Id"
+                                            onclick="toggleStatus('@acc.Id', '@acc.FullName', 1)" title="Activate"
                                             class="w-8 h-8 rounded-xl hover:bg-emerald-50 hover:text-emerald-600 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-emerald-200">
                                         <span class="material-icons-round text-base">check_circle_outline</span>
                                     </button>
@@ -418,13 +412,33 @@
                     var dot   = cell.querySelector('div');
                     var badge = cell.querySelector('.badge');
                     if (newStatus === 1) {
+                        // Vừa Activate → status = Active (green)
                         dot.className   = 'w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-emerald-100';
                         badge.className = 'badge badge-active';
                         badge.textContent = 'Active';
                     } else {
+                        // Vừa Deactivate → status = Inactive (red)
                         dot.className   = 'w-2 h-2 rounded-full bg-red-400 ring-2 ring-red-100';
                         badge.className = 'badge badge-inactive';
                         badge.textContent = 'Inactive';
+                    }
+                }
+
+                // Cập nhật action button — đổi icon + onclick sang trạng thái ngược lại
+                var toggleBtn = document.getElementById('toggle-btn-' + id);
+                if (toggleBtn) {
+                    if (newStatus === 1) {
+                        // Đã Active → hiển thị nút Deactivate
+                        toggleBtn.setAttribute('onclick', "toggleStatus('" + id + "', '" + name + "', 0)");
+                        toggleBtn.setAttribute('title', 'Deactivate');
+                        toggleBtn.className = 'w-8 h-8 rounded-xl hover:bg-red-50 hover:text-red-500 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-red-200';
+                        toggleBtn.querySelector('span').textContent = 'block';
+                    } else {
+                        // Đã Inactive → hiển thị nút Activate
+                        toggleBtn.setAttribute('onclick', "toggleStatus('" + id + "', '" + name + "', 1)");
+                        toggleBtn.setAttribute('title', 'Activate');
+                        toggleBtn.className = 'w-8 h-8 rounded-xl hover:bg-emerald-50 hover:text-emerald-600 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-emerald-200';
+                        toggleBtn.querySelector('span').textContent = 'check_circle_outline';
                     }
                 }
                 showToast('success', data.message);
