@@ -13,9 +13,6 @@ public class UserRepository
     public async Task<User?> FindByEmailAsync(string email) =>
         await _db.Users.FirstOrDefaultAsync(u => u.Email == email && !u.IsDeleted);
 
-    public async Task<User?> FindByGoogleIdAsync(string googleId) =>
-        await _db.Users.FirstOrDefaultAsync(u => u.GoogleId == googleId && !u.IsDeleted);
-
     public async Task<User?> FindByIdAsync(Guid id) =>
         await _db.Users.FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
 

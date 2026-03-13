@@ -9,6 +9,12 @@ public class ApiResult
 
     [JsonPropertyName("message")]
     public string? Message { get; set; }
+
+    [JsonPropertyName("needsVerification")]
+    public bool NeedsVerification { get; set; }
+
+    [JsonPropertyName("email")]
+    public string? Email { get; set; }
 }
 
 public class ApiResult<T> : ApiResult

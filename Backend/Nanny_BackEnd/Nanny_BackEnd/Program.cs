@@ -64,8 +64,6 @@ builder.Services.AddCors(options =>
     options.AddDefaultPolicy(policy =>
         policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
 
-builder.Services.AddHttpClient();
-
 // DI — Repositories
 builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<RefreshTokenRepository>();
@@ -77,6 +75,9 @@ builder.Services.AddScoped<OtpService>();
 builder.Services.AddScoped<EmailService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddSingleton<PasswordValidator>();
+
+// Background Services
+builder.Services.AddHostedService<OtpCleanupService>();
 
 var app = builder.Build();
 

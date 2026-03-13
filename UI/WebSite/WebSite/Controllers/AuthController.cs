@@ -12,9 +12,10 @@ namespace WebSite.Controllers;
 
 public class AuthController : Controller
 {
+    private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
+
     private readonly HttpClient _http;
     private readonly IConfiguration _config;
-    private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
 
     public AuthController(IHttpClientFactory httpFactory, IConfiguration config)
     {
@@ -25,6 +26,9 @@ public class AuthController : Controller
     [HttpGet]
     public IActionResult Login(string? returnUrl = null)
     {
+        if (User.Identity?.IsAuthenticated == true)
+            return LocalRedirect(returnUrl ?? "/");
+
         ViewBag.ReturnUrl = returnUrl;
         SetGoogleClientId();
         return View();
@@ -37,6 +41,12 @@ public class AuthController : Controller
 
         var response = await _http.PostAsJsonAsync("/api/auth/login", new { model.Email, model.Password });
         var result = await ReadApiResult<LoginResponseDto>(response);
+
+        if (result?.NeedsVerification == true)
+        {
+            TempData["Info"] = result.Message;
+            return RedirectToAction("VerifyEmail", new { email = result.Email });
+        }
 
         if (result == null || !result.Success)
         {
@@ -71,7 +81,6 @@ public class AuthController : Controller
             return View(model);
         }
 
-        await SignInUserAsync(result.Data!);
         return RedirectToAction("VerifyEmail", new { email = model.Email });
     }
 
@@ -112,6 +121,26 @@ public class AuthController : Controller
         return RedirectToAction("ResetPassword", new { email = model.Email });
     }
 
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResendForgotPasswordOtp(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            TempData["Error"] = "Không xác định được email. Vui lòng thử lại từ đầu.";
+            return RedirectToAction("ForgotPassword");
+        }
+
+        var response = await _http.PostAsJsonAsync("/api/auth/forgot-password", new { Email = email });
+        var result   = await ReadApiResult(response);
+
+        if (result == null || !result.Success)
+            TempData["Error"] = result?.Message ?? "Gửi lại mã OTP thất bại. Vui lòng thử lại.";
+        else
+            TempData["Success"] = "Đã gửi lại mã OTP. Vui lòng kiểm tra email (kể cả hộp thư spam).";
+
+        return RedirectToAction("ResetPassword", new { email });
+    }
+
     [HttpGet]
     public IActionResult ResetPassword(string? email = null) =>
         View(new ResetPasswordViewModel { Email = email ?? "" });
@@ -145,10 +174,20 @@ public class AuthController : Controller
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> ResendVerifyEmail(string email)
     {
-        if (!string.IsNullOrWhiteSpace(email))
-            await _http.PostAsJsonAsync("/api/auth/resend-verify", new { Email = email });
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            TempData["Error"] = "Không xác định được email. Vui lòng đăng ký lại.";
+            return RedirectToAction("Register");
+        }
 
-        TempData["Success"] = "Đã gửi lại mã OTP. Vui lòng kiểm tra email.";
+        var response = await _http.PostAsJsonAsync("/api/auth/resend-verify", new { Email = email });
+        var result   = await ReadApiResult(response);
+
+        if (result == null || !result.Success)
+            TempData["Error"] = result?.Message ?? "Gửi lại mã OTP thất bại. Vui lòng thử lại.";
+        else
+            TempData["Success"] = "Đã gửi lại mã OTP. Vui lòng kiểm tra email.";
+
         return RedirectToAction("VerifyEmail", new { email });
     }
 
@@ -166,8 +205,8 @@ public class AuthController : Controller
             return View(model);
         }
 
-        TempData["Success"] = "Xác thực email thành công!";
-        return RedirectToAction("Index", "Home");
+        TempData["Success"] = "Xác thực email thành công! Vui lòng đăng nhập.";
+        return RedirectToAction("Login");
     }
 
     [Authorize, HttpGet]
@@ -182,28 +221,24 @@ public class AuthController : Controller
     }
 
     [Authorize, HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> ChangePassword(string currentPassword, string newPassword)
+    public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
     {
-        var token = HttpContext.Session.GetString("AccessToken");
-        if (string.IsNullOrEmpty(token))
+        if (!ModelState.IsValid) return View(model);
+
+        if (string.IsNullOrEmpty(HttpContext.Session.GetString("AccessToken")))
         {
             ModelState.AddModelError("", "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.");
-            return View();
+            return View(model);
         }
 
-        var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/change-password")
-        {
-            Content = JsonContent.Create(new { currentPassword, newPassword }),
-            Headers = { Authorization = new AuthenticationHeaderValue("Bearer", token) }
-        };
-
-        var response = await _http.SendAsync(request);
+        var response = await SendAuthorizedAsync(HttpMethod.Post, "/api/auth/change-password",
+            new { currentPassword = model.CurrentPassword, newPassword = model.NewPassword });
         var result = await ReadApiResult(response);
 
         if (result == null || !result.Success)
         {
             ModelState.AddModelError("", result?.Message ?? "Đổi mật khẩu thất bại.");
-            return View();
+            return View(model);
         }
 
         TempData["Success"] = "Đổi mật khẩu thành công!";
@@ -215,15 +250,7 @@ public class AuthController : Controller
     {
         var refreshToken = HttpContext.Session.GetString("RefreshToken");
         if (!string.IsNullOrEmpty(refreshToken))
-        {
-            var accessToken = HttpContext.Session.GetString("AccessToken");
-            var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/logout")
-            {
-                Content = JsonContent.Create(new { refreshToken }),
-                Headers = { Authorization = new AuthenticationHeaderValue("Bearer", accessToken) }
-            };
-            await _http.SendAsync(request);
-        }
+            await SendAuthorizedAsync(HttpMethod.Post, "/api/auth/logout", new { refreshToken });
 
         HttpContext.Session.Clear();
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
@@ -249,7 +276,9 @@ public class AuthController : Controller
             claims.Add(new Claim(ClaimTypes.Role, role));
 
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
+        await HttpContext.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            new ClaimsPrincipal(identity));
     }
 
     private bool IsGoogleUser() =>
@@ -257,6 +286,15 @@ public class AuthController : Controller
 
     private void SetGoogleClientId() =>
         ViewBag.GoogleClientId = _config["Google:ClientId"];
+
+    private async Task<HttpResponseMessage> SendAuthorizedAsync(HttpMethod method, string url, object body)
+    {
+        var req = new HttpRequestMessage(method, url) { Content = JsonContent.Create(body) };
+        var token = HttpContext.Session.GetString("AccessToken");
+        if (!string.IsNullOrEmpty(token))
+            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return await _http.SendAsync(req);
+    }
 
     private static async Task<ApiResult?> ReadApiResult(HttpResponseMessage response) =>
         await ReadApiResult<ApiResult>(response) as ApiResult;
@@ -266,7 +304,7 @@ public class AuthController : Controller
         try
         {
             var json = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<ApiResult<T>>(json, JsonOpts);
+            return JsonSerializer.Deserialize<ApiResult<T>>(json, _jsonOptions);
         }
         catch
         {

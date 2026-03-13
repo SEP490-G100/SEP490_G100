@@ -13,10 +13,9 @@ public class OtpRepository
 
     public void Add(OtpCode otp) => _db.OtpCodes.Add(otp);
 
-    public async Task<OtpCode?> FindValidAsync(string email, string code, OtpPurpose purpose) =>
+    public async Task<OtpCode?> FindActiveAsync(string email, OtpPurpose purpose) =>
         await _db.OtpCodes.FirstOrDefaultAsync(o =>
             o.Email == email &&
-            o.Code == code &&
             o.Purpose == (int)purpose &&
             !o.IsUsed &&
             o.ExpiresAt > DateTime.UtcNow &&
