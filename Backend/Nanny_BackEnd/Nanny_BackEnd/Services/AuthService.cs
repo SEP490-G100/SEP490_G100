@@ -35,9 +35,9 @@ public class AuthService
         _config = config;
     }
 
-    public async Task<LoginResponse> RegisterAsync(RegisterRequest request)
+    public async Task<LoginResponse> register(RegisterRequest request)
     {
-        var existing = await _userRepo.FindByEmailAsync(request.Email);
+        var existing = await _userRepo.findByEmail(request.Email);
         if (existing != null)
         {
             if (existing.Status == (int)UserStatus.Pending && existing.AuthProvider == (int)AuthProvider.Email)
@@ -64,17 +64,18 @@ public class AuthService
             CreatedAt = DateTime.UtcNow
         };
 
+        // Lưu User TRƯỚC để tránh FK violation khi gán Role
         _userRepo.Add(user);
-        await _userRepo.AssignRoleAsync(user.Id, AuthConstants.DefaultRole);
-        await _userRepo.SaveChangesAsync();
+        await _userRepo.saveChanges();
 
         await TrySendOtpEmailAsync(user.Email, user.Id, OtpPurpose.VerifyEmail);
         return await BuildLoginResponseAsync(user);
     }
 
     public async Task<(LoginResponse? Response, bool IsPending)> LoginAsync(LoginRequest request)
+
     {
-        var user = await _userRepo.FindByEmailAsync(request.Email);
+        var user = await _userRepo.findByEmail(request.Email);
         if (user == null || user.AuthProvider == (int)AuthProvider.Google || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             throw new UnauthorizedAccessException("Email hoặc mật khẩu không đúng.");
 
@@ -94,21 +95,21 @@ public class AuthService
             throw new UnauthorizedAccessException("Tài khoản không thể đăng nhập.");
 
         user.LastLoginAt = DateTime.UtcNow;
-        await _userRepo.SaveChangesAsync();
+        await _userRepo.saveChanges();
 
         return (await BuildLoginResponseAsync(user), false);
     }
 
-    public async Task<LoginResponse> RefreshTokenAsync(RefreshTokenRequest request)
+    public async Task<LoginResponse> refreshToken(RefreshTokenRequest request)
     {
         var userId = _jwt.GetUserIdFromToken(request.AccessToken)
             ?? throw new UnauthorizedAccessException("Token không hợp lệ.");
 
-        var stored = await _tokenRepo.FindByTokenAsync(request.RefreshToken);
+        var stored = await _tokenRepo.findByToken(request.RefreshToken);
         if (stored == null || stored.UserId != userId || stored.IsRevoked || stored.IsUsed || stored.ExpiresAt < DateTime.UtcNow)
             throw new UnauthorizedAccessException("Refresh token không hợp lệ hoặc đã hết hạn.");
 
-        var user = await _userRepo.FindByIdAsync(userId)
+        var user = await _userRepo.findById(userId)
             ?? throw new UnauthorizedAccessException("Người dùng không tồn tại.");
 
         if (user.Status == (int)UserStatus.Banned)
@@ -126,19 +127,19 @@ public class AuthService
         return response;
     }
 
-    public async Task<LoginResponse> GoogleLoginAsync(GoogleLoginRequest request)
+    public async Task<LoginResponse> googleLogin(GoogleLoginRequest request)
     {
         var payload = await GoogleJsonWebSignature.ValidateAsync(request.IdToken, new GoogleJsonWebSignature.ValidationSettings
         {
             Audience = new[] { _config["Google:ClientId"] }
         });
 
-        return await ProcessGoogleLoginAsync(payload);
+        return await processGoogleLogin(payload);
     }
 
     public async Task ChangePasswordAsync(Guid userId, ChangePasswordRequest request)
     {
-        var user = await _userRepo.FindByIdAsync(userId)
+        var user = await _userRepo.findById(userId)
             ?? throw new InvalidOperationException("Người dùng không tồn tại.");
 
         if (user.AuthProvider == (int)AuthProvider.Google)
@@ -148,12 +149,12 @@ public class AuthService
             throw new UnauthorizedAccessException("Mật khẩu hiện tại không đúng.");
 
         ValidatePasswordOrThrow(request.NewPassword);
-        await UpdatePasswordAsync(user, request.NewPassword);
+        await updatePassword(user, request.NewPassword);
     }
 
-    public async Task<(bool success, string message)> ForgotPasswordAsync(string email)
+    public async Task<(bool success, string message)> forgotPassword(string email)
     {
-        var user = await _userRepo.FindByEmailAsync(email);
+        var user = await _userRepo.findByEmail(email);
         if (user == null)
             return (true, "Nếu email tồn tại, mã OTP đã được gửi.");
 
@@ -162,8 +163,8 @@ public class AuthService
 
         try
         {
-            var code = await _otp.GenerateAsync(email, OtpPurpose.ForgotPassword, user.Id);
-            await _email.SendOtpEmailAsync(email, code, "ForgotPassword");
+            var code = await _otp.generate(email, OtpPurpose.ForgotPassword, user.Id);
+            await _email.sendOtpEmail(email, code, "ForgotPassword");
             return (true, "Mã OTP đã được gửi đến email của bạn.");
         }
         catch (Exception ex)
@@ -172,38 +173,38 @@ public class AuthService
         }
     }
 
-    public async Task ResetPasswordAsync(ResetPasswordRequest request)
+    public async Task resetPassword(ResetPasswordRequest request)
     {
-        var otp = await _otp.ValidateAsync(request.Email, request.OtpCode, OtpPurpose.ForgotPassword)
+        var otp = await _otp.validate(request.Email, request.OtpCode, OtpPurpose.ForgotPassword)
             ?? throw new InvalidOperationException("Mã OTP không hợp lệ hoặc đã hết hạn.");
 
-        var user = await _userRepo.FindByEmailAsync(request.Email)
+        var user = await _userRepo.findByEmail(request.Email)
             ?? throw new InvalidOperationException("Người dùng không tồn tại.");
 
         if (user.AuthProvider == (int)AuthProvider.Google)
             throw new InvalidOperationException("Tài khoản Google không sử dụng mật khẩu.");
 
         ValidatePasswordOrThrow(request.NewPassword);
-        await UpdatePasswordAsync(user, request.NewPassword);
+        await updatePassword(user, request.NewPassword);
     }
 
-    public async Task VerifyEmailAsync(VerifyEmailRequest request)
+    public async Task verifyEmail(VerifyEmailRequest request)
     {
-        var otp = await _otp.ValidateAsync(request.Email, request.OtpCode, OtpPurpose.VerifyEmail)
+        var otp = await _otp.validate(request.Email, request.OtpCode, OtpPurpose.VerifyEmail)
             ?? throw new InvalidOperationException("Mã OTP không hợp lệ hoặc đã hết hạn.");
 
-        var user = await _userRepo.FindByEmailAsync(request.Email)
+        var user = await _userRepo.findByEmail(request.Email)
             ?? throw new InvalidOperationException("Người dùng không tồn tại.");
 
         user.EmailConfirmed = true;
         user.Status = (int)UserStatus.Active;
         user.UpdatedAt = DateTime.UtcNow;
-        await _userRepo.SaveChangesAsync();
+        await _userRepo.saveChanges();
     }
 
-    public async Task ResendVerifyEmailAsync(string email)
+    public async Task resendVerifyEmail(string email)
     {
-        var user = await _userRepo.FindByEmailAsync(email);
+        var user = await _userRepo.findByEmail(email);
         if (user == null || user.EmailConfirmed || user.AuthProvider == (int)AuthProvider.Google)
             return;
 
@@ -211,9 +212,9 @@ public class AuthService
         await _email.SendOtpEmailAsync(user.Email, code, "VerifyEmail");
     }
 
-    public async Task LogoutAsync(string refreshToken)
+    public async Task logout(string refreshToken)
     {
-        var token = await _tokenRepo.FindByTokenAsync(refreshToken);
+        var token = await _tokenRepo.findByToken(refreshToken);
         if (token == null) return;
 
         await _tokenRepo.RevokeAllForUserAsync(token.UserId);
@@ -234,9 +235,9 @@ public class AuthService
         return await BuildLoginResponseAsync(existing);
     }
 
-    private async Task<LoginResponse> ProcessGoogleLoginAsync(GoogleJsonWebSignature.Payload payload)
+    private async Task<LoginResponse> processGoogleLogin(GoogleJsonWebSignature.Payload payload)
     {
-        var user = await _userRepo.FindByEmailAsync(payload.Email);
+        var user = await _userRepo.findByEmail(payload.Email);
 
         if (user?.AuthProvider == (int)AuthProvider.Email)
             throw new InvalidOperationException("Email này đã đăng ký bằng mật khẩu. Vui lòng đăng nhập bằng email.");
@@ -257,18 +258,21 @@ public class AuthService
                 CreatedAt = DateTime.UtcNow
             };
             _userRepo.Add(user);
-            await _userRepo.AssignRoleAsync(user.Id, AuthConstants.DefaultRole);
+
+            await _userRepo.assignRole(user.Id, AuthConstants.DefaultRole);
+            await _userRepo.addParentProfile(user.Id);
+            await _userRepo.saveChanges();
         }
 
         user.LastLoginAt = DateTime.UtcNow;
-        await _userRepo.SaveChangesAsync();
+        await _userRepo.saveChanges();
 
-        return await BuildLoginResponseAsync(user);
+        return await buildLoginResponse(user);
     }
 
     private async Task<LoginResponse> BuildLoginResponseAsync(User user)
     {
-        var roles = await _userRepo.GetRolesAsync(user.Id);
+        var roles = await _userRepo.getRoles(user.Id);
         var (accessToken, expiresAt, jwtId) = _jwt.GenerateAccessToken(user, roles);
         var refreshToken = _jwt.GenerateRefreshToken();
 
@@ -281,7 +285,7 @@ public class AuthService
             ExpiresAt = DateTime.UtcNow.AddDays(AuthConstants.RefreshTokenDays),
             CreatedAt = DateTime.UtcNow
         });
-        await _tokenRepo.SaveChangesAsync();
+        await _tokenRepo.saveChanges();
 
         return new LoginResponse
         {
@@ -309,18 +313,18 @@ public class AuthService
             throw new InvalidOperationException(string.Join(" ", errors));
     }
 
-    private async Task UpdatePasswordAsync(User user, string newPassword)
+    private async Task updatePassword(User user, string newPassword)
     {
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
         user.UpdatedAt = DateTime.UtcNow;
-        await _userRepo.SaveChangesAsync();
+        await _userRepo.saveChanges();
     }
 
-    private async Task TrySendOtpEmailAsync(string email, Guid userId, OtpPurpose purpose)
+    private async Task trySendOtpEmail(string email, Guid userId, OtpPurpose purpose)
     {
-        var code = await _otp.GenerateAsync(email, purpose, userId);
+        var code = await _otp.generate(email, purpose, userId);
         var purposeKey = purpose == OtpPurpose.VerifyEmail ? "VerifyEmail" : "ForgotPassword";
-        try { await _email.SendOtpEmailAsync(email, code, purposeKey); }
+        try { await _email.sendOtpEmail(email, code, purposeKey); }
         catch { /* Silent — email failure should not block the main flow */ }
     }
 }

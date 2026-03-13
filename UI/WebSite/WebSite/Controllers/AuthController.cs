@@ -49,14 +49,27 @@ public class AuthController : Controller
         }
 
         if (result == null || !result.Success)
+
         {
-            ModelState.AddModelError("", result?.Message ?? "Đăng nhập thất bại.");
+            var response = await _http.PostAsJsonAsync("/api/auth/login", new { model.Email, model.Password });
+            var result = await ReadApiResult<LoginResponseDto>(response);
+
+            if (result == null || !result.Success)
+            {
+                ModelState.AddModelError("", result?.Message ?? "Đăng nhập thất bại.");
+                SetGoogleClientId();
+                return View(model);
+            }
+
+            await SignInUserAsync(result.Data!);
+            return LocalRedirect(returnUrl ?? "/");
+        }
+        catch (HttpRequestException)
+        {
+            ModelState.AddModelError("", "Không thể kết nối đến máy chủ. Vui lòng thử lại sau.");
             SetGoogleClientId();
             return View(model);
         }
-
-        await SignInUserAsync(result.Data!);
-        return LocalRedirect(returnUrl ?? "/");
     }
 
     [HttpGet]
@@ -67,21 +80,34 @@ public class AuthController : Controller
     {
         if (!ModelState.IsValid) { SetGoogleClientId(); return View(model); }
 
-        var response = await _http.PostAsJsonAsync("/api/auth/register", new
+        try
         {
-            model.Email, model.Password, model.FirstName, model.LastName, model.PhoneNumber
-        });
+            var response = await _http.PostAsJsonAsync("/api/auth/register", new
+            {
+                model.Email, model.Password, model.FirstName, model.LastName, model.PhoneNumber
+            });
 
-        var result = await ReadApiResult<LoginResponseDto>(response);
+            var result = await ReadApiResult<LoginResponseDto>(response);
 
-        if (result == null || !result.Success)
+            if (result == null || !result.Success)
+            {
+                ModelState.AddModelError("", result?.Message ?? "Đăng ký thất bại.");
+                SetGoogleClientId();
+                return View(model);
+            }
+
+            await SignInUserAsync(result.Data!);
+            return RedirectToAction("VerifyEmail", new { email = model.Email });
+        }
+        catch (HttpRequestException)
         {
-            ModelState.AddModelError("", result?.Message ?? "Đăng ký thất bại.");
+            ModelState.AddModelError("", "Không thể kết nối đến máy chủ. Vui lòng thử lại sau.");
             SetGoogleClientId();
             return View(model);
         }
 
         return RedirectToAction("VerifyEmail", new { email = model.Email });
+
     }
 
     [HttpPost, ValidateAntiForgeryToken]

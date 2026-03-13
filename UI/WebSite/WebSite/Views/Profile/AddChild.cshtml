@@ -1,0 +1,146 @@
+@using WebSite.Controllers
+@using WebSite.Models.Profile
+@model CreateChildProfileViewModel
+
+@{
+    ViewData["Title"] = "Thêm con em";
+}
+
+<div class="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50/30 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-2xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8">
+            <span class="section-label">👶 Gia đình mở rộng</span>
+            <h1 class="text-4xl font-bold text-gray-900 dark:text-white mt-3" style="font-family:'Quicksand',sans-serif">
+                Thêm <span class="gradient-text">con em</span>
+            </h1>
+            <div class="section-divider left mt-4"></div>
+        </div>
+
+        <!-- Form Card -->
+        <div class="bg-white dark:bg-gray-800/80 rounded-3xl p-8 lg:p-10 shadow-soft border border-gray-100/80 dark:border-gray-700/50 backdrop-blur-sm">
+            <form method="post">
+                @Html.AntiForgeryToken()
+
+                <!-- Basic Information -->
+                <div class="space-y-6 mb-8">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <span class="material-icons-round text-green-500">person</span>
+                        Thông tin cơ bản
+                    </h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Name -->
+                        <div>
+                            <label for="Name" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                                👶 Tên con (Không bắt buộc)
+                            </label>
+                            <input type="text" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                                   id="Name" name="Name" value="@Model.Name" placeholder="Để trống nếu muốn">
+                            @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-red-500 text-sm mt-1" })
+                        </div>
+
+                        <!-- Date of Birth -->
+                        <div>
+                            <label for="DateOfBirth" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                                🎂 Ngày sinh <span class="text-red-500">*</span>
+                            </label>
+                            <input type="date" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                                   id="DateOfBirth" name="DateOfBirth" value="@(Model.DateOfBirth != default ? Model.DateOfBirth.ToString("yyyy-MM-dd") : "")" required>
+                            @Html.ValidationMessageFor(m => m.DateOfBirth, "", new { @class = "text-red-500 text-sm mt-1" })
+                        </div>
+
+                        <!-- Gender -->
+                        <div>
+                            <label for="Gender" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                                👥 Giới tính
+                            </label>
+                            <select class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                                    id="Gender" name="Gender">
+                                <option value="">-- Chọn giới tính --</option>
+                                <option value="0" selected="@(Model.Gender == 0)">Nam</option>
+                                <option value="1" selected="@(Model.Gender == 1)">Nữ</option>
+                                <option value="2" selected="@(Model.Gender == 2)">Khác</option>
+                            </select>
+                            @Html.ValidationMessageFor(m => m.Gender, "", new { @class = "text-red-500 text-sm mt-1" })
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Health & Special Information -->
+                <div class="border-t border-gray-100 dark:border-gray-700/50 pt-8 space-y-6">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <span class="material-icons-round text-green-500">health_and_safety</span>
+                        Thông tin sức khỏe
+                    </h3>
+
+                    <!-- Allergies -->
+                    <div>
+                        <label for="Allergies" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                            ⚠️ Dị ứng (nếu có)
+                        </label>
+                        <textarea class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none"
+                                  id="Allergies" name="Allergies" rows="3" placeholder="Mô tả các loại dị ứng nếu có...">@Model.Allergies</textarea>
+                        @Html.ValidationMessageFor(m => m.Allergies, "", new { @class = "text-red-500 text-sm mt-1" })
+                    </div>
+
+                    <!-- Special Needs -->
+                    <div>
+                        <label for="SpecialNeeds" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                            🎯 Nhu cầu đặc biệt (nếu có)
+                        </label>
+                        <textarea class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none"
+                                  id="SpecialNeeds" name="SpecialNeeds" rows="3" placeholder="Mô tả các nhu cầu đặc biệt nếu có...">@Model.SpecialNeeds</textarea>
+                        @Html.ValidationMessageFor(m => m.SpecialNeeds, "", new { @class = "text-red-500 text-sm mt-1" })
+                    </div>
+
+                    <!-- Notes -->
+                    <div>
+                        <label for="Notes" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                            📝 Ghi chú thêm
+                        </label>
+                        <textarea class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none"
+                                  id="Notes" name="Notes" rows="4" placeholder="Các thông tin thêm về con em...">@Model.Notes</textarea>
+                        @Html.ValidationMessageFor(m => m.Notes, "", new { @class = "text-red-500 text-sm mt-1" })
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row gap-3 mt-10 pt-8 border-t border-gray-100 dark:border-gray-700/50">
+                    <a href="@Url.Action("Children", "Profile")" 
+                       class="flex items-center justify-center gap-2 px-6 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-bold rounded-xl transition-all duration-300">
+                        <span class="material-icons-round">close</span>
+                        Hủy
+                    </a>
+                    <button type="submit" 
+                            class="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl flex-1 sm:flex-none">
+                        <span class="material-icons-round">add_circle</span>
+                        Thêm con em
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+    .form-select {
+        border-radius: 5px;
+        border: 1px solid #ddd;
+        padding: 0.5rem 0.75rem;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #198754;
+        box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+    }
+
+    .btn {
+        border-radius: 5px;
+        padding: 0.5rem 1rem;
+    }
+
+    .text-danger {
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+</style>

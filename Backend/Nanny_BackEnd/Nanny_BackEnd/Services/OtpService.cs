@@ -11,9 +11,9 @@ public class OtpService
 
     public OtpService(OtpRepository otpRepo) => _otpRepo = otpRepo;
 
-    public async Task<string> GenerateAsync(string email, OtpPurpose purpose, Guid? userId = null)
+    public async Task<string> generate(string email, OtpPurpose purpose, Guid? userId = null)
     {
-        await _otpRepo.MarkPreviousAsUsedAsync(email, purpose);
+        await _otpRepo.markPreviousAsUsed(email, purpose);
 
         var code = RandomNumberGenerator.GetInt32(100000, 999999).ToString();
         var otp = new OtpCode
@@ -28,13 +28,14 @@ public class OtpService
         };
 
         _otpRepo.Add(otp);
-        await _otpRepo.SaveChangesAsync();
+        await _otpRepo.saveChanges();
         return code;
     }
 
-    public async Task<OtpCode?> ValidateAsync(string email, string code, OtpPurpose purpose)
+    public async Task<OtpCode?> validate(string email, string code, OtpPurpose purpose)
     {
         var otp = await _otpRepo.FindActiveAsync(email, purpose);
+
         if (otp == null) return null;
 
         otp.AttemptCount++;
@@ -47,7 +48,7 @@ public class OtpService
 
         otp.IsUsed = true;
         otp.UsedAt = DateTime.UtcNow;
-        await _otpRepo.SaveChangesAsync();
+        await _otpRepo.saveChanges();
 
         return otp;
     }
