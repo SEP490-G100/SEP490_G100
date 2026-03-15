@@ -20,6 +20,18 @@
                     @TempData["Success"]
                 </div>
             }
+            @if (TempData["Info"] != null)
+            {
+                <div class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-xl mb-4 text-sm">
+                    @TempData["Info"]
+                </div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 text-sm">
+                    @TempData["Error"]
+                </div>
+            }
 
             @if (!ViewData.ModelState.IsValid)
             {
@@ -49,11 +61,30 @@
                 <input type="hidden" name="email" value="@Model.Email" />
                 <p class="text-sm text-gray-500 dark:text-gray-400">
                     Không nhận được mã?
-                    <button type="submit" class="font-semibold text-orange-500 hover:text-orange-600 underline-offset-2 hover:underline bg-transparent border-none cursor-pointer p-0">
-                        Gửi lại mã OTP
+                    <button id="resendBtn" type="submit" disabled
+                            class="font-semibold text-gray-400 bg-transparent border-none cursor-not-allowed p-0 transition-colors">
+                        Gửi lại sau <span id="countdown">180</span>s
                     </button>
                 </p>
             </form>
+
+<script>
+(function () {
+    const btn = document.getElementById('resendBtn');
+    const counter = document.getElementById('countdown');
+    let seconds = 180;
+    const timer = setInterval(() => {
+        seconds--;
+        counter.textContent = seconds;
+        if (seconds <= 0) {
+            clearInterval(timer);
+            btn.disabled = false;
+            btn.className = 'font-semibold text-orange-500 hover:text-orange-600 underline-offset-2 hover:underline bg-transparent border-none cursor-pointer p-0 transition-colors';
+            btn.innerHTML = 'Gửi lại mã OTP';
+        }
+    }, 1000);
+})();
+</script>
         </div>
     </div>
 </div>

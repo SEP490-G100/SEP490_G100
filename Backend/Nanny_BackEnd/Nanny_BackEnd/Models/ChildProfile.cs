@@ -9,7 +9,7 @@ public partial class ChildProfile
 
     public Guid ParentProfileId { get; set; }
 
-    public string Name { get; set; } = null!;
+    public string? Name { get; set; }
 
     public DateOnly DateOfBirth { get; set; }
 
