@@ -80,6 +80,7 @@ builder.Services.AddScoped<OtpRepository>();
 // Search feature (SD1B)
 builder.Services.AddScoped<JobRepository>();
 builder.Services.AddScoped<FavoriteRepository>();
+builder.Services.AddScoped<SubscriptionRepository>();
 
 // DI — Services
 builder.Services.AddScoped<JwtService>();
@@ -90,6 +91,7 @@ builder.Services.AddSingleton<PasswordValidator>();
 // Search feature (SD1B)
 builder.Services.AddScoped<JobService>();
 builder.Services.AddScoped<GeocodingService>();
+builder.Services.AddScoped<SubscriptionService>();
 
 var app = builder.Build();
 
