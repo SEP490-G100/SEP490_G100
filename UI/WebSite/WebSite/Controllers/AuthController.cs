@@ -66,7 +66,8 @@ public class AuthController : Controller
             {
                 Headers = { Authorization = new AuthenticationHeaderValue("Bearer", loginData.AccessToken) }
             };
-            var ob = await _http.SendAsync(obRequest);
+            var ob = 
+                await _http.SendAsync(obRequest);
             var obResult = await ReadApiResult<OnboardingStatusViewModel>(ob);
             if (obResult?.Data != null && obResult.Data.RequiresOnboarding && obResult.Data.NextStep != "Completed")
                 return RedirectToAction("Start", "Onboarding");
