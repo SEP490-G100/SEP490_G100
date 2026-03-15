@@ -37,7 +37,8 @@ public class AuthController : Controller
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
     {
-        if (!ModelState.IsValid) { SetGoogleClientId(); return View(model); }
+        if (!ModelState.IsValid) { SetGoogleClientId(); return View(model); 
+        }
 
         var response = await _http.PostAsJsonAsync("/api/auth/login", new { model.Email, model.Password });
         var result = await ReadApiResult<LoginResponseDto>(response);
