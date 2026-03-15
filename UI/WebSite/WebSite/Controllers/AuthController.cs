@@ -49,27 +49,14 @@ public class AuthController : Controller
         }
 
         if (result == null || !result.Success)
-
         {
-            var response = await _http.PostAsJsonAsync("/api/auth/login", new { model.Email, model.Password });
-            var result = await ReadApiResult<LoginResponseDto>(response);
-
-            if (result == null || !result.Success)
-            {
-                ModelState.AddModelError("", result?.Message ?? "Đăng nhập thất bại.");
-                SetGoogleClientId();
-                return View(model);
-            }
-
-            await SignInUserAsync(result.Data!);
-            return LocalRedirect(returnUrl ?? "/");
-        }
-        catch (HttpRequestException)
-        {
-            ModelState.AddModelError("", "Không thể kết nối đến máy chủ. Vui lòng thử lại sau.");
+            ModelState.AddModelError("", result?.Message ?? "Đăng nhập thất bại.");
             SetGoogleClientId();
             return View(model);
         }
+
+        await SignInUserAsync(result.Data!);
+        return LocalRedirect(returnUrl ?? "/");
     }
 
     [HttpGet]
