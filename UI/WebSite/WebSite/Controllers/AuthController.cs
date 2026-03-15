@@ -55,7 +55,26 @@ public class AuthController : Controller
             return View(model);
         }
 
-        await SignInUserAsync(result.Data!);
+        var loginData = result.Data!;
+        await SignInUserAsync(loginData);
+
+        // Sau khi đăng nhập, kiểm tra trạng thái onboarding (kèm Bearer token)
+        try
+        {
+            var obRequest = new HttpRequestMessage(HttpMethod.Get, "/api/onboarding/status")
+            {
+                Headers = { Authorization = new AuthenticationHeaderValue("Bearer", loginData.AccessToken) }
+            };
+            var ob = await _http.SendAsync(obRequest);
+            var obResult = await ReadApiResult<OnboardingStatusViewModel>(ob);
+            if (obResult?.Data != null && obResult.Data.RequiresOnboarding && obResult.Data.NextStep != "Completed")
+                return RedirectToAction("Start", "Onboarding");
+        }
+        catch
+        {
+            // Nếu có lỗi khi gọi onboarding, bỏ qua và cho vào trang đích mặc định
+        }
+
         return LocalRedirect(returnUrl ?? "/");
     }
 
@@ -109,7 +128,24 @@ public class AuthController : Controller
             return RedirectToAction("Login");
         }
 
-        await SignInUserAsync(result.Data!);
+        var loginData = result.Data!;
+        await SignInUserAsync(loginData);
+
+        try
+        {
+            var obRequest = new HttpRequestMessage(HttpMethod.Get, "/api/onboarding/status")
+            {
+                Headers = { Authorization = new AuthenticationHeaderValue("Bearer", loginData.AccessToken) }
+            };
+            var ob = await _http.SendAsync(obRequest);
+            var obResult = await ReadApiResult<OnboardingStatusViewModel>(ob);
+            if (obResult?.Data != null && obResult.Data.RequiresOnboarding && obResult.Data.NextStep != "Completed")
+                return RedirectToAction("Start", "Onboarding");
+        }
+        catch
+        {
+        }
+
         return RedirectToAction("Index", "Home");
     }
 

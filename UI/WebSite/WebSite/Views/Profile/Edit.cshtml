@@ -104,7 +104,7 @@
                         Địa chỉ
                     </h3>
 
-                    <!-- Full Address -->
+                    <!-- Full Address: người dùng nhập chi tiết, dùng Tỉnh/Quận/Phường để xác định vị trí -->
                     <div>
                         <label for="Address" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
                             📍 Địa chỉ chi tiết
@@ -120,24 +120,30 @@
                             <label for="City" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
                                 Thành phố/Tỉnh
                             </label>
-                            <input type="text" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                                   id="City" name="City" value="@Model.City">
+                            <select class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                                    id="City" name="City">
+                                <option value="">-- Chọn Tỉnh/Thành --</option>
+                            </select>
                             @Html.ValidationMessageFor(m => m.City, "", new { @class = "text-red-500 text-sm mt-1" })
                         </div>
                         <div>
                             <label for="District" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
                                 Quận/Huyện
                             </label>
-                            <input type="text" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                                   id="District" name="District" value="@Model.District">
+                            <select class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                                    id="District" name="District">
+                                <option value="">-- Chọn Quận/Huyện --</option>
+                            </select>
                             @Html.ValidationMessageFor(m => m.District, "", new { @class = "text-red-500 text-sm mt-1" })
                         </div>
                         <div>
                             <label for="Ward" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
                                 Phường/Xã
                             </label>
-                            <input type="text" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                                   id="Ward" name="Ward" value="@Model.Ward">
+                            <select class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                                    id="Ward" name="Ward">
+                                <option value="">-- Chọn Phường/Xã --</option>
+                            </select>
                             @Html.ValidationMessageFor(m => m.Ward, "", new { @class = "text-red-500 text-sm mt-1" })
                         </div>
                     </div>
@@ -244,6 +250,139 @@
 
             // Hiển thị text cho người dùng xem
             document.getElementById('coords-display').innerText = lat.toFixed(6) + ", " + lng.toFixed(6);
+        }
+
+        // Dropdown Tỉnh/Thành - Quận/Huyện - Phường/Xã + tự geocode Lat/Lng theo địa chỉ đầy đủ (VN)
+        var citySelect = document.getElementById('City');
+        var districtSelect = document.getElementById('District');
+        var wardSelect = document.getElementById('Ward');
+        var addressInput = document.getElementById('Address');
+        var provinces = [];
+
+        fetch('https://provinces.open-api.vn/api/?depth=3')
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                provinces = data || [];
+                provinces.forEach(function (p) {
+                    var opt = document.createElement('option');
+                    opt.value = p.name;
+                    opt.textContent = p.name;
+                    opt.dataset.code = p.code;
+                    citySelect.appendChild(opt);
+                });
+
+                preselectFromModel();
+            });
+
+        function preselectFromModel() {
+            var currentCity = '@(Model.City ?? "")';
+            var currentDistrict = '@(Model.District ?? "")';
+            var currentWard = '@(Model.Ward ?? "")';
+
+            if (currentCity) {
+                citySelect.value = currentCity;
+                onCityChange(function () {
+                    if (currentDistrict) {
+                        districtSelect.value = currentDistrict;
+                        onDistrictChange(function () {
+                            if (currentWard) {
+                                wardSelect.value = currentWard;
+                            }
+                        });
+                    }
+                });
+            }
+        }
+
+        function onCityChange(callback) {
+            districtSelect.innerHTML = '<option value="">-- Chọn Quận/Huyện --</option>';
+            wardSelect.innerHTML = '<option value="">-- Chọn Phường/Xã --</option>';
+
+            var selected = provinces.find(function (p) { return p.name === citySelect.value; });
+            if (!selected) { if (callback) callback(); return; }
+
+            selected.districts.forEach(function (d) {
+                var opt = document.createElement('option');
+                opt.value = d.name;
+                opt.textContent = d.name;
+                opt.dataset.code = d.code;
+                districtSelect.appendChild(opt);
+            });
+
+            if (callback) callback();
+            autoGeocode();
+        }
+
+        function onDistrictChange(callback) {
+            wardSelect.innerHTML = '<option value="">-- Chọn Phường/Xã --</option>';
+
+            var selectedProv = provinces.find(function (p) { return p.name === citySelect.value; });
+            if (!selectedProv) { if (callback) callback(); return; }
+
+            var selectedDist = selectedProv.districts.find(function (d) { return d.name === districtSelect.value; });
+            if (!selectedDist) { if (callback) callback(); return; }
+
+            (selectedDist.wards || []).forEach(function (w) {
+                var opt = document.createElement('option');
+                opt.value = w.name;
+                opt.textContent = w.name;
+                wardSelect.appendChild(opt);
+            });
+
+            if (callback) callback();
+            autoGeocode();
+        }
+
+        citySelect.addEventListener('change', function () {
+            onCityChange();
+        });
+
+        districtSelect.addEventListener('change', function () {
+            onDistrictChange();
+        });
+
+        wardSelect.addEventListener('change', function () {
+            autoGeocode();
+        });
+
+        var debounceTimer;
+        addressInput.addEventListener('blur', function () {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(autoGeocode, 300);
+        });
+
+        // Lấy Lat/Lng từ backend theo địa chỉ đầy đủ (VN)
+        function autoGeocode() {
+            var detail = (addressInput.value || '').trim();
+            var city = (citySelect.value || '').trim();
+            var dist = (districtSelect.value || '').trim();
+            var ward = (wardSelect.value || '').trim();
+
+            if (!city || !dist || !ward) return;
+
+            var parts = [];
+            if (detail) parts.push(detail);
+            parts.push(ward);
+            parts.push(dist);
+            parts.push(city);
+            var query = parts.join(', ');
+
+            fetch('/Address/Suggest?q=' + encodeURIComponent(query) + '&limit=1')
+                .then(function (r) { return r.json(); })
+                .then(function (items) {
+                    if (!items || !items.length) return;
+                    var item = items[0];
+
+                    var lat = item.latitude != null ? item.latitude : item.Latitude;
+                    var lng = item.longitude != null ? item.longitude : item.Longitude;
+
+                    if (lat != null && lng != null) {
+                        updateCoordinates(parseFloat(lat), parseFloat(lng));
+                        marker.setLatLng([lat, lng]);
+                        map.setView([lat, lng], 13);
+                    }
+                })
+                .catch(function () { });
         }
     });
 </script>
