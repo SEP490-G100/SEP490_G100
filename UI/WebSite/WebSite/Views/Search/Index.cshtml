@@ -1,0 +1,469 @@
+@{
+    ViewData["Title"] = "Tìm bảo mẫu – NannyMatch";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
+    var userName = User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? "";
+    var userId   = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "";
+}
+
+@section Head {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="~/css/search.css" />
+}
+
+
+
+<!-- ══ FILTER + ACTION BAR ══ -->
+<div class="sticky top-[72px] z-40 bg-white/95 backdrop-blur-lg border-b border-gray-100"
+     style="box-shadow:0 2px 8px rgba(0,0,0,.04); height:60px;">
+    <div class="px-6 h-full flex items-center gap-3 overflow-x-auto">
+
+        <!-- Search -->
+        <div class="relative flex-shrink-0 w-52">
+            <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[18px]">search</span>
+            <input id="searchCity" type="text" placeholder="Thành phố..."
+                   class="w-full pl-9 pr-4 py-2 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold text-gray-800 focus:ring-2 focus:ring-orange-300 focus:border-orange-400 outline-none transition-all placeholder-gray-400"
+                   oninput="debounce()" />
+        </div>
+
+        <div class="w-px h-6 bg-gray-200 flex-shrink-0"></div>
+
+        <!-- Chip: Loại việc -->
+        <div class="relative flex-shrink-0">
+            <button id="chipType" class="chip flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 text-sm font-semibold text-gray-600 bg-white hover:border-orange-400 hover:text-orange-600 hover:bg-orange-50 transition-all"
+                    onclick="toggleDrop('dropType','chipType')">
+                <span class="material-icons-round text-[16px]">person</span>Loại việc
+            </button>
+            <div id="dropType" class="fdrop hidden bg-white rounded-2xl shadow-xl border border-gray-100 p-4">
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Loại công việc</p>
+                <div class="flex flex-wrap gap-2">
+                    <button class="fd-opt px-3 py-1.5 rounded-full border border-gray-200 text-sm font-semibold text-gray-600 hover:border-orange-400 hover:text-orange-600 hover:bg-orange-50 transition-all" data-val="1" onclick="pickOpt(this,'type')">Full-time</button>
+                    <button class="fd-opt px-3 py-1.5 rounded-full border border-gray-200 text-sm font-semibold text-gray-600 hover:border-orange-400 hover:text-orange-600 hover:bg-orange-50 transition-all" data-val="2" onclick="pickOpt(this,'type')">Part-time</button>
+                    <button class="fd-opt px-3 py-1.5 rounded-full border border-gray-200 text-sm font-semibold text-gray-600 hover:border-orange-400 hover:text-orange-600 hover:bg-orange-50 transition-all" data-val="3" onclick="pickOpt(this,'type')">Qua đêm</button>
+                </div>
+                <div class="flex gap-2 mt-4 pt-3 border-t border-gray-100">
+                    <button class="flex-1 py-1.5 text-sm font-semibold rounded-lg border border-gray-200 text-gray-500 hover:text-red-500 hover:border-red-300 transition-all" onclick="clearFilter('type','dropType','chipType')">Xoá</button>
+                    <button class="flex-1 py-1.5 text-sm font-bold rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition-all" onclick="applyDrop('dropType')">Áp dụng</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chip: Mức lương -->
+        <div class="relative flex-shrink-0">
+            <button id="chipSalary" class="chip flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 text-sm font-semibold text-gray-600 bg-white hover:border-orange-400 hover:text-orange-600 hover:bg-orange-50 transition-all"
+                    onclick="toggleDrop('dropSalary','chipSalary')">
+                <span class="material-icons-round text-[16px]">payments</span>Mức lương
+            </button>
+            <div id="dropSalary" class="fdrop hidden bg-white rounded-2xl shadow-xl border border-gray-100 p-4">
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Lương tối thiểu</p>
+                <div class="flex flex-wrap gap-2">
+                    <button class="fd-opt px-3 py-1.5 rounded-full border border-gray-200 text-sm font-semibold text-gray-600 hover:border-orange-400 hover:text-orange-600 hover:bg-orange-50 transition-all" data-val="50000"  onclick="pickOpt(this,'salary')">≥ 50k/giờ</button>
+                    <button class="fd-opt px-3 py-1.5 rounded-full border border-gray-200 text-sm font-semibold text-gray-600 hover:border-orange-400 hover:text-orange-600 hover:bg-orange-50 transition-all" data-val="100000" onclick="pickOpt(this,'salary')">≥ 100k/giờ</button>
+                    <button class="fd-opt px-3 py-1.5 rounded-full border border-gray-200 text-sm font-semibold text-gray-600 hover:border-orange-400 hover:text-orange-600 hover:bg-orange-50 transition-all" data-val="150000" onclick="pickOpt(this,'salary')">≥ 150k/giờ</button>
+                    <button class="fd-opt px-3 py-1.5 rounded-full border border-gray-200 text-sm font-semibold text-gray-600 hover:border-orange-400 hover:text-orange-600 hover:bg-orange-50 transition-all" data-val="200000" onclick="pickOpt(this,'salary')">≥ 200k/giờ</button>
+                </div>
+                <div class="flex gap-2 mt-4 pt-3 border-t border-gray-100">
+                    <button class="flex-1 py-1.5 text-sm font-semibold rounded-lg border border-gray-200 text-gray-500 hover:text-red-500 hover:border-red-300 transition-all" onclick="clearFilter('salary','dropSalary','chipSalary')">Xoá</button>
+                    <button class="flex-1 py-1.5 text-sm font-bold rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition-all" onclick="applyDrop('dropSalary')">Áp dụng</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chip: Quận/Huyện -->
+        <div class="relative flex-shrink-0">
+            <button id="chipDistrict" class="chip flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 text-sm font-semibold text-gray-600 bg-white hover:border-orange-400 hover:text-orange-600 hover:bg-orange-50 transition-all"
+                    onclick="toggleDrop('dropDistrict','chipDistrict')">
+                <span class="material-icons-round text-[16px]">location_on</span>Quận/Huyện
+            </button>
+            <div id="dropDistrict" class="fdrop hidden bg-white rounded-2xl shadow-xl border border-gray-100 p-4">
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Khu vực</p>
+                <div class="flex flex-wrap gap-2">
+                    @foreach (var d in new[]{"Quận 1","Quận 3","Bình Thạnh","Thủ Đức","Cầu Giấy","Hoàng Mai","Hải Châu"})
+                    {
+                        <button class="fd-opt px-3 py-1.5 rounded-full border border-gray-200 text-sm font-semibold text-gray-600 hover:border-orange-400 hover:text-orange-600 hover:bg-orange-50 transition-all"
+                                data-val="@d" onclick="pickOpt(this,'district')">@d</button>
+                    }
+                </div>
+                <div class="flex gap-2 mt-4 pt-3 border-t border-gray-100">
+                    <button class="flex-1 py-1.5 text-sm font-semibold rounded-lg border border-gray-200 text-gray-500 hover:text-red-500 hover:border-red-300 transition-all" onclick="clearFilter('district','dropDistrict','chipDistrict')">Xoá</button>
+                    <button class="flex-1 py-1.5 text-sm font-bold rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition-all" onclick="applyDrop('dropDistrict')">Áp dụng</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reset -->
+        <button id="chipReset" class="hidden flex-shrink-0 items-center gap-1 px-3 py-1.5 rounded-full border border-red-200 text-red-500 text-sm font-semibold hover:bg-red-50 transition-all" onclick="resetAll()">
+            <span class="material-icons-round text-sm">close</span>Xoá lọc
+        </button>
+
+        <!-- RIGHT: Create + Premium + Count -->
+        <div class="ml-auto flex items-center gap-2 flex-shrink-0">
+            @if (isAuthenticated)
+            {
+                <button onclick="openCreate()"
+                        class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold shadow-md hover:shadow-lg transition-all hover:scale-105 active:scale-95">
+                    <span class="material-icons-round text-base">add_circle</span>Đăng tin
+                </button>
+            }
+
+            <button onclick="openPremium()"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-sm font-bold shadow-md hover:shadow-lg hover:scale-105 transition-all"
+                    style="background:linear-gradient(135deg,#f59e0b,#d97706)">
+                <span class="material-icons-round text-[16px]">workspace_premium</span>Premium
+            </button>
+
+            <span id="resultCount" class="text-sm text-gray-400 font-semibold whitespace-nowrap">Đang tải...</span>
+        </div>
+    </div>
+</div>
+
+<!-- ══ BODY: LIST + MAP ══ -->
+<div class="search-body">
+    <div class="list-panel">
+        <div id="skeletons"></div>
+        <div id="jobList"></div>
+    </div>
+    <div class="map-panel">
+        <div id="map"></div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     MODAL: TẠO BÀI ĐĂNG MỚI
+═══════════════════════════════════════════════════════════════ -->
+<div id="createModal" class="nmodal fixed inset-0 z-50 bg-black/50 backdrop-blur-sm items-center justify-center px-4"
+     onclick="if(event.target===this)closeCreate()">
+    <div class="nmodal-box bg-white rounded-2xl w-full max-w-xl shadow-2xl relative">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
+            <div>
+                <h2 class="text-lg font-bold text-gray-900">Đăng tin tìm bảo mẫu</h2>
+                <p class="text-xs text-gray-400 font-semibold mt-0.5">Điền thông tin để tìm người phù hợp nhất</p>
+            </div>
+            <!-- Thông tin người đăng (tự động lấy từ session) -->
+            <div class="flex items-center gap-2 text-xs text-gray-500 font-semibold bg-orange-50 px-3 py-1.5 rounded-xl border border-orange-100">
+                <span class="material-icons-round text-orange-400 text-base">account_circle</span>
+                <span id="posterName">@userName</span>
+            </div>
+        </div>
+
+        <!-- Form -->
+        <form id="createForm" class="px-6 py-5 space-y-4">
+            <!-- Tiêu đề -->
+            <div>
+                <label class="form-label">Tiêu đề bài đăng <span class="text-red-500">*</span></label>
+                <input type="text" id="cf-title" name="title" class="form-input" placeholder="VD: Cần bảo mẫu chăm sóc bé 2 tuổi tại Quận 1" required />
+            </div>
+
+            <!-- Mô tả -->
+            <div>
+                <label class="form-label">Mô tả chi tiết <span class="text-red-500">*</span></label>
+                <textarea id="cf-desc" name="description" class="form-input resize-none" rows="3"
+                          placeholder="Mô tả yêu cầu công việc, giờ làm, môi trường gia đình..." required></textarea>
+            </div>
+
+            <!-- Loại việc + Số trẻ -->
+            <div class="form-row">
+                <div>
+                    <label class="form-label">Loại công việc <span class="text-red-500">*</span></label>
+                    <select id="cf-type" name="jobType" class="form-input">
+                        <option value="1">Full-time (toàn thời gian)</option>
+                        <option value="2">Part-time (bán thời gian)</option>
+                        <option value="3">Qua đêm</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Số trẻ cần chăm</label>
+                    <input type="number" id="cf-children" name="numberOfChildren" class="form-input" min="1" max="10" value="1" />
+                </div>
+            </div>
+
+            <!-- Lương -->
+            <div>
+                <label class="form-label">Mức lương</label>
+                <div class="flex items-center gap-2">
+                    <input type="number" id="cf-salMin" name="salaryMin" class="form-input" placeholder="Tối thiểu (VNĐ/giờ)" />
+                    <span class="text-gray-400 font-semibold text-sm flex-shrink-0">–</span>
+                    <input type="number" id="cf-salMax" name="salaryMax" class="form-input" placeholder="Tối đa" />
+                </div>
+                <label class="flex items-center gap-2 mt-2 cursor-pointer">
+                    <input type="checkbox" id="cf-negotiable" name="salaryNegotiable" class="rounded accent-orange-500" />
+                    <span class="text-xs font-semibold text-gray-500">Lương thương lượng</span>
+                </label>
+            </div>
+
+            <!-- Địa điểm -->
+            <div>
+                <label class="form-label">Địa chỉ chi tiết</label>
+                <input type="text" id="cf-location" name="location" class="form-input"
+                       placeholder="VD: 25 Nguyễn Huệ, phường Bến Nghé" />
+            </div>
+            <div class="form-row">
+                <div class="relative">
+                    <label class="form-label">Thành phố <span class="text-red-500">*</span></label>
+                    <input type="text" id="cf-city" name="city" class="form-input" placeholder="VD: Thành phố Hồ Chí Minh" autocomplete="off" required
+                           oninput="acSuggest(this,'ac-cf-city')" onblur="setTimeout(()=>document.getElementById('ac-cf-city').style.display='none',200)" />
+                    <ul id="ac-cf-city" class="ac-dropdown"></ul>
+                </div>
+                <div class="relative">
+                    <label class="form-label">Quận/Huyện</label>
+                    <input type="text" id="cf-district" name="district" class="form-input" placeholder="VD: Quận 1" autocomplete="off"
+                           oninput="acDistrict(this,'ac-cf-dist',document.getElementById('cf-city').value)" onblur="setTimeout(()=>document.getElementById('ac-cf-dist').style.display='none',200)" />
+                    <ul id="ac-cf-dist" class="ac-dropdown"></ul>
+                </div>
+            </div>
+            <div class="text-[11px] text-gray-400 font-medium -mt-2">
+                Gợi ý: nhập địa chỉ chi tiết trước, rồi chọn thành phố và quận/huyện để định vị chính xác hơn.
+            </div>
+
+            <!-- Kỹ năng yêu cầu -->
+            <div>
+                <label class="form-label">Kỹ năng yêu cầu</label>
+                <div class="flex gap-2">
+                    <input type="text" id="cf-skillInput" class="form-input" placeholder="Nhập kỹ năng rồi nhấn Enter"
+                           onkeydown="if(event.key==='Enter'){event.preventDefault();addSkill();}" />
+                    <button type="button" onclick="addSkill()"
+                            class="flex-shrink-0 px-3 py-2 rounded-xl bg-orange-50 text-orange-600 font-bold text-sm hover:bg-orange-100 transition-all">
+                        <span class="material-icons-round text-base">add</span>
+                    </button>
+                </div>
+                <div id="cf-skills" class="flex flex-wrap gap-2 mt-2"></div>
+            </div>
+
+            <!-- Visibility Toggle -->
+            <div class="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-100">
+                <div>
+                    <p class="text-sm font-bold text-gray-800">Bài viết công khai</p>
+                    <p class="text-xs text-gray-400 mt-0.5">Bật → tất cả xem được &nbsp;···· Tắt → chỉ Nanny xem được</p>
+                </div>
+                <button type="button" id="cf-visibility" onclick="toggleVisibility('cf-visibility')" class="vis-toggle on" aria-label="Toggle public" title="Bật: tất cả · Tắt: chỉ Nanny">
+                    <span class="vis-thumb"></span>
+                </button>
+            </div>
+        </form>
+
+
+        <!-- Footer -->
+        <div class="px-6 pb-6 flex gap-3">
+            <button type="button" onclick="closeCreate()"
+                    class="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm hover:bg-gray-50 transition-all">
+                Huỷ bỏ
+            </button>
+            <button type="button" onclick="submitCreate()"
+                    class="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm shadow-md transition-all hover:scale-[1.02] active:scale-95">
+                <span class="material-icons-round text-base align-middle">check_circle</span>
+                Đăng bài
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     MODAL: CHỈNH SỬA BÀI ĐĂNG
+═══════════════════════════════════════════════════════════════ -->
+<div id="editModal" class="nmodal fixed inset-0 z-50 bg-black/50 backdrop-blur-sm items-center justify-center px-4"
+     onclick="if(event.target===this)closeEdit()">
+    <div class="nmodal-box bg-white rounded-2xl w-full max-w-xl shadow-2xl relative">
+
+        <div class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
+            <div>
+                <h2 class="text-lg font-bold text-gray-900">Chỉnh sửa bài đăng</h2>
+                <p class="text-xs text-gray-400 font-semibold mt-0.5">Cập nhật thông tin tin đăng</p>
+            </div>
+            <button onclick="closeEdit()" class="text-gray-300 hover:text-gray-700 material-icons-round text-2xl transition-colors">close</button>
+        </div>
+
+        <form id="editForm" class="px-6 py-5 space-y-4">
+            <input type="hidden" id="ef-id" />
+            <div>
+                <label class="form-label">Tiêu đề bài đăng <span class="text-red-500">*</span></label>
+                <input type="text" id="ef-title" class="form-input" required />
+            </div>
+            <div>
+                <label class="form-label">Mô tả chi tiết</label>
+                <textarea id="ef-desc" class="form-input resize-none" rows="3"></textarea>
+            </div>
+            <div class="form-row">
+                <div>
+                    <label class="form-label">Loại công việc</label>
+                    <select id="ef-type" class="form-input">
+                        <option value="1">Full-time</option>
+                        <option value="2">Part-time</option>
+                        <option value="3">Qua đêm</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Số trẻ</label>
+                    <input type="number" id="ef-children" class="form-input" min="1" max="10" />
+                </div>
+            </div>
+            <div>
+                <label class="form-label">Lương</label>
+                <div class="flex items-center gap-2">
+                    <input type="number" id="ef-salMin" class="form-input" placeholder="Tối thiểu" />
+                    <span class="text-gray-400 font-semibold text-sm flex-shrink-0">–</span>
+                    <input type="number" id="ef-salMax" class="form-input" placeholder="Tối đa" />
+                </div>
+                <label class="flex items-center gap-2 mt-2 cursor-pointer">
+                    <input type="checkbox" id="ef-negotiable" class="rounded accent-orange-500" />
+                    <span class="text-xs font-semibold text-gray-500">Lương thương lượng</span>
+                </label>
+            </div>
+            <div>
+                <label class="form-label">Địa chỉ chi tiết</label>
+                <input type="text" id="ef-location" class="form-input" placeholder="Số nhà, đường, phường/xã..." />
+            </div>
+            <div class="form-row">
+                <div class="relative">
+                    <label class="form-label">Thành phố</label>
+                    <input type="text" id="ef-city" class="form-input" placeholder="Thành phố..." autocomplete="off"
+                           oninput="acSuggest(this,'ac-ef-city')" onblur="setTimeout(()=>document.getElementById('ac-ef-city').style.display='none',200)" />
+                    <ul id="ac-ef-city" class="ac-dropdown"></ul>
+                </div>
+                <div class="relative">
+                    <label class="form-label">Quận/Huyện</label>
+                    <input type="text" id="ef-district" class="form-input" placeholder="Quận/Huyện..." autocomplete="off"
+                           oninput="acDistrict(this,'ac-ef-dist',document.getElementById('ef-city').value)" onblur="setTimeout(()=>document.getElementById('ac-ef-dist').style.display='none',200)" />
+                    <ul id="ac-ef-dist" class="ac-dropdown"></ul>
+                </div>
+            </div>
+            <!-- Visibility Toggle (Edit) -->
+            <div class="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-100 mt-1">
+                <div>
+                    <p class="text-sm font-bold text-gray-800">Bài viết công khai</p>
+                    <p class="text-xs text-gray-400 mt-0.5">Bật → tất cả xem được &nbsp;···· Tắt → chỉ Nanny xem được</p>
+                </div>
+                <button type="button" id="ef-visibility" onclick="toggleVisibility('ef-visibility')" class="vis-toggle on" aria-label="Toggle public">
+                    <span class="vis-thumb"></span>
+                </button>
+            </div>
+        </form>
+
+        <div class="px-6 pb-6 flex gap-3">
+            <button type="button" onclick="deleteJob()"
+                    class="px-4 py-2.5 rounded-xl border border-red-200 text-red-500 font-bold text-sm hover:bg-red-50 transition-all flex items-center gap-1">
+                <span class="material-icons-round text-base">delete</span> Xoá
+            </button>
+            <button type="button" onclick="closeEdit()"
+                    class="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm hover:bg-gray-50 transition-all">
+                Huỷ
+            </button>
+            <button type="button" onclick="submitEdit()"
+                    class="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm shadow-md transition-all hover:scale-[1.02] active:scale-95">
+                Lưu thay đổi
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     MODAL: PREVIEW (XEM CHI TIẾT)
+═══════════════════════════════════════════════════════════════ -->
+<div id="previewModal" class="nmodal fixed inset-0 z-50 bg-black/50 backdrop-blur-sm items-center justify-center px-4"
+     onclick="if(event.target===this)closePreview()">
+    <div class="nmodal-box bg-white rounded-2xl w-full max-w-2xl shadow-2xl relative">
+        <div class="p-6">
+            <button onclick="closePreview()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-800 transition-colors material-icons-round text-2xl">close</button>
+            <div class="pr-10">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold mb-3">
+                    <span class="material-icons-round text-sm">article</span>
+                    Chi tiết tin đăng
+                </div>
+                <h2 id="pv-title" class="text-2xl font-bold text-gray-900 mb-2">Tên bài viết</h2>
+                <p id="pv-parentName" class="text-sm font-semibold text-gray-500 mb-4">Đăng bởi phụ huynh</p>
+            </div>
+
+            <div class="flex flex-wrap gap-2 mb-5">
+                <span id="pv-type" class="px-2.5 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold">Loại việc</span>
+                <span id="pv-sal" class="px-2.5 py-1 rounded-full bg-green-50 text-green-700 text-xs font-bold">Lương</span>
+                <span id="pv-status" class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">Trạng thái</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
+                <div class="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                    <p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Địa điểm</p>
+                    <p id="pv-loc" class="text-sm font-semibold text-gray-800">Địa điểm</p>
+                </div>
+                <div class="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                    <p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Số trẻ cần chăm</p>
+                    <p id="pv-kids" class="text-sm font-semibold text-gray-800">Chưa cập nhật</p>
+                </div>
+                <div class="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                    <p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Tọa độ bản đồ</p>
+                    <p id="pv-coords" class="text-sm font-semibold text-gray-800">Chưa có tọa độ</p>
+                </div>
+                <div class="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                    <p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Khoảng cách</p>
+                    <p id="pv-distance" class="text-sm font-semibold text-gray-800">Chưa xác định</p>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 rounded-xl p-4 mb-5 border border-gray-100">
+                <p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Mô tả công việc</p>
+                <p id="pv-desc" class="text-sm text-gray-700 whitespace-pre-line leading-relaxed">Mô tả chi tiết</p>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <a id="pv-parentBtn" href="#" target="_blank"
+                   class="w-full py-3 rounded-xl border border-orange-200 text-orange-600 bg-orange-50 hover:bg-orange-100 font-bold text-sm transition-all inline-flex items-center justify-center gap-2">
+                    <span class="material-icons-round text-base">person</span>
+                    <span id="pv-parentBtnText">View Detail Profile Người Đăng</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ PREMIUM MODAL ══ -->
+<div id="premiumModal" class="nmodal fixed inset-0 z-50 bg-black/50 backdrop-blur-sm items-center justify-center"
+     onclick="if(event.target===this)closePremium()">
+    <div class="nmodal-box bg-white rounded-2xl p-8 max-w-md w-[90%] shadow-2xl relative">
+        <button class="absolute top-4 right-4 text-gray-300 hover:text-gray-700 transition-colors material-icons-round text-2xl" onclick="closePremium()">close</button>
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-xs font-bold mb-5">
+            <span class="material-icons-round text-sm text-amber-500">workspace_premium</span> NannyMatch Premium
+        </div>
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">Mở khoá đầy đủ tính năng</h2>
+        <p class="text-sm text-gray-500 leading-relaxed mb-6">Liên hệ trực tiếp không giới hạn, xem hồ sơ đầy đủ và ưu tiên kết quả tìm kiếm.</p>
+        <div class="grid grid-cols-2 gap-3 mb-6">
+            <div class="plan-card rounded-xl p-4" onclick="selectPlan(this)">
+                <p class="text-xs font-bold text-gray-400 mb-1">1 tháng</p>
+                <p class="text-xl font-bold text-gray-900">199k<span class="text-sm font-medium text-gray-400">/tháng</span></p>
+            </div>
+            <div class="plan-card selected rounded-xl p-4" onclick="selectPlan(this)">
+                <p class="text-xs font-bold text-orange-500 mb-1">⭐ 3 tháng • Phổ biến</p>
+                <p class="text-xl font-bold text-gray-900">149k<span class="text-sm font-medium text-gray-400">/tháng</span></p>
+            </div>
+        </div>
+        <ul class="space-y-2.5 mb-6">
+            @foreach (var perk in new[]{"Liên hệ bảo mẫu không giới hạn","Xem ảnh xác minh & hồ sơ đầy đủ","Ưu tiên hiển thị trong kết quả","Thông báo bảo mẫu mới tức thì","Hỗ trợ ưu tiên 24/7"})
+            {
+                <li class="flex items-center gap-2.5 text-sm font-semibold text-gray-700">
+                    <span class="material-icons-round text-green-500 text-base">check_circle</span>@perk
+                </li>
+            }
+        </ul>
+        <button class="w-full py-3.5 rounded-xl font-bold text-white text-base shadow-lg hover:scale-[1.02] active:scale-95 transition-all"
+                style="background:linear-gradient(135deg,#f59e0b,#d97706)"
+                onclick="closePremium();showToast('🎉 Đang chuyển đến trang thanh toán...')">
+            ✨ Nâng cấp ngay
+        </button>
+        <p class="text-center text-xs text-gray-400 mt-3">Huỷ bất kỳ lúc nào • Thanh toán bảo mật SSL</p>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="bg-gray-900 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-2xl"></div>
+
+@section Scripts {
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ── Config inject từ Razor ──────────────────────────────────
+const API_URL   = '/Search/Jobs';
+const IS_AUTH   = @(isAuthenticated ? "true" : "false");
+const GRADS     = ['linear-gradient(135deg,#f97316,#ea580c)','linear-gradient(135deg,#f59e0b,#d97706)','linear-gradient(135deg,#10b981,#059669)','linear-gradient(135deg,#3b82f6,#1d4ed8)','linear-gradient(135deg,#8b5cf6,#6d28d9)','linear-gradient(135deg,#ec4899,#be185d)'];
+const JOB_TYPES = {1:'Full-time',2:'Part-time',3:'Qua đêm'};
+</script>
+<script src="~/js/search.js"></script>
+}
+

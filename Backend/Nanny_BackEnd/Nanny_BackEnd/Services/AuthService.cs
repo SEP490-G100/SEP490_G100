@@ -16,7 +16,6 @@ public class AuthService
     private readonly EmailService _email;
     private readonly PasswordValidator _pwdValidator;
     private readonly IConfiguration _config;
-    private readonly IHttpClientFactory _httpFactory;
 
     public AuthService(
         UserRepository userRepo,
@@ -25,8 +24,7 @@ public class AuthService
         OtpService otp,
         EmailService email,
         PasswordValidator pwdValidator,
-        IConfiguration config,
-        IHttpClientFactory httpFactory)
+        IConfiguration config)
     {
         _userRepo = userRepo;
         _tokenRepo = tokenRepo;
@@ -35,7 +33,6 @@ public class AuthService
         _email = email;
         _pwdValidator = pwdValidator;
         _config = config;
-        _httpFactory = httpFactory;
     }
 
     public async Task<LoginResponse> RegisterAsync(RegisterRequest request)
@@ -43,6 +40,9 @@ public class AuthService
         var existing = await _userRepo.FindByEmailAsync(request.Email);
         if (existing != null)
         {
+            if (existing.Status == (int)UserStatus.Pending && existing.AuthProvider == (int)AuthProvider.Email)
+                return await ReRegisterPendingUserAsync(existing, request);
+
             var msg = existing.AuthProvider == (int)AuthProvider.Google
                 ? "Email này đã đăng ký bằng Google. Vui lòng đăng nhập bằng Google."
                 : "Email đã được đăng ký.";
@@ -75,23 +75,34 @@ public class AuthService
         await _userRepo.SaveChangesAsync();
 
         await TrySendOtpEmailAsync(user.Email, user.Id, OtpPurpose.VerifyEmail);
-
         return await BuildLoginResponseAsync(user);
     }
 
-    public async Task<LoginResponse> LoginAsync(LoginRequest request)
+    public async Task<(LoginResponse? Response, bool IsPending)> LoginAsync(LoginRequest request)
     {
         var user = await _userRepo.FindByEmailAsync(request.Email);
         if (user == null || user.AuthProvider == (int)AuthProvider.Google || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             throw new UnauthorizedAccessException("Email hoặc mật khẩu không đúng.");
 
+        if (user.Status == (int)UserStatus.Pending)
+        {
+            await TrySendOtpEmailAsync(user.Email, user.Id, OtpPurpose.VerifyEmail);
+            return (null, true);
+        }
+
+        if (user.Status == (int)UserStatus.Banned)
+            throw new UnauthorizedAccessException("Tài khoản đã bị khóa. Vui lòng liên hệ hỗ trợ.");
+
+        if (user.Status == (int)UserStatus.Inactive)
+            throw new UnauthorizedAccessException("Tài khoản đã bị vô hiệu hóa.");
+
         if (user.Status != (int)UserStatus.Active)
-            throw new UnauthorizedAccessException("Tài khoản chưa được kích hoạt.");
+            throw new UnauthorizedAccessException("Tài khoản không thể đăng nhập.");
 
         user.LastLoginAt = DateTime.UtcNow;
         await _userRepo.SaveChangesAsync();
 
-        return await BuildLoginResponseAsync(user);
+        return (await BuildLoginResponseAsync(user), false);
     }
 
     public async Task<LoginResponse> RefreshTokenAsync(RefreshTokenRequest request)
@@ -106,11 +117,16 @@ public class AuthService
         var user = await _userRepo.FindByIdAsync(userId)
             ?? throw new UnauthorizedAccessException("Người dùng không tồn tại.");
 
+        if (user.Status == (int)UserStatus.Banned)
+            throw new UnauthorizedAccessException("Tài khoản đã bị khóa.");
+
+        if (user.Status == (int)UserStatus.Inactive)
+            throw new UnauthorizedAccessException("Tài khoản đã bị vô hiệu hóa.");
+
         stored.IsUsed = true;
         stored.UpdatedAt = DateTime.UtcNow;
 
         var response = await BuildLoginResponseAsync(user);
-        stored.ReplacedByToken = response.RefreshToken;
         await _tokenRepo.SaveChangesAsync();
 
         return response;
@@ -119,17 +135,6 @@ public class AuthService
     public async Task<LoginResponse> GoogleLoginAsync(GoogleLoginRequest request)
     {
         var payload = await GoogleJsonWebSignature.ValidateAsync(request.IdToken, new GoogleJsonWebSignature.ValidationSettings
-        {
-            Audience = new[] { _config["Google:ClientId"] }
-        });
-
-        return await ProcessGoogleLoginAsync(payload);
-    }
-
-    public async Task<LoginResponse> GoogleLoginWithCodeAsync(GoogleAuthCodeRequest request)
-    {
-        var idToken = await ExchangeAuthCodeForIdTokenAsync(request);
-        var payload = await GoogleJsonWebSignature.ValidateAsync(idToken, new GoogleJsonWebSignature.ValidationSettings
         {
             Audience = new[] { _config["Google:ClientId"] }
         });
@@ -208,7 +213,8 @@ public class AuthService
         if (user == null || user.EmailConfirmed || user.AuthProvider == (int)AuthProvider.Google)
             return;
 
-        await TrySendOtpEmailAsync(user.Email, user.Id, OtpPurpose.VerifyEmail);
+        var code = await _otp.GenerateAsync(user.Email, OtpPurpose.VerifyEmail, user.Id);
+        await _email.SendOtpEmailAsync(user.Email, code, "VerifyEmail");
     }
 
     public async Task LogoutAsync(string refreshToken)
@@ -216,12 +222,23 @@ public class AuthService
         var token = await _tokenRepo.FindByTokenAsync(refreshToken);
         if (token == null) return;
 
-        token.IsRevoked = true;
-        token.RevokedAt = DateTime.UtcNow;
+        await _tokenRepo.RevokeAllForUserAsync(token.UserId);
         await _tokenRepo.SaveChangesAsync();
     }
 
-    // Private helpers 
+    private async Task<LoginResponse> ReRegisterPendingUserAsync(User existing, RegisterRequest request)
+    {
+        ValidatePasswordOrThrow(request.Password);
+        existing.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+        existing.FirstName    = request.FirstName;
+        existing.LastName     = request.LastName;
+        existing.PhoneNumber  = request.PhoneNumber;
+        existing.UpdatedAt    = DateTime.UtcNow;
+        await _userRepo.SaveChangesAsync();
+
+        await TrySendOtpEmailAsync(existing.Email, existing.Id, OtpPurpose.VerifyEmail);
+        return await BuildLoginResponseAsync(existing);
+    }
 
     private async Task<LoginResponse> ProcessGoogleLoginAsync(GoogleJsonWebSignature.Payload payload)
     {
@@ -245,36 +262,14 @@ public class AuthService
                 Status = (int)UserStatus.Active,
                 CreatedAt = DateTime.UtcNow
             };
-
             _userRepo.Add(user);
             await _userRepo.AssignRoleAsync(user.Id, AuthConstants.DefaultRole);
-            await _userRepo.SaveChangesAsync();
         }
 
         user.LastLoginAt = DateTime.UtcNow;
         await _userRepo.SaveChangesAsync();
 
         return await BuildLoginResponseAsync(user);
-    }
-
-    private async Task<string> ExchangeAuthCodeForIdTokenAsync(GoogleAuthCodeRequest request)
-    {
-        using var http = _httpFactory.CreateClient();
-        var response = await http.PostAsync("https://oauth2.googleapis.com/token", new FormUrlEncodedContent(
-            new Dictionary<string, string>
-            {
-                ["code"]          = request.AuthCode,
-                ["client_id"]     = _config["Google:ClientId"]!,
-                ["client_secret"] = _config["Google:ClientSecret"]!,
-                ["redirect_uri"]  = request.RedirectUri,
-                ["grant_type"]    = "authorization_code"
-            }));
-
-        var data = await response.Content.ReadFromJsonAsync<Dictionary<string, object>>();
-        if (data == null || !data.ContainsKey("id_token"))
-            throw new InvalidOperationException("Không thể xác thực với Google.");
-
-        return data["id_token"].ToString()!;
     }
 
     private async Task<LoginResponse> BuildLoginResponseAsync(User user)
@@ -294,8 +289,6 @@ public class AuthService
         });
         await _tokenRepo.SaveChangesAsync();
 
-        var authProvider = user.AuthProvider == (int)AuthProvider.Google ? "google" : "email";
-
         return new LoginResponse
         {
             AccessToken = accessToken,
@@ -309,7 +302,7 @@ public class AuthService
                 LastName = user.LastName,
                 AvatarUrl = user.AvatarUrl,
                 EmailConfirmed = user.EmailConfirmed,
-                AuthProvider = authProvider,
+                AuthProvider = user.AuthProvider == (int)AuthProvider.Google ? "google" : "email",
                 Roles = roles
             }
         };

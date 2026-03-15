@@ -30,8 +30,12 @@ public class AuthController : ControllerBase
     {
         try
         {
-            var result = await _auth.LoginAsync(request);
-            return Ok(new { success = true, data = result });
+            var (response, isPending) = await _auth.LoginAsync(request);
+            if (isPending)
+                return Ok(new { success = false, needsVerification = true, email = request.Email,
+                                message = "Email chưa được xác thực. Mã OTP mới đã được gửi đến email của bạn." });
+
+            return Ok(new { success = true, data = response });
         }
         catch (UnauthorizedAccessException ex) { return Unauthorized(Fail(ex.Message)); }
     }
@@ -56,17 +60,7 @@ public class AuthController : ControllerBase
             return Ok(new { success = true, data = result });
         }
         catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
-    }
-
-    [HttpPost("google-callback")]
-    public async Task<IActionResult> GoogleCallback([FromBody] GoogleAuthCodeRequest request)
-    {
-        try
-        {
-            var result = await _auth.GoogleLoginWithCodeAsync(request);
-            return Ok(new { success = true, data = result });
-        }
-        catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
+        catch (Exception ex)                 { return Unauthorized(Fail(ex.Message)); }
     }
 
     [Authorize]
@@ -103,8 +97,15 @@ public class AuthController : ControllerBase
     [HttpPost("resend-verify")]
     public async Task<IActionResult> ResendVerifyEmail([FromBody] ResendVerifyRequest request)
     {
-        await _auth.ResendVerifyEmailAsync(request.Email);
-        return Ok(new { success = true, message = "Nếu email tồn tại và chưa xác thực, mã OTP mới đã được gửi." });
+        try
+        {
+            await _auth.ResendVerifyEmailAsync(request.Email);
+            return Ok(new { success = true, message = "Mã OTP mới đã được gửi đến email của bạn." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(Fail($"Không thể gửi email: {ex.Message}"));
+        }
     }
 
     [HttpPost("verify-email")]
@@ -128,8 +129,9 @@ public class AuthController : ControllerBase
     private Guid GetCurrentUserId()
     {
         var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-               ?? User.FindFirst("sub")?.Value;
-        return Guid.Parse(sub!);
+               ?? User.FindFirst("sub")?.Value
+               ?? throw new UnauthorizedAccessException("Token không chứa user ID.");
+        return Guid.Parse(sub);
     }
 
     private static object Fail(string message) => new { success = false, message };

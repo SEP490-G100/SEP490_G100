@@ -34,10 +34,17 @@ public class OtpService
 
     public async Task<OtpCode?> ValidateAsync(string email, string code, OtpPurpose purpose)
     {
-        var otp = await _otpRepo.FindValidAsync(email, code, purpose);
+        var otp = await _otpRepo.FindActiveAsync(email, purpose);
         if (otp == null) return null;
 
         otp.AttemptCount++;
+
+        if (otp.Code != code)
+        {
+            await _otpRepo.SaveChangesAsync();
+            return null;
+        }
+
         otp.IsUsed = true;
         otp.UsedAt = DateTime.UtcNow;
         await _otpRepo.SaveChangesAsync();
