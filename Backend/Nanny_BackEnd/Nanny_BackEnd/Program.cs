@@ -98,6 +98,9 @@ builder.Services.AddSingleton<PasswordValidator>();
 builder.Services.AddScoped<JobService>();
 builder.Services.AddScoped<GeocodingService>();
 
+// Background Services
+builder.Services.AddHostedService<OtpCleanupService>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
