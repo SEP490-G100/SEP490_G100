@@ -1,0 +1,326 @@
+
+.search-body {
+    display: flex;
+    height: calc(100vh - 72px - 60px);
+}
+
+.list-panel {
+    width: 440px;
+    min-width: 260px;
+    overflow-y: auto;
+    background: #f9fafb;
+    border-right: 1px solid #f3f4f6;
+    scrollbar-width: thin;
+}
+
+    .list-panel::-webkit-scrollbar {
+        width: 3px;
+    }
+
+    .list-panel::-webkit-scrollbar-thumb {
+        background: #e5e7eb;
+    }
+
+.map-panel {
+    flex: 1;
+    position: relative;
+}
+
+#map {
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+}
+
+.sk {
+    background: linear-gradient(90deg,#f3f4f6 25%,#e9ecef 50%,#f3f4f6 75%);
+    background-size: 200% 100%;
+    animation: sk 1.4s infinite;
+    border-radius: 8px;
+}
+
+@keyframes sk {
+    0% {
+        background-position: 200% 0
+    }
+
+    100% {
+        background-position: -200% 0
+    }
+}
+
+.job-card {
+    transition: background .15s,box-shadow .15s;
+    cursor: pointer;
+}
+
+    .job-card:hover {
+        background: #fff7ed !important;
+        box-shadow: inset 3px 0 0 #f97316;
+    }
+
+    .job-card.active {
+        background: #fff7ed !important;
+        box-shadow: inset 3px 0 0 #f97316;
+    }
+
+.fav-btn {
+    color: #d1d5db;
+    transition: .18s;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+}
+
+    .fav-btn:hover, .fav-btn.on {
+        color: #f43f5e;
+        transform: scale(1.2);
+    }
+
+.chip.on {
+    border-color: #f97316 !important;
+    color: #ea580c !important;
+    background: #fff7ed !important;
+}
+
+.fdrop {
+    position: fixed;
+    z-index: 1000;
+    min-width: 260px;
+    animation: dropIn .18s ease;
+}
+
+@keyframes dropIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px)
+    }
+
+    to {
+        opacity: 1;
+        transform: none
+    }
+}
+
+.fd-opt.chosen {
+    border-color: #f97316 !important;
+    color: #ea580c !important;
+    background: #fff7ed !important;
+}
+
+.map-pin {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #f97316;
+    border: 2.5px solid #fff;
+    box-shadow: 0 2px 8px rgba(249,115,22,.5);
+}
+
+/* Modals */
+.nmodal {
+    display: none;
+}
+
+    .nmodal.show {
+        display: flex;
+        animation: fadeInM .2s;
+    }
+
+@keyframes fadeInM {
+    from {
+        opacity: 0
+    }
+
+    to {
+        opacity: 1
+    }
+}
+
+.nmodal-box {
+    animation: slideUpM .25s ease;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+@keyframes slideUpM {
+    from {
+        transform: translateY(20px);
+        opacity: 0
+    }
+
+    to {
+        transform: none;
+        opacity: 1
+    }
+}
+
+.plan-card {
+    border: 2px solid #e5e7eb;
+    cursor: pointer;
+    transition: .18s;
+}
+
+    .plan-card:hover {
+        border-color: #f97316;
+    }
+
+    .plan-card.selected {
+        border-color: #f97316;
+        background: #fff7ed;
+    }
+
+.leaflet-popup-pane, .leaflet-popup {
+    z-index: 700 !important;
+}
+
+.leaflet-popup-content-wrapper {
+    border-radius: 12px !important;
+    font-family: 'Quicksand',sans-serif !important;
+    box-shadow: 0 8px 28px rgba(0,0,0,.15) !important;
+}
+
+#toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    z-index: 9999;
+    transition: .3s cubic-bezier(.34,1.56,.64,1);
+}
+
+    #toast.show {
+        transform: translateX(-50%) translateY(0);
+    }
+
+/* Form */
+.form-label {
+    display: block;
+    font-size: .75rem;
+    font-weight: 700;
+    color: #6b7280;
+    margin-bottom: .35rem;
+}
+
+.form-input {
+    width: 100%;
+    padding: .55rem .85rem;
+    border: 1.5px solid #e5e7eb;
+    border-radius: .75rem;
+    font-size: .875rem;
+    font-family: 'Quicksand',sans-serif;
+    font-weight: 600;
+    outline: none;
+    transition: .2s;
+    background: #fafafa;
+}
+
+    .form-input:focus {
+        border-color: #f97316;
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(249,115,22,.12);
+    }
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.skill-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    background: #fff7ed;
+    color: #ea580c;
+    border-radius: 999px;
+    padding: .25rem .75rem;
+    font-size: .75rem;
+    font-weight: 700;
+}
+
+    .skill-tag button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: inherit;
+        line-height: 1;
+        padding: 0;
+    }
+
+/* ── Autocomplete Dropdown ─────────────────────────────── */
+.ac-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1.5px solid #fed7aa;
+    border-radius: .75rem;
+    box-shadow: 0 8px 24px rgba(0,0,0,.12);
+    z-index: 2000;
+    max-height: 180px;
+    overflow-y: auto;
+    list-style: none;
+    padding: .3rem 0;
+    margin: 0;
+}
+
+    .ac-dropdown li {
+        padding: .5rem .9rem;
+        font-size: .82rem;
+        font-weight: 600;
+        color: #374151;
+        cursor: pointer;
+        transition: background .12s;
+    }
+
+        .ac-dropdown li:hover {
+            background: #fff7ed;
+            color: #ea580c;
+        }
+
+/* ── Visibility Toggle Switch ──────────────────────────── */
+.vis-toggle {
+    width: 48px;
+    height: 26px;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    transition: background .25s;
+    flex-shrink: 0;
+    padding: 0;
+}
+
+    .vis-toggle.on {
+        background: #f97316;
+    }
+
+    .vis-toggle.off {
+        background: #d1d5db;
+    }
+
+.vis-thumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform .25s cubic-bezier(.34,1.56,.64,1);
+    box-shadow: 0 1px 4px rgba(0,0,0,.18);
+    pointer-events: none;
+}
+
+.vis-toggle.on .vis-thumb {
+    transform: translateX(22px);
+}
+
+.vis-toggle.off .vis-thumb {
+    transform: translateX(0);
+}
+

@@ -10,11 +10,10 @@ public class UserRepository
 
     public UserRepository(Sep490NannyDbContext db) => _db = db;
 
+    public void Add(User user) => _db.Users.Add(user);
+
     public async Task<User?> FindByEmailAsync(string email) =>
         await _db.Users.FirstOrDefaultAsync(u => u.Email == email && !u.IsDeleted);
-
-    public async Task<User?> FindByGoogleIdAsync(string googleId) =>
-        await _db.Users.FirstOrDefaultAsync(u => u.GoogleId == googleId && !u.IsDeleted);
 
     public async Task<User?> FindByIdAsync(Guid id) =>
         await _db.Users.FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
@@ -39,8 +38,6 @@ public class UserRepository
             CreatedAt = DateTime.UtcNow
         });
     }
-
-    public void Add(User user) => _db.Users.Add(user);
 
     public async Task SaveChangesAsync() => await _db.SaveChangesAsync();
 }
