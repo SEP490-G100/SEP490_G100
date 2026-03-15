@@ -65,7 +65,13 @@ public class AuthService
         };
 
         _userRepo.Add(user);
-        await _userRepo.AssignRoleAsync(user.Id, AuthConstants.DefaultRole);
+
+        // Gán vai trò dựa trên lựa chọn khi đăng ký (Parent/Nanny)
+        var normalizedRole = string.IsNullOrWhiteSpace(request.Role)
+            ? AuthConstants.DefaultRole
+            : request.Role.Trim();
+
+        await _userRepo.AssignRoleAsync(user.Id, normalizedRole);
         await _userRepo.SaveChangesAsync();
 
         await TrySendOtpEmailAsync(user.Email, user.Id, OtpPurpose.VerifyEmail);

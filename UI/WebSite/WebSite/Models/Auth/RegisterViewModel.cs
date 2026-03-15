@@ -25,4 +25,7 @@ public class RegisterViewModel
     public string LastName { get; set; } = null!;
 
     public string? PhoneNumber { get; set; }
+
+    [Required(ErrorMessage = "Vui lòng chọn vai trò.")]
+    public string Role { get; set; } = "Parent"; // Parent hoặc Nanny
 }

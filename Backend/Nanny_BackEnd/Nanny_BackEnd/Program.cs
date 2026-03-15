@@ -76,6 +76,8 @@ builder.Services.AddHttpClient();
 builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<RefreshTokenRepository>();
 builder.Services.AddScoped<OtpRepository>();
+builder.Services.AddScoped<ParentRepository>();
+builder.Services.AddScoped<ChildRepository>();
 
 // DI — Services
 builder.Services.AddScoped<JwtService>();
@@ -83,6 +85,10 @@ builder.Services.AddScoped<OtpService>();
 builder.Services.AddScoped<EmailService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ProfileService>();
+builder.Services.AddScoped<OnboardingService>();
+builder.Services.AddScoped<NannyProfileRepository>();
+builder.Services.AddScoped<NannySkillRepository>();
+builder.Services.AddScoped<NannyAvailabilityRepository>();
 builder.Services.AddSingleton<PasswordValidator>();
 
 var app = builder.Build();

@@ -19,4 +19,7 @@ public class RegisterRequest
     public string LastName { get; set; } = null!;
 
     public string? PhoneNumber { get; set; }
+
+    [Required(ErrorMessage = "Vai trò là bắt buộc.")]
+    public string Role { get; set; } = "Parent"; // Parent hoặc Nanny
 }
