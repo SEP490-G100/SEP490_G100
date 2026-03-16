@@ -83,9 +83,12 @@ builder.Services.AddHttpClient("Nominatim", c =>
 builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<RefreshTokenRepository>();
 builder.Services.AddScoped<OtpRepository>();
+builder.Services.AddScoped<ParentRepository>();
+builder.Services.AddScoped<ChildRepository>();
 // Search feature (SD1B)
 builder.Services.AddScoped<JobRepository>();
 builder.Services.AddScoped<FavoriteRepository>();
+builder.Services.AddScoped<SubscriptionRepository>();
 
 // DI — Services
 builder.Services.AddScoped<JwtService>();
@@ -93,10 +96,15 @@ builder.Services.AddScoped<OtpService>();
 builder.Services.AddScoped<EmailService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ProfileService>();
+builder.Services.AddScoped<OnboardingService>();
+builder.Services.AddScoped<NannyProfileRepository>();
+builder.Services.AddScoped<NannySkillRepository>();
+builder.Services.AddScoped<NannyAvailabilityRepository>();
 builder.Services.AddSingleton<PasswordValidator>();
 // Search feature (SD1B)
 builder.Services.AddScoped<JobService>();
 builder.Services.AddScoped<GeocodingService>();
+builder.Services.AddScoped<SubscriptionService>();
 
 // Background Services
 builder.Services.AddHostedService<OtpCleanupService>();

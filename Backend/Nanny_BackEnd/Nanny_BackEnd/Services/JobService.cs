@@ -82,8 +82,8 @@ public class JobService
             Latitude         = lat,
             Longitude        = lng,
             ExpiresAt        = DateTime.UtcNow.AddMonths(1),
-            Status           = req.Status,          // 0=Draft, 1=Active do user chọn
-            ModerationStatus = 2,    // Approved ngay
+            Status           = req.Status,         
+            ModerationStatus = 2,  
             PublishedAt      = req.Status == 1 ? DateTime.UtcNow : null,
             CreatedAt        = DateTime.UtcNow,
             CreatedBy        = parentProfileId
