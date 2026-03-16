@@ -24,4 +24,7 @@ public class JobPostingDetailResponse
     public DateTime? ClosedAt { get; set; }
     public DateTime CreatedAt { get; set; }
     public int ApplicationCount { get; set; }
+    public string? SubscriptionPlanCode { get; set; }
+    public bool FeaturedBadge { get; set; }
+    public bool SearchPriority { get; set; }
 }

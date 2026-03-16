@@ -1,6 +1,8 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Nanny_BackEnd.Data;
@@ -10,6 +12,21 @@ using Nanny_BackEnd.Services;
 using Nanny_BackEnd.Validations;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+
+builder.Services.Configure<HostOptions>(options =>
+{
+    options.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore;
+});
+
+var dataProtectionPath = Path.Combine(builder.Environment.ContentRootPath, "App_Data", "DataProtectionKeys");
+Directory.CreateDirectory(dataProtectionPath);
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionPath))
+    .SetApplicationName("Nanny_BackEnd");
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -45,7 +62,9 @@ builder.Services.AddSwaggerGen(c =>
 
 // DbContext
 builder.Services.AddDbContext<Sep490NannyDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("MyCnn")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("MyCnn"),
+        sqlOptions => sqlOptions.EnableRetryOnFailure()));
 
 // JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -107,7 +126,8 @@ builder.Services.AddScoped<GeocodingService>();
 builder.Services.AddScoped<SubscriptionService>();
 
 // Background Services
-builder.Services.AddHostedService<OtpCleanupService>();
+if (!builder.Environment.IsDevelopment())
+    builder.Services.AddHostedService<OtpCleanupService>();
 
 var app = builder.Build();
 

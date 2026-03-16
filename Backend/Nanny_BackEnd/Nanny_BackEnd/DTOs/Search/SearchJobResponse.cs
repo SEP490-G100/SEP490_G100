@@ -20,4 +20,7 @@ public class SearchJobResponse
     public int Status { get; set; }        // 0=Draft, 1=Active
     public DateTime? PublishedAt { get; set; }
     public double? DistanceKm { get; set; }
+    public string? SubscriptionPlanCode { get; set; }
+    public bool FeaturedBadge { get; set; }
+    public bool SearchPriority { get; set; }
 }

@@ -17,10 +17,13 @@ public class JobRepository
         Guid? currentUserId = null,
         bool canSeeNannyOnlyJobs = false)
     {
+        var nowUtc = DateTime.UtcNow;
         var query = _db.JobPostings
             .Where(j => !j.IsDeleted)
             .Include(j => j.JobRequirements).ThenInclude(jr => jr.Skill)
             .Include(j => j.ParentProfile).ThenInclude(p => p.User)
+            .ThenInclude(u => u.UserSubscriptions)
+            .ThenInclude(s => s.SubscriptionPlan)
             .AsQueryable();
 
         query = query.Where(j =>
@@ -47,7 +50,17 @@ public class JobRepository
 
         var skip = (filters.Page - 1) * filters.PageSize;
         return await query
-            .OrderByDescending(j => j.PublishedAt ?? j.CreatedAt)
+            .OrderByDescending(j => j.ParentProfile.User.UserSubscriptions.Any(s =>
+                !s.IsDeleted &&
+                s.Status == 1 &&
+                s.EndDate >= nowUtc &&
+                s.SubscriptionPlan.Name == "Pro"))
+            .ThenByDescending(j => j.ParentProfile.User.UserSubscriptions.Any(s =>
+                !s.IsDeleted &&
+                s.Status == 1 &&
+                s.EndDate >= nowUtc &&
+                (s.SubscriptionPlan.Name == "Plus" || s.SubscriptionPlan.Name == "Pro")))
+            .ThenByDescending(j => j.PublishedAt ?? j.CreatedAt)
             .Skip(skip).Take(filters.PageSize)
             .ToListAsync();
     }
@@ -55,16 +68,29 @@ public class JobRepository
     /// <summary>Tìm theo tiêu đề. Nếu title rỗng → trả tất cả.</summary>
     public async Task<List<JobPosting>> searchByTitle(string? title)
     {
+        var nowUtc = DateTime.UtcNow;
         var query = _db.JobPostings
             .Where(j => !j.IsDeleted && j.Status == 1 && j.ModerationStatus == 2)
             .Include(j => j.ParentProfile).ThenInclude(p => p.User)
+            .ThenInclude(u => u.UserSubscriptions)
+            .ThenInclude(s => s.SubscriptionPlan)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(title))
             query = query.Where(j => j.Title.ToLower().Contains(title.ToLower()));
 
         return await query
-            .OrderByDescending(j => j.PublishedAt ?? j.CreatedAt)
+            .OrderByDescending(j => j.ParentProfile.User.UserSubscriptions.Any(s =>
+                !s.IsDeleted &&
+                s.Status == 1 &&
+                s.EndDate >= nowUtc &&
+                s.SubscriptionPlan.Name == "Pro"))
+            .ThenByDescending(j => j.ParentProfile.User.UserSubscriptions.Any(s =>
+                !s.IsDeleted &&
+                s.Status == 1 &&
+                s.EndDate >= nowUtc &&
+                (s.SubscriptionPlan.Name == "Plus" || s.SubscriptionPlan.Name == "Pro")))
+            .ThenByDescending(j => j.PublishedAt ?? j.CreatedAt)
             .Take(50)
             .ToListAsync();
     }
@@ -74,6 +100,9 @@ public class JobRepository
             .Where(j => j.ParentProfileId == parentProfileId && !j.IsDeleted)
             .Include(j => j.JobRequirements).ThenInclude(jr => jr.Skill)
             .Include(j => j.JobApplications)
+            .Include(j => j.ParentProfile).ThenInclude(p => p.User)
+            .ThenInclude(u => u.UserSubscriptions)
+            .ThenInclude(s => s.SubscriptionPlan)
             .OrderByDescending(j => j.CreatedAt)
             .ToListAsync();
 
@@ -83,6 +112,8 @@ public class JobRepository
             .Where(j => j.Id == id && !j.IsDeleted)
             .Include(j => j.JobRequirements).ThenInclude(jr => jr.Skill)
             .Include(j => j.ParentProfile).ThenInclude(p => p.User)
+            .ThenInclude(u => u.UserSubscriptions)
+            .ThenInclude(s => s.SubscriptionPlan)
             .Include(j => j.JobApplications)
             .FirstOrDefaultAsync();
 

@@ -25,6 +25,16 @@ public class SubscriptionController : ControllerBase
         return Ok(success(plans, plans.Count));
     }
 
+    [AllowAnonymous]
+    [HttpGet("plans/{code}")]
+    public async Task<IActionResult> GetPlanByCode(string code)
+    {
+        var plan = await _subscriptionService.getPlanByCode(code);
+        return plan == null
+            ? NotFound(fail("Không tìm thấy gói subscription yêu cầu."))
+            : Ok(success(plan));
+    }
+
     [Authorize]
     [HttpGet("me")]
     public async Task<IActionResult> GetCurrentSubscription()

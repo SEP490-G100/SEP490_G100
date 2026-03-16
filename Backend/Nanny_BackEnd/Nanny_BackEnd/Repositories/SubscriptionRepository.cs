@@ -17,6 +17,16 @@ public class SubscriptionRepository
             .ThenBy(p => p.Price)
             .ToListAsync();
 
+    public async Task<List<SubscriptionPlan>> getPlansByNames(IEnumerable<string> names)
+    {
+        var normalizedNames = names.ToList();
+        return await _db.SubscriptionPlans
+            .Where(p => !p.IsDeleted && normalizedNames.Contains(p.Name))
+            .OrderBy(p => p.SortOrder)
+            .ThenBy(p => p.Price)
+            .ToListAsync();
+    }
+
     public async Task<SubscriptionPlan?> findPlanById(Guid planId) =>
         await _db.SubscriptionPlans
             .FirstOrDefaultAsync(p => p.Id == planId && !p.IsDeleted && p.IsActive);
@@ -27,6 +37,15 @@ public class SubscriptionRepository
             .Include(s => s.SubscriptionPlan)
             .Include(s => s.PaymentTransaction)
             .Where(s => s.Status == 1 && s.EndDate >= nowUtc)
+            .OrderByDescending(s => s.EndDate)
+            .FirstOrDefaultAsync();
+
+    public async Task<UserSubscription?> findCurrentSubscriptionByParentProfile(Guid parentProfileId, DateTime nowUtc) =>
+        await _db.UserSubscriptions
+            .Where(s => !s.IsDeleted && s.Status == 1 && s.EndDate >= nowUtc)
+            .Include(s => s.SubscriptionPlan)
+            .Include(s => s.PaymentTransaction)
+            .Where(s => _db.ParentProfiles.Any(p => p.Id == parentProfileId && !p.IsDeleted && p.UserId == s.UserId))
             .OrderByDescending(s => s.EndDate)
             .FirstOrDefaultAsync();
 
@@ -46,6 +65,8 @@ public class SubscriptionRepository
     public void addTransaction(Transaction transaction) => _db.Transactions.Add(transaction);
 
     public void addUserSubscription(UserSubscription subscription) => _db.UserSubscriptions.Add(subscription);
+
+    public void addPlan(SubscriptionPlan plan) => _db.SubscriptionPlans.Add(plan);
 
     public async Task saveChanges() => await _db.SaveChangesAsync();
 }

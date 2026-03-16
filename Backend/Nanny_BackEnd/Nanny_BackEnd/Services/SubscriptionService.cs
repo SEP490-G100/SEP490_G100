@@ -1,11 +1,67 @@
 using Nanny_BackEnd.DTOs.Subscription;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
+using System.Text.Json;
 
 namespace Nanny_BackEnd.Services;
 
 public class SubscriptionService
 {
+    private sealed record ManagedPlanDefinition(
+        string Code,
+        string Name,
+        string Description,
+        decimal Price,
+        int DurationDays,
+        int SortOrder,
+        SubscriptionBenefitResponse Benefits,
+        List<string> Features);
+
+    private static readonly ManagedPlanDefinition PlusPlan = new(
+        Code: "PLUS",
+        Name: "Plus",
+        Description: "Goi Plus danh cho phu huynh dang bai thuong xuyen, can bai dang noi bat hon va quan ly hieu qua hon.",
+        Price: 299000m,
+        DurationDays: 30,
+        SortOrder: 1,
+        Benefits: new SubscriptionBenefitResponse
+        {
+            MonthlyJobPostLimit = 10,
+            FeaturedBadge = true,
+            SearchPriority = false,
+            ListingDurationDays = 45
+        },
+        Features:
+        [
+            "Dang toi da 10 bai moi moi thang",
+            "Bai dang co badge noi bat",
+            "Thoi gian hien thi bai dang 45 ngay"
+        ]);
+
+    private static readonly ManagedPlanDefinition ProPlan = new(
+        Code: "PRO",
+        Name: "Pro",
+        Description: "Goi Pro danh cho phu huynh dang tuyen nghiem tuc, can uu tien hien thi va hieu qua tiep can cao hon.",
+        Price: 499000m,
+        DurationDays: 30,
+        SortOrder: 2,
+        Benefits: new SubscriptionBenefitResponse
+        {
+            MonthlyJobPostLimit = 30,
+            FeaturedBadge = true,
+            SearchPriority = true,
+            ListingDurationDays = 60
+        },
+        Features:
+        [
+            "Dang toi da 30 bai moi moi thang",
+            "Bai dang co badge noi bat",
+            "Duoc uu tien hien thi trong ket qua tim kiem",
+            "Thoi gian hien thi bai dang 60 ngay"
+        ]);
+
+    private static readonly ManagedPlanDefinition[] ManagedPlans = [PlusPlan, ProPlan];
+
     private readonly SubscriptionRepository _subscriptionRepo;
 
     public SubscriptionService(SubscriptionRepository subscriptionRepo)
@@ -15,7 +71,7 @@ public class SubscriptionService
 
     public async Task<List<SubscriptionPlanResponse>> getPlans()
     {
-        var plans = await _subscriptionRepo.getActivePlans();
+        var plans = await ensureManagedPlans();
         return plans.Select(mapPlan).ToList();
     }
 
@@ -39,8 +95,12 @@ public class SubscriptionService
     {
         await expireOldSubscriptions(userId);
 
+        await ensureManagedPlans();
         var plan = await _subscriptionRepo.findPlanById(request.SubscriptionPlanId)
             ?? throw new KeyNotFoundException("Không tìm thấy gói subscription hoặc gói đã ngừng hoạt động.");
+
+        if (getManagedPlanDefinition(plan.Name) == null)
+            throw new InvalidOperationException("Hệ thống hiện chỉ hỗ trợ 2 gói subscription là Plus và Pro.");
 
         var currentSubscription = await _subscriptionRepo.findCurrentSubscription(userId, DateTime.UtcNow);
         if (currentSubscription != null)
@@ -55,7 +115,7 @@ public class SubscriptionService
             PaymentGatewayTransactionId = request.PaymentGatewayTransactionId?.Trim(),
             Status = 2,
             Description = $"Thanh toán gói {plan.Name}",
-            Type = 2,
+            Type = 1,
             CreatedAt = nowUtc,
             CompletedAt = nowUtc,
             CreatedBy = userId
@@ -81,6 +141,22 @@ public class SubscriptionService
         subscription.SubscriptionPlan = plan;
         subscription.PaymentTransaction = transaction;
         return mapSubscription(subscription);
+    }
+
+    public async Task<SubscriptionPlanResponse?> getPlanByCode(string code)
+    {
+        var plans = await ensureManagedPlans();
+        var plan = plans.FirstOrDefault(p =>
+            string.Equals(getManagedPlanDefinition(p.Name)?.Code, code, StringComparison.OrdinalIgnoreCase));
+        return plan == null ? null : mapPlan(plan);
+    }
+
+    public async Task<SubscriptionBenefitResponse> getBenefitsForParentProfile(Guid parentProfileId)
+    {
+        await ensureManagedPlans();
+        var subscription = await _subscriptionRepo.findCurrentSubscriptionByParentProfile(parentProfileId, DateTime.UtcNow);
+        var definition = getManagedPlanDefinition(subscription?.SubscriptionPlan?.Name);
+        return definition?.Benefits ?? SubscriptionBenefitResponse.Free;
     }
 
     public async Task<UserSubscriptionResponse> cancelCurrentSubscription(Guid userId)
@@ -118,16 +194,118 @@ public class SubscriptionService
         await _subscriptionRepo.saveChanges();
     }
 
-    private static SubscriptionPlanResponse mapPlan(SubscriptionPlan plan) => new()
+    private async Task<List<SubscriptionPlan>> ensureManagedPlans()
     {
-        Id = plan.Id,
-        Name = plan.Name,
-        Description = plan.Description,
-        Price = plan.Price,
-        DurationDays = plan.DurationDays,
-        Features = splitFeatures(plan.Features),
-        SortOrder = plan.SortOrder
-    };
+        var existingPlans = await _subscriptionRepo.getPlansByNames(ManagedPlans.Select(p => p.Name));
+        var planMap = existingPlans.ToDictionary(p => p.Name, StringComparer.OrdinalIgnoreCase);
+        var needsSave = false;
+
+        foreach (var definition in ManagedPlans)
+        {
+            if (!planMap.TryGetValue(definition.Name, out var plan))
+            {
+                plan = new SubscriptionPlan
+                {
+                    Id = Guid.NewGuid(),
+                    CreatedAt = DateTime.UtcNow,
+                    IsDeleted = false
+                };
+                applyDefinition(plan, definition);
+                _subscriptionRepo.addPlan(plan);
+                existingPlans.Add(plan);
+                needsSave = true;
+                continue;
+            }
+
+            if (applyDefinition(plan, definition))
+                needsSave = true;
+        }
+
+        if (needsSave)
+            await _subscriptionRepo.saveChanges();
+
+        return existingPlans
+            .Where(p => !p.IsDeleted && p.IsActive)
+            .OrderBy(p => p.SortOrder)
+            .ThenBy(p => p.Price)
+            .ToList();
+    }
+
+    private static bool applyDefinition(SubscriptionPlan plan, ManagedPlanDefinition definition)
+    {
+        var changed = false;
+
+        if (plan.Name != definition.Name)
+        {
+            plan.Name = definition.Name;
+            changed = true;
+        }
+
+        if (plan.Description != definition.Description)
+        {
+            plan.Description = definition.Description;
+            changed = true;
+        }
+
+        if (plan.Price != definition.Price)
+        {
+            plan.Price = definition.Price;
+            changed = true;
+        }
+
+        if (plan.DurationDays != definition.DurationDays)
+        {
+            plan.DurationDays = definition.DurationDays;
+            changed = true;
+        }
+
+        if (plan.SortOrder != definition.SortOrder)
+        {
+            plan.SortOrder = definition.SortOrder;
+            changed = true;
+        }
+
+        var features = JsonSerializer.Serialize(definition.Features);
+        if (plan.Features != features)
+        {
+            plan.Features = features;
+            changed = true;
+        }
+
+        if (!plan.IsActive)
+        {
+            plan.IsActive = true;
+            changed = true;
+        }
+
+        if (plan.IsDeleted)
+        {
+            plan.IsDeleted = false;
+            changed = true;
+        }
+
+        if (changed)
+            plan.UpdatedAt = DateTime.UtcNow;
+
+        return changed;
+    }
+
+    private static SubscriptionPlanResponse mapPlan(SubscriptionPlan plan)
+    {
+        var definition = getManagedPlanDefinition(plan.Name);
+        return new SubscriptionPlanResponse
+        {
+            Id = plan.Id,
+            Code = definition?.Code ?? plan.Name.ToUpperInvariant(),
+            Name = plan.Name,
+            Description = plan.Description,
+            Price = plan.Price,
+            DurationDays = plan.DurationDays,
+            Features = definition?.Features ?? splitFeatures(plan.Features),
+            SortOrder = plan.SortOrder,
+            Benefits = definition?.Benefits ?? new SubscriptionBenefitResponse()
+        };
+    }
 
     private static UserSubscriptionResponse mapSubscription(UserSubscription subscription)
     {
@@ -164,7 +342,7 @@ public class SubscriptionService
     private static List<string> splitFeatures(string? features) =>
         string.IsNullOrWhiteSpace(features)
             ? []
-            : features
+            : tryParseJsonFeatures(features) ?? features
                 .Split(['\n', '\r', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .ToList();
 
@@ -192,4 +370,20 @@ public class SubscriptionService
         3 => "Hoàn tiền",
         _ => "Khác"
     };
+
+    private static ManagedPlanDefinition? getManagedPlanDefinition(string? planName) =>
+        ManagedPlans.FirstOrDefault(p => string.Equals(p.Name, planName, StringComparison.OrdinalIgnoreCase));
+
+    private static List<string>? tryParseJsonFeatures(string features)
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<List<string>>(features);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
 }

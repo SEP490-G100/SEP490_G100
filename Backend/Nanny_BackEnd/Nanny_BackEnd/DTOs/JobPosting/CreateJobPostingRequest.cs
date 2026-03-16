@@ -16,7 +16,6 @@ public class CreateJobPostingRequest
     [StringLength(3000, MinimumLength = 10, ErrorMessage = "Mô tả phải từ 10 đến 3000 ký tự.")]
     public string Description { get; set; } = "";
 
-    /// <summary>Loại công việc: 1=Toàn thời gian, 2=Bán thời gian, 3=Qua đêm</summary>
     [Required(ErrorMessage = "Loại công việc không được để trống.")]
     [Range(1, 3, ErrorMessage = "JobType phải là 1 (FullTime), 2 (PartTime), hoặc 3 (Overnight).")]
     public int JobType { get; set; }
@@ -38,9 +37,8 @@ public class CreateJobPostingRequest
     [StringLength(100, ErrorMessage = "Quận/Huyện tối đa 100 ký tự.")]
     public string? District { get; set; }
 
-    /// <summary>Trạng thái: 0 = Draft (lưu nháp), 1 = Active (đăng ngay). Mặc định: 1</summary>
     [Range(0, 1, ErrorMessage = "Status phải là 0 (Draft) hoặc 1 (Active).")]
     public int Status { get; set; } = 1;
-    // Lat/Lng được hệ thống tự geocode — không cần client gửi lên
+   
 }
 
