@@ -43,8 +43,8 @@
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Mật khẩu</label>
                         <div class="relative">
-                            <input asp-for="Password" type="password" placeholder="••••••••" id="passwordInput"
-                                   class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition-all pr-12" />
+                            <input asp-for="Password" type="text" placeholder="••••••••" id="passwordInput"
+                                   class="pwd-field w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition-all pr-12" />
                             <button type="button" onclick="togglePassword('passwordInput', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                                 <span class="material-icons-round text-xl">visibility_off</span>
                             </button>
@@ -103,8 +103,8 @@
         function togglePassword(inputId, btn) {
             var input = document.getElementById(inputId);
             var icon = btn.querySelector('.material-icons-round');
-            if (input.type === 'password') { input.type = 'text'; icon.textContent = 'visibility'; }
-            else { input.type = 'password'; icon.textContent = 'visibility_off'; }
+            var isShowing = input.classList.toggle('show');
+            icon.textContent = isShowing ? 'visibility' : 'visibility_off';
         }
     </script>
 }
