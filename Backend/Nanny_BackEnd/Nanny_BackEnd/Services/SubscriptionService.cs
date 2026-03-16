@@ -26,14 +26,14 @@ public class SubscriptionService
         SortOrder: 1,
         Benefits: new SubscriptionBenefitResponse
         {
-            MonthlyJobPostLimit = 10,
+            MonthlyJobPostLimit = 3,
             FeaturedBadge = true,
             SearchPriority = false,
             ListingDurationDays = 45
         },
         Features:
         [
-            "Dang toi da 10 bai moi moi thang",
+            "Dang toi da 3 bai moi moi thang",
             "Bai dang co badge noi bat",
             "Thoi gian hien thi bai dang 45 ngay"
         ]);
@@ -47,14 +47,14 @@ public class SubscriptionService
         SortOrder: 2,
         Benefits: new SubscriptionBenefitResponse
         {
-            MonthlyJobPostLimit = 30,
+            MonthlyJobPostLimit = 5,
             FeaturedBadge = true,
             SearchPriority = true,
             ListingDurationDays = 60
         },
         Features:
         [
-            "Dang toi da 30 bai moi moi thang",
+            "Dang toi da 5 bai moi moi thang",
             "Bai dang co badge noi bat",
             "Duoc uu tien hien thi trong ket qua tim kiem",
             "Thoi gian hien thi bai dang 60 ngay"

@@ -65,7 +65,6 @@ public class JobRepository
             .ToListAsync();
     }
 
-    /// <summary>Tìm theo tiêu đề. Nếu title rỗng → trả tất cả.</summary>
     public async Task<List<JobPosting>> searchByTitle(string? title)
     {
         var nowUtc = DateTime.UtcNow;

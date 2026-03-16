@@ -41,7 +41,7 @@ public class SubscriptionJobTests
     }
 
     [Fact]
-    public async Task PlusParent_GetsTenPostsAndFortyFiveDayListing()
+    public async Task PlusParent_GetsThreePostsAndFortyFiveDayListing()
     {
         await using var fixture = await TestFixture.create();
         await fixture.subscribePlan(fixture.PlusParentUserId, "PLUS");
@@ -62,7 +62,7 @@ public class SubscriptionJobTests
         Assert.NotNull(job.ExpiresAt);
         Assert.InRange((job.ExpiresAt!.Value - job.CreatedAt).TotalDays, 44.9, 45.1);
 
-        for (var i = 0; i < 9; i++)
+        for (var i = 0; i < 2; i++)
         {
             await fixture.JobService.createJob(fixture.PlusParentProfileId, new CreateJobPostingRequest
             {
@@ -80,8 +80,8 @@ public class SubscriptionJobTests
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             fixture.JobService.createJob(fixture.PlusParentProfileId, new CreateJobPostingRequest
             {
-                Title = "Vuot gioi han Plus",
-                Description = "Bai thu muoi mot se phai bi chan theo gioi han cua goi Plus hien tai.",
+                Title = "Vuot gioi han Plus lan 4",
+                Description = "Bai thu tu se phai bi chan theo gioi han cua goi Plus hien tai.",
                 JobType = 1,
                 NumberOfChildren = 1,
                 SalaryNegotiable = true,
@@ -90,7 +90,7 @@ public class SubscriptionJobTests
                 Status = 1
             }));
 
-        Assert.Contains("10 bai viet", ex.Message);
+        Assert.Contains("3 bai viet", ex.Message);
     }
 
     [Fact]

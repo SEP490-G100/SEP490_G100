@@ -285,7 +285,7 @@ public class JobService
         {
             return ("PRO", new SubscriptionBenefitResponse
             {
-                MonthlyJobPostLimit = 30,
+                MonthlyJobPostLimit = 5,
                 FeaturedBadge = true,
                 SearchPriority = true,
                 ListingDurationDays = 60
@@ -296,7 +296,7 @@ public class JobService
         {
             return ("PLUS", new SubscriptionBenefitResponse
             {
-                MonthlyJobPostLimit = 10,
+                MonthlyJobPostLimit = 3,
                 FeaturedBadge = true,
                 SearchPriority = false,
                 ListingDurationDays = 45
