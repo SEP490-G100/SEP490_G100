@@ -10,6 +10,6 @@ public class ParentOnboardingChildRequest
 {
     public string? SpecialNeeds { get; set; }
     public string? Notes { get; set; }
-    public string Characteristic { get; internal set; }
-    public byte? ChildAgeGroup { get; internal set; }
+    public string? Characteristic { get; set; }
+    public byte? ChildAgeGroup { get; set; }
 }

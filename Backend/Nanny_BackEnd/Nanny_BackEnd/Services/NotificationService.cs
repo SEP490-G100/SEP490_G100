@@ -200,11 +200,17 @@ public class NotificationService
         {
             NotificationTypes.SubscriptionReminder => "/Subscription",
             NotificationTypes.JobApplicationReceived when notification.RelatedEntityId.HasValue =>
-                $"/Search?jobId={notification.RelatedEntityId.Value}",
+                $"/Search/History?jobId={notification.RelatedEntityId.Value}",
             NotificationTypes.JobApplicationApproved when notification.RelatedEntityId.HasValue =>
                 $"/Search?applicationId={notification.RelatedEntityId.Value}",
             NotificationTypes.JobApplicationRejected when notification.RelatedEntityId.HasValue =>
                 $"/Search?applicationId={notification.RelatedEntityId.Value}",
+            NotificationTypes.JobPostingApproved when notification.RelatedEntityId.HasValue =>
+                $"/Search?jobId={notification.RelatedEntityId.Value}",
+            NotificationTypes.JobPostingRejected when notification.RelatedEntityId.HasValue =>
+                $"/Search/History?jobId={notification.RelatedEntityId.Value}",
+            NotificationTypes.JobPostingPending when notification.RelatedEntityId.HasValue =>
+                $"/Search/History?jobId={notification.RelatedEntityId.Value}",
             _ => null
         };
     }

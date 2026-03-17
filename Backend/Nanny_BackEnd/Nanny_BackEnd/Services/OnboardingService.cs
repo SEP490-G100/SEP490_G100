@@ -191,14 +191,14 @@ public class OnboardingService
                 UserId = userId,
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = userId,
-                VerificationStatus = VerificationStatus.NotSubmitted
+                VerificationStatus = (int)VerificationStatus.NotSubmitted
             };
             _nannyProfileRepo.Add(profile);
         }
 
         profile.Bio = request.Bio;
         profile.YearsOfExperience = request.YearsOfExperience;
-        profile.EducationLevel = request.EducationLevel;
+        profile.EducationLevel = (int?)request.EducationLevel;
         profile.ExpectedSalaryMin = request.ExpectedSalaryMin;
         profile.ExpectedSalaryMax = request.ExpectedSalaryMax;
         profile.MaxTravelDistance = request.MaxTravelDistance;
@@ -224,7 +224,7 @@ public class OnboardingService
             Id = Guid.NewGuid(),
             NannyProfileId = profile.Id,
             SkillId = s.SkillId,
-            ProficiencyLevel = s.ProficiencyLevel,
+            ProficiencyLevel = (int?)s.ProficiencyLevel,
             CreatedAt = now,
             CreatedBy = userId
         });
@@ -276,3 +276,4 @@ public class OnboardingService
             CreatedBy = userId
         };
 }
+

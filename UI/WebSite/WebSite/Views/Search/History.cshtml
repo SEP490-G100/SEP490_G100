@@ -1,0 +1,227 @@
+@{
+    ViewData["Title"] = "Lịch sử bài đăng - NannyMatch";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Head {
+    <link rel="stylesheet" href="~/css/search.css" />
+}
+
+<section class="min-h-screen bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_45%,#fff7ed_100%)] py-10">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+        <div class="rounded-[30px] border border-orange-100 bg-white/90 shadow-[0_24px_60px_rgba(15,23,42,.08)] overflow-hidden">
+            <div class="px-6 py-6 sm:px-8 border-b border-orange-100 bg-[radial-gradient(circle_at_top_right,rgba(255,237,213,.85),transparent_28%),linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.24em] text-orange-500">Bài đăng của tôi</p>
+                        <h1 class="mt-2 text-3xl font-bold text-slate-900">Lịch sử bài đăng</h1>
+                        <p class="mt-2 text-sm leading-6 text-slate-500 max-w-2xl">
+                            Theo dõi trạng thái duyệt, ghi chú của moderator và toàn bộ thông tin của các bài đăng bạn đã tạo.
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <a href="/Search"
+                           class="inline-flex items-center justify-center min-h-[48px] px-5 rounded-2xl border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 transition-all">
+                            Quay lại tìm bài
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-6 sm:px-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="rounded-3xl border border-slate-100 bg-slate-50 px-5 py-4">
+                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Tổng bài đăng</p>
+                        <p id="historyTotalCount" class="mt-2 text-3xl font-extrabold text-slate-900">0</p>
+                    </div>
+                    <div class="rounded-3xl border border-amber-100 bg-amber-50/70 px-5 py-4">
+                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-amber-500">Đang chờ duyệt</p>
+                        <p id="historyPendingCount" class="mt-2 text-3xl font-extrabold text-amber-700">0</p>
+                    </div>
+                    <div class="rounded-3xl border border-orange-100 bg-orange-50/70 px-5 py-4">
+                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-orange-500">Đang hiển thị</p>
+                        <p id="historyPublishedCount" class="mt-2 text-3xl font-extrabold text-orange-600">0</p>
+                    </div>
+                </div>
+
+                <div id="historyPageBody" class="space-y-4">
+                    <div class="rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center text-slate-500">
+                        Đang tải lịch sử bài đăng...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    (() => {
+        const moderationLabels = {
+            0: 'Đang chờ duyệt',
+            1: 'Đã bị từ chối',
+            2: 'Đã được duyệt'
+        };
+
+        const postStatusLabels = {
+            1: 'Công khai',
+            2: 'Ẩn bài đăng'
+        };
+
+        const rowLabels = ['Morning', 'Afternoon', 'Evening', 'Night'];
+        const dayLabels = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+
+        const escapeHtml = (value) => String(value ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+
+        const formatSalary = (value) => value ? `${(Number(value) / 1000).toFixed(0)}k/giờ` : 'Không xác định';
+        const formatSalaryRange = (min, max) => {
+            if (min && max) return `${formatSalary(min)} - ${formatSalary(max)}`;
+            if (min) return `Từ ${formatSalary(min)}`;
+            if (max) return `Đến ${formatSalary(max)}`;
+            return 'Không xác định';
+        };
+
+        const formatAgeRange = (min, max) => {
+            if (min && max) return `${min} - ${max} tuổi`;
+            if (min) return `Từ ${min} tuổi`;
+            if (max) return `Đến ${max} tuổi`;
+            return 'Không yêu cầu';
+        };
+
+        const renderScheduleSummary = (slots) => {
+            if (!Array.isArray(slots) || !slots.length) {
+                return '<span class="text-sm text-slate-400">Chưa chọn lịch cụ thể.</span>';
+            }
+
+            const grouped = rowLabels.map((rowLabel, timeSlot) => {
+                const days = slots
+                    .filter((slot) => slot.timeSlot === timeSlot)
+                    .sort((a, b) => a.dayOfWeek - b.dayOfWeek)
+                    .map((slot) => dayLabels[slot.dayOfWeek]);
+                return { rowLabel, days };
+            }).filter((item) => item.days.length);
+
+            return `<div class="schedule-summary">${grouped.map((item) => `
+                <div class="schedule-summary-card">
+                    <h4>${item.rowLabel}</h4>
+                    <p>${item.days.join(', ')}</p>
+                </div>`).join('')}</div>`;
+        };
+
+        const focusJobId = new URLSearchParams(window.location.search).get('jobId');
+
+        async function loadHistoryPage() {
+            const body = document.getElementById('historyPageBody');
+            const totalEl = document.getElementById('historyTotalCount');
+            const pendingEl = document.getElementById('historyPendingCount');
+            const publishedEl = document.getElementById('historyPublishedCount');
+
+            try {
+                const res = await fetch('/Search/MyJobs');
+                const json = await res.json();
+                const jobs = json.data || [];
+
+                totalEl.textContent = jobs.length;
+                pendingEl.textContent = jobs.filter((job) => Number(job.moderationStatus) === 0).length;
+                publishedEl.textContent = jobs.filter((job) => Number(job.status) === 1 && Number(job.moderationStatus) === 2).length;
+
+                if (!jobs.length) {
+                    body.innerHTML = `
+                        <div class="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-6 py-14 text-center">
+                            <span class="material-icons-round text-[34px] text-orange-300">history</span>
+                            <h3 class="mt-3 text-lg font-bold text-slate-900">Bạn chưa có bài đăng nào</h3>
+                            <p class="mt-2 text-sm text-slate-500">Khi bạn tạo bài đăng đầu tiên, lịch sử sẽ hiện ở đây.</p>
+                        </div>`;
+                    return;
+                }
+
+                body.innerHTML = jobs.map((job) => `
+                    <article data-job-id="${escapeHtml(job.id)}" class="history-job-card rounded-[28px] border border-slate-100 bg-white shadow-[0_14px_34px_rgba(15,23,42,.06)] overflow-hidden transition-all">
+                        <div class="px-6 py-5 border-b border-slate-100 bg-[linear-gradient(180deg,#ffffff_0%,#fffaf5_100%)]">
+                            <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                                <div>
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <h2 class="text-lg font-bold text-slate-900">${escapeHtml(job.title || 'Tin đăng')}</h2>
+                                        <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-extrabold">${escapeHtml(moderationLabels[job.moderationStatus] || 'Đang cập nhật')}</span>
+                                        <span class="px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-extrabold">${escapeHtml(postStatusLabels[job.status] || 'Đang cập nhật')}</span>
+                                    </div>
+                                    <p class="mt-2 text-sm text-slate-500">${escapeHtml([job.location, job.district, job.city].filter(Boolean).join(', ') || 'Chưa cập nhật địa điểm')}</p>
+                                </div>
+                                <div class="text-sm font-bold text-orange-600">
+                                    ${job.salaryNegotiable ? 'Thương lượng' : escapeHtml(formatSalaryRange(job.salaryMin, job.salaryMax))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="px-6 py-5 grid grid-cols-1 xl:grid-cols-[1.2fr_.8fr] gap-5">
+                            <div class="space-y-4">
+                                <div>
+                                    <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Mô tả</p>
+                                    <p class="mt-2 text-sm leading-6 text-slate-600">${escapeHtml(job.description || 'Không có mô tả chi tiết.')}</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Lịch muốn tuyển</p>
+                                    <div class="mt-3">${renderScheduleSummary(job.scheduleSlots || [])}</div>
+                                </div>
+                            </div>
+
+                            <div class="rounded-3xl border border-orange-100 bg-orange-50/40 px-5 py-4">
+                                <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-orange-500">Chi tiết duyệt bài</p>
+                                <div class="mt-4 space-y-3 text-sm text-slate-600">
+                                    <div class="flex items-start justify-between gap-4">
+                                        <span class="font-bold text-slate-500">Trạng thái</span>
+                                        <span class="text-right font-bold text-slate-900">${escapeHtml(moderationLabels[job.moderationStatus] || 'Đang cập nhật')}</span>
+                                    </div>
+                                    <div class="flex items-start justify-between gap-4">
+                                        <span class="font-bold text-slate-500">Hiển thị</span>
+                                        <span class="text-right font-bold text-slate-900">${escapeHtml(postStatusLabels[job.status] || 'Đang cập nhật')}</span>
+                                    </div>
+                                    <div class="flex items-start justify-between gap-4">
+                                        <span class="font-bold text-slate-500">Số trẻ</span>
+                                        <span class="text-right font-bold text-slate-900">${job.numberOfChildren ? `${job.numberOfChildren} bé` : 'Chưa cập nhật'}</span>
+                                    </div>
+                                    <div class="flex items-start justify-between gap-4">
+                                        <span class="font-bold text-slate-500">Độ tuổi nanny</span>
+                                        <span class="text-right font-bold text-slate-900">${formatAgeRange(job.minNannyAge, job.maxNannyAge)}</span>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-slate-500 mb-2">Ghi chú moderator</p>
+                                        <div class="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm leading-6 text-slate-600">
+                                            ${escapeHtml(job.moderationNote || 'Chưa có ghi chú từ moderator.')}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-slate-500 mb-2">Kỹ năng yêu cầu</p>
+                                        <div class="flex flex-wrap gap-2">
+                                            ${(job.skills && job.skills.length)
+                                                ? job.skills.map((skill) => `<span class="px-3 py-1 rounded-full bg-white text-orange-700 text-xs font-bold border border-orange-100">${escapeHtml(skill)}</span>`).join('')
+                                                : '<span class="text-sm text-slate-400">Chưa có kỹ năng yêu cầu.</span>'}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </article>`).join('');
+
+                if (focusJobId) {
+                    const target = body.querySelector(`[data-job-id="${focusJobId}"]`);
+                    if (target) {
+                        target.classList.add('ring-4', 'ring-orange-200', 'border-orange-300', 'shadow-[0_18px_42px_rgba(249,115,22,.16)]');
+                        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            } catch {
+                body.innerHTML = `
+                    <div class="rounded-3xl border border-red-100 bg-red-50 px-6 py-10 text-center text-red-600">
+                        Không tải được lịch sử bài đăng.
+                    </div>`;
+            }
+        }
+
+        loadHistoryPage();
+    })();
+</script>

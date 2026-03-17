@@ -6,6 +6,8 @@ using Nanny_BackEnd.Data;
 using Nanny_BackEnd.DTOs.JobPosting;
 using Nanny_BackEnd.DTOs.Search;
 using Nanny_BackEnd.DTOs.Subscription;
+using Nanny_BackEnd.Enums;
+using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
 using Nanny_BackEnd.Services;
@@ -100,7 +102,7 @@ public class SubscriptionJobTests
         await using var fixture = await TestFixture.create();
         await fixture.subscribePlan(fixture.ProParentUserId, "PRO");
 
-        await fixture.JobService.createJob(fixture.FreeParentProfileId, new CreateJobPostingRequest
+        var freeJobId = await fixture.JobService.createJob(fixture.FreeParentProfileId, new CreateJobPostingRequest
         {
             Title = "Bai free",
             Description = "Bai free dung de so sanh thu tu hien thi trong ket qua tim kiem.",
@@ -114,7 +116,7 @@ public class SubscriptionJobTests
 
         await Task.Delay(20);
 
-        await fixture.JobService.createJob(fixture.ProParentProfileId, new CreateJobPostingRequest
+        var proJobId = await fixture.JobService.createJob(fixture.ProParentProfileId, new CreateJobPostingRequest
         {
             Title = "Bai Pro",
             Description = "Bai Pro duoc ky vong uu tien hien thi truoc bai thuong trong tim kiem.",
@@ -125,6 +127,9 @@ public class SubscriptionJobTests
             District = "Ba Dinh",
             Status = 1
         });
+
+        await fixture.JobService.moderateJob(freeJobId, Guid.NewGuid(), true, null);
+        await fixture.JobService.moderateJob(proJobId, Guid.NewGuid(), true, null);
 
         var results = await fixture.JobService.findJobs(new SearchJobRequest
         {
@@ -138,6 +143,78 @@ public class SubscriptionJobTests
         Assert.Equal("PRO", results[0].SubscriptionPlanCode);
         Assert.True(results[0].FeaturedBadge);
         Assert.True(results[0].SearchPriority);
+    }
+
+    [Fact]
+    public async Task EditToHidden_KeepsApprovedModeration_AndStillAppearsInHistory()
+    {
+        await using var fixture = await TestFixture.create();
+
+        var jobId = await fixture.JobService.createJob(fixture.FreeParentProfileId, new CreateJobPostingRequest
+        {
+            Title = "Bai can an",
+            Description = "Bai nay duoc tao de kiem tra viec chuyen sang hidden khi edit.",
+            JobType = 1,
+            NumberOfChildren = 1,
+            SalaryNegotiable = true,
+            City = "Ha Noi",
+            District = "Ba Dinh",
+            Status = (int)JobPostingStatus.Public
+        });
+
+        var moderatorId = Guid.NewGuid();
+        await fixture.JobService.moderateJob(jobId, moderatorId, true, null);
+
+        await fixture.JobService.updateJob(jobId, fixture.FreeParentProfileId, new UpdateJobPostingRequest
+        {
+            Title = "Bai can an",
+            Description = "Da chinh sua va chuyen sang hidden de kiem tra luong trang thai moi.",
+            JobType = 1,
+            NumberOfChildren = 1,
+            SalaryNegotiable = true,
+            City = "Ha Noi",
+            District = "Ba Dinh",
+            Status = (int)JobPostingStatus.Hidden
+        });
+
+        var updatedJob = await fixture.Db.JobPostings.FirstAsync(j => j.Id == jobId);
+        Assert.Equal((int)JobPostingStatus.Hidden, updatedJob.Status);
+        Assert.Equal((int)JobPostingModerationStatus.Approved, updatedJob.ModerationStatus);
+        Assert.NotNull(updatedJob.ClosedAt);
+
+        var myJobs = await fixture.JobService.getMyJobs(fixture.FreeParentProfileId);
+        var historyItem = Assert.Single(myJobs.Where(j => j.Id == jobId));
+        Assert.Equal((int)JobPostingStatus.Hidden, historyItem.Status);
+        Assert.Equal((int)JobPostingModerationStatus.Approved, historyItem.ModerationStatus);
+    }
+
+    [Fact]
+    public async Task CreateJob_SetsPendingModeration_AndCreatesPendingNotification()
+    {
+        await using var fixture = await TestFixture.create();
+
+        var jobId = await fixture.JobService.createJob(fixture.FreeParentProfileId, new CreateJobPostingRequest
+        {
+            Title = "Bai dang moi cho moderator duyet",
+            Description = "Bai nay duoc tao de kiem tra notification cho trang thai pending.",
+            JobType = 1,
+            NumberOfChildren = 1,
+            SalaryNegotiable = true,
+            City = "Ha Noi",
+            District = "Dong Da",
+            Status = (int)JobPostingStatus.Public
+        });
+
+        var createdJob = await fixture.Db.JobPostings.FirstAsync(j => j.Id == jobId);
+        Assert.Equal((int)JobPostingModerationStatus.Pending, createdJob.ModerationStatus);
+
+        var notification = await fixture.Db.Notifications
+            .Where(n => n.UserId == fixture.FreeParentUserId && n.RelatedEntityId == jobId)
+            .SingleAsync();
+
+        Assert.Equal(NotificationTypes.JobPostingPending, notification.Type);
+        Assert.Contains("cho moderator duyet", notification.Title, StringComparison.OrdinalIgnoreCase);
+        Assert.False(notification.IsRead);
     }
 
     [Fact]
@@ -276,7 +353,7 @@ public class SubscriptionJobTests
                 }));
             var subscriptionService = new SubscriptionService(subscriptionRepo, notificationService, vietQrService);
             var geo = new GeocodingService(new FakeHttpClientFactory());
-            var jobService = new JobService(jobRepo, favoriteRepo, geo, subscriptionService);
+            var jobService = new JobService(jobRepo, favoriteRepo, geo, subscriptionService, notificationService);
 
             var fixture = new TestFixture(db, subscriptionService, jobService, notificationService);
             await fixture.seedUsers();

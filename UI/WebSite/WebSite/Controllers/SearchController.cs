@@ -25,7 +25,14 @@ public class SearchController : Controller
 
     // ── GET /Search ─────────────────────────────────────────
     [HttpGet]
-    public IActionResult Index() => View();
+    public async Task<IActionResult> Index()
+    {
+        ViewBag.SkillOptions = await getSkillOptionsForView();
+        return View();
+    }
+
+    [HttpGet]
+    public IActionResult History() => View();
 
     // ── GET /Search/Jobs ────────────────────────────────────
     [HttpGet]
@@ -54,6 +61,52 @@ public class SearchController : Controller
         {
             return Json(new { success = false, total = 0, data = Array.Empty<object>(), error = ex.Message });
         }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> MyJobs()
+    {
+        SetAuthHeader();
+        try
+        {
+            var response = await _http.GetAsync("/api/job-postings/my");
+            if (!response.IsSuccessStatusCode)
+                return Json(new { success = false, total = 0, data = Array.Empty<object>() });
+
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<SearchApiResult>(json, JsonOpts);
+            return Json(new { success = result?.Success ?? false, total = result?.Total ?? 0, data = result?.Data ?? [] });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, total = 0, data = Array.Empty<object>(), error = ex.Message });
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Prefill()
+    {
+        SetAuthHeader();
+        try
+        {
+            var response = await _http.GetAsync("/api/job-postings/prefill");
+            if (!response.IsSuccessStatusCode)
+                return Json(new { success = false, data = (object?)null });
+
+            var json = await response.Content.ReadAsStringAsync();
+            return Content(json, "application/json");
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Skills()
+    {
+        var skills = await getSkillOptionsForView();
+        return Json(new { success = skills.Count > 0, data = skills });
     }
 
     // ── POST /Search/CreateJob ──────────────────────────────
@@ -211,5 +264,27 @@ public class SearchController : Controller
 
         return property.GetString();
     }
-}
 
+    private async Task<List<JobSkillOption>> getSkillOptionsForView()
+    {
+        SetAuthHeader();
+        try
+        {
+            var response = await _http.GetAsync("/api/onboarding/skills");
+            if (!response.IsSuccessStatusCode)
+                return [];
+
+            var json = await response.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("data", out var dataEl))
+                return [];
+
+            var skills = JsonSerializer.Deserialize<List<JobSkillOption>>(dataEl.GetRawText(), JsonOpts);
+            return skills ?? [];
+        }
+        catch
+        {
+            return [];
+        }
+    }
+}
