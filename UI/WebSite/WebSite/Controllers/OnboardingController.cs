@@ -47,10 +47,11 @@ public class OnboardingController : Controller
 
         return status.NextStep switch
         {
-            "ParentBasicInfo" => RedirectToAction("Step1Name", "ParentOnboarding"),
-            "ParentFamily" => RedirectToAction("Step4Family", "ParentOnboarding"),
+            "SelectRole" => RedirectToAction("ChooseRole", "Auth"),
+            "ParentBasicInfo" => RedirectToAction("Step1BasicInfo", "ParentOnboarding"),
+            "ParentFamily" => RedirectToAction("Step2Family", "ParentOnboarding"),
             "ParentChildren" => RedirectToAction("Children", "Profile"),
-            "NannyBasicInfo" => RedirectToAction("Step1Name", "NannyBasicInfo"),
+            "NannyBasicInfo" => RedirectToAction("Step1BasicInfo", "NannyBasicInfo"),
             "NannyProfile" => RedirectToAction("Profile", "Nanny"),
             "NannySkills" => RedirectToAction("Skills", "Nanny"),
             "NannyAvailability" => RedirectToAction("Availability", "Nanny"),

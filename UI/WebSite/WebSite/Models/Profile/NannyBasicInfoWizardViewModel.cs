@@ -11,6 +11,8 @@ namespace WebSite.Models.Profile
         public string? Ward { get; set; }
         public decimal? Latitude { get; set; }
         public decimal? Longitude { get; set; }
+        public string? AvatarUrl { get; set; }
+        public IFormFile? AvatarFile { get; set; }
     }
 }
 

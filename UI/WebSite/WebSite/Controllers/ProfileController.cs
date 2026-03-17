@@ -237,12 +237,10 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
             var viewModel = new UpdateChildProfileViewModel
             {
                 Id = child.Id,
-                Name = child.Name,
-                DateOfBirth = child.DateOfBirth,
-                Gender = child.Gender,
                 SpecialNeeds = child.SpecialNeeds,
-                Allergies = child.Allergies,
-                Notes = child.Notes
+                Notes = child.Notes,
+                Characteristic = child.Characteristic,
+                ChildAgeGroup = child.ChildAgeGroup
             };
 
             return View(viewModel);
@@ -268,12 +266,10 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
 
             var updateRequest = new
             {
-                model.Name,
-                model.DateOfBirth,
-                model.Gender,
                 model.SpecialNeeds,
-                model.Allergies,
-                model.Notes
+                model.Notes,
+                model.Characteristic,
+                model.ChildAgeGroup
             };
 
             var response = await _http.PutAsJsonAsync($"/api/profile/children/{model.Id}", updateRequest);

@@ -46,6 +46,8 @@ public partial class Sep490NannyDbContext : DbContext
 
     public virtual DbSet<JobRequirement> JobRequirements { get; set; }
 
+    public virtual DbSet<JobScheduleRequirement> JobScheduleRequirements { get; set; }
+
     public virtual DbSet<Message> Messages { get; set; }
 
     public virtual DbSet<NannyAvailability> NannyAvailabilities { get; set; }
@@ -156,9 +158,8 @@ public partial class Sep490NannyDbContext : DbContext
             entity.HasIndex(e => e.ParentProfileId, "IX_ChildProfiles_ParentProfileId").HasFilter("([IsDeleted]=(0))");
 
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-            entity.Property(e => e.Allergies).HasMaxLength(500);
+            entity.Property(e => e.Characteristic).HasMaxLength(1000);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())");
-            entity.Property(e => e.Name).HasMaxLength(100);
             entity.Property(e => e.Notes).HasMaxLength(1000);
             entity.Property(e => e.SpecialNeeds).HasMaxLength(1000);
 
@@ -401,9 +402,6 @@ public partial class Sep490NannyDbContext : DbContext
             entity.Property(e => e.SalaryMax).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.SalaryMin).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.Title).HasMaxLength(200);
-            entity.Property(e => e.WorkingDays).HasMaxLength(50);
-            entity.Property(e => e.WorkingHoursEnd).HasPrecision(0);
-            entity.Property(e => e.WorkingHoursStart).HasPrecision(0);
 
             entity.HasOne(d => d.ModeratedByNavigation).WithMany(p => p.JobPostings)
                 .HasForeignKey(d => d.ModeratedBy)
@@ -434,6 +432,19 @@ public partial class Sep490NannyDbContext : DbContext
                 .HasConstraintName("FK_JobRequirements_Skills");
         });
 
+        modelBuilder.Entity<JobScheduleRequirement>(entity =>
+        {
+            entity.HasIndex(e => new { e.JobPostingId, e.DayOfWeek, e.TimeSlot }, "UQ_JobScheduleRequirements").IsUnique();
+
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())");
+            entity.Property(e => e.IsRequired).HasDefaultValue(true);
+
+            entity.HasOne(d => d.JobPosting).WithMany(p => p.JobScheduleRequirements)
+                .HasForeignKey(d => d.JobPostingId)
+                .HasConstraintName("FK_JobScheduleRequirements_JobPostings");
+        });
+
         modelBuilder.Entity<Message>(entity =>
         {
             entity.HasIndex(e => new { e.ConversationId, e.CreatedAt }, "IX_Messages_ConversationId_CreatedAt")
@@ -456,11 +467,13 @@ public partial class Sep490NannyDbContext : DbContext
 
         modelBuilder.Entity<NannyAvailability>(entity =>
         {
+            entity.HasIndex(e => new { e.NannyProfileId, e.DayOfWeek, e.TimeSlot }, "UQ_NannyAvailabilities_NannyProfileId_DayOfWeek_TimeSlot")
+                .IsUnique()
+                .HasFilter("([IsDeleted]=(0))");
+
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())");
-            entity.Property(e => e.EndTime).HasPrecision(0);
             entity.Property(e => e.IsAvailable).HasDefaultValue(true);
-            entity.Property(e => e.StartTime).HasPrecision(0);
 
             entity.HasOne(d => d.NannyProfile).WithMany(p => p.NannyAvailabilities)
                 .HasForeignKey(d => d.NannyProfileId)

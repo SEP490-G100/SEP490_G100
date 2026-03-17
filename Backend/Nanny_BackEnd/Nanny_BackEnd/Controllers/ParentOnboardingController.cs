@@ -63,11 +63,9 @@ public class ParentOnboardingController : ControllerBase
             var userId = GetCurrentUserId();
             var createRequest = new CreateChildProfileRequest
             {
-                Name = request.Name,
-                DateOfBirth = request.DateOfBirth,
-                Gender = request.Gender,
+                Characteristic = request.Characteristic,
+                ChildAgeGroup = (Enums.ChildAgeGroup?)request.ChildAgeGroup,
                 SpecialNeeds = request.SpecialNeeds,
-                Allergies = request.Allergies,
                 Notes = request.Notes
             };
 

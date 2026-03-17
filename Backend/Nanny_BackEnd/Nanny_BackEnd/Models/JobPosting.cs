@@ -23,16 +23,6 @@ public partial class JobPosting
 
     public bool SalaryNegotiable { get; set; }
 
-    public DateOnly? StartDate { get; set; }
-
-    public DateOnly? EndDate { get; set; }
-
-    public TimeOnly? WorkingHoursStart { get; set; }
-
-    public TimeOnly? WorkingHoursEnd { get; set; }
-
-    public string? WorkingDays { get; set; }
-
     public int? NumberOfChildren { get; set; }
 
     public string? Location { get; set; }
@@ -71,11 +61,17 @@ public partial class JobPosting
 
     public bool IsDeleted { get; set; }
 
+    public int? MinNannyAge { get; set; }
+
+    public int? MaxNannyAge { get; set; }
+
     public virtual ICollection<FavoriteJobPosting> FavoriteJobPostings { get; set; } = new List<FavoriteJobPosting>();
 
     public virtual ICollection<JobApplication> JobApplications { get; set; } = new List<JobApplication>();
 
     public virtual ICollection<JobRequirement> JobRequirements { get; set; } = new List<JobRequirement>();
+
+    public virtual ICollection<JobScheduleRequirement> JobScheduleRequirements { get; set; } = new List<JobScheduleRequirement>();
 
     public virtual User? ModeratedByNavigation { get; set; }
 

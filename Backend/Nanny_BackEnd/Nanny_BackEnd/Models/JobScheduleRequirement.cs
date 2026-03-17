@@ -3,15 +3,17 @@ using System.Collections.Generic;
 
 namespace Nanny_BackEnd.Models;
 
-public partial class NannyAvailability
+public partial class JobScheduleRequirement
 {
     public Guid Id { get; set; }
 
-    public Guid NannyProfileId { get; set; }
+    public Guid JobPostingId { get; set; }
 
     public int DayOfWeek { get; set; }
 
-    public bool IsAvailable { get; set; }
+    public int TimeSlot { get; set; }
+
+    public bool IsRequired { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
@@ -23,7 +25,5 @@ public partial class NannyAvailability
 
     public bool IsDeleted { get; set; }
 
-    public int TimeSlot { get; set; }
-
-    public virtual NannyProfile NannyProfile { get; set; } = null!;
+    public virtual JobPosting JobPosting { get; set; } = null!;
 }
