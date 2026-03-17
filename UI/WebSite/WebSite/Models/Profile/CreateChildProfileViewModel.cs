@@ -1,12 +1,13 @@
-﻿namespace WebSite.Models.Profile
+namespace WebSite.Models.Profile
 {
+    using WebSite.Enums;
+
     public class CreateChildProfileViewModel
     {
-        public string? Name { get; set; } = null!;
-        public DateOnly DateOfBirth { get; set; }
-        public int? Gender { get; set; }
         public string? SpecialNeeds { get; set; }
-        public string? Allergies { get; set; }
         public string? Notes { get; set; }
+        public string? Characteristic { get; set; }
+        public ChildAgeGroup? ChildAgeGroup { get; set; }
     }
 }
+

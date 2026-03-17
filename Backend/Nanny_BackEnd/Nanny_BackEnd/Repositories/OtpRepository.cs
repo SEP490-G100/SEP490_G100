@@ -13,17 +13,17 @@ public class OtpRepository
 
     public void Add(OtpCode otp) => _db.OtpCodes.Add(otp);
 
-    public async Task<OtpCode?> findValid(string email, string code, OtpPurpose purpose) =>
+    public async Task<OtpCode?> FindActiveAsync(string email, OtpPurpose purpose) =>
+
         await _db.OtpCodes.FirstOrDefaultAsync(o =>
             o.Email == email &&
-            o.Code == code &&
             o.Purpose == (int)purpose &&
             !o.IsUsed &&
             o.ExpiresAt > DateTime.UtcNow &&
             o.AttemptCount < AuthConstants.MaxOtpAttempts &&
             !o.IsDeleted);
 
-    public async Task markPreviousAsUsed(string email, OtpPurpose purpose)
+    public async Task MarkPreviousAsUsedAsync(string email, OtpPurpose purpose)
     {
         var previous = await _db.OtpCodes
             .Where(o => o.Email == email && o.Purpose == (int)purpose && !o.IsUsed && !o.IsDeleted)
@@ -36,7 +36,7 @@ public class OtpRepository
         }
     }
 
-    public async Task cleanupExpired()
+    public async Task CleanupExpiredAsync()
     {
         var expired = await _db.OtpCodes
             .Where(o => o.ExpiresAt < DateTime.UtcNow && !o.IsDeleted)
@@ -45,5 +45,5 @@ public class OtpRepository
         _db.OtpCodes.RemoveRange(expired);
     }
 
-    public async Task saveChanges() => await _db.SaveChangesAsync();
+    public async Task SaveChangesAsync() => await _db.SaveChangesAsync();
 }

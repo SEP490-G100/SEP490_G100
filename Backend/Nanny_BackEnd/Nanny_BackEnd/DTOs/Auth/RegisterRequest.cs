@@ -19,4 +19,10 @@ public class RegisterRequest
     public string LastName { get; set; } = null!;
 
     public string? PhoneNumber { get; set; }
+
+    /// <summary>
+    /// Role sẽ được set sau trong bước ChooseRole, không gán mặc định.
+    /// Nếu null/empty, GetStatusAsync() sẽ yêu cầu user chọn role trước khi onboarding
+    /// </summary>
+    public string? Role { get; set; } = null;
 }
