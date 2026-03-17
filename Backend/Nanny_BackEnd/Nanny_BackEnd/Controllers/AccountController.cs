@@ -1,0 +1,214 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Nanny_BackEnd.Data;
+using Nanny_BackEnd.DTOs.Account;
+using Nanny_BackEnd.Models;
+
+namespace Nanny_BackEnd.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+//[Authorize(Roles = "Moderator,Admin")]
+public class AccountController : ControllerBase
+{
+    private readonly Sep490NannyDbContext _db;
+
+    public AccountController(Sep490NannyDbContext db) => _db = db;
+
+    /// <summary>
+    /// GET /api/accounts?role=Nanny&status=0&search=lan&page=1&pageSize=10
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> GetAccounts(
+        [FromQuery] string? role = null,
+        [FromQuery] int? status = null,
+        [FromQuery] string? search = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1 || pageSize > 100) pageSize = 10;
+
+        // Các role bị loại trừ khỏi danh sách quản lý (Moderator chỉ quản lý Nanny và Parent)
+        var excludedRoles = new[] { "Moderator", "Admin" };
+
+        var query = _db.Users
+            .Where(u => !u.IsDeleted)
+            .Where(u => u.UserRoles.Any(ur =>
+                !ur.IsDeleted &&
+                !excludedRoles.Contains(ur.Role.Name)))
+            .AsQueryable();
+
+        // Filter by status
+        if (status.HasValue)
+            query = query.Where(u => u.Status == status.Value);
+
+        // Filter by search (name or email)
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var s = search.Trim().ToLower();
+            query = query.Where(u =>
+                u.Email.ToLower().Contains(s) ||
+                u.FirstName.ToLower().Contains(s) ||
+                u.LastName.ToLower().Contains(s));
+        }
+
+        // Filter by role — chỉ cho phép Parent hoặc Nanny
+        var allowedRoles = new[] { "Parent", "Nanny" };
+        if (!string.IsNullOrWhiteSpace(role) && allowedRoles.Contains(role))
+        {
+            query = query.Where(u =>
+                u.UserRoles.Any(ur =>
+                    !ur.IsDeleted &&
+                    ur.Role.Name == role));
+        }
+
+        var totalCount = await query.CountAsync();
+
+        var users = await query
+            .OrderByDescending(u => u.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(u => new AccountDto
+            {
+                Id            = u.Id,
+                FirstName     = u.FirstName,
+                LastName      = u.LastName,
+                Email         = u.Email,
+                PhoneNumber   = u.PhoneNumber,
+                AvatarUrl     = u.AvatarUrl,
+                City          = u.City,
+                Status        = u.Status,
+                EmailConfirmed = u.EmailConfirmed,
+                CreatedAt     = u.CreatedAt,
+                LastLoginAt   = u.LastLoginAt,
+                Roles         = u.UserRoles
+                    .Where(ur => !ur.IsDeleted)
+                    .Select(ur => ur.Role.Name)
+                    .ToList()
+            })
+            .ToListAsync();
+
+        return Ok(new
+        {
+            success = true,
+            data = new AccountListResponse
+            {
+                Items      = users,
+                TotalCount = totalCount,
+                Page       = page,
+                PageSize   = pageSize
+            }
+        });
+    }
+
+    /// <summary>
+    /// GET /api/accounts/{id}
+    /// </summary>
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetAccount(Guid id)
+    {
+        var user = await _db.Users
+            .Where(u => u.Id == id && !u.IsDeleted)
+            .Select(u => new AccountDto
+            {
+                Id             = u.Id,
+                FirstName      = u.FirstName,
+                LastName       = u.LastName,
+                Email          = u.Email,
+                PhoneNumber    = u.PhoneNumber,
+                AvatarUrl      = u.AvatarUrl,
+                DateOfBirth    = u.DateOfBirth,
+                Gender         = u.Gender,
+                Address        = u.Address,
+                City           = u.City,
+                District       = u.District,
+                Ward           = u.Ward,
+                Status         = u.Status,
+                EmailConfirmed = u.EmailConfirmed,
+                CreatedAt      = u.CreatedAt,
+                CreatedBy      = u.CreatedBy,
+                UpdatedAt      = u.UpdatedAt,
+                UpdatedBy      = u.UpdatedBy,
+                LastLoginAt    = u.LastLoginAt,
+                Roles          = u.UserRoles
+                    .Where(ur => !ur.IsDeleted)
+                    .Select(ur => ur.Role.Name)
+                    .ToList()
+            })
+            .FirstOrDefaultAsync();
+
+        if (user == null)
+            return NotFound(new { success = false, message = "Không tìm thấy tài khoản." });
+
+        return Ok(new { success = true, data = user });
+    }
+
+    /// <summary>
+    /// PATCH /api/account/{id}
+    /// Moderator cập nhật Status và PhoneNumber của tài khoản
+    /// </summary>
+    [HttpPatch("{id:guid}")]
+    public async Task<IActionResult> UpdateAccount(Guid id, [FromBody] UpdateAccountRequest request)
+    {
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
+        if (user == null)
+            return NotFound(new { success = false, message = "Không tìm thấy tài khoản." });
+
+        // Chỉ cho phép cập nhật Nanny hoặc Parent
+        var excludedRoles = new[] { "Moderator", "Admin" };
+        var roles = _db.UserRoles
+            .Where(ur => ur.UserId == id && !ur.IsDeleted)
+            .Select(ur => ur.Role.Name);
+        if (await roles.AnyAsync(r => excludedRoles.Contains(r)))
+            return StatusCode(403, new { success = false, message = "Không có quyền cập nhật tài khoản Moderator/Admin." });
+
+        if (request.Status != 0 && request.Status != 1)
+            return BadRequest(new { success = false, message = "Status không hợp lệ. Chỉ chấp nhận 0 (Inactive) hoặc 1 (Active)." });
+
+        // Validate phone number: bỏ trống OK, có nhập thì phải là 10-11 chữ số
+        if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
+        {
+            var phone = request.PhoneNumber.Trim();
+            if (!System.Text.RegularExpressions.Regex.IsMatch(phone, @"^\d{10,11}$"))
+                return BadRequest(new { success = false, message = "Số điện thoại phải là chuỗi số từ 10 đến 11 chữ số." });
+            request.PhoneNumber = phone; // lưu đã trim
+        }
+
+        user.Status      = request.Status;
+        user.PhoneNumber = string.IsNullOrWhiteSpace(request.PhoneNumber) ? null : request.PhoneNumber;
+        user.UpdatedAt   = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync();
+
+        return Ok(new { success = true, message = "Cập nhật tài khoản thành công." });
+    }
+
+    /// <summary>
+    /// PATCH /api/account/{id}/status
+    /// Body: { "status": 1 } = Active, { "status": 0 } = Inactive
+    /// </summary>
+    [HttpPatch("{id:guid}/status")]
+    public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateAccountStatusRequest request)
+    {
+        if (request.Status != 0 && request.Status != 1)
+            return BadRequest(new { success = false, message = "Status không hợp lệ. Chỉ chấp nhận 0 (Active) hoặc 1 (Inactive)." });
+
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
+        if (user == null)
+            return NotFound(new { success = false, message = "Không tìm thấy tài khoản." });
+
+        user.Status    = request.Status;
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync();
+
+        return Ok(new
+        {
+            success = true,
+            message = request.Status == 0 ? "Đã kích hoạt tài khoản." : "Đã vô hiệu hóa tài khoản.",
+            data    = new { user.Id, user.Status }
+        });
+    }
+}
