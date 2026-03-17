@@ -49,6 +49,21 @@ public class SubscriptionRepository
             .OrderByDescending(s => s.EndDate)
             .FirstOrDefaultAsync();
 
+    public async Task<UserSubscription?> findCurrentSubscriptionByNannyProfile(Guid nannyProfileId, DateTime nowUtc) =>
+        await _db.UserSubscriptions
+            .Where(s => !s.IsDeleted && s.Status == 1 && s.EndDate >= nowUtc)
+            .Include(s => s.SubscriptionPlan)
+            .Include(s => s.PaymentTransaction)
+            .Where(s => _db.NannyProfiles.Any(n => n.Id == nannyProfileId && !n.IsDeleted && n.UserId == s.UserId))
+            .OrderByDescending(s => s.EndDate)
+            .FirstOrDefaultAsync();
+
+    public async Task<bool> hasParentProfile(Guid userId) =>
+        await _db.ParentProfiles.AnyAsync(p => p.UserId == userId && !p.IsDeleted);
+
+    public async Task<bool> hasNannyProfile(Guid userId) =>
+        await _db.NannyProfiles.AnyAsync(n => n.UserId == userId && !n.IsDeleted);
+
     public async Task<List<UserSubscription>> getSubscriptionHistory(Guid userId) =>
         await _db.UserSubscriptions
             .Where(s => s.UserId == userId && !s.IsDeleted)

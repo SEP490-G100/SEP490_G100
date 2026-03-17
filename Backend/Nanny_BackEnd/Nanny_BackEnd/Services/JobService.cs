@@ -303,6 +303,6 @@ public class JobService
             });
         }
 
-        return (null, SubscriptionBenefitResponse.Free);
+        return (null, SubscriptionBenefitResponse.FreeParent);
     }
 }

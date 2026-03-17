@@ -139,6 +139,51 @@ public class SubscriptionJobTests
         Assert.True(results[0].SearchPriority);
     }
 
+    [Fact]
+    public async Task ManagedPlans_IncludeParentAndNannyPlusPro()
+    {
+        await using var fixture = await TestFixture.create();
+
+        var plans = await fixture.SubscriptionService.getPlans();
+        var codes = plans.Select(p => p.Code).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        Assert.Contains("PLUS", codes);
+        Assert.Contains("PRO", codes);
+        Assert.Contains("NANNY_PLUS", codes);
+        Assert.Contains("NANNY_PRO", codes);
+    }
+
+    [Fact]
+    public async Task ParentCannotSubscribeToNannyPlan()
+    {
+        await using var fixture = await TestFixture.create();
+
+        var plans = await fixture.SubscriptionService.getPlans();
+        var nannyPlan = plans.Single(p => p.Code == "NANNY_PLUS");
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            fixture.SubscriptionService.subscribe(fixture.FreeParentUserId, new SubscribeRequest
+            {
+                SubscriptionPlanId = nannyPlan.Id,
+                PaymentGatewayTransactionId = "invalid-parent-nanny-plan"
+            }));
+
+        Assert.Contains("khong phai Nanny", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task NannyPlus_GetsThreeApplicationsPerMonth()
+    {
+        await using var fixture = await TestFixture.create();
+        await fixture.subscribePlan(fixture.PlusNannyUserId, "NANNY_PLUS");
+
+        var benefits = await fixture.SubscriptionService.getBenefitsForNannyProfile(fixture.PlusNannyProfileId);
+
+        Assert.Equal(3, benefits.MonthlyApplicationLimit);
+        Assert.True(benefits.FeaturedBadge);
+        Assert.False(benefits.SearchPriority);
+    }
+
     private sealed class TestFixture : IAsyncDisposable
     {
         private TestFixture(
@@ -160,6 +205,8 @@ public class SubscriptionJobTests
         public Guid PlusParentProfileId { get; private set; }
         public Guid ProParentUserId { get; private set; }
         public Guid ProParentProfileId { get; private set; }
+        public Guid PlusNannyUserId { get; private set; }
+        public Guid PlusNannyProfileId { get; private set; }
 
         public static async Task<TestFixture> create()
         {
@@ -196,6 +243,7 @@ public class SubscriptionJobTests
             (FreeParentUserId, FreeParentProfileId) = await addParent("free@nanny.vn", "Free");
             (PlusParentUserId, PlusParentProfileId) = await addParent("plus@nanny.vn", "Plus");
             (ProParentUserId, ProParentProfileId) = await addParent("pro@nanny.vn", "Pro");
+            (PlusNannyUserId, PlusNannyProfileId) = await addNanny("nannyplus@nanny.vn", "Plus");
         }
 
         private async Task<(Guid UserId, Guid ParentProfileId)> addParent(string email, string firstName)
@@ -223,6 +271,37 @@ public class SubscriptionJobTests
 
             await Db.SaveChangesAsync();
             return (userId, parentProfileId);
+        }
+
+        private async Task<(Guid UserId, Guid NannyProfileId)> addNanny(string email, string firstName)
+        {
+            var userId = Guid.NewGuid();
+            var nannyProfileId = Guid.NewGuid();
+            Db.Users.Add(new User
+            {
+                Id = userId,
+                Email = email,
+                FirstName = firstName,
+                LastName = "Nanny",
+                Status = 1,
+                AuthProvider = 0,
+                EmailConfirmed = true,
+                PhoneConfirmed = false,
+                CreatedAt = DateTime.UtcNow
+            });
+            Db.NannyProfiles.Add(new NannyProfile
+            {
+                Id = nannyProfileId,
+                UserId = userId,
+                SalaryType = 1,
+                VerificationStatus = 0,
+                TotalReviews = 0,
+                ProfileCompleteness = 0,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await Db.SaveChangesAsync();
+            return (userId, nannyProfileId);
         }
 
         public ValueTask DisposeAsync() => Db.DisposeAsync();

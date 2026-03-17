@@ -1,7 +1,7 @@
+using System.Text.Json;
 using Nanny_BackEnd.DTOs.Subscription;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
-using System.Text.Json;
 
 namespace Nanny_BackEnd.Services;
 
@@ -9,6 +9,7 @@ public class SubscriptionService
 {
     private sealed record ManagedPlanDefinition(
         string Code,
+        string TargetRole,
         string Name,
         string Description,
         decimal Price,
@@ -17,16 +18,18 @@ public class SubscriptionService
         SubscriptionBenefitResponse Benefits,
         List<string> Features);
 
-    private static readonly ManagedPlanDefinition PlusPlan = new(
+    private static readonly ManagedPlanDefinition ParentPlusPlan = new(
         Code: "PLUS",
+        TargetRole: "Parent",
         Name: "Plus",
-        Description: "Goi Plus danh cho phu huynh dang bai thuong xuyen, can bai dang noi bat hon va quan ly hieu qua hon.",
+        Description: "Goi Plus cho Parent can dang them bai va lam bai dang noi bat hon.",
         Price: 299000m,
         DurationDays: 30,
         SortOrder: 1,
         Benefits: new SubscriptionBenefitResponse
         {
             MonthlyJobPostLimit = 3,
+            MonthlyApplicationLimit = 0,
             FeaturedBadge = true,
             SearchPriority = false,
             ListingDurationDays = 45
@@ -38,16 +41,18 @@ public class SubscriptionService
             "Thoi gian hien thi bai dang 45 ngay"
         ]);
 
-    private static readonly ManagedPlanDefinition ProPlan = new(
+    private static readonly ManagedPlanDefinition ParentProPlan = new(
         Code: "PRO",
+        TargetRole: "Parent",
         Name: "Pro",
-        Description: "Goi Pro danh cho phu huynh dang tuyen nghiem tuc, can uu tien hien thi va hieu qua tiep can cao hon.",
+        Description: "Goi Pro cho Parent can uu tien hien thi va gia tang co hoi tiep can.",
         Price: 499000m,
         DurationDays: 30,
         SortOrder: 2,
         Benefits: new SubscriptionBenefitResponse
         {
             MonthlyJobPostLimit = 5,
+            MonthlyApplicationLimit = 0,
             FeaturedBadge = true,
             SearchPriority = true,
             ListingDurationDays = 60
@@ -60,7 +65,59 @@ public class SubscriptionService
             "Thoi gian hien thi bai dang 60 ngay"
         ]);
 
-    private static readonly ManagedPlanDefinition[] ManagedPlans = [PlusPlan, ProPlan];
+    private static readonly ManagedPlanDefinition NannyPlusPlan = new(
+        Code: "NANNY_PLUS",
+        TargetRole: "Nanny",
+        Name: "Nanny Plus",
+        Description: "Goi Plus cho Nanny muon co them luot ung tuyen va ho so noi bat hon.",
+        Price: 199000m,
+        DurationDays: 30,
+        SortOrder: 3,
+        Benefits: new SubscriptionBenefitResponse
+        {
+            MonthlyJobPostLimit = 0,
+            MonthlyApplicationLimit = 3,
+            FeaturedBadge = true,
+            SearchPriority = false,
+            ListingDurationDays = 0
+        },
+        Features:
+        [
+            "Ung tuyen toi da 3 cong viec moi moi thang",
+            "Ho so co badge noi bat",
+            "Ho so duoc hien thi tot hon tai khoan free"
+        ]);
+
+    private static readonly ManagedPlanDefinition NannyProPlan = new(
+        Code: "NANNY_PRO",
+        TargetRole: "Nanny",
+        Name: "Nanny Pro",
+        Description: "Goi Pro cho Nanny muon co them luot ung tuyen va uu tien hien thi cao hon.",
+        Price: 299000m,
+        DurationDays: 30,
+        SortOrder: 4,
+        Benefits: new SubscriptionBenefitResponse
+        {
+            MonthlyJobPostLimit = 0,
+            MonthlyApplicationLimit = 5,
+            FeaturedBadge = true,
+            SearchPriority = true,
+            ListingDurationDays = 0
+        },
+        Features:
+        [
+            "Ung tuyen toi da 5 cong viec moi moi thang",
+            "Ho so co badge noi bat",
+            "Ho so duoc uu tien hien thi cao hon goi Nanny Plus"
+        ]);
+
+    private static readonly ManagedPlanDefinition[] ManagedPlans =
+    [
+        ParentPlusPlan,
+        ParentProPlan,
+        NannyPlusPlan,
+        NannyProPlan
+    ];
 
     private readonly SubscriptionRepository _subscriptionRepo;
 
@@ -73,6 +130,14 @@ public class SubscriptionService
     {
         var plans = await ensureManagedPlans();
         return plans.Select(mapPlan).ToList();
+    }
+
+    public async Task<SubscriptionPlanResponse?> getPlanByCode(string code)
+    {
+        var plans = await ensureManagedPlans();
+        var plan = plans.FirstOrDefault(p =>
+            string.Equals(getManagedPlanDefinition(p.Name)?.Code, code, StringComparison.OrdinalIgnoreCase));
+        return plan == null ? null : mapPlan(plan);
     }
 
     public async Task<UserSubscriptionResponse?> getCurrentSubscription(Guid userId)
@@ -94,17 +159,19 @@ public class SubscriptionService
     public async Task<UserSubscriptionResponse> subscribe(Guid userId, SubscribeRequest request)
     {
         await expireOldSubscriptions(userId);
-
         await ensureManagedPlans();
-        var plan = await _subscriptionRepo.findPlanById(request.SubscriptionPlanId)
-            ?? throw new KeyNotFoundException("Không tìm thấy gói subscription hoặc gói đã ngừng hoạt động.");
 
-        if (getManagedPlanDefinition(plan.Name) == null)
-            throw new InvalidOperationException("Hệ thống hiện chỉ hỗ trợ 2 gói subscription là Plus và Pro.");
+        var plan = await _subscriptionRepo.findPlanById(request.SubscriptionPlanId)
+            ?? throw new KeyNotFoundException("Khong tim thay goi subscription hoac goi da ngung hoat dong.");
+
+        var definition = getManagedPlanDefinition(plan.Name)
+            ?? throw new InvalidOperationException("He thong chi ho tro cac goi subscription duoc quan ly san.");
+
+        await validatePlanOwnership(userId, definition);
 
         var currentSubscription = await _subscriptionRepo.findCurrentSubscription(userId, DateTime.UtcNow);
         if (currentSubscription != null)
-            throw new InvalidOperationException("Bạn đang có gói subscription còn hiệu lực. Vui lòng hủy hoặc chờ gói hiện tại hết hạn.");
+            throw new InvalidOperationException("Ban dang co goi subscription con hieu luc. Vui long huy hoac cho goi hien tai het han.");
 
         var nowUtc = DateTime.UtcNow;
         var transaction = new Transaction
@@ -114,7 +181,7 @@ public class SubscriptionService
             Amount = plan.Price,
             PaymentGatewayTransactionId = request.PaymentGatewayTransactionId?.Trim(),
             Status = 2,
-            Description = $"Thanh toán gói {plan.Name}",
+            Description = $"Thanh toan goi {plan.Name}",
             Type = 1,
             CreatedAt = nowUtc,
             CompletedAt = nowUtc,
@@ -143,20 +210,20 @@ public class SubscriptionService
         return mapSubscription(subscription);
     }
 
-    public async Task<SubscriptionPlanResponse?> getPlanByCode(string code)
-    {
-        var plans = await ensureManagedPlans();
-        var plan = plans.FirstOrDefault(p =>
-            string.Equals(getManagedPlanDefinition(p.Name)?.Code, code, StringComparison.OrdinalIgnoreCase));
-        return plan == null ? null : mapPlan(plan);
-    }
-
     public async Task<SubscriptionBenefitResponse> getBenefitsForParentProfile(Guid parentProfileId)
     {
         await ensureManagedPlans();
         var subscription = await _subscriptionRepo.findCurrentSubscriptionByParentProfile(parentProfileId, DateTime.UtcNow);
         var definition = getManagedPlanDefinition(subscription?.SubscriptionPlan?.Name);
-        return definition?.Benefits ?? SubscriptionBenefitResponse.Free;
+        return definition?.Benefits ?? SubscriptionBenefitResponse.FreeParent;
+    }
+
+    public async Task<SubscriptionBenefitResponse> getBenefitsForNannyProfile(Guid nannyProfileId)
+    {
+        await ensureManagedPlans();
+        var subscription = await _subscriptionRepo.findCurrentSubscriptionByNannyProfile(nannyProfileId, DateTime.UtcNow);
+        var definition = getManagedPlanDefinition(subscription?.SubscriptionPlan?.Name);
+        return definition?.Benefits ?? SubscriptionBenefitResponse.FreeNanny;
     }
 
     public async Task<UserSubscriptionResponse> cancelCurrentSubscription(Guid userId)
@@ -164,7 +231,7 @@ public class SubscriptionService
         await expireOldSubscriptions(userId);
 
         var subscription = await _subscriptionRepo.findCurrentSubscription(userId, DateTime.UtcNow)
-            ?? throw new KeyNotFoundException("Bạn không có gói subscription đang hoạt động.");
+            ?? throw new KeyNotFoundException("Ban khong co goi subscription dang hoat dong.");
 
         var nowUtc = DateTime.UtcNow;
         subscription.Status = 2;
@@ -296,7 +363,8 @@ public class SubscriptionService
         return new SubscriptionPlanResponse
         {
             Id = plan.Id,
-            Code = definition?.Code ?? plan.Name.ToUpperInvariant(),
+            Code = definition?.Code ?? plan.Name.ToUpperInvariant().Replace(' ', '_'),
+            TargetRole = definition?.TargetRole ?? "Unknown",
             Name = plan.Name,
             Description = plan.Description,
             Price = plan.Price,
@@ -348,27 +416,26 @@ public class SubscriptionService
 
     private static string getSubscriptionStatusLabel(int status) => status switch
     {
-        1 => "Đang hoạt động",
-        2 => "Đã hủy",
-        3 => "Hết hạn",
-        _ => "Không xác định"
+        1 => "Dang hoat dong",
+        2 => "Da huy",
+        3 => "Het han",
+        _ => "Khong xac dinh"
     };
 
     private static string getTransactionStatusLabel(int status) => status switch
     {
-        1 => "Chờ thanh toán",
-        2 => "Thành công",
-        3 => "Thất bại",
-        4 => "Đã hoàn tiền",
-        _ => "Không xác định"
+        1 => "Cho thanh toan",
+        2 => "Thanh cong",
+        3 => "That bai",
+        4 => "Da hoan tien",
+        _ => "Khong xac dinh"
     };
 
     private static string getTransactionTypeLabel(int type) => type switch
     {
-        1 => "Nạp tiền",
-        2 => "Thanh toán subscription",
-        3 => "Hoàn tiền",
-        _ => "Khác"
+        0 => "Nap tien",
+        1 => "Thanh toan subscription",
+        _ => "Khac"
     };
 
     private static ManagedPlanDefinition? getManagedPlanDefinition(string? planName) =>
@@ -386,4 +453,20 @@ public class SubscriptionService
         }
     }
 
+    private async Task validatePlanOwnership(Guid userId, ManagedPlanDefinition definition)
+    {
+        if (string.Equals(definition.TargetRole, "Parent", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!await _subscriptionRepo.hasParentProfile(userId))
+                throw new InvalidOperationException("Tai khoan hien tai khong phai Parent nen khong the mua goi nay.");
+
+            return;
+        }
+
+        if (string.Equals(definition.TargetRole, "Nanny", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!await _subscriptionRepo.hasNannyProfile(userId))
+                throw new InvalidOperationException("Tai khoan hien tai khong phai Nanny nen khong the mua goi nay.");
+        }
+    }
 }
