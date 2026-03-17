@@ -184,21 +184,63 @@ public class SubscriptionJobTests
         Assert.False(benefits.SearchPriority);
     }
 
+    [Fact]
+    public async Task SubscriptionReminder_CreatesSevenAndThreeDayNotifications_WithoutDuplicates()
+    {
+        await using var fixture = await TestFixture.create();
+        await fixture.subscribePlan(fixture.PlusParentUserId, "PLUS");
+
+        var subscription = await fixture.Db.UserSubscriptions
+            .Include(s => s.SubscriptionPlan)
+            .FirstAsync(s => s.UserId == fixture.PlusParentUserId);
+
+        subscription.EndDate = DateTime.UtcNow.Date.AddDays(7);
+        await fixture.Db.SaveChangesAsync();
+
+        var createdFirstRun = await fixture.NotificationService.createSubscriptionExpiryReminders();
+        var createdSecondRun = await fixture.NotificationService.createSubscriptionExpiryReminders();
+
+        var notifications = await fixture.Db.Notifications
+            .Where(n => n.UserId == fixture.PlusParentUserId)
+            .ToListAsync();
+
+        Assert.Equal(1, createdFirstRun);
+        Assert.Equal(0, createdSecondRun);
+        Assert.Single(notifications);
+        Assert.Contains("7 ngay", notifications[0].Title);
+
+        subscription.EndDate = DateTime.UtcNow.Date.AddDays(3);
+        await fixture.Db.SaveChangesAsync();
+
+        var createdThirdRun = await fixture.NotificationService.createSubscriptionExpiryReminders();
+        notifications = await fixture.Db.Notifications
+            .Where(n => n.UserId == fixture.PlusParentUserId)
+            .OrderBy(n => n.CreatedAt)
+            .ToListAsync();
+
+        Assert.Equal(1, createdThirdRun);
+        Assert.Equal(2, notifications.Count);
+        Assert.Contains(notifications, n => n.Title.Contains("3 ngay"));
+    }
+
     private sealed class TestFixture : IAsyncDisposable
     {
         private TestFixture(
             Sep490NannyDbContext db,
             SubscriptionService subscriptionService,
-            JobService jobService)
+            JobService jobService,
+            NotificationService notificationService)
         {
             Db = db;
             SubscriptionService = subscriptionService;
             JobService = jobService;
+            NotificationService = notificationService;
         }
 
         public Sep490NannyDbContext Db { get; }
         public SubscriptionService SubscriptionService { get; }
         public JobService JobService { get; }
+        public NotificationService NotificationService { get; }
         public Guid FreeParentUserId { get; private set; }
         public Guid FreeParentProfileId { get; private set; }
         public Guid PlusParentUserId { get; private set; }
@@ -219,10 +261,11 @@ public class SubscriptionJobTests
             var jobRepo = new JobRepository(db);
             var subscriptionRepo = new SubscriptionRepository(db);
             var subscriptionService = new SubscriptionService(subscriptionRepo);
+            var notificationService = new NotificationService(subscriptionRepo);
             var geo = new GeocodingService(new FakeHttpClientFactory());
             var jobService = new JobService(jobRepo, favoriteRepo, geo, subscriptionService);
 
-            var fixture = new TestFixture(db, subscriptionService, jobService);
+            var fixture = new TestFixture(db, subscriptionService, jobService, notificationService);
             await fixture.seedUsers();
             return fixture;
         }

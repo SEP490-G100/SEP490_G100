@@ -124,10 +124,12 @@ builder.Services.AddSingleton<PasswordValidator>();
 builder.Services.AddScoped<JobService>();
 builder.Services.AddScoped<GeocodingService>();
 builder.Services.AddScoped<SubscriptionService>();
+builder.Services.AddScoped<NotificationService>();
 
 // Background Services
 if (!builder.Environment.IsDevelopment())
     builder.Services.AddHostedService<OtpCleanupService>();
+builder.Services.AddHostedService<SubscriptionReminderService>();
 
 var app = builder.Build();
 

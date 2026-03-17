@@ -77,6 +77,47 @@ public class SubscriptionRepository
             .Where(s => s.UserId == userId && !s.IsDeleted && s.Status == 1 && s.EndDate < nowUtc)
             .ToListAsync();
 
+    public async Task<List<UserSubscription>> getActiveSubscriptionsExpiringOnDate(DateTime targetDateUtc) =>
+        await _db.UserSubscriptions
+            .Where(s => !s.IsDeleted && s.Status == 1)
+            .Include(s => s.SubscriptionPlan)
+            .Where(s => s.EndDate.Date == targetDateUtc.Date)
+            .ToListAsync();
+
+    public async Task<bool> hasNotificationForSubscription(Guid userId, Guid subscriptionId, string title) =>
+        await _db.Notifications.AnyAsync(n =>
+            n.UserId == userId &&
+            !n.IsDeleted &&
+            n.RelatedEntityId == subscriptionId &&
+            n.RelatedEntityType == "UserSubscription" &&
+            n.Title == title);
+
+    public void addNotification(Notification notification) => _db.Notifications.Add(notification);
+
+    public async Task<List<Notification>> getNotifications(Guid userId, int page, int pageSize) =>
+        await _db.Notifications
+            .Where(n => n.UserId == userId && !n.IsDeleted)
+            .OrderByDescending(n => n.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+    public async Task<int> countNotifications(Guid userId) =>
+        await _db.Notifications.CountAsync(n => n.UserId == userId && !n.IsDeleted);
+
+    public async Task<int> countUnreadNotifications(Guid userId) =>
+        await _db.Notifications.CountAsync(n => n.UserId == userId && !n.IsDeleted && !n.IsRead);
+
+    public async Task<Notification?> findNotificationById(Guid notificationId, Guid userId) =>
+        await _db.Notifications
+            .FirstOrDefaultAsync(n => n.Id == notificationId && n.UserId == userId && !n.IsDeleted);
+
+    public async Task<List<Notification>> getUnreadNotifications(Guid userId) =>
+        await _db.Notifications
+            .Where(n => n.UserId == userId && !n.IsDeleted && !n.IsRead)
+            .OrderByDescending(n => n.CreatedAt)
+            .ToListAsync();
+
     public void addTransaction(Transaction transaction) => _db.Transactions.Add(transaction);
 
     public void addUserSubscription(UserSubscription subscription) => _db.UserSubscriptions.Add(subscription);
