@@ -1,10 +1,12 @@
 namespace WebSite.Models.Nanny;
 
+using WebSite.Enums;
+
 public class NannySkillSelectionViewModel
 {
     public Guid SkillId { get; set; }
     public string SkillName { get; set; } = string.Empty;
-    public int? ProficiencyLevel { get; set; }
+    public ProficiencyLevel? ProficiencyLevel { get; set; }
 }
 
 public class NannySkillsViewModel

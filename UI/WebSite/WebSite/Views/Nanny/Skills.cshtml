@@ -52,14 +52,13 @@
                             </div>
 
                             <div class="mt-4">
-                                <label class="block text-sm font-medium text-gray-300 mb-2">Proficiency level (1-5)</label>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Proficiency level</label>
                                 <select asp-for="SelectedSkills[i].ProficiencyLevel"
                                         class="w-full px-4 py-3 rounded-xl bg-[#1f242b] border border-[#3b434e] text-gray-100 focus:ring-2 focus:ring-pink-400">
-                                    <option value="1">1 - Beginner</option>
-                                    <option value="2">2 - Intermediate</option>
-                                    <option value="3">3 - Advanced</option>
-                                    <option value="4">4 - Expert</option>
-                                    <option value="5">5 - Professional</option>
+                                    <option value="">-- Chọn trình độ --</option>
+                                    <option value="1">Cơ bản</option>
+                                    <option value="2">Trung cấp</option>
+                                    <option value="3">Nâng cao</option>
                                 </select>
                                 <span asp-validation-for="SelectedSkills[i].ProficiencyLevel" class="text-red-400 text-xs"></span>
                             </div>

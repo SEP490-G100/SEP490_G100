@@ -20,6 +20,9 @@ public class RegisterRequest
 
     public string? PhoneNumber { get; set; }
 
-    [Required(ErrorMessage = "Vai trò là bắt buộc.")]
-    public string Role { get; set; } = "Parent"; // Parent hoặc Nanny
+    /// <summary>
+    /// Role sẽ được set sau trong bước ChooseRole, không gán mặc định.
+    /// Nếu null/empty, GetStatusAsync() sẽ yêu cầu user chọn role trước khi onboarding
+    /// </summary>
+    public string? Role { get; set; } = null;
 }

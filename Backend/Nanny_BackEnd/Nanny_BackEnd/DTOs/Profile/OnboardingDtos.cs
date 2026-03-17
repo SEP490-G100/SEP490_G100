@@ -1,5 +1,7 @@
 namespace Nanny_BackEnd.DTOs.Profile;
 
+using Nanny_BackEnd.Enums;
+
 public class OnboardingStatusDto
 {
     public bool RequiresOnboarding { get; set; }
@@ -11,7 +13,7 @@ public class UpdateNannyProfileRequest
 {
     public string? Bio { get; set; }
     public int? YearsOfExperience { get; set; }
-    public int? EducationLevel { get; set; }
+    public EducationLevel? EducationLevel { get; set; }
     public decimal? ExpectedSalaryMin { get; set; }
     public decimal? ExpectedSalaryMax { get; set; }
     public int? MaxTravelDistance { get; set; }
@@ -20,7 +22,7 @@ public class UpdateNannyProfileRequest
 public class NannySkillSelectionDto
 {
     public Guid SkillId { get; set; }
-    public int? ProficiencyLevel { get; set; }
+    public ProficiencyLevel? ProficiencyLevel { get; set; }
 }
 
 public class SkillSelectionDto

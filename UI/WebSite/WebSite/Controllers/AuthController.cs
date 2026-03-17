@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authentication;
@@ -92,7 +93,11 @@ public class AuthController : Controller
         {
             var response = await _http.PostAsJsonAsync("/api/auth/register", new
             {
-                model.Email, model.Password, model.FirstName, model.LastName, model.PhoneNumber
+                model.FirstName,
+                model.LastName,
+                model.Email,
+                model.Password,
+                model.ConfirmPassword
             });
 
             var result = await ReadApiResult<LoginResponseDto>(response);
@@ -113,8 +118,6 @@ public class AuthController : Controller
             SetGoogleClientId();
             return View(model);
         }
-
-        return RedirectToAction("VerifyEmail", new { email = model.Email });
 
     }
 
@@ -256,8 +259,62 @@ public class AuthController : Controller
             return View(model);
         }
 
-        TempData["Success"] = "Xác thực email thành công! Vui lòng đăng nhập.";
+        // Xoá session đang giữ token Pending để buộc đăng nhập lại với token mới (đã kích hoạt)
+        // Nếu không làm bước này, Login GET sẽ phát hiện cookie cũ và redirect thẳng "/" bỏ qua onboarding
+        HttpContext.Session.Clear();
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+        TempData["Success"] = "Xác thực email thành công! Vui lòng đăng nhập để tiếp tục.";
         return RedirectToAction("Login");
+    }
+
+    /// <summary>
+    /// Cho phép user chọn vai trò (Nanny hoặc Parent) khi lần đầu tiên đăng nhập
+    /// </summary>
+    [Authorize, HttpGet]
+    public IActionResult ChooseRole() => View();
+
+    [Authorize, HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChooseRole(string role)
+    {
+        if (string.IsNullOrEmpty(role) || (role != "Nanny" && role != "Parent"))
+        {
+            ModelState.AddModelError("", "Vui lòng chọn một vai trò hợp lệ.");
+            return View();
+        }
+
+        var token = HttpContext.Session.GetString("AccessToken");
+        if (string.IsNullOrEmpty(token))
+        {
+            TempData["Error"] = "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.";
+            return RedirectToAction("Login");
+        }
+
+        try
+        {
+            var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/set-role")
+            {
+                Headers = { Authorization = new AuthenticationHeaderValue("Bearer", token) },
+                Content = JsonContent.Create(new { role })
+            };
+            
+            var response = await _http.SendAsync(request);
+            var result = await ReadApiResult(response);
+
+            if (result == null || !result.Success)
+            {
+                ModelState.AddModelError("", result?.Message ?? "Lỗi khi cập nhật vai trò. Vui lòng thử lại.");
+                return View();
+            }
+
+            // Sau khi set role thành công, chuyển hướng tới Onboarding/Start
+            return RedirectToAction("Start", "Onboarding");
+        }
+        catch (Exception ex)
+        {
+            ModelState.AddModelError("", $"Có lỗi xảy ra: {ex.Message}");
+            return View();
+        }
     }
 
     [Authorize, HttpGet]

@@ -8,11 +8,9 @@ public class UpdateParentProfileRequest
 
 public class ParentOnboardingChildRequest
 {
-    public string? Name { get; set; }
-    public DateOnly DateOfBirth { get; set; }
-    public int? Gender { get; set; }
     public string? SpecialNeeds { get; set; }
-    public string? Allergies { get; set; }
     public string? Notes { get; set; }
+    public string Characteristic { get; internal set; }
+    public byte? ChildAgeGroup { get; internal set; }
 }
 

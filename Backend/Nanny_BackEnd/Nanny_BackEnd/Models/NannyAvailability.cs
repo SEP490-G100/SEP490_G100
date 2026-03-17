@@ -11,10 +11,6 @@ public partial class NannyAvailability
 
     public int DayOfWeek { get; set; }
 
-    public TimeOnly StartTime { get; set; }
-
-    public TimeOnly EndTime { get; set; }
-
     public bool IsAvailable { get; set; }
 
     public DateTime CreatedAt { get; set; }
@@ -26,6 +22,8 @@ public partial class NannyAvailability
     public Guid? UpdatedBy { get; set; }
 
     public bool IsDeleted { get; set; }
+
+    public int TimeSlot { get; set; }
 
     public virtual NannyProfile NannyProfile { get; set; } = null!;
 }

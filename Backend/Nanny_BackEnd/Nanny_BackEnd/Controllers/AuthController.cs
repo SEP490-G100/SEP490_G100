@@ -119,6 +119,19 @@ public class AuthController : ControllerBase
         catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
     }
 
+    [Authorize]
+    [HttpPost("set-role")]
+    public async Task<IActionResult> SetRole([FromBody] SetRoleRequest request)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            var result = await _auth.SetRoleAsync(userId, request.Role);
+            return Ok(new { success = true, message = "Cập nhật vai trò thành công.", data = result });
+        }
+        catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
+    }
+
     [HttpPost("logout")]
     public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
     {

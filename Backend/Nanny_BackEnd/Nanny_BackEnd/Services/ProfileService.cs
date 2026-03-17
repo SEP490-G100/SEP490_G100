@@ -9,12 +9,48 @@ public class ProfileService
     private readonly UserRepository _userRepo;
     private readonly ParentRepository _parentRepo;
     private readonly ChildRepository _childRepo;
+    private readonly IWebHostEnvironment _env;
 
-    public ProfileService(UserRepository userRepo, ParentRepository parentRepo, ChildRepository childRepo)
+    public ProfileService(UserRepository userRepo, ParentRepository parentRepo, ChildRepository childRepo, IWebHostEnvironment env)
     {
         _userRepo = userRepo;
         _parentRepo = parentRepo;
         _childRepo = childRepo;
+        _env = env;
+    }
+
+    public async Task<string> UploadAvatarAsync(Guid userId, IFormFile file)
+    {
+        var user = await _userRepo.FindByIdAsync(userId)
+            ?? throw new InvalidOperationException("Người dùng không tồn tại.");
+
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        var allowedExts = new[] { ".jpg", ".jpeg", ".png" };
+        if (!allowedExts.Contains(ext))
+            throw new InvalidOperationException("Chỉ chấp nhận file ảnh .jpg, .jpeg, hoặc .png.");
+
+        if (file.Length > 5 * 1024 * 1024)
+            throw new InvalidOperationException("File ảnh không được vượt quá 5MB.");
+
+        var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", "avatars");
+        Directory.CreateDirectory(uploadsFolder);
+
+        var fileName = $"{userId}{ext}";
+        var filePath = Path.Combine(uploadsFolder, fileName);
+
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        var avatarUrl = $"/uploads/avatars/{fileName}?t={DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
+        
+        user.AvatarUrl = avatarUrl;
+        user.UpdatedAt = DateTime.UtcNow;
+        user.UpdatedBy = userId;
+        await _userRepo.SaveChangesAsync();
+
+        return avatarUrl;
     }
 
     public async Task<PersonalProfileDto> GetPersonalProfileAsync(Guid userId)
@@ -104,12 +140,10 @@ public class ProfileService
         {
             Id = c.Id,
             ParentProfileId = c.ParentProfileId,
-            Name = c.Name,
-            DateOfBirth = c.DateOfBirth,
-            Gender = c.Gender,
             SpecialNeeds = c.SpecialNeeds,
-            Allergies = c.Allergies,
             Notes = c.Notes,
+            Characteristic = c.Characteristic,
+            ChildAgeGroup = (byte?)c.ChildAgeGroup,
             CreatedAt = c.CreatedAt
         }).ToList();
     }
@@ -132,12 +166,10 @@ public class ProfileService
         {
             Id = Guid.NewGuid(),
             ParentProfileId = parentProfile.Id,
-            Name = request.Name,
-            DateOfBirth = request.DateOfBirth,
-            Gender = request.Gender,
             SpecialNeeds = request.SpecialNeeds,
-            Allergies = request.Allergies,
             Notes = request.Notes,
+            Characteristic = request.Characteristic,
+            ChildAgeGroup = request.ChildAgeGroup,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = userId
         };
@@ -156,12 +188,10 @@ public class ProfileService
         var child = await _childRepo.FindByIdAndParentAsync(childId, parentProfile.Id)
             ?? throw new InvalidOperationException("Không tìm thấy con hoặc không có quyền.");
 
-        child.Name = request.Name;
-        child.DateOfBirth = request.DateOfBirth;
-        child.Gender = request.Gender;
         child.SpecialNeeds = request.SpecialNeeds;
-        child.Allergies = request.Allergies;
         child.Notes = request.Notes;
+        child.Characteristic = request.Characteristic;
+        child.ChildAgeGroup = request.ChildAgeGroup;
         child.UpdatedAt = DateTime.UtcNow;
         child.UpdatedBy = userId;
 
@@ -191,12 +221,10 @@ public class ProfileService
     {
         Id = c.Id,
         ParentProfileId = c.ParentProfileId,
-        Name = c.Name,
-        DateOfBirth = c.DateOfBirth,
-        Gender = c.Gender,
         SpecialNeeds = c.SpecialNeeds,
-        Allergies = c.Allergies,
         Notes = c.Notes,
+        Characteristic = c.Characteristic,
+        ChildAgeGroup = (byte?)c.ChildAgeGroup,
         CreatedAt = c.CreatedAt
     };
 }

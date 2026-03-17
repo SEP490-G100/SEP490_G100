@@ -39,5 +39,11 @@ public class UserRepository
         });
     }
 
+    public async Task RemoveAllRolesAsync(Guid userId)
+    {
+        var roles = await _db.UserRoles.Where(ur => ur.UserId == userId).ToListAsync();
+        _db.UserRoles.RemoveRange(roles);
+    }
+
     public async Task SaveChangesAsync() => await _db.SaveChangesAsync();
 }

@@ -35,11 +35,8 @@
                         <div class="flex items-start justify-between mb-6 pb-4 border-b border-gray-100 dark:border-gray-700/50">
                             <div>
                                 <h3 class="text-2xl font-bold text-gray-900 dark:text-white" style="font-family:'Quicksand',sans-serif">
-                                    @(string.IsNullOrEmpty(child.Name) ? "Con (không có tên)" : child.Name)
+                                    Hồ sơ con
                                 </h3>
-                                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                    Ngày sinh: @child.DateOfBirth.ToString("dd/MM/yyyy")
-                                </p>
                             </div>
                             <div class="flex gap-2">
                                 <a href="@Url.Action("EditChild", "Profile", new { childId = child.Id })"
@@ -60,18 +57,11 @@
 
                         <!-- Child Details Grid -->
                         <div class="grid grid-cols-2 gap-4">
-                            <!-- Gender -->
+                            <!-- Age Group -->
                             <div>
-                                <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">👥 Giới tính</p>
+                                <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">👶 Nhóm tuổi</p>
                                 <p class="font-medium text-gray-900 dark:text-white">
-                                    @if (child.Gender.HasValue)
-                                    {
-                                        @(child.Gender == 0 ? "Nam" : child.Gender == 1 ? "Nữ" : "Khác")
-                                    }
-                                    else
-                                    {
-                                        <span class="text-gray-400">--</span>
-                                    }
+                                    @Html.Raw(child.ChildAgeGroup.HasValue ? WebSite.Helpers.EnumDisplayHelper.GetDisplayName(child.ChildAgeGroup.Value) : "<span class=\"text-gray-400\">--</span>")
                                 </p>
                             </div>
 
@@ -82,13 +72,13 @@
                             </div>
                         </div>
 
-                        <!-- Allergies -->
-                        @if (!string.IsNullOrEmpty(child.Allergies))
+                        <!-- Characteristic -->
+                        @if (!string.IsNullOrEmpty(child.Characteristic))
                         {
                             <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700/50">
-                                <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">⚠️ Dị ứng</p>
+                                <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">✨ Đặc điểm tính cách</p>
                                 <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-900/30 rounded-xl p-3">
-                                    <p class="text-sm text-yellow-800 dark:text-yellow-300">@child.Allergies</p>
+                                    <p class="text-sm text-yellow-800 dark:text-yellow-300">@child.Characteristic</p>
                                 </div>
                             </div>
                         }

@@ -66,12 +66,13 @@ public class AuthService
 
         _userRepo.Add(user);
 
-        // Gán vai trò dựa trên lựa chọn khi đăng ký (Parent/Nanny)
-        var normalizedRole = string.IsNullOrWhiteSpace(request.Role)
-            ? AuthConstants.DefaultRole
-            : request.Role.Trim();
+        // Chỉ gán role nếu user chỉ định role khi đăng ký
+        // Nếu role = null/empty, user sẽ phải chọn role ở bước ChooseRole
+        if (!string.IsNullOrWhiteSpace(request.Role))
+        {
+            await _userRepo.AssignRoleAsync(user.Id, request.Role.Trim());
+        }
 
-        await _userRepo.AssignRoleAsync(user.Id, normalizedRole);
         await _userRepo.SaveChangesAsync();
 
         await TrySendOtpEmailAsync(user.Email, user.Id, OtpPurpose.VerifyEmail);
@@ -224,6 +225,24 @@ public class AuthService
 
         await _tokenRepo.RevokeAllForUserAsync(token.UserId);
         await _tokenRepo.SaveChangesAsync();
+    }
+
+    public async Task<LoginResponse> SetRoleAsync(Guid userId, string role)
+    {
+        var validRoles = new[] { "Parent", "Nanny" };
+        if (!validRoles.Contains(role, StringComparer.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Vai trò không hợp lệ. Chỉ chấp nhận Parent hoặc Nanny.");
+
+        var user = await _userRepo.FindByIdAsync(userId)
+            ?? throw new InvalidOperationException("Người dùng không tồn tại.");
+
+        // Xóa tất cả role cũ rồi gán role mới
+        await _userRepo.RemoveAllRolesAsync(userId);
+        await _userRepo.AssignRoleAsync(userId, role);
+        await _userRepo.SaveChangesAsync();
+
+        // Trả về token mới chứa role đã cập nhật
+        return await BuildLoginResponseAsync(user);
     }
 
     private async Task<LoginResponse> ReRegisterPendingUserAsync(User existing, RegisterRequest request)
