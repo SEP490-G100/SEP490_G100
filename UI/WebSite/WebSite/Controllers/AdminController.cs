@@ -23,14 +23,14 @@ public class AdminController : Controller
     // ── Dashboard ──────────────────────────────────────
     public async Task<IActionResult> Dashboard()
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, "/api/admin/dashboard");
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/Admin/dashboard");
         AttachToken(request);
         try
         {
             var response = await _http.SendAsync(request);
             var json     = await response.Content.ReadAsStringAsync();
-            var result   = JsonSerializer.Deserialize<ApiResult<AdminDashboardDto>>(json, JsonOpts);
-            return View(result?.Data ?? new AdminDashboardDto());
+            var result   = JsonSerializer.Deserialize<ApiResult<ApiDashboardStatsDto>>(json, JsonOpts);
+            return View(result?.Data?.ToViewModel() ?? new AdminDashboardDto());
         }
         catch
         {
@@ -114,7 +114,7 @@ public class AdminController : Controller
     // ── Edit Moderator GET ──────────────────────────────
     public async Task<IActionResult> EditModerator(Guid id)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/account/{id}");
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/admin/moderators/{id}");
         AttachToken(request);
         try
         {
