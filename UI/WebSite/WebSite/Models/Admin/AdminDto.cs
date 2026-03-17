@@ -17,6 +17,11 @@ public class AdminDashboardDto
     public int     TotalSubscriptions { get; set; }
     public int     ActiveSubs         { get; set; }
     public int     ExpiredSubs        { get; set; }
+
+    // Platform Health stats
+    public int     PendingVerifications { get; set; }
+    public int     ActiveJobPostings    { get; set; }
+    public int     TotalContracts       { get; set; }
 }
 
 public class RecentTransactionDto
@@ -41,6 +46,7 @@ public class ApiDashboardStatsDto
     public ApiUserStatsDto?         UserStats         { get; set; }
     public ApiRevenueStatsDto?      RevenueStats      { get; set; }
     public ApiSubscriptionStatsDto? SubscriptionStats { get; set; }
+    public ApiPlatformHealthStatsDto? PlatformHealth  { get; set; }
 
     /// <summary>Flatten into the view model.</summary>
     public AdminDashboardDto ToViewModel() => new()
@@ -54,6 +60,9 @@ public class ApiDashboardStatsDto
         TotalSubscriptions = SubscriptionStats?.TotalSubscriptions ?? 0,
         ActiveSubs         = SubscriptionStats?.ActiveSubs        ?? 0,
         ExpiredSubs        = SubscriptionStats?.ExpiredSubs        ?? 0,
+        PendingVerifications = PlatformHealth?.PendingVerifications ?? 0,
+        ActiveJobPostings  = PlatformHealth?.ActiveJobPostings  ?? 0,
+        TotalContracts     = PlatformHealth?.TotalContracts     ?? 0
     };
 }
 
@@ -76,6 +85,13 @@ public class ApiSubscriptionStatsDto
     public int TotalSubscriptions { get; set; }
     public int ActiveSubs         { get; set; }
     public int ExpiredSubs        { get; set; }
+}
+
+public class ApiPlatformHealthStatsDto
+{
+    public int PendingVerifications { get; set; }
+    public int ActiveJobPostings { get; set; }
+    public int TotalContracts { get; set; }
 }
 
 // ── Moderator management DTOs ─────────────────────────────────────────────

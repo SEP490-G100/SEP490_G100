@@ -1,4 +1,6 @@
+using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.DTOs.Dashboard;
+using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Repositories;
 
 namespace Nanny_BackEnd.Services;
@@ -8,15 +10,24 @@ public class DashboardService
     private readonly UserRepository _userRepo;
     private readonly TransactionRepository _transactionRepo;
     private readonly UserSubscriptionRepository _subscriptionRepo;
+    private readonly VerificationRequestRepository _verificationRepo;
+    private readonly JobRepository _jobRepo;
+    private readonly ContractRepository _contractRepo;
 
     public DashboardService(
         UserRepository userRepo,
         TransactionRepository transactionRepo,
-        UserSubscriptionRepository subscriptionRepo)
+        UserSubscriptionRepository subscriptionRepo,
+        VerificationRequestRepository verificationRepo,
+        JobRepository jobRepo,
+        ContractRepository contractRepo)
     {
         _userRepo         = userRepo;
         _transactionRepo  = transactionRepo;
         _subscriptionRepo = subscriptionRepo;
+        _verificationRepo = verificationRepo;
+        _jobRepo          = jobRepo;
+        _contractRepo     = contractRepo;
     }
 
     public async Task<DashboardStatsDto> GetDashboardStatsAsync()
@@ -30,11 +41,27 @@ public class DashboardService
         // Subscription stats — via UserSubscriptionRepository
         var subscriptionStats = await GetSubscriptionStatsAsync();
 
+        // Platform Health stats
+        var pendingVerifications = await _verificationRepo.GetQuery()
+                                           .CountAsync(v => !v.IsDeleted && v.Status == (int)VerificationStatus.Pending);
+        var activeJobs = await _jobRepo.GetQuery()
+                                           .CountAsync(j => !j.IsDeleted && j.Status == 1); // 1 = Open
+        var totalContracts = await _contractRepo.GetQuery()
+                                           .CountAsync(c => !c.IsDeleted);
+
+        var platformHealth = new PlatformHealthStatsDto 
+        {
+            PendingVerifications = pendingVerifications,
+            ActiveJobPostings = activeJobs,
+            TotalContracts = totalContracts
+        };
+
         return new DashboardStatsDto
         {
             UserStats         = userStats,
             RevenueStats      = revenueStats,
-            SubscriptionStats = subscriptionStats
+            SubscriptionStats = subscriptionStats,
+            PlatformHealth    = platformHealth
         };
     }
 

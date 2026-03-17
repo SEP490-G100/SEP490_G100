@@ -20,20 +20,26 @@ public class AdminController : Controller
         _http = httpFactory.CreateClient("BackendApi");
     }
 
-    // ── Dashboard ──────────────────────────────────────
     public async Task<IActionResult> Dashboard()
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, "/api/Admin/dashboard");
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/admin/dashboard");
         AttachToken(request);
         try
         {
             var response = await _http.SendAsync(request);
             var json     = await response.Content.ReadAsStringAsync();
-            var result   = JsonSerializer.Deserialize<ApiResult<ApiDashboardStatsDto>>(json, JsonOpts);
+            if (!response.IsSuccessStatusCode)
+            {
+                TempData["Error"] = $"Lỗi API lấy dữ liệu Dashboard ({(int)response.StatusCode}). Vui lòng kiểm tra lại quyền truy cập.";
+                return View(new AdminDashboardDto());
+            }
+
+            var result = JsonSerializer.Deserialize<ApiResult<ApiDashboardStatsDto>>(json, JsonOpts);
             return View(result?.Data?.ToViewModel() ?? new AdminDashboardDto());
         }
-        catch
+        catch (Exception ex)
         {
+            TempData["Error"] = $"Lỗi kết nối Dashboard: {ex.Message}";
             return View(new AdminDashboardDto());
         }
     }
@@ -44,7 +50,7 @@ public class AdminController : Controller
         ViewBag.Search = search;
         ViewBag.Status = status?.ToString() ?? "";
 
-        var qs = new List<string> { $"page={page}", "pageSize=10" };
+        var qs = new List<string> { $"page={page}", "pageSize=3" };
         if (!string.IsNullOrWhiteSpace(search)) qs.Add($"search={Uri.EscapeDataString(search)}");
         if (status.HasValue) qs.Add($"status={status.Value}");
 
@@ -190,6 +196,36 @@ public class AdminController : Controller
         }
         catch (Exception ex) { TempData["Error"] = $"Lỗi: {ex.Message}"; }
         return RedirectToAction(nameof(ManageModerators));
+    }
+
+    // ── Export System Data ─────────────────────────────
+    [HttpGet]
+    public async Task<IActionResult> ExportData()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/admin/export");
+        AttachToken(request);
+        try
+        {
+            var response = await _http.SendAsync(request);
+            if (!response.IsSuccessStatusCode)
+            {
+                TempData["Error"] = $"Lỗi khi xuất dữ liệu: HTTP {(int)response.StatusCode}";
+                return RedirectToAction("Dashboard");
+            }
+
+            var stream = await response.Content.ReadAsStreamAsync();
+            var contentType = response.Content.Headers.ContentType?.ToString() ?? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            var fileName = response.Content.Headers.ContentDisposition?.FileNameStar 
+                ?? response.Content.Headers.ContentDisposition?.FileName?.Replace("\"", "") 
+                ?? $"NannyMatch_SystemData_{DateTime.Now:yyyyMMdd}.xlsx";
+
+            return File(stream, contentType, fileName);
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = $"Lỗi kết nối khi xuất Excel: {ex.Message}";
+            return RedirectToAction("Dashboard");
+        }
     }
 
     // ── Helper ─────────────────────────────────────────

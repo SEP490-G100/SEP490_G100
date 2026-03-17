@@ -8,7 +8,7 @@ using WebSite.Models.Account;
 
 namespace WebSite.Controllers;
 
-[Authorize(Roles = "Moderator,Admin")]
+//[Authorize(Roles = "Moderator")]
 public class ModeratorController : Controller
 {
     private readonly HttpClient _http;
@@ -180,7 +180,7 @@ public class ModeratorController : Controller
         ViewBag.Search = search;
         ViewBag.Status = status;
 
-        var qs = new List<string> { $"page={page}", "pageSize=10" };
+        var qs = new List<string> { $"page={page}", "pageSize=3" };
         if (status.HasValue) qs.Add($"status={status.Value}");
         if (!string.IsNullOrWhiteSpace(search)) qs.Add($"search={Uri.EscapeDataString(search)}");
 
@@ -261,7 +261,7 @@ public class ModeratorController : Controller
             var result   = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
 
             if (result?.Success == true)
-                TempData["Success"] = action == 1 ? "Đã duyệt hồ sơ thành công." : "Đã từ chối hồ sơ.";
+                TempData["Success"] = action == 2 ? "Đã duyệt hồ sơ thành công." : "Đã từ chối hồ sơ.";
             else
                 TempData["Error"] = result?.Message ?? "Xử lý thất bại.";
         }
@@ -287,7 +287,7 @@ public class ModeratorController : Controller
         int?    status = null,
         string? search = null,
         int     page   = 1,
-        int     pageSize = 10)
+        int     pageSize = 3)
     {
         var token = HttpContext.Session.GetString("AccessToken");
 

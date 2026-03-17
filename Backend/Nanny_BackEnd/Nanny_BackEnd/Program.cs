@@ -92,6 +92,7 @@ builder.Services.AddScoped<VerificationRequestRepository>();
 builder.Services.AddScoped<TransactionRepository>();
 builder.Services.AddScoped<UserSubscriptionRepository>();
 builder.Services.AddScoped<SubscriptionRepository>();
+builder.Services.AddScoped<ContractRepository>();
 
 // DI — Services
 builder.Services.AddScoped<JwtService>();
@@ -111,6 +112,7 @@ builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<VerificationRequestService>();
 builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<SubscriptionService>();
+builder.Services.AddScoped<ExportService>();
 
 // Background Services
 builder.Services.AddHostedService<OtpCleanupService>();

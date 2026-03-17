@@ -145,11 +145,11 @@ public class UserService
         if (request.Status != 0 && request.Status != 1)
             return (false, 400, "Status không hợp lệ. Chỉ chấp nhận 0 (Active) hoặc 1 (Inactive).", null);
 
-        var user = await _userRepo.findById(id);
+        var user = await _userRepo.FindByIdAsync(id);
         if (user == null)
             return (false, 404, "Không tìm thấy tài khoản.", null);
 
-        user.Status    = request.Status;
+        user.Status = request.Status;
         user.UpdatedAt = DateTime.UtcNow;
 
         await _userRepo.saveChanges();

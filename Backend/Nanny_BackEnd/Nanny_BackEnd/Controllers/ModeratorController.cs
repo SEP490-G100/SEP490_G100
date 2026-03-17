@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nanny_BackEnd.DTOs.Account;
 using Nanny_BackEnd.DTOs.Verification;
@@ -7,7 +8,7 @@ namespace Nanny_BackEnd.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-//[Authorize(Roles = "Moderator,Admin")]
+//[Authorize(Roles = "Moderator")]
 public class ModeratorController : ControllerBase
 {
     private readonly UserService _userService;
@@ -76,7 +77,7 @@ public class ModeratorController : ControllerBase
     // NANNY VERIFICATION
     // ─────────────────────────────────────────────────────
 
-    /// GET /api/Moderator/verifications?status=0&search=lan&page=1&pageSize=10
+    /// GET /api/Moderator/verifications?status=0&search=lan&page=1&pageSize=3
     [HttpGet("verifications")]
     public async Task<IActionResult> GetVerifications(
         [FromQuery] int? status = null,

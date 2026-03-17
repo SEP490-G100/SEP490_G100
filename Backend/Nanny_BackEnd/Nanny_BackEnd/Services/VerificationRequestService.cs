@@ -74,8 +74,8 @@ public class VerificationRequestService
 
             Bio                = v.NannyProfile.Bio,
             YearsOfExperience  = v.NannyProfile.YearsOfExperience,
-            EducationLevel     = v.NannyProfile.EducationLevel,
-            VerificationStatus = v.NannyProfile.VerificationStatus,
+            EducationLevel     = (int?) v.NannyProfile.EducationLevel,
+            VerificationStatus = (int) v.NannyProfile.VerificationStatus,
 
             Documents = v.VerificationDocuments.Select(d => new VerificationDocumentDto
             {
@@ -92,11 +92,11 @@ public class VerificationRequestService
 
     public async Task<(bool Success, int StatusCode, string Message)> ReviewAsync(Guid id, ReviewVerificationRequest request)
     {
-        // Action: 1 = Approved, 2 = Rejected
-        if (request.Action != 1 && request.Action != 2)
-            return (false, 400, "Action không hợp lệ. Chỉ chấp nhận 1 (Approve) hoặc 2 (Reject).");
+        // Action: 2 = Approved, 3 = Rejected
+        if (request.Action != (int)Enums.VerificationStatus.Approved && request.Action != (int)Enums.VerificationStatus.Rejected)
+            return (false, 400, "Action không hợp lệ. Chỉ chấp nhận 2 (Approve) hoặc 3 (Reject).");
 
-        if (request.Action == 2 && string.IsNullOrWhiteSpace(request.RejectionReason))
+        if (request.Action == (int)Enums.VerificationStatus.Rejected && string.IsNullOrWhiteSpace(request.RejectionReason))
             return (false, 400, "Lý do từ chối (RejectionReason) là bắt buộc khi từ chối yêu cầu.");
 
         var v = await _repo.GetByIdAsync(id);
@@ -104,29 +104,29 @@ public class VerificationRequestService
         if (v == null)
             return (false, 404, "Không tìm thấy yêu cầu xác minh.");
 
-        if (v.Status != 0)
+        if (v.Status != (int)Enums.VerificationStatus.Pending)
             return (false, 409, "Yêu cầu này đã được xử lý trước đó.");
 
         // Update VerificationRequest
-        v.Status          = request.Action;     // 1 = Approved, 2 = Rejected
+        v.Status          = request.Action;     // 2 = Approved, 3 = Rejected
         v.ReviewedBy      = request.ReviewedBy;
         v.ReviewedAt      = DateTime.UtcNow;
-        v.RejectionReason = request.Action == 2 ? request.RejectionReason?.Trim() : null;
+        v.RejectionReason = request.Action == (int)Enums.VerificationStatus.Rejected ? request.RejectionReason?.Trim() : null;
         v.UpdatedAt       = DateTime.UtcNow;
 
         // Sync NannyProfile.VerificationStatus accordingly
         var nannyProfile = await _repo.GetNannyProfileAsync(v.NannyProfileId);
         if (nannyProfile != null)
         {
-            nannyProfile.VerificationStatus = request.Action; // 1=Approved, 2=Rejected
-            nannyProfile.VerifiedAt = request.Action == 1 ? DateTime.UtcNow : null;
-            nannyProfile.VerifiedBy = request.Action == 1 ? request.ReviewedBy : null;
+            nannyProfile.VerificationStatus = (Enums.VerificationStatus) request.Action; // 1=Approved, 2=Rejected
+            nannyProfile.VerifiedAt = request.Action == (int)Enums.VerificationStatus.Approved ? DateTime.UtcNow : null;
+            nannyProfile.VerifiedBy = request.Action == (int)Enums.VerificationStatus.Approved ? request.ReviewedBy : null;
             nannyProfile.UpdatedAt  = DateTime.UtcNow;
         }
 
         await _repo.SaveChangesAsync();
 
-        var message = request.Action == 1 ? "Đã duyệt yêu cầu xác minh." : "Đã từ chối yêu cầu xác minh.";
+        var message = request.Action == (int)Enums.VerificationStatus.Approved ? "Đã duyệt yêu cầu xác minh." : "Đã từ chối yêu cầu xác minh.";
         return (true, 200, message);
     }
 }

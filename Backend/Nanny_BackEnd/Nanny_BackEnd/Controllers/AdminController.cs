@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nanny_BackEnd.DTOs.Account;
 using Nanny_BackEnd.Services;
@@ -11,11 +12,23 @@ public class AdminController : ControllerBase
 {
     private readonly DashboardService _dashboardService;
     private readonly UserService _userService;
+    private readonly ExportService _exportService;
 
-    public AdminController(DashboardService dashboardService, UserService userService)
+    public AdminController(DashboardService dashboardService, UserService userService, ExportService exportService)
     {
         _dashboardService = dashboardService;
         _userService      = userService;
+        _exportService    = exportService;
+    }
+
+    // ────────────────────────────────────────────────
+    // GET /api/admin/export
+    // ────────────────────────────────────────────────
+    [HttpGet("export")]
+    public async Task<IActionResult> ExportSystemData()
+    {
+        var fileContents = await _exportService.ExportSystemDataToExcelAsync();
+        return File(fileContents, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"NannyMatch_SystemData_{DateTime.Now:yyyyMMdd}.xlsx");
     }
 
     // ────────────────────────────────────────────────
@@ -36,7 +49,7 @@ public class AdminController : ControllerBase
         [FromQuery] string? search   = null,
         [FromQuery] int?    status   = null,
         [FromQuery] int     page     = 1,
-        [FromQuery] int     pageSize = 10)
+        [FromQuery] int     pageSize = 3)
     {
         var response = await _userService.GetModeratorsAsync(search, status, page, pageSize);
         return Ok(new { success = true, data = response });

@@ -13,7 +13,7 @@ public class VerificationRequestListDto
 {
     public Guid     Id              { get; set; }
     public Guid     NannyProfileId  { get; set; }
-    public int      Status          { get; set; }   // 0=Pending, 1=Approved, 2=Rejected
+    public int      Status          { get; set; }   // 1=Pending, 2=Approved, 3=Rejected
     public DateTime CreatedAt       { get; set; }
     public DateTime? ReviewedAt     { get; set; }
 
@@ -25,8 +25,8 @@ public class VerificationRequestListDto
     public string? NannyCity      { get; set; }
 
     public string FullName    => $"{NannyFirstName} {NannyLastName}".Trim();
-    public string StatusLabel => Status switch { 1 => "Approved", 2 => "Rejected", _ => "Pending" };
-    public string StatusClass => Status switch { 1 => "badge-active", 2 => "badge-inactive", _ => "badge-pending" };
+    public string StatusLabel => Status switch { 2 => "Approved", 3 => "Rejected", _ => "Pending" };
+    public string StatusClass => Status switch { 2 => "badge-active", 3 => "badge-inactive", _ => "badge-pending" };
 }
 
 public class VerificationRequestDetailDto
@@ -54,8 +54,8 @@ public class VerificationRequestDetailDto
     public List<VerificationDocumentDto> Documents { get; set; } = new();
 
     public string FullName    => $"{NannyFirstName} {NannyLastName}".Trim();
-    public string StatusLabel => Status switch { 1 => "Approved", 2 => "Rejected", _ => "Pending" };
-    public string StatusClass => Status switch { 1 => "badge-active", 2 => "badge-inactive", _ => "badge-pending" };
+    public string StatusLabel => Status switch { 2 => "Approved", 3 => "Rejected", _ => "Pending" };
+    public string StatusClass => Status switch { 2 => "badge-active", 3 => "badge-inactive", _ => "badge-pending" };
     public string EducationLabel => EducationLevel switch
     {
         0 => "No formal education",
@@ -102,6 +102,6 @@ public class VerificationDocumentDto
 
 public class ReviewVerificationRequest
 {
-    public int     Action          { get; set; }   // 1=Approve, 2=Reject
+    public int     Action          { get; set; }   // 2=Approve, 3=Reject
     public string? RejectionReason { get; set; }
 }

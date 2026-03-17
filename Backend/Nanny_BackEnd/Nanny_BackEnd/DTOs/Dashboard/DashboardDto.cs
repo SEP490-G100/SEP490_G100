@@ -5,6 +5,16 @@ public class DashboardStatsDto
     public UserStatsDto UserStats { get; set; } = null!;
     public RevenueStatsDto RevenueStats { get; set; } = null!;
     public SubscriptionStatsDto SubscriptionStats { get; set; } = null!;
+    public PlatformHealthStatsDto PlatformHealth { get; set; } = null!;
+}
+
+// ── Platform Health Stats ───────────────────────────────────────────────────
+
+public class PlatformHealthStatsDto
+{
+    public int PendingVerifications { get; set; }
+    public int ActiveJobPostings { get; set; }
+    public int TotalContracts { get; set; }
 }
 
 // ── User Stats ──────────────────────────────────────────────────────────────
