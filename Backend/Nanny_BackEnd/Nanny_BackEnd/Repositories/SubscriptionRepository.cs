@@ -40,6 +40,9 @@ public class SubscriptionRepository
             .OrderByDescending(s => s.EndDate)
             .FirstOrDefaultAsync();
 
+    public async Task<bool> hasAnySubscriptionLinkedToTransaction(Guid transactionId) =>
+        await _db.UserSubscriptions.AnyAsync(s => s.PaymentTransactionId == transactionId && !s.IsDeleted);
+
     public async Task<UserSubscription?> findCurrentSubscriptionByParentProfile(Guid parentProfileId, DateTime nowUtc) =>
         await _db.UserSubscriptions
             .Where(s => !s.IsDeleted && s.Status == 1 && s.EndDate >= nowUtc)
@@ -117,6 +120,25 @@ public class SubscriptionRepository
             .Where(n => n.UserId == userId && !n.IsDeleted && !n.IsRead)
             .OrderByDescending(n => n.CreatedAt)
             .ToListAsync();
+
+    public async Task<List<User>> getUsersByIds(IEnumerable<Guid> userIds)
+    {
+        var ids = userIds.Distinct().ToList();
+        if (ids.Count == 0)
+            return [];
+
+        return await _db.Users
+            .Where(u => ids.Contains(u.Id) && !u.IsDeleted)
+            .ToListAsync();
+    }
+
+    public async Task<Transaction?> findTransactionById(Guid transactionId, Guid userId) =>
+        await _db.Transactions
+            .FirstOrDefaultAsync(t => t.Id == transactionId && t.UserId == userId && !t.IsDeleted);
+
+    public async Task<Transaction?> findTransactionByGatewayCode(string gatewayCode) =>
+        await _db.Transactions
+            .FirstOrDefaultAsync(t => t.PaymentGatewayTransactionId == gatewayCode && !t.IsDeleted);
 
     public void addTransaction(Transaction transaction) => _db.Transactions.Add(transaction);
 

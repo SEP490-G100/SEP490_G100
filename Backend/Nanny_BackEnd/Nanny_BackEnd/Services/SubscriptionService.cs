@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Nanny_BackEnd.DTOs.Subscription;
+using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
 
@@ -120,10 +121,17 @@ public class SubscriptionService
     ];
 
     private readonly SubscriptionRepository _subscriptionRepo;
+    private readonly NotificationService _notificationService;
+    private readonly VietQrService _vietQrService;
 
-    public SubscriptionService(SubscriptionRepository subscriptionRepo)
+    public SubscriptionService(
+        SubscriptionRepository subscriptionRepo,
+        NotificationService notificationService,
+        VietQrService vietQrService)
     {
         _subscriptionRepo = subscriptionRepo;
+        _notificationService = notificationService;
+        _vietQrService = vietQrService;
     }
 
     public async Task<List<SubscriptionPlanResponse>> getPlans()
@@ -131,6 +139,9 @@ public class SubscriptionService
         var plans = await ensureManagedPlans();
         return plans.Select(mapPlan).ToList();
     }
+
+    public bool isVietQrWebhookAuthorized(string? webhookToken) =>
+        _vietQrService.isWebhookAuthorized(webhookToken);
 
     public async Task<SubscriptionPlanResponse?> getPlanByCode(string code)
     {
@@ -208,6 +219,170 @@ public class SubscriptionService
         subscription.SubscriptionPlan = plan;
         subscription.PaymentTransaction = transaction;
         return mapSubscription(subscription);
+    }
+
+    public async Task<SubscriptionPaymentSessionResponse> createPayment(Guid userId, CreateSubscriptionPaymentRequest request)
+    {
+        await expireOldSubscriptions(userId);
+        await ensureManagedPlans();
+
+        var plan = await _subscriptionRepo.findPlanById(request.SubscriptionPlanId)
+            ?? throw new KeyNotFoundException("Khong tim thay goi subscription hoac goi da ngung hoat dong.");
+
+        var definition = getManagedPlanDefinition(plan.Name)
+            ?? throw new InvalidOperationException("He thong chi ho tro cac goi subscription duoc quan ly san.");
+
+        await validatePlanOwnership(userId, definition);
+
+        var currentSubscription = await _subscriptionRepo.findCurrentSubscription(userId, DateTime.UtcNow);
+        if (currentSubscription != null)
+            throw new InvalidOperationException("Ban dang co goi subscription con hieu luc. Vui long huy hoac cho goi hien tai het han.");
+
+        var user = (await _subscriptionRepo.getUsersByIds([userId])).FirstOrDefault()
+            ?? throw new KeyNotFoundException("Khong tim thay nguoi dung hien tai.");
+
+        var nowUtc = DateTime.UtcNow;
+        var orderCode = generateOrderCode();
+        var paymentContent = buildPaymentContent(definition.Code, orderCode);
+        var transaction = new Transaction
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            Amount = plan.Price,
+            PaymentGatewayTransactionId = orderCode.ToString(),
+            Status = 1,
+            Description = paymentContent,
+            Type = 1,
+            CreatedAt = nowUtc,
+            CreatedBy = userId
+        };
+
+        _subscriptionRepo.addTransaction(transaction);
+        await _subscriptionRepo.saveChanges();
+
+        try
+        {
+            var payment = await _vietQrService.createPayment(
+                orderCode,
+                plan.Price,
+                paymentContent,
+                getDisplayName(user),
+                user.Email,
+                _vietQrService.buildSuccessUrl(transaction.Id),
+                _vietQrService.buildCancelUrl(transaction.Id));
+
+            return new SubscriptionPaymentSessionResponse
+            {
+                TransactionId = transaction.Id,
+                PlanName = plan.Name,
+                Amount = plan.Price,
+                OrderCode = orderCode,
+                PaymentContent = paymentContent,
+                CheckoutUrl = payment.Data!.CheckoutUrl,
+                ProviderPaymentId = payment.Data.Id,
+                Status = payment.Data.Status
+            };
+        }
+        catch
+        {
+            transaction.Status = 3;
+            transaction.UpdatedAt = DateTime.UtcNow;
+            transaction.UpdatedBy = userId;
+            await _subscriptionRepo.saveChanges();
+            throw;
+        }
+    }
+
+    public async Task<SubscriptionPaymentStatusResponse> getPaymentStatus(Guid userId, Guid transactionId)
+    {
+        var transaction = await _subscriptionRepo.findTransactionById(transactionId, userId)
+            ?? throw new KeyNotFoundException("Khong tim thay giao dich thanh toan.");
+
+        var planCode = tryExtractPlanCode(transaction.Description);
+        var planName = planCode == null
+            ? "Subscription"
+            : (await getPlanByCode(planCode))?.Name ?? "Subscription";
+
+        return new SubscriptionPaymentStatusResponse
+        {
+            TransactionId = transaction.Id,
+            TransactionStatus = transaction.Status,
+            TransactionStatusLabel = getTransactionStatusLabel(transaction.Status),
+            PlanName = planName,
+            SubscriptionActivated = await _subscriptionRepo.hasAnySubscriptionLinkedToTransaction(transaction.Id)
+        };
+    }
+
+    public async Task<int> handleVietQrWebhook(VietQrWebhookRequest request)
+    {
+        if (request.Data.Count == 0)
+            return 0;
+
+        var processed = 0;
+
+        foreach (var item in request.Data)
+        {
+            if (item.OrderCode <= 0)
+                continue;
+
+            var transaction = await _subscriptionRepo.findTransactionByGatewayCode(item.OrderCode.ToString());
+            if (transaction == null)
+                continue;
+
+            if (!string.IsNullOrWhiteSpace(item.Code) &&
+                !string.Equals(item.Code, "00", StringComparison.OrdinalIgnoreCase))
+            {
+                transaction.Status = 3;
+                transaction.UpdatedAt = DateTime.UtcNow;
+                continue;
+            }
+
+            if (transaction.Status == 2 || await _subscriptionRepo.hasAnySubscriptionLinkedToTransaction(transaction.Id))
+                continue;
+
+            var planCode = tryExtractPlanCode(transaction.Description)
+                ?? throw new InvalidOperationException("Khong xac dinh duoc goi tu giao dich VietQR.");
+
+            var planDto = await getPlanByCode(planCode)
+                ?? throw new KeyNotFoundException("Khong tim thay goi subscription can kich hoat.");
+
+            var plan = await _subscriptionRepo.findPlanById(planDto.Id)
+                ?? throw new KeyNotFoundException("Khong tim thay goi subscription dang hoat dong.");
+
+            var nowUtc = DateTime.UtcNow;
+            transaction.Status = 2;
+            transaction.CompletedAt = nowUtc;
+            transaction.UpdatedAt = nowUtc;
+
+            var subscription = new UserSubscription
+            {
+                Id = Guid.NewGuid(),
+                UserId = transaction.UserId,
+                SubscriptionPlanId = plan.Id,
+                StartDate = nowUtc,
+                EndDate = nowUtc.AddDays(plan.DurationDays),
+                Status = 1,
+                PaymentTransactionId = transaction.Id,
+                CreatedAt = nowUtc,
+                CreatedBy = transaction.UserId
+            };
+
+            _subscriptionRepo.addUserSubscription(subscription);
+
+            await _notificationService.createNotification(
+                transaction.UserId,
+                $"Dang ky goi {plan.Name} thanh cong",
+                $"Ban da thanh toan thanh cong goi {plan.Name}. Goi cua ban co hieu luc den {subscription.EndDate:dd/MM/yyyy}.",
+                NotificationTypes.SubscriptionPurchased,
+                subscription.Id,
+                "UserSubscription",
+                null);
+
+            processed++;
+        }
+
+        await _subscriptionRepo.saveChanges();
+        return processed;
     }
 
     public async Task<SubscriptionBenefitResponse> getBenefitsForParentProfile(Guid parentProfileId)
@@ -437,6 +612,31 @@ public class SubscriptionService
         1 => "Thanh toan subscription",
         _ => "Khac"
     };
+
+    private static int generateOrderCode()
+    {
+        var baseValue = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() % 900000000;
+        return (int)(baseValue + 100000000);
+    }
+
+    private static string buildPaymentContent(string planCode, int orderCode) => $"NM {planCode} {orderCode}";
+
+    private static string? tryExtractPlanCode(string? description)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+            return null;
+
+        var parts = description.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return parts.Length >= 3 && string.Equals(parts[0], "NM", StringComparison.OrdinalIgnoreCase)
+            ? parts[1]
+            : null;
+    }
+
+    private static string getDisplayName(User user)
+    {
+        var fullName = $"{user.FirstName} {user.LastName}".Trim();
+        return string.IsNullOrWhiteSpace(fullName) ? user.Email : fullName;
+    }
 
     private static ManagedPlanDefinition? getManagedPlanDefinition(string? planName) =>
         ManagedPlans.FirstOrDefault(p => string.Equals(p.Name, planName, StringComparison.OrdinalIgnoreCase));

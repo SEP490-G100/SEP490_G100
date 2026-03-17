@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Nanny_BackEnd.Data;
 using Nanny_BackEnd.DTOs.JobPosting;
 using Nanny_BackEnd.DTOs.Search;
@@ -208,6 +209,8 @@ public class SubscriptionJobTests
         Assert.Equal(0, createdSecondRun);
         Assert.Single(notifications);
         Assert.Contains("7 ngay", notifications[0].Title);
+        Assert.Equal(1, notifications[0].Type);
+        Assert.Null(notifications[0].CreatedBy);
 
         subscription.EndDate = DateTime.UtcNow.Date.AddDays(3);
         await fixture.Db.SaveChangesAsync();
@@ -260,8 +263,18 @@ public class SubscriptionJobTests
             var favoriteRepo = new FavoriteRepository(db);
             var jobRepo = new JobRepository(db);
             var subscriptionRepo = new SubscriptionRepository(db);
-            var subscriptionService = new SubscriptionService(subscriptionRepo);
             var notificationService = new NotificationService(subscriptionRepo);
+            var vietQrService = new VietQrService(
+                new FakeHttpClientFactory(),
+                Options.Create(new VietQrOptions
+                {
+                    BaseUrl = "https://api.vietqr.io/v2/",
+                    ClientId = "test-client",
+                    ApiKey = "test-key",
+                    SuccessUrl = "https://example.test/success",
+                    CancelUrl = "https://example.test/cancel"
+                }));
+            var subscriptionService = new SubscriptionService(subscriptionRepo, notificationService, vietQrService);
             var geo = new GeocodingService(new FakeHttpClientFactory());
             var jobService = new JobService(jobRepo, favoriteRepo, geo, subscriptionService);
 

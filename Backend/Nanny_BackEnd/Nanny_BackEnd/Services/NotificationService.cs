@@ -1,4 +1,5 @@
 using Nanny_BackEnd.DTOs.Notification;
+using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
 
@@ -6,8 +7,6 @@ namespace Nanny_BackEnd.Services;
 
 public class NotificationService
 {
-    private const int SubscriptionReminderType = 1;
-
     private readonly SubscriptionRepository _subscriptionRepo;
 
     public NotificationService(SubscriptionRepository subscriptionRepo)
@@ -23,12 +22,15 @@ public class NotificationService
         var notifications = await _subscriptionRepo.getNotifications(userId, page, pageSize);
         var total = await _subscriptionRepo.countNotifications(userId);
         var unreadCount = await _subscriptionRepo.countUnreadNotifications(userId);
+        var senderUsers = await _subscriptionRepo.getUsersByIds(
+            notifications.Where(n => n.CreatedBy.HasValue).Select(n => n.CreatedBy!.Value));
+        var senderMap = senderUsers.ToDictionary(u => u.Id, getDisplayName);
 
         return new NotificationListResponse
         {
             Total = total,
             UnreadCount = unreadCount,
-            Items = notifications.Select(NotificationResponse.fromEntity).ToList()
+            Items = notifications.Select(n => mapNotification(n, senderMap)).ToList()
         };
     }
 
@@ -49,7 +51,14 @@ public class NotificationService
             await _subscriptionRepo.saveChanges();
         }
 
-        return NotificationResponse.fromEntity(notification);
+        var senderMap = new Dictionary<Guid, string>();
+        if (notification.CreatedBy.HasValue)
+        {
+            var senders = await _subscriptionRepo.getUsersByIds([notification.CreatedBy.Value]);
+            senderMap = senders.ToDictionary(u => u.Id, getDisplayName);
+        }
+
+        return mapNotification(notification, senderMap);
     }
 
     public async Task<int> markAllAsRead(Guid userId)
@@ -77,6 +86,33 @@ public class NotificationService
         createdCount += await createSubscriptionExpiryReminders(7);
         createdCount += await createSubscriptionExpiryReminders(3);
         return createdCount;
+    }
+
+    public async Task createNotification(
+        Guid userId,
+        string title,
+        string content,
+        int type,
+        Guid? relatedEntityId = null,
+        string? relatedEntityType = null,
+        Guid? createdBy = null)
+    {
+        _subscriptionRepo.addNotification(new Notification
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            Title = title,
+            Content = content,
+            Type = type,
+            IsRead = false,
+            RelatedEntityId = relatedEntityId,
+            RelatedEntityType = relatedEntityType,
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = createdBy,
+            IsDeleted = false
+        });
+
+        await _subscriptionRepo.saveChanges();
     }
 
     private async Task<int> createSubscriptionExpiryReminders(int daysBeforeExpiry)
@@ -107,12 +143,12 @@ public class NotificationService
                 UserId = subscription.UserId,
                 Title = title,
                 Content = content,
-                Type = SubscriptionReminderType,
+                Type = NotificationTypes.SubscriptionReminder,
                 IsRead = false,
                 RelatedEntityId = subscription.Id,
                 RelatedEntityType = "UserSubscription",
                 CreatedAt = DateTime.UtcNow,
-                CreatedBy = subscription.UserId,
+                CreatedBy = null,
                 IsDeleted = false
             });
 
@@ -123,5 +159,53 @@ public class NotificationService
             await _subscriptionRepo.saveChanges();
 
         return createdCount;
+    }
+
+    private static NotificationResponse mapNotification(Notification notification, IReadOnlyDictionary<Guid, string> senderMap) => new()
+    {
+        Id = notification.Id,
+        Title = notification.Title,
+        Content = notification.Content,
+        Type = notification.Type,
+        TypeLabel = NotificationTypes.getLabel(notification.Type),
+        IsRead = notification.IsRead,
+        CreatedBy = notification.CreatedBy,
+        SenderLabel = getSenderLabel(notification, senderMap),
+        RelatedEntityId = notification.RelatedEntityId,
+        RelatedEntityType = notification.RelatedEntityType,
+        ActionUrl = getActionUrl(notification),
+        CreatedAt = notification.CreatedAt,
+        ReadAt = notification.ReadAt
+    };
+
+    private static string getSenderLabel(Notification notification, IReadOnlyDictionary<Guid, string> senderMap)
+    {
+        if (!notification.CreatedBy.HasValue)
+            return notification.Type == NotificationTypes.AdminBroadcast ? "Admin he thong" : "He thong";
+
+        return senderMap.TryGetValue(notification.CreatedBy.Value, out var senderName)
+            ? senderName
+            : "Nguoi dung";
+    }
+
+    private static string getDisplayName(User user)
+    {
+        var fullName = $"{user.FirstName} {user.LastName}".Trim();
+        return string.IsNullOrWhiteSpace(fullName) ? user.Email : fullName;
+    }
+
+    private static string? getActionUrl(Notification notification)
+    {
+        return notification.Type switch
+        {
+            NotificationTypes.SubscriptionReminder => "/Subscription",
+            NotificationTypes.JobApplicationReceived when notification.RelatedEntityId.HasValue =>
+                $"/Search?jobId={notification.RelatedEntityId.Value}",
+            NotificationTypes.JobApplicationApproved when notification.RelatedEntityId.HasValue =>
+                $"/Search?applicationId={notification.RelatedEntityId.Value}",
+            NotificationTypes.JobApplicationRejected when notification.RelatedEntityId.HasValue =>
+                $"/Search?applicationId={notification.RelatedEntityId.Value}",
+            _ => null
+        };
     }
 }

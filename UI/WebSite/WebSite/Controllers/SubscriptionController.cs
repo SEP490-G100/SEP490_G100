@@ -40,21 +40,25 @@ public class SubscriptionController : Controller
 
         setAuthHeader(token);
 
-        var response = await _http.PostAsJsonAsync("/api/subscriptions/subscribe", new
+        var response = await _http.PostAsJsonAsync("/api/subscriptions/create-payment", new
         {
-            subscriptionPlanId,
-            paymentGatewayTransactionId = $"ui-{Guid.NewGuid():N}"
+            subscriptionPlanId
         });
 
-        var result = await readApiResult<UserSubscriptionViewModel>(response);
+        var result = await readApiResult<SubscriptionPaymentSessionViewModel>(response);
         if (result == null || !result.Success)
         {
             TempData["SubscriptionError"] = result?.Message ?? "Khong the mua goi luc nay.";
             return RedirectToAction(nameof(Index));
         }
 
-        TempData["SubscriptionSuccess"] = $"Mua goi {result.Data?.Plan?.Name ?? "subscription"} thanh cong.";
-        return RedirectToAction(nameof(Index));
+        if (string.IsNullOrWhiteSpace(result.Data?.CheckoutUrl))
+        {
+            TempData["SubscriptionError"] = "Khong tao duoc lien ket thanh toan.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        return Redirect(result.Data.CheckoutUrl);
     }
 
     [HttpPost]
@@ -77,6 +81,48 @@ public class SubscriptionController : Controller
 
         TempData["SubscriptionSuccess"] = "Da huy goi hien tai.";
         return RedirectToAction(nameof(Index));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> PaymentResult(Guid transactionId, bool cancelled = false)
+    {
+        var token = getToken();
+        if (string.IsNullOrWhiteSpace(token))
+            return RedirectToAction("Login", "Auth", new { returnUrl = Url.Action(nameof(PaymentResult), "Subscription", new { transactionId, cancelled }) });
+
+        setAuthHeader(token);
+        var vm = new SubscriptionPaymentResultPageViewModel
+        {
+            TransactionId = transactionId,
+            Cancelled = cancelled
+        };
+
+        if (transactionId != Guid.Empty)
+        {
+            var response = await _http.GetAsync($"/api/subscriptions/payment-status/{transactionId}");
+            var result = await readApiResult<SubscriptionPaymentStatusViewModel>(response);
+            if (result?.Success == true)
+                vm.PaymentStatus = result.Data;
+        }
+
+        return View(vm);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> PaymentStatus(Guid transactionId)
+    {
+        var token = getToken();
+        if (string.IsNullOrWhiteSpace(token))
+            return Json(new { success = false, message = "Ban can dang nhap de xem trang thai thanh toan." });
+
+        setAuthHeader(token);
+        var response = await _http.GetAsync($"/api/subscriptions/payment-status/{transactionId}");
+        var result = await readApiResult<SubscriptionPaymentStatusViewModel>(response);
+        return Json(result ?? new ApiResult<SubscriptionPaymentStatusViewModel>
+        {
+            Success = false,
+            Message = "Khong the lay trang thai thanh toan."
+        });
     }
 
     private async Task<SubscriptionPageViewModel> buildPageModel(string token)

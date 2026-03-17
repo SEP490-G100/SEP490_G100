@@ -90,6 +90,12 @@ builder.Services.AddCors(options =>
         policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
 
 builder.Services.AddHttpClient();
+builder.Services.Configure<VietQrOptions>(builder.Configuration.GetSection("VietQr"));
+builder.Services.AddHttpClient("VietQr", c =>
+{
+    c.BaseAddress = new Uri(builder.Configuration["VietQr:BaseUrl"] ?? "https://api.vietqr.io/v2/");
+    c.Timeout = TimeSpan.FromSeconds(30);
+});
 // Nominatim (OpenStreetMap geocoding) — User-Agent bắt buộc theo ToS
 builder.Services.AddHttpClient("Nominatim", c =>
 {
@@ -125,6 +131,7 @@ builder.Services.AddScoped<JobService>();
 builder.Services.AddScoped<GeocodingService>();
 builder.Services.AddScoped<SubscriptionService>();
 builder.Services.AddScoped<NotificationService>();
+builder.Services.AddScoped<VietQrService>();
 
 // Background Services
 if (!builder.Environment.IsDevelopment())

@@ -119,6 +119,58 @@ public class UserSubscriptionViewModel
     public SubscriptionTransactionViewModel? Transaction { get; set; }
 }
 
+public class SubscriptionPaymentSessionViewModel
+{
+    [JsonPropertyName("transactionId")]
+    public Guid TransactionId { get; set; }
+
+    [JsonPropertyName("planName")]
+    public string PlanName { get; set; } = "";
+
+    [JsonPropertyName("amount")]
+    public decimal Amount { get; set; }
+
+    [JsonPropertyName("orderCode")]
+    public int OrderCode { get; set; }
+
+    [JsonPropertyName("paymentContent")]
+    public string PaymentContent { get; set; } = "";
+
+    [JsonPropertyName("checkoutUrl")]
+    public string CheckoutUrl { get; set; } = "";
+
+    [JsonPropertyName("providerPaymentId")]
+    public string ProviderPaymentId { get; set; } = "";
+
+    [JsonPropertyName("status")]
+    public string Status { get; set; } = "";
+}
+
+public class SubscriptionPaymentStatusViewModel
+{
+    [JsonPropertyName("transactionId")]
+    public Guid TransactionId { get; set; }
+
+    [JsonPropertyName("transactionStatus")]
+    public int TransactionStatus { get; set; }
+
+    [JsonPropertyName("transactionStatusLabel")]
+    public string TransactionStatusLabel { get; set; } = "";
+
+    [JsonPropertyName("planName")]
+    public string PlanName { get; set; } = "";
+
+    [JsonPropertyName("subscriptionActivated")]
+    public bool SubscriptionActivated { get; set; }
+}
+
+public class SubscriptionPaymentResultPageViewModel
+{
+    public Guid TransactionId { get; set; }
+    public bool Cancelled { get; set; }
+    public SubscriptionPaymentStatusViewModel? PaymentStatus { get; set; }
+}
+
 public class SubscriptionPageViewModel
 {
     public string CurrentRole { get; set; } = "Guest";
