@@ -47,6 +47,26 @@ public class NannyBasicInfoController : Controller
     {
         SetAuthHeader();
 
+        // Upload Avatar
+        if (model.AvatarFile != null && model.AvatarFile.Length > 0)
+        {
+            using var content = new MultipartFormDataContent();
+            var streamContent = new StreamContent(model.AvatarFile.OpenReadStream());
+            streamContent.Headers.ContentType = new MediaTypeHeaderValue(model.AvatarFile.ContentType);
+            content.Add(streamContent, "file", model.AvatarFile.FileName);
+
+            var uploadRes = await _http.PostAsync("/api/profile/upload-avatar", content);
+            if (uploadRes.IsSuccessStatusCode)
+            {
+                var uploadJson = await uploadRes.Content.ReadAsStringAsync();
+                var uploadResult = JsonSerializer.Deserialize<ApiResultDto>(uploadJson, JsonOpts);
+                if (uploadResult?.Success == true && uploadResult.Data != null)
+                {
+                    model.AvatarUrl = uploadResult.Data.ToString();
+                }
+            }
+        }
+
         var firstName = string.Empty;
         var lastName = string.Empty;
 
@@ -69,7 +89,7 @@ public class NannyBasicInfoController : Controller
             FirstName = string.IsNullOrWhiteSpace(firstName) ? "Nanny" : firstName,
             LastName = string.IsNullOrWhiteSpace(lastName) ? "User" : lastName,
             PhoneNumber = (string?)null,
-            AvatarUrl = (string?)null,
+            AvatarUrl = model.AvatarUrl,
             model.DateOfBirth,
             model.Gender,
             model.Address,
@@ -81,13 +101,13 @@ public class NannyBasicInfoController : Controller
         };
 
         var response = await _http.PutAsJsonAsync("/api/profile", updateRequest);
-        var content = await response.Content.ReadAsStringAsync();
-        var apiResult = JsonSerializer.Deserialize<ApiResultDto>(content, JsonOpts);
+        var resContent = await response.Content.ReadAsStringAsync();
+        var apiResult = JsonSerializer.Deserialize<ApiResultDto>(resContent, JsonOpts);
         return apiResult != null && apiResult.Success;
     }
 
     [HttpGet]
-    public async Task<IActionResult> Step1Name()
+    public async Task<IActionResult> Step1BasicInfo()
     {
         var existing = await LoadCurrentProfileAsync();
         var vm = new NannyBasicInfoWizardViewModel();
@@ -103,6 +123,7 @@ public class NannyBasicInfoController : Controller
             vm.Ward = existing.Ward;
             vm.Latitude = existing.Latitude;
             vm.Longitude = existing.Longitude;
+            vm.AvatarUrl = existing.AvatarUrl;
         }
 
         return View(vm);
@@ -110,97 +131,39 @@ public class NannyBasicInfoController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Step1Name(NannyBasicInfoWizardViewModel model, string? direction)
+    public async Task<IActionResult> Step1BasicInfo(NannyBasicInfoWizardViewModel model, string? direction)
     {
-        if (direction == "next" && string.IsNullOrWhiteSpace(model.FullName))
-        {
-            ModelState.AddModelError(nameof(model.FullName), "Vui lòng nhập họ tên.");
-        }
-
-        if (!ModelState.IsValid)
-        {
-            return View(model);
-        }
-
-        return View("Step2DateOfBirth", model);
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public IActionResult Step2DateOfBirth(NannyBasicInfoWizardViewModel model, string? direction)
-    {
-        if (direction == "back")
-        {
-            return View("Step1Name", model);
-        }
-
-        if (direction == "next" && model.DateOfBirth == null)
-        {
-            ModelState.AddModelError(nameof(model.DateOfBirth), "Vui lòng chọn ngày sinh.");
-        }
-
-        if (!ModelState.IsValid)
-        {
-            return View("Step2DateOfBirth", model);
-        }
-
-        return View("Step3Gender", model);
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public IActionResult Step3Gender(NannyBasicInfoWizardViewModel model, string? direction)
-    {
-        if (direction == "back")
-        {
-            return View("Step2DateOfBirth", model);
-        }
-
-        if (direction == "next" && model.Gender == null)
-        {
-            ModelState.AddModelError(nameof(model.Gender), "Vui lòng chọn giới tính.");
-        }
-
-        if (!ModelState.IsValid)
-        {
-            return View("Step3Gender", model);
-        }
-
-        return View("Step4Address", model);
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Step4Address(NannyBasicInfoWizardViewModel model, string? direction)
-    {
-        if (direction == "back")
-        {
-            return View("Step3Gender", model);
-        }
-
         if (direction == "next")
         {
+            if (string.IsNullOrWhiteSpace(model.FullName))
+                ModelState.AddModelError(nameof(model.FullName), "Vui lòng nhập họ tên.");
+
+            if (model.DateOfBirth == null)
+                ModelState.AddModelError(nameof(model.DateOfBirth), "Vui lòng chọn ngày sinh.");
+
+            if (model.Gender == null)
+                ModelState.AddModelError(nameof(model.Gender), "Vui lòng chọn giới tính.");
+
             if (string.IsNullOrWhiteSpace(model.Address))
-            {
-                ModelState.AddModelError(nameof(model.Address), "Vui lòng nhập địa chỉ.");
-            }
+                ModelState.AddModelError(nameof(model.Address), "Vui lòng nhập địa chỉ chi tiết.");
+
+            if (string.IsNullOrWhiteSpace(model.City) || string.IsNullOrWhiteSpace(model.District) || string.IsNullOrWhiteSpace(model.Ward))
+                ModelState.AddModelError(string.Empty, "Vui lòng chọn đầy đủ Tỉnh/Thành, Quận/Huyện, Phường/Xã.");
 
             if (!ModelState.IsValid)
-            {
-                return View("Step4Address", model);
-            }
+                return View(model);
 
             var success = await SaveProfileAsync(model);
             if (!success)
             {
                 ModelState.AddModelError(string.Empty, "Cập nhật thông tin thất bại. Vui lòng thử lại.");
-                return View("Step4Address", model);
+                return View(model);
             }
 
             return RedirectToAction("Start", "Onboarding");
         }
 
-        return View("Step4Address", model);
+        return View(model);
     }
 }
 

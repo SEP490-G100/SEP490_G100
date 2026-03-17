@@ -54,12 +54,12 @@
                             <label class="block text-sm font-medium text-gray-300 mb-2">Education level</label>
                             <select asp-for="EducationLevel"
                                     class="w-full px-4 py-3 rounded-xl bg-[#1f242b] border border-[#3b434e] text-gray-100 focus:outline-none focus:ring-2 focus:ring-pink-400">
-                                <option value="0">High School</option>
-                                <option value="1">Vocational</option>
-                                <option value="2">Associate Degree</option>
-                                <option value="3">Bachelor's Degree</option>
-                                <option value="4">Master's Degree</option>
-                                <option value="5">Doctorate</option>
+                                <option value="">-- Chọn trình độ học vấn --</option>
+                                <option value="0">Trung học</option>
+                                <option value="1">Cao đẳng</option>
+                                <option value="2">Đại học</option>
+                                <option value="3">Thạc sĩ</option>
+                                <option value="4">Khác</option>
                             </select>
                             <span asp-validation-for="EducationLevel" class="text-red-400 text-xs mt-1"></span>
                         </div>

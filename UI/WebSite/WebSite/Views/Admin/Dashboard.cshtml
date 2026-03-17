@@ -1,0 +1,223 @@
+@model WebSite.Models.Admin.AdminDashboardDto
+@{
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+    ViewData["Title"] = "Dashboard";
+}
+
+<!-- PAGE HEADER -->
+<div class="mb-7 fade-in-up">
+    <span class="section-label">📊 System Overview</span>
+    <h1 class="page-title mt-2">
+        Welcome, <span class="gradient-text">Admin</span>!
+    </h1>
+    <p class="page-subtitle">Monitor platform performance, users, and revenue at a glance.</p>
+</div>
+
+<!-- STAT CARDS -->
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-7">
+
+    <!-- Total Users -->
+    <div class="stat-card p-5 fade-in-up fade-in-up-delay-1">
+        <div class="flex items-start justify-between mb-4">
+            <div class="icon-badge" style="background:linear-gradient(135deg,#FFF7ED,#FED7AA);">
+                <span class="material-icons-round text-orange-500 text-2xl">people</span>
+            </div>
+            <span class="section-label text-[10px] px-2 py-0.5">All</span>
+        </div>
+        <div class="stat-number mb-0.5">@Model.TotalUsers.ToString("N0")</div>
+        <div class="text-sm text-gray-500 font-semibold mb-3">Total Users</div>
+        <div class="flex gap-3 text-xs text-gray-400">
+            <span class="flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-violet-400 inline-block"></span>@Model.TotalParents Parents
+            </span>
+            <span class="flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-blue-400 inline-block"></span>@Model.TotalNannies Nannies
+            </span>
+        </div>
+    </div>
+
+    <!-- Moderators -->
+    <div class="stat-card p-5 fade-in-up fade-in-up-delay-2">
+        <div class="flex items-start justify-between mb-4">
+            <div class="icon-badge" style="background:linear-gradient(135deg,#FFF7ED,#FFEDD5);">
+                <span class="material-icons-round text-orange-500 text-2xl">manage_accounts</span>
+            </div>
+            <span class="badge badge-mod">Moderator</span>
+        </div>
+        <div class="stat-number mb-0.5">@Model.TotalModerators.ToString("N0")</div>
+        <div class="text-sm text-gray-500 font-semibold mb-3">Moderators</div>
+        @if (Model.TotalUsers > 0)
+        {
+            var pct = (double)Model.TotalModerators / Model.TotalUsers * 100;
+            <div>
+                <div class="flex justify-between text-[10px] text-gray-400 mb-1">
+                    <span>Share</span><span class="font-bold text-orange-500">@pct.ToString("F0")%</span>
+                </div>
+                <div class="w-full bg-gray-100 rounded-full h-1.5">
+                    <div class="progress-fill bg-gradient-to-r from-orange-400 to-orange-500 h-1.5 rounded-full" style="width:@pct.ToString("F0")%"></div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Revenue -->
+    <div class="stat-card p-5 fade-in-up fade-in-up-delay-3">
+        <div class="flex items-start justify-between mb-4">
+            <div class="icon-badge" style="background:linear-gradient(135deg,#D1FAE5,#A7F3D0);">
+                <span class="material-icons-round text-emerald-500 text-2xl">payments</span>
+            </div>
+            <span class="badge badge-active">Revenue</span>
+        </div>
+        <div class="stat-number mb-0.5">
+            @Model.TotalRevenue.ToString("N0")<span class="text-sm text-gray-400 font-normal ml-1">₫</span>
+        </div>
+        <div class="text-sm text-gray-500 font-semibold">Total Revenue</div>
+    </div>
+
+    <!-- Transactions -->
+    <div class="stat-card p-5 fade-in-up fade-in-up-delay-4">
+        <div class="flex items-start justify-between mb-4">
+            <div class="icon-badge" style="background:linear-gradient(135deg,#FEF3C7,#FDE68A);">
+                <span class="material-icons-round text-amber-500 text-2xl">receipt_long</span>
+            </div>
+            <span class="badge badge-pending">Transactions</span>
+        </div>
+        <div class="stat-number mb-0.5">@Model.TotalTransactions.ToString("N0")</div>
+        <div class="text-sm text-gray-500 font-semibold">Total Transactions</div>
+    </div>
+</div>
+
+<!-- ROW 2: Quick Actions + Recent Transactions -->
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-5 mb-7">
+
+    <!-- Quick Actions -->
+    <div class="content-card p-0 fade-in-up">
+        <div class="card-header">
+            <h2>⚡ Quick Actions</h2>
+        </div>
+        <div class="p-4 space-y-2.5">
+
+            <a href="/Admin/ManageModerators"
+               class="quick-action-item hover:bg-orange-50 hover:border-orange-200">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center flex-shrink-0">
+                    <span class="material-icons-round text-orange-500 text-lg">manage_accounts</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-bold text-gray-700">Manage Moderators</p>
+                    <p class="text-xs text-gray-400">@Model.TotalModerators active accounts</p>
+                </div>
+                <span class="material-icons-round text-gray-300 text-base">arrow_forward_ios</span>
+            </a>
+
+            <a href="/Admin/CreateModerator"
+               class="quick-action-item hover:bg-emerald-50 hover:border-emerald-200">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-100 to-emerald-200 flex items-center justify-center flex-shrink-0">
+                    <span class="material-icons-round text-emerald-500 text-lg">person_add</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-bold text-gray-700">Create Moderator</p>
+                    <p class="text-xs text-gray-400">Add a new moderator account</p>
+                </div>
+                <span class="material-icons-round text-gray-300 text-base">arrow_forward_ios</span>
+            </a>
+
+        </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="xl:col-span-2 content-card overflow-hidden fade-in-up" style="animation-delay:.1s;">
+        <div class="card-header">
+            <h2>🕐 Recent Transactions</h2>
+        </div>
+
+        @if (!Model.RecentTransactions.Any())
+        {
+            <div class="px-6 py-12 text-center text-gray-400 text-sm">
+                <span class="material-icons-round text-4xl mb-2 block text-gray-200">receipt_long</span>
+                No transactions yet.
+            </div>
+        }
+        else
+        {
+            <div class="divide-y divide-gray-50">
+                @foreach (var tx in Model.RecentTransactions)
+                {
+                    var statusCls = tx.Status == 1 ? "badge-active" : tx.Status == 0 ? "badge-pending" : "badge-inactive";
+                    <div class="flex items-center gap-3 px-5 py-3.5 hover:bg-orange-50/50 transition-colors">
+                        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center flex-shrink-0">
+                            <span class="material-icons-round text-orange-500 text-base">receipt_long</span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-bold text-gray-800 truncate">@tx.UserName</p>
+                            <p class="text-xs text-gray-400 truncate">@tx.UserEmail</p>
+                        </div>
+                        <div class="flex flex-col items-end gap-1 flex-shrink-0">
+                            <span class="font-bold text-sm text-gray-800">@tx.Amount.ToString("N0") ₫</span>
+                            <span class="badge @statusCls">@tx.StatusLabel</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<!-- User Breakdown -->
+<div class="content-card p-6 fade-in-up" style="animation-delay:.15s;">
+    <div class="flex items-center gap-3 mb-5">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center">
+            <span class="material-icons-round text-orange-500 text-lg">bar_chart</span>
+        </div>
+        <h2 class="font-bold text-gray-900">User Breakdown</h2>
+    </div>
+
+    @if (Model.TotalUsers == 0)
+    {
+        <div class="text-center py-8">
+            <span class="material-icons-round text-4xl text-gray-200 block mb-2">insert_chart_outlined</span>
+            <p class="text-sm text-gray-400">No data available.</p>
+        </div>
+    }
+    else
+    {
+        var pParent = (double)Model.TotalParents    / Model.TotalUsers * 100;
+        var pNanny  = (double)Model.TotalNannies    / Model.TotalUsers * 100;
+        var pMod    = (double)Model.TotalModerators / Model.TotalUsers * 100;
+
+        <div class="space-y-4">
+            <div class="bg-violet-50/60 rounded-2xl p-4 border border-violet-100">
+                <div class="flex justify-between text-sm mb-2">
+                    <span class="text-gray-700 font-semibold flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-violet-400 inline-block"></span>Parents
+                    </span>
+                    <span class="font-bold text-gray-800">@Model.TotalParents.ToString("N0") <span class="text-violet-500 font-bold text-xs ml-1">(@pParent.ToString("F0")%)</span></span>
+                </div>
+                <div class="w-full bg-violet-100 rounded-full h-2.5">
+                    <div class="progress-fill bg-gradient-to-r from-violet-400 to-violet-600 h-2.5 rounded-full" style="width:@pParent.ToString("F0")%"></div>
+                </div>
+            </div>
+            <div class="bg-blue-50/60 rounded-2xl p-4 border border-blue-100">
+                <div class="flex justify-between text-sm mb-2">
+                    <span class="text-gray-700 font-semibold flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-blue-400 inline-block"></span>Nannies
+                    </span>
+                    <span class="font-bold text-gray-800">@Model.TotalNannies.ToString("N0") <span class="text-blue-500 font-bold text-xs ml-1">(@pNanny.ToString("F0")%)</span></span>
+                </div>
+                <div class="w-full bg-blue-100 rounded-full h-2.5">
+                    <div class="progress-fill bg-gradient-to-r from-blue-400 to-blue-600 h-2.5 rounded-full" style="width:@pNanny.ToString("F0")%"></div>
+                </div>
+            </div>
+            <div class="bg-orange-50/60 rounded-2xl p-4 border border-orange-100">
+                <div class="flex justify-between text-sm mb-2">
+                    <span class="text-gray-700 font-semibold flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-orange-400 inline-block"></span>Moderators
+                    </span>
+                    <span class="font-bold text-gray-800">@Model.TotalModerators.ToString("N0") <span class="text-orange-500 font-bold text-xs ml-1">(@pMod.ToString("F0")%)</span></span>
+                </div>
+                <div class="w-full bg-orange-100 rounded-full h-2.5">
+                    <div class="progress-fill bg-gradient-to-r from-orange-400 to-orange-600 h-2.5 rounded-full" style="width:@pMod.ToString("F0")%"></div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

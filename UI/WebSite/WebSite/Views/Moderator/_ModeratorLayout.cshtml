@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>@ViewData["Title"] - Moderator | NannyMatch</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
+    <link href="~/css/moderator.css" rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { display: ['Quicksand', 'sans-serif'] },
+                    colors: {
+                        primary: '#F97316',
+                        primaryDark: '#EA580C',
+                    },
+                    boxShadow: {
+                        'card': '0 4px 24px rgba(0,0,0,0.07)',
+                        'soft': '0 8px 32px rgba(0,0,0,0.08)',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="font-display bg-gray-50 text-gray-800" style="font-family:'Quicksand',sans-serif;">
+
+    <div class="flex h-screen overflow-hidden">
+
+        <!-- ===== SIDEBAR ===== -->
+        <aside id="sidebar" class="mod-sidebar fixed inset-y-0 left-0 z-40 flex flex-col bg-gradient-to-b from-gray-900 via-gray-900 to-gray-950 text-white transition-all duration-300 overflow-hidden"
+               style="width: 260px;">
+
+            <!-- Brand -->
+            <div class="flex items-center gap-3 px-5 py-5 border-b border-white/10">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-lg flex-shrink-0">
+                    <span class="material-icons-round text-white text-xl">child_care</span>
+                </div>
+                <div class="sidebar-text overflow-hidden">
+                    <span class="text-lg font-bold tracking-tight" style="background:linear-gradient(135deg,#F97316,#FB923C);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">NannyMatch</span>
+                    <p class="text-[10px] text-gray-400 -mt-0.5 uppercase tracking-widest">Moderator Panel</p>
+                </div>
+            </div>
+
+            <!-- Nav -->
+            <nav class="flex-1 px-3 py-5 space-y-1 overflow-y-auto overflow-x-hidden">
+
+                <p class="sidebar-text px-2 text-[10px] uppercase tracking-widest text-gray-500 mb-2 font-semibold">Overview</p>
+
+                <a href="/Moderator/Dashboard"
+                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() == "Dashboard" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
+                    <span class="material-icons-round text-xl flex-shrink-0">dashboard</span>
+                    <span class="sidebar-text">Dashboard</span>
+                </a>
+
+                <p class="sidebar-text px-2 text-[10px] uppercase tracking-widest text-gray-500 mt-5 mb-2 font-semibold">Management</p>
+
+                <a href="/Moderator/ManageAccount"
+                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() == "ManageAccount" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
+                    <span class="material-icons-round text-xl flex-shrink-0">manage_accounts</span>
+                    <span class="sidebar-text">Manage Accounts</span>
+                </a>
+
+                <a href="/Moderator/NannyVerification"
+                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() == "NannyVerification" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
+                    <span class="material-icons-round text-xl flex-shrink-0">verified_user</span>
+                    <span class="sidebar-text">Nanny Verification</span>
+                    <span class="sidebar-text ml-auto bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">12</span>
+                </a>
+
+                <a href="/Moderator/ViewReports"
+                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() == "ViewReports" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
+                    <span class="material-icons-round text-xl flex-shrink-0">flag</span>
+                    <span class="sidebar-text">Reports</span>
+                    <span class="sidebar-text ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">5</span>
+                </a>
+
+                <a href="/Moderator/ModerateJobPostings"
+                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() == "ModerateJobPostings" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
+                    <span class="material-icons-round text-xl flex-shrink-0">work</span>
+                    <span class="sidebar-text">Job Postings Review</span>
+                </a>
+
+                <p class="sidebar-text px-2 text-[10px] uppercase tracking-widest text-gray-500 mt-5 mb-2 font-semibold">Content</p>
+
+                <a href="/Moderator/ManageBlogs"
+                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() == "ManageBlogs" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
+                    <span class="material-icons-round text-xl flex-shrink-0">article</span>
+                    <span class="sidebar-text">Manage Blogs</span>
+                </a>
+
+                <a href="/Moderator/ManageFAQ"
+                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() == "ManageFAQ" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
+                    <span class="material-icons-round text-xl flex-shrink-0">help_outline</span>
+                    <span class="sidebar-text">Manage FAQ</span>
+                </a>
+            </nav>
+
+            <!-- Bottom: User info + logout -->
+            <div class="p-4 border-t border-white/10">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                        @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value?.Substring(0, 1).ToUpper() ?? "M")
+                    </div>
+                    <div class="sidebar-text flex-1 min-w-0">
+                        <p class="text-sm font-semibold text-white truncate">
+                            @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? "Moderator")
+                        </p>
+                        <p class="text-xs text-gray-400 truncate">Moderator</p>
+                    </div>
+                    <form asp-controller="Auth" asp-action="Logout" method="post" class="sidebar-text flex-shrink-0">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" title="Sign out"
+                                class="w-8 h-8 rounded-lg hover:bg-red-500/20 flex items-center justify-center text-gray-400 hover:text-red-400 transition-all">
+                            <span class="material-icons-round text-xl">logout</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ===== MAIN CONTENT ===== -->
+        <div id="mainContent" class="flex flex-col flex-1 min-w-0 transition-all duration-300" style="margin-left: 260px;">
+
+            <!-- Top Header Bar -->
+            <header class="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-gray-100 flex flex-col"
+                    style="box-shadow:0 2px 20px rgba(249,115,22,0.07);">
+                <!-- Shimmer accent line -->
+                <div class="mod-topbar-accent"></div>
+                <!-- Header row -->
+                <div class="flex items-center justify-between px-6 h-15" style="height:60px;">
+                    <div class="flex items-center gap-4">
+                        <button id="sidebarToggle" onclick="toggleSidebar()"
+                                class="w-9 h-9 rounded-xl hover:bg-orange-50 flex items-center justify-center text-gray-400 hover:text-orange-500 transition-all">
+                            <span class="material-icons-round">menu</span>
+                        </button>
+                        <div class="flex items-center gap-2 text-sm">
+                            <span class="text-gray-400">NannyMatch</span>
+                            <span class="material-icons-round text-gray-300 text-sm">chevron_right</span>
+                            <span class="font-bold" style="background:linear-gradient(135deg,#F97316,#EA580C);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">@ViewData["Title"]</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <button class="relative w-9 h-9 rounded-xl hover:bg-orange-50 flex items-center justify-center text-gray-400 hover:text-orange-500 transition-all">
+                            <span class="material-icons-round">notifications_none</span>
+                            <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
+                        </button>
+                        <div class="flex items-center gap-2 pl-3 border-l border-gray-100">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
+                                @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value?.Substring(0, 1).ToUpper() ?? "M")
+                            </div>
+                            <span class="text-sm font-semibold text-gray-700 hidden sm:block">
+                                @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? "Moderator")
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <main class="flex-1 overflow-y-auto p-6">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        var sidebarCollapsed = false;
+
+        function toggleSidebar() {
+            var sidebar = document.getElementById('sidebar');
+            var main = document.getElementById('mainContent');
+            sidebarCollapsed = !sidebarCollapsed;
+
+            if (sidebarCollapsed) {
+                sidebar.style.width = '72px';
+                main.style.marginLeft = '72px';
+                sidebar.classList.add('collapsed');
+            } else {
+                sidebar.style.width = '260px';
+                main.style.marginLeft = '260px';
+                sidebar.classList.remove('collapsed');
+            }
+        }
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
