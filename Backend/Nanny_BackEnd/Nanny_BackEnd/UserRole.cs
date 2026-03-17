@@ -1,17 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Nanny_BackEnd.Models;
+namespace Nanny_BackEnd;
 
-public partial class NannyAvailability
+public partial class UserRole
 {
     public Guid Id { get; set; }
 
-    public Guid NannyProfileId { get; set; }
+    public Guid UserId { get; set; }
 
-    public int DayOfWeek { get; set; }
-
-    public bool IsAvailable { get; set; }
+    public Guid RoleId { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
@@ -23,7 +21,7 @@ public partial class NannyAvailability
 
     public bool IsDeleted { get; set; }
 
-    public int TimeSlot { get; set; }
+    public virtual Role Role { get; set; } = null!;
 
-    public virtual NannyProfile NannyProfile { get; set; } = null!;
+    public virtual User User { get; set; } = null!;
 }

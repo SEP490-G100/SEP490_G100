@@ -1,13 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
-using Nanny_BackEnd.Models;
 
-namespace Nanny_BackEnd.Data;
+namespace Nanny_BackEnd;
 
-public partial class Sep490NannyDbContext : DbContext
+public partial class NannyMatchingDbContext : DbContext
 {
-    public Sep490NannyDbContext(DbContextOptions<Sep490NannyDbContext> options)
+    public NannyMatchingDbContext()
+    {
+    }
+
+    public NannyMatchingDbContext(DbContextOptions<NannyMatchingDbContext> options)
         : base(options)
     {
     }
@@ -89,6 +92,9 @@ public partial class Sep490NannyDbContext : DbContext
     public virtual DbSet<VerificationDocument> VerificationDocuments { get; set; }
 
     public virtual DbSet<VerificationRequest> VerificationRequests { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        => optionsBuilder.UseSqlServer("Name=ConnectionStrings:MyCnn");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Nanny_BackEnd.Models;
+namespace Nanny_BackEnd;
 
 public partial class ChildProfile
 {

@@ -8,7 +8,47 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="AuditLog.cs" />
+    <Compile Remove="Blog.cs" />
+    <Compile Remove="BlogCategory.cs" />
+    <Compile Remove="ChildProfile.cs" />
+    <Compile Remove="ContactRequest.cs" />
+    <Compile Remove="Contract.cs" />
+    <Compile Remove="ContractTemplate.cs" />
+    <Compile Remove="Conversation.cs" />
+    <Compile Remove="ConversationParticipant.cs" />
     <Compile Remove="DTO\**" />
+    <Compile Remove="Faq.cs" />
+    <Compile Remove="FavoriteJobPosting.cs" />
+    <Compile Remove="FavoriteNanny.cs" />
+    <Compile Remove="HiringRecord.cs" />
+    <Compile Remove="Interview.cs" />
+    <Compile Remove="JobApplication.cs" />
+    <Compile Remove="JobPosting.cs" />
+    <Compile Remove="JobRequirement.cs" />
+    <Compile Remove="JobScheduleRequirement.cs" />
+    <Compile Remove="Message.cs" />
+    <Compile Remove="NannyAvailability.cs" />
+    <Compile Remove="NannyCertificate.cs" />
+    <Compile Remove="NannyMatchingDbContext.cs" />
+    <Compile Remove="NannyProfile.cs" />
+    <Compile Remove="NannySkill.cs" />
+    <Compile Remove="Notification.cs" />
+    <Compile Remove="OtpCode.cs" />
+    <Compile Remove="ParentProfile.cs" />
+    <Compile Remove="RefreshToken.cs" />
+    <Compile Remove="Report.cs" />
+    <Compile Remove="Review.cs" />
+    <Compile Remove="Role.cs" />
+    <Compile Remove="Skill.cs" />
+    <Compile Remove="SubscriptionPlan.cs" />
+    <Compile Remove="SystemSetting.cs" />
+    <Compile Remove="Transaction.cs" />
+    <Compile Remove="User.cs" />
+    <Compile Remove="UserRole.cs" />
+    <Compile Remove="UserSubscription.cs" />
+    <Compile Remove="VerificationDocument.cs" />
+    <Compile Remove="VerificationRequest.cs" />
     <Content Remove="DTO\**" />
     <EmbeddedResource Remove="DTO\**" />
     <None Remove="DTO\**" />

@@ -104,11 +104,9 @@ public class ProfileService
         {
             Id = c.Id,
             ParentProfileId = c.ParentProfileId,
-            Name = c.Name,
-            DateOfBirth = c.DateOfBirth,
-            Gender = c.Gender,
+            Characteristic = c.Characteristic,
+            ChildAgeGroup = c.ChildAgeGroup,
             SpecialNeeds = c.SpecialNeeds,
-            Allergies = c.Allergies,
             Notes = c.Notes,
             CreatedAt = c.CreatedAt
         }).ToList();
@@ -132,11 +130,9 @@ public class ProfileService
         {
             Id = Guid.NewGuid(),
             ParentProfileId = parentProfile.Id,
-            Name = request.Name,
-            DateOfBirth = request.DateOfBirth,
-            Gender = request.Gender,
+            Characteristic = request.Characteristic,
+            ChildAgeGroup = request.ChildAgeGroup,
             SpecialNeeds = request.SpecialNeeds,
-            Allergies = request.Allergies,
             Notes = request.Notes,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = userId
@@ -156,11 +152,9 @@ public class ProfileService
         var child = await _childRepo.FindByIdAndParentAsync(childId, parentProfile.Id)
             ?? throw new InvalidOperationException("Không tìm thấy con hoặc không có quyền.");
 
-        child.Name = request.Name;
-        child.DateOfBirth = request.DateOfBirth;
-        child.Gender = request.Gender;
+        child.Characteristic = request.Characteristic;
+        child.ChildAgeGroup = request.ChildAgeGroup;
         child.SpecialNeeds = request.SpecialNeeds;
-        child.Allergies = request.Allergies;
         child.Notes = request.Notes;
         child.UpdatedAt = DateTime.UtcNow;
         child.UpdatedBy = userId;
@@ -191,11 +185,9 @@ public class ProfileService
     {
         Id = c.Id,
         ParentProfileId = c.ParentProfileId,
-        Name = c.Name,
-        DateOfBirth = c.DateOfBirth,
-        Gender = c.Gender,
+        Characteristic = c.Characteristic,
+        ChildAgeGroup = c.ChildAgeGroup,
         SpecialNeeds = c.SpecialNeeds,
-        Allergies = c.Allergies,
         Notes = c.Notes,
         CreatedAt = c.CreatedAt
     };

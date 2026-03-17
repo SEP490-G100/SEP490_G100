@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using Nanny_BackEnd.DTOs.Profile;
 using Nanny_BackEnd.Data;
+using Nanny_BackEnd.DTOs.Profile;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
 
@@ -47,10 +47,8 @@ public class OnboardingService
         };
 
         var user = await _userRepo.FindByIdAsync(userId)
-            ?? throw new InvalidOperationException("Người dùng không tồn tại.");
+            ?? throw new InvalidOperationException("Nguoi dung khong ton tai.");
 
-        // Kiểm tra thông tin cá nhân cơ bản
-        // Không bắt buộc DateOfBirth và Ward để tránh bắt user onboarding lại sau khi đã điền đủ thông tin yêu cầu trên giao diện
         var hasBasicInfo =
             !string.IsNullOrWhiteSpace(user.FirstName) &&
             !string.IsNullOrWhiteSpace(user.LastName) &&
@@ -66,6 +64,7 @@ public class OnboardingService
                 : "ParentBasicInfo";
             return status;
         }
+
         if (role.Equals("Parent", StringComparison.OrdinalIgnoreCase))
         {
             var parentProfile = await _parentRepo.FindByUserIdAsync(userId);
@@ -91,9 +90,6 @@ public class OnboardingService
                 return status;
             }
 
-            // Parent đã đủ thông tin
-            status.RequiresOnboarding = false;
-            status.NextStep = "Completed";
             return status;
         }
 
@@ -121,16 +117,13 @@ public class OnboardingService
                 return status;
             }
 
-            var avails = await _nannyAvailabilityRepo.GetByNannyProfileIdAsync(nannyProfile.Id);
-            if (avails.Count == 0)
+            var availabilities = await _nannyAvailabilityRepo.GetByNannyProfileIdAsync(nannyProfile.Id);
+            if (availabilities.Count == 0)
             {
                 status.RequiresOnboarding = true;
                 status.NextStep = "NannyAvailability";
                 return status;
             }
-
-            status.RequiresOnboarding = false;
-            status.NextStep = "Completed";
         }
 
         return status;
@@ -183,13 +176,11 @@ public class OnboardingService
     public async Task UpdateNannySkillsAsync(Guid userId, UpdateNannySkillsRequest request)
     {
         var profile = await _nannyProfileRepo.FindByUserIdAsync(userId)
-            ?? throw new InvalidOperationException("Chưa có hồ sơ nanny.");
+            ?? throw new InvalidOperationException("Chua co ho so nanny.");
 
         var existing = await _nannySkillRepo.GetByNannyProfileIdAsync(profile.Id);
         if (existing.Any())
-        {
             _nannySkillRepo.RemoveRange(existing);
-        }
 
         var now = DateTime.UtcNow;
         var newSkills = request.Skills.Select(s => new NannySkill
@@ -209,31 +200,25 @@ public class OnboardingService
     public async Task UpdateNannyAvailabilityAsync(Guid userId, UpdateNannyAvailabilityRequest request)
     {
         var profile = await _nannyProfileRepo.FindByUserIdAsync(userId)
-            ?? throw new InvalidOperationException("Chưa có hồ sơ nanny.");
+            ?? throw new InvalidOperationException("Chua co ho so nanny.");
 
         var existing = await _nannyAvailabilityRepo.GetByNannyProfileIdAsync(profile.Id);
         if (existing.Any())
-        {
             _nannyAvailabilityRepo.RemoveRange(existing);
-        }
 
         var items = new List<NannyAvailability>();
         var now = DateTime.UtcNow;
 
         foreach (var day in request.Days)
         {
-            // Morning: 6h - 12h
             if (day.Morning)
-                items.Add(CreateAvailability(profile.Id, day.DayOfWeek, new TimeOnly(6, 0), new TimeOnly(12, 0), userId, now));
-            // Afternoon: 13h - 19h
+                items.Add(CreateAvailability(profile.Id, day.DayOfWeek, 1, userId, now));
             if (day.Afternoon)
-                items.Add(CreateAvailability(profile.Id, day.DayOfWeek, new TimeOnly(13, 0), new TimeOnly(19, 0), userId, now));
-            // Evening: 20h - 24h (lưu 23:59:59 cho end of day)
+                items.Add(CreateAvailability(profile.Id, day.DayOfWeek, 2, userId, now));
             if (day.Evening)
-                items.Add(CreateAvailability(profile.Id, day.DayOfWeek, new TimeOnly(20, 0), new TimeOnly(23, 59, 59), userId, now));
-            // Night: 1h - 5h
+                items.Add(CreateAvailability(profile.Id, day.DayOfWeek, 3, userId, now));
             if (day.Night)
-                items.Add(CreateAvailability(profile.Id, day.DayOfWeek, new TimeOnly(1, 0), new TimeOnly(5, 0), userId, now));
+                items.Add(CreateAvailability(profile.Id, day.DayOfWeek, 4, userId, now));
         }
 
         if (items.Any())
@@ -242,17 +227,15 @@ public class OnboardingService
         await _nannyAvailabilityRepo.SaveChangesAsync();
     }
 
-    private static NannyAvailability CreateAvailability(Guid nannyProfileId, int dayOfWeek, TimeOnly start, TimeOnly end, Guid userId, DateTime now) =>
+    private static NannyAvailability CreateAvailability(Guid nannyProfileId, int dayOfWeek, int timeSlot, Guid userId, DateTime now) =>
         new()
         {
             Id = Guid.NewGuid(),
             NannyProfileId = nannyProfileId,
             DayOfWeek = dayOfWeek,
-            StartTime = start,
-            EndTime = end,
+            TimeSlot = timeSlot,
             IsAvailable = true,
             CreatedAt = now,
             CreatedBy = userId
         };
 }
-

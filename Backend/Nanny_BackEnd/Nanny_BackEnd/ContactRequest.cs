@@ -1,17 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Nanny_BackEnd.Models;
+namespace Nanny_BackEnd;
 
-public partial class ChildProfile
+public partial class ContactRequest
 {
     public Guid Id { get; set; }
 
     public Guid ParentProfileId { get; set; }
 
-    public string? SpecialNeeds { get; set; }
+    public Guid NannyProfileId { get; set; }
 
-    public string? Notes { get; set; }
+    public string? Message { get; set; }
+
+    public int Status { get; set; }
+
+    public string? ResponseMessage { get; set; }
+
+    public DateTime? RespondedAt { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
@@ -23,9 +29,7 @@ public partial class ChildProfile
 
     public bool IsDeleted { get; set; }
 
-    public string? Characteristic { get; set; }
-
-    public byte? ChildAgeGroup { get; set; }
+    public virtual NannyProfile NannyProfile { get; set; } = null!;
 
     public virtual ParentProfile ParentProfile { get; set; } = null!;
 }

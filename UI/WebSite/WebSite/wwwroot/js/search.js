@@ -519,7 +519,7 @@ function toggleVisibility(id) {
 }
 
 // ─── Premium ───────────────────────────────────────────────
-function openPremium() { document.getElementById('premiumModal').classList.add('show'); }
+function openPremium() { window.location.href = '/Subscription'; }
 function closePremium() { document.getElementById('premiumModal').classList.remove('show'); }
 function selectPlan(el) { document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected')); el.classList.add('selected'); }
 
