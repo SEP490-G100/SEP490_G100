@@ -55,6 +55,27 @@ public class ProfileController : ControllerBase
     }
 
     /// <summary>
+    /// Upload user avatar
+    /// </summary>
+    [HttpPost("upload-avatar")]
+    public async Task<IActionResult> UploadAvatar(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest(Fail("Vui lòng chọn file ảnh."));
+
+        try
+        {
+            var userId = GetCurrentUserId();
+            var avatarUrl = await _profileService.UploadAvatarAsync(userId, file);
+            return Ok(new { success = true, message = "Cập nhật ảnh đại diện thành công.", data = avatarUrl });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(Fail(ex.Message));
+        }
+    }
+
+    /// <summary>
     /// Get all child profiles (Parent only)
     /// </summary>
     [HttpGet("children")]

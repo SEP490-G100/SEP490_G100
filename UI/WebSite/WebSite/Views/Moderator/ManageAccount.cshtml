@@ -1,0 +1,488 @@
+@model WebSite.Models.Account.AccountListResponse
+@{
+    Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
+    ViewData["Title"] = "Manage Accounts";
+
+    var currentSearch = ViewBag.Search as string ?? "";
+    var currentRole   = ViewBag.Role   as string ?? "";
+    var currentStatus = ViewBag.Status as string ?? "";
+    var currentPage   = Model?.Page ?? 1;
+    var totalPages    = Model?.TotalPages ?? 1;
+    var accounts      = Model?.Items ?? new List<WebSite.Models.Account.AccountDto>();
+}
+
+<!-- ====================================================
+     PAGE HEADER  — Home-style section label + gradient title
+     ==================================================== -->
+<div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
+    <div>
+        <span class="section-label">👤 User Management</span>
+        <h1 class="page-title mt-2">
+            Manage <span class="gradient-text">Accounts</span>
+        </h1>
+        <p class="page-subtitle">View, update and deactivate user accounts in the system.</p>
+    </div>
+    <div class="flex gap-2 flex-shrink-0">
+        <button class="btn-outline" onclick="exportAccounts()">
+            <span class="material-icons-round text-base">download</span>
+            Export Excel
+        </button>
+    </div>
+</div>
+
+<!-- Alert messages -->
+@if (TempData["Error"] != null)
+{
+    <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 fade-in-up">
+        <span class="material-icons-round text-base">error_outline</span>
+        @TempData["Error"]
+    </div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 fade-in-up">
+        <span class="material-icons-round text-base">check_circle_outline</span>
+        @TempData["Success"]
+    </div>
+}
+
+<!-- ====================================================
+     FILTER / SEARCH FORM  — glassmorphism card
+     ==================================================== -->
+<form method="get" action="/Moderator/ManageAccount" id="filterForm">
+    <div class="content-card p-4 mb-5 fade-in-up" style="animation-delay:.05s;">
+        <div class="flex flex-col md:flex-row gap-3">
+
+            <!-- Search -->
+            <div class="relative flex-1">
+                <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">search</span>
+                <input name="search" type="text" value="@currentSearch"
+                       placeholder="Search by name or email..."
+                       class="search-input pl-9"
+                       onkeydown="if(event.key==='Enter'){this.form.submit();}" />
+            </div>
+
+            <!-- Role Filter -->
+            <div class="relative">
+                <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">person_outline</span>
+                <select name="role" onchange="this.form.submit()"
+                        class="search-input md:w-44 !pl-9 cursor-pointer appearance-none">
+                    <option value="">All Roles</option>
+                    <option value="Parent" selected="@(currentRole == "Parent" ? "selected" : null)">Parent</option>
+                    <option value="Nanny"  selected="@(currentRole == "Nanny"  ? "selected" : null)">Nanny</option>
+                </select>
+            </div>
+
+            <!-- Status Filter -->
+            <div class="relative">
+                <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">toggle_on</span>
+                <select name="status" onchange="this.form.submit()"
+                        class="search-input md:w-44 !pl-9 cursor-pointer appearance-none">
+                    <option value="">All Statuses</option>
+                    <option value="1" selected="@(currentStatus == "1" ? "selected" : null)">Active</option>
+                    <option value="0" selected="@(currentStatus == "0" ? "selected" : null)">Inactive</option>
+                </select>
+            </div>
+
+            <!-- Submit -->
+            <button type="submit" class="btn-primary flex-shrink-0">
+                <span class="material-icons-round text-base">search</span>
+                Search
+            </button>
+        </div>
+    </div>
+</form>
+
+<!-- ====================================================
+     ACCOUNT TABLE
+     ==================================================== -->
+<div class="content-card overflow-hidden fade-in-up" style="animation-delay:.1s;">
+
+    <!-- Table header row -->
+    <div class="card-header">
+        <span class="text-sm text-gray-500">
+            Showing <span class="font-bold text-gray-800">@accounts.Count</span>
+            of <span class="font-bold text-gray-800">@(Model?.TotalCount ?? 0)</span> accounts
+        </span>
+        <div class="flex items-center gap-4 text-xs text-gray-400">
+            <div class="flex items-center gap-1.5">
+                <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-emerald-100"></div>Active
+            </div>
+            <div class="flex items-center gap-1.5">
+                <div class="w-2.5 h-2.5 rounded-full bg-red-400 ring-2 ring-red-100"></div>Inactive
+            </div>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full mod-table">
+            <thead>
+                <tr>
+                    <th class="text-left">#</th>
+                    <th class="text-left">User</th>
+                    <th class="text-left">Email</th>
+                    <th class="text-left">Role</th>
+                    <th class="text-left">Joined</th>
+                    <th class="text-left">Status</th>
+                    <th class="text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!accounts.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="text-center py-16 text-gray-400">
+                            <span class="material-icons-round text-5xl mb-3 block text-gray-200">search_off</span>
+                            <p class="font-semibold text-gray-400">No accounts found matching your criteria.</p>
+                            <p class="text-xs text-gray-300 mt-1">Try adjusting your filters above.</p>
+                        </td>
+                    </tr>
+                }
+                @{int rowNum = ((currentPage - 1) * 3) + 1;}
+                @foreach (var acc in accounts)
+                {
+                    var statusBadge = acc.Status == 1 ? "badge-active"   : "badge-inactive";
+                    var statusLabel = acc.Status == 1 ? "Active"          : "Inactive";
+                    var avatarColors = new[] { "#F97316","#3B82F6","#8B5CF6","#10B981","#F59E0B","#EF4444","#EC4899","#6366F1" };
+                    var avatarBg = avatarColors[Math.Abs(acc.Id.GetHashCode()) % avatarColors.Length];
+
+                    <tr class="account-row" id="row-@acc.Id">
+                        <td class="text-gray-300 text-xs font-mono">@rowNum</td>
+                        <td>
+                            <div class="flex items-center gap-3">
+                                @if (!string.IsNullOrEmpty(acc.AvatarUrl))
+                                {
+                                    <img src="@acc.AvatarUrl" alt="@acc.FullName"
+                                         class="user-avatar object-cover" style="background:@avatarBg;" />
+                                }
+                                else
+                                {
+                                    <div class="user-avatar" style="background:@avatarBg;">@acc.Avatar</div>
+                                }
+                                <div>
+                                    <span class="font-bold text-gray-800">@acc.FullName</span>
+                                    @if (!acc.EmailConfirmed)
+                                    {
+                                        <span class="ml-1 text-[10px] text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">Unverified</span>
+                                    }
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-gray-500 text-sm">@acc.Email</td>
+                        <td>
+                            <div class="flex flex-wrap gap-1">
+                                @foreach (var r in acc.Roles)
+                                {
+                                    var rb = r switch {
+                                        "Parent"    => "badge-parent",
+                                        "Nanny"     => "badge-nanny",
+                                        "Moderator" => "badge-mod",
+                                        "Admin"     => "badge-mod",
+                                        _           => "badge-pending"
+                                    };
+                                    <span class="badge @rb">@r</span>
+                                }
+                            </div>
+                        </td>
+                        <td class="text-gray-500 text-xs">@acc.CreatedAt.ToString("MMM dd, yyyy")</td>
+                        <td>
+                            <div class="flex items-center gap-1.5" id="status-cell-@acc.Id">
+                                <div class="w-2 h-2 rounded-full @(acc.Status == 1 ? "bg-emerald-400 ring-2 ring-emerald-100" : "bg-red-400 ring-2 ring-red-100")"></div>
+                                <span class="badge @statusBadge">@statusLabel</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="flex items-center justify-center gap-1.5">
+                                <!-- View / Edit -->
+                                <a href="/Moderator/EditAccount/@acc.Id" title="View & Edit"
+                                   class="w-8 h-8 rounded-xl hover:bg-blue-50 hover:text-blue-600 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-blue-200">
+                                    <span class="material-icons-round text-base">edit</span>
+                                </a>
+                                <!-- Toggle Status -->
+                                @if (acc.Status == 1)
+                                {
+                                    <button id="toggle-btn-@acc.Id"
+                                            onclick="toggleStatus('@acc.Id', '@acc.FullName', 0)" title="Deactivate"
+                                            class="w-8 h-8 rounded-xl hover:bg-red-50 hover:text-red-500 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-red-200">
+                                        <span class="material-icons-round text-base">block</span>
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button id="toggle-btn-@acc.Id"
+                                            onclick="toggleStatus('@acc.Id', '@acc.FullName', 1)" title="Activate"
+                                            class="w-8 h-8 rounded-xl hover:bg-emerald-50 hover:text-emerald-600 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-emerald-200">
+                                        <span class="material-icons-round text-base">check_circle_outline</span>
+                                    </button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                    rowNum++;
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex items-center justify-between px-6 py-4 border-t border-gray-50">
+        <span class="text-sm text-gray-400">
+            Page <span class="font-bold text-gray-600">@currentPage</span> of <span class="font-bold text-gray-600">@totalPages</span>
+        </span>
+        <div class="flex gap-1.5">
+            @if (currentPage > 1)
+            {
+                <a href="?search=@currentSearch&role=@currentRole&status=@currentStatus&page=@(currentPage - 1)"
+                   class="page-btn">
+                    <span class="material-icons-round text-sm">chevron_left</span>
+                </a>
+            }
+            else
+            {
+                <button class="page-btn opacity-30 cursor-not-allowed" disabled>
+                    <span class="material-icons-round text-sm">chevron_left</span>
+                </button>
+            }
+            @for (int p = Math.Max(1, currentPage - 2); p <= Math.Min(totalPages, currentPage + 2); p++)
+            {
+                <a href="?search=@currentSearch&role=@currentRole&status=@currentStatus&page=@p"
+                   class="page-btn @(p == currentPage ? "active" : "")">@p</a>
+            }
+            @if (currentPage < totalPages)
+            {
+                <a href="?search=@currentSearch&role=@currentRole&status=@currentStatus&page=@(currentPage + 1)"
+                   class="page-btn">
+                    <span class="material-icons-round text-sm">chevron_right</span>
+                </a>
+            }
+            else
+            {
+                <button class="page-btn opacity-30 cursor-not-allowed" disabled>
+                    <span class="material-icons-round text-sm">chevron_right</span>
+                </button>
+            }
+        </div>
+    </div>
+</div>
+
+
+<!-- ====================================================
+     VIEW DETAIL MODAL  — Home-style glassmorphism
+     ==================================================== -->
+<div id="viewModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeModal('viewModal')">
+    <div class="modal-box">
+        <div class="flex items-center justify-between mb-5">
+            <h3 class="text-lg font-bold text-gray-900">Account Details</h3>
+            <button onclick="closeModal('viewModal')"
+                    class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-all">
+                <span class="material-icons-round">close</span>
+            </button>
+        </div>
+
+        <!-- Avatar + name block -->
+        <div class="flex items-center gap-4 mb-6 p-4 rounded-2xl"
+             style="background:linear-gradient(135deg,#FFF7ED,#FED7AA20); border:1px solid #FED7AA;">
+            <div id="modalAvatar"
+                 class="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg"></div>
+            <div>
+                <p id="modalName" class="font-bold text-gray-900 text-lg"></p>
+                <p id="modalEmail" class="text-sm text-gray-500"></p>
+                <span id="modalRoleBadge" class="badge badge-nanny mt-1.5 inline-block"></span>
+            </div>
+        </div>
+
+        <!-- Info grid -->
+        <div class="grid grid-cols-2 gap-3 text-sm mb-5">
+            <div class="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                <p class="text-xs text-gray-400 mb-1 uppercase tracking-wide font-semibold">Status</p>
+                <p id="modalStatus" class="font-bold text-gray-700"></p>
+            </div>
+            <div class="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                <p class="text-xs text-gray-400 mb-1 uppercase tracking-wide font-semibold">Joined</p>
+                <p id="modalJoined" class="font-bold text-gray-700"></p>
+            </div>
+            <div class="bg-gray-50 rounded-xl p-3 border border-gray-100 col-span-2">
+                <p class="text-xs text-gray-400 mb-1 uppercase tracking-wide font-semibold">Account ID</p>
+                <p id="modalId" class="font-semibold text-gray-600 font-mono text-xs break-all"></p>
+            </div>
+        </div>
+
+        <button onclick="closeModal('viewModal')" class="btn-outline w-full justify-center">Close</button>
+    </div>
+</div>
+
+<!-- ====================================================
+     TOGGLE STATUS MODAL
+     ==================================================== -->
+<div id="toggleModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeModal('toggleModal')">
+    <div class="modal-box">
+        <div class="flex items-center gap-3 mb-4">
+            <div id="toggleIcon" class="w-12 h-12 rounded-2xl flex items-center justify-center">
+                <span class="material-icons-round text-2xl"></span>
+            </div>
+            <div>
+                <h3 id="toggleTitle" class="text-lg font-bold text-gray-900"></h3>
+                <p class="text-sm text-gray-400">This action requires confirmation</p>
+            </div>
+        </div>
+        <p id="toggleBody" class="text-sm text-gray-600 mb-6 bg-gray-50 rounded-2xl p-4 border border-gray-100 leading-relaxed"></p>
+        <div class="flex gap-2">
+            <button onclick="closeModal('toggleModal')" class="btn-outline flex-1 justify-center">Cancel</button>
+            <button id="toggleConfirmBtn" class="btn-primary flex-1 justify-center">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast notification -->
+<div id="toast" class="fixed bottom-6 right-6 z-50 hidden items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl text-white text-sm font-bold">
+    <span id="toastIcon" class="material-icons-round text-xl"></span>
+    <span id="toastMsg"></span>
+</div>
+
+@section Scripts {
+<script>
+    // ── VIEW ACCOUNT MODAL ──
+    function viewAccount(id) {
+        var btn = document.getElementById('view-' + id);
+        var name = btn.getAttribute('data-name');
+        document.getElementById('modalAvatar').style.background = btn.getAttribute('data-avatar-bg');
+        document.getElementById('modalAvatar').textContent = name.charAt(0).toUpperCase();
+        document.getElementById('modalName').textContent   = name;
+        document.getElementById('modalEmail').textContent  = btn.getAttribute('data-email');
+        document.getElementById('modalStatus').textContent = btn.getAttribute('data-status');
+        document.getElementById('modalJoined').textContent = btn.getAttribute('data-joined');
+        document.getElementById('modalId').textContent     = id;
+        var role = btn.getAttribute('data-role');
+        var badge = document.getElementById('modalRoleBadge');
+        badge.textContent = role;
+        badge.className = 'badge ' + (role === 'Parent' ? 'badge-parent' : role === 'Nanny' ? 'badge-nanny' : 'badge-mod');
+        document.getElementById('viewModal').classList.remove('hidden');
+    }
+
+    // ── TOGGLE STATUS MODAL ──
+    function toggleStatus(id, name, newStatus) {
+        var icon  = document.getElementById('toggleIcon');
+        var title = document.getElementById('toggleTitle');
+        var body  = document.getElementById('toggleBody');
+        var btn   = document.getElementById('toggleConfirmBtn');
+
+        if (newStatus === 0) {
+            icon.style.background = '#FEE2E2';
+            icon.querySelector('span').style.color = '#EF4444';
+            icon.querySelector('span').textContent = 'block';
+            title.textContent = 'Deactivate Account';
+            body.innerHTML = 'Are you sure you want to <strong>deactivate</strong> the account of <strong>' + name + '</strong>? This user will no longer be able to sign in.';
+            btn.style.background = 'linear-gradient(135deg,#EF4444,#DC2626)';
+            btn.style.boxShadow  = '0 4px 14px rgba(239,68,68,0.35)';
+            btn.textContent = 'Deactivate';
+        } else {
+            icon.style.background = '#D1FAE5';
+            icon.querySelector('span').style.color = '#10B981';
+            icon.querySelector('span').textContent = 'check_circle_outline';
+            title.textContent = 'Activate Account';
+            body.innerHTML = 'Are you sure you want to <strong>activate</strong> the account of <strong>' + name + '</strong>? This user will be able to sign in again.';
+            btn.style.background = 'linear-gradient(135deg,#10B981,#059669)';
+            btn.style.boxShadow  = '0 4px 14px rgba(16,185,129,0.35)';
+            btn.textContent = 'Activate';
+        }
+
+        btn.onclick = function() { confirmToggle(id, name, newStatus); };
+        document.getElementById('toggleModal').classList.remove('hidden');
+    }
+
+    // ── CONFIRM TOGGLE via AJAX ──
+    function confirmToggle(id, name, newStatus) {
+        var tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+        var token = tokenInput ? tokenInput.value : '';
+
+        fetch('/Moderator/ToggleStatus', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'RequestVerificationToken': token
+            },
+            body: 'id=' + encodeURIComponent(id) + '&newStatus=' + newStatus + '&__RequestVerificationToken=' + encodeURIComponent(token)
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            closeModal('toggleModal');
+            if (data.success) {
+                var cell = document.getElementById('status-cell-' + id);
+                if (cell) {
+                    var dot   = cell.querySelector('div');
+                    var badge = cell.querySelector('.badge');
+                    if (newStatus === 1) {
+                        // Vừa Activate → status = Active (green)
+                        dot.className   = 'w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-emerald-100';
+                        badge.className = 'badge badge-active';
+                        badge.textContent = 'Active';
+                    } else {
+                        // Vừa Deactivate → status = Inactive (red)
+                        dot.className   = 'w-2 h-2 rounded-full bg-red-400 ring-2 ring-red-100';
+                        badge.className = 'badge badge-inactive';
+                        badge.textContent = 'Inactive';
+                    }
+                }
+
+                // Cập nhật action button — đổi icon + onclick sang trạng thái ngược lại
+                var toggleBtn = document.getElementById('toggle-btn-' + id);
+                if (toggleBtn) {
+                    if (newStatus === 1) {
+                        // Đã Active → hiển thị nút Deactivate
+                        toggleBtn.setAttribute('onclick', "toggleStatus('" + id + "', '" + name + "', 0)");
+                        toggleBtn.setAttribute('title', 'Deactivate');
+                        toggleBtn.className = 'w-8 h-8 rounded-xl hover:bg-red-50 hover:text-red-500 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-red-200';
+                        toggleBtn.querySelector('span').textContent = 'block';
+                    } else {
+                        // Đã Inactive → hiển thị nút Activate
+                        toggleBtn.setAttribute('onclick', "toggleStatus('" + id + "', '" + name + "', 1)");
+                        toggleBtn.setAttribute('title', 'Activate');
+                        toggleBtn.className = 'w-8 h-8 rounded-xl hover:bg-emerald-50 hover:text-emerald-600 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-emerald-200';
+                        toggleBtn.querySelector('span').textContent = 'check_circle_outline';
+                    }
+                }
+                showToast('success', data.message);
+            } else {
+                showToast('error', data.message);
+            }
+        })
+        .catch(function(err) {
+            closeModal('toggleModal');
+            showToast('error', 'Connection error: ' + err.message);
+        });
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.add('hidden');
+    }
+
+    function showToast(type, msg) {
+        var toast = document.getElementById('toast');
+        var icon  = document.getElementById('toastIcon');
+        var text  = document.getElementById('toastMsg');
+        toast.style.background = type === 'success'
+            ? 'linear-gradient(135deg,#10B981,#059669)'
+            : 'linear-gradient(135deg,#EF4444,#DC2626)';
+        toast.style.boxShadow = type === 'success'
+            ? '0 8px 24px rgba(16,185,129,0.4)'
+            : '0 8px 24px rgba(239,68,68,0.4)';
+        icon.textContent  = type === 'success' ? 'check_circle' : 'error';
+        text.textContent  = msg;
+        toast.classList.remove('hidden');
+        toast.classList.add('flex');
+        setTimeout(function() {
+            toast.classList.add('hidden');
+            toast.classList.remove('flex');
+        }, 3500);
+    }
+
+    function exportAccounts() {
+        alert('Excel export will be available once the API integration is complete.');
+    }
+</script>
+
+@* Hidden CSRF form for AJAX calls *@
+<form id="csrfForm" style="display:none;">
+    @Html.AntiForgeryToken()
+</form>
+}

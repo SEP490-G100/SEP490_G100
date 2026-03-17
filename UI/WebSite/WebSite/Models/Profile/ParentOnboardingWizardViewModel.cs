@@ -15,15 +15,16 @@ namespace WebSite.Models.Profile
 
         // Bước 3
         public string? AvatarUrl { get; set; }
+        public IFormFile? AvatarFile { get; set; }
 
         // Bước 4
         public string? FamilyDescription { get; set; }
         public int? NumberOfChildren { get; set; }
 
         // Bước 5 - Child
-        public System.DateOnly? ChildDateOfBirth { get; set; }
+        public WebSite.Enums.ChildAgeGroup? ChildAgeGroup { get; set; }
         public string? ChildSpecialNeeds { get; set; }
-        public string? ChildAllergies { get; set; }
+        public string? ChildCharacteristic { get; set; }
         public string? ChildNotes { get; set; }
     }
 }

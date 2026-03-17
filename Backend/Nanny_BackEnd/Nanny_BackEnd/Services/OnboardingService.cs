@@ -3,6 +3,7 @@ using Nanny_BackEnd.Data;
 using Nanny_BackEnd.DTOs.Profile;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Enums;
 
 namespace Nanny_BackEnd.Services;
 
@@ -39,13 +40,6 @@ public class OnboardingService
         var roles = await _userRepo.GetRolesAsync(userId);
         var role = roles.FirstOrDefault() ?? string.Empty;
 
-        var status = new OnboardingStatusDto
-        {
-            Role = role,
-            RequiresOnboarding = false,
-            NextStep = "Completed"
-        };
-
         var user = await _userRepo.FindByIdAsync(userId)
             ?? throw new InvalidOperationException("Nguoi dung khong ton tai.");
 
@@ -56,41 +50,79 @@ public class OnboardingService
             !string.IsNullOrWhiteSpace(user.City) &&
             !string.IsNullOrWhiteSpace(user.District);
 
+        // Nếu thiếu thông tin cơ bản, PHẢI chọn role trước 
+        // (vì không thể điền FirstName/LastName/City/District mà không biết role)
         if (!hasBasicInfo)
         {
-            status.RequiresOnboarding = true;
-            status.NextStep = role.Equals("Nanny", StringComparison.OrdinalIgnoreCase)
-                ? "NannyBasicInfo"
-                : "ParentBasicInfo";
+            if (string.IsNullOrEmpty(role))
+            {
+                return new OnboardingStatusDto
+                {
+                    Role = string.Empty,
+                    RequiresOnboarding = true,
+                    NextStep = "SelectRole"
+                };
+            }
+
+            // Nếu user có role nhưng thiếu basic info, hãy tiến hành điền basic info
+            var status = new OnboardingStatusDto
+            {
+                Role = role,
+                RequiresOnboarding = true,
+                NextStep = role.Equals("Nanny", StringComparison.OrdinalIgnoreCase)
+                    ? "NannyBasicInfo"
+                    : "ParentBasicInfo"
+            };
             return status;
         }
+
+        // N?u ch?a ch?n role m� ?� c� th�ng tin c? b?n, y�u c?u ch?n role
+        if (string.IsNullOrEmpty(role))
+        {
+            return new OnboardingStatusDto
+            {
+                Role = string.Empty,
+                RequiresOnboarding = true,
+                NextStep = "SelectRole"
+            };
+        }
+
+        var finalStatus = new OnboardingStatusDto
+        {
+            Role = role,
+            RequiresOnboarding = false,
+            NextStep = "Completed"
+        };
 
         if (role.Equals("Parent", StringComparison.OrdinalIgnoreCase))
         {
             var parentProfile = await _parentRepo.FindByUserIdAsync(userId);
             if (parentProfile == null)
             {
-                status.RequiresOnboarding = true;
-                status.NextStep = "ParentFamily";
-                return status;
+                finalStatus.RequiresOnboarding = true;
+                finalStatus.NextStep = "ParentFamily";
+                return finalStatus;
             }
 
             if (string.IsNullOrWhiteSpace(parentProfile.FamilyDescription) || parentProfile.NumberOfChildren == null)
             {
-                status.RequiresOnboarding = true;
-                status.NextStep = "ParentFamily";
-                return status;
+                finalStatus.RequiresOnboarding = true;
+                finalStatus.NextStep = "ParentFamily";
+                return finalStatus;
             }
 
             var children = await _childRepo.GetByParentProfileIdAsync(parentProfile.Id);
             if (children.Count == 0)
             {
-                status.RequiresOnboarding = true;
-                status.NextStep = "ParentChildren";
-                return status;
+                finalStatus.RequiresOnboarding = true;
+                finalStatus.NextStep = "ParentChildren";
+                return finalStatus;
             }
 
-            return status;
+            // Parent ?� ?? th�ng tin
+            finalStatus.RequiresOnboarding = false;
+            finalStatus.NextStep = "Completed";
+            return finalStatus;
         }
 
         if (role.Equals("Nanny", StringComparison.OrdinalIgnoreCase))
@@ -104,29 +136,32 @@ public class OnboardingService
                 nannyProfile.ExpectedSalaryMax == null ||
                 nannyProfile.MaxTravelDistance == null)
             {
-                status.RequiresOnboarding = true;
-                status.NextStep = "NannyProfile";
-                return status;
+                finalStatus.RequiresOnboarding = true;
+                finalStatus.NextStep = "NannyProfile";
+                return finalStatus;
             }
 
             var skills = await _nannySkillRepo.GetByNannyProfileIdAsync(nannyProfile.Id);
             if (skills.Count == 0)
             {
-                status.RequiresOnboarding = true;
-                status.NextStep = "NannySkills";
-                return status;
+                finalStatus.RequiresOnboarding = true;
+                finalStatus.NextStep = "NannySkills";
+                return finalStatus;
             }
 
             var availabilities = await _nannyAvailabilityRepo.GetByNannyProfileIdAsync(nannyProfile.Id);
             if (availabilities.Count == 0)
             {
-                status.RequiresOnboarding = true;
-                status.NextStep = "NannyAvailability";
-                return status;
+                finalStatus.RequiresOnboarding = true;
+                finalStatus.NextStep = "NannyAvailability";
+                return finalStatus;
             }
+
+            finalStatus.RequiresOnboarding = false;
+            finalStatus.NextStep = "Completed";
         }
 
-        return status;
+        return finalStatus;
     }
 
     public async Task<List<SkillSelectionDto>> GetAllSkillsAsync()
@@ -155,7 +190,8 @@ public class OnboardingService
                 Id = Guid.NewGuid(),
                 UserId = userId,
                 CreatedAt = DateTime.UtcNow,
-                CreatedBy = userId
+                CreatedBy = userId,
+                VerificationStatus = VerificationStatus.NotSubmitted
             };
             _nannyProfileRepo.Add(profile);
         }
@@ -211,14 +247,15 @@ public class OnboardingService
 
         foreach (var day in request.Days)
         {
+            // TimeSlot: 0=Morning, 1=Afternoon, 2=Evening, 3=Night
             if (day.Morning)
-                items.Add(CreateAvailability(profile.Id, day.DayOfWeek, 1, userId, now));
+                items.Add(CreateAvailability(profile.Id, day.DayOfWeek, 0, userId, now));
             if (day.Afternoon)
-                items.Add(CreateAvailability(profile.Id, day.DayOfWeek, 2, userId, now));
+                items.Add(CreateAvailability(profile.Id, day.DayOfWeek, 1, userId, now));
             if (day.Evening)
-                items.Add(CreateAvailability(profile.Id, day.DayOfWeek, 3, userId, now));
+                items.Add(CreateAvailability(profile.Id, day.DayOfWeek, 2, userId, now));
             if (day.Night)
-                items.Add(CreateAvailability(profile.Id, day.DayOfWeek, 4, userId, now));
+                items.Add(CreateAvailability(profile.Id, day.DayOfWeek, 3, userId, now));
         }
 
         if (items.Any())

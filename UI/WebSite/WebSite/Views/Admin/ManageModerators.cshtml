@@ -1,0 +1,257 @@
+@model WebSite.Models.Account.AccountListResponse
+@{
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+    ViewData["Title"] = "Manage Moderators";
+
+    var currentSearch = ViewBag.Search as string ?? "";
+    var currentStatus = ViewBag.Status as string ?? "";
+    var currentPage   = Model?.Page ?? 1;
+    var totalPages    = Model?.TotalPages ?? 1;
+    var accounts      = Model?.Items ?? new List<WebSite.Models.Account.AccountDto>();
+}
+
+<!-- ====================================================
+     PAGE HEADER  — Home-style section label + gradient title
+     ==================================================== -->
+<div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
+    <div>
+        <span class="section-label">🛡️ Moderation Team</span>
+        <h1 class="page-title mt-2">
+            Manage <span class="gradient-text">Moderators</span>
+        </h1>
+        <p class="page-subtitle">Create, update or deactivate moderator accounts in the system.</p>
+    </div>
+    <div class="flex gap-2 flex-shrink-0">
+        <a href="/Admin/CreateModerator" class="btn-primary">
+            <span class="material-icons-round text-base">person_add</span>
+            New Moderator
+        </a>
+    </div>
+</div>
+
+<!-- Alert messages -->
+@if (TempData["Error"] != null)
+{
+    <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 fade-in-up">
+        <span class="material-icons-round text-base">error_outline</span>
+        @TempData["Error"]
+    </div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 fade-in-up">
+        <span class="material-icons-round text-base">check_circle_outline</span>
+        @TempData["Success"]
+    </div>
+}
+
+<!-- ====================================================
+     FILTER / SEARCH FORM  — glassmorphism card
+     ==================================================== -->
+<form method="get" action="/Admin/ManageModerators" id="filterForm">
+    <div class="content-card p-4 mb-5 fade-in-up" style="animation-delay:.05s;">
+        <div class="flex flex-col md:flex-row gap-3">
+
+            <!-- Search -->
+            <div class="relative flex-1">
+                <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">search</span>
+                <input name="search" type="text" value="@currentSearch"
+                       placeholder="Search by name or email..."
+                       class="search-input pl-9"
+                       onkeydown="if(event.key==='Enter'){this.form.submit();}" />
+            </div>
+
+            <!-- Status Filter -->
+            <div class="relative">
+                <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">toggle_on</span>
+                <select name="status" onchange="this.form.submit()"
+                        class="search-input md:w-44 !pl-9 cursor-pointer appearance-none">
+                    <option value="">All Statuses</option>
+                    <option value="1" selected="@(currentStatus == "1" ? "selected" : null)">Active</option>
+                    <option value="0" selected="@(currentStatus == "0" ? "selected" : null)">Inactive</option>
+                </select>
+            </div>
+
+            <!-- Submit -->
+            <button type="submit" class="btn-primary flex-shrink-0">
+                <span class="material-icons-round text-base">search</span>
+                Search
+            </button>
+        </div>
+    </div>
+</form>
+
+<!-- ====================================================
+     ACCOUNT TABLE
+     ==================================================== -->
+<div class="content-card overflow-hidden fade-in-up" style="animation-delay:.1s;">
+
+    <!-- Table header row -->
+    <div class="card-header">
+        <span class="text-sm text-gray-500">
+            Showing <span class="font-bold text-gray-800">@accounts.Count</span>
+            of <span class="font-bold text-gray-800">@(Model?.TotalCount ?? 0)</span> moderators
+        </span>
+        <div class="flex items-center gap-4 text-xs text-gray-400">
+            <div class="flex items-center gap-1.5">
+                <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-emerald-100"></div>Active
+            </div>
+            <div class="flex items-center gap-1.5">
+                <div class="w-2.5 h-2.5 rounded-full bg-red-400 ring-2 ring-red-100"></div>Inactive
+            </div>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full mod-table">
+            <thead>
+                <tr>
+                    <th class="text-left">#</th>
+                    <th class="text-left">User</th>
+                    <th class="text-left">Email</th>
+                    <th class="text-left">Phone</th>
+                    <th class="text-left">Joined</th>
+                    <th class="text-left">Status</th>
+                    <th class="text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!accounts.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="text-center py-16 text-gray-400">
+                            <span class="material-icons-round text-5xl mb-3 block text-gray-200">search_off</span>
+                            <p class="font-semibold text-gray-400">No moderators found matching your criteria.</p>
+                            <p class="text-xs text-gray-300 mt-1">Try adjusting your filters above.</p>
+                        </td>
+                    </tr>
+                }
+                @{int rowNum = ((currentPage - 1) * 10) + 1;}
+                @foreach (var acc in accounts)
+                {
+                    var statusBadge = acc.Status == 1 ? "badge-active"   : "badge-inactive";
+                    var statusLabel = acc.Status == 1 ? "Active"          : "Inactive";
+                    var avatarColors = new[] { "#F97316","#EA580C","#F59E0B","#FBBF24","#FCD34D" };
+                    var avatarBg = avatarColors[Math.Abs(acc.Id.GetHashCode()) % avatarColors.Length];
+
+                    <tr class="account-row" id="row-@acc.Id">
+                        <td class="text-gray-300 text-xs font-mono">@rowNum</td>
+                        <td>
+                            <div class="flex items-center gap-3">
+                                <div class="user-avatar" style="background:@avatarBg;">@acc.FirstName.Substring(0,1).ToUpper()</div>
+                                <div>
+                                    <span class="font-bold text-gray-800">@acc.FullName</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-gray-500 text-sm">@acc.Email</td>
+                        <td class="text-gray-500 text-sm">@(acc.PhoneNumber ?? "—")</td>
+                        <td class="text-gray-500 text-xs">@acc.CreatedAt.ToString("MMM dd, yyyy")</td>
+                        <td>
+                            <div class="flex items-center gap-1.5" id="status-cell-@acc.Id">
+                                <div class="w-2 h-2 rounded-full @(acc.Status == 1 ? "bg-emerald-400 ring-2 ring-emerald-100" : "bg-red-400 ring-2 ring-red-100")"></div>
+                                <span class="badge @statusBadge">@statusLabel</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="flex items-center justify-center gap-1.5">
+                                <!-- View / Edit -->
+                                <a href="/Admin/EditModerator/@acc.Id" title="Edit"
+                                   class="w-8 h-8 rounded-xl hover:bg-orange-50 hover:text-orange-600 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-orange-200">
+                                    <span class="material-icons-round text-base">edit</span>
+                                </a>
+                                <!-- Delete -->
+                                <button onclick="confirmDelete('@acc.Id','@acc.FullName')" title="Delete"
+                                        class="w-8 h-8 rounded-xl hover:bg-red-50 hover:text-red-500 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-red-200">
+                                    <span class="material-icons-round text-base">delete_outline</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    rowNum++;
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex items-center justify-between px-6 py-4 border-t border-gray-50">
+        <span class="text-sm text-gray-400">
+            Page <span class="font-bold text-gray-600">@currentPage</span> of <span class="font-bold text-gray-600">@totalPages</span>
+        </span>
+        <div class="flex gap-1.5">
+            @if (currentPage > 1)
+            {
+                <a href="?search=@currentSearch&status=@currentStatus&page=@(currentPage - 1)"
+                   class="page-btn">
+                    <span class="material-icons-round text-sm">chevron_left</span>
+                </a>
+            }
+            else
+            {
+                <button class="page-btn opacity-30 cursor-not-allowed" disabled>
+                    <span class="material-icons-round text-sm">chevron_left</span>
+                </button>
+            }
+            @for (int p = Math.Max(1, currentPage - 2); p <= Math.Min(totalPages, currentPage + 2); p++)
+            {
+                <a href="?search=@currentSearch&status=@currentStatus&page=@p"
+                   class="page-btn @(p == currentPage ? "active" : "")">@p</a>
+            }
+            @if (currentPage < totalPages)
+            {
+                <a href="?search=@currentSearch&status=@currentStatus&page=@(currentPage + 1)"
+                   class="page-btn">
+                    <span class="material-icons-round text-sm">chevron_right</span>
+                </a>
+            }
+            else
+            {
+                <button class="page-btn opacity-30 cursor-not-allowed" disabled>
+                    <span class="material-icons-round text-sm">chevron_right</span>
+                </button>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- ====================================================
+     DELETE CONFIRM MODAL
+     ==================================================== -->
+<div id="deleteModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeModal('deleteModal')">
+    <div class="modal-box">
+        <div class="flex items-center gap-3 mb-4">
+            <div id="toggleIcon" class="w-12 h-12 rounded-2xl flex items-center justify-center" style="background:#FEE2E2;">
+                <span class="material-icons-round text-2xl" style="color:#EF4444;">delete_forever</span>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-gray-900">Delete Moderator</h3>
+                <p class="text-sm text-gray-400">This action requires confirmation</p>
+            </div>
+        </div>
+        <p class="text-sm text-gray-600 mb-6 bg-gray-50 rounded-2xl p-4 border border-gray-100 leading-relaxed">
+            Are you sure you want to <strong>delete</strong> the account of <strong id="deleteName"></strong>? This user will be removed from the system.
+        </p>
+        <div id="deleteFormContainer" class="flex gap-2"></div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function confirmDelete(id, name) {
+        document.getElementById('deleteName').textContent = name;
+        document.getElementById('deleteFormContainer').innerHTML =
+            '<button onclick="closeModal(\'deleteModal\')" class="btn-outline flex-1 justify-center">Cancel</button>' +
+            '<form method="post" action="/Admin/DeleteModerator" class="flex-1 flex">' +
+            '@Html.AntiForgeryToken()'.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&') +
+            '<input type="hidden" name="id" value="' + id + '" />' +
+            '<button type="submit" class="btn-danger w-full justify-center">Confirm</button>' +
+            '</form>';
+        document.getElementById('deleteModal').classList.remove('hidden');
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.add('hidden');
+    }
+</script>
+}

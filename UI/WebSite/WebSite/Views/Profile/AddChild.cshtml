@@ -30,39 +30,22 @@
                     </h3>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Name -->
-                        <div>
-                            <label for="Name" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                                👶 Tên con (Không bắt buộc)
-                            </label>
-                            <input type="text" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-                                   id="Name" name="Name" value="@Model.Name" placeholder="Để trống nếu muốn">
-                            @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-red-500 text-sm mt-1" })
-                        </div>
 
-                        <!-- Date of Birth -->
-                        <div>
-                            <label for="DateOfBirth" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                                🎂 Ngày sinh <span class="text-red-500">*</span>
-                            </label>
-                            <input type="date" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-                                   id="DateOfBirth" name="DateOfBirth" value="@(Model.DateOfBirth != default ? Model.DateOfBirth.ToString("yyyy-MM-dd") : "")" required>
-                            @Html.ValidationMessageFor(m => m.DateOfBirth, "", new { @class = "text-red-500 text-sm mt-1" })
-                        </div>
 
-                        <!-- Gender -->
+                        <!-- Child Age Group -->
                         <div>
-                            <label for="Gender" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                                👥 Giới tính
+                            <label for="ChildAgeGroup" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                                🎂 Nhóm tuổi
                             </label>
                             <select class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-                                    id="Gender" name="Gender">
-                                <option value="">-- Chọn giới tính --</option>
-                                <option value="0" selected="@(Model.Gender == 0)">Nam</option>
-                                <option value="1" selected="@(Model.Gender == 1)">Nữ</option>
-                                <option value="2" selected="@(Model.Gender == 2)">Khác</option>
+                                    id="ChildAgeGroup" name="ChildAgeGroup">
+                                <option value="">-- Chọn nhóm tuổi --</option>
+                                <option value="1">Em bé (0-1 tuổi)</option>
+                                <option value="2">Toddler (1-3 tuổi)</option>
+                                <option value="3">Mầm non (3-5 tuổi)</option>
+                                <option value="4">Học sinh tiểu học (6-12 tuổi)</option>
                             </select>
-                            @Html.ValidationMessageFor(m => m.Gender, "", new { @class = "text-red-500 text-sm mt-1" })
+                            @Html.ValidationMessageFor(m => m.ChildAgeGroup, "", new { @class = "text-red-500 text-sm mt-1" })
                         </div>
                     </div>
                 </div>
@@ -74,15 +57,7 @@
                         Thông tin sức khỏe
                     </h3>
 
-                    <!-- Allergies -->
-                    <div>
-                        <label for="Allergies" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                            ⚠️ Dị ứng (nếu có)
-                        </label>
-                        <textarea class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none"
-                                  id="Allergies" name="Allergies" rows="3" placeholder="Mô tả các loại dị ứng nếu có...">@Model.Allergies</textarea>
-                        @Html.ValidationMessageFor(m => m.Allergies, "", new { @class = "text-red-500 text-sm mt-1" })
-                    </div>
+
 
                     <!-- Special Needs -->
                     <div>
@@ -102,6 +77,16 @@
                         <textarea class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none"
                                   id="Notes" name="Notes" rows="4" placeholder="Các thông tin thêm về con em...">@Model.Notes</textarea>
                         @Html.ValidationMessageFor(m => m.Notes, "", new { @class = "text-red-500 text-sm mt-1" })
+                    </div>
+
+                    <!-- Characteristic -->
+                    <div>
+                        <label for="Characteristic" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                            ✨ Đặc điểm tính cách
+                        </label>
+                        <textarea class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none"
+                                  id="Characteristic" name="Characteristic" rows="3" placeholder="Mô tả đặc điểm tính cách của con...">@Model.Characteristic</textarea>
+                        @Html.ValidationMessageFor(m => m.Characteristic, "", new { @class = "text-red-500 text-sm mt-1" })
                     </div>
                 </div>
 

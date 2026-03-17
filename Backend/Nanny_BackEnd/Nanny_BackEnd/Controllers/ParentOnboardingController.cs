@@ -64,7 +64,7 @@ public class ParentOnboardingController : ControllerBase
             var createRequest = new CreateChildProfileRequest
             {
                 Characteristic = request.Characteristic,
-                ChildAgeGroup = request.ChildAgeGroup,
+                ChildAgeGroup = (Enums.ChildAgeGroup?)request.ChildAgeGroup,
                 SpecialNeeds = request.SpecialNeeds,
                 Notes = request.Notes
             };

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Nanny_BackEnd.Enums;
 
 namespace Nanny_BackEnd.Models;
 
@@ -13,7 +14,7 @@ public partial class NannyProfile
 
     public int? YearsOfExperience { get; set; }
 
-    public int? EducationLevel { get; set; }
+    public EducationLevel? EducationLevel { get; set; }
 
     public decimal? ExpectedSalaryMin { get; set; }
 
@@ -23,7 +24,7 @@ public partial class NannyProfile
 
     public int? MaxTravelDistance { get; set; }
 
-    public int VerificationStatus { get; set; }
+    public VerificationStatus VerificationStatus { get; set; }
 
     public DateTime? VerifiedAt { get; set; }
 

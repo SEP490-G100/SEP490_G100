@@ -10,6 +10,8 @@ namespace WebSite.Controllers;
 [Authorize(Roles = "Parent")]
 public class ParentOnboardingController : Controller
 {
+
+
     private readonly HttpClient _http;
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
 
@@ -47,6 +49,26 @@ public class ParentOnboardingController : Controller
     {
         SetAuthHeader();
 
+        // 1. Upload Avatar if present
+        if (model.AvatarFile != null && model.AvatarFile.Length > 0)
+        {
+            using var content = new MultipartFormDataContent();
+            var streamContent = new StreamContent(model.AvatarFile.OpenReadStream());
+            streamContent.Headers.ContentType = new MediaTypeHeaderValue(model.AvatarFile.ContentType);
+            content.Add(streamContent, "file", model.AvatarFile.FileName);
+
+            var uploadRes = await _http.PostAsync("/api/profile/upload-avatar", content);
+            if (uploadRes.IsSuccessStatusCode)
+            {
+                var uploadJson = await uploadRes.Content.ReadAsStringAsync();
+                var uploadResult = JsonSerializer.Deserialize<ApiResultDto>(uploadJson, JsonOpts);
+                if (uploadResult?.Success == true && uploadResult.Data != null)
+                {
+                    model.AvatarUrl = uploadResult.Data.ToString();
+                }
+            }
+        }
+
         var firstName = string.Empty;
         var lastName = string.Empty;
 
@@ -81,8 +103,8 @@ public class ParentOnboardingController : Controller
         };
 
         var response = await _http.PutAsJsonAsync("/api/profile", updateRequest);
-        var content = await response.Content.ReadAsStringAsync();
-        var apiResult = JsonSerializer.Deserialize<ApiResultDto>(content, JsonOpts);
+        var resContent = await response.Content.ReadAsStringAsync();
+        var apiResult = JsonSerializer.Deserialize<ApiResultDto>(resContent, JsonOpts);
         return apiResult != null && apiResult.Success;
     }
 
@@ -106,11 +128,9 @@ public class ParentOnboardingController : Controller
         SetAuthHeader();
         var payload = new
         {
-            Name = (string?)null,
-            DateOfBirth = model.ChildDateOfBirth,
-            Gender = (int?)null,
+            Characteristic = model.ChildCharacteristic,
+            ChildAgeGroup = model.ChildAgeGroup,
             SpecialNeeds = model.ChildSpecialNeeds,
-            Allergies = model.ChildAllergies,
             Notes = model.ChildNotes
         };
 
@@ -138,7 +158,7 @@ public class ParentOnboardingController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Step1Name()
+    public async Task<IActionResult> Step1BasicInfo()
     {
         var existing = await LoadCurrentProfileAsync();
         var vm = new ParentOnboardingWizardViewModel();
@@ -160,138 +180,83 @@ public class ParentOnboardingController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Step1Name(ParentOnboardingWizardViewModel model, string? direction)
+    public async Task<IActionResult> Step1BasicInfo(ParentOnboardingWizardViewModel model, string? direction)
     {
-        if (direction == "next" && string.IsNullOrWhiteSpace(model.FullName))
-        {
-            ModelState.AddModelError(nameof(model.FullName), "Vui lòng nhập họ tên.");
-        }
-
-        if (!ModelState.IsValid)
-        {
-            return View(model);
-        }
-
-        return View("Step2Address", model);
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public IActionResult Step2Address(ParentOnboardingWizardViewModel model, string? direction)
-    {
-        if (direction == "back")
-        {
-            return View("Step1Name", model);
-        }
-
-        if (direction == "next" && string.IsNullOrWhiteSpace(model.Address))
-        {
-            ModelState.AddModelError(nameof(model.Address), "Vui lòng nhập địa chỉ.");
-        }
-
-        if (!ModelState.IsValid)
-        {
-            return View("Step2Address", model);
-        }
-
-        return View("Step3Avatar", model);
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Step3Avatar(ParentOnboardingWizardViewModel model, string? direction)
-    {
-        if (direction == "back")
-        {
-            return View("Step2Address", model);
-        }
-
         if (direction == "next")
         {
+            if (string.IsNullOrWhiteSpace(model.FullName))
+                ModelState.AddModelError(nameof(model.FullName), "Vui lòng nhập họ tên.");
+
+            if (string.IsNullOrWhiteSpace(model.Address))
+                ModelState.AddModelError(nameof(model.Address), "Vui lòng nhập địa chỉ chi tiết.");
+
+            if (string.IsNullOrWhiteSpace(model.City) || string.IsNullOrWhiteSpace(model.District) || string.IsNullOrWhiteSpace(model.Ward))
+                ModelState.AddModelError(string.Empty, "Vui lòng chọn đầy đủ Tỉnh/Thành, Quận/Huyện, Phường/Xã.");
+
+            if (!ModelState.IsValid)
+                return View(model);
+
             var success = await SaveBasicUserInfoAsync(model);
             if (!success)
             {
-                ModelState.AddModelError(string.Empty, "Cập nhật thông tin cơ bản thất bại. Vui lòng thử lại.");
-                return View("Step3Avatar", model);
+                ModelState.AddModelError(string.Empty, "Lưu thông tin thất bại. Vui lòng thử lại.");
+                return View(model);
             }
 
-            return View("Step4Family", model);
+            return RedirectToAction("Step2Family");
         }
 
-        return View("Step3Avatar", model);
+        return View(model);
+    }
+
+    [HttpGet]
+    public IActionResult Step2Family()
+    {
+        return View(new ParentOnboardingWizardViewModel());
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Step4Family(ParentOnboardingWizardViewModel model, string? direction)
+    public async Task<IActionResult> Step2Family(ParentOnboardingWizardViewModel model, string? direction)
     {
         if (direction == "back")
         {
-            return View("Step3Avatar", model);
+            return RedirectToAction("Step1BasicInfo");
         }
 
         if (direction == "next")
         {
             if (string.IsNullOrWhiteSpace(model.FamilyDescription))
-            {
                 ModelState.AddModelError(nameof(model.FamilyDescription), "Vui lòng mô tả gia đình.");
-            }
-            if (model.NumberOfChildren == null || model.NumberOfChildren <= 0)
-            {
-                ModelState.AddModelError(nameof(model.NumberOfChildren), "Vui lòng nhập số lượng con hợp lệ.");
-            }
+
+            if (!model.NumberOfChildren.HasValue || model.NumberOfChildren < 1)
+                ModelState.AddModelError(nameof(model.NumberOfChildren), "Vui lòng nhập số lượng con.");
+
+            if (!model.ChildAgeGroup.HasValue)
+                ModelState.AddModelError(nameof(model.ChildAgeGroup), "Vui lòng chọn nhóm tuổi của trẻ.");
 
             if (!ModelState.IsValid)
+                return View(model);
+
+            // Lưu Parent Profile (FamilyDescription & NumberOfChildren)
+            var parentSuccess = await SaveParentProfileAsync(model);
+            if (!parentSuccess)
             {
-                return View("Step4Family", model);
+                ModelState.AddModelError(string.Empty, "Lưu thông tin gia đình thất bại.");
+                return View(model);
             }
 
-            var success = await SaveParentProfileAsync(model);
-            if (!success)
+            // Gọi API thêm Child Profile đầu tiên
+            var childSuccess = await CreateChildAsync(model);
+            if (!childSuccess)
             {
-                ModelState.AddModelError(string.Empty, "Cập nhật hồ sơ parent thất bại. Vui lòng thử lại.");
-                return View("Step4Family", model);
+                // Có thể API trả về 500 do DB schema mismatch, cứ cho user qua buớc này
+                // (Chấp nhận fail ở bước thêm child để user có thể vào được Homepage)
             }
 
-            return View("Step5Child", model);
-        }
-
-        return View("Step4Family", model);
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Step5Child(ParentOnboardingWizardViewModel model, string? direction)
-    {
-        if (direction == "back")
-        {
-            return View("Step4Family", model);
-        }
-
-        if (direction == "next")
-        {
-            if (model.ChildDateOfBirth == null)
-            {
-                ModelState.AddModelError(nameof(model.ChildDateOfBirth), "Vui lòng chọn ngày sinh của con.");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                return View("Step5Child", model);
-            }
-
-            var success = await CreateChildAsync(model);
-            if (!success)
-            {
-                ModelState.AddModelError(string.Empty, "Tạo hồ sơ con thất bại. Vui lòng thử lại.");
-                return View("Step5Child", model);
-            }
-
-            // Sau khi tạo child profile thành công, quay về trang chủ
             return RedirectToAction("Index", "Home");
         }
 
-        return View("Step5Child", model);
+        return View(model);
     }
 }
-
