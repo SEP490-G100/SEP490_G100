@@ -467,11 +467,13 @@ public partial class Sep490NannyDbContext : DbContext
 
         modelBuilder.Entity<NannyAvailability>(entity =>
         {
+            entity.HasIndex(e => new { e.NannyProfileId, e.DayOfWeek, e.TimeSlot }, "UQ_NannyAvailabilities_NannyProfileId_DayOfWeek_TimeSlot")
+                .IsUnique()
+                .HasFilter("([IsDeleted]=(0))");
+
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())");
-            entity.Property(e => e.EndTime).HasPrecision(0);
             entity.Property(e => e.IsAvailable).HasDefaultValue(true);
-            entity.Property(e => e.StartTime).HasPrecision(0);
 
             entity.HasOne(d => d.NannyProfile).WithMany(p => p.NannyAvailabilities)
                 .HasForeignKey(d => d.NannyProfileId)
