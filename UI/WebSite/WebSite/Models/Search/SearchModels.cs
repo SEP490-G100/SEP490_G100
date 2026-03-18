@@ -20,6 +20,9 @@ public class SearchJobResponse
     [JsonPropertyName("parentProfileId")]
     public Guid? ParentProfileId { get; set; }
 
+    [JsonPropertyName("childProfileId")]
+    public Guid? ChildProfileId { get; set; }
+
     [JsonPropertyName("isOwner")]
     public bool IsOwner { get; set; }
 
@@ -41,9 +44,6 @@ public class SearchJobResponse
     [JsonPropertyName("salaryMax")]
     public decimal? SalaryMax { get; set; }
 
-    [JsonPropertyName("salaryType")]
-    public int SalaryType { get; set; }
-
     [JsonPropertyName("salaryNegotiable")]
     public bool SalaryNegotiable { get; set; }
 
@@ -55,6 +55,30 @@ public class SearchJobResponse
 
     [JsonPropertyName("location")]
     public string? Location { get; set; }
+
+    [JsonPropertyName("characteristic")]
+    public string? Characteristic { get; set; }
+
+    [JsonPropertyName("birthType")]
+    public int? BirthType { get; set; }
+
+    [JsonPropertyName("birthTypeLabel")]
+    public string? BirthTypeLabel { get; set; }
+
+    [JsonPropertyName("specialNeeds")]
+    public string? SpecialNeeds { get; set; }
+
+    [JsonPropertyName("minNannyAge")]
+    public int? MinNannyAge { get; set; }
+
+    [JsonPropertyName("maxNannyAge")]
+    public int? MaxNannyAge { get; set; }
+
+    [JsonPropertyName("skills")]
+    public List<string> Skills { get; set; } = [];
+
+    [JsonPropertyName("scheduleSlots")]
+    public List<JobScheduleSlotResponse> ScheduleSlots { get; set; } = [];
 
     [JsonPropertyName("numberOfChildren")]
     public int? NumberOfChildren { get; set; }
@@ -68,11 +92,98 @@ public class SearchJobResponse
     [JsonPropertyName("status")]
     public int Status { get; set; }
 
+    [JsonPropertyName("moderationStatus")]
+    public int ModerationStatus { get; set; }
+
+    [JsonPropertyName("moderationNote")]
+    public string? ModerationNote { get; set; }
+
+    [JsonPropertyName("moderatedAt")]
+    public DateTime? ModeratedAt { get; set; }
+
     [JsonPropertyName("publishedAt")]
     public DateTime? PublishedAt { get; set; }
 
     [JsonPropertyName("distanceKm")]
     public double? DistanceKm { get; set; }
+
+    [JsonPropertyName("subscriptionPlanCode")]
+    public string? SubscriptionPlanCode { get; set; }
+
+    [JsonPropertyName("featuredBadge")]
+    public bool FeaturedBadge { get; set; }
+
+    [JsonPropertyName("searchPriority")]
+    public bool SearchPriority { get; set; }
+}
+
+public class JobPostingPrefillResponse
+{
+    [JsonPropertyName("numberOfChildren")]
+    public int? NumberOfChildren { get; set; }
+
+    [JsonPropertyName("selectedChildProfileId")]
+    public Guid? SelectedChildProfileId { get; set; }
+
+    [JsonPropertyName("characteristic")]
+    public string? Characteristic { get; set; }
+
+    [JsonPropertyName("birthType")]
+    public int? BirthType { get; set; }
+
+    [JsonPropertyName("birthTypeLabel")]
+    public string? BirthTypeLabel { get; set; }
+
+    [JsonPropertyName("specialNeeds")]
+    public string? SpecialNeeds { get; set; }
+
+    [JsonPropertyName("skills")]
+    public List<string> Skills { get; set; } = [];
+
+    [JsonPropertyName("children")]
+    public List<JobPostingPrefillChildResponse> Children { get; set; } = [];
+}
+
+public class JobPostingPrefillChildResponse
+{
+    [JsonPropertyName("id")]
+    public Guid Id { get; set; }
+
+    [JsonPropertyName("label")]
+    public string Label { get; set; } = "";
+
+    [JsonPropertyName("characteristic")]
+    public string? Characteristic { get; set; }
+
+    [JsonPropertyName("birthType")]
+    public int? BirthType { get; set; }
+
+    [JsonPropertyName("birthTypeLabel")]
+    public string? BirthTypeLabel { get; set; }
+
+    [JsonPropertyName("specialNeeds")]
+    public string? SpecialNeeds { get; set; }
+}
+
+public class JobScheduleSlotResponse
+{
+    [JsonPropertyName("dayOfWeek")]
+    public int DayOfWeek { get; set; }
+
+    [JsonPropertyName("timeSlot")]
+    public int TimeSlot { get; set; }
+}
+
+public class JobSkillOption
+{
+    [JsonPropertyName("skillId")]
+    public Guid SkillId { get; set; }
+
+    [JsonPropertyName("skillName")]
+    public string SkillName { get; set; } = "";
+
+    [JsonPropertyName("category")]
+    public string Category { get; set; } = "";
 }
 
 public class SearchApiResult

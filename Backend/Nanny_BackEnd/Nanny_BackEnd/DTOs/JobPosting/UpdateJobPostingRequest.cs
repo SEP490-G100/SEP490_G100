@@ -2,31 +2,32 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Nanny_BackEnd.DTOs.JobPosting;
 
-/// <summary>
-/// Request body khi cập nhật Job Posting.
-/// Lat/Lng được hệ thống tự động geocode nếu địa chỉ thay đổi.
-/// </summary>
 public class UpdateJobPostingRequest
 {
-    [Required(ErrorMessage = "Tiêu đề không được để trống.")]
-    [StringLength(200, MinimumLength = 5, ErrorMessage = "Tiêu đề phải từ 5 đến 200 ký tự.")]
+    [Required(ErrorMessage = "Tieu de khong duoc de trong.")]
+    [StringLength(200, MinimumLength = 5, ErrorMessage = "Tieu de phai tu 5 den 200 ky tu.")]
     public string Title { get; set; } = "";
 
-    [Required(ErrorMessage = "Mô tả không được để trống.")]
-    [StringLength(3000, MinimumLength = 10, ErrorMessage = "Mô tả phải từ 10 đến 3000 ký tự.")]
+    [Required(ErrorMessage = "Mo ta khong duoc de trong.")]
+    [StringLength(3000, MinimumLength = 10, ErrorMessage = "Mo ta phai tu 10 den 3000 ky tu.")]
     public string Description { get; set; } = "";
 
-    [Required(ErrorMessage = "Loại công việc không được để trống.")]
-    [Range(1, 3, ErrorMessage = "JobType phải là 1, 2, hoặc 3.")]
+    [Required(ErrorMessage = "Loai cong viec khong duoc de trong.")]
+    [Range(1, 3, ErrorMessage = "JobType phai la 1, 2, hoac 3.")]
     public int JobType { get; set; }
 
-    [Range(0, 100_000_000, ErrorMessage = "Lương tối thiểu phải từ 0 đến 100,000,000.")]
+    [Range(0, 100_000_000, ErrorMessage = "Luong toi thieu phai tu 0 den 100,000,000.")]
     public decimal? SalaryMin { get; set; }
+
+    [Range(0, 100_000_000, ErrorMessage = "Luong toi da phai tu 0 den 100,000,000.")]
+    public decimal? SalaryMax { get; set; }
 
     public bool SalaryNegotiable { get; set; }
 
-    [Range(1, 10, ErrorMessage = "Số trẻ phải từ 1 đến 10.")]
+    [Range(1, 10, ErrorMessage = "So tre phai tu 1 den 10.")]
     public int? NumberOfChildren { get; set; }
+
+    public Guid? ChildProfileId { get; set; }
 
     [StringLength(300)]
     public string? Location { get; set; }
@@ -37,8 +38,26 @@ public class UpdateJobPostingRequest
     [StringLength(100)]
     public string? District { get; set; }
 
-    /// <summary>Trạng thái: 0 = Draft (chỉ Nanny xem), 1 = Active (công khai).</summary>
-    [Range(0, 1, ErrorMessage = "Status phải là 0 (Draft) hoặc 1 (Active).")]
+    [StringLength(500, ErrorMessage = "Characteristic toi da 500 ky tu.")]
+    public string? Characteristic { get; set; }
+
+    [Range(1, 4, ErrorMessage = "BirthType phai tu 1 den 4.")]
+    public int? BirthType { get; set; }
+
+    [StringLength(500, ErrorMessage = "SpecialNeeds toi da 500 ky tu.")]
+    public string? SpecialNeeds { get; set; }
+
+    [Range(18, 80, ErrorMessage = "Do tuoi toi thieu cua bao mau phai tu 18 den 80.")]
+    public int? MinNannyAge { get; set; }
+
+    [Range(18, 80, ErrorMessage = "Do tuoi toi da cua bao mau phai tu 18 den 80.")]
+    public int? MaxNannyAge { get; set; }
+
+    [MaxLength(20, ErrorMessage = "Toi da 20 ky nang cho moi bai dang.")]
+    public List<string> Skills { get; set; } = [];
+
+    public List<JobScheduleSlotRequest> ScheduleSlots { get; set; } = [];
+
+    [Range(1, 2, ErrorMessage = "Trạng thái bài đăng phải là 1 (Published) hoặc 2 (Hidden).")]
     public int Status { get; set; } = 1;
-    // Lat/Lng được hệ thống tự geocode — không cần client gửi lên
 }

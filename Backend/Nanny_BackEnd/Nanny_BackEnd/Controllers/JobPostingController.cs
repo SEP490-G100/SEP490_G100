@@ -1,10 +1,10 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
 using Nanny_BackEnd.DTOs.JobPosting;
-using Nanny_BackEnd.DTOs.Search;
 using Nanny_BackEnd.Services;
 
 namespace Nanny_BackEnd.Controllers;
@@ -22,21 +22,28 @@ public class JobPostingController : ControllerBase
         _db = db;
     }
 
-
-
     [Authorize]
     [HttpGet("my")]
     public async Task<IActionResult> GetMyJobs()
     {
         var parent = await getParent();
-        if (parent is null) return BadRequest(Fail("Tài khoản hiện tại không phải Phụ Huynh."));
+        if (parent is null) return BadRequest(Fail("Tai khoan hien tai khong phai Phu Huynh."));
 
         var result = await _jobSvc.getMyJobs(parent.Id);
         return Ok(Success(result, result.Count));
     }
 
+    [Authorize]
+    [HttpGet("prefill")]
+    public async Task<IActionResult> GetPrefill()
+    {
+        var parent = await getParent();
+        if (parent is null) return BadRequest(Fail("Tai khoan hien tai khong phai Phu Huynh."));
 
-    // GET /api/job-postings?title=c%E1%BA%A7n+b%E1%BA%A3o+m%E1%BA%ABu
+        var result = await _jobSvc.getCreatePrefill(parent.Id);
+        return Ok(Success(result));
+    }
+
     [AllowAnonymous]
     [HttpGet]
     public async Task<IActionResult> SearchByTitle([FromQuery] string? title)
@@ -45,24 +52,43 @@ public class JobPostingController : ControllerBase
         return Ok(Success(result, result.Count));
     }
 
+    [AllowAnonymous]
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetById(Guid id)
+    {
+        try
+        {
+            var result = await _jobSvc.getDetail(id);
+            return Ok(Success(result));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(Fail(ex.Message));
+        }
+    }
 
     [Authorize]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateJobPostingRequest request)
     {
-
         if (!ModelState.IsValid)
             return BadRequest(FailValidation(ModelState));
 
         var parent = await getParent();
-        if (parent is null) return BadRequest(Fail("Tài khoản hiện tại không phải Phụ Huynh."));
+        if (parent is null) return BadRequest(Fail("Tai khoan hien tai khong phai Phu Huynh."));
 
         try
         {
             var jobId = await _jobSvc.createJob(parent.Id, request);
-            return Ok(new { success = true, message = "Tạo tin đăng thành công.", data = new { id = jobId } });
+            return Ok(new
+            {
+                success = true,
+                message = "Tao tin dang thanh cong. Bai dang dang o trang thai cho duyet.",
+                data = new { id = jobId }
+            });
         }
         catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
+        catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
     }
 
     [Authorize]
@@ -73,48 +99,84 @@ public class JobPostingController : ControllerBase
             return BadRequest(FailValidation(ModelState));
 
         var parent = await getParent();
-        if (parent is null) return BadRequest(Fail("Tài khoản hiện tại không phải Phụ Huynh."));
+        if (parent is null) return BadRequest(Fail("Tai khoan hien tai khong phai Phu Huynh."));
 
         try
         {
             await _jobSvc.updateJob(id, parent.Id, request);
-            return Ok(new { success = true, message = "Cập nhật tin đăng thành công." });
+            return Ok(new
+            {
+                success = true,
+                message = "Cap nhat tin dang thanh cong. Bai dang da duoc dua ve trang thai cho duyet."
+            });
         }
-        catch (KeyNotFoundException ex)         { return NotFound(Fail(ex.Message)); }
-        catch (UnauthorizedAccessException ex)  { return StatusCode(403, Fail(ex.Message)); }
-        catch (InvalidOperationException ex)    { return BadRequest(Fail(ex.Message)); }
+        catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
+        catch (UnauthorizedAccessException ex) { return StatusCode(403, Fail(ex.Message)); }
+        catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
     }
-
-
 
     [Authorize]
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {
         var parent = await getParent();
-        if (parent is null) return BadRequest(Fail("Tài khoản hiện tại không phải Phụ Huynh."));
+        if (parent is null) return BadRequest(Fail("Tai khoan hien tai khong phai Phu Huynh."));
 
         try
         {
             await _jobSvc.deletePost(id, parent.Id);
-            return Ok(new { success = true, message = "Xoá tin đăng thành công." });
+            return Ok(new { success = true, message = "Xoa tin dang thanh cong." });
         }
-        catch (KeyNotFoundException ex)        { return NotFound(Fail(ex.Message)); }
+        catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
         catch (UnauthorizedAccessException ex) { return StatusCode(403, Fail(ex.Message)); }
-        catch (InvalidOperationException ex)   { return BadRequest(Fail(ex.Message)); }
+        catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
     }
 
+    [Authorize(Roles = "Moderator,Admin")]
+    [HttpPost("{id:guid}/approve")]
+    public async Task<IActionResult> Approve(Guid id, [FromBody] ModerateJobPostingRequest request)
+    {
+        var moderatorId = getCurrentUserId();
+        if (!moderatorId.HasValue) return Unauthorized(Fail("Khong xac dinh duoc moderator hien tai."));
+
+        try
+        {
+            await _jobSvc.moderateJob(id, moderatorId.Value, true, request.Note);
+            return Ok(new { success = true, message = "Da duyet bai dang thanh cong." });
+        }
+        catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
+    }
+
+    [Authorize(Roles = "Moderator,Admin")]
+    [HttpPost("{id:guid}/reject")]
+    public async Task<IActionResult> Reject(Guid id, [FromBody] ModerateJobPostingRequest request)
+    {
+        var moderatorId = getCurrentUserId();
+        if (!moderatorId.HasValue) return Unauthorized(Fail("Khong xac dinh duoc moderator hien tai."));
+
+        try
+        {
+            await _jobSvc.moderateJob(id, moderatorId.Value, false, request.Note);
+            return Ok(new { success = true, message = "Da tu choi bai dang." });
+        }
+        catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
+    }
 
     private async Task<Models.ParentProfile?> getParent()
     {
-        var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-               ?? User.FindFirst("sub")?.Value;
-
-        if (!Guid.TryParse(sub, out var userId))
+        var userId = getCurrentUserId();
+        if (!userId.HasValue)
             return null;
 
         return await _db.ParentProfiles
-            .FirstOrDefaultAsync(p => p.UserId == userId && !p.IsDeleted);
+            .FirstOrDefaultAsync(p => p.UserId == userId.Value && !p.IsDeleted);
+    }
+
+    private Guid? getCurrentUserId()
+    {
+        var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+               ?? User.FindFirst("sub")?.Value;
+        return Guid.TryParse(sub, out var userId) ? userId : null;
     }
 
     private static object Success(object data, int? total = null) =>
@@ -122,20 +184,17 @@ public class JobPostingController : ControllerBase
             ? new { success = true, total, data }
             : new { success = true, data };
 
-    private static object Fail(string message) =>
-        new { success = false, message };
+    private static object Fail(string message) => new { success = false, message };
 
-
-    private static object FailValidation(Microsoft.AspNetCore.Mvc.ModelBinding.ModelStateDictionary modelState) =>
+    private static object FailValidation(ModelStateDictionary modelState) =>
         new
         {
             success = false,
-            message = "Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.",
+            message = "Du lieu khong hop le. Vui long kiem tra lai.",
             errors = modelState
                 .Where(e => e.Value?.Errors.Count > 0)
                 .ToDictionary(
                     kvp => kvp.Key,
-                    kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
-                )
+                    kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray())
         };
 }

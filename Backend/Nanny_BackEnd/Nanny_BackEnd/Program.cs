@@ -1,6 +1,8 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Nanny_BackEnd.Data;
@@ -10,6 +12,21 @@ using Nanny_BackEnd.Services;
 using Nanny_BackEnd.Validations;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+
+builder.Services.Configure<HostOptions>(options =>
+{
+    options.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore;
+});
+
+var dataProtectionPath = Path.Combine(builder.Environment.ContentRootPath, "App_Data", "DataProtectionKeys");
+Directory.CreateDirectory(dataProtectionPath);
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionPath))
+    .SetApplicationName("Nanny_BackEnd");
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -45,7 +62,9 @@ builder.Services.AddSwaggerGen(c =>
 
 // DbContext
 builder.Services.AddDbContext<Sep490NannyDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("MyCnn")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("MyCnn"),
+        sqlOptions => sqlOptions.EnableRetryOnFailure()));
 
 // JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -71,6 +90,12 @@ builder.Services.AddCors(options =>
         policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
 
 builder.Services.AddHttpClient();
+builder.Services.Configure<VietQrOptions>(builder.Configuration.GetSection("VietQr"));
+builder.Services.AddHttpClient("VietQr", c =>
+{
+    c.BaseAddress = new Uri(builder.Configuration["VietQr:BaseUrl"] ?? "https://api.vietqr.io/v2/");
+    c.Timeout = TimeSpan.FromSeconds(30);
+});
 // Nominatim (OpenStreetMap geocoding) — User-Agent bắt buộc theo ToS
 builder.Services.AddHttpClient("Nominatim", c =>
 {
@@ -105,9 +130,13 @@ builder.Services.AddSingleton<PasswordValidator>();
 builder.Services.AddScoped<JobService>();
 builder.Services.AddScoped<GeocodingService>();
 builder.Services.AddScoped<SubscriptionService>();
+builder.Services.AddScoped<NotificationService>();
+builder.Services.AddScoped<VietQrService>();
 
 // Background Services
-builder.Services.AddHostedService<OtpCleanupService>();
+if (!builder.Environment.IsDevelopment())
+    builder.Services.AddHostedService<OtpCleanupService>();
+builder.Services.AddHostedService<SubscriptionReminderService>();
 
 var app = builder.Build();
 
