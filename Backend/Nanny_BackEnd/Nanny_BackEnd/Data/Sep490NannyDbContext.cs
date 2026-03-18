@@ -383,6 +383,8 @@ public partial class Sep490NannyDbContext : DbContext
 
         modelBuilder.Entity<JobPosting>(entity =>
         {
+            entity.HasIndex(e => e.ChildProfileId, "IX_JobPostings_ChildProfileId").HasFilter("([IsDeleted]=(0))");
+
             entity.HasIndex(e => e.ParentProfileId, "IX_JobPostings_ParentProfileId").HasFilter("([IsDeleted]=(0))");
 
             entity.HasIndex(e => new { e.City, e.District, e.CreatedAt }, "IX_JobPostings_Search")
@@ -402,6 +404,10 @@ public partial class Sep490NannyDbContext : DbContext
             entity.Property(e => e.SalaryMax).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.SalaryMin).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.Title).HasMaxLength(200);
+
+            entity.HasOne(d => d.ChildProfile).WithMany(p => p.JobPostings)
+                .HasForeignKey(d => d.ChildProfileId)
+                .HasConstraintName("FK_JobPostings_ChildProfiles");
 
             entity.HasOne(d => d.ModeratedByNavigation).WithMany(p => p.JobPostings)
                 .HasForeignKey(d => d.ModeratedBy)

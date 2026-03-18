@@ -1,0 +1,152 @@
+@model WebSite.Models.Subscription.SubscriptionPaymentResultPageViewModel
+@{
+    ViewData["Title"] = "Ket qua thanh toan";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Head {
+    <link rel="stylesheet" href="~/css/subscription.css" />
+}
+
+<div class="sub-shell">
+    <section class="sub-hero">
+        <div class="sub-hero-copy">
+            <div class="sub-role">Ket qua thanh toan</div>
+            <h1>Dang xac nhan giao dich cua ban</h1>
+            <p>He thong se cap nhat ngay khi callback thanh toan tu cong thanh toan duoc ghi nhan.</p>
+        </div>
+        <div class="sub-status-card">
+            <span class="sub-status-label">Ma giao dich</span>
+            <strong>@Model.TransactionId</strong>
+            @if (Model.Cancelled)
+            {
+                <p>Ban da huy giao dich tren cong thanh toan. Ban co the quay lai va thu lai bat cu luc nao.</p>
+            }
+            else if (Model.PaymentStatus != null)
+            {
+                <p id="paymentStatusText">@Model.PaymentStatus.TransactionStatusLabel - @Model.PaymentStatus.PlanName</p>
+            }
+            else
+            {
+                <p id="paymentStatusText">Dang cho he thong xac nhan thanh toan.</p>
+            }
+        </div>
+    </section>
+
+    <section class="sub-current">
+        <div class="sub-grid" style="grid-template-columns:minmax(0, 1fr);">
+            <article class="plan-card current-card">
+                <div class="plan-top">
+                    <span class="plan-tag">Thanh toan</span>
+                    <h3 id="paymentResultTitle">
+                        @if (Model.Cancelled)
+                        {
+                            @:Ban da huy giao dich
+                        }
+                        else if (Model.PaymentStatus?.SubscriptionActivated == true)
+                        {
+                            @:Thanh toan thanh cong
+                        }
+                        else if (Model.PaymentStatus?.TransactionStatus == 3)
+                        {
+                            @:Thanh toan that bai
+                        }
+                        else
+                        {
+                            @:Dang cho xac nhan
+                        }
+                    </h3>
+                    <p id="paymentResultDescription">
+                        @if (Model.Cancelled)
+                        {
+                            @:Giao dich chua duoc hoan tat. Neu ban muon tiep tuc, vui long quay lai trang subscription va tao giao dich moi.
+                        }
+                        else if (Model.PaymentStatus?.SubscriptionActivated == true)
+                        {
+                            @:Goi subscription cua ban da duoc kich hoat. Ban co the quay lai trang subscription de xem chi tiet.
+                        }
+                        else if (Model.PaymentStatus?.TransactionStatus == 3)
+                        {
+                            @:Cong thanh toan da tra ve trang thai that bai. Ban co the thu lai bang mot giao dich moi.
+                        }
+                        else
+                        {
+                            @:Trang nay se tu dong kiem tra lai ket qua trong vai giay toi.
+                        }
+                    </p>
+                </div>
+
+                <div class="plan-highlight">
+                    <span>Trang thai: <b id="paymentResultStatus">@Model.PaymentStatus?.TransactionStatusLabel ?? "Dang cho xac nhan"</b></span>
+                    <span>Goi: <b id="paymentResultPlan">@Model.PaymentStatus?.PlanName ?? "Subscription"</b></span>
+                </div>
+
+                <div class="flex flex-wrap gap-3 mt-6">
+                    <a href="@Url.Action("Index", "Subscription")" class="sub-primary-btn">Quay lai trang goi</a>
+                    <a href="@Url.Action("Index", "Home")" class="sub-secondary-btn">Ve trang chu</a>
+                </div>
+            </article>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    @if (!Model.Cancelled && Model.TransactionId != Guid.Empty)
+    {
+        <script>
+            (() => {
+                const transactionId = '@Model.TransactionId';
+                const statusText = document.getElementById('paymentStatusText');
+                const resultTitle = document.getElementById('paymentResultTitle');
+                const resultDescription = document.getElementById('paymentResultDescription');
+                const resultStatus = document.getElementById('paymentResultStatus');
+                const resultPlan = document.getElementById('paymentResultPlan');
+
+                let attempts = 0;
+                const maxAttempts = 20;
+
+                const applyStatus = (data) => {
+                    if (!data) return false;
+
+                    resultStatus.textContent = data.transactionStatusLabel || 'Dang cho xac nhan';
+                    resultPlan.textContent = data.planName || 'Subscription';
+                    statusText.textContent = `${data.transactionStatusLabel || 'Dang cho xac nhan'} - ${data.planName || 'Subscription'}`;
+
+                    if (data.subscriptionActivated) {
+                        resultTitle.textContent = 'Thanh toan thanh cong';
+                        resultDescription.textContent = 'Goi subscription cua ban da duoc kich hoat thanh cong.';
+                        return true;
+                    }
+
+                    if (data.transactionStatus === 3) {
+                        resultTitle.textContent = 'Thanh toan that bai';
+                        resultDescription.textContent = 'Cong thanh toan tra ve trang thai that bai. Ban co the thu lai bang mot giao dich moi.';
+                        return true;
+                    }
+
+                    resultTitle.textContent = 'Dang cho xac nhan';
+                    resultDescription.textContent = 'Trang nay se tu dong kiem tra lai ket qua trong vai giay toi.';
+                    return false;
+                };
+
+                const poll = async () => {
+                    attempts += 1;
+                    try {
+                        const response = await fetch(`/Subscription/PaymentStatus?transactionId=${transactionId}`, {
+                            credentials: 'same-origin'
+                        });
+                        const result = await response.json();
+                        const done = applyStatus(result?.data);
+                        if (done || attempts >= maxAttempts) return;
+                    } catch {
+                        if (attempts >= maxAttempts) return;
+                    }
+
+                    setTimeout(poll, 3000);
+                };
+
+                setTimeout(poll, 2500);
+            })();
+        </script>
+    }
+}
