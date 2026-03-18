@@ -1,0 +1,287 @@
+@model WebSite.Models.Verification.VerificationRequestDetailDto
+@{
+    Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
+    ViewData["Title"] = "Verification Detail";
+
+    var avatarColors = new[] { "#F97316","#3B82F6","#8B5CF6","#10B981","#F59E0B","#EF4444","#EC4899","#6366F1" };
+    var avatarBg     = avatarColors[Math.Abs(Model.NannyUserId.GetHashCode()) % avatarColors.Length];
+    var isPending    = Model.Status == 1;
+}
+
+<!-- BREADCRUMB -->
+<div class="flex items-center gap-2 text-sm text-gray-400 mb-6 fade-in-up">
+    <a href="/Moderator/ManageNannyVerification" class="hover:text-orange-500 transition-colors font-semibold">
+        Nanny Verification
+    </a>
+    <span class="material-icons-round text-base">chevron_right</span>
+    <span class="text-gray-600 font-semibold">@Model.FullName</span>
+</div>
+
+<!-- PAGE HEADER -->
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7 fade-in-up">
+    <div>
+        <span class="section-label">Verification Detail</span>
+        <h1 class="page-title mt-2">Review <span class="gradient-text">Application</span></h1>
+    </div>
+    <span class="badge @Model.StatusClass text-sm px-4 py-2">@Model.StatusLabel</span>
+</div>
+
+<!-- Alert messages -->
+@if (TempData["Error"] != null)
+{
+    <div class="mb-5 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2">
+        <span class="material-icons-round text-base">error_outline</span> @TempData["Error"]
+    </div>
+}
+
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
+
+    <!-- LEFT: Nanny profile info -->
+    <div class="xl:col-span-1 space-y-5">
+
+        <!-- Nanny card -->
+        <div class="content-card p-5 fade-in-up">
+            <div class="flex items-center gap-4 mb-5 p-4 rounded-2xl"
+                 style="background:linear-gradient(135deg,#FFF7ED,#FED7AA20); border:1px solid #FED7AA;">
+                @if (!string.IsNullOrEmpty(Model.NannyAvatarUrl))
+                {
+                    <img src="@Model.NannyAvatarUrl" alt="@Model.FullName"
+                         class="w-16 h-16 rounded-2xl object-cover shadow-lg" />
+                }
+                else
+                {
+                    <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-lg"
+                         style="background:@avatarBg;">
+                        @Model.FullName.FirstOrDefault()
+                    </div>
+                }
+                <div>
+                    <p class="font-bold text-gray-900 text-lg">@Model.FullName</p>
+                    <p class="text-sm text-gray-500">@Model.NannyEmail</p>
+                    <span class="badge badge-nanny mt-1 inline-block">Nanny</span>
+                </div>
+            </div>
+
+            <div class="space-y-3 text-sm">
+                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                    <span class="material-icons-round text-gray-400 text-base">phone</span>
+                    <div>
+                        <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold">Phone</p>
+                        <p class="font-semibold text-gray-700">@(Model.NannyPhoneNumber ?? "—")</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                    <span class="material-icons-round text-gray-400 text-base">location_on</span>
+                    <div>
+                        <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold">City</p>
+                        <p class="font-semibold text-gray-700">@(Model.NannyCity ?? "—")</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                    <span class="material-icons-round text-gray-400 text-base">work_history</span>
+                    <div>
+                        <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold">Experience</p>
+                        <p class="font-semibold text-gray-700">@(Model.YearsOfExperience.HasValue ? $"{Model.YearsOfExperience} years" : "—")</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                    <span class="material-icons-round text-gray-400 text-base">school</span>
+                    <div>
+                        <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold">Education</p>
+                        <p class="font-semibold text-gray-700">@Model.EducationLabel</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                    <span class="material-icons-round text-gray-400 text-base">calendar_today</span>
+                    <div>
+                        <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold">Submitted</p>
+                        <p class="font-semibold text-gray-700">@Model.CreatedAt.ToString("MMM dd, yyyy HH:mm")</p>
+                    </div>
+                </div>
+                @if (Model.ReviewedAt.HasValue)
+                {
+                    <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                        <span class="material-icons-round text-gray-400 text-base">check_circle</span>
+                        <div>
+                            <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold">Reviewed At</p>
+                            <p class="font-semibold text-gray-700">@Model.ReviewedAt.Value.ToString("MMM dd, yyyy HH:mm")</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Bio -->
+        @if (!string.IsNullOrWhiteSpace(Model.Bio))
+        {
+            <div class="content-card p-5 fade-in-up">
+                <h3 class="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                    <span class="material-icons-round text-orange-500 text-lg">notes</span> Bio
+                </h3>
+                <p class="text-sm text-gray-600 leading-relaxed">@Model.Bio</p>
+            </div>
+        }
+
+        <!-- Rejection reason (if rejected) -->
+        @if (Model.Status == 3 && !string.IsNullOrWhiteSpace(Model.RejectionReason))
+        {
+            <div class="content-card p-5 fade-in-up border-l-4 border-red-400">
+                <h3 class="font-bold text-red-600 mb-2 flex items-center gap-2">
+                    <span class="material-icons-round text-lg">cancel</span> Rejection Reason
+                </h3>
+                <p class="text-sm text-gray-600">@Model.RejectionReason</p>
+            </div>
+        }
+    </div>
+
+    <!-- RIGHT: Documents + Action -->
+    <div class="xl:col-span-2 space-y-5">
+
+        <!-- Documents -->
+        <div class="content-card p-0 overflow-hidden fade-in-up">
+            <div class="card-header">
+                <h2 class="flex items-center gap-2">
+                    <span class="material-icons-round text-orange-500 text-lg">folder_open</span>
+                    Verification Documents
+                </h2>
+                <span class="text-sm text-gray-400">@Model.Documents.Count file(s)</span>
+            </div>
+
+            @if (!Model.Documents.Any())
+            {
+                <div class="px-6 py-12 text-center text-gray-400 text-sm">
+                    <span class="material-icons-round text-4xl mb-2 block text-gray-200">folder_off</span>
+                    No documents uploaded.
+                </div>
+            }
+            else
+            {
+                <div class="divide-y divide-gray-50">
+                    @foreach (var doc in Model.Documents)
+                    {
+                        var ext = System.IO.Path.GetExtension(doc.FileName).ToLower();
+                        var isImage = ext is ".jpg" or ".jpeg" or ".png" or ".gif" or ".webp";
+                        var isPdf   = ext == ".pdf";
+
+                        <div class="flex items-center gap-4 px-5 py-4 hover:bg-orange-50/40 transition-colors">
+                            <!-- Icon -->
+                            <div class="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                                 style="background:linear-gradient(135deg,#FFF7ED,#FED7AA);">
+                                <span class="material-icons-round text-orange-500 text-xl">@doc.TypeIcon</span>
+                            </div>
+
+                            <!-- Info -->
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">File Name</p>
+                                <p class="text-base font-bold text-gray-800 truncate">
+                                    @doc.FileName 
+                                    <span class="text-xs font-normal text-gray-400 ml-1">@(string.IsNullOrEmpty(doc.FileSizeLabel) ? "" : $"({doc.FileSizeLabel})")</span>
+                                </p>
+                            </div>
+
+                            <!-- Preview if image -->
+                            @if (isImage)
+                            {
+                                <a href="@doc.DocumentUrl" target="_blank" rel="noopener"
+                                   title="View @doc.TypeLabel">
+                                    <img src="@doc.DocumentUrl" alt="@doc.TypeLabel"
+                                         class="w-12 h-12 rounded-xl object-cover border border-gray-200 hover:scale-105 transition-transform" />
+                                </a>
+                            }
+
+                            <!-- Open link -->
+                            <a href="@doc.DocumentUrl" target="_blank" rel="noopener"
+                               class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold
+                                      bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition-all flex-shrink-0">
+                                <span class="material-icons-round text-sm">@(isPdf ? "picture_as_pdf" : "open_in_new")</span>
+                                @(isPdf ? "Open PDF" : "View File")
+                            </a>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- APPROVE / REJECT — only if Pending -->
+        @if (isPending)
+        {
+            <div class="content-card p-6 fade-in-up" style="animation-delay:.1s;">
+                <h3 class="font-bold text-gray-900 mb-5 flex items-center gap-2">
+                    <span class="material-icons-round text-orange-500 text-lg">gavel</span>
+                    Make Decision
+                </h3>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Approve -->
+                    <form method="post" action="/Moderator/ReviewVerification/@Model.Id"
+                          onsubmit="return confirm('Approve this nanny verification?')">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="action" value="2" />
+                        <button type="submit"
+                                class="w-full flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-white text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                style="background:linear-gradient(135deg,#10B981,#059669); box-shadow:0 4px 14px rgba(16,185,129,0.35);">
+                            <span class="material-icons-round text-lg">check_circle</span>
+                            Approve Application
+                        </button>
+                    </form>
+
+                    <!-- Reject -->
+                    <button type="button" onclick="document.getElementById('rejectPanel').classList.toggle('hidden')"
+                            class="w-full flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
+                            style="background:linear-gradient(135deg,#EF4444,#DC2626); color:#fff; box-shadow:0 4px 14px rgba(239,68,68,0.35);">
+                        <span class="material-icons-round text-lg">cancel</span>
+                        Reject Application
+                    </button>
+                </div>
+
+                <!-- Rejection reason panel -->
+                <div id="rejectPanel" class="hidden mt-5">
+                    <form method="post" action="/Moderator/ReviewVerification/@Model.Id"
+                          onsubmit="return validateReject()">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="action" value="3" />
+                        <div class="mb-3">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">
+                                Rejection Reason <span class="text-red-500">*</span>
+                            </label>
+                            <textarea id="rejectionReason" name="rejectionReason" rows="4"
+                                      placeholder="Please provide a clear reason for rejection..."
+                                      class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-700
+                                             focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100
+                                             resize-none transition-all"></textarea>
+                        </div>
+                        <button type="submit"
+                                class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all"
+                                style="background:linear-gradient(135deg,#EF4444,#DC2626);">
+                            <span class="material-icons-round text-base">send</span>
+                            Submit Rejection
+                        </button>
+                    </form>
+                </div>
+            </div>
+        }
+
+        <!-- Back button -->
+        <div class="fade-in-up">
+            <a href="/Moderator/ManageNannyVerification"
+               class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold
+                      bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all">
+                <span class="material-icons-round text-base">arrow_back</span>
+                Back to List
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function validateReject() {
+        var reason = document.getElementById('rejectionReason').value.trim();
+        if (!reason) {
+            alert('Please provide a rejection reason before submitting.');
+            return false;
+        }
+        return confirm('Reject this nanny verification with the provided reason?');
+    }
+</script>
+}

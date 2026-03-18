@@ -64,35 +64,34 @@
                     <span class="sidebar-text">Manage Accounts</span>
                 </a>
 
-                <a href="/Moderator/NannyVerification"
+                <a href="/Moderator/ManageNannyVerification"
                    class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() == "NannyVerification" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">verified_user</span>
-                    <span class="sidebar-text">Nanny Verification</span>
-                    <span class="sidebar-text ml-auto bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">12</span>
+                    <span class="sidebar-text">Manage Nanny Verification Requests</span>
                 </a>
 
-                <a href="/Moderator/ViewReports"
+                 
+
+                <a href="/Moderator/#"
+                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() == "ModerateJobPostings" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
+                    <span class="material-icons-round text-xl flex-shrink-0">work</span>
+                    <span class="sidebar-text">Manage Job Postings</span>
+                </a>
+                <a href="/Moderator/ManageReport"
                    class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() == "ViewReports" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">flag</span>
                     <span class="sidebar-text">Reports</span>
-                    <span class="sidebar-text ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">5</span>
-                </a>
-
-                <a href="/Moderator/ModerateJobPostings"
-                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() == "ModerateJobPostings" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
-                    <span class="material-icons-round text-xl flex-shrink-0">work</span>
-                    <span class="sidebar-text">Job Postings Review</span>
                 </a>
 
                 <p class="sidebar-text px-2 text-[10px] uppercase tracking-widest text-gray-500 mt-5 mb-2 font-semibold">Content</p>
 
-                <a href="/Moderator/ManageBlogs"
+                <a href="/Moderator/#"
                    class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() == "ManageBlogs" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">article</span>
                     <span class="sidebar-text">Manage Blogs</span>
                 </a>
 
-                <a href="/Moderator/ManageFAQ"
+                <a href="/Moderator/#"
                    class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() == "ManageFAQ" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">help_outline</span>
                     <span class="sidebar-text">Manage FAQ</span>
