@@ -89,4 +89,3 @@ public class ParentOnboardingController : ControllerBase
         return Guid.Parse(sub!);
     }
 }
-

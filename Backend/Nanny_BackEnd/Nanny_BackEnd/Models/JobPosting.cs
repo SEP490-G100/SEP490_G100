@@ -65,6 +65,10 @@ public partial class JobPosting
 
     public int? MaxNannyAge { get; set; }
 
+    public Guid? ChildProfileId { get; set; }
+
+    public virtual ChildProfile? ChildProfile { get; set; }
+
     public virtual ICollection<FavoriteJobPosting> FavoriteJobPostings { get; set; } = new List<FavoriteJobPosting>();
 
     public virtual ICollection<JobApplication> JobApplications { get; set; } = new List<JobApplication>();
