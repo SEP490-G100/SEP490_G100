@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Nanny_BackEnd.Enums;
 
 namespace Nanny_BackEnd.Models;
 
@@ -12,7 +11,7 @@ public partial class NannySkill
 
     public Guid SkillId { get; set; }
 
-    public ProficiencyLevel? ProficiencyLevel { get; set; }
+    public int? ProficiencyLevel { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
