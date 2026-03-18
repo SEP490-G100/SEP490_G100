@@ -140,6 +140,15 @@ public class NannyBasicInfoController : Controller
 
             if (model.DateOfBirth == null)
                 ModelState.AddModelError(nameof(model.DateOfBirth), "Vui lòng chọn ngày sinh.");
+            else
+            {
+                var today = DateOnly.FromDateTime(DateTime.Today);
+                var dob = model.DateOfBirth.Value;
+                var age = today.Year - dob.Year;
+                if (dob > today.AddYears(-age)) age--;
+                if (age < 18)
+                    ModelState.AddModelError(nameof(model.DateOfBirth), "Nanny phải đủ 18 tuổi trở lên.");
+            }
 
             if (model.Gender == null)
                 ModelState.AddModelError(nameof(model.Gender), "Vui lòng chọn giới tính.");

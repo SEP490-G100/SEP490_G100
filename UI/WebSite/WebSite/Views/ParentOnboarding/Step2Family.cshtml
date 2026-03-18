@@ -66,13 +66,41 @@
                         </div>
 
                         <div>
-                            <label asp-for="ChildSpecialNeeds" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                                Nhu cầu đặc biệt (nếu có)
+                            <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
+                                Nhu cầu đặc biệt (Chọn tất cả các mục phù hợp)
                             </label>
-                            <input asp-for="ChildSpecialNeeds"
-                                   class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                                   placeholder="VD: Dị ứng đậu phộng, cần ngủ trưa..." />
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-gray-50/50 dark:bg-gray-900/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-700">
+                                @{
+                                    var options = new[] { "Dị ứng thực phẩm", "Hen suyễn", "Tự kỷ", "ADHD", "Chế độ ăn đặc biệt", "Khác" };
+                                }
+                                @foreach (var option in options)
+                                {
+                                    <label class="flex items-center gap-3 p-2 hover:bg-white dark:hover:bg-gray-800 rounded-xl transition-colors cursor-pointer group">
+                                        <input type="checkbox" value="@option" class="special-need-checkbox w-5 h-5 rounded border-gray-300 text-orange-600 focus:ring-orange-500/20 transition-all cursor-pointer" />
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-orange-600 transition-colors">@option</span>
+                                    </label>
+                                }
+                            </div>
+                            <input type="hidden" asp-for="ChildSpecialNeeds" id="hiddenSpecialNeeds" />
                         </div>
+
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const checkboxes = document.querySelectorAll('.special-need-checkbox');
+                                const hiddenInput = document.getElementById('hiddenSpecialNeeds');
+
+                                function updateHiddenInput() {
+                                    const selected = Array.from(checkboxes)
+                                        .filter(cb => cb.checked)
+                                        .map(cb => cb.value);
+                                    hiddenInput.value = selected.join(', ');
+                                }
+
+                                checkboxes.forEach(cb => {
+                                    cb.addEventListener('change', updateHiddenInput);
+                                });
+                            });
+                        </script>
 
                         <div>
                             <label asp-for="ChildNotes" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">

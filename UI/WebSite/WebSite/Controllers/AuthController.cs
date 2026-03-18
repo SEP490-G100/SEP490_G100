@@ -299,12 +299,18 @@ public class AuthController : Controller
             };
             
             var response = await _http.SendAsync(request);
-            var result = await ReadApiResult(response);
+            var result = await ReadApiResult<LoginResponseDto>(response);
 
             if (result == null || !result.Success)
             {
                 ModelState.AddModelError("", result?.Message ?? "Lỗi khi cập nhật vai trò. Vui lòng thử lại.");
                 return View();
+            }
+
+            // Backend trả về token mới chứa role đã cập nhật → refresh session + cookie claims
+            if (result.Data != null)
+            {
+                await SignInUserAsync(result.Data);
             }
 
             // Sau khi set role thành công, chuyển hướng tới Onboarding/Start

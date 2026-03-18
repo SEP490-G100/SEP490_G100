@@ -6,120 +6,391 @@
     ViewData["Title"] = "Hồ sơ cá nhân";
 }
 
-<div class="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50/30 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-4xl mx-auto">
-        <!-- Header -->
-        <div class="mb-8">
-            <span class="section-label">👤 Hồ sơ của tôi</span>
-            <h1 class="text-4xl font-bold text-gray-900 dark:text-white mt-3" style="font-family:'Quicksand',sans-serif">
-                Thông tin <span class="gradient-text">cá nhân</span>
-            </h1>
-            <div class="section-divider left mt-4"></div>
+@{
+    var avatar = string.IsNullOrWhiteSpace(Model.AvatarUrl) ? null : Model.AvatarUrl;
+    var locationText = !string.IsNullOrWhiteSpace(Model.City) ? $"{Model.District}, {Model.City}" : "Chưa cập nhật địa chỉ";
+    var fullAddress = !string.IsNullOrWhiteSpace(Model.Address) ? $"{Model.Address}, {Model.Ward}, {Model.District}, {Model.City}" : "Chưa cập nhật";
+
+    string[] dayLabels = { "Mo", "Tu", "We", "Th", "Fr", "Sa", "Su" };
+    string[] slotLabels = { "Morning", "Afternoon", "Evening", "Night" };
+    bool IsAvailable(int day, int slot) =>
+        Model.Availabilities != null && Model.Availabilities.Any(a => a.DayOfWeek == day && a.TimeSlot == slot && a.IsAvailable);
+
+    var mapLat = Model.Latitude?.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    var mapLng = Model.Longitude?.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    var hasCoords = !string.IsNullOrWhiteSpace(mapLat) && !string.IsNullOrWhiteSpace(mapLng);
+    var osmEmbed = hasCoords
+        ? $"https://www.openstreetmap.org/export/embed.html?bbox={(double.Parse(mapLng!, System.Globalization.CultureInfo.InvariantCulture) - 0.02).ToString(System.Globalization.CultureInfo.InvariantCulture)}%2C{(double.Parse(mapLat!, System.Globalization.CultureInfo.InvariantCulture) - 0.02).ToString(System.Globalization.CultureInfo.InvariantCulture)}%2C{(double.Parse(mapLng!, System.Globalization.CultureInfo.InvariantCulture) + 0.02).ToString(System.Globalization.CultureInfo.InvariantCulture)}%2C{(double.Parse(mapLat!, System.Globalization.CultureInfo.InvariantCulture) + 0.02).ToString(System.Globalization.CultureInfo.InvariantCulture)}&layer=mapnik&marker={mapLat}%2C{mapLng}"
+        : null;
+
+    var nannyChipTexts = (Model.Skills ?? new List<NannySkillItemViewModel>())
+        .Take(3)
+        .Select(s => s.SkillId.ToString())
+        .ToList();
+
+    var parentChipTexts = new List<string>();
+    if (!string.IsNullOrWhiteSpace(Model.Characteristic)) parentChipTexts.Add(Model.Characteristic);
+    if (!string.IsNullOrWhiteSpace(Model.SpecialNeeds)) parentChipTexts.Add("SpecialNeeds");
+    if (Model.ChildAgeGroup.HasValue) parentChipTexts.Add($"AgeGroup {Model.ChildAgeGroup}");
+    parentChipTexts = parentChipTexts.Take(3).ToList();
+
+    var isParent = Model.IsParent;
+    var isNanny = Model.IsNanny;
+}
+
+
+<div class="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50/30 to-white dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 text-gray-900 dark:text-gray-100">
+    @if (ViewBag.Warning != null)
+    {
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 pt-6 animate-fade-in">
+            <div class="rounded-2xl border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 text-sm flex items-center gap-3 shadow-sm">
+                <span class="material-icons-round text-amber-500">warning</span>
+                @ViewBag.Warning
+            </div>
+        </div>
+    }
+    
+    <!-- Hero Header -->
+    <div class="h-32 sm:h-40 bg-gradient-to-r from-orange-400 to-orange-600 relative overflow-hidden shadow-lg">
+        <div class="absolute inset-0 opacity-20">
+            <div class="absolute top-0 left-0 w-64 h-64 bg-white rounded-full blur-3xl -ml-20 -mt-20"></div>
+            <div class="absolute bottom-0 right-0 w-64 h-64 bg-white rounded-full blur-3xl -mr-20 -mb-20"></div>
+        </div>
+    </div>
+
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 -mt-16 sm:-mt-20 pb-20 relative z-10">
+        <!-- Profile Header Card -->
+        <div class="flex flex-col md:flex-row items-center md:items-end gap-6 px-4 mb-8">
+            <div class="h-32 w-32 sm:h-40 sm:w-40 rounded-3xl bg-white dark:bg-gray-800 p-1 shadow-xl ring-4 ring-white/20 dark:ring-gray-900/20 overflow-hidden shrink-0 group hover:scale-105 transition-transform duration-500">
+                @if (avatar != null)
+                {
+                    <img src="@avatar" alt="Avatar" class="h-full w-full object-cover rounded-2xl" />
+                }
+                else
+                {
+                    <div class="h-full w-full flex items-center justify-center bg-gray-50 dark:bg-gray-700 text-gray-400 rounded-2xl">
+                        <span class="material-icons-round" style="font-size: 64px;">person</span>
+                    </div>
+                }
+            </div>
+            <div class="flex-1 text-center md:text-left mb-2">
+                <div class="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 mb-3">
+                    <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-gray-900 dark:text-white" style="font-family:'Quicksand',sans-serif">
+                        @Model.FirstName @Model.LastName
+                    </h1>
+                    <div class="flex items-center justify-center md:justify-start gap-2">
+                        <span class="px-3 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 text-xs font-bold rounded-full border border-orange-200 dark:border-orange-800/50 uppercase tracking-wider">
+                            @(isNanny ? "Bảo mẫu" : "Phụ huynh")
+                        </span>
+                        <span class="material-icons-round text-blue-500 text-xl" title="Đã xác minh">verified</span>
+                    </div>
+                </div>
+                
+                <div class="flex flex-wrap justify-center md:justify-start gap-4">
+                    <div class="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+                        <span class="material-icons-round text-sm">location_on</span>
+                        <span class="text-sm font-medium">@(!string.IsNullOrWhiteSpace(Model.City) ? Model.City : "Việt Nam")</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+                        <span class="material-icons-round text-sm">cake</span>
+                        <span class="text-sm font-medium">@((Model.Age?.ToString() ?? "—")) tuổi</span>
+                    </div>
+                    @if (isNanny)
+                    {
+                        <div class="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+                            <span class="material-icons-round text-sm text-yellow-500">star</span>
+                            <span class="text-sm font-bold">@Model.AverageRatingLabel (@(Model.TotalReviews ?? 0) đánh giá)</span>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="flex gap-3 mt-4 md:mt-0">
+                <a href="@Url.Action("Edit", "Profile")"
+                   class="inline-flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primaryDark text-white font-bold rounded-2xl shadow-glow transition-all hover:scale-105 active:scale-95">
+                    <span class="material-icons-round text-lg">edit</span>
+                    <span>Sửa hồ sơ</span>
+                </a>
+            </div>
         </div>
 
-        <!-- Main Card -->
-        <div class="bg-white dark:bg-gray-800/80 rounded-3xl p-8 lg:p-10 shadow-soft border border-gray-100/80 dark:border-gray-700/50 backdrop-blur-sm">
-            <!-- Profile Information Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                <!-- Email -->
-                <div class="space-y-2">
-                    <label class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">📧 Email</label>
-                    <p class="text-lg font-semibold text-gray-900 dark:text-white">@Model.Email</p>
-                </div>
-
-                <!-- Full Name -->
-                <div class="space-y-2">
-                    <label class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">👤 Họ tên</label>
-                    <p class="text-lg font-semibold text-gray-900 dark:text-white">@Model.FirstName @Model.LastName</p>
-                </div>
-
-                <!-- Phone -->
-                <div class="space-y-2">
-                    <label class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">📱 Số điện thoại</label>
-                    <p class="text-lg font-semibold text-gray-900 dark:text-white">
-                        @(Model.PhoneNumber?.ToString() ?? "Chưa được cập nhật")
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column: Key Info -->
+            <div class="lg:col-span-2 space-y-8">
+                <!-- About Card -->
+                <div class="bg-white/80 dark:bg-card-dark/80 backdrop-blur-md rounded-3xl p-6 sm:p-8 shadow-soft border border-gray-100/80 dark:border-gray-800/50">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-bold flex items-center gap-2" style="font-family:'Quicksand',sans-serif">
+                            <span class="w-2 h-8 bg-primary rounded-full"></span>
+                            @(isNanny ? "Giới thiệu bản thân" : "Mô tả gia đình")
+                        </h2>
+                        <div class="flex items-center gap-2 text-xs font-semibold text-gray-400 bg-gray-50 dark:bg-gray-800/50 px-3 py-1.5 rounded-full uppercase tracking-wider">
+                            <span class="material-icons-round text-xs">schedule</span>
+                            Hoạt động: 1 tháng trước
+                        </div>
+                    </div>
+                    
+                    <p class="text-gray-600 dark:text-gray-300 leading-relaxed text-base italic">
+                        "@(isNanny ? (Model.Bio ?? "Chưa cập nhật giới thiệu.") : (Model.FamilyDescription ?? "Chưa có mô tả về gia đình."))"
                     </p>
-                </div>
 
-                <!-- Date of Birth -->
-                <div class="space-y-2">
-                    <label class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">🎂 Ngày sinh</label>
-                    <p class="text-lg font-semibold text-gray-900 dark:text-white">
-                        @(Model.DateOfBirth?.ToString("dd/MM/yyyy") ?? "Chưa được cập nhật")
-                    </p>
-                </div>
-
-                <!-- Gender -->
-                <div class="space-y-2">
-                    <label class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">👥 Giới tính</label>
-                    <p class="text-lg font-semibold text-gray-900 dark:text-white">
-                        @if (Model.Gender.HasValue)
-                        {
-                            @(Model.Gender == 0 ? "Nam" : Model.Gender == 1 ? "Nữ" : "Khác")
-                        }
-                        else
-                        {
-                            <span class="text-gray-400">Chưa được cập nhật</span>
-                        }
-                    </p>
-                </div>
-
-                <!-- Roles -->
-                <div class="space-y-2">
-                    <label class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">🏷️ Vị trí</label>
-                    <div>
-                        @if (Model.Roles.Any())
-                        {
-                            @foreach(var role in Model.Roles)
-                            {
-                                <span class="inline-block bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 px-3 py-1 rounded-full text-sm font-medium mr-2 mb-2">@role</span>
+                    <div class="mt-8 pt-8 border-t border-gray-100 dark:border-gray-800/50">
+                        <h3 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                             Đặc điểm & Kỹ năng
+                        </h3>
+                        <div class="flex flex-wrap gap-2">
+                            @{
+                                var chips = isNanny ? nannyChipTexts : parentChipTexts;
                             }
+                            @if (chips.Any())
+                            {
+                                @foreach (var chip in chips)
+                                {
+                                    <span class="px-4 py-2 rounded-xl bg-orange-50 dark:bg-orange-950/20 border border-orange-100 dark:border-orange-900/30 text-sm font-bold text-orange-700 dark:text-orange-300">
+                                        @(chip.Length > 20 ? chip.Substring(0, 20) + "…" : chip)
+                                    </span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-sm text-gray-400 font-medium italic">Chưa cập nhật đặc điểm</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Location Card -->
+                    <div class="bg-white/80 dark:bg-card-dark/80 backdrop-blur-md rounded-3xl p-6 shadow-soft border border-gray-100/80 dark:border-gray-800/50">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center text-blue-600 dark:text-blue-400 shadow-sm">
+                                <span class="material-icons-round">home</span>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-900 dark:text-white">Địa chỉ liên hệ</h3>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">@locationText</p>
+                            </div>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="p-3 bg-gray-50/50 dark:bg-gray-800/30 rounded-xl border border-gray-100/50 dark:border-gray-700/50">
+                                <p class="text-xs font-bold text-gray-400 uppercase mb-1">Chi tiết</p>
+                                <p class="text-sm font-semibold">@fullAddress</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contact Card -->
+                    <div class="bg-white/80 dark:bg-card-dark/80 backdrop-blur-md rounded-3xl p-6 shadow-soft border border-gray-100/80 dark:border-gray-800/50">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-12 h-12 bg-purple-50 dark:bg-purple-900/30 rounded-2xl flex items-center justify-center text-purple-600 dark:text-purple-400 shadow-sm">
+                                <span class="material-icons-round">contact_mail</span>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-900 dark:text-white">Thông tin liên lạc</h3>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Bảo mật & xác minh</p>
+                            </div>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between p-3 bg-gray-50/50 dark:bg-gray-800/30 rounded-xl border border-gray-100/50 dark:border-gray-700/50">
+                                <span class="text-xs font-bold text-gray-400 uppercase">Email</span>
+                                <span class="text-sm font-semibold truncate max-w-[150px]">@Model.Email</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-gray-50/50 dark:bg-gray-800/30 rounded-xl border border-gray-100/50 dark:border-gray-700/50">
+                                <span class="text-xs font-bold text-gray-400 uppercase">Điện thoại</span>
+                                <span class="text-sm font-semibold">@Model.PhoneNumber</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Family Details (for Parent) -->
+                @if (isParent)
+                {
+                    <div class="bg-white/80 dark:bg-card-dark/80 backdrop-blur-md rounded-3xl p-8 shadow-soft border border-gray-100/80 dark:border-gray-800/50">
+                        <div class="flex items-center justify-between mb-8">
+                            <h2 class="text-xl font-bold flex items-center gap-2" style="font-family:'Quicksand',sans-serif">
+                                <span class="w-2 h-8 bg-green-500 rounded-full"></span>
+                                Thông tin gia đình
+                            </h2>
+                            <a href="@Url.Action("Children", "Profile")" class="text-sm font-bold text-primary hover:underline flex items-center gap-1">
+                                Quản lý con em <span class="material-icons-round text-sm">chevron_right</span>
+                            </a>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="bg-gray-50 dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700">
+                                <div class="text-xs font-bold text-gray-400 uppercase mb-2">Số lượng trẻ</div>
+                                <div class="text-2xl font-bold text-gray-900 dark:text-white">@(Model.NumberOfChildren?.ToString() ?? "—")</div>
+                            </div>
+                            <div class="bg-gray-50 dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700">
+                                <div class="text-xs font-bold text-gray-400 uppercase mb-2">Nhóm tuổi</div>
+                                <div class="text-2xl font-bold text-gray-900 dark:text-white">@(Model.ChildAgeGroup?.ToString() ?? "—")</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 space-y-4">
+                            <div class="p-5 bg-orange-50/50 dark:bg-orange-900/10 rounded-2xl border border-orange-100 dark:border-orange-900/20">
+                                <h4 class="text-sm font-bold text-orange-800 dark:text-orange-300 mb-2 flex items-center gap-2">
+                                    <span class="material-icons-round text-sm">auto_awesome</span>
+                                    Nhu cầu đặc biệt
+                                </h4>
+                                <p class="text-sm text-gray-600 dark:text-gray-300">@(string.IsNullOrWhiteSpace(Model.SpecialNeeds) ? "Không có nhu cầu đặc biệt." : Model.SpecialNeeds)</p>
+                            </div>
+                            <div class="p-5 bg-gray-50/50 dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700">
+                                <h4 class="text-sm font-bold text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-2">
+                                    <span class="material-icons-round text-sm">notes</span>
+                                    Ghi chú thêm
+                                </h4>
+                                <p class="text-sm text-gray-600 dark:text-gray-300">@(string.IsNullOrWhiteSpace(Model.Notes) ? "Không có ghi chú." : Model.Notes)</p>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Map Card -->
+                <div class="bg-white/80 dark:bg-card-dark/80 backdrop-blur-md rounded-3xl p-6 shadow-soft border border-gray-100/80 dark:border-gray-800/50 overflow-hidden">
+                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2" style="font-family:'Quicksand',sans-serif">
+                        <span class="w-2 h-8 bg-blue-400 rounded-full"></span>
+                        Bản đồ vị trí
+                    </h2>
+                    <div class="rounded-2xl overflow-hidden shadow-inner bg-gray-100 border border-gray-200 dark:border-gray-700 h-80">
+                        @if (osmEmbed != null)
+                        {
+                            <iframe title="map" src="@osmEmbed" class="w-full h-full" loading="lazy"></iframe>
                         }
                         else
                         {
-                            <span class="text-gray-400">Chưa được gán vị trị</span>
+                            <div class="w-full h-full flex flex-col items-center justify-center text-gray-400 p-8 text-center italic">
+                                <span class="material-icons-round text-4xl mb-2">map</span>
+                                <p>Chưa có toạ độ để hiển thị bản đồ</p>
+                            </div>
                         }
                     </div>
                 </div>
             </div>
 
-            <!-- Address Section -->
-            <div class="pt-8 border-t border-gray-100 dark:border-gray-700/50">
-                <label class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-3">📍 Địa chỉ</label>
-                <p class="text-lg font-semibold text-gray-900 dark:text-white">
-                    @if (!string.IsNullOrEmpty(Model.Address))
+            <!-- Right Column: Stats & Secondary Info -->
+            <div class="space-y-8">
+                <!-- Action Cards -->
+                <div class="bg-gradient-to-br from-orange-400 to-orange-600 rounded-3xl p-6 text-white shadow-glow">
+                    <h3 class="text-lg font-bold mb-2">Hoàn thiện hồ sơ</h3>
+                    <p class="text-sm text-orange-50 mb-6 font-medium">Hồ sơ hoàn chỉnh giúp bạn dễ dàng kết nối hơn.</p>
+                    <a href="@Url.Action("Edit", "Profile")" class="w-full py-3 bg-white text-orange-600 font-bold rounded-2xl shadow-md flex items-center justify-center gap-2 hover:bg-orange-50 transition-colors">
+                        <span class="material-icons-round">bolt</span>
+                        Cập nhật ngay
+                    </a>
+                </div>
+
+                <!-- Verification Status -->
+                <div class="bg-white/80 dark:bg-card-dark/80 backdrop-blur-md rounded-3xl p-6 shadow-soft border border-gray-100/80 dark:border-gray-800/50">
+                    <h3 class="text-lg font-bold mb-6 flex items-center gap-2" style="font-family:'Quicksand',sans-serif">
+                        <span class="material-icons-round text-teal-500">verified_user</span>
+                        Xác minh
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-100 dark:border-green-900/30">
+                            <span class="text-sm font-bold text-green-700 dark:text-green-400">Trạng thái</span>
+                            <span class="text-sm font-bold text-green-700 dark:text-green-400 uppercase tracking-tighter">@Model.VerificationStatusLabel</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-100 dark:border-green-900/30">
+                            <span class="text-sm font-bold text-green-700 dark:text-green-400">Email</span>
+                            <span class="material-icons-round text-green-500 text-sm">check_circle</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700">
+                            <span class="text-sm font-bold text-gray-500 dark:text-gray-400">CCCD/Hộ chiếu</span>
+                            <span class="text-xs font-bold text-gray-400 italic">Chưa xác minh</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Availability/Stats Card -->
+                <div class="bg-white/80 dark:bg-card-dark/80 backdrop-blur-md rounded-3xl p-6 shadow-soft border border-gray-100/80 dark:border-gray-800/50">
+                    <h3 class="text-lg font-bold mb-6 flex items-center gap-2" style="font-family:'Quicksand',sans-serif">
+                        <span class="material-icons-round text-orange-500">calendar_month</span>
+                        @(isNanny ? "Lịch rảnh" : "Hoạt động")
+                    </h3>
+                    
+                    @if (isNanny)
                     {
-                        @($"{Model.Address}, {Model.Ward}, {Model.District}, {Model.City}")
+                        <div class="grid grid-cols-8 gap-1.5 mb-2">
+                             <div class="w-6"></div>
+                             @foreach(var day in dayLabels) { <div class="text-[10px] font-bold text-gray-400 text-center uppercase">@day</div> }
+                             
+                             @for (var s = 0; s < 4; s++)
+                             {
+                                 <div class="text-[9px] font-bold text-gray-400 flex items-center h-5 uppercase">@slotLabels[s].Substring(0, 3)</div>
+                                 @for (var d = 0; d < 7; d++)
+                                 {
+                                     var available = IsAvailable(d, s);
+                                     <div class="h-5 rounded-md border @(available ? "bg-orange-500 border-orange-600 shadow-sm" : "bg-gray-50 dark:bg-gray-800 border-gray-100 dark:border-gray-700")"></div>
+                                 }
+                             }
+                        </div>
+                        <div class="mt-4 flex items-center gap-4 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                             <div class="flex items-center gap-1.5"><span class="w-3 h-3 bg-orange-500 rounded-sm"></span> Rảnh</div>
+                             <div class="flex items-center gap-1.5"><span class="w-3 h-3 bg-gray-50 dark:bg-gray-800 rounded-sm border border-gray-200"></span> Bận</div>
+                        </div>
                     }
                     else
                     {
-                        <span class="text-gray-400">Chưa được cập nhật</span>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-gray-500 font-medium">Vai trò tham gia</span>
+                                <span class="font-bold">@(Model.Roles != null && Model.Roles.Any() ? string.Join(", ", Model.Roles) : "—")</span>
+                            </div>
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-gray-500 font-medium">Tham gia từ</span>
+                                <span class="font-bold">@DateTime.Today.AddYears(-1).ToString("MM/yyyy")</span>
+                            </div>
+                        </div>
                     }
-                </p>
-            </div>
+                </div>
 
-            <!-- Action Buttons -->
-            <div class="flex flex-col sm:flex-row gap-3 mt-10 pt-8 border-t border-gray-100 dark:border-gray-700/50">
-                <a href="@Url.Action("Edit", "Profile")" 
-                   class="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl">
-                    <span class="material-icons-round text-xl">edit</span>
-                    Chỉnh sửa thông tin
-                </a>
-                @if (Model.IsParent)
-                {
-                    <a href="@Url.Action("Children", "Profile")" 
-                       class="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl">
-                        <span class="material-icons-round text-xl">groups</span>
-                        Quản lý con em
-                    </a>
-                }
+                <!-- Interests/Comfort -->
+                 <div class="bg-white/80 dark:bg-card-dark/80 backdrop-blur-md rounded-3xl p-6 shadow-soft border border-gray-100/80 dark:border-gray-800/50">
+                    <h3 class="text-lg font-bold mb-6 flex items-center gap-2" style="font-family:'Quicksand',sans-serif">
+                        <span class="material-icons-round text-pink-500">favorite</span>
+                        Sự thoải mái với
+                    </h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-300">
+                            <span class="material-icons-round text-lg text-gray-400">pets</span> Thú cưng
+                        </div>
+                        <div class="flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-300">
+                            <span class="material-icons-round text-lg text-gray-400">restaurant</span> Nấu ăn
+                        </div>
+                        <div class="flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-300">
+                            <span class="material-icons-round text-lg text-gray-400">school</span> Bài tập về nhà
+                        </div>
+                        <div class="flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-300">
+                            <span class="material-icons-round text-lg text-gray-400">cleaning_services</span> Việc nhà
+                        </div>
+                    </div>
+                 </div>
             </div>
         </div>
+        
+        <!-- Footer Management Links -->
+        @if (isParent)
+        {
+            <div class="mt-8 flex flex-wrap items-center justify-center gap-4">
+                <a href="@Url.Action("Children", "Profile")" class="px-8 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl text-sm font-bold flex items-center gap-2 hover:border-primary hover:text-primary transition-all shadow-sm">
+                    <span class="material-icons-round text-green-500">child_care</span>
+                    Quản lý con em
+                </a>
+                <a href="#" class="px-8 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl text-sm font-bold flex items-center gap-2 hover:border-primary hover:text-primary transition-all shadow-sm">
+                    <span class="material-icons-round text-blue-500">history</span>
+                    Lịch sử đặt lịch
+                </a>
+            </div>
+        }
     </div>
 </div>
-    }
 
-    .fw-bold {
-        color: #333;
-    }
+<style>
+    .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+    @@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .shadow-glow { box-shadow: 0 10px 25px -5px rgba(249, 115, 22, 0.4); }
+    .shadow-soft { box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05); }
+    .bg-card-dark { background-color: #111827; }
 </style>

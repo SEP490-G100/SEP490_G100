@@ -6,19 +6,29 @@
     ViewData["Title"] = "Chỉnh sửa thông tin cá nhân";
 }
 
-<div class="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50/30 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-4xl mx-auto">
-        <!-- Header -->
-        <div class="mb-8">
-            <span class="section-label">✏️ Chỉnh sửa</span>
-            <h1 class="text-4xl font-bold text-gray-900 dark:text-white mt-3" style="font-family:'Quicksand',sans-serif">
-                Cập nhật <span class="gradient-text">thông tin</span>
+    <!-- Hero Header -->
+    <div class="h-32 sm:h-40 bg-gradient-to-r from-orange-400 to-orange-600 relative overflow-hidden shadow-lg">
+        <div class="absolute inset-0 opacity-20">
+            <div class="absolute top-0 left-0 w-64 h-64 bg-white rounded-full blur-3xl -ml-20 -mt-20"></div>
+            <div class="absolute bottom-0 right-0 w-64 h-64 bg-white rounded-full blur-3xl -mr-20 -mb-20"></div>
+        </div>
+    </div>
+
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 -mt-16 sm:-mt-20 pb-20 relative z-10">
+        <!-- Header Info -->
+        <div class="mb-8 px-4 text-center md:text-left">
+            <span class="inline-flex items-center gap-2 px-3 py-1 bg-white/20 backdrop-blur-md text-white text-xs font-bold rounded-full border border-white/30 uppercase tracking-wider mb-3">
+                <span class="material-icons-round text-xs">edit</span>
+                Chỉnh sửa hồ sơ
+            </span>
+            <h1 class="text-3xl sm:text-4xl font-bold text-white mb-2" style="font-family:'Quicksand',sans-serif">
+                Cập nhật <span class="text-orange-100">thông tin cá nhân</span>
             </h1>
-            <div class="section-divider left mt-4"></div>
+            <p class="text-orange-50/80 text-sm font-medium">Giữ hồ sơ của bạn luôn mới mẻ để kết nối tốt hơn</p>
         </div>
 
         <!-- Form Card -->
-        <div class="bg-white dark:bg-gray-800/80 rounded-3xl p-8 lg:p-10 shadow-soft border border-gray-100/80 dark:border-gray-700/50 backdrop-blur-sm">
+        <div class="bg-white/80 dark:bg-card-dark/80 rounded-3xl p-8 lg:p-10 shadow-soft border border-gray-100/80 dark:border-gray-800/50 backdrop-blur-md animate-fade-in">
             <form method="post">
                 @Html.AntiForgeryToken()
 
@@ -35,7 +45,7 @@
                             <label for="FirstName" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
                                 Họ <span class="text-red-500">*</span>
                             </label>
-                            <input type="text" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                            <input type="text" class="w-full px-5 py-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none text-gray-900 dark:text-white font-medium"
                                    id="FirstName" name="FirstName" value="@Model.FirstName" required>
                             @Html.ValidationMessageFor(m => m.FirstName, "", new { @class = "text-red-500 text-sm mt-1" })
                         </div>
@@ -45,7 +55,7 @@
                             <label for="LastName" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
                                 Tên <span class="text-red-500">*</span>
                             </label>
-                            <input type="text" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                            <input type="text" class="w-full px-5 py-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none text-gray-900 dark:text-white font-medium"
                                    id="LastName" name="LastName" value="@Model.LastName" required>
                             @Html.ValidationMessageFor(m => m.LastName, "", new { @class = "text-red-500 text-sm mt-1" })
                         </div>
@@ -55,7 +65,7 @@
                             <label for="PhoneNumber" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
                                 📱 Số điện thoại
                             </label>
-                            <input type="tel" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                            <input type="url" class="w-full px-5 py-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none text-gray-900 dark:text-white font-medium"
                                    id="PhoneNumber" name="PhoneNumber" value="@Model.PhoneNumber">
                             @Html.ValidationMessageFor(m => m.PhoneNumber, "", new { @class = "text-red-500 text-sm mt-1" })
                         </div>
@@ -65,7 +75,7 @@
                             <label for="DateOfBirth" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
                                 🎂 Ngày sinh
                             </label>
-                            <input type="date" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                            <input type="date" class="w-full px-5 py-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none text-gray-900 dark:text-white font-medium"
                                    id="DateOfBirth" name="DateOfBirth" value="@Model.DateOfBirth?.ToString("yyyy-MM-dd")">
                             @Html.ValidationMessageFor(m => m.DateOfBirth, "", new { @class = "text-red-500 text-sm mt-1" })
                         </div>
@@ -90,7 +100,7 @@
                             <label for="AvatarUrl" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
                                 🖼️ URL hình ảnh
                             </label>
-                            <input type="url" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                            <input type="url" class="w-full px-5 py-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none text-gray-900 dark:text-white font-medium"
                                    id="AvatarUrl" name="AvatarUrl" value="@Model.AvatarUrl" placeholder="https://...">
                             @Html.ValidationMessageFor(m => m.AvatarUrl, "", new { @class = "text-red-500 text-sm mt-1" })
                         </div>
@@ -109,7 +119,7 @@
                         <label for="Address" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
                             📍 Địa chỉ chi tiết
                         </label>
-                        <input type="text" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                        <input type="text" class="w-full px-5 py-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none text-gray-900 dark:text-white font-medium"
                                id="Address" name="Address" value="@Model.Address" placeholder="Số nhà, tên đường,...">
                         @Html.ValidationMessageFor(m => m.Address, "", new { @class = "text-red-500 text-sm mt-1" })
                     </div>
@@ -120,7 +130,7 @@
                             <label for="City" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
                                 Thành phố/Tỉnh
                             </label>
-                            <select class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                            <select class="w-full px-5 py-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none text-gray-900 dark:text-white font-medium"
                                     id="City" name="City">
                                 <option value="">-- Chọn Tỉnh/Thành --</option>
                             </select>
@@ -130,7 +140,7 @@
                             <label for="District" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
                                 Quận/Huyện
                             </label>
-                            <select class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                            <select class="w-full px-5 py-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none text-gray-900 dark:text-white font-medium"
                                     id="District" name="District">
                                 <option value="">-- Chọn Quận/Huyện --</option>
                             </select>
@@ -140,7 +150,7 @@
                             <label for="Ward" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
                                 Phường/Xã
                             </label>
-                            <select class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                            <select class="w-full px-5 py-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none text-gray-900 dark:text-white font-medium"
                                     id="Ward" name="Ward">
                                 <option value="">-- Chọn Phường/Xã --</option>
                             </select>
@@ -173,13 +183,13 @@
                 <!-- Action Buttons -->
                 <div class="flex flex-col sm:flex-row gap-3 pt-8 border-t border-gray-100 dark:border-gray-700/50">
                     <a href="@Url.Action("Index", "Profile")" 
-                       class="flex items-center justify-center gap-2 px-6 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-bold rounded-xl transition-all duration-300">
-                        <span class="material-icons-round">close</span>
-                        Hủy
+                       class="flex-1 flex items-center justify-center gap-2 px-8 py-4 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-bold rounded-2xl transition-all duration-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-transparent hover:border-gray-300 dark:hover:border-gray-600">
+                        <span class="material-icons-round text-lg">close</span>
+                        Hủy bỏ
                     </a>
                     <button type="submit" 
-                            class="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl flex-1 sm:flex-none">
-                        <span class="material-icons-round">save</span>
+                            class="flex-1 flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold rounded-2xl transition-all duration-300 shadow-glow hover:shadow-xl">
+                        <span class="material-icons-round text-lg">save</span>
                         Lưu thay đổi
                     </button>
                 </div>
@@ -187,23 +197,15 @@
         </div>
     </div>
 </div>
-        padding: 0.5rem 0.75rem;
-    }
-
-    .form-control:focus,
-    .form-select:focus {
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-    }
-
-    .btn {
-        border-radius: 5px;
-        padding: 0.5rem 1rem;
-    }
-
-    .text-danger {
-        font-size: 0.875rem;
-        margin-top: 0.25rem;
+<style>
+    .shadow-soft { box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05); }
+    .shadow-glow { box-shadow: 0 10px 25px -5px rgba(249, 115, 22, 0.4); }
+    .bg-card-dark { background-color: #111827; }
+    .gradient-text { 
+        background: linear-gradient(135deg, #EA580C 0%, #F97316 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 700;
     }
 </style>
 
