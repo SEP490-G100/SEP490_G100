@@ -259,8 +259,6 @@ public class AuthController : Controller
             return View(model);
         }
 
-        // Xoá session đang giữ token Pending để buộc đăng nhập lại với token mới (đã kích hoạt)
-        // Nếu không làm bước này, Login GET sẽ phát hiện cookie cũ và redirect thẳng "/" bỏ qua onboarding
         HttpContext.Session.Clear();
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
@@ -268,9 +266,6 @@ public class AuthController : Controller
         return RedirectToAction("Login");
     }
 
-    /// <summary>
-    /// Cho phép user chọn vai trò (Nanny hoặc Parent) khi lần đầu tiên đăng nhập
-    /// </summary>
     [Authorize, HttpGet]
     public IActionResult ChooseRole() => View();
 

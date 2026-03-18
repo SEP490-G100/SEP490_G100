@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Nanny_BackEnd.Enums;
 
 namespace Nanny_BackEnd.Models;
 
@@ -26,7 +25,9 @@ public partial class ChildProfile
 
     public string? Characteristic { get; set; }
 
-    public ChildAgeGroup? ChildAgeGroup { get; set; }
+    public byte? ChildAgeGroup { get; set; }
+
+    public virtual ICollection<JobPosting> JobPostings { get; set; } = new List<JobPosting>();
 
     public virtual ParentProfile ParentProfile { get; set; } = null!;
 }

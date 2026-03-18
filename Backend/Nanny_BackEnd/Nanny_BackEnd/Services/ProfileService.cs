@@ -169,7 +169,7 @@ public class ProfileService
             SpecialNeeds = request.SpecialNeeds,
             Notes = request.Notes,
             Characteristic = request.Characteristic,
-            ChildAgeGroup = request.ChildAgeGroup,
+            ChildAgeGroup = (byte?)request.ChildAgeGroup,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = userId
         };
@@ -191,7 +191,7 @@ public class ProfileService
         child.SpecialNeeds = request.SpecialNeeds;
         child.Notes = request.Notes;
         child.Characteristic = request.Characteristic;
-        child.ChildAgeGroup = request.ChildAgeGroup;
+        child.ChildAgeGroup = (byte?)request.ChildAgeGroup;
         child.UpdatedAt = DateTime.UtcNow;
         child.UpdatedBy = userId;
 
