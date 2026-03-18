@@ -12,6 +12,7 @@ public class JobRepository
 
     public JobRepository(Sep490NannyDbContext db) => _db = db;
 
+
     public async Task<List<JobPosting>> searchJobPosting(
         SearchJobRequest filters,
         Guid? currentUserId = null,
@@ -142,6 +143,20 @@ public class JobRepository
             .Where(s => !s.IsDeleted && normalized.Contains(s.Name.ToLower()))
             .ToListAsync();
     }
+    public async Task<ParentProfile?> getParentProfileSnapshot(Guid parentProfileId) =>
+        await _db.ParentProfiles
+            .Where(p => p.Id == parentProfileId && !p.IsDeleted)
+            .Include(p => p.User)
+            .Include(p => p.ChildProfiles.Where(c => !c.IsDeleted))
+            .FirstOrDefaultAsync();
+
+    public async Task<List<Skill>> getSkillsByNames(IEnumerable<string> names)
+    {
+        var normalized = names.Select(n => n.ToLower()).ToList();
+        return await _db.Skills
+            .Where(s => !s.IsDeleted && normalized.Contains(s.Name.ToLower()))
+            .ToListAsync();
+    }
 
     public async Task<List<Skill>> getActiveSkills() =>
         await _db.Skills
@@ -149,6 +164,15 @@ public class JobRepository
             .OrderBy(s => s.SortOrder)
             .ThenBy(s => s.Name)
             .ToListAsync();
+
+    public async Task<List<Skill>> getActiveSkills() =>
+        await _db.Skills
+            .Where(s => !s.IsDeleted && s.IsActive)
+            .OrderBy(s => s.SortOrder)
+            .ThenBy(s => s.Name)
+            .ToListAsync();
+
+    public void addSkills(IEnumerable<Skill> skills) => _db.Skills.AddRange(skills);
 
     public void addSkills(IEnumerable<Skill> skills) => _db.Skills.AddRange(skills);
 
