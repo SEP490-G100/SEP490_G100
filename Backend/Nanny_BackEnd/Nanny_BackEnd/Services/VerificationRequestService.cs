@@ -118,7 +118,7 @@ public class VerificationRequestService
         var nannyProfile = await _repo.GetNannyProfileAsync(v.NannyProfileId);
         if (nannyProfile != null)
         {
-            nannyProfile.VerificationStatus = (Enums.VerificationStatus) request.Action; // 1=Approved, 2=Rejected
+            nannyProfile.VerificationStatus = (int)(Enums.VerificationStatus)request.Action; // 1=Approved, 2=Rejected
             nannyProfile.VerifiedAt = request.Action == (int)Enums.VerificationStatus.Approved ? DateTime.UtcNow : null;
             nannyProfile.VerifiedBy = request.Action == (int)Enums.VerificationStatus.Approved ? request.ReviewedBy : null;
             nannyProfile.UpdatedAt  = DateTime.UtcNow;
