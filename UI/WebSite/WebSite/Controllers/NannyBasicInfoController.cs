@@ -11,11 +11,22 @@ namespace WebSite.Controllers;
 public class NannyBasicInfoController : Controller
 {
     private readonly HttpClient _http;
+    private readonly string _apiBaseUrl;
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
 
-    public NannyBasicInfoController(IHttpClientFactory httpFactory)
+    public NannyBasicInfoController(IHttpClientFactory httpFactory, IConfiguration config)
     {
         _http = httpFactory.CreateClient("BackendApi");
+        _apiBaseUrl = (config["ApiSettings:BaseUrl"] ?? "").TrimEnd('/');
+    }
+
+    private string? NormalizeAvatarUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return url;
+        if (Uri.TryCreate(url, UriKind.Absolute, out _)) return url;
+        if (url.StartsWith("/") && !string.IsNullOrWhiteSpace(_apiBaseUrl))
+            return _apiBaseUrl + url;
+        return url;
     }
 
     private string? GetToken() => HttpContext.Session.GetString("AccessToken");
@@ -123,7 +134,7 @@ public class NannyBasicInfoController : Controller
             vm.Ward = existing.Ward;
             vm.Latitude = existing.Latitude;
             vm.Longitude = existing.Longitude;
-            vm.AvatarUrl = existing.AvatarUrl;
+            vm.AvatarUrl = NormalizeAvatarUrl(existing.AvatarUrl);
         }
 
         return View(vm);
@@ -175,4 +186,3 @@ public class NannyBasicInfoController : Controller
         return View(model);
     }
 }
-

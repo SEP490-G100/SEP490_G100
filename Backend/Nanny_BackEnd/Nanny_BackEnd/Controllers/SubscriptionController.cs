@@ -25,6 +25,16 @@ public class SubscriptionController : ControllerBase
         return Ok(success(plans, plans.Count));
     }
 
+    [AllowAnonymous]
+    [HttpGet("plans/{code}")]
+    public async Task<IActionResult> GetPlanByCode(string code)
+    {
+        var plan = await _subscriptionService.getPlanByCode(code);
+        return plan == null
+            ? NotFound(fail("Không tìm thấy gói subscription yêu cầu."))
+            : Ok(success(plan));
+    }
+
     [Authorize]
     [HttpGet("me")]
     public async Task<IActionResult> GetCurrentSubscription()
@@ -72,6 +82,61 @@ public class SubscriptionController : ControllerBase
         }
         catch (KeyNotFoundException ex) { return NotFound(fail(ex.Message)); }
         catch (InvalidOperationException ex) { return BadRequest(fail(ex.Message)); }
+    }
+
+    [Authorize]
+    [HttpPost("create-payment")]
+    public async Task<IActionResult> CreatePayment([FromBody] CreateSubscriptionPaymentRequest request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(failValidation(ModelState));
+
+        var userId = getCurrentUserId();
+        if (!userId.HasValue)
+            return Unauthorized(fail("Khong xac dinh duoc nguoi dung hien tai."));
+
+        try
+        {
+            var session = await _subscriptionService.createPayment(userId.Value, request);
+            return Ok(new
+            {
+                success = true,
+                message = "Da tao lien ket thanh toan thanh cong.",
+                data = session
+            });
+        }
+        catch (KeyNotFoundException ex) { return NotFound(fail(ex.Message)); }
+        catch (InvalidOperationException ex) { return BadRequest(fail(ex.Message)); }
+    }
+
+    [Authorize]
+    [HttpGet("payment-status/{transactionId:guid}")]
+    public async Task<IActionResult> GetPaymentStatus(Guid transactionId)
+    {
+        var userId = getCurrentUserId();
+        if (!userId.HasValue)
+            return Unauthorized(fail("Khong xac dinh duoc nguoi dung hien tai."));
+
+        try
+        {
+            var status = await _subscriptionService.getPaymentStatus(userId.Value, transactionId);
+            return Ok(success(status));
+        }
+        catch (KeyNotFoundException ex) { return NotFound(fail(ex.Message)); }
+    }
+
+    [AllowAnonymous]
+    [HttpPost("vietqr/callback")]
+    public async Task<IActionResult> VietQrCallback(
+        [FromBody] VietQrWebhookRequest request,
+        [FromHeader(Name = "x-webhook-token")] string? webhookToken,
+        [FromHeader(Name = "secure-token")] string? secureToken)
+    {
+        if (!_subscriptionService.isVietQrWebhookAuthorized(webhookToken ?? secureToken))
+            return Unauthorized(fail("Webhook token khong hop le."));
+
+        var processed = await _subscriptionService.handleVietQrWebhook(request);
+        return Ok(new { success = true, processed });
     }
 
     [Authorize]

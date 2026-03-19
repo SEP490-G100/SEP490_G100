@@ -1,4 +1,5 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authentication;
@@ -12,11 +13,13 @@ namespace WebSite.Controllers;
 public class ProfileController : Controller
 {
     private readonly HttpClient _http;
+    private readonly string _apiBaseUrl;
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
 
-    public ProfileController(IHttpClientFactory httpFactory)
+    public ProfileController(IHttpClientFactory httpFactory, IConfiguration config)
     {
         _http = httpFactory.CreateClient("BackendApi");
+        _apiBaseUrl = (config["ApiSettings:BaseUrl"] ?? "").TrimEnd('/');
     }
 
     // Helper method to get token from session
@@ -40,6 +43,15 @@ public class ProfileController : Controller
             LastName = User.FindFirstValue(ClaimTypes.Surname) ?? "",
             Roles = roles
         };
+    }
+
+    private string? NormalizeAvatarUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return url;
+        if (Uri.TryCreate(url, UriKind.Absolute, out _)) return url;
+        if (url.StartsWith("/") && !string.IsNullOrWhiteSpace(_apiBaseUrl))
+            return _apiBaseUrl + url;
+        return url;
     }
 
     private EditPersonalInfoViewModel BuildEditProfileFromClaims()
@@ -85,6 +97,9 @@ public class ProfileController : Controller
             var profile = JsonSerializer.Deserialize<PersonalProfileViewModel>(
                 JsonSerializer.Serialize(apiResult.Data), JsonOpts);
 
+            if (profile != null)
+                profile.AvatarUrl = NormalizeAvatarUrl(profile.AvatarUrl);
+
             return View(profile ?? BuildProfileFromClaims());
         }
         catch (Exception ex)
@@ -118,6 +133,9 @@ public class ProfileController : Controller
             var profile = JsonSerializer.Deserialize<EditPersonalInfoViewModel>(
                 JsonSerializer.Serialize(apiResult?.Data), JsonOpts);
 
+            if (profile != null)
+                profile.AvatarUrl = NormalizeAvatarUrl(profile.AvatarUrl);
+
             return View(profile ?? BuildEditProfileFromClaims());
         }
         catch (Exception ex)
@@ -143,6 +161,24 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
                 return RedirectToAction("Login", "Auth");
             }
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            // Upload Avatar if present (same behavior as onboarding step)
+            if (model.AvatarFile != null && model.AvatarFile.Length > 0)
+            {
+                using var form = new MultipartFormDataContent();
+                var streamContent = new StreamContent(model.AvatarFile.OpenReadStream());
+                streamContent.Headers.ContentType = new MediaTypeHeaderValue(model.AvatarFile.ContentType);
+                form.Add(streamContent, "file", model.AvatarFile.FileName);
+
+                var uploadRes = await _http.PostAsync("/api/profile/upload-avatar", form);
+                if (uploadRes.IsSuccessStatusCode)
+                {
+                    var uploadJson = await uploadRes.Content.ReadAsStringAsync();
+                    var uploadResult = JsonSerializer.Deserialize<ApiResultDto>(uploadJson, JsonOpts);
+                    if (uploadResult?.Success == true && uploadResult.Data != null)
+                        model.AvatarUrl = uploadResult.Data.ToString();
+                }
+            }
 
             var updateRequest = new
             {
@@ -409,7 +445,6 @@ public class ApiResultDto
     public string? Message { get; set; }
     public object? Data { get; set; }
 }
-
 
 
 

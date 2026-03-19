@@ -1,4 +1,6 @@
-﻿namespace WebSite.Models.Profile
+using Microsoft.AspNetCore.Http;
+
+namespace WebSite.Models.Profile
 {
     public class EditPersonalInfoViewModel
     {
@@ -6,6 +8,7 @@
         public string LastName { get; set; } = null!;
         public string? PhoneNumber { get; set; }
         public string? AvatarUrl { get; set; }
+        public IFormFile? AvatarFile { get; set; }
         public DateOnly? DateOfBirth { get; set; }
         public int? Gender { get; set; }
         public string? Address { get; set; }

@@ -1,4 +1,4 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
@@ -20,7 +20,6 @@ public class AdminController : Controller
         _http = httpFactory.CreateClient("BackendApi");
     }
 
-    // ── Dashboard ──────────────────────────────────────
     public async Task<IActionResult> Dashboard()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "/api/admin/dashboard");
@@ -28,12 +27,19 @@ public class AdminController : Controller
         try
         {
             var response = await _http.SendAsync(request);
-            var json     = await response.Content.ReadAsStringAsync();
-            var result   = JsonSerializer.Deserialize<ApiResult<AdminDashboardDto>>(json, JsonOpts);
-            return View(result?.Data ?? new AdminDashboardDto());
+            var json = await response.Content.ReadAsStringAsync();
+            if (!response.IsSuccessStatusCode)
+            {
+                TempData["Error"] = $"Lỗi API lấy dữ liệu Dashboard ({(int)response.StatusCode}). Vui lòng kiểm tra lại quyền truy cập.";
+                return View(new AdminDashboardDto());
+            }
+
+            var result = JsonSerializer.Deserialize<ApiResult<ApiDashboardStatsDto>>(json, JsonOpts);
+            return View(result?.Data?.ToViewModel() ?? new AdminDashboardDto());
         }
-        catch
+        catch (Exception ex)
         {
+            TempData["Error"] = $"Lỗi kết nối Dashboard: {ex.Message}";
             return View(new AdminDashboardDto());
         }
     }
@@ -44,7 +50,7 @@ public class AdminController : Controller
         ViewBag.Search = search;
         ViewBag.Status = status?.ToString() ?? "";
 
-        var qs = new List<string> { $"page={page}", "pageSize=10" };
+        var qs = new List<string> { $"page={page}", "pageSize=3" };
         if (!string.IsNullOrWhiteSpace(search)) qs.Add($"search={Uri.EscapeDataString(search)}");
         if (status.HasValue) qs.Add($"status={status.Value}");
 
@@ -53,8 +59,8 @@ public class AdminController : Controller
         try
         {
             var response = await _http.SendAsync(request);
-            var json     = await response.Content.ReadAsStringAsync();
-            var result   = JsonSerializer.Deserialize<ApiResult<AccountListResponse>>(json, JsonOpts);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult<AccountListResponse>>(json, JsonOpts);
             return View(result?.Data ?? new AccountListResponse());
         }
         catch
@@ -72,12 +78,12 @@ public class AdminController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateModerator(CreateModeratorRequest model)
     {
-        var body    = JsonSerializer.Serialize(new
+        var body = JsonSerializer.Serialize(new
         {
-            email       = model.Email,
-            password    = model.Password,
-            firstName   = model.FirstName,
-            lastName    = model.LastName,
+            email = model.Email,
+            password = model.Password,
+            firstName = model.FirstName,
+            lastName = model.LastName,
             phoneNumber = model.PhoneNumber
         });
         var request = new HttpRequestMessage(HttpMethod.Post, "/api/admin/moderators")
@@ -89,7 +95,7 @@ public class AdminController : Controller
         try
         {
             var response = await _http.SendAsync(request);
-            var json     = await response.Content.ReadAsStringAsync();
+            var json = await response.Content.ReadAsStringAsync();
             if (string.IsNullOrWhiteSpace(json))
             {
                 TempData["Error"] = $"API trả về rỗng (HTTP {(int)response.StatusCode}).";
@@ -114,13 +120,13 @@ public class AdminController : Controller
     // ── Edit Moderator GET ──────────────────────────────
     public async Task<IActionResult> EditModerator(Guid id)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/account/{id}");
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/admin/moderators/{id}");
         AttachToken(request);
         try
         {
             var response = await _http.SendAsync(request);
-            var json     = await response.Content.ReadAsStringAsync();
-            var result   = JsonSerializer.Deserialize<ApiResult<AccountDto>>(json, JsonOpts);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult<AccountDto>>(json, JsonOpts);
             if (result?.Success != true || result.Data == null)
             {
                 TempData["Error"] = "Không tìm thấy Moderator.";
@@ -142,10 +148,10 @@ public class AdminController : Controller
     {
         var body = JsonSerializer.Serialize(new
         {
-            firstName   = model.FirstName,
-            lastName    = model.LastName,
+            firstName = model.FirstName,
+            lastName = model.LastName,
             phoneNumber = model.PhoneNumber,
-            status      = model.Status
+            status = model.Status
         });
         var request = new HttpRequestMessage(HttpMethod.Patch, $"/api/admin/moderators/{id}")
         {
@@ -156,7 +162,7 @@ public class AdminController : Controller
         try
         {
             var response = await _http.SendAsync(request);
-            var json     = await response.Content.ReadAsStringAsync();
+            var json = await response.Content.ReadAsStringAsync();
             if (string.IsNullOrWhiteSpace(json))
             {
                 TempData["Error"] = $"API trả về rỗng (HTTP {(int)response.StatusCode}).";
@@ -184,12 +190,42 @@ public class AdminController : Controller
         try
         {
             var response = await _http.SendAsync(request);
-            var json     = await response.Content.ReadAsStringAsync();
-            var result   = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
             TempData[result?.Success == true ? "Success" : "Error"] = result?.Message ?? "Đã xoá.";
         }
         catch (Exception ex) { TempData["Error"] = $"Lỗi: {ex.Message}"; }
         return RedirectToAction(nameof(ManageModerators));
+    }
+
+    // ── Export System Data ─────────────────────────────
+    [HttpGet]
+    public async Task<IActionResult> ExportData()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/admin/export");
+        AttachToken(request);
+        try
+        {
+            var response = await _http.SendAsync(request);
+            if (!response.IsSuccessStatusCode)
+            {
+                TempData["Error"] = $"Lỗi khi xuất dữ liệu: HTTP {(int)response.StatusCode}";
+                return RedirectToAction("Dashboard");
+            }
+
+            var stream = await response.Content.ReadAsStreamAsync();
+            var contentType = response.Content.Headers.ContentType?.ToString() ?? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            var fileName = response.Content.Headers.ContentDisposition?.FileNameStar
+                ?? response.Content.Headers.ContentDisposition?.FileName?.Replace("\"", "")
+                ?? $"NannyMatch_SystemData_{DateTime.Now:yyyyMMdd}.xlsx";
+
+            return File(stream, contentType, fileName);
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = $"Lỗi kết nối khi xuất Excel: {ex.Message}";
+            return RedirectToAction("Dashboard");
+        }
     }
 
     // ── Helper ─────────────────────────────────────────

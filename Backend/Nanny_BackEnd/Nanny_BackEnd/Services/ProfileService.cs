@@ -109,13 +109,13 @@ public class ProfileService
                 averageRating = nannyProfile.AverageRating;
                 totalReviews = nannyProfile.TotalReviews;
 
-                verificationStatus = nannyProfile.VerificationStatus switch
+                verificationStatus = (Enums.VerificationStatus)nannyProfile.VerificationStatus switch
                 {
-                    Enums.VerificationStatus.NotSubmitted => "ChÆ°a Ä‘Æ°á»£c xÃ¡c thá»±c",
-                    Enums.VerificationStatus.Pending => "Äang chá» xÃ¡c thá»±c",
-                    Enums.VerificationStatus.Approved => "ÄÃ£ Ä‘Æ°á»£c xÃ¡c thá»±c",
-                    Enums.VerificationStatus.Rejected => "Bá»‹ tá»« chá»‘i xÃ¡c thá»±c",
-                    _ => "ChÆ°a Ä‘Æ°á»£c xÃ¡c thá»±c"
+                    Enums.VerificationStatus.NotSubmitted => "Chưa được xác thực",
+                    Enums.VerificationStatus.Pending => "Đang chờ xác thực",
+                    Enums.VerificationStatus.Approved => "Đã được xác thực",
+                    Enums.VerificationStatus.Rejected => "Bị từ chối xác thực",
+                    _ => "Chưa được xác thực"
                 };
 
                 var nannySkills = await _nannySkillRepo.GetByNannyProfileIdAsync(nannyProfile.Id);
@@ -235,14 +235,14 @@ public class ProfileService
         if (isNanny)
         {
             if (!request.DateOfBirth.HasValue)
-                throw new InvalidOperationException("Nanny pháº£i nháº­p ngÃ y sinh.");
+                throw new InvalidOperationException("Nanny pháº£i nháº­p ngÃ ,áy sinh.");
 
             var today = DateOnly.FromDateTime(DateTime.Today);
             var dob = request.DateOfBirth.Value;
             var age = today.Year - dob.Year;
             if (dob > today.AddYears(-age)) age--;
             if (age < 18)
-                throw new InvalidOperationException("Nanny pháº£i Ä‘á»§ 18 tuá»•i trá»Ÿ lÃªn.");
+                throw new InvalidOperationException("Nanny phải đủ 18 tuổi trở lên.");
         }
 
         // Map data
@@ -327,7 +327,7 @@ public class ProfileService
             SpecialNeeds = request.SpecialNeeds,
             Notes = request.Notes,
             Characteristic = request.Characteristic,
-            ChildAgeGroup = request.ChildAgeGroup,
+            ChildAgeGroup = (byte)request.ChildAgeGroup,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = userId
         };
@@ -349,7 +349,7 @@ public class ProfileService
         child.SpecialNeeds = request.SpecialNeeds;
         child.Notes = request.Notes;
         child.Characteristic = request.Characteristic;
-        child.ChildAgeGroup = request.ChildAgeGroup;
+        child.ChildAgeGroup = (byte)request.ChildAgeGroup;
         child.UpdatedAt = DateTime.UtcNow;
         child.UpdatedBy = userId;
 

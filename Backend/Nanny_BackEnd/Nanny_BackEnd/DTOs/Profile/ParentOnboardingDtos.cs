@@ -13,4 +13,3 @@ public class ParentOnboardingChildRequest
     public string Characteristic { get; internal set; }
     public byte? ChildAgeGroup { get; internal set; }
 }
-

@@ -69,18 +69,20 @@
                         @* Min Salary *@
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Min salary (VNĐ)</label>
-                            <input asp-for="ExpectedSalaryMin" type="number" step="1000"
+                            <input asp-for="ExpectedSalaryMin" type="number" step="1000" min="20001"
                                    class="w-full px-4 py-3 rounded-xl bg-[#1f242b] border border-[#3b434e] text-gray-100 focus:outline-none focus:ring-2 focus:ring-pink-400" />
                             <span asp-validation-for="ExpectedSalaryMin" class="text-red-400 text-xs mt-1"></span>
                         </div>
                         @* Max Salary *@
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Max salary (VNĐ)</label>
-                            <input asp-for="ExpectedSalaryMax" type="number" step="1000"
+                            <input asp-for="ExpectedSalaryMax" type="number" step="1000" max="499999"
                                    class="w-full px-4 py-3 rounded-xl bg-[#1f242b] border border-[#3b434e] text-gray-100 focus:outline-none focus:ring-2 focus:ring-pink-400" />
                             <span asp-validation-for="ExpectedSalaryMax" class="text-red-400 text-xs mt-1"></span>
                         </div>
                     </div>
+                    
+                    <div id="salaryRangeError" class="hidden text-red-400 text-xs bg-red-900/20 p-3 rounded-lg border border-red-900/50"></div>
 
                     @* Travel Distance *@
                     <div>
@@ -105,3 +107,39 @@
         </div>
     </div>
 </div>
+
+<script>
+(function () {
+    var form = document.querySelector('form[asp-action="Profile"]') || document.querySelector('form');
+    var minEl = document.getElementById('ExpectedSalaryMin');
+    var maxEl = document.getElementById('ExpectedSalaryMax');
+    var errEl = document.getElementById('salaryRangeError');
+
+    function showErr(msg) {
+        if (!errEl) return;
+        errEl.textContent = msg || '';
+        errEl.classList.toggle('hidden', !msg);
+    }
+
+    function validate() {
+        var min = minEl && minEl.value ? Number(minEl.value) : null;
+        var max = maxEl && maxEl.value ? Number(maxEl.value) : null;
+
+        if (min != null && min <= 20000) return 'Min salary (VNĐ) phải > 20000.';
+        if (max != null && max >= 500000) return 'Max salary (VNĐ) phải < 500000.';
+        if (min != null && max != null && max < min) return 'Max salary phải >= Min salary.';
+        return '';
+    }
+
+    if (minEl) minEl.addEventListener('input', function () { showErr(validate()); });
+    if (maxEl) maxEl.addEventListener('input', function () { showErr(validate()); });
+
+    if (form) {
+        form.addEventListener('submit', function (e) {
+            var msg = validate();
+            showErr(msg);
+            if (msg) e.preventDefault();
+        });
+    }
+})();
+</script>

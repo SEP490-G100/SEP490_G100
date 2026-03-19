@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Json;
+using System.Linq;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -59,6 +60,11 @@ public class AuthController : Controller
 
         var loginData = result.Data!;
         await SignInUserAsync(loginData);
+
+        // Nếu user chưa có role (đặc biệt case đăng ký/đăng nhập Google lần đầu),
+        // luôn bắt buộc chọn role trước khi chạy onboarding theo role.
+        if (loginData.User?.Roles == null || !loginData.User.Roles.Any())
+            return RedirectToAction("ChooseRole", "Auth");
 
         // Sau khi đăng nhập, kiểm tra trạng thái onboarding (kèm Bearer token)
         try
@@ -135,6 +141,11 @@ public class AuthController : Controller
 
         var loginData = result.Data!;
         await SignInUserAsync(loginData);
+
+        // Nếu user chưa có role (đặc biệt case đăng ký Google lần đầu),
+        // luôn bắt buộc chọn role trước khi chạy onboarding theo role.
+        if (loginData.User?.Roles == null || !loginData.User.Roles.Any())
+            return RedirectToAction("ChooseRole", "Auth");
 
         try
         {
@@ -357,6 +368,14 @@ public class AuthController : Controller
 
         TempData["Success"] = "Đổi mật khẩu thành công!";
         return RedirectToAction("ChangePassword");
+    }
+
+    /// <summary>Trả về JWT access token từ session — dùng bởi SignalR JS client.</summary>
+    [Authorize, HttpGet]
+    public IActionResult GetToken()
+    {
+        var token = HttpContext.Session.GetString("AccessToken") ?? "";
+        return Content(token, "text/plain");
     }
 
     [HttpPost, ValidateAntiForgeryToken]

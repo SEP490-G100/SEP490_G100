@@ -38,8 +38,14 @@
                         <label asp-for="AvatarFile" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
                             Ảnh đại diện (.jpg, .png)
                         </label>
-                        <input type="file" asp-for="AvatarFile" accept="image/jpeg, image/png"
+                        <input type="file" asp-for="AvatarFile" accept=".jpg,.jpeg,.png,image/jpeg,image/png"
                                class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 transition-all" />
+                        <div id="avatarUploadError" class="hidden mt-2 text-sm text-red-600"></div>
+                        <div class="mt-3">
+                            <img id="avatarPreview"
+                                 class="hidden w-24 h-24 rounded-2xl object-cover border border-gray-200 dark:border-gray-600"
+                                 alt="Avatar preview" />
+                        </div>
                         <span asp-validation-for="AvatarFile" class="text-red-500 text-sm mt-1"></span>
                     </div>
 
@@ -104,6 +110,69 @@
 
 <script>
 (function () {
+    // Avatar upload: only png/jpg/jpeg + instant preview
+    var avatarInput = document.getElementById('AvatarFile');
+    var avatarErr = document.getElementById('avatarUploadError');
+    var avatarPreview = document.getElementById('avatarPreview');
+    var currentAvatarUrl = '@(Model.AvatarUrl ?? "")';
+    var objectUrl = null;
+
+    function showAvatarError(msg) {
+        if (!avatarErr) return;
+        avatarErr.textContent = msg || '';
+        avatarErr.classList.toggle('hidden', !msg);
+    }
+
+    function clearPreview() {
+        if (objectUrl) { try { URL.revokeObjectURL(objectUrl); } catch (e) { } objectUrl = null; }
+        if (avatarPreview) {
+            avatarPreview.src = '';
+            avatarPreview.classList.add('hidden');
+        }
+    }
+
+    function setPreview(src) {
+        if (!avatarPreview) return;
+        avatarPreview.src = src;
+        avatarPreview.classList.remove('hidden');
+    }
+
+    function isAllowedImage(file) {
+        if (!file) return false;
+        var name = (file.name || '').toLowerCase();
+        var extOk = name.endsWith('.png') || name.endsWith('.jpg') || name.endsWith('.jpeg');
+        var typeOk = (file.type === 'image/png' || file.type === 'image/jpeg' || file.type === 'image/jpg');
+        // Some browsers may provide empty type; accept based on extension in that case
+        return extOk && (typeOk || !file.type);
+    }
+
+    if (currentAvatarUrl) {
+        setPreview(currentAvatarUrl);
+    }
+
+    if (avatarInput) {
+        avatarInput.addEventListener('change', function () {
+            showAvatarError('');
+            clearPreview();
+
+            var file = avatarInput.files && avatarInput.files[0] ? avatarInput.files[0] : null;
+            if (!file) {
+                if (currentAvatarUrl) setPreview(currentAvatarUrl);
+                return;
+            }
+
+            if (!isAllowedImage(file)) {
+                avatarInput.value = '';
+                showAvatarError('Chỉ cho phép upload ảnh định dạng .png, .jpg, .jpeg.');
+                if (currentAvatarUrl) setPreview(currentAvatarUrl);
+                return;
+            }
+
+            objectUrl = URL.createObjectURL(file);
+            setPreview(objectUrl);
+        });
+    }
+
     var citySelect = document.getElementById('City');
     var districtSelect = document.getElementById('District');
     var wardSelect = document.getElementById('Ward');

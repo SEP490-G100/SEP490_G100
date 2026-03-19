@@ -1,6 +1,6 @@
-using Microsoft.EntityFrameworkCore;
-using Nanny_BackEnd.DTOs.Profile;
+﻿using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
+using Nanny_BackEnd.DTOs.Profile;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
 using Nanny_BackEnd.Enums;
@@ -41,10 +41,8 @@ public class OnboardingService
         var role = roles.FirstOrDefault() ?? string.Empty;
 
         var user = await _userRepo.FindByIdAsync(userId)
-            ?? throw new InvalidOperationException("Người dùng không tồn tại.");
+            ?? throw new InvalidOperationException("Nguoi dung khong ton tai.");
 
-        // Kiểm tra thông tin cá nhân cơ bản
-        // Không bắt buộc DateOfBirth và Ward để tránh bắt user onboarding lại sau khi đã điền đủ thông tin yêu cầu trên giao diện
         var hasBasicInfo =
             !string.IsNullOrWhiteSpace(user.FirstName) &&
             !string.IsNullOrWhiteSpace(user.LastName) &&
@@ -151,8 +149,8 @@ public class OnboardingService
                 return finalStatus;
             }
 
-            var avails = await _nannyAvailabilityRepo.GetByNannyProfileIdAsync(nannyProfile.Id);
-            if (avails.Count == 0)
+            var availabilities = await _nannyAvailabilityRepo.GetByNannyProfileIdAsync(nannyProfile.Id);
+            if (availabilities.Count == 0)
             {
                 finalStatus.RequiresOnboarding = true;
                 finalStatus.NextStep = "NannyAvailability";
@@ -193,14 +191,14 @@ public class OnboardingService
                 UserId = userId,
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = userId,
-                VerificationStatus = VerificationStatus.NotSubmitted
+                VerificationStatus = (int)VerificationStatus.NotSubmitted
             };
             _nannyProfileRepo.Add(profile);
         }
 
         profile.Bio = request.Bio;
         profile.YearsOfExperience = request.YearsOfExperience;
-        profile.EducationLevel = request.EducationLevel;
+        profile.EducationLevel = (int?)request.EducationLevel;
         profile.ExpectedSalaryMin = request.ExpectedSalaryMin;
         profile.ExpectedSalaryMax = request.ExpectedSalaryMax;
         profile.MaxTravelDistance = request.MaxTravelDistance;
@@ -214,13 +212,11 @@ public class OnboardingService
     public async Task UpdateNannySkillsAsync(Guid userId, UpdateNannySkillsRequest request)
     {
         var profile = await _nannyProfileRepo.FindByUserIdAsync(userId)
-            ?? throw new InvalidOperationException("Chưa có hồ sơ nanny.");
+            ?? throw new InvalidOperationException("Chua co ho so nanny.");
 
         var existing = await _nannySkillRepo.GetByNannyProfileIdAsync(profile.Id);
         if (existing.Any())
-        {
             _nannySkillRepo.RemoveRange(existing);
-        }
 
         var now = DateTime.UtcNow;
         var newSkills = request.Skills.Select(s => new NannySkill
@@ -228,7 +224,7 @@ public class OnboardingService
             Id = Guid.NewGuid(),
             NannyProfileId = profile.Id,
             SkillId = s.SkillId,
-            ProficiencyLevel = s.ProficiencyLevel,
+            ProficiencyLevel = (int?)s.ProficiencyLevel,
             CreatedAt = now,
             CreatedBy = userId
         });
@@ -240,13 +236,11 @@ public class OnboardingService
     public async Task UpdateNannyAvailabilityAsync(Guid userId, UpdateNannyAvailabilityRequest request)
     {
         var profile = await _nannyProfileRepo.FindByUserIdAsync(userId)
-            ?? throw new InvalidOperationException("Chưa có hồ sơ nanny.");
+            ?? throw new InvalidOperationException("Chua co ho so nanny.");
 
         var existing = await _nannyAvailabilityRepo.GetByNannyProfileIdAsync(profile.Id);
         if (existing.Any())
-        {
             _nannyAvailabilityRepo.RemoveRange(existing);
-        }
 
         var items = new List<NannyAvailability>();
         var now = DateTime.UtcNow;

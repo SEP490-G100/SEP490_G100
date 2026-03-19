@@ -5,12 +5,22 @@
 }
 
 <!-- PAGE HEADER -->
-<div class="mb-7 fade-in-up">
-    <span class="section-label">📊 System Overview</span>
-    <h1 class="page-title mt-2">
-        Welcome, <span class="gradient-text">Admin</span>!
-    </h1>
-    <p class="page-subtitle">Monitor platform performance, users, and revenue at a glance.</p>
+<div class="mb-7 fade-in-up flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+    <div>
+        <span class="section-label"> System Overview</span>
+        <h1 class="page-title mt-2">
+            Welcome, <span class="gradient-text">Admin</span>!
+        </h1>
+        <p class="page-subtitle">Monitor platform performance, users, and revenue at a glance.</p>
+    </div>
+    
+    <div>
+        <a href="/Admin/ExportData" 
+           class="inline-flex items-center gap-2 bg-gradient-to-r from-orange-400 to-orange-500 text-white px-5 py-2.5 rounded-xl font-semibold shadow-lg shadow-orange-500/30 hover:shadow-orange-500/40 hover:-translate-y-0.5 transition-all">
+            <span class="material-icons-round text-xl">download</span>
+            Export System Data
+        </a>
+    </div>
 </div>
 
 <!-- STAT CARDS -->
@@ -74,17 +84,69 @@
         <div class="text-sm text-gray-500 font-semibold">Total Revenue</div>
     </div>
 
-    <!-- Transactions -->
+    <!-- Subscriptions -->
     <div class="stat-card p-5 fade-in-up fade-in-up-delay-4">
         <div class="flex items-start justify-between mb-4">
-            <div class="icon-badge" style="background:linear-gradient(135deg,#FEF3C7,#FDE68A);">
-                <span class="material-icons-round text-amber-500 text-2xl">receipt_long</span>
+            <div class="icon-badge" style="background:linear-gradient(135deg,#EDE9FE,#DDD6FE);">
+                <span class="material-icons-round text-violet-500 text-2xl">card_membership</span>
             </div>
-            <span class="badge badge-pending">Transactions</span>
+            <span class="badge badge-pending">Subscriptions</span>
         </div>
-        <div class="stat-number mb-0.5">@Model.TotalTransactions.ToString("N0")</div>
-        <div class="text-sm text-gray-500 font-semibold">Total Transactions</div>
+        <div class="stat-number mb-0.5">@Model.TotalSubscriptions.ToString("N0")</div>
+        <div class="text-sm text-gray-500 font-semibold mb-3">Total Subscriptions</div>
+        <div class="flex gap-3 text-xs text-gray-400">
+            <span class="flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span>@Model.ActiveSubs Active
+            </span>
+            <span class="flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-gray-300 inline-block"></span>@Model.ExpiredSubs Expired
+            </span>
+        </div>
     </div>
+</div>
+
+<!-- PLATFORM HEALTH (NEW ROW) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 mb-7">
+
+    <!-- Pending Verifications -->
+    <div class="stat-card p-5 fade-in-up fade-in-up-delay-5">
+        <div class="flex items-start justify-between mb-4">
+            <div class="icon-badge" style="background:linear-gradient(135deg,#FEF2F2,#FEE2E2);">
+                <span class="material-icons-round text-red-500 text-2xl">policy</span>
+            </div>
+            <span class="badge badge-pending">Action Required</span>
+        </div>
+        <div class="stat-number mb-0.5 text-red-600">@Model.PendingVerifications.ToString("N0")</div>
+        <div class="text-sm text-gray-500 font-semibold mb-3">Pending Verifications</div>
+        <p class="text-xs text-gray-400">Nanny profiles waiting for moderator approval.</p>
+    </div>
+
+    <!-- Active Jobs -->
+    <div class="stat-card p-5 fade-in-up fade-in-up-delay-6">
+        <div class="flex items-start justify-between mb-4">
+            <div class="icon-badge" style="background:linear-gradient(135deg,#F0FDF4,#DCFCE7);">
+                <span class="material-icons-round text-green-500 text-2xl">work</span>
+            </div>
+            <span class="badge badge-active">Active</span>
+        </div>
+        <div class="stat-number mb-0.5 text-green-600">@Model.ActiveJobPostings.ToString("N0")</div>
+        <div class="text-sm text-gray-500 font-semibold mb-3">Open Job Postings</div>
+        <p class="text-xs text-gray-400">Parents actively looking for nannies right now.</p>
+    </div>
+
+    <!-- Total Contracts -->
+    <div class="stat-card p-5 fade-in-up fade-in-up-delay-7">
+        <div class="flex items-start justify-between mb-4">
+            <div class="icon-badge" style="background:linear-gradient(135deg,#EFF6FF,#DBEAFE);">
+                <span class="material-icons-round text-blue-500 text-2xl">handshake</span>
+            </div>
+            <span class="badge badge-parent">Success</span>
+        </div>
+        <div class="stat-number mb-0.5 text-blue-600">@Model.TotalContracts.ToString("N0")</div>
+        <div class="text-sm text-gray-500 font-semibold mb-3">Total Contracts</div>
+        <p class="text-xs text-gray-400">Successful matches made on NannyMatch.</p>
+    </div>
+
 </div>
 
 <!-- ROW 2: Quick Actions + Recent Transactions -->
