@@ -44,8 +44,7 @@ public class DashboardService
         // Platform Health stats
         var pendingVerifications = await _verificationRepo.GetQuery()
                                            .CountAsync(v => !v.IsDeleted && v.Status == (int)VerificationStatus.Pending);
-        var activeJobs = await _jobRepo.GetQuery()
-                                           .CountAsync(j => !j.IsDeleted && j.Status == 1); // 1 = Open
+        var activeJobs = await _jobRepo.GetQuery().CountAsync(j => !j.IsDeleted && j.Status == 1); // 1 = Open
         var totalContracts = await _contractRepo.GetQuery()
                                            .CountAsync(c => !c.IsDeleted);
 

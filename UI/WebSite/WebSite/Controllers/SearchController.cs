@@ -34,6 +34,14 @@ public class SearchController : Controller
     [HttpGet]
     public IActionResult History() => View();
 
+    [HttpGet]
+    public async Task<IActionResult> Edit(Guid id)
+    {
+        ViewBag.JobId = id;
+        ViewBag.SkillOptions = await getSkillOptionsForView();
+        return View();
+    }
+
     // ── GET /Search/Jobs ────────────────────────────────────
     [HttpGet]
     public async Task<IActionResult> Jobs([FromQuery] SearchJobRequest req)

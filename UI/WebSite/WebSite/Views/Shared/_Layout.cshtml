@@ -582,6 +582,13 @@
                                     await loadNotifications();
                                 });
 
+                                window.addEventListener('nm:notifications-refresh', async () => {
+                                    await loadUnreadCount();
+                                    if (!notificationMenu.classList.contains('hidden')) {
+                                        await loadNotifications();
+                                    }
+                                });
+
                                 document.addEventListener('click', function(e) {
                                     if (!notificationDropdown.contains(e.target)) {
                                         notificationMenu.classList.add('hidden');
