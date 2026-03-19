@@ -698,6 +698,29 @@ select.form-input.bg-gray-50 {
     box-shadow: 0 10px 20px rgba(249, 115, 22, .25);
 }
 
+.schedule-grid--readonly {
+    padding: .75rem;
+    gap: .8rem;
+}
+
+.schedule-grid--readonly .schedule-cell {
+    width: 42px;
+    height: 42px;
+    border-radius: 999px;
+    cursor: default;
+}
+
+.schedule-grid--readonly .schedule-cell:hover {
+    transform: none;
+    border-color: #d8dee8;
+    background: linear-gradient(180deg, #ffffff, #f6f8fb);
+}
+
+.schedule-grid--readonly .schedule-cell.active:hover {
+    background: linear-gradient(135deg, #fb923c, #f97316);
+    border-color: #ea580c;
+}
+
 .schedule-check {
     font-size: 14px;
     font-weight: 900;

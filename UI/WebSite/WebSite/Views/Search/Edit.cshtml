@@ -1,0 +1,404 @@
+@{
+    ViewData["Title"] = "Chinh sua bai dang - NannyMatch";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var jobId = (Guid)(ViewBag.JobId ?? Guid.Empty);
+    var skillOptions = ViewBag.SkillOptions as IEnumerable<WebSite.Models.Search.JobSkillOption>
+        ?? System.Linq.Enumerable.Empty<WebSite.Models.Search.JobSkillOption>();
+}
+
+@section Head {
+    <link rel="stylesheet" href="~/css/search.css" />
+}
+
+<section class="min-h-screen bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_45%,#fff7ed_100%)] py-10">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6">
+        <div class="rounded-[30px] border border-orange-100 bg-white/90 shadow-[0_24px_60px_rgba(15,23,42,.08)] overflow-hidden">
+            <div class="px-6 py-6 sm:px-8 border-b border-orange-100 bg-[radial-gradient(circle_at_top_right,rgba(255,237,213,.85),transparent_28%),linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.24em] text-orange-500">Cap nhat bai dang</p>
+                        <h1 class="mt-2 text-3xl font-bold text-slate-900">Chinh sua bai dang</h1>
+                        <p class="mt-2 text-sm leading-6 text-slate-500 max-w-2xl">
+                            Khi luu thay doi, bai dang cong khai se quay ve trang thai cho moderator duyet lai.
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <a href="/Search/History"
+                           class="inline-flex items-center justify-center min-h-[48px] px-5 rounded-2xl border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 transition-all">
+                            Quay lai lich su
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-6 sm:px-8">
+                <div id="editPageNotice" class="hidden rounded-2xl border px-4 py-3 text-sm font-semibold mb-5"></div>
+
+                <form id="editPageForm" class="space-y-5">
+                    <input type="hidden" id="ef-id" value="@jobId" />
+                    <input type="hidden" id="ef-status" value="1" />
+
+                    <div class="section-card">
+                        <div class="section-heading">
+                            <div>
+                                <p class="section-title">Thong tin co ban</p>
+                                <p class="section-caption">Cap nhat noi dung, luong, dia diem va do tuoi nanny mong muon.</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="md:col-span-2">
+                                <label class="form-label">Tieu de bai dang</label>
+                                <input type="text" id="ef-title" class="form-input" required />
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="form-label">Mo ta chi tiet</label>
+                                <textarea id="ef-desc" class="form-input resize-none" rows="3" required></textarea>
+                            </div>
+                            <div>
+                                <label class="form-label">Loai cong viec</label>
+                                <select id="ef-type" class="form-input">
+                                    <option value="1">Full-time</option>
+                                    <option value="2">Part-time</option>
+                                    <option value="3">Qua dem</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="form-label">So tre can cham</label>
+                                <input type="number" id="ef-children" class="form-input" min="1" max="10" />
+                            </div>
+                            <div>
+                                <label class="form-label">Luong toi thieu</label>
+                                <input type="number" id="ef-salMin" class="form-input" />
+                            </div>
+                            <div>
+                                <label class="form-label">Luong toi da</label>
+                                <input type="number" id="ef-salMax" class="form-input" />
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="form-label">Tuy chon luong</label>
+                                <label class="negotiable-field negotiable-field-large">
+                                    <input type="checkbox" id="ef-negotiable" class="rounded accent-orange-500" />
+                                    <span class="negotiable-title">Luong thuong luong</span>
+                                    <span class="negotiable-caption">Bat neu ban muon trao doi muc luong truc tiep voi nanny.</span>
+                                </label>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="form-label">Dia chi chi tiet</label>
+                                <input type="text" id="ef-location" class="form-input" />
+                            </div>
+                            <div>
+                                <label class="form-label">Thanh pho</label>
+                                <input type="text" id="ef-city" class="form-input" />
+                            </div>
+                            <div>
+                                <label class="form-label">Quan/Huyen</label>
+                                <input type="text" id="ef-district" class="form-input" />
+                            </div>
+                            <div>
+                                <label class="form-label">Do tuoi bao mau tu</label>
+                                <input type="number" id="ef-minAge" class="form-input" min="18" max="80" />
+                            </div>
+                            <div>
+                                <label class="form-label">Do tuoi bao mau den</label>
+                                <input type="number" id="ef-maxAge" class="form-input" min="18" max="80" />
+                            </div>
+                            <div>
+                                <label class="form-label">Trang thai bai dang</label>
+                                <div class="status-toggle" id="ef-statusToggle">
+                                    <button type="button" class="status-option active" data-status="1">Cong khai</button>
+                                    <button type="button" class="status-option" data-status="2">An bai dang</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section-card schedule-card">
+                        <div class="schedule-header">
+                            <div>
+                                <p class="section-title">Lich ngay muon tuyen</p>
+                                <p class="section-caption">Cap nhat cac buoi can nanny ho tro trong tuan.</p>
+                            </div>
+                        </div>
+                        <div id="ef-schedule" class="schedule-grid"></div>
+                    </div>
+
+                    <div class="section-card section-card-soft">
+                        <div class="section-heading">
+                            <div>
+                                <p class="section-title">Thong tin tu profile Parent</p>
+                                <p class="section-caption">Chon lai be neu can, he thong se cap nhat thong tin Child Profile tuong ung.</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div class="md:col-span-2">
+                                <label class="form-label">Chon tre</label>
+                                <select id="ef-childProfileId" class="form-input"></select>
+                            </div>
+                            <div>
+                                <label class="form-label">Dac diem</label>
+                                <textarea id="ef-characteristic" class="form-input resize-none bg-white/80" rows="2" readonly></textarea>
+                            </div>
+                            <div>
+                                <label class="form-label">Nhom tuoi cua be</label>
+                                <input type="text" id="ef-birthType" class="form-input bg-white/80" readonly />
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="form-label">Nhu cau dac biet</label>
+                                <textarea id="ef-specialNeeds" class="form-input resize-none bg-white/80" rows="2" readonly></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section-card section-card-plain">
+                        <div class="section-heading">
+                            <div>
+                                <p class="section-title">Ky nang yeu cau</p>
+                                <p class="section-caption">Cap nhat bo ky nang bang danh sach skill co san trong he thong.</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 items-center">
+                            <select id="ef-skillSelect" class="form-input">
+                                <option value="">Chon ky nang can yeu cau</option>
+                                @foreach (var skill in skillOptions)
+                                {
+                                    <option value="@skill.SkillName">@skill.SkillName</option>
+                                }
+                            </select>
+                            <button type="button" id="ef-addSkill" class="icon-pill-btn">
+                                <span class="material-icons-round text-base">add</span>
+                            </button>
+                        </div>
+                        <div id="ef-skills" class="flex flex-wrap gap-2 mt-2"></div>
+                    </div>
+
+                    <div class="flex flex-col-reverse sm:flex-row gap-3">
+                        <a href="/Search/History" class="modal-btn modal-btn-secondary flex-1 text-center">Huy</a>
+                        <button type="submit" id="editPageSubmit" class="modal-btn modal-btn-primary flex-1">Luu thay doi</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div id="toast" class="bg-gray-900 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-2xl"></div>
+
+@section Scripts {
+<script>
+const JOB_ID = '@jobId';
+let editChildren = [];
+let editSkills = [];
+let editSchedule = [];
+
+const DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+const ROW_LABELS = ['Morning', 'Afternoon', 'Evening', 'Night'];
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+}
+
+function showToast(message) {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    toast.textContent = message;
+    toast.classList.add('show');
+    clearTimeout(showToast._timer);
+    showToast._timer = setTimeout(() => toast.classList.remove('show'), 2600);
+}
+
+function showNotice(message, kind) {
+    const box = document.getElementById('editPageNotice');
+    if (!box) return;
+    box.className = `rounded-2xl border px-4 py-3 text-sm font-semibold mb-5 ${kind === 'warn' ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-orange-200 bg-orange-50 text-orange-700'}`;
+    box.textContent = message;
+    box.classList.remove('hidden');
+}
+
+function setEditStatus(status) {
+    document.getElementById('ef-status').value = String(status);
+    document.querySelectorAll('#ef-statusToggle .status-option').forEach((button) => {
+        button.classList.toggle('active', Number(button.dataset.status) === status);
+    });
+}
+
+function renderScheduleGrid() {
+    const container = document.getElementById('ef-schedule');
+    if (!container) return;
+    const selectedSet = new Set(editSchedule.map(slot => `${slot.dayOfWeek}-${slot.timeSlot}`));
+    let html = '<div></div>';
+    DAY_LABELS.forEach(label => html += `<div class="schedule-col-label">${label}</div>`);
+    ROW_LABELS.forEach((rowLabel, timeSlot) => {
+        html += `<div class="schedule-row-label">${rowLabel}</div>`;
+        for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek += 1) {
+            const key = `${dayOfWeek}-${timeSlot}`;
+            const active = selectedSet.has(key);
+            html += `<button type="button" class="schedule-cell ${active ? 'active' : ''}" data-day="${dayOfWeek}" data-slot="${timeSlot}"><span class="schedule-check">${active ? '&#10003;' : ''}</span></button>`;
+        }
+    });
+    container.innerHTML = html;
+    container.querySelectorAll('.schedule-cell').forEach((button) => {
+        button.addEventListener('click', () => {
+            const dayOfWeek = Number(button.dataset.day);
+            const timeSlot = Number(button.dataset.slot);
+            const idx = editSchedule.findIndex(slot => slot.dayOfWeek === dayOfWeek && slot.timeSlot === timeSlot);
+            if (idx >= 0) editSchedule.splice(idx, 1);
+            else editSchedule.push({ dayOfWeek, timeSlot });
+            renderScheduleGrid();
+        });
+    });
+}
+
+function renderSkillCollection() {
+    const container = document.getElementById('ef-skills');
+    if (!container) return;
+    container.innerHTML = editSkills.map(skill => `
+        <span class="skill-tag">${escapeHtml(skill)}
+            <button type="button" data-skill="${escapeHtml(skill)}">x</button>
+        </span>`).join('');
+    container.querySelectorAll('button[data-skill]').forEach((button) => {
+        button.addEventListener('click', () => {
+            editSkills = editSkills.filter(skill => skill !== button.dataset.skill);
+            renderSkillCollection();
+        });
+    });
+}
+
+function setProfileFields(child) {
+    document.getElementById('ef-characteristic').value = child?.characteristic || '';
+    document.getElementById('ef-birthType').value = child?.birthTypeLabel || '';
+    document.getElementById('ef-specialNeeds').value = child?.specialNeeds || '';
+}
+
+function getSelectedChild() {
+    const childId = document.getElementById('ef-childProfileId').value;
+    return editChildren.find(child => String(child.id).toLowerCase() === String(childId).toLowerCase()) || null;
+}
+
+function renderChildren(selectedChildId) {
+    const select = document.getElementById('ef-childProfileId');
+    if (!select) return;
+    select.innerHTML = editChildren.length
+        ? editChildren.map(child => `<option value="${escapeHtml(child.id)}">${escapeHtml(child.label)}</option>`).join('')
+        : '<option value="">Chua co Child Profile</option>';
+    if (selectedChildId) select.value = selectedChildId;
+    setProfileFields(getSelectedChild());
+}
+
+async function loadEditPage() {
+    try {
+        const [detailRes, prefillRes] = await Promise.all([
+            fetch(`/Search/Detail/${JOB_ID}`),
+            fetch('/Search/Prefill')
+        ]);
+
+        const detailJson = await detailRes.json();
+        const prefillJson = await prefillRes.json();
+        const job = detailJson?.data || detailJson;
+        const prefill = prefillJson?.data || {};
+
+        editChildren = Array.isArray(prefill.children) ? prefill.children : [];
+        renderChildren(job.childProfileId || prefill.selectedChildProfileId);
+
+        document.getElementById('ef-title').value = job.title || '';
+        document.getElementById('ef-desc').value = job.description || '';
+        document.getElementById('ef-type').value = job.jobType || 1;
+        document.getElementById('ef-children').value = job.numberOfChildren || prefill.numberOfChildren || 1;
+        document.getElementById('ef-salMin').value = job.salaryMin || '';
+        document.getElementById('ef-salMax').value = job.salaryMax || '';
+        document.getElementById('ef-negotiable').checked = !!job.salaryNegotiable;
+        document.getElementById('ef-location').value = job.location || '';
+        document.getElementById('ef-city').value = job.city || '';
+        document.getElementById('ef-district').value = job.district || '';
+        document.getElementById('ef-minAge').value = job.minNannyAge || '';
+        document.getElementById('ef-maxAge').value = job.maxNannyAge || '';
+        setEditStatus(Number(job.status) || 1);
+
+        editSkills = Array.isArray(job.skills) ? [...job.skills] : [];
+        editSchedule = Array.isArray(job.scheduleSlots) ? job.scheduleSlots.map(slot => ({ dayOfWeek: slot.dayOfWeek, timeSlot: slot.timeSlot })) : [];
+        renderSkillCollection();
+        renderScheduleGrid();
+        setProfileFields(getSelectedChild());
+
+        if (Number(job.moderationStatus) === 0) {
+            showNotice('Bai dang nay dang cho moderator duyet. Ban van co the chinh sua va luu lai.', 'warn');
+        } else if (Number(job.moderationStatus) === 2) {
+            showNotice('Neu ban chinh sua bai dang cong khai va luu lai, bai dang se quay ve trang thai cho duyet.', 'info');
+        }
+    } catch {
+        showToast('Khong tai duoc thong tin bai dang');
+    }
+}
+
+document.getElementById('ef-childProfileId')?.addEventListener('change', () => setProfileFields(getSelectedChild()));
+document.getElementById('ef-addSkill')?.addEventListener('click', () => {
+    const select = document.getElementById('ef-skillSelect');
+    const value = select.value.trim();
+    if (!value || editSkills.includes(value)) return;
+    editSkills.push(value);
+    select.value = '';
+    renderSkillCollection();
+});
+
+document.querySelectorAll('#ef-statusToggle .status-option').forEach((button) => {
+    button.addEventListener('click', () => setEditStatus(Number(button.dataset.status)));
+});
+
+document.getElementById('editPageForm')?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const payload = {
+        title: document.getElementById('ef-title').value.trim(),
+        description: document.getElementById('ef-desc').value.trim(),
+        jobType: Number(document.getElementById('ef-type').value),
+        numberOfChildren: Number(document.getElementById('ef-children').value || 1),
+        childProfileId: document.getElementById('ef-childProfileId').value || null,
+        salaryMin: document.getElementById('ef-salMin').value ? Number(document.getElementById('ef-salMin').value) : null,
+        salaryMax: document.getElementById('ef-salMax').value ? Number(document.getElementById('ef-salMax').value) : null,
+        salaryNegotiable: document.getElementById('ef-negotiable').checked,
+        location: document.getElementById('ef-location').value.trim(),
+        city: document.getElementById('ef-city').value.trim(),
+        district: document.getElementById('ef-district').value.trim(),
+        minNannyAge: document.getElementById('ef-minAge').value ? Number(document.getElementById('ef-minAge').value) : null,
+        maxNannyAge: document.getElementById('ef-maxAge').value ? Number(document.getElementById('ef-maxAge').value) : null,
+        skills: editSkills,
+        scheduleSlots: editSchedule,
+        status: Number(document.getElementById('ef-status').value || 1)
+    };
+
+    const submitBtn = document.getElementById('editPageSubmit');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Dang luu...';
+
+    try {
+        const res = await fetch(`/Search/UpdateJob/${JOB_ID}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const json = await res.json();
+        if (!json.success) {
+            showToast(json.message || 'Cap nhat that bai');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Luu thay doi';
+            return;
+        }
+
+        showToast('Cap nhat thanh cong. Bai dang da duoc gui moderator duyet lai');
+        setTimeout(() => {
+            window.location.href = `/Search/History?jobId=${JOB_ID}`;
+        }, 900);
+    } catch {
+        showToast('Loi ket noi server');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Luu thay doi';
+    }
+});
+
+loadEditPage();
+</script>
+}
