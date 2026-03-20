@@ -18,12 +18,18 @@
 </div>
 
 <!-- PAGE HEADER -->
-<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7 fade-in-up">
+<div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
     <div>
         <span class="section-label">Verification Detail</span>
         <h1 class="page-title mt-2">Review <span class="gradient-text">Application</span></h1>
+        <div class="mt-2 flex items-center gap-3">
+            <span class="badge @Model.StatusClass text-sm px-4 py-2">@Model.StatusLabel</span>
+        </div>
     </div>
-    <span class="badge @Model.StatusClass text-sm px-4 py-2">@Model.StatusLabel</span>
+    <a href="/Moderator/ManageNannyVerification" class="btn-outline flex-shrink-0">
+        <span class="material-icons-round text-base">arrow_back</span>
+        Back to List
+    </a>
 </div>
 
 <!-- Alert messages -->
@@ -70,11 +76,31 @@
                         <p class="font-semibold text-gray-700">@(Model.NannyPhoneNumber ?? "—")</p>
                     </div>
                 </div>
+                @{
+                    var fullAddress = string.Join(", ", new[] { Model.NannyAddress, Model.NannyWard, Model.NannyDistrict, Model.NannyCity }
+                        .Where(s => !string.IsNullOrWhiteSpace(s)));
+                    var genderStr = Model.NannyGender switch { 1 => "Male", 2 => "Female", _ => "Not specified" };
+                    var salaryTypeStr = Model.SalaryType == 1 ? "Per Hour" : "Per Month";
+                }
+                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                    <span class="material-icons-round text-gray-400 text-base">cake</span>
+                    <div>
+                        <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold">Date of Birth</p>
+                        <p class="font-semibold text-gray-700">@(Model.NannyDateOfBirth.HasValue ? Model.NannyDateOfBirth.Value.ToString("MMM dd, yyyy") : "—")</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                    <span class="material-icons-round text-gray-400 text-base">wc</span>
+                    <div>
+                        <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold">Gender</p>
+                        <p class="font-semibold text-gray-700">@genderStr</p>
+                    </div>
+                </div>
                 <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
                     <span class="material-icons-round text-gray-400 text-base">location_on</span>
                     <div>
-                        <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold">City</p>
-                        <p class="font-semibold text-gray-700">@(Model.NannyCity ?? "—")</p>
+                        <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold">Home Address</p>
+                        <p class="font-semibold text-gray-700">@(string.IsNullOrWhiteSpace(fullAddress) ? "—" : fullAddress)</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
@@ -89,6 +115,20 @@
                     <div>
                         <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold">Education</p>
                         <p class="font-semibold text-gray-700">@Model.EducationLabel</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                    <span class="material-icons-round text-gray-400 text-base">payments</span>
+                    <div>
+                        <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold">Expected Salary</p>
+                        <p class="font-semibold text-gray-700">@(Model.ExpectedSalaryMin?.ToString("N0") ?? "—") - @(Model.ExpectedSalaryMax?.ToString("N0") ?? "—") VND (@salaryTypeStr)</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                    <span class="material-icons-round text-gray-400 text-base">commute</span>
+                    <div>
+                        <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold">Max Travel Distance</p>
+                        <p class="font-semibold text-gray-700">@(Model.MaxTravelDistance.HasValue ? $"{Model.MaxTravelDistance} km" : "—")</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
@@ -262,14 +302,7 @@
         }
 
         <!-- Back button -->
-        <div class="fade-in-up">
-            <a href="/Moderator/ManageNannyVerification"
-               class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold
-                      bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all">
-                <span class="material-icons-round text-base">arrow_back</span>
-                Back to List
-            </a>
-        </div>
+
     </div>
 </div>
 
