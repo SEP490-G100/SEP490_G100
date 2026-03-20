@@ -15,6 +15,9 @@ let debounceTimer = null;
 let editingJobId = null;
 let isSubmittingCreate = false;
 let isSubmittingEdit = false;
+let provinces = [];
+let locationDataPromise = null;
+const autocompleteDropdowns = new Map();
 
 const DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 const ROW_LABELS = ['Morning', 'Afternoon', 'Evening', 'Night'];
@@ -25,6 +28,141 @@ const GEO_FALLBACK = {
   'Ha Noi': { lat: 21.028, lng: 105.854, radius: 7000, zoom: 11 },
   'Da Nang': { lat: 16.054, lng: 108.202, radius: 6500, zoom: 11 }
 };
+
+function loadLocationData() {
+  if (locationDataPromise) return locationDataPromise;
+
+  locationDataPromise = fetch('https://provinces.open-api.vn/api/?depth=3')
+    .then((response) => response.ok ? response.json() : [])
+    .then((data) => {
+      provinces = Array.isArray(data) ? data : [];
+      attachLocationAutocomplete('cf');
+      attachLocationAutocomplete('ef');
+      return provinces;
+    })
+    .catch(() => {
+      provinces = [];
+      return provinces;
+    });
+
+  return locationDataPromise;
+}
+
+function normalizeText(value) {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+function getProvinceOptions() {
+  return provinces.map((province) => province.name);
+}
+
+function getDistrictOptions(cityName) {
+  const selectedProvince = provinces.find((province) => province.name === cityName);
+  return (selectedProvince?.districts || []).map((district) => district.name);
+}
+
+function getAutocompleteKey(prefix, kind) {
+  return `${prefix}-${kind}`;
+}
+
+function hideAutocomplete(prefix, kind) {
+  const dropdown = autocompleteDropdowns.get(getAutocompleteKey(prefix, kind));
+  if (!dropdown) return;
+  dropdown.classList.remove('show');
+}
+
+function renderAutocompleteOptions(prefix, kind, options, onSelect) {
+  const dropdown = autocompleteDropdowns.get(getAutocompleteKey(prefix, kind));
+  if (!dropdown) return;
+
+  if (!options.length) {
+    dropdown.innerHTML = '';
+    dropdown.classList.remove('show');
+    return;
+  }
+
+  dropdown.innerHTML = options.map((option) => `<li data-value="${escapeHtml(option)}">${escapeHtml(option)}</li>`).join('');
+  dropdown.classList.add('show');
+
+  dropdown.querySelectorAll('li').forEach((item) => {
+    item.addEventListener('mousedown', (event) => {
+      event.preventDefault();
+      onSelect(item.dataset.value || '');
+    });
+  });
+}
+
+function attachAutocomplete(prefix, kind, optionGetter, onSelect) {
+  const input = document.getElementById(`${prefix}-${kind}`);
+  if (!input || input.dataset.acReady === 'true') return;
+
+  input.dataset.acReady = 'true';
+  input.removeAttribute('list');
+  input.parentElement?.classList.add('autocomplete-field');
+
+  const datalist = document.getElementById(`${prefix}-${kind}Options`);
+  if (datalist) datalist.remove();
+
+  const dropdown = document.createElement('ul');
+  dropdown.className = 'ac-dropdown';
+  input.insertAdjacentElement('afterend', dropdown);
+  autocompleteDropdowns.set(getAutocompleteKey(prefix, kind), dropdown);
+
+  const showForQuery = () => {
+    const query = normalizeText(input.value);
+    const filtered = optionGetter()
+      .filter((option) => !query || normalizeText(option).includes(query))
+      .slice(0, 12);
+
+    renderAutocompleteOptions(prefix, kind, filtered, (value) => {
+      input.value = value;
+      onSelect(value);
+      hideAutocomplete(prefix, kind);
+    });
+  };
+
+  input.addEventListener('focus', showForQuery);
+  input.addEventListener('input', showForQuery);
+  input.addEventListener('blur', () => {
+    setTimeout(() => hideAutocomplete(prefix, kind), 120);
+  });
+}
+
+function attachLocationAutocomplete(prefix) {
+  attachAutocomplete(
+    prefix,
+    'city',
+    () => getProvinceOptions(),
+    (value) => {
+      const districtInput = document.getElementById(`${prefix}-district`);
+      if (districtInput) districtInput.value = '';
+      handleCityChange(prefix, value);
+    }
+  );
+
+  attachAutocomplete(
+    prefix,
+    'district',
+    () => getDistrictOptions(document.getElementById(`${prefix}-city`)?.value.trim() || ''),
+    () => {}
+  );
+}
+
+function handleCityChange(prefix, explicitCityValue) {
+  const cityInput = document.getElementById(`${prefix}-city`);
+  const districtInput = document.getElementById(`${prefix}-district`);
+  if (!cityInput) return;
+
+  const cityValue = (explicitCityValue ?? cityInput.value).trim();
+  const allowedDistricts = getDistrictOptions(cityValue);
+  if (districtInput && districtInput.value && !allowedDistricts.includes(districtInput.value.trim())) {
+    districtInput.value = '';
+  }
+}
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -89,7 +227,7 @@ function debounceSearch() {
 
 function initMap() {
   const mapEl = document.getElementById('map');
-  if (!mapEl || typeof L === 'undefined') return;
+  if (map || !mapEl || typeof L === 'undefined') return;
   map = L.map('map', { zoomControl: true }).setView([10.776, 106.701], 11);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; CartoDB',
@@ -378,6 +516,7 @@ function setEditStatus(status) {
 }
 
 async function openCreate() {
+  await loadLocationData();
   document.getElementById('createForm')?.reset();
   createSkills = [];
   createSchedule = [];
@@ -557,10 +696,28 @@ function closePreview() {
   document.getElementById('previewModal')?.classList.remove('show');
 }
 
-function handleCreateCityChange() { }
-function handleEditCityChange() { }
+function handleCreateCityChange() {
+  handleCityChange('cf');
+}
 
-document.addEventListener('DOMContentLoaded', () => {
+function handleEditCityChange() {
+  handleCityChange('ef');
+}
+
+function bootstrapSearchPage() {
   initMap();
+  loadLocationData();
   doSearch();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootstrapSearchPage, { once: true });
+} else {
+  bootstrapSearchPage();
+}
+
+window.addEventListener('pageshow', () => {
+  if (!currentJobs.length) {
+    bootstrapSearchPage();
+  }
 });
