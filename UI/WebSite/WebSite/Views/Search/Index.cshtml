@@ -9,7 +9,7 @@
 
 @section Head {
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="~/css/search.css" />
+    <link rel="stylesheet" href="~/css/search.css" asp-append-version="true" />
 }
 
 <div class="sticky top-[72px] z-40 bg-white/95 backdrop-blur-lg border-b border-gray-100" style="box-shadow:0 2px 8px rgba(0,0,0,.04);">
@@ -369,6 +369,7 @@
 
 <div id="previewModal" class="nmodal fixed inset-0 z-50 bg-black/50 backdrop-blur-sm items-center justify-center px-4" onclick="if(event.target===this)closePreview()">
     <div class="nmodal-box bg-white rounded-2xl w-full max-w-3xl shadow-2xl relative">
+        <div class="modal-scroll">
         <div class="p-6">
             <button onclick="closePreview()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-800 transition-colors material-icons-round text-2xl">close</button>
             <div class="pr-10">
@@ -415,6 +416,7 @@
                 <span id="pv-parentBtnText">Xem chi tiết hồ sơ người đăng</span>
             </a>
         </div>
+        </div>
     </div>
 </div>
 
@@ -441,6 +443,50 @@
 const API_URL = '/Search/Jobs';
 const IS_AUTH = @(isAuthenticated ? "true" : "false");
 const CURRENT_USER_NAME = '@userName';
+
+(() => {
+    const ensurePreviewEditButton = () => {
+        const parentButton = document.getElementById('pv-parentBtn');
+        if (!parentButton || document.getElementById('pv-editBtn')) return document.getElementById('pv-editBtn');
+
+        const editButton = document.createElement('a');
+        editButton.id = 'pv-editBtn';
+        editButton.href = '#';
+        editButton.className = 'hidden w-full py-3 rounded-xl border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 font-bold text-sm transition-all inline-flex items-center justify-center gap-2';
+        editButton.innerHTML = '<span class="material-icons-round text-base">edit</span><span>Chinh sua bai dang</span>';
+
+        const actionGrid = document.createElement('div');
+        actionGrid.className = 'grid grid-cols-1 sm:grid-cols-2 gap-3';
+        parentButton.parentNode.insertBefore(actionGrid, parentButton);
+        actionGrid.appendChild(editButton);
+        actionGrid.appendChild(parentButton);
+        return editButton;
+    };
+
+    const bindPreviewEditButton = (job) => {
+        const button = ensurePreviewEditButton();
+        if (!button || !job) return;
+        const canEdit = [0, 2].includes(Number(job.moderationStatus)) && !!job.id;
+        button.classList.toggle('hidden', !canEdit);
+        if (canEdit) button.href = `/Search/Edit/${job.id}`;
+        else button.removeAttribute('href');
+    };
+
+    const hookPreview = () => {
+        if (typeof window.openPreview !== 'function' || window.openPreview.__nmWrapped) return;
+        const original = window.openPreview;
+        window.openPreview = function(job) {
+            const result = original.apply(this, arguments);
+            bindPreviewEditButton(job);
+            return result;
+        };
+        window.openPreview.__nmWrapped = true;
+    };
+
+    document.addEventListener('DOMContentLoaded', hookPreview);
+    setTimeout(hookPreview, 0);
+    setTimeout(hookPreview, 300);
+})();
 </script>
-<script src="~/js/search.js"></script>
+<script src="~/js/search.js" asp-append-version="true"></script>
 }

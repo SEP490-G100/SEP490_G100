@@ -13,8 +13,6 @@ public class JobRepository
     public JobRepository(Sep490NannyDbContext db) => _db = db;
 
     public IQueryable<JobPosting> GetQuery() => _db.JobPostings.AsQueryable();
-
-
     public async Task<List<JobPosting>> searchJobPosting(
         SearchJobRequest filters,
         Guid? currentUserId = null,
@@ -145,6 +143,8 @@ public class JobRepository
             .Where(s => !s.IsDeleted && normalized.Contains(s.Name.ToLower()))
             .ToListAsync();
     }
+ 
+
 
     public async Task<List<Skill>> getActiveSkills() =>
         await _db.Skills
@@ -153,7 +153,11 @@ public class JobRepository
             .ThenBy(s => s.Name)
             .ToListAsync();
 
+ 
+
     public void addSkills(IEnumerable<Skill> skills) => _db.Skills.AddRange(skills);
+
+
 
     public async Task<JobPosting> createJobPosting(JobPosting job)
     {
