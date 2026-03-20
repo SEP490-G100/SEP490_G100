@@ -219,5 +219,40 @@ public class JobRepository
         await _db.SaveChangesAsync();
     }
 
+    public async Task<(List<JobPosting> Items, int TotalCount)> GetModeratorJobPostingsAsync(
+        int? status,
+        int? moderationStatus,
+        string? search,
+        int page,
+        int pageSize)
+    {
+        var query = _db.JobPostings
+            .Where(j => !j.IsDeleted)
+            .Include(j => j.ParentProfile).ThenInclude(p => p.User)
+            .AsQueryable();
+
+        if (status.HasValue)
+            query = query.Where(j => j.Status == status.Value);
+
+        if (moderationStatus.HasValue)
+            query = query.Where(j => j.ModerationStatus == moderationStatus.Value);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var s = search.ToLower();
+            query = query.Where(j => j.Title.ToLower().Contains(s) || 
+                                    (j.ParentProfile != null && (j.ParentProfile.User.FirstName + " " + j.ParentProfile.User.LastName).ToLower().Contains(s)));
+        }
+
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .OrderByDescending(j => j.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items, totalCount);
+    }
+
     public async Task saveChanges() => await _db.SaveChangesAsync();
 }

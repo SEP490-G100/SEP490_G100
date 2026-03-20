@@ -45,11 +45,20 @@ public class VerificationRequestDetailDto
     public string? NannyPhoneNumber { get; set; }
     public string? NannyAvatarUrl   { get; set; }
     public string? NannyCity        { get; set; }
+    public string? NannyAddress     { get; set; }
+    public string? NannyDistrict    { get; set; }
+    public string? NannyWard        { get; set; }
+    public int?    NannyGender      { get; set; }
+    public DateOnly? NannyDateOfBirth { get; set; }
 
     public string? Bio                { get; set; }
     public int?    YearsOfExperience  { get; set; }
     public int?    EducationLevel     { get; set; }
     public int     VerificationStatus { get; set; }
+    public decimal? ExpectedSalaryMin { get; set; }
+    public decimal? ExpectedSalaryMax { get; set; }
+    public int     SalaryType         { get; set; }
+    public int?    MaxTravelDistance  { get; set; }
 
     public List<VerificationDocumentDto> Documents { get; set; } = new();
 

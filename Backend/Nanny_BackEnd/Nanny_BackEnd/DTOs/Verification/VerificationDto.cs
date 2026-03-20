@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Http;
+
 namespace Nanny_BackEnd.DTOs.Verification;
 
 /// <summary>DTO for list view of verification requests</summary>
@@ -5,7 +7,7 @@ public class VerificationRequestListDto
 {
     public Guid Id { get; set; }
     public Guid NannyProfileId { get; set; }
-    public int Status { get; set; }                // 0=Pending, 1=Approved, 2=Rejected
+    public int Status { get; set; }                // 1=Pending, 2=Approved, 3=Rejected
     public DateTime CreatedAt { get; set; }
     public DateTime? ReviewedAt { get; set; }
 
@@ -37,12 +39,21 @@ public class VerificationRequestDetailDto
     public string? NannyPhoneNumber { get; set; }
     public string? NannyAvatarUrl { get; set; }
     public string? NannyCity { get; set; }
+    public string? NannyAddress { get; set; }
+    public string? NannyDistrict { get; set; }
+    public string? NannyWard { get; set; }
+    public int? NannyGender { get; set; }
+    public DateOnly? NannyDateOfBirth { get; set; }
 
     // NannyProfile info
     public string? Bio { get; set; }
     public int? YearsOfExperience { get; set; }
     public int? EducationLevel { get; set; }
     public int VerificationStatus { get; set; }
+    public decimal? ExpectedSalaryMin { get; set; }
+    public decimal? ExpectedSalaryMax { get; set; }
+    public int SalaryType { get; set; }
+    public int? MaxTravelDistance { get; set; }
 
     // Documents
     public List<VerificationDocumentDto> Documents { get; set; } = new();
@@ -78,4 +89,17 @@ public class ReviewVerificationRequest
 
     /// <summary>Id of the moderator reviewing (should come from JWT in real scenarios)</summary>
     public Guid? ReviewedBy { get; set; }
+}
+
+/// <summary>Request body for a Nanny to submit verification documents</summary>
+public class SubmitVerificationRequestDto
+{
+    public List<UploadedVerificationDocumentDto> Documents { get; set; } = new();
+}
+
+public class UploadedVerificationDocumentDto
+{
+    public string DocumentUrl { get; set; } = null!;
+    public string FileName { get; set; } = null!;
+    public int FileSize { get; set; }
 }

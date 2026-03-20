@@ -65,6 +65,26 @@ public class VerificationRequestRepository
             .FirstOrDefaultAsync(np => np.Id == nannyProfileId && !np.IsDeleted);
     }
 
+    public async Task<NannyProfile?> GetNannyProfileByUserIdAsync(Guid userId)
+    {
+        return await _db.NannyProfiles
+            .FirstOrDefaultAsync(np => np.UserId == userId && !np.IsDeleted);
+    }
+
+    public async Task<List<VerificationRequest>> GetRequestsByNannyProfileAsync(Guid nannyProfileId)
+    {
+        return await _db.VerificationRequests
+            .Include(v => v.VerificationDocuments.Where(d => !d.IsDeleted))
+            .Where(v => v.NannyProfileId == nannyProfileId && !v.IsDeleted)
+            .OrderByDescending(v => v.CreatedAt)
+            .ToListAsync();
+    }
+
+    public void AddRequest(VerificationRequest request)
+    {
+        _db.VerificationRequests.Add(request);
+    }
+
     public async Task SaveChangesAsync()
     {
         await _db.SaveChangesAsync();

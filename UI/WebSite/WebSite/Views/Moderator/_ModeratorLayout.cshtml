@@ -36,9 +36,7 @@
 
             <!-- Brand -->
             <div class="flex items-center gap-3 px-5 py-5 border-b border-white/10">
-                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-lg flex-shrink-0">
-                    <span class="material-icons-round text-white text-xl">child_care</span>
-                </div>
+                <img src="~/img/nanny-logo.jpg" alt="Logo" class="w-9 h-9 rounded-xl object-cover shadow-lg flex-shrink-0" />
                 <div class="sidebar-text overflow-hidden">
                     <span class="text-lg font-bold tracking-tight" style="background:linear-gradient(135deg,#F97316,#FB923C);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">NannyMatch</span>
                     <p class="text-[10px] text-gray-400 -mt-0.5 uppercase tracking-widest">Moderator Panel</p>
@@ -72,8 +70,8 @@
 
                  
 
-                <a href="/Moderator/#"
-                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() == "ModerateJobPostings" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
+                <a href="/Moderator/ManageJobPosting"
+                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() == "ManageJobPosting" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">work</span>
                     <span class="sidebar-text">Manage Job Postings</span>
                 </a>
@@ -85,16 +83,22 @@
 
                 <p class="sidebar-text px-2 text-[10px] uppercase tracking-widest text-gray-500 mt-5 mb-2 font-semibold">Content</p>
 
-                <a href="/Moderator/#"
-                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() == "ManageBlogs" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
+                <a href="/Moderator/ManageBlog"
+                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() is "ManageBlog" or "CreateBlog" or "ViewBlogDetail" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">article</span>
                     <span class="sidebar-text">Manage Blogs</span>
                 </a>
 
-                <a href="/Moderator/#"
-                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() == "ManageFAQ" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
+                <a href="/Moderator/ManageFAQ"
+                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() is "ManageFAQ" or "CreateFAQ" or "ViewFAQDetail" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">help_outline</span>
                     <span class="sidebar-text">Manage FAQ</span>
+                </a>
+
+                <a href="/Moderator/ManageBlogCategory"
+                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() is "ManageBlogCategory" or "CreateBlogCategory" or "ViewBlogCategoryDetail" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
+                    <span class="material-icons-round text-xl flex-shrink-0">category</span>
+                    <span class="sidebar-text">Manage Blog Categories</span>
                 </a>
             </nav>
 

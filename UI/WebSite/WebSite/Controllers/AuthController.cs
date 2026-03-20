@@ -60,6 +60,12 @@ public class AuthController : Controller
         var loginData = result.Data!;
         await SignInUserAsync(loginData);
 
+        // --- Staff roles: skip onboarding, redirect directly to their dashboards ---
+        if (loginData.User.Roles.Contains("Admin", StringComparer.OrdinalIgnoreCase))
+            return Redirect("/Admin/Dashboard");
+        if (loginData.User.Roles.Contains("Moderator", StringComparer.OrdinalIgnoreCase))
+            return Redirect("/Moderator/Dashboard");
+
         // Sau khi đăng nhập, kiểm tra trạng thái onboarding (kèm Bearer token)
         try
         {
@@ -135,6 +141,12 @@ public class AuthController : Controller
 
         var loginData = result.Data!;
         await SignInUserAsync(loginData);
+
+        // --- Staff roles: skip onboarding, redirect directly to their dashboards ---
+        if (loginData.User.Roles.Contains("Admin", StringComparer.OrdinalIgnoreCase))
+            return Redirect("/Admin/Dashboard");
+        if (loginData.User.Roles.Contains("Moderator", StringComparer.OrdinalIgnoreCase))
+            return Redirect("/Moderator/Dashboard");
 
         try
         {
