@@ -118,6 +118,9 @@ builder.Services.AddScoped<TransactionRepository>();
 builder.Services.AddScoped<UserSubscriptionRepository>();
 builder.Services.AddScoped<SubscriptionRepository>();
 builder.Services.AddScoped<ContractRepository>();
+builder.Services.AddScoped<FaqRepository>();
+builder.Services.AddScoped<BlogCategoryRepository>();
+builder.Services.AddScoped<BlogRepository>();
 
 // DI — Services
 builder.Services.AddScoped<JwtService>();
@@ -140,6 +143,10 @@ builder.Services.AddScoped<SubscriptionService>();
 builder.Services.AddScoped<ExportService>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<VietQrService>();
+builder.Services.AddScoped<FaqService>();
+builder.Services.AddScoped<BlogCategoryService>();
+builder.Services.AddScoped<BlogService>();
+
 
 // Background Services
 if (!builder.Environment.IsDevelopment())
