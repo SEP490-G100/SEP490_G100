@@ -32,7 +32,7 @@ const GEO_FALLBACK = {
 function loadLocationData() {
   if (locationDataPromise) return locationDataPromise;
 
-  locationDataPromise = fetch('https://provinces.open-api.vn/api/?depth=3')
+  locationDataPromise = fetch('https://provinces.open-api.vn/api/v2/?depth=3')
     .then((response) => response.ok ? response.json() : [])
     .then((data) => {
       provinces = Array.isArray(data) ? data : [];
