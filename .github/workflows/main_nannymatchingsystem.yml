@@ -9,6 +9,11 @@ on:
       - main
   workflow_dispatch:
 
+env:
+  PROJECT_PATH: UI/WebSite/WebSite/WebSite.csproj
+  PUBLISH_PATH: ${{ github.workspace }}/myapp
+  APP_NAME: NannyMatch
+
 jobs:
   build:
     runs-on: windows-latest
@@ -24,16 +29,17 @@ jobs:
           dotnet-version: "8.x"
 
       - name: Build with dotnet
-        run: dotnet build UI/WebSite/WebSite/WebSite.csproj --configuration Release
+        run: dotnet build "${{ env.PROJECT_PATH }}" --configuration Release
 
       - name: dotnet publish
-        run: dotnet publish UI/WebSite/WebSite/WebSite.csproj -c Release --no-build -o "${{ github.workspace }}/myapp"
+        run: dotnet publish "${{ env.PROJECT_PATH }}" -c Release --no-build -o "${{ env.PUBLISH_PATH }}"
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
-          name: .net-app
-          path: ${{ github.workspace }}/myapp
+          name: frontend-publish
+          path: ${{ env.PUBLISH_PATH }}
+          if-no-files-found: error
 
   deploy:
     runs-on: windows-latest
@@ -46,21 +52,21 @@ jobs:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
-          name: .net-app
-          path: ${{ github.workspace }}/myapp
+          name: frontend-publish
+          path: ${{ env.PUBLISH_PATH }}
       - name: Print deploying commit
         run: echo "Deploying frontend commit ${{ github.sha }}"
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZURE_UI_CLIENT_ID || secrets.AZUREAPPSERVICE_CLIENTID_9C56DF3D6716487B91E70FA177A72210 }}
-          tenant-id: ${{ secrets.AZURE_UI_TENANT_ID || secrets.AZUREAPPSERVICE_TENANTID_43FFE5235E15427DB1ED26E84AA37A13 }}
-          subscription-id: ${{ secrets.AZURE_UI_SUBSCRIPTION_ID || secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_D7C3EE1323584A28AFE9B863DCA68F88 }}
+          client-id: ${{ secrets.AZURE_UI_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_UI_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_UI_SUBSCRIPTION_ID }}
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: ${{ vars.AZURE_UI_WEBAPP_NAME || 'NannyMatch' }}
+          app-name: ${{ env.APP_NAME }}
           slot-name: "Production"
-          package: ${{ github.workspace }}/myapp
+          package: ${{ env.PUBLISH_PATH }}
