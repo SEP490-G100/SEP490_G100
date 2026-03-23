@@ -53,14 +53,14 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_9C56DF3D6716487B91E70FA177A72210 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_43FFE5235E15427DB1ED26E84AA37A13 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_D7C3EE1323584A28AFE9B863DCA68F88 }}
+          client-id: ${{ secrets.AZURE_UI_CLIENT_ID || secrets.AZUREAPPSERVICE_CLIENTID_9C56DF3D6716487B91E70FA177A72210 }}
+          tenant-id: ${{ secrets.AZURE_UI_TENANT_ID || secrets.AZUREAPPSERVICE_TENANTID_43FFE5235E15427DB1ED26E84AA37A13 }}
+          subscription-id: ${{ secrets.AZURE_UI_SUBSCRIPTION_ID || secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_D7C3EE1323584A28AFE9B863DCA68F88 }}
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: "NannyMatchingSystem"
+          app-name: ${{ vars.AZURE_UI_WEBAPP_NAME || 'NannyMatch' }}
           slot-name: "Production"
           package: ${{ github.workspace }}/myapp
