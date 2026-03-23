@@ -441,6 +441,14 @@
                                     Lich su bai dang
                                 </a>
 
+                                @if (User.IsInRole("Nanny"))
+                                {
+                                    <a href="/NannyVerificationRequest" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        <span class="material-icons-round text-base">verified_user</span>
+                                        Yêu cầu xác minh
+                                    </a>
+                                }
+
                                 <div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
                                 <form asp-controller="Auth" asp-action="Logout" method="post">
                                     @Html.AntiForgeryToken()
@@ -584,6 +592,13 @@
                                     }
 
                                     await loadNotifications();
+                                });
+
+                                window.addEventListener('nm:notifications-refresh', async () => {
+                                    await loadUnreadCount();
+                                    if (!notificationMenu.classList.contains('hidden')) {
+                                        await loadNotifications();
+                                    }
                                 });
 
                                 document.addEventListener('click', function(e) {

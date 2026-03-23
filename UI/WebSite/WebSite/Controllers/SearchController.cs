@@ -34,6 +34,14 @@ public class SearchController : Controller
     [HttpGet]
     public IActionResult History() => View();
 
+    [HttpGet]
+    public async Task<IActionResult> Edit(Guid id)
+    {
+        ViewBag.JobId = id;
+        ViewBag.SkillOptions = await getSkillOptionsForView();
+        return View();
+    }
+
     // ── GET /Search/Jobs ────────────────────────────────────
     [HttpGet]
     public async Task<IActionResult> Jobs([FromQuery] SearchJobRequest req)
@@ -46,6 +54,10 @@ public class SearchController : Controller
             if (!string.IsNullOrWhiteSpace(req.District)) query.Add($"district={Uri.EscapeDataString(req.District)}");
             if (req.JobType.HasValue)   query.Add($"jobType={req.JobType}");
             if (req.SalaryMin.HasValue) query.Add($"salaryMin={req.SalaryMin}");
+            if (req.MinLat.HasValue)    query.Add($"minLat={req.MinLat.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+            if (req.MaxLat.HasValue)    query.Add($"maxLat={req.MaxLat.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+            if (req.MinLng.HasValue)    query.Add($"minLng={req.MinLng.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+            if (req.MaxLng.HasValue)    query.Add($"maxLng={req.MaxLng.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
             query.Add($"page={req.Page}");
             query.Add($"pageSize={Math.Min(req.PageSize, 50)}");
 

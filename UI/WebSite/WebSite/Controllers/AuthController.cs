@@ -61,6 +61,12 @@ public class AuthController : Controller
         var loginData = result.Data!;
         await SignInUserAsync(loginData);
 
+        // --- Staff roles: skip onboarding, redirect directly to their dashboards ---
+        if (loginData.User.Roles.Contains("Admin", StringComparer.OrdinalIgnoreCase))
+            return Redirect("/Admin/Dashboard");
+        if (loginData.User.Roles.Contains("Moderator", StringComparer.OrdinalIgnoreCase))
+            return Redirect("/Moderator/Dashboard");
+
         // Nếu user chưa có role (đặc biệt case đăng ký/đăng nhập Google lần đầu),
         // luôn bắt buộc chọn role trước khi chạy onboarding theo role.
         if (loginData.User?.Roles == null || !loginData.User.Roles.Any())
@@ -141,6 +147,12 @@ public class AuthController : Controller
 
         var loginData = result.Data!;
         await SignInUserAsync(loginData);
+
+        // --- Staff roles: skip onboarding, redirect directly to their dashboards ---
+        if (loginData.User.Roles.Contains("Admin", StringComparer.OrdinalIgnoreCase))
+            return Redirect("/Admin/Dashboard");
+        if (loginData.User.Roles.Contains("Moderator", StringComparer.OrdinalIgnoreCase))
+            return Redirect("/Moderator/Dashboard");
 
         // Nếu user chưa có role (đặc biệt case đăng ký Google lần đầu),
         // luôn bắt buộc chọn role trước khi chạy onboarding theo role.

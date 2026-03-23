@@ -13,8 +13,6 @@ public class JobRepository
     public JobRepository(Sep490NannyDbContext db) => _db = db;
 
     public IQueryable<JobPosting> GetQuery() => _db.JobPostings.AsQueryable();
-
-
     public async Task<List<JobPosting>> searchJobPosting(
         SearchJobRequest filters,
         Guid? currentUserId = null,
@@ -50,6 +48,22 @@ public class JobRepository
 
         if (filters.SalaryMin.HasValue)
             query = query.Where(j => j.SalaryMin >= filters.SalaryMin || j.SalaryNegotiable);
+
+        if (filters.MinLat.HasValue && filters.MaxLat.HasValue && filters.MinLng.HasValue && filters.MaxLng.HasValue)
+        {
+            var minLat = Math.Min(filters.MinLat.Value, filters.MaxLat.Value);
+            var maxLat = Math.Max(filters.MinLat.Value, filters.MaxLat.Value);
+            var minLng = Math.Min(filters.MinLng.Value, filters.MaxLng.Value);
+            var maxLng = Math.Max(filters.MinLng.Value, filters.MaxLng.Value);
+
+            query = query.Where(j =>
+                j.Latitude.HasValue &&
+                j.Longitude.HasValue &&
+                (double)j.Latitude.Value >= minLat &&
+                (double)j.Latitude.Value <= maxLat &&
+                (double)j.Longitude.Value >= minLng &&
+                (double)j.Longitude.Value <= maxLng);
+        }
 
         var skip = (filters.Page - 1) * filters.PageSize;
         return await query
@@ -145,6 +159,8 @@ public class JobRepository
             .Where(s => !s.IsDeleted && normalized.Contains(s.Name.ToLower()))
             .ToListAsync();
     }
+ 
+
 
     public async Task<List<Skill>> getActiveSkills() =>
         await _db.Skills
@@ -153,7 +169,11 @@ public class JobRepository
             .ThenBy(s => s.Name)
             .ToListAsync();
 
+ 
+
     public void addSkills(IEnumerable<Skill> skills) => _db.Skills.AddRange(skills);
+
+
 
     public async Task<JobPosting> createJobPosting(JobPosting job)
     {
@@ -217,6 +237,41 @@ public class JobRepository
         }
 
         await _db.SaveChangesAsync();
+    }
+
+    public async Task<(List<JobPosting> Items, int TotalCount)> GetModeratorJobPostingsAsync(
+        int? status,
+        int? moderationStatus,
+        string? search,
+        int page,
+        int pageSize)
+    {
+        var query = _db.JobPostings
+            .Where(j => !j.IsDeleted)
+            .Include(j => j.ParentProfile).ThenInclude(p => p.User)
+            .AsQueryable();
+
+        if (status.HasValue)
+            query = query.Where(j => j.Status == status.Value);
+
+        if (moderationStatus.HasValue)
+            query = query.Where(j => j.ModerationStatus == moderationStatus.Value);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var s = search.ToLower();
+            query = query.Where(j => j.Title.ToLower().Contains(s) || 
+                                    (j.ParentProfile != null && (j.ParentProfile.User.FirstName + " " + j.ParentProfile.User.LastName).ToLower().Contains(s)));
+        }
+
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .OrderByDescending(j => j.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items, totalCount);
     }
 
     public async Task saveChanges() => await _db.SaveChangesAsync();

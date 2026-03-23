@@ -611,4 +611,61 @@ public class JobService
 
         return (null, SubscriptionBenefitResponse.FreeParent);
     }
+    public async Task<(List<SearchJobResponse> Items, int TotalCount)> GetModeratorJobsAsync(
+        int? status,
+        int? moderationStatus,
+        string? search,
+        int page,
+        int pageSize)
+    {
+        var (items, totalCount) = await _jobRepo.GetModeratorJobPostingsAsync(status, moderationStatus, search, page, pageSize);
+        var mapped = items.Select(j => mapToListItem(j)).ToList();
+        return (mapped, totalCount);
+    }
+
+    public async Task ReviewJobAsync(Guid jobId, Guid moderatorUserId, int moderationStatus, string? note)
+    {
+        var job = await _jobRepo.viewDetailPosting(jobId)
+            ?? throw new KeyNotFoundException("Khong tim thay tin dang hoac tin da bi xoa.");
+
+        var nowUtc = DateTime.UtcNow;
+        job.ModerationStatus = moderationStatus;
+        job.ModerationNote = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
+        job.ModeratedAt = nowUtc;
+        job.ModeratedBy = moderatorUserId;
+
+        if (moderationStatus == (int)JobPostingModerationStatus.Approved)
+        {
+            job.PublishedAt = job.Status == (int)JobPostingStatus.Public ? nowUtc : null;
+            job.ClosedAt = job.Status == (int)JobPostingStatus.Hidden ? nowUtc : null;
+        }
+        else
+        {
+            job.PublishedAt = null;
+            job.ClosedAt = nowUtc;
+        }
+
+        await _jobRepo.updateJobPosting(job);
+
+        // Notifications
+        var isApproved = moderationStatus == (int)JobPostingModerationStatus.Approved;
+        var title = isApproved ? "Bai dang cua ban da duoc duyet" : "Bai dang cua ban da bi tu choi";
+        var content = isApproved 
+            ? $"Bai dang \"{job.Title}\" da duoc moderator duyet." 
+            : $"Bai dang \"{job.Title}\" da bi tu choi.{(string.IsNullOrWhiteSpace(job.ModerationNote) ? "" : $" Ly do: {job.ModerationNote}")}";
+
+        var notifType = isApproved ? NotificationTypes.JobPostingApproved : NotificationTypes.JobPostingRejected;
+
+        if (job.ParentProfile != null)
+        {
+            await _notificationService.createNotification(
+                job.ParentProfile.UserId,
+                title,
+                content,
+                notifType,
+                job.Id,
+                "JobPosting",
+                moderatorUserId);
+        }
+    }
 }
