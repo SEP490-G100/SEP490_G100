@@ -259,7 +259,7 @@
         var addressInput = document.getElementById('Address');
         var provinces = [];
 
-        fetch('https://provinces.open-api.vn/api/?depth=3')
+        fetch('https://provinces.open-api.vn/api/v2/?depth=3')
             .then(function (r) { return r.json(); })
             .then(function (data) {
                 provinces = data || [];

@@ -17,6 +17,7 @@ let isSubmittingCreate = false;
 let isSubmittingEdit = false;
 let provinces = [];
 let locationDataPromise = null;
+let suppressNextMapSearch = false;
 const autocompleteDropdowns = new Map();
 
 const DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
@@ -32,7 +33,7 @@ const GEO_FALLBACK = {
 function loadLocationData() {
   if (locationDataPromise) return locationDataPromise;
 
-  locationDataPromise = fetch('https://provinces.open-api.vn/api/?depth=3')
+  locationDataPromise = fetch('https://provinces.open-api.vn/api/v2/?depth=3')
     .then((response) => response.ok ? response.json() : [])
     .then((data) => {
       provinces = Array.isArray(data) ? data : [];
@@ -233,6 +234,29 @@ function initMap() {
     attribution: '&copy; CartoDB',
     maxZoom: 19
   }).addTo(map);
+
+  map.on('moveend', () => {
+    if (suppressNextMapSearch) {
+      suppressNextMapSearch = false;
+      return;
+    }
+
+    debounceSearch();
+  });
+}
+
+function getCurrentMapBoundsParams() {
+  if (!map) return null;
+
+  const bounds = map.getBounds();
+  if (!bounds?.isValid?.()) return null;
+
+  return {
+    minLat: bounds.getSouth(),
+    maxLat: bounds.getNorth(),
+    minLng: bounds.getWest(),
+    maxLng: bounds.getEast()
+  };
 }
 
 function getAreaPresentation(job) {
@@ -273,6 +297,7 @@ function setMarkerHover(idx, active, openPopup = false) {
 function highlightOnMap(idx) {
   const markerData = markers[idx];
   if (!markerData || !map) return;
+  suppressNextMapSearch = true;
   map.flyTo([markerData.point.lat, markerData.point.lng], markerData.point.zoom || 13, { duration: 0.45 });
   setMarkerHover(idx, true, false);
 }
@@ -373,6 +398,14 @@ async function doSearch() {
   const city = document.getElementById('searchCity')?.value.trim() || '';
   const params = new URLSearchParams({ page: '1', pageSize: '20' });
   if (city) params.append('city', city);
+
+  const bounds = getCurrentMapBoundsParams();
+  if (bounds) {
+    params.append('minLat', bounds.minLat.toString());
+    params.append('maxLat', bounds.maxLat.toString());
+    params.append('minLng', bounds.minLng.toString());
+    params.append('maxLng', bounds.maxLng.toString());
+  }
 
   try {
     const res = await fetch(`/Search/Jobs?${params.toString()}`, { credentials: 'same-origin' });
