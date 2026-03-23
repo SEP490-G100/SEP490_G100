@@ -1,0 +1,492 @@
+@{
+    ViewData["Title"] = "Tìm bảo mẫu - NannyMatch";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
+    var userName = User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? "";
+    var skillOptions = ViewBag.SkillOptions as IEnumerable<WebSite.Models.Search.JobSkillOption>
+        ?? System.Linq.Enumerable.Empty<WebSite.Models.Search.JobSkillOption>();
+}
+
+@section Head {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="~/css/search.css" asp-append-version="true" />
+}
+
+<div class="sticky top-[72px] z-40 bg-white/95 backdrop-blur-lg border-b border-gray-100" style="box-shadow:0 2px 8px rgba(0,0,0,.04);">
+    <div class="px-6 py-3 flex items-center gap-3 flex-wrap">
+        <div class="relative flex-1 min-w-[240px]">
+            <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[18px]">search</span>
+            <input id="searchCity" type="text" placeholder="Tìm theo thành phố..."
+                   class="w-full pl-9 pr-4 py-2 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold text-gray-800 focus:ring-2 focus:ring-orange-300 focus:border-orange-400 outline-none transition-all placeholder-gray-400"
+                   oninput="debounceSearch()" />
+        </div>
+        <span id="resultCount" class="text-sm text-gray-400 font-semibold whitespace-nowrap">Đang tải...</span>
+        @if (isAuthenticated)
+        {
+            <button onclick="openHistory()"
+                    class="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-orange-200 bg-white hover:bg-orange-50 text-orange-600 text-sm font-bold transition-all">
+                <span class="material-icons-round text-base">history</span>Lịch sử bài đăng
+            </button>
+            <button onclick="openCreate()"
+                    class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold shadow-md hover:shadow-lg transition-all">
+                <span class="material-icons-round text-base">add_circle</span>Đăng tin
+            </button>
+        }
+        <button onclick="openPremium()"
+                class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-white text-sm font-bold shadow-md transition-all"
+                style="background:linear-gradient(135deg,#f59e0b,#d97706)">
+            <span class="material-icons-round text-[16px]">workspace_premium</span>Premium
+        </button>
+    </div>
+</div>
+
+<div class="search-body">
+    <div class="list-panel">
+        <div id="jobList"></div>
+    </div>
+    <div class="map-panel">
+        <div id="map"></div>
+    </div>
+</div>
+
+<div id="createModal" class="nmodal fixed inset-0 z-50 bg-black/50 backdrop-blur-sm items-center justify-center px-4" onclick="if(event.target===this)closeCreate()">
+    <div class="nmodal-box modal-shell bg-white rounded-2xl w-full max-w-5xl shadow-2xl relative">
+        <div class="modal-head">
+            <div>
+                <p class="modal-kicker">Bài đăng mới</p>
+                <h2 class="text-2xl font-bold text-gray-900">Đăng tin tìm bảo mẫu</h2>
+                <p class="modal-subtitle">Tạo bài đăng rõ ràng để moderator duyệt nhanh hơn và nanny dễ ứng tuyển hơn.</p>
+            </div>
+            <button onclick="closeCreate()" class="modal-close material-icons-round">close</button>
+        </div>
+        <div class="modal-scroll">
+            <form id="createForm" class="modal-form">
+                <div class="section-card">
+                    <div class="section-heading">
+                        <div>
+                            <p class="section-title">Thông tin cơ bản</p>
+                            <p class="section-caption">Nội dung bài đăng, mức lương, địa điểm và yêu cầu chính.</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="md:col-span-2">
+                            <label class="form-label">Tiêu đề bài đăng</label>
+                            <input type="text" id="cf-title" class="form-input" required style="border-radius: 10px;" />
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="form-label">Mô tả chi tiết</label>
+                            <textarea id="cf-desc" class="form-input resize-none" rows="3" required></textarea>
+                        </div>
+                        <div>
+                            <label class="form-label">Loại công việc</label>
+                            <select id="cf-type" class="form-input" style="border-radius: 10px;">
+                                <option value="1">Full-time</option>
+                                <option value="2">Part-time</option>
+                                <option value="3">Qua đêm</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">Số trẻ cần chăm</label>
+                            <input type="number" id="cf-children" class="form-input bg-gray-50" min="1" max="10" readonly />
+                        </div>
+                        <div>
+                            <label class="form-label" >Lương tối thiểu</label>
+                            <input type="number" id="cf-salMin" style="border-radius: 10px;" class="form-input" />
+                        </div>
+                        <div>
+                            <label class="form-label" >Lương tối đa</label>
+                            <input type="number" id="cf-salMax" style="border-radius: 10px;" class="form-input" />
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="form-label">Tùy chọn lương</label>
+                            <label class="negotiable-field negotiable-field-large">
+                                <input type="checkbox" id="cf-negotiable" class="rounded accent-orange-500" />
+                                <span class="negotiable-title">Lương thương lượng</span>
+                                <span class="negotiable-caption">Bật nếu bạn muốn trao đổi mức lương trực tiếp với nanny.</span>
+                            </label>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="form-label" >Địa chỉ chi tiết</label>
+                            <input type="text" id="cf-location" style="border-radius: 10px;" class="form-input" />
+                        </div>
+                        <div>
+                            <label class="form-label" >Thành phố</label>
+                            <input type="text" id="cf-city" style="border-radius: 10px;" class="form-input" list="cf-cityOptions" oninput="handleCreateCityChange()" placeholder="Nhập để gợi ý thành phố" required />
+                            <datalist id="cf-cityOptions"></datalist>
+                        </div>
+                        <div>
+                            <label class="form-label" >Quận/Huyện</label>
+                            <input type="text" id="cf-district" style="border-radius: 10px;" class="form-input" list="cf-districtOptions" placeholder="Nhập để gợi ý quận/huyện" />
+                            <datalist id="cf-districtOptions"></datalist>
+                        </div>
+                        <div>
+                            <label class="form-label" >Độ tuổi bảo mẫu từ</label>
+                            <input type="number" id="cf-minAge" class="form-input" style="border-radius: 10px;" min="18" max="80" />
+                        </div>
+                        <div>
+                            <label class="form-label" >Độ tuổi bảo mẫu đến</label>
+                            <input type="number" id="cf-maxAge" class="form-input" style="border-radius: 10px;" min="18" max="80" />
+                        </div>
+                        <div>
+                            <label class="form-label">Trạng thái bài đăng</label>
+                            <div class="status-toggle" id="cf-statusToggle">
+                                <button type="button" class="status-option active" onclick="setCreateStatus(1)">Công khai</button>
+                                <button type="button" class="status-option" onclick="setCreateStatus(2)">Ẩn bài đăng</button>
+                            </div>
+                            <input type="hidden" id="cf-status" value="1" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-card schedule-card">
+                    <div class="schedule-header">
+                        <div>
+                            <p class="section-title">Lịch ngày muốn tuyển</p>
+                            <p class="section-caption">Chọn các khung giờ bạn muốn nanny có thể làm việc.</p>
+                        </div>
+                    </div>
+                    <div id="cf-schedule" class="schedule-grid"></div>
+                </div>
+
+                <div class="section-card section-card-soft">
+                    <div class="section-heading">
+                        <div>
+                            <p class="section-title">Thông tin từ profile Parent</p>
+                            <p class="section-caption">Chọn bé cần đăng bài, hệ thống sẽ tự lấy thông tin liên quan từ Child Profile.</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="md:col-span-2">
+                            <label class="form-label">Chọn trẻ</label>
+                            <select id="cf-childProfileId" class="form-input" onchange="handleCreateChildChange()" style="border-radius: 10px;"></select>
+                        </div>
+                        <div>
+                            <label class="form-label">Đặc điểm</label>
+                            <textarea id="cf-characteristic" class="form-input resize-none bg-white/80" rows="2" readonly></textarea>
+                        </div>
+                        <div>
+                            <label class="form-label">Nhóm tuổi của bé</label>
+                            <input type="text" id="cf-birthType" class="form-input bg-white/80" readonly />
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="form-label">Nhu cầu đặc biệt</label>
+                            <textarea id="cf-specialNeeds" class="form-input resize-none bg-white/80" rows="2" readonly></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-card section-card-plain">
+                    <div class="section-heading">
+                        <div>
+                            <p class="section-title">Kỹ năng yêu cầu</p>
+                            <p class="section-caption">Chọn từ danh sách kỹ năng có sẵn trong hệ thống để bài đăng đồng bộ hơn.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 items-center">
+                        <select id="cf-skillSelect" class="form-input" style="border-radius: 10px;">
+                            @foreach (var skill in skillOptions)
+                            {
+                                <option value="@skill.SkillName">@skill.SkillName@(string.IsNullOrWhiteSpace(skill.Category) ? "" : $" - {skill.Category}")</option>
+                            }
+                            <option value="">Chọn kỹ năng cần yêu cầu</option>
+                        </select>
+                        <button type="button" onclick="addCreateSkill()" class="icon-pill-btn">
+                            <span class="material-icons-round text-base">add</span>
+                        </button>
+                    </div>
+                    <div id="cf-skills" class="flex flex-wrap gap-2 mt-2"></div>
+                </div>
+
+            </form>
+            <div class="modal-footer">
+                <button type="button" onclick="closeCreate()" class="modal-btn modal-btn-secondary">Hủy</button>
+                <button type="button" onclick="submitCreate()" class="modal-btn modal-btn-primary">Đăng bài</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="editModal" class="nmodal fixed inset-0 z-50 bg-black/50 backdrop-blur-sm items-center justify-center px-4" onclick="if(event.target===this)closeEdit()">
+    <div class="nmodal-box modal-shell bg-white rounded-2xl w-full max-w-5xl shadow-2xl relative">
+        <div class="modal-head">
+            <div>
+                <p class="modal-kicker">Cập nhật bài đăng</p>
+                <h2 class="text-2xl font-bold text-gray-900">Chỉnh sửa bài đăng</h2>
+                <p class="modal-subtitle">Sau khi cập nhật, bài đăng sẽ quay về trạng thái chờ moderator duyệt lại.</p>
+            </div>
+            <button onclick="closeEdit()" class="modal-close material-icons-round">close</button>
+        </div>
+        <div class="modal-scroll">
+            <form id="editForm" class="modal-form">
+                <input type="hidden" id="ef-id" />
+                <div class="section-card">
+                    <div class="section-heading">
+                        <div>
+                            <p class="section-title">Thông tin cơ bản</p>
+                            <p class="section-caption">Chỉnh sửa nội dung, lương, địa điểm và độ tuổi nanny mong muốn.</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="md:col-span-2">
+                            <label class="form-label">Tiêu đề bài đăng</label>
+                            <input type="text" id="ef-title" class="form-input" required />
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="form-label">Mô tả chi tiết</label>
+                            <textarea id="ef-desc" class="form-input resize-none" rows="3" required></textarea>
+                        </div>
+                        <div>
+                            <label class="form-label">Loại công việc</label>
+                            <select id="ef-type" class="form-input">
+                                <option value="1">Full-time</option>
+                                <option value="2">Part-time</option>
+                                <option value="3">Qua đêm</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">Số trẻ cần chăm</label>
+                            <input type="number" id="ef-children" class="form-input bg-gray-50" min="1" max="10" readonly />
+                        </div>
+                        <div>
+                            <label class="form-label">Lương tối thiểu</label>
+                            <input type="number" id="ef-salMin" class="form-input" />
+                        </div>
+                        <div>
+                            <label class="form-label">Lương tối đa</label>
+                            <input type="number" id="ef-salMax" class="form-input" />
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="form-label">Tùy chọn lương</label>
+                            <label class="negotiable-field negotiable-field-large">
+                                <input type="checkbox" id="ef-negotiable" class="rounded accent-orange-500" />
+                                <span class="negotiable-title">Lương thương lượng</span>
+                                <span class="negotiable-caption">Bật nếu bạn muốn trao đổi mức lương trực tiếp với nanny.</span>
+                            </label>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="form-label">Địa chỉ chi tiết</label>
+                            <input type="text" id="ef-location" class="form-input" />
+                        </div>
+                        <div>
+                            <label class="form-label">Thành phố</label>
+                            <input type="text" id="ef-city" class="form-input" list="ef-cityOptions" oninput="handleEditCityChange()" placeholder="Nhập để gợi ý thành phố" />
+                            <datalist id="ef-cityOptions"></datalist>
+                        </div>
+                        <div>
+                            <label class="form-label">Quận/Huyện</label>
+                            <input type="text" id="ef-district" class="form-input" list="ef-districtOptions" placeholder="Nhập để gợi ý quận/huyện" />
+                            <datalist id="ef-districtOptions"></datalist>
+                        </div>
+                        <div>
+                            <label class="form-label">Độ tuổi bảo mẫu từ</label>
+                            <input type="number" id="ef-minAge" class="form-input" min="18" max="80" />
+                        </div>
+                        <div>
+                            <label class="form-label">Độ tuổi bảo mẫu đến</label>
+                            <input type="number" id="ef-maxAge" class="form-input" min="18" max="80" />
+                        </div>
+                        <div>
+                            <label class="form-label">Trạng thái bài đăng</label>
+                            <div class="status-toggle" id="ef-statusToggle">
+                                <button type="button" class="status-option active" onclick="setEditStatus(1)">Công khai</button>
+                                <button type="button" class="status-option" onclick="setEditStatus(2)">Ẩn bài đăng</button>
+                            </div>
+                            <input type="hidden" id="ef-status" value="1" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-card schedule-card">
+                    <div class="schedule-header">
+                        <div>
+                            <p class="section-title">Lịch ngày muốn tuyển</p>
+                            <p class="section-caption">Cập nhật các buổi cần nanny hỗ trợ trong tuần.</p>
+                        </div>
+                    </div>
+                    <div id="ef-schedule" class="schedule-grid"></div>
+                </div>
+
+                <div class="section-card section-card-soft">
+                    <div class="section-heading">
+                        <div>
+                            <p class="section-title">Thông tin từ profile Parent</p>
+                            <p class="section-caption">Chọn lại bé nếu cần, hệ thống sẽ cập nhật thông tin Child Profile tương ứng.</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="md:col-span-2">
+                            <label class="form-label">Chọn trẻ</label>
+                            <select id="ef-childProfileId" class="form-input" onchange="handleEditChildChange()"></select>
+                        </div>
+                        <div>
+                            <label class="form-label">Đặc điểm</label>
+                            <textarea id="ef-characteristic" class="form-input resize-none bg-white/80" rows="2" readonly></textarea>
+                        </div>
+                        <div>
+                            <label class="form-label">Nhóm tuổi của bé</label>
+                            <input type="text" id="ef-birthType" class="form-input bg-white/80" readonly />
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="form-label">Nhu cầu đặc biệt</label>
+                            <textarea id="ef-specialNeeds" class="form-input resize-none bg-white/80" rows="2" readonly></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-card section-card-plain">
+                    <div class="section-heading">
+                        <div>
+                            <p class="section-title">Kỹ năng yêu cầu</p>
+                            <p class="section-caption">Tinh chỉnh bộ kỹ năng yêu cầu bằng danh sách skill chuẩn của hệ thống.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 items-center">
+                        <select id="ef-skillSelect" class="form-input">
+                            @foreach (var skill in skillOptions)
+                            {
+                                <option value="@skill.SkillName">@skill.SkillName@(string.IsNullOrWhiteSpace(skill.Category) ? "" : $" - {skill.Category}")</option>
+                            }
+                            <option value="">Chọn kỹ năng cần yêu cầu</option>
+                        </select>
+                        <button type="button" onclick="addEditSkill()" class="icon-pill-btn">
+                            <span class="material-icons-round text-base">add</span>
+                        </button>
+                    </div>
+                    <div id="ef-skills" class="flex flex-wrap gap-2 mt-2"></div>
+                </div>
+
+            </form>
+            <div class="modal-footer">
+                <button type="button" onclick="deleteJob()" class="modal-btn modal-btn-danger flex items-center justify-center gap-1">
+                    <span class="material-icons-round text-base">delete</span>Xóa
+                </button>
+                <button type="button" onclick="closeEdit()" class="modal-btn modal-btn-secondary">Hủy</button>
+                <button type="button" onclick="submitEdit()" class="modal-btn modal-btn-primary">Lưu thay đổi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="previewModal" class="nmodal fixed inset-0 z-50 bg-black/50 backdrop-blur-sm items-center justify-center px-4" onclick="if(event.target===this)closePreview()">
+    <div class="nmodal-box bg-white rounded-2xl w-full max-w-3xl shadow-2xl relative">
+        <div class="modal-scroll">
+        <div class="p-6">
+            <button onclick="closePreview()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-800 transition-colors material-icons-round text-2xl">close</button>
+            <div class="pr-10">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold mb-3">
+                    <span class="material-icons-round text-sm">article</span>Chi tiết tin đăng
+                </div>
+                <h2 id="pv-title" class="text-2xl font-bold text-gray-900 mb-2">Tên bài viết</h2>
+                <p id="pv-parentName" class="text-sm font-semibold text-gray-500 mb-4">Đăng bởi phụ huynh</p>
+            </div>
+            <div class="flex flex-wrap gap-2 mb-5">
+                <span id="pv-type" class="px-2.5 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold">Loại việc</span>
+                <span id="pv-sal" class="px-2.5 py-1 rounded-full bg-green-50 text-green-700 text-xs font-bold">Lương</span>
+                <span id="pv-status" class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">Trạng thái</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
+                <div class="rounded-xl border border-gray-100 bg-gray-50 p-4"><p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Địa điểm</p><p id="pv-loc" class="text-sm font-semibold text-gray-800"></p></div>
+                <div class="rounded-xl border border-gray-100 bg-gray-50 p-4"><p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Số trẻ cần chăm</p><p id="pv-kids" class="text-sm font-semibold text-gray-800"></p></div>
+                <div class="rounded-xl border border-gray-100 bg-gray-50 p-4"><p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Đặc điểm</p><p id="pv-characteristic" class="text-sm text-gray-700 whitespace-pre-line"></p></div>
+                <div class="rounded-xl border border-gray-100 bg-gray-50 p-4"><p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Nhóm tuổi của bé</p><p id="pv-birthType" class="text-sm text-gray-700"></p></div>
+                <div class="rounded-xl border border-gray-100 bg-gray-50 p-4"><p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Nhu cầu đặc biệt</p><p id="pv-specialNeeds" class="text-sm text-gray-700 whitespace-pre-line"></p></div>
+                <div class="rounded-xl border border-gray-100 bg-gray-50 p-4"><p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Độ tuổi bảo mẫu</p><p id="pv-ageRange" class="text-sm text-gray-700"></p></div>
+                <div class="rounded-xl border border-gray-100 bg-gray-50 p-4"><p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Tọa độ bản đồ</p><p id="pv-coords" class="text-sm font-semibold text-gray-800"></p></div>
+                <div class="rounded-xl border border-gray-100 bg-gray-50 p-4"><p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Khoảng cách</p><p id="pv-distance" class="text-sm font-semibold text-gray-800"></p></div>
+            </div>
+            <div class="bg-gray-50 rounded-xl p-4 mb-5 border border-gray-100">
+                <p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Kỹ năng yêu cầu</p>
+                <div id="pv-skills" class="flex flex-wrap gap-2"></div>
+            </div>
+            <div class="bg-gray-50 rounded-xl p-4 mb-5 border border-gray-100">
+                <p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Lịch ngày muốn tuyển</p>
+                <div id="pv-schedule"></div>
+            </div>
+            <div class="bg-gray-50 rounded-xl p-4 mb-5 border border-gray-100">
+                <p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Trạng thái duyệt</p>
+                <p id="pv-moderation" class="text-sm font-semibold text-gray-800"></p>
+                <p id="pv-note" class="text-sm text-gray-600 whitespace-pre-line mt-2 hidden"></p>
+            </div>
+            <div class="bg-gray-50 rounded-xl p-4 mb-5 border border-gray-100">
+                <p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Mô tả công việc</p>
+                <p id="pv-desc" class="text-sm text-gray-700 whitespace-pre-line leading-relaxed"></p>
+            </div>
+            <a id="pv-parentBtn" href="#" target="_blank" class="w-full py-3 rounded-xl border border-orange-200 text-orange-600 bg-orange-50 hover:bg-orange-100 font-bold text-sm transition-all inline-flex items-center justify-center gap-2">
+                <span class="material-icons-round text-base">person</span>
+                <span id="pv-parentBtnText">Xem chi tiết hồ sơ người đăng</span>
+            </a>
+        </div>
+        </div>
+    </div>
+</div>
+
+<div id="historyModal" class="nmodal fixed inset-0 z-50 bg-black/50 backdrop-blur-sm items-center justify-center px-4" onclick="if(event.target===this)closeHistory()">
+    <div class="nmodal-box bg-white rounded-2xl w-full max-w-3xl shadow-2xl relative">
+        <div class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
+            <div>
+                <h2 class="text-lg font-bold text-gray-900">Lịch sử bài đăng</h2>
+                <p class="text-xs text-gray-400 font-semibold mt-0.5">Xem trạng thái chờ duyệt, đã duyệt, từ chối và ghi chú từ moderator.</p>
+            </div>
+            <button onclick="closeHistory()" class="text-gray-300 hover:text-gray-700 material-icons-round text-2xl transition-colors">close</button>
+        </div>
+        <div id="historyBody" class="px-6 py-5 max-h-[70vh] overflow-y-auto space-y-3">
+            <div class="text-sm text-gray-500">Đang tải dữ liệu...</div>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="bg-gray-900 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-2xl"></div>
+
+@section Scripts {
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const API_URL = '/Search/Jobs';
+const IS_AUTH = @(isAuthenticated ? "true" : "false");
+const CURRENT_USER_NAME = '@userName';
+
+(() => {
+    const ensurePreviewEditButton = () => {
+        const parentButton = document.getElementById('pv-parentBtn');
+        if (!parentButton || document.getElementById('pv-editBtn')) return document.getElementById('pv-editBtn');
+
+        const editButton = document.createElement('a');
+        editButton.id = 'pv-editBtn';
+        editButton.href = '#';
+        editButton.className = 'hidden w-full py-3 rounded-xl border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 font-bold text-sm transition-all inline-flex items-center justify-center gap-2';
+        editButton.innerHTML = '<span class="material-icons-round text-base">edit</span><span>Chinh sua bai dang</span>';
+
+        const actionGrid = document.createElement('div');
+        actionGrid.className = 'grid grid-cols-1 sm:grid-cols-2 gap-3';
+        parentButton.parentNode.insertBefore(actionGrid, parentButton);
+        actionGrid.appendChild(editButton);
+        actionGrid.appendChild(parentButton);
+        return editButton;
+    };
+
+    const bindPreviewEditButton = (job) => {
+        const button = ensurePreviewEditButton();
+        if (!button || !job) return;
+        const canEdit = [0, 2].includes(Number(job.moderationStatus)) && !!job.id;
+        button.classList.toggle('hidden', !canEdit);
+        if (canEdit) button.href = `/Search/Edit/${job.id}`;
+        else button.removeAttribute('href');
+    };
+
+    const hookPreview = () => {
+        if (typeof window.openPreview !== 'function' || window.openPreview.__nmWrapped) return;
+        const original = window.openPreview;
+        window.openPreview = function(job) {
+            const result = original.apply(this, arguments);
+            bindPreviewEditButton(job);
+            return result;
+        };
+        window.openPreview.__nmWrapped = true;
+    };
+
+    document.addEventListener('DOMContentLoaded', hookPreview);
+    setTimeout(hookPreview, 0);
+    setTimeout(hookPreview, 300);
+})();
+</script>
+<script src="~/js/search.js" asp-append-version="true"></script>
+}

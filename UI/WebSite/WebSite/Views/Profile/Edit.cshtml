@@ -1,0 +1,388 @@
+@using WebSite.Controllers
+@using WebSite.Models.Profile
+@model EditPersonalInfoViewModel
+
+@{
+    ViewData["Title"] = "Chỉnh sửa thông tin cá nhân";
+}
+
+<div class="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50/30 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8">
+            <span class="section-label">✏️ Chỉnh sửa</span>
+            <h1 class="text-4xl font-bold text-gray-900 dark:text-white mt-3" style="font-family:'Quicksand',sans-serif">
+                Cập nhật <span class="gradient-text">thông tin</span>
+            </h1>
+            <div class="section-divider left mt-4"></div>
+        </div>
+
+        <!-- Form Card -->
+        <div class="bg-white dark:bg-gray-800/80 rounded-3xl p-8 lg:p-10 shadow-soft border border-gray-100/80 dark:border-gray-700/50 backdrop-blur-sm">
+            <form method="post">
+                @Html.AntiForgeryToken()
+
+                <!-- Personal Information -->
+                <div class="space-y-6 mb-8">
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <span class="material-icons-round text-orange-500">person</span>
+                        Thông tin cá nhân
+                    </h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- First Name -->
+                        <div>
+                            <label for="FirstName" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                                Họ <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                                   id="FirstName" name="FirstName" value="@Model.FirstName" required>
+                            @Html.ValidationMessageFor(m => m.FirstName, "", new { @class = "text-red-500 text-sm mt-1" })
+                        </div>
+
+                        <!-- Last Name -->
+                        <div>
+                            <label for="LastName" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                                Tên <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                                   id="LastName" name="LastName" value="@Model.LastName" required>
+                            @Html.ValidationMessageFor(m => m.LastName, "", new { @class = "text-red-500 text-sm mt-1" })
+                        </div>
+
+                        <!-- Phone Number -->
+                        <div>
+                            <label for="PhoneNumber" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                                📱 Số điện thoại
+                            </label>
+                            <input type="tel" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                                   id="PhoneNumber" name="PhoneNumber" value="@Model.PhoneNumber">
+                            @Html.ValidationMessageFor(m => m.PhoneNumber, "", new { @class = "text-red-500 text-sm mt-1" })
+                        </div>
+
+                        <!-- Date of Birth -->
+                        <div>
+                            <label for="DateOfBirth" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                                🎂 Ngày sinh
+                            </label>
+                            <input type="date" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                                   id="DateOfBirth" name="DateOfBirth" value="@Model.DateOfBirth?.ToString("yyyy-MM-dd")">
+                            @Html.ValidationMessageFor(m => m.DateOfBirth, "", new { @class = "text-red-500 text-sm mt-1" })
+                        </div>
+
+                        <!-- Gender -->
+                        <div>
+                            <label for="Gender" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                                👥 Giới tính
+                            </label>
+                            <select class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                                    id="Gender" name="Gender">
+                                <option value="">-- Chọn giới tính --</option>
+                                <option value="0" selected="@(Model.Gender == 0)">Nam</option>
+                                <option value="1" selected="@(Model.Gender == 1)">Nữ</option>
+                                <option value="2" selected="@(Model.Gender == 2)">Khác</option>
+                            </select>
+                            @Html.ValidationMessageFor(m => m.Gender, "", new { @class = "text-red-500 text-sm mt-1" })
+                        </div>
+
+                        <!-- Avatar URL -->
+                        <div>
+                            <label for="AvatarUrl" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                                🖼️ URL hình ảnh
+                            </label>
+                            <input type="url" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                                   id="AvatarUrl" name="AvatarUrl" value="@Model.AvatarUrl" placeholder="https://...">
+                            @Html.ValidationMessageFor(m => m.AvatarUrl, "", new { @class = "text-red-500 text-sm mt-1" })
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Address Section -->
+                <div class="border-t border-gray-100 dark:border-gray-700/50 pt-8 space-y-6 mb-8">
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <span class="material-icons-round text-orange-500">location_on</span>
+                        Địa chỉ
+                    </h3>
+
+                    <!-- Full Address: người dùng nhập chi tiết, dùng Tỉnh/Quận/Phường để xác định vị trí -->
+                    <div>
+                        <label for="Address" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                            📍 Địa chỉ chi tiết
+                        </label>
+                        <input type="text" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                               id="Address" name="Address" value="@Model.Address" placeholder="Số nhà, tên đường,...">
+                        @Html.ValidationMessageFor(m => m.Address, "", new { @class = "text-red-500 text-sm mt-1" })
+                    </div>
+
+                    <!-- City, District, Ward -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label for="City" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                                Thành phố/Tỉnh
+                            </label>
+                            <select class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                                    id="City" name="City">
+                                <option value="">-- Chọn Tỉnh/Thành --</option>
+                            </select>
+                            @Html.ValidationMessageFor(m => m.City, "", new { @class = "text-red-500 text-sm mt-1" })
+                        </div>
+                        <div>
+                            <label for="District" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                                Quận/Huyện
+                            </label>
+                            <select class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                                    id="District" name="District">
+                                <option value="">-- Chọn Quận/Huyện --</option>
+                            </select>
+                            @Html.ValidationMessageFor(m => m.District, "", new { @class = "text-red-500 text-sm mt-1" })
+                        </div>
+                        <div>
+                            <label for="Ward" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                                Phường/Xã
+                            </label>
+                            <select class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                                    id="Ward" name="Ward">
+                                <option value="">-- Chọn Phường/Xã --</option>
+                            </select>
+                            @Html.ValidationMessageFor(m => m.Ward, "", new { @class = "text-red-500 text-sm mt-1" })
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Map Section -->
+                <div class="border-t border-gray-100 dark:border-gray-700/50 pt-8 space-y-6 mb-8">
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <span class="material-icons-round text-orange-500">map</span>
+                        Vị trí trên bản đồ
+                    </h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Kéo dấu marker để chọn vị trí của bạn</p>
+                    
+                    <div id="map" class="w-full h-64 md:h-96 rounded-2xl border-2 border-gray-200 dark:border-gray-700/50 overflow-hidden shadow-lg"></div>
+
+                    <input type="hidden" id="Latitude" name="Latitude" value="@Model.Latitude">
+                    <input type="hidden" id="Longitude" name="Longitude" value="@Model.Longitude">
+
+                    <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-900/30 rounded-lg p-4">
+                        <p class="text-sm text-blue-800 dark:text-blue-300">
+                            <span class="font-bold">Tọa độ hiện tại:</span> <span id="coords-display">@Model.Latitude, @Model.Longitude</span>
+                        </p>
+                    </div>
+                    @Html.ValidationMessageFor(m => m.Latitude, "", new { @class = "text-red-500 text-sm mt-1" })
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row gap-3 pt-8 border-t border-gray-100 dark:border-gray-700/50">
+                    <a href="@Url.Action("Index", "Profile")" 
+                       class="flex items-center justify-center gap-2 px-6 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-bold rounded-xl transition-all duration-300">
+                        <span class="material-icons-round">close</span>
+                        Hủy
+                    </a>
+                    <button type="submit" 
+                            class="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl flex-1 sm:flex-none">
+                        <span class="material-icons-round">save</span>
+                        Lưu thay đổi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+        padding: 0.5rem 0.75rem;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+
+    .btn {
+        border-radius: 5px;
+        padding: 0.5rem 1rem;
+    }
+
+    .text-danger {
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+</style>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // 1. Lấy tọa độ từ Model (mặc định là Hà Nội nếu chưa có dữ liệu)
+        var initialLat = parseFloat(document.getElementById('Latitude').value) || 21.0285;
+        var initialLng = parseFloat(document.getElementById('Longitude').value) || 105.8542;
+
+        // 2. Khởi tạo bản đồ
+        var map = L.map('map').setView([initialLat, initialLng], 13);
+
+        // 3. Thêm lớp nền bản đồ (OpenStreetMap)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // 4. Tạo Marker có thể kéo thả (draggable)
+        var marker = L.marker([initialLat, initialLng], {
+            draggable: true
+        }).addTo(map);
+
+        // 5. Sự kiện khi kéo thả Marker
+        marker.on('dragend', function(event) {
+            var position = marker.getLatLng();
+            updateCoordinates(position.lat, position.lng);
+        });
+
+        // 6. Sự kiện khi click vào một điểm bất kỳ trên bản đồ
+        map.on('click', function(e) {
+            var lat = e.latlng.lat;
+            var lng = e.latlng.lng;
+            marker.setLatLng([lat, lng]);
+            updateCoordinates(lat, lng);
+        });
+
+        function updateCoordinates(lat, lng) {
+            // Cập nhật vào input hidden để submit form
+            document.getElementById('Latitude').value = lat.toFixed(6);
+            document.getElementById('Longitude').value = lng.toFixed(6);
+
+            // Hiển thị text cho người dùng xem
+            document.getElementById('coords-display').innerText = lat.toFixed(6) + ", " + lng.toFixed(6);
+        }
+
+        // Dropdown Tỉnh/Thành - Quận/Huyện - Phường/Xã + tự geocode Lat/Lng theo địa chỉ đầy đủ (VN)
+        var citySelect = document.getElementById('City');
+        var districtSelect = document.getElementById('District');
+        var wardSelect = document.getElementById('Ward');
+        var addressInput = document.getElementById('Address');
+        var provinces = [];
+
+        fetch('https://provinces.open-api.vn/api/v2/?depth=3')
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                provinces = data || [];
+                provinces.forEach(function (p) {
+                    var opt = document.createElement('option');
+                    opt.value = p.name;
+                    opt.textContent = p.name;
+                    opt.dataset.code = p.code;
+                    citySelect.appendChild(opt);
+                });
+
+                preselectFromModel();
+            });
+
+        function preselectFromModel() {
+            var currentCity = '@(Model.City ?? "")';
+            var currentDistrict = '@(Model.District ?? "")';
+            var currentWard = '@(Model.Ward ?? "")';
+
+            if (currentCity) {
+                citySelect.value = currentCity;
+                onCityChange(function () {
+                    if (currentDistrict) {
+                        districtSelect.value = currentDistrict;
+                        onDistrictChange(function () {
+                            if (currentWard) {
+                                wardSelect.value = currentWard;
+                            }
+                        });
+                    }
+                });
+            }
+        }
+
+        function onCityChange(callback) {
+            districtSelect.innerHTML = '<option value="">-- Chọn Quận/Huyện --</option>';
+            wardSelect.innerHTML = '<option value="">-- Chọn Phường/Xã --</option>';
+
+            var selected = provinces.find(function (p) { return p.name === citySelect.value; });
+            if (!selected) { if (callback) callback(); return; }
+
+            selected.districts.forEach(function (d) {
+                var opt = document.createElement('option');
+                opt.value = d.name;
+                opt.textContent = d.name;
+                opt.dataset.code = d.code;
+                districtSelect.appendChild(opt);
+            });
+
+            if (callback) callback();
+            autoGeocode();
+        }
+
+        function onDistrictChange(callback) {
+            wardSelect.innerHTML = '<option value="">-- Chọn Phường/Xã --</option>';
+
+            var selectedProv = provinces.find(function (p) { return p.name === citySelect.value; });
+            if (!selectedProv) { if (callback) callback(); return; }
+
+            var selectedDist = selectedProv.districts.find(function (d) { return d.name === districtSelect.value; });
+            if (!selectedDist) { if (callback) callback(); return; }
+
+            (selectedDist.wards || []).forEach(function (w) {
+                var opt = document.createElement('option');
+                opt.value = w.name;
+                opt.textContent = w.name;
+                wardSelect.appendChild(opt);
+            });
+
+            if (callback) callback();
+            autoGeocode();
+        }
+
+        citySelect.addEventListener('change', function () {
+            onCityChange();
+        });
+
+        districtSelect.addEventListener('change', function () {
+            onDistrictChange();
+        });
+
+        wardSelect.addEventListener('change', function () {
+            autoGeocode();
+        });
+
+        var debounceTimer;
+        addressInput.addEventListener('blur', function () {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(autoGeocode, 300);
+        });
+
+        // Lấy Lat/Lng từ backend theo địa chỉ đầy đủ (VN)
+        function autoGeocode() {
+            var detail = (addressInput.value || '').trim();
+            var city = (citySelect.value || '').trim();
+            var dist = (districtSelect.value || '').trim();
+            var ward = (wardSelect.value || '').trim();
+
+            if (!city || !dist || !ward) return;
+
+            var parts = [];
+            if (detail) parts.push(detail);
+            parts.push(ward);
+            parts.push(dist);
+            parts.push(city);
+            var query = parts.join(', ');
+
+            fetch('/Address/Suggest?q=' + encodeURIComponent(query) + '&limit=1')
+                .then(function (r) { return r.json(); })
+                .then(function (items) {
+                    if (!items || !items.length) return;
+                    var item = items[0];
+
+                    var lat = item.latitude != null ? item.latitude : item.Latitude;
+                    var lng = item.longitude != null ? item.longitude : item.Longitude;
+
+                    if (lat != null && lng != null) {
+                        updateCoordinates(parseFloat(lat), parseFloat(lng));
+                        marker.setLatLng([lat, lng]);
+                        map.setView([lat, lng], 13);
+                    }
+                })
+                .catch(function () { });
+        }
+    });
+</script>

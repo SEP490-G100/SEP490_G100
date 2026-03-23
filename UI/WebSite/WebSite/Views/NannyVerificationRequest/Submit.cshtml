@@ -1,0 +1,158 @@
+@model WebSite.Models.Verification.SubmitVerificationRequestViewModel
+@{
+    ViewData["Title"] = "Gửi yêu cầu xác minh";
+}
+
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-10">
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">Gửi yêu cầu xác minh</h1>
+            <p class="text-gray-600 dark:text-gray-400">Vui lòng kiểm tra thông tin và tải lên các tài liệu cần thiết</p>
+        </div>
+        <a href="@Url.Action("Index", "NannyVerificationRequest")" 
+           class="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-medium transition-colors">
+            <span class="material-icons-round">arrow_back</span>
+            Trở về
+        </a>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="mb-6 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300 px-4 py-3 rounded-xl flex items-center gap-3">
+            <span class="material-icons-round text-red-500">error</span>
+            <p>@TempData["Error"]</p>
+        </div>
+    }
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="mb-6 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300 px-4 py-3 rounded-xl flex flex-col gap-1">
+            <div asp-validation-summary="All" class="text-sm"></div>
+        </div>
+    }
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Thông tin hồ sơ (Readonly) -->
+        <div class="lg:col-span-1">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-700/50 p-6">
+                <div class="text-center mb-6">
+                    <div class="w-24 h-24 mx-auto bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden mb-4 border-4 border-white dark:border-gray-800 shadow-lg">
+                        @if (!string.IsNullOrEmpty(Model.NannyAvatarUrl))
+                        {
+                            <img src="@Model.NannyAvatarUrl" alt="Avatar" class="w-full h-full object-cover" />
+                        }
+                        else
+                        {
+                            <div class="w-full h-full flex items-center justify-center text-gray-400">
+                                <span class="material-icons-round text-4xl">person</span>
+                            </div>
+                        }
+                    </div>
+                    <h3 class="font-bold text-xl text-gray-900 dark:text-white">@Model.NannyFirstName @Model.NannyLastName</h3>
+                    <p class="text-gray-500 text-sm">@Model.NannyEmail</p>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <caption class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Số điện thoại</caption>
+                        <p class="text-gray-900 dark:text-gray-200 font-medium">@(string.IsNullOrEmpty(Model.PhoneNumber) ? "Chưa cung cấp" : Model.PhoneNumber)</p>
+                    </div>
+                    <div>
+                        <caption class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Khu vực làm việc</caption>
+                        <p class="text-gray-900 dark:text-gray-200 font-medium">@(string.IsNullOrEmpty(Model.NannyCity) ? "Chưa cập nhật" : Model.NannyCity)</p>
+                    </div>
+                    <div>
+                        <caption class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Địa chỉ</caption>
+                        <p class="text-gray-900 dark:text-gray-200 font-medium">@(string.IsNullOrEmpty(Model.NannyAddress) ? "Chưa cập nhật" : Model.NannyAddress)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Tải tài liệu -->
+        <div class="lg:col-span-2">
+            <form asp-action="Submit" method="post" enctype="multipart/form-data" class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-700/50 p-6 sm:p-8 space-y-8">
+                
+                <!-- Files Upload -->
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-2">
+                        <span class="material-icons-round text-orange-500">upload_file</span>
+                        Tài liệu xác minh (CCCD, Bằng cấp, v.v.) <span class="text-red-500">*</span>
+                    </h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                        Vui lòng tải lên ảnh chụp CCCD, bằng cấp, chứng chỉ liên quan. (Bắt buộc)
+                    </p>
+                    <div class="relative border-2 border-dashed border-orange-200 dark:border-gray-600 rounded-xl bg-orange-50/50 dark:bg-gray-700/30 p-8 text-center hover:bg-orange-50 dark:hover:bg-gray-700 transition-colors group cursor-pointer" onclick="document.getElementById('Files').click()">
+                        <input type="file" id="Files" name="Files" multiple accept=".jpg,.jpeg,.png" class="hidden" onchange="handleFileSelect('Files', 'filesPreview', event)" />
+                        <span class="material-icons-round text-4xl text-orange-400 dark:text-gray-400 group-hover:scale-110 transition-transform mb-3 block">cloud_upload</span>
+                        <p class="font-semibold text-gray-700 dark:text-gray-300">Nhấn để chọn ảnh</p>
+                        <p class="text-xs text-gray-500 mt-2">Định dạng JPG, PNG (Tối đa 5MB/ảnh)</p>
+                    </div>
+                    <div id="filesPreview" class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+                </div>
+
+                <div class="pt-4 flex justify-end">
+                    <button type="submit" class="bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold px-8 py-3.5 rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:-translate-y-0.5 transition-all text-sm w-full sm:w-auto">
+                        Xác nhận gửi yêu cầu
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const store = {
+            'Files': new DataTransfer()
+        };
+
+        function removeFile(inputId, index, previewId) {
+            const originalDt = store[inputId];
+            const newDt = new DataTransfer();
+            for (let i = 0; i < originalDt.files.length; i++) {
+                if (i !== index) {
+                    newDt.items.add(originalDt.files[i]);
+                }
+            }
+            store[inputId] = newDt;
+            document.getElementById(inputId).files = newDt.files;
+            renderPreviews(inputId, previewId);
+        }
+
+        function renderPreviews(inputId, previewId) {
+            const previewContainer = document.getElementById(previewId);
+            previewContainer.innerHTML = '';
+            const files = store[inputId].files;
+            
+            Array.from(files).forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const div = document.createElement('div');
+                    div.className = 'relative aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm group';
+                    div.innerHTML = `
+                        <img src="${e.target.result}" class="w-full h-full object-cover" />
+                        <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-2">
+                            <span class="text-white text-xs font-semibold text-center break-all mb-2 line-clamp-2" title="${file.name}">${file.name}</span>
+                            <button type="button" onclick="event.stopPropagation(); removeFile('${inputId}', ${index}, '${previewId}')" class="bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 transition-colors shadow flex items-center justify-center">
+                                <span class="material-icons-round text-sm block leading-none">delete</span>
+                            </button>
+                        </div>
+                    `;
+                    previewContainer.appendChild(div);
+                }
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function handleFileSelect(inputId, previewId, event) {
+            const newFiles = event.target.files;
+            if (newFiles && newFiles.length > 0) {
+                Array.from(newFiles).forEach(file => {
+                    store[inputId].items.add(file);
+                });
+                document.getElementById(inputId).files = store[inputId].files;
+                renderPreviews(inputId, previewId);
+            }
+        }
+    </script>
+}

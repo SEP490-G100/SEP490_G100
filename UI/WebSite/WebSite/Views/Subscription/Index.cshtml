@@ -1,0 +1,196 @@
+@model WebSite.Models.Subscription.SubscriptionPageViewModel
+@{
+    ViewData["Title"] = "Subscription";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Head {
+    <link rel="stylesheet" href="~/css/subscription.css" />
+}
+
+<div class="sub-shell">
+    <section class="sub-hero">
+        <div class="sub-hero-copy">
+            <div class="sub-role">Gói dành cho @Model.RoleLabel</div>
+            <h1>@Model.Headline</h1>
+            <p>@Model.Summary</p>
+            <div class="sub-chip-row">
+                @if (Model.IsParent)
+                {
+                    <span class="sub-chip">Đăng bài theo cấp độ Free, Plus, Pro</span>
+                    <span class="sub-chip">Ưu tiên hiển thị cho bài đăng Pro</span>
+                    <span class="sub-chip">Gia tăng thời hạn bài đăng</span>
+                }
+                else if (Model.IsNanny)
+                {
+                    <span class="sub-chip">Tăng số lượt ứng tuyển mỗi tháng</span>
+                    <span class="sub-chip">Hồ sơ có badge nổi bật</span>
+                    <span class="sub-chip">Ưu tiên hiển thị cho hồ sơ Pro</span>
+                }
+            </div>
+        </div>
+        <div class="sub-status-card">
+            <span class="sub-status-label">Trạng thái hiện tại</span>
+            @if (Model.HasActiveSubscription)
+            {
+                <strong>@Model.CurrentSubscription!.Plan.Name</strong>
+                <p>Còn @Model.CurrentSubscription.RemainingDays ngày và hết hạn vào @Model.CurrentSubscription.EndDate.ToLocalTime().ToString("dd/MM/yyyy")</p>
+            }
+            else
+            {
+                <strong>Free</strong>
+                <p>Bạn đang ở gói mặc định của @Model.RoleLabel.ToLowerInvariant().</p>
+            }
+            <div class="sub-status-metrics">
+                @if (Model.IsParent)
+                {
+                    <div class="sub-metric">
+                        <span class="sub-metric-label">Free</span>
+                        <b>@Model.FreeBenefits.MonthlyJobPostLimit bài/tháng</b>
+                    </div>
+                    <div class="sub-metric">
+                        <span class="sub-metric-label">Thời hạn</span>
+                        <b>@Model.FreeBenefits.ListingDurationDays ngày</b>
+                    </div>
+                }
+                else if (Model.IsNanny)
+                {
+                    <div class="sub-metric">
+                        <span class="sub-metric-label">Free</span>
+                        <b>@Model.FreeBenefits.MonthlyApplicationLimit ứng tuyển/tháng</b>
+                    </div>
+                    <div class="sub-metric">
+                        <span class="sub-metric-label">Profile</span>
+                        <b>Hiển thị cơ bản</b>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+
+    @if (TempData["SubscriptionSuccess"] is string successMessage)
+    {
+        <div class="sub-alert sub-alert-success">@successMessage</div>
+    }
+
+    @if (TempData["SubscriptionError"] is string errorMessage)
+    {
+        <div class="sub-alert sub-alert-error">@errorMessage</div>
+    }
+
+    @if (!Model.SupportsSubscription)
+    {
+        <section class="sub-empty">
+            <h2>Không xác định được vai trò subscription</h2>
+            <p>Trang này hiện chỉ hỗ trợ tài khoản Parent và Nanny. Vui lòng đăng nhập đúng vai trò để mua gói.</p>
+        </section>
+    }
+    else
+    {
+        <section class="sub-current">
+            <div class="sub-section-head">
+                <div>
+                    <div class="sub-section-label">Các gói thành viên</div>
+                    <h2>So sánh gói hiện tại</h2>
+                    <p>Free là mốc cơ bản. Plus và Pro mở rộng quyền lợi dành cho @Model.RoleLabel.ToLowerInvariant().</p>
+                </div>
+                @if (Model.HasActiveSubscription)
+                {
+                    <form asp-action="CancelCurrent" method="post">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="sub-secondary-btn">Hủy gói hiện tại</button>
+                    </form>
+                }
+            </div>
+
+            <div class="sub-grid">
+                <article class="plan-card free-card">
+                    <div class="plan-top">
+                        <span class="plan-tag">Free</span>
+                        <h3>Mặc định</h3>
+                        <p>Bắt đầu nhanh, đủ để trải nghiệm và làm quen hệ thống.</p>
+                    </div>
+                    <div class="plan-price">0đ</div>
+                    <ul class="plan-list">
+                        @if (Model.IsParent)
+                        {
+                            <li>Tối đa @Model.FreeBenefits.MonthlyJobPostLimit bài mỗi tháng</li>
+                            <li>Bài đăng hiển thị @Model.FreeBenefits.ListingDurationDays ngày</li>
+                            <li>Không có badge nổi bật</li>
+                            <li>Không được ưu tiên trong tìm kiếm</li>
+                        }
+                        else if (Model.IsNanny)
+                        {
+                            <li>Tối đa @Model.FreeBenefits.MonthlyApplicationLimit lượt ứng tuyển mỗi tháng</li>
+                            <li>Hồ sơ hiển thị thường</li>
+                            <li>Không có badge nổi bật</li>
+                            <li>Không được ưu tiên trong kết quả tìm kiếm</li>
+                        }
+                    </ul>
+                </article>
+
+                @foreach (var plan in Model.Plans)
+                {
+                    var isCurrent = Model.CurrentSubscription?.Plan?.Code == plan.Code && Model.HasActiveSubscription;
+                    <article class="plan-card @(plan.Code.Contains("PRO") ? "pro-card" : "plus-card") @(isCurrent ? "current-card" : "")">
+                        <div class="plan-top">
+                            <span class="plan-tag">@plan.Name</span>
+                            <h3>@plan.Name</h3>
+                            <p>@(plan.Description ?? "Gói phù hợp để mở rộng quyền lợi sử dụng.")</p>
+                        </div>
+                        <div class="plan-price">@plan.Price.ToString("N0")đ<span>/@plan.DurationDays ngày</span></div>
+                        <div class="plan-highlight">
+                            @if (Model.IsParent)
+                            {
+                                <span>@plan.Benefits.MonthlyJobPostLimit bài/tháng</span>
+                                <span>@plan.Benefits.ListingDurationDays ngày hiển thị</span>
+                            }
+                            else if (Model.IsNanny)
+                            {
+                                <span>@plan.Benefits.MonthlyApplicationLimit ứng tuyển/tháng</span>
+                                <span>@(plan.Benefits.SearchPriority ? "Ưu tiên cao hơn" : "Nổi bật hơn Free")</span>
+                            }
+                        </div>
+                        <ul class="plan-list">
+                            @if (Model.IsParent)
+                            {
+                                <li>Đăng tối đa @plan.Benefits.MonthlyJobPostLimit bài mỗi tháng</li>
+                                <li>Bài đăng hiển thị @plan.Benefits.ListingDurationDays ngày</li>
+                                <li>@(plan.Benefits.FeaturedBadge ? "Có badge nổi bật cho bài đăng" : "Không có badge nổi bật")</li>
+                                <li>@(plan.Benefits.SearchPriority ? "Được ưu tiên hiển thị trong tìm kiếm" : "Không ưu tiên hiển thị")</li>
+                            }
+                            else if (Model.IsNanny)
+                            {
+                                <li>Ứng tuyển tối đa @plan.Benefits.MonthlyApplicationLimit công việc mỗi tháng</li>
+                                <li>@(plan.Benefits.FeaturedBadge ? "Hồ sơ có badge nổi bật" : "Hồ sơ hiển thị thường")</li>
+                                <li>@(plan.Benefits.SearchPriority ? "Hồ sơ được ưu tiên hiển thị cao hơn" : "Hồ sơ được hiển thị nổi bật hơn Free")</li>
+                            }
+
+                            @foreach (var feature in plan.Features)
+                            {
+                                <li>@feature</li>
+                            }
+                        </ul>
+
+                        @if (isCurrent)
+                        {
+                            <div class="plan-current-pill">Đang sử dụng</div>
+                        }
+                        else if (Model.HasActiveSubscription)
+                        {
+                            <button type="button" class="sub-disabled-btn" disabled>Đang có gói hoạt động</button>
+                        }
+                        else
+                        {
+                            <form asp-action="Purchase" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="subscriptionPlanId" value="@plan.Id" />
+                                <button type="submit" class="sub-primary-btn">Mua gói @plan.Name</button>
+                            </form>
+                        }
+                    </article>
+                }
+            </div>
+        </section>
+    }
+</div>

@@ -1,0 +1,285 @@
+@model WebSite.Models.BlogCategory.BlogCategoryDto
+@{
+    Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
+    ViewData["Title"] = "Blog Category Detail";
+}
+
+<!-- PAGE HEADER -->
+<div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
+    <div>
+        <span class="section-label">📂 Content Management</span>
+        <h1 class="page-title mt-2">Blog Category <span class="gradient-text">Detail & Edit</span></h1>
+        <p class="page-subtitle">Update category name and slug.</p>
+    </div>
+    <a href="/Moderator/ManageBlogCategory" class="btn-outline flex-shrink-0">
+        <span class="material-icons-round text-base">arrow_back</span>
+        Back to Categories
+    </a>
+</div>
+
+<!-- Global error -->
+<div id="globalError" class="hidden mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2">
+    <span class="material-icons-round text-base">error_outline</span>
+    <span id="globalErrorMsg"></span>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2">
+        <span class="material-icons-round text-base">error_outline</span>
+        @TempData["Error"]
+    </div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2">
+        <span class="material-icons-round text-base">check_circle_outline</span>
+        @TempData["Success"]
+    </div>
+}
+
+<form method="post" action="/Moderator/ViewBlogCategoryDetail/@Model.Id" id="catEditForm" novalidate>
+    @Html.AntiForgeryToken()
+
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+
+        <!-- LEFT — Fields -->
+        <div class="xl:col-span-2 space-y-5">
+
+            <!-- Read-only Info -->
+            <div class="content-card p-0 fade-in-up">
+                <div class="card-header">
+                    <div class="flex items-center gap-2">
+                        <span class="material-icons-round text-blue-400">info</span>
+                        <h2>Category Info <span class="text-xs text-gray-400 font-normal ml-1">(read-only)</span></h2>
+                    </div>
+                </div>
+                <div class="p-5 space-y-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="field-group sm:col-span-2">
+                            <label class="field-label">Category ID</label>
+                            <div class="field-readonly font-mono text-xs break-all">@Model.Id</div>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Sort Order</label>
+                            <div class="field-readonly">
+                                <span class="material-icons-round text-gray-300 text-base">sort</span>
+                                <span class="font-semibold text-gray-700">@Model.SortOrder</span>
+                                <span class="text-xs text-gray-300 ml-1">(read-only)</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="field-group">
+                            <label class="field-label">Total Blogs</label>
+                            <div class="field-readonly">
+                                <span class="material-icons-round text-gray-300 text-base">article</span>
+                                <span class="font-semibold text-gray-700">@Model.BlogCount</span>
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Created At</label>
+                            <div class="field-readonly text-xs">
+                                <span class="material-icons-round text-gray-300 text-base">calendar_today</span>
+                                @Model.CreatedAt.ToString("dd MMM yyyy, HH:mm")
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Last Updated</label>
+                            <div class="field-readonly text-xs">
+                                <span class="material-icons-round text-gray-300 text-base">update</span>
+                                @(Model.UpdatedAt.HasValue ? Model.UpdatedAt.Value.ToString("dd MMM yyyy, HH:mm") : "Never")
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Editable Content -->
+            <div class="content-card p-0 fade-in-up" style="animation-delay:.05s;">
+                <div class="card-header">
+                    <div class="flex items-center gap-2">
+                        <span class="material-icons-round text-blue-400">edit</span>
+                        <h2>Edit Content <span class="text-xs text-green-500 font-semibold ml-1">✏️ editable</span></h2>
+                    </div>
+                </div>
+                <div class="p-5 space-y-4">
+
+                    <!-- Name -->
+                    <div class="field-group">
+                        <label class="field-label">
+                            Name <span class="text-red-400">*</span>
+                            <span class="text-blue-400 text-[10px] ml-1">✏️ editable</span>
+                        </label>
+                        <div class="relative">
+                            <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-base pointer-events-none">label</span>
+                            <input id="nameInput" name="Name" type="text"
+                                   value="@Model.Name"
+                                   placeholder="e.g. Parenting Tips"
+                                   class="search-input !pl-9 w-full" />
+                        </div>
+                        <p id="nameError" class="hidden text-xs text-red-500 mt-0.5 flex items-center gap-1">
+                            <span class="material-icons-round text-xs">error</span>
+                            Name không được để trống.
+                        </p>
+                    </div>
+
+                    <!-- Slug -->
+                    <div class="field-group">
+                        <label class="field-label">
+                            Slug <span class="text-red-400">*</span>
+                            <span class="text-blue-400 text-[10px] ml-1">✏️ editable</span>
+                        </label>
+                        <div class="relative">
+                            <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-base pointer-events-none">link</span>
+                            <input id="slugInput" name="Slug" type="text"
+                                   value="@Model.Slug"
+                                   placeholder="e.g. parenting-tips"
+                                   class="search-input !pl-9 w-full" />
+                        </div>
+                        <p id="slugError" class="hidden text-xs text-red-500 mt-0.5 flex items-center gap-1">
+                            <span class="material-icons-round text-xs">error</span>
+                            Slug không được để trống.
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT — Summary + Actions -->
+        <div class="space-y-5">
+
+            <!-- Summary card -->
+            <div class="content-card p-6 text-center fade-in-up" style="animation-delay:.08s;">
+                <div class="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-4 ring-4 ring-blue-100">
+                    <span class="material-icons-round text-3xl text-blue-400">category</span>
+                </div>
+                <h3 class="font-bold text-gray-900 text-sm leading-tight px-2">@Model.Name</h3>
+                <p class="text-xs text-gray-400 mt-1 font-mono">@Model.Slug</p>
+                <div class="mt-3 pt-3 border-t border-gray-100">
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-50 text-orange-500 border border-orange-100">
+                        @Model.BlogCount blog@(Model.BlogCount == 1 ? "" : "s")
+                    </span>
+                </div>
+            </div>
+
+            <!-- Stat card -->
+            <div class="content-card p-4 space-y-3 fade-in-up" style="animation-delay:.1s;">
+                <div>
+                    <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-0.5">Sort Order</p>
+                    <p class="text-lg font-bold text-gray-700">@Model.SortOrder <span class="text-xs text-gray-400 font-normal">(not editable)</span></p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-0.5">Created</p>
+                    <p class="text-sm text-gray-600">@Model.CreatedAt.ToString("dd MMM yyyy, HH:mm")</p>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="content-card p-4 space-y-2.5 fade-in-up" style="animation-delay:.15s;">
+                <button type="button" onclick="submitEditForm()" class="btn-primary w-full justify-center">
+                    <span class="material-icons-round text-base">save</span>
+                    Save Changes
+                </button>
+                <a href="/Moderator/ManageBlogCategory" class="btn-outline w-full justify-center">
+                    <span class="material-icons-round text-base">close</span>
+                    Cancel
+                </a>
+                <hr class="border-gray-100 my-1" />
+                <button type="button" onclick="confirmDelete('@Model.Id')" class="btn-danger w-full justify-center">
+                    <span class="material-icons-round text-base">delete_forever</span>
+                    Delete Category
+                </button>
+            </div>
+
+        </div>
+    </div>
+</form>
+
+<!-- DELETE MODAL -->
+<div id="deleteModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeModal('deleteModal')">
+    <div class="modal-box">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-12 h-12 rounded-2xl flex items-center justify-center" style="background:#FEE2E2;">
+                <span class="material-icons-round text-2xl" style="color:#EF4444;">delete_forever</span>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-gray-900">Delete Blog Category</h3>
+                <p class="text-sm text-gray-400">This action cannot be undone</p>
+            </div>
+        </div>
+        <p class="text-sm text-gray-600 mb-6 bg-gray-50 rounded-2xl p-4 border border-gray-100 leading-relaxed">
+            Are you sure you want to delete category <strong>@Model.Name</strong>? It will be soft-deleted and hidden from users.
+        </p>
+        <div id="deleteFormContainer" class="flex gap-2"></div>
+    </div>
+</div>
+
+<style>
+.field-group { display:flex; flex-direction:column; gap:.4rem; }
+.field-label { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#9CA3AF; }
+.field-readonly {
+    display:flex; align-items:center; gap:.5rem;
+    background:#F9FAFB; border:1px solid #F3F4F6;
+    border-radius:.85rem; padding:.6rem .9rem;
+    font-size:.875rem; color:#374151; min-height:2.6rem;
+}
+.btn-danger {
+    display:inline-flex; align-items:center; gap:.4rem;
+    padding:.55rem 1.1rem; border-radius:.85rem;
+    font-size:.85rem; font-weight:700; cursor:pointer; transition:all .15s;
+    background:#FEE2E2; color:#EF4444; border:1.5px solid #FECACA;
+}
+.btn-danger:hover { background:#FCA5A5; border-color:#F87171; }
+</style>
+
+@section Scripts {
+<script>
+function setErr(inputId, errId, hasError) {
+    var el  = document.getElementById(inputId);
+    var err = document.getElementById(errId);
+    if (hasError) { el.classList.add('!border-red-400'); err.classList.remove('hidden'); }
+    else          { el.classList.remove('!border-red-400'); err.classList.add('hidden'); }
+}
+
+function submitEditForm() {
+    var name = (document.getElementById('nameInput').value || '').trim();
+    var slug = (document.getElementById('slugInput').value || '').trim();
+
+    setErr('nameInput', 'nameError', !name);
+    setErr('slugInput', 'slugError', !slug);
+
+    if (!name || !slug) {
+        var parts = [];
+        if (!name) parts.push('Name');
+        if (!slug) parts.push('Slug');
+        document.getElementById('globalErrorMsg').textContent = parts.join(' và ') + ' không được để trống.';
+        document.getElementById('globalError').classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+    }
+    document.getElementById('globalError').classList.add('hidden');
+    document.getElementById('catEditForm').submit();
+}
+
+['nameInput','slugInput'].forEach(function(id) {
+    document.getElementById(id).addEventListener('input', function() {
+        if (this.value.trim()) setErr(id, id === 'nameInput' ? 'nameError' : 'slugError', false);
+    });
+});
+
+function confirmDelete(id) {
+    document.getElementById('deleteFormContainer').innerHTML =
+        '<button onclick="closeModal(\'deleteModal\')" class="btn-outline flex-1 justify-center">Cancel</button>' +
+        '<form method="post" action="/Moderator/DeleteBlogCategory" class="flex-1 flex">' +
+        '@Html.AntiForgeryToken()'.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&') +
+        '<input type="hidden" name="id" value="' + id + '" />' +
+        '<button type="submit" class="btn-danger w-full justify-center">Confirm Delete</button>' +
+        '</form>';
+    document.getElementById('deleteModal').classList.remove('hidden');
+}
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+</script>
+}

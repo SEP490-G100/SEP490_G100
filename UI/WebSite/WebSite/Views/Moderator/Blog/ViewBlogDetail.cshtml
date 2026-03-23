@@ -1,0 +1,215 @@
+@using WebSite.Enums
+@model WebSite.Models.Blog.BlogDto
+@{
+    Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
+    ViewData["Title"] = "Blog Detail";
+    var categories = ViewBag.Categories as List<WebSite.Models.Blog.BlogCategoryOption>
+                     ?? new List<WebSite.Models.Blog.BlogCategoryOption>();
+}
+
+<!-- PAGE HEADER -->
+<div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
+    <div>
+        <h1 class="page-title mt-2">
+            Edit <span class="gradient-text">Blog</span>
+        </h1>
+        <p class="page-subtitle">Update blog article details and settings.</p>
+    </div>
+    <a href="/Moderator/ManageBlog" class="btn-outline flex-shrink-0 flex items-center gap-1">
+        <span class="material-icons-round text-base">arrow_back</span>
+        Back to List
+    </a>
+</div>
+
+<!-- Alerts -->
+@if (TempData["Error"] != null)
+{
+    <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 fade-in-up">
+        <span class="material-icons-round text-base">error_outline</span>
+        @TempData["Error"]
+    </div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 fade-in-up">
+        <span class="material-icons-round text-base">check_circle_outline</span>
+        @TempData["Success"]
+    </div>
+}
+
+<form method="post" action="/Moderator/ViewBlogDetail/@Model.Id" id="editBlogForm">
+    @Html.AntiForgeryToken()
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+        <!-- LEFT: Main content -->
+        <div class="lg:col-span-2 flex flex-col gap-5">
+
+            <!-- Title & Slug -->
+            <div class="content-card p-6 fade-in-up">
+                <h2 class="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
+                    <span class="material-icons-round text-indigo-400 text-base">title</span>
+                    Basic Info
+                </h2>
+
+                <!-- Title -->
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">
+                        Title <span class="text-red-500">*</span>
+                    </label>
+                    <input id="titleInput" name="Title" type="text" value="@Model.Title"
+                           placeholder="Blog title..."
+                           class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 transition" />
+                    <p id="titleError" class="text-red-500 text-xs mt-1 hidden">Title không được để trống.</p>
+                </div>
+
+                <!-- Slug -->
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">
+                        Slug <span class="text-red-500">*</span>
+                    </label>
+                    <input id="slugInput" name="Slug" type="text" value="@Model.Slug"
+                           placeholder="blog-slug"
+                           class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-mono focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 transition" />
+                    <p id="slugError" class="text-red-500 text-xs mt-1 hidden">Slug không được để trống.</p>
+                </div>
+
+                <!-- Summary -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Summary</label>
+                    <textarea name="Summary" rows="2"
+                              placeholder="Short description..."
+                              class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 transition resize-none">@(Model.Summary ?? "")</textarea>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="content-card p-6 fade-in-up" style="animation-delay:.05s;">
+                <h2 class="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
+                    <span class="material-icons-round text-indigo-400 text-base">edit_note</span>
+                    Content <span class="text-red-500">*</span>
+                </h2>
+                <textarea id="contentInput" name="Content" rows="18"
+                          class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 transition resize-y">@Model.Content</textarea>
+                <p id="contentError" class="text-red-500 text-xs mt-1 hidden">Content không được để trống.</p>
+            </div>
+        </div>
+
+        <!-- RIGHT: Settings + Info -->
+        <div class="flex flex-col gap-5">
+
+            <!-- Publish Settings -->
+            <div class="content-card p-6 fade-in-up" style="animation-delay:.08s;">
+                <h2 class="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
+                    <span class="material-icons-round text-indigo-400 text-base">settings</span>
+                    Settings
+                </h2>
+
+                <!-- Status -->
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Status</label>
+                    <select name="Status"
+                            class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-indigo-400 transition appearance-none">
+                        <option value="@((int)BlogStatus.Draft)" selected="@(Model.Status == BlogStatus.Draft ? "selected" : null)">Draft</option>
+                        <option value="@((int)BlogStatus.Published)" selected="@(Model.Status == BlogStatus.Published ? "selected" : null)">Published</option>
+                        <option value="@((int)BlogStatus.Archived)" selected="@(Model.Status == BlogStatus.Archived ? "selected" : null)">Archived</option>
+                    </select>
+                </div>
+
+                <!-- Category -->
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Category</label>
+                    <select name="CategoryId"
+                            class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-indigo-400 transition appearance-none">
+                        <option value="">— No Category —</option>
+                        @foreach (var cat in categories)
+                        {
+                            <option value="@cat.Id" selected="@(Model.CategoryId == cat.Id ? "selected" : null)">@cat.Name</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- ThumbnailUrl -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Thumbnail URL</label>
+                    <input name="ThumbnailUrl" type="url" value="@(Model.ThumbnailUrl ?? "")"
+                           placeholder="https://example.com/image.jpg"
+                           class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-indigo-400 transition" />
+                </div>
+            </div>
+
+            <!-- Read-only Info -->
+            <div class="content-card p-6 fade-in-up" style="animation-delay:.1s;">
+                <h2 class="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
+                    <span class="material-icons-round text-gray-400 text-base">info_outline</span>
+                    Blog Info
+                </h2>
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-400 font-medium">ID</span>
+                        <span class="text-gray-600 font-mono text-xs">@Model.Id.ToString()[..8]…</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400 font-medium">Author</span>
+                        <span class="text-gray-600">@(Model.AuthorName ?? "—")</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400 font-medium">Views</span>
+                        <span class="text-gray-600">@Model.ViewCount</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400 font-medium">Published</span>
+                        <span class="text-gray-600">@(Model.PublishedAt?.ToString("MMM dd, yyyy") ?? "—")</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400 font-medium">Created</span>
+                        <span class="text-gray-600">@Model.CreatedAt.ToString("MMM dd, yyyy")</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400 font-medium">Updated</span>
+                        <span class="text-gray-600">@(Model.UpdatedAt?.ToString("MMM dd, yyyy") ?? "—")</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400 font-medium">Visibility</span>
+                        @if (!Model.IsDeleted)
+                        {
+                            <span class="badge badge-active">Active</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-inactive">Inactive</span>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Save -->
+            <div class="content-card p-5 fade-in-up" style="animation-delay:.12s;">
+                <button type="button" onclick="submitForm()"
+                        class="btn-primary w-full justify-center">
+                    <span class="material-icons-round text-base">save</span>
+                    Save Changes
+                </button>
+                <a href="/Moderator/ManageBlog" class="btn-outline w-full justify-center mt-3">
+                    Cancel
+                </a>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+<script>
+function submitForm() {
+    var title   = document.getElementById('titleInput').value.trim();
+    var slug    = document.getElementById('slugInput').value.trim();
+    var content = document.getElementById('contentInput').value.trim();
+
+    document.getElementById('titleError').classList.toggle('hidden', !!title);
+    document.getElementById('slugError').classList.toggle('hidden',  !!slug);
+    document.getElementById('contentError').classList.toggle('hidden', !!content);
+
+    if (!title || !slug || !content) return;
+    document.getElementById('editBlogForm').submit();
+}
+</script>
+}

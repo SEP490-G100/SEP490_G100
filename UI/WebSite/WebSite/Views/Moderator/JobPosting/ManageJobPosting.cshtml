@@ -1,0 +1,277 @@
+@using WebSite.Controllers
+@model  JobPostingListResponse
+@{
+    Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
+    ViewData["Title"] = "Manage Job Postings";
+
+    var currentSearch = ViewBag.Search as string ?? "";
+    var currentStatus = ViewBag.Status as string ?? "";
+    var currentModStatus = ViewBag.ModerationStatus as string ?? "";
+    var currentPage = Model?.Page ?? 1;
+    var totalPages = Model?.TotalPages ?? 1;
+    var items = Model?.Items ?? new List<WebSite.Models.Search.SearchJobResponse>();
+}
+
+<!-- ====================================================
+     PAGE HEADER
+     ==================================================== -->
+<div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
+    <div>
+        <span class="section-label">Job Management</span>
+        <h1 class="page-title mt-2">
+            Manage <span class="gradient-text">Job Postings</span>
+        </h1>
+        <p class="page-subtitle">Review, approve or reject job postings from parents.</p>
+    </div>
+</div>
+
+<!-- Alert messages -->
+@if (TempData["Error"] != null)
+{
+    <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 fade-in-up">
+        <span class="material-icons-round text-base">error_outline</span>
+        @TempData["Error"]
+    </div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 fade-in-up">
+        <span class="material-icons-round text-base">check_circle_outline</span>
+        @TempData["Success"]
+    </div>
+}
+
+<!-- ====================================================
+     FILTER / SEARCH FORM
+     ==================================================== -->
+<form method="get" action="/Moderator/ManageJobPosting" id="filterForm">
+    <div class="content-card p-4 mb-5 fade-in-up" style="animation-delay:.05s;">
+        <div class="flex flex-col md:flex-row gap-3">
+
+            <!-- Search -->
+            <div class="relative flex-1">
+                <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">search</span>
+                <input name="search" type="text" value="@currentSearch"
+                       placeholder="Search by title or parent..."
+                       class="search-input pl-9 w-full border border-gray-200 rounded-xl px-4 py-2 font-medium"
+                       onkeydown="if(event.key==='Enter'){this.form.submit();}" />
+            </div>
+
+            <!-- Status Filter -->
+            <div class="relative">
+                <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">visibility</span>
+                <select name="status" onchange="this.form.submit()"
+                        class="search-input md:w-36 !pl-9 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
+                    <option value="">Status</option>
+                    <option value="1" selected="@(currentStatus == "1" ? "selected" : null)">Public</option>
+                    <option value="2" selected="@(currentStatus == "2" ? "selected" : null)">Hidden</option>
+                </select>
+            </div>
+
+            <!-- Moderation Filter -->
+            <div class="relative">
+                <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">gavel</span>
+                <select name="moderationStatus" onchange="this.form.submit()"
+                        class="search-input md:w-44 !pl-9 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
+                    <option value="">Moderation</option>
+                    <option value="0" selected="@(currentModStatus == "0" ? "selected" : null)">Pending</option>
+                    <option value="1" selected="@(currentModStatus == "1" ? "selected" : null)">Rejected</option>
+                    <option value="2" selected="@(currentModStatus == "2" ? "selected" : null)">Approved</option>
+                </select>
+            </div>
+
+            <!-- Submit -->
+            <button type="submit" class="btn-primary flex-shrink-0 flex items-center gap-1">
+                <span class="material-icons-round text-base">search</span>
+                Search
+            </button>
+        </div>
+    </div>
+</form>
+
+<!-- ====================================================
+     JOB TABLE
+     ==================================================== -->
+<div class="content-card overflow-hidden fade-in-up" style="animation-delay:.1s;">
+
+    <div class="card-header">
+        <span class="text-sm text-gray-500">
+            Showing <span class="font-bold text-gray-800">@items.Count</span>
+            of <span class="font-bold text-gray-800">@(Model?.TotalCount ?? 0)</span> jobs
+        </span>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full mod-table">
+            <thead>
+                <tr>
+                    <th class="text-left">#</th>
+                    <th class="text-left">Job Info</th>
+                    <th class="text-left">Parent</th>
+                    <th class="text-left">Status</th>
+                    <th class="text-left">Moderation</th>
+                    <th class="text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!items.Any())
+                {
+                    <tr>
+                        <td colspan="6" class="text-center py-16 text-gray-400">
+                            <span class="material-icons-round text-5xl mb-3 block text-gray-200">work_outline</span>
+                            <p class="font-semibold text-gray-400">No job postings found matching your criteria.</p>
+                        </td>
+                    </tr>
+                }
+                @{int rowNum = ((currentPage - 1) * Model?.PageSize ?? 10) + 1;}
+                @foreach (var item in items)
+                {
+                    var modBadge = item.ModerationStatus switch {
+                        0 => "badge-pending",
+                        1 => "badge-inactive",
+                        2 => "badge-active",
+                        _ => "badge-pending"
+                    };
+                    var modLabel = item.ModerationStatus switch {
+                        0 => "Pending",
+                        1 => "Rejected",
+                        2 => "Approved",
+                        _ => "Unknown"
+                    };
+
+                    <tr>
+                        <td class="text-gray-300 text-xs font-mono">@rowNum</td>
+                        <td>
+                            <div class="flex flex-col">
+                                <span class="font-bold text-gray-800 line-clamp-1">@item.Title</span>
+                                <span class="text-[10px] text-gray-400 font-mono">ID: @item.Id</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="text-gray-600 text-sm font-medium">@item.ParentName</span>
+                        </td>
+                        <td>
+                            @if (item.Status == 1) { <span class="badge badge-active">Public</span> }
+                            else { <span class="badge badge-inactive">Hidden</span> }
+                        </td>
+                        <td>
+                            <span class="badge @modBadge">@modLabel</span>
+                        </td>
+                        <td>
+                            <div class="flex items-center justify-center gap-1.5">
+                                <button onclick="openReviewModal('@item.Id', '@item.Title')" 
+                                        class="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all text-xs font-bold flex items-center gap-1">
+                                    <span class="material-icons-round text-sm">rate_review</span>
+                                    Moderate
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    rowNum++;
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages > 1)
+    {
+        <div class="flex items-center justify-between px-6 py-4 border-t border-gray-50">
+            <span class="text-sm text-gray-400">
+                Page <span class="font-bold text-gray-600">@currentPage</span> of <span class="font-bold text-gray-600">@totalPages</span>
+            </span>
+            <div class="flex gap-1.5">
+                @for (int p = 1; p <= totalPages; p++)
+                {
+                    <a href="?search=@currentSearch&status=@currentStatus&moderationStatus=@currentModStatus&page=@p"
+                       class="page-btn @(p == currentPage ? "active" : "")">@p</a>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<!-- ====================================================
+     REVIEW MODAL
+     ==================================================== -->
+<div id="reviewModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeModal('reviewModal')">
+    <div class="modal-box max-w-md scale-in">
+        <div class="flex items-center justify-between mb-5">
+            <h3 class="text-lg font-bold text-gray-900">Moderate Job Posting</h3>
+            <button onclick="closeModal('reviewModal')"
+                    class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 transition-all">
+                <span class="material-icons-round">close</span>
+            </button>
+        </div>
+
+        <div class="mb-6 p-4 rounded-2xl bg-blue-50 border border-blue-100 italic text-sm text-blue-700 leading-relaxed" id="reviewJobTitle">
+        </div>
+
+        <form asp-action="ReviewJobPosting" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" id="reviewJobId" />
+            
+            <div class="mb-5">
+                <label class="block text-xs font-bold text-gray-400 uppercase mb-3 tracking-wider">Select Decision</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <label class="decision-card group">
+                        <input type="radio" name="action" value="2" required class="hidden" />
+                        <div class="inner border-2 border-gray-100 rounded-2xl p-4 flex flex-col items-center gap-2 transition-all group-hover:bg-emerald-50 peer-checked:border-emerald-400 peer-checked:bg-emerald-50">
+                            <span class="material-icons-round text-emerald-500 text-3xl">check_circle</span>
+                            <span class="text-xs font-bold text-gray-700">Approve</span>
+                        </div>
+                    </label>
+                    <label class="decision-card group">
+                        <input type="radio" name="action" value="1" required class="hidden" />
+                        <div class="inner border-2 border-gray-100 rounded-2xl p-4 flex flex-col items-center gap-2 transition-all group-hover:bg-red-50 peer-checked:border-red-400 peer-checked:bg-red-50">
+                            <span class="material-icons-round text-red-500 text-3xl">cancel</span>
+                            <span class="text-xs font-bold text-gray-700">Reject</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-xs font-bold text-gray-400 uppercase mb-2 tracking-wider">Internal Note / Feedback</label>
+                <textarea name="note" rows="3" placeholder="Enter reason or feedback for the parent..." 
+                          class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none resize-none transition-all"></textarea>
+            </div>
+
+            <div class="flex gap-2.5">
+                <button type="button" onclick="closeModal('reviewModal')" class="btn-outline flex-1 justify-center py-3">Cancel</button>
+                <button type="submit" class="btn-primary flex-1 justify-center shadow-lg shadow-blue-500/20 py-3">Confirm Review</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .decision-card input:checked + .inner {
+        border-color: #34D399; /* emerald-400 for approve */
+        background-color: #ECFDF5;
+    }
+    .decision-card:last-child input:checked + .inner {
+        border-color: #F87171; /* red-400 for reject */
+        background-color: #FEF2F2;
+    }
+    .scale-in { animation: scaleIn 0.2s ease-out forwards; }
+    @@keyframes scaleIn {
+        from { transform: scale(0.95); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+</style>
+
+<script>
+    function openReviewModal(id, title) {
+        document.getElementById('reviewJobId').value = id;
+        document.getElementById('reviewJobTitle').textContent = 'Reviewing job: "' + title + '"';
+        let modal = document.getElementById('reviewModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+    function closeModal(id) {
+        let modal = document.getElementById(id);
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+</script>
