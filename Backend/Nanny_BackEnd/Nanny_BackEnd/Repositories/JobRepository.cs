@@ -49,6 +49,22 @@ public class JobRepository
         if (filters.SalaryMin.HasValue)
             query = query.Where(j => j.SalaryMin >= filters.SalaryMin || j.SalaryNegotiable);
 
+        if (filters.MinLat.HasValue && filters.MaxLat.HasValue && filters.MinLng.HasValue && filters.MaxLng.HasValue)
+        {
+            var minLat = Math.Min(filters.MinLat.Value, filters.MaxLat.Value);
+            var maxLat = Math.Max(filters.MinLat.Value, filters.MaxLat.Value);
+            var minLng = Math.Min(filters.MinLng.Value, filters.MaxLng.Value);
+            var maxLng = Math.Max(filters.MinLng.Value, filters.MaxLng.Value);
+
+            query = query.Where(j =>
+                j.Latitude.HasValue &&
+                j.Longitude.HasValue &&
+                (double)j.Latitude.Value >= minLat &&
+                (double)j.Latitude.Value <= maxLat &&
+                (double)j.Longitude.Value >= minLng &&
+                (double)j.Longitude.Value <= maxLng);
+        }
+
         var skip = (filters.Page - 1) * filters.PageSize;
         return await query
             .OrderByDescending(j => j.ParentProfile!.User.UserSubscriptions.Any(s =>
