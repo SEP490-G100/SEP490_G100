@@ -37,6 +37,7 @@ public class MessageHistoryDto
     public string OtherUserName { get; set; } = null!;
     public Guid OtherUserId { get; set; }
     public bool IsBlocked { get; set; }
+    public Guid? BlockedByUserId { get; set; }
     public bool IsHidden { get; set; }
     public List<MessageDto> Messages { get; set; } = [];
     public int TotalCount { get; set; }
@@ -67,6 +68,6 @@ public class ReportMessageDto
 
 public class UpdateConversationStatusDto
 {
-    /// <summary>"block" | "unblock" | "hide" | "unhide"</summary>
+    /// <summary>"block" | "unblock"</summary>
     public string Action { get; set; } = null!;
 }

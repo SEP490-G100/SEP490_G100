@@ -38,16 +38,18 @@ namespace WebSite.Models.Profile
         public decimal? ExpectedSalaryMax { get; set; }
         public int? MaxTravelDistance { get; set; }
         public string? VerificationStatus { get; set; }
+        public int? VerificationStatusCode { get; set; }
         public decimal? AverageRating { get; set; }
         public int? TotalReviews { get; set; }
         public List<NannySkillItemViewModel>? Skills { get; set; }
         public List<NannyAvailabilityItemViewModel>? Availabilities { get; set; }
+        public List<NannyCertificateItemViewModel>? Certificates { get; set; }
 
         public string VerificationStatusLabel =>
             string.IsNullOrWhiteSpace(VerificationStatus) ? "Chưa được xác thực" : VerificationStatus!;
 
         public string AverageRatingLabel =>
-            AverageRating.HasValue ? AverageRating.Value.ToString("0.##") : "Chưa có";
+            AverageRating.HasValue ? AverageRating.Value.ToString("0.##") : "0";
 
         public int? Age
         {
@@ -66,6 +68,7 @@ namespace WebSite.Models.Profile
     public class NannySkillItemViewModel
     {
         public Guid SkillId { get; set; }
+        public string? SkillName { get; set; }
         public int? ProficiencyLevel { get; set; }
     }
 
@@ -74,5 +77,14 @@ namespace WebSite.Models.Profile
         public int DayOfWeek { get; set; }
         public bool IsAvailable { get; set; }
         public int TimeSlot { get; set; }
+    }
+
+    public class NannyCertificateItemViewModel
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? IssuingOrganization { get; set; }
+        public string? CertificateUrl { get; set; }
+        public int VerificationStatus { get; set; }
     }
 }

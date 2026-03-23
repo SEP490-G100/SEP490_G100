@@ -164,6 +164,7 @@ builder.Services.AddScoped<ProfileService>();
 builder.Services.AddScoped<OnboardingService>();
 builder.Services.AddScoped<NannyProfileRepository>();
 builder.Services.AddScoped<NannySkillRepository>();
+builder.Services.AddScoped<NannyCertificateRepository>();
 builder.Services.AddScoped<NannyAvailabilityRepository>();
 builder.Services.AddSingleton<PasswordValidator>();
 // Search feature (SD1B)

@@ -35,15 +35,18 @@ public class PersonalProfileDto
     public decimal? ExpectedSalaryMax { get; set; }
     public int? MaxTravelDistance { get; set; }
     public string? VerificationStatus { get; set; }
+    public int? VerificationStatusCode { get; set; }
     public decimal? AverageRating { get; set; }
     public int? TotalReviews { get; set; }
     public List<NannySkillItemDto>? Skills { get; set; }
     public List<NannyAvailabilityItemDto>? Availabilities { get; set; }
+    public List<NannyCertificateItemDto>? Certificates { get; set; }
 }
 
 public class NannySkillItemDto
 {
     public Guid SkillId { get; set; }
+    public string? SkillName { get; set; }
     public int? ProficiencyLevel { get; set; }
 }
 
@@ -52,4 +55,13 @@ public class NannyAvailabilityItemDto
     public int DayOfWeek { get; set; }
     public bool IsAvailable { get; set; }
     public int TimeSlot { get; set; }
+}
+
+public class NannyCertificateItemDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? IssuingOrganization { get; set; }
+    public string? CertificateUrl { get; set; }
+    public int VerificationStatus { get; set; }
 }

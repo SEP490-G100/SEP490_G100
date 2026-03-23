@@ -1,109 +1,103 @@
 @model WebSite.Models.Nanny.NannyProfileViewModel
 @{
-    ViewData["Title"] = "Create your profile";
+    ViewData["Title"] = "Hồ sơ bảo mẫu";
 }
 
-<div class="min-h-screen bg-[#1f242b] flex items-center justify-center px-4">
-    <div class="w-full max-w-2xl bg-[#2b323b] text-gray-100 rounded-2xl shadow-2xl overflow-hidden">
-        @* Progress Bar - Tăng lên 33% cho bước này *@
-        <div class="h-1 bg-[#3b434e]">
-            <div class="h-1 bg-pink-400" style="width:33%"></div>
+<div class="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50/30 to-white py-10 px-4">
+    <div class="max-w-3xl mx-auto">
+        <div class="mb-6 text-center">
+            <span class="section-label">Hồ sơ bảo mẫu</span>
+            <h1 class="text-3xl font-bold text-gray-900 mt-3" style="font-family:'Quicksand',sans-serif">
+                Bước 2: Kinh nghiệm & kỳ vọng công việc
+            </h1>
+            <div class="section-divider mt-4 mx-auto"></div>
         </div>
 
-        <div class="p-8">
-            <div class="flex justify-between items-center mb-6">
-                <h1 class="text-lg font-semibold">Create your profile</h1>
-                <button type="button" onclick="window.location.href='@Url.Action("Logout", "Auth")'" class="text-gray-400 hover:text-gray-200">×</button>
+        <div class="bg-white/90 rounded-3xl border border-orange-100 shadow-soft overflow-hidden">
+            <div class="h-1 bg-orange-100">
+                <div class="h-1 bg-gradient-to-r from-orange-500 to-amber-500" style="width:33%"></div>
             </div>
 
-            @* 1. Hiển thị tổng hợp các lỗi từ Server (Ví dụ: Lỗi Database, Lỗi FK) *@
-            <div asp-validation-summary="ModelOnly" class="text-red-400 text-sm mb-4 bg-red-900/20 p-3 rounded-lg border border-red-900/50"></div>
+            <div class="p-8">
+                <div asp-validation-summary="ModelOnly" class="text-red-500 text-sm mb-4"></div>
 
-            <div class="flex flex-col items-center mb-8">
-                <div class="w-24 h-24 rounded-full bg-[#3b434e] flex items-center justify-center mb-4">
-                    <span class="text-4xl">👶</span>
-                </div>
-                <div class="text-sm text-gray-300 px-4 py-2 rounded-full bg-[#3b434e]">
-                    Tell us about your nanny experience
-                </div>
+                <form asp-action="Profile" asp-controller="Nanny" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <div class="space-y-5">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Giới thiệu bản thân</label>
+                            <textarea asp-for="Bio" rows="4"
+                                      class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                                      placeholder="Chia sẻ ngắn gọn về bạn..."></textarea>
+                            <span asp-validation-for="Bio" class="text-red-500 text-xs mt-1"></span>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Số năm kinh nghiệm</label>
+                                <input asp-for="YearsOfExperience" type="number" min="0"
+                                       class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                                <span asp-validation-for="YearsOfExperience" class="text-red-500 text-xs mt-1"></span>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Trình độ học vấn</label>
+                                <select asp-for="EducationLevel"
+                                        class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-400">
+                                    <option value="">-- Chọn trình độ học vấn --</option>
+                                    <option value="0">Trung học</option>
+                                    <option value="1">Cao đẳng</option>
+                                    <option value="2">Đại học</option>
+                                    <option value="3">Thạc sĩ</option>
+                                    <option value="4">Khác</option>
+                                </select>
+                                <span asp-validation-for="EducationLevel" class="text-red-500 text-xs mt-1"></span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Mức lương tối thiểu</label>
+                                <div class="relative">
+                                    <input asp-for="ExpectedSalaryMin" type="number" step="1000" min="20001"
+                                           class="w-full px-4 py-3 pr-16 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-500">VND</span>
+                                </div>
+                                <span asp-validation-for="ExpectedSalaryMin" class="text-red-500 text-xs mt-1"></span>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Mức lương tối đa</label>
+                                <div class="relative">
+                                    <input asp-for="ExpectedSalaryMax" type="number" step="1000" max="499999"
+                                           class="w-full px-4 py-3 pr-16 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-500">VND</span>
+                                </div>
+                                <span asp-validation-for="ExpectedSalaryMax" class="text-red-500 text-xs mt-1"></span>
+                            </div>
+                        </div>
+
+                        <div id="salaryRangeError" class="hidden text-red-500 text-xs bg-red-50 p-3 rounded-lg border border-red-200"></div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Khoảng cách di chuyển tối đa (km)</label>
+                            <input asp-for="MaxTravelDistance" type="number"
+                                   class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                            <span asp-validation-for="MaxTravelDistance" class="text-red-500 text-xs mt-1"></span>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center mt-8">
+                        <a href="@Url.Action("Edit", "Profile")"
+                           class="px-5 py-2 rounded-full border border-orange-200 text-gray-700 hover:bg-orange-50 text-sm font-semibold">
+                            Quay lại
+                        </a>
+                        <button type="submit"
+                                class="px-6 py-2 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold text-sm shadow-md">
+                            Tiếp tục
+                        </button>
+                    </div>
+                </form>
             </div>
-
-            <form asp-action="Profile" asp-controller="Nanny" method="post">
-                @Html.AntiForgeryToken()
-
-                <div class="space-y-5">
-                    @* Bio *@
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Bio</label>
-                        <textarea asp-for="Bio" rows="4"
-                                  class="w-full px-4 py-3 rounded-xl bg-[#1f242b] border border-[#3b434e] text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
-                                  placeholder="Share a bit about yourself..."></textarea>
-                        <span asp-validation-for="Bio" class="text-red-400 text-xs mt-1"></span>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4">
-                        @* Years of Experience *@
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-2">Years of experience</label>
-                            <input asp-for="YearsOfExperience" type="number" min="0"
-                                   class="w-full px-4 py-3 rounded-xl bg-[#1f242b] border border-[#3b434e] text-gray-100 focus:outline-none focus:ring-2 focus:ring-pink-400" />
-                            <span asp-validation-for="YearsOfExperience" class="text-red-400 text-xs mt-1"></span>
-                        </div>
-                        @* Education Level *@
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-2">Education level</label>
-                            <select asp-for="EducationLevel"
-                                    class="w-full px-4 py-3 rounded-xl bg-[#1f242b] border border-[#3b434e] text-gray-100 focus:outline-none focus:ring-2 focus:ring-pink-400">
-                                <option value="">-- Chọn trình độ học vấn --</option>
-                                <option value="0">Trung học</option>
-                                <option value="1">Cao đẳng</option>
-                                <option value="2">Đại học</option>
-                                <option value="3">Thạc sĩ</option>
-                                <option value="4">Khác</option>
-                            </select>
-                            <span asp-validation-for="EducationLevel" class="text-red-400 text-xs mt-1"></span>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4">
-                        @* Min Salary *@
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-2">Min salary (VNĐ)</label>
-                            <input asp-for="ExpectedSalaryMin" type="number" step="1000" min="20001"
-                                   class="w-full px-4 py-3 rounded-xl bg-[#1f242b] border border-[#3b434e] text-gray-100 focus:outline-none focus:ring-2 focus:ring-pink-400" />
-                            <span asp-validation-for="ExpectedSalaryMin" class="text-red-400 text-xs mt-1"></span>
-                        </div>
-                        @* Max Salary *@
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-2">Max salary (VNĐ)</label>
-                            <input asp-for="ExpectedSalaryMax" type="number" step="1000" max="499999"
-                                   class="w-full px-4 py-3 rounded-xl bg-[#1f242b] border border-[#3b434e] text-gray-100 focus:outline-none focus:ring-2 focus:ring-pink-400" />
-                            <span asp-validation-for="ExpectedSalaryMax" class="text-red-400 text-xs mt-1"></span>
-                        </div>
-                    </div>
-                    
-                    <div id="salaryRangeError" class="hidden text-red-400 text-xs bg-red-900/20 p-3 rounded-lg border border-red-900/50"></div>
-
-                    @* Travel Distance *@
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Max travel distance (km)</label>
-                        <input asp-for="MaxTravelDistance" type="number"
-                               class="w-full px-4 py-3 rounded-xl bg-[#1f242b] border border-[#3b434e] text-gray-100 focus:outline-none focus:ring-2 focus:ring-pink-400" />
-                        <span asp-validation-for="MaxTravelDistance" class="text-red-400 text-xs mt-1"></span>
-                    </div>
-                </div>
-
-                <div class="flex justify-between items-center mt-8">
-                    <a href="@Url.Action("Edit", "Profile")"
-                       class="px-5 py-2 rounded-full border border-[#3b434e] text-gray-200 hover:bg-[#3b434e] text-sm">
-                        Back
-                    </a>
-                    <button type="submit"
-                            class="px-6 py-2 rounded-full bg-teal-500 hover:bg-teal-400 text-white font-semibold text-sm transition-colors">
-                        Next
-                    </button>
-                </div>
-            </form>
         </div>
     </div>
 </div>
@@ -125,9 +119,9 @@
         var min = minEl && minEl.value ? Number(minEl.value) : null;
         var max = maxEl && maxEl.value ? Number(maxEl.value) : null;
 
-        if (min != null && min <= 20000) return 'Min salary (VNĐ) phải > 20000.';
-        if (max != null && max >= 500000) return 'Max salary (VNĐ) phải < 500000.';
-        if (min != null && max != null && max < min) return 'Max salary phải >= Min salary.';
+        if (min != null && min <= 20000) return 'Mức lương tối thiểu phải lớn hơn 20000 VND.';
+        if (max != null && max >= 500000) return 'Mức lương tối đa phải nhỏ hơn 500000 VND.';
+        if (min != null && max != null && max < min) return 'Mức lương tối đa phải lớn hơn hoặc bằng mức tối thiểu.';
         return '';
     }
 

@@ -1,7 +1,9 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Nanny_BackEnd.DTOs.Communication;
+using Nanny_BackEnd.Hubs;
 using Nanny_BackEnd.Services;
 
 namespace Nanny_BackEnd.Controllers;
@@ -12,8 +14,13 @@ namespace Nanny_BackEnd.Controllers;
 public class CommunicationController : ControllerBase
 {
     private readonly CommunicationService _service;
+    private readonly IHubContext<ChatHub> _hubContext;
 
-    public CommunicationController(CommunicationService service) => _service = service;
+    public CommunicationController(CommunicationService service, IHubContext<ChatHub> hubContext)
+    {
+        _service = service;
+        _hubContext = hubContext;
+    }
 
     // GET /api/communication/conversations
     [HttpGet("conversations")]
@@ -88,7 +95,14 @@ public class CommunicationController : ControllerBase
 
         try
         {
-            await _service.DeleteMessageAsync(id, userId.Value);
+            var deleted = await _service.DeleteMessageAsync(id, userId.Value);
+
+            await _hubContext.Clients.Group(deleted.ConversationId.ToString()).SendAsync("MessageDeleted", new
+            {
+                messageId = deleted.MessageId,
+                conversationId = deleted.ConversationId
+            });
+
             return Ok(new { success = true, message = "Tin nhan da duoc xoa." });
         }
         catch (KeyNotFoundException ex) { return NotFound(fail(ex.Message)); }
@@ -121,8 +135,27 @@ public class CommunicationController : ControllerBase
 
         try
         {
-            await _service.UpdateConversationStatusAsync(id, userId.Value, dto);
-            return Ok(new { success = true, message = $"Da thuc hien hanh dong '{dto.Action}' thanh cong." });
+            var status = await _service.UpdateConversationStatusAsync(id, userId.Value, dto);
+
+            await _hubContext.Clients.Group(id.ToString()).SendAsync("ConversationStatusChanged", new
+            {
+                conversationId = id,
+                action = dto.Action,
+                isBlocked = status.IsBlocked,
+                blockedByUserId = status.BlockedByUserId
+            });
+
+            return Ok(new
+            {
+                success = true,
+                message = $"Da thuc hien hanh dong '{dto.Action}' thanh cong.",
+                data = new
+                {
+                    isBlocked = status.IsBlocked,
+                    isHidden = status.IsHidden,
+                    blockedByUserId = status.BlockedByUserId
+                }
+            });
         }
         catch (UnauthorizedAccessException) { return Forbid(); }
         catch (ArgumentException ex) { return BadRequest(fail(ex.Message)); }

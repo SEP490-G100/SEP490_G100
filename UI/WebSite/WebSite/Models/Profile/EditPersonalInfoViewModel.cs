@@ -17,5 +17,24 @@ namespace WebSite.Models.Profile
         public string? Ward { get; set; }
         public decimal? Latitude { get; set; }
         public decimal? Longitude { get; set; }
+
+        // Nanny specific
+        public List<string> Roles { get; set; } = new();
+        public bool IsNanny => Roles.Any(r => r.Equals("Nanny", StringComparison.OrdinalIgnoreCase));
+        public string? Bio { get; set; }
+        public int? YearsOfExperience { get; set; }
+        public int? EducationLevel { get; set; }
+        public decimal? ExpectedSalaryMin { get; set; }
+        public decimal? ExpectedSalaryMax { get; set; }
+        public int? MaxTravelDistance { get; set; }
+        public List<Guid> SelectedSkillIds { get; set; } = new();
+        public List<SelectableSkillViewModel> AvailableSkills { get; set; } = new();
+    }
+
+    public class SelectableSkillViewModel
+    {
+        public Guid SkillId { get; set; }
+        public string SkillName { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
     }
 }

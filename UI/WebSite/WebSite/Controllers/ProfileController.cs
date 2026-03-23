@@ -56,11 +56,33 @@ public class ProfileController : Controller
 
     private EditPersonalInfoViewModel BuildEditProfileFromClaims()
     {
+        var roles = User.Claims
+            .Where(c => c.Type == ClaimTypes.Role)
+            .Select(c => c.Value)
+            .ToList();
+
         return new EditPersonalInfoViewModel
         {
             FirstName = User.FindFirstValue(ClaimTypes.GivenName) ?? "",
-            LastName = User.FindFirstValue(ClaimTypes.Surname) ?? ""
+            LastName = User.FindFirstValue(ClaimTypes.Surname) ?? "",
+            Roles = roles
         };
+    }
+
+    private async Task PopulateAvailableSkillsAsync(EditPersonalInfoViewModel model)
+    {
+        if (!model.IsNanny) return;
+
+        var response = await _http.GetAsync("/api/onboarding/skills");
+        if (!response.IsSuccessStatusCode) return;
+
+        var content = await response.Content.ReadAsStringAsync();
+        var apiResult = JsonSerializer.Deserialize<ApiResultDto>(content, JsonOpts);
+        if (apiResult?.Data is not JsonElement element || element.ValueKind != JsonValueKind.Array)
+            return;
+
+        model.AvailableSkills = JsonSerializer.Deserialize<List<SelectableSkillViewModel>>(
+            element.GetRawText(), JsonOpts) ?? new();
     }
 
     // Get and display personal profile
@@ -136,7 +158,19 @@ public class ProfileController : Controller
             if (profile != null)
                 profile.AvatarUrl = NormalizeAvatarUrl(profile.AvatarUrl);
 
-            return View(profile ?? BuildEditProfileFromClaims());
+            var vm = profile ?? BuildEditProfileFromClaims();
+            if (apiResult?.Data is JsonElement root &&
+                root.TryGetProperty("skills", out var skillsElement) &&
+                skillsElement.ValueKind == JsonValueKind.Array)
+            {
+                vm.SelectedSkillIds = skillsElement
+                    .EnumerateArray()
+                    .Select(s => s.TryGetProperty("skillId", out var idEl) ? idEl.GetGuid() : Guid.Empty)
+                    .Where(id => id != Guid.Empty)
+                    .ToList();
+            }
+            await PopulateAvailableSkillsAsync(vm);
+            return View(vm);
         }
         catch (Exception ex)
         {
@@ -150,7 +184,15 @@ public class ProfileController : Controller
 public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
 {
     if (!ModelState.IsValid)
+    {
+        var tokenForSkill = GetTokenFromSession();
+        if (!string.IsNullOrEmpty(tokenForSkill))
+        {
+            _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenForSkill);
+            await PopulateAvailableSkillsAsync(model);
+        }
         return View(model);
+    }
 
     try
     {
@@ -193,7 +235,14 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
                 model.District,
                 model.Ward,
                 model.Latitude,
-                model.Longitude
+                model.Longitude,
+                model.Bio,
+                model.YearsOfExperience,
+                model.EducationLevel,
+                model.ExpectedSalaryMin,
+                model.ExpectedSalaryMax,
+                model.MaxTravelDistance,
+                SkillIds = model.SelectedSkillIds
             };
 
             var response = await _http.PutAsJsonAsync("/api/profile", updateRequest);
@@ -214,6 +263,36 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
             TempData["Error"] = "Lá»—i khi cáº­p nháº­t: " + ex.Message;
             return View(model);
         }
+    }
+
+    [HttpGet]
+    public IActionResult Verify() => Redirect("/verification");
+
+    [NonAction]
+    public async Task<IActionResult> Verify(CreateCertificateViewModel model)
+    {
+        var token = GetTokenFromSession();
+        if (string.IsNullOrEmpty(token))
+            return RedirectToAction("Login", "Auth");
+
+        _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var response = await _http.PostAsJsonAsync("/api/profile/certificates", new
+        {
+            model.Name,
+            model.IssuingOrganization,
+            model.CertificateUrl
+        });
+
+        var content = await response.Content.ReadAsStringAsync();
+        var apiResult = JsonSerializer.Deserialize<ApiResultDto>(content, JsonOpts);
+        if (apiResult == null || !apiResult.Success)
+        {
+            TempData["Error"] = apiResult?.Message ?? "Không thể thêm chứng chỉ.";
+            return RedirectToAction(nameof(Verify));
+        }
+
+        TempData["Success"] = "Đã thêm chứng chỉ thành công.";
+        return RedirectToAction(nameof(Index));
     }
 
     // View child profiles
@@ -446,5 +525,9 @@ public class ApiResultDto
     public object? Data { get; set; }
 }
 
-
-
+public class CreateCertificateViewModel
+{
+    public string Name { get; set; } = string.Empty;
+    public string? IssuingOrganization { get; set; }
+    public string? CertificateUrl { get; set; }
+}

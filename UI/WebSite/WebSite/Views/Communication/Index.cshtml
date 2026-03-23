@@ -446,9 +446,6 @@
                     </div>
                 </div>
                 <div class="chat-header-actions">
-                    <button class="chat-action-btn" id="btnHideConv" title="Ẩn hội thoại">
-                        <span class="material-icons-round" style="font-size:18px;">visibility_off</span>
-                    </button>
                     <button class="chat-action-btn danger" id="btnBlockConv" title="Chặn">
                         <span class="material-icons-round" style="font-size:18px;">block</span>
                     </button>
@@ -463,8 +460,7 @@
             <!-- Blocked banner (hidden by default) -->
             <div class="chat-blocked-banner" id="blockedBanner" style="display:none;">
                 <span class="material-icons-round" style="vertical-align:middle;margin-right:4px;font-size:16px;">block</span>
-                Bạn đã chặn hội thoại này. Hãy bỏ chặn để tiếp tục nhắn tin.
-                <button onclick="unblockConv()" style="margin-left:10px;padding:4px 12px;border-radius:8px;border:1.5px solid #dc2626;background:transparent;color:#dc2626;font-size:13px;font-weight:700;cursor:pointer;">Bỏ chặn</button>
+                Cuộc trò chuyện đã bị khóa. Bạn không thể nhắn tin.
             </div>
 
             <!-- Input -->
@@ -513,8 +509,9 @@
 //  STATE
 // ════════════════════════════════════════════════════════════════════
 const apiBaseUrl = '@(ViewBag.ApiBaseUrl ?? "")';
+const currentUserId = '@(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value ?? "")';
 let activeConvId = null;
-let activeConvData = null; // { isBlocked, isHidden, otherUserId, otherUserName }
+let activeConvData = null; // { isBlocked, isHidden, blockedByUserId, otherUserId, otherUserName }
 let pendingDeleteMsgId = null;
 let pendingReportMsgId = null;
 let allConversations = [];
@@ -552,7 +549,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('sendBtn').addEventListener('click', sendMessage);
     document.getElementById('btnBlockConv').addEventListener('click', toggleBlock);
-    document.getElementById('btnHideConv').addEventListener('click', hideConv);
 
     // Close context menus on outside click
     document.addEventListener('click', () => {
@@ -651,6 +647,7 @@ async function loadMessages(convId, page = 1) {
         activeConvData = {
             isBlocked: data.isBlocked,
             isHidden: data.isHidden,
+            blockedByUserId: data.blockedByUserId || null,
             otherUserId: data.otherUserId,
             otherUserName: data.otherUserName
         };
@@ -674,6 +671,7 @@ function renderMessages(messages) {
     let lastDate = '';
 
     el.innerHTML = sorted.map(m => {
+        const isMine = resolveMessageIsMine(m);
         const dateStr = new Date(m.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
         const dateSep = dateStr !== lastDate ? `<div class="msg-group-date"><span>${dateStr}</span></div>` : '';
         lastDate = dateStr;
@@ -683,7 +681,7 @@ function renderMessages(messages) {
             ? `<img src="${esc(m.senderAvatar)}" alt="${esc(m.senderName)}">`
             : initial;
 
-        const ctx = m.isMine
+        const ctx = isMine
             ? `<div class="msg-ctx-menu" id="ctx-${m.id}">
                 <div class="ctx-item danger" onclick="openDeleteModal('${m.id}')"><span class="material-icons-round" style="font-size:16px;">delete</span>Xoá</div>
                </div>`
@@ -692,8 +690,8 @@ function renderMessages(messages) {
                </div>`;
 
         return `${dateSep}
-        <div class="msg-row ${m.isMine ? 'mine' : ''}" id="msg-${m.id}">
-            ${!m.isMine ? `<div class="msg-avatar">${avatarHtml}</div>` : ''}
+        <div class="msg-row ${isMine ? 'mine' : ''}" id="msg-${m.id}">
+            ${!isMine ? `<div class="msg-avatar">${avatarHtml}</div>` : ''}
             <div style="display:flex;flex-direction:column;gap:3px;position:relative;">
                 <div class="msg-bubble ${m.isDeleted ? 'deleted' : ''}"
                      oncontextmenu="openCtxMenu(event,'${m.id}')"
@@ -703,7 +701,7 @@ function renderMessages(messages) {
                 </div>
                 <div class="msg-time">${fmtMsgTime(m.createdAt)}${m.readAt ? ' ✓✓' : ''}</div>
             </div>
-            ${m.isMine ? `<div class="msg-avatar">${avatarHtml}</div>` : ''}
+            ${isMine ? `<div class="msg-avatar">${avatarHtml}</div>` : ''}
         </div>`;
     }).join('');
 
@@ -717,21 +715,22 @@ function appendMessage(m) {
     const empty = el.querySelector('.chat-empty, [style*="chat_bubble_outline"]');
     if (empty) empty.remove();
 
+    const isMine = resolveMessageIsMine(m);
     const initial = (m.senderName || 'U').charAt(0).toUpperCase();
-    const ctx = m.isMine
+    const ctx = isMine
         ? `<div class="msg-ctx-menu" id="ctx-${m.id}"><div class="ctx-item danger" onclick="openDeleteModal('${m.id}')"><span class="material-icons-round" style="font-size:16px;">delete</span>Xoá</div></div>`
         : `<div class="msg-ctx-menu" id="ctx-${m.id}"><div class="ctx-item danger" onclick="openReportModal('${m.id}')"><span class="material-icons-round" style="font-size:16px;">flag</span>Báo cáo</div></div>`;
 
     const row = document.createElement('div');
-    row.className = `msg-row ${m.isMine ? 'mine' : ''}`;
+    row.className = `msg-row ${isMine ? 'mine' : ''}`;
     row.id = `msg-${m.id}`;
     row.innerHTML = `
-        ${!m.isMine ? `<div class="msg-avatar">${initial}</div>` : ''}
+        ${!isMine ? `<div class="msg-avatar">${initial}</div>` : ''}
         <div style="display:flex;flex-direction:column;gap:3px;position:relative;">
             <div class="msg-bubble" oncontextmenu="openCtxMenu(event,'${m.id}')" ondblclick="openCtxMenu(event,'${m.id}')">${esc(m.content)}${ctx}</div>
             <div class="msg-time">${fmtMsgTime(m.createdAt)}</div>
         </div>
-        ${m.isMine ? `<div class="msg-avatar">${initial}</div>` : ''}`;
+        ${isMine ? `<div class="msg-avatar">${initial}</div>` : ''}`;
     el.appendChild(row);
     el.scrollTop = el.scrollHeight;
 }
@@ -769,27 +768,45 @@ async function sendMessage() {
 // ════════════════════════════════════════════════════════════════════
 async function toggleBlock() {
     if (!activeConvId || !activeConvData) return;
+    if (activeConvData.isBlocked && !canCurrentUserUnblock()) {
+        alert('Chỉ người đã khóa cuộc trò chuyện mới có thể mở khóa.');
+        return;
+    }
     const action = activeConvData.isBlocked ? 'unblock' : 'block';
-    await updateStatus(action);
-    activeConvData.isBlocked = !activeConvData.isBlocked;
+    const status = await updateStatus(action);
+    if (!status) return;
+    activeConvData.isBlocked = !!status.isBlocked;
+    activeConvData.isHidden = !!status.isHidden;
+    activeConvData.blockedByUserId = status.blockedByUserId || null;
     updateBlockUI(activeConvData.isBlocked);
 }
 
 async function unblockConv() {
-    await updateStatus('unblock');
-    activeConvData.isBlocked = false;
-    updateBlockUI(false);
+    if (!canCurrentUserUnblock()) {
+        alert('Chỉ người đã khóa cuộc trò chuyện mới có thể mở khóa.');
+        return;
+    }
+    const status = await updateStatus('unblock');
+    if (!status) return;
+    activeConvData.isBlocked = !!status.isBlocked;
+    activeConvData.isHidden = !!status.isHidden;
+    activeConvData.blockedByUserId = status.blockedByUserId || null;
+    updateBlockUI(activeConvData.isBlocked);
 }
 
 async function hideConv() {
     if (!activeConvId) return;
     const action = activeConvData?.isHidden ? 'unhide' : 'hide';
-    await updateStatus(action);
+    const status = await updateStatus(action);
+    if (!status) return;
+    activeConvData.isHidden = !!status.isHidden;
     if (action === 'hide') {
         alert('Hội thoại đã được ẩn.');
-        await loadConversations();
+        allConversations = allConversations.filter(c => String(c.id) !== String(activeConvId));
+        renderConversations(allConversations);
         // Reset main area
         activeConvId = null;
+        activeConvData = null;
         document.getElementById('chatArea').style.display = 'none';
         document.getElementById('chatEmpty').style.display = 'flex';
     }
@@ -797,23 +814,39 @@ async function hideConv() {
 
 async function updateStatus(action) {
     try {
-        await fetch(`/Communication/UpdateStatus/${activeConvId}`, {
+        const res = await fetch(`/Communication/UpdateStatus/${activeConvId}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getAntiForgery() },
             body: JSON.stringify({ action })
         });
+        const json = await res.json();
+        if (!res.ok || !json?.success) {
+            alert(json?.message || 'Không thể cập nhật trạng thái hội thoại.');
+            return null;
+        }
+        return json.data ?? null;
     } catch {}
+    return null;
+}
+
+function canCurrentUserUnblock() {
+    if (!activeConvData?.isBlocked) return true;
+    return !!activeConvData.blockedByUserId && String(activeConvData.blockedByUserId) === String(currentUserId);
 }
 
 function updateBlockUI(isBlocked) {
     const banner = document.getElementById('blockedBanner');
     const inputArea = document.getElementById('chatInputArea');
     const blockBtn = document.getElementById('btnBlockConv');
+    const canUnblock = canCurrentUserUnblock();
 
     banner.style.display = isBlocked ? 'block' : 'none';
     inputArea.style.display = isBlocked ? 'none' : 'flex';
-    blockBtn.title = isBlocked ? 'Bỏ chặn' : 'Chặn';
+    blockBtn.title = isBlocked ? (canUnblock ? 'Bỏ chặn' : 'Cuộc trò chuyện đang bị khóa') : 'Chặn';
     blockBtn.querySelector('.material-icons-round').textContent = isBlocked ? 'lock_open' : 'block';
+    blockBtn.disabled = isBlocked && !canUnblock;
+    blockBtn.style.opacity = blockBtn.disabled ? '.55' : '1';
+    blockBtn.style.cursor = blockBtn.disabled ? 'not-allowed' : 'pointer';
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -848,8 +881,7 @@ async function confirmDelete() {
         });
         const json = await res.json();
         if (json.success) {
-            const bubble = document.querySelector(`#msg-${pendingDeleteMsgId} .msg-bubble`);
-            if (bubble) { bubble.textContent = '[Tin nhắn đã bị xoá]'; bubble.classList.add('deleted'); }
+            applyMessageDeleted(pendingDeleteMsgId, activeConvId);
         }
     } catch {}
     closeDeleteModal();
@@ -913,6 +945,30 @@ function getAntiForgery() {
     return document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
 }
 
+function resolveMessageIsMine(message) {
+    if (activeConvData?.otherUserId && message?.senderId) {
+        return String(message.senderId) !== String(activeConvData.otherUserId);
+    }
+    if (typeof message?.isMine === 'boolean') {
+        return message.isMine;
+    }
+    return false;
+}
+
+function applyMessageDeleted(messageId, conversationId) {
+    const bubble = document.querySelector(`#msg-${messageId} .msg-bubble`);
+    if (bubble) {
+        bubble.textContent = '[Tin nhắn đã bị xoá]';
+        bubble.classList.add('deleted');
+    }
+    if (conversationId) {
+        updateConversationPreview(
+            { conversationId, content: '[Tin nhắn đã bị xoá]', createdAt: new Date().toISOString() },
+            true
+        );
+    }
+}
+
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  SIGNALR
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -934,10 +990,25 @@ async function initSignalR() {
     hubConnection.on('ReceiveMessage', message => {
         if (!message || !message.conversationId) return;
         if (String(message.conversationId) === String(activeConvId)) {
-            appendMessage(message);
+            const isMine = resolveMessageIsMine(message);
+            appendMessage({ ...message, isMine });
         } else {
-            updateConversationPreview(message, false);
+            const isMine = typeof message.isMine === 'boolean' ? message.isMine : false;
+            updateConversationPreview(message, isMine);
         }
+    });
+
+    hubConnection.on('ConversationStatusChanged', status => {
+        if (!status || !status.conversationId || !activeConvId || !activeConvData) return;
+        if (String(status.conversationId) !== String(activeConvId)) return;
+        activeConvData.isBlocked = !!status.isBlocked;
+        activeConvData.blockedByUserId = status.blockedByUserId || null;
+        updateBlockUI(activeConvData.isBlocked);
+    });
+
+    hubConnection.on('MessageDeleted', data => {
+        if (!data?.messageId) return;
+        applyMessageDeleted(data.messageId, data.conversationId);
     });
 
     hubConnection.on('Error', msg => {

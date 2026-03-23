@@ -55,6 +55,11 @@ public class CommunicationRepository
                 p.UserId == userId &&
                 !p.IsDeleted);
 
+    public async Task<List<ConversationParticipant>> GetParticipantsByConversationIdAsync(Guid conversationId) =>
+        await _db.ConversationParticipants
+            .Where(p => p.ConversationId == conversationId && !p.IsDeleted)
+            .ToListAsync();
+
     // ─── Message ──────────────────────────────────────────────────────────────
 
     public async Task<(List<Message> Items, int Total)> GetMessagesByConversationIdAsync(

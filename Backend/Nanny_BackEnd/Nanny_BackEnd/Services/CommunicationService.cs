@@ -47,6 +47,7 @@ public class CommunicationService
             OtherUserName = getDisplayName(otherParticipant?.User),
             OtherUserId = otherParticipant?.UserId ?? Guid.Empty,
             IsBlocked = myParticipant.IsBlocked,
+            BlockedByUserId = myParticipant.IsBlocked ? myParticipant.UpdatedBy : null,
             IsHidden = myParticipant.IsHidden,
             Messages = messages.Select(m => mapMessage(m, currentUserId)).ToList(),
             TotalCount = total,
@@ -152,7 +153,7 @@ public class CommunicationService
 
     // ─── Xóa tin nhắn (soft delete) ──────────────────────────────────────────
 
-    public async Task DeleteMessageAsync(Guid messageId, Guid userId)
+    public async Task<(Guid ConversationId, Guid MessageId)> DeleteMessageAsync(Guid messageId, Guid userId)
     {
         var message = await _repo.GetMessageByIdAsync(messageId)
             ?? throw new KeyNotFoundException("Khong tim thay tin nhan.");
@@ -163,6 +164,8 @@ public class CommunicationService
         message.IsDeleted = true;
         message.UpdatedAt = DateTime.UtcNow;
         await _repo.SaveChangesAsync();
+
+        return (message.ConversationId, message.Id);
     }
 
     // ─── Báo cáo tin nhắn ────────────────────────────────────────────────────
@@ -194,34 +197,44 @@ public class CommunicationService
 
     // ─── Cập nhật trạng thái hội thoại (Block/Hide) ──────────────────────────
 
-    public async Task UpdateConversationStatusAsync(
+    public async Task<(bool IsBlocked, bool IsHidden, Guid? BlockedByUserId)> UpdateConversationStatusAsync(
         Guid conversationId, Guid userId, UpdateConversationStatusDto dto)
     {
         var participant = await _repo.GetParticipantAsync(conversationId, userId)
             ?? throw new UnauthorizedAccessException("Ban khong phai thanh vien cua cuoc hoi thoai nay.");
 
+        var participants = await _repo.GetParticipantsByConversationIdAsync(conversationId);
         var now = DateTime.UtcNow;
         switch (dto.Action.ToLower())
         {
             case "block":
-                participant.IsBlocked = true;
+                foreach (var p in participants)
+                {
+                    p.IsBlocked = true;
+                    p.UpdatedAt = now;
+                    p.UpdatedBy = userId;
+                }
                 break;
             case "unblock":
-                participant.IsBlocked = false;
-                break;
-            case "hide":
-                participant.IsHidden = true;
-                break;
-            case "unhide":
-                participant.IsHidden = false;
+                if (participant.UpdatedBy != userId)
+                    throw new InvalidOperationException("Chi nguoi da chan cuoc tro chuyen moi co quyen mo chan.");
+
+                foreach (var p in participants)
+                {
+                    p.IsBlocked = false;
+                    p.UpdatedAt = now;
+                    p.UpdatedBy = userId;
+                }
                 break;
             default:
-                throw new ArgumentException($"Hanh dong '{dto.Action}' khong hop le. Cac gia tri hop le: block, unblock, hide, unhide.");
+                throw new ArgumentException($"Hanh dong '{dto.Action}' khong hop le. Cac gia tri hop le: block, unblock.");
         }
 
         participant.UpdatedAt = now;
         participant.UpdatedBy = userId;
         await _repo.SaveChangesAsync();
+
+        return (participant.IsBlocked, participant.IsHidden, participant.IsBlocked ? participant.UpdatedBy : null);
     }
 
     // ─── Mapping helpers ─────────────────────────────────────────────────────
