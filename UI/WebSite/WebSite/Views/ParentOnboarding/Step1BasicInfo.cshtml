@@ -1,0 +1,238 @@
+@model WebSite.Models.Profile.ParentOnboardingWizardViewModel
+@{
+    ViewData["Title"] = "Parent - Thông tin cơ bản";
+}
+
+<div class="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50/30 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-2xl mx-auto">
+        <div class="mb-8">
+            <span class="section-label">👨‍👩‍👧 Parent Onboarding</span>
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white mt-3">
+                Bước 1: Thông tin cá nhân
+            </h1>
+            <div class="section-divider left mt-4"></div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800/80 rounded-3xl p-8 shadow-soft border border-gray-100/80 dark:border-gray-700/50 backdrop-blur-sm">
+            <div asp-validation-summary="ModelOnly" class="text-red-500 text-sm mb-4"></div>
+
+            <form asp-action="Step1BasicInfo" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+
+                <input type="hidden" asp-for="Latitude" id="Latitude" />
+                <input type="hidden" asp-for="Longitude" id="Longitude" />
+                <input type="hidden" asp-for="AvatarUrl" />
+
+                <div class="space-y-6">
+                    <div>
+                        <label asp-for="FullName" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                            Họ và tên <span class="text-red-500">*</span>
+                        </label>
+                        <input asp-for="FullName"
+                               class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                               placeholder="VD: Trần Văn B" />
+                        <span asp-validation-for="FullName" class="text-red-500 text-sm mt-1"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="AvatarFile" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                            Ảnh đại diện (.jpg, .png)
+                        </label>
+                        <input type="file" asp-for="AvatarFile" accept="image/jpeg, image/png"
+                               class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 transition-all" />
+                        <span asp-validation-for="AvatarFile" class="text-red-500 text-sm mt-1"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="Address" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                            Địa chỉ chi tiết <span class="text-red-500">*</span>
+                        </label>
+                        <input asp-for="Address" id="Address"
+                               class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                               placeholder="Số nhà, tên đường, ..." />
+                        <span asp-validation-for="Address" class="text-red-500 text-sm mt-1"></span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label asp-for="City" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                                Tỉnh/Thành phố <span class="text-red-500">*</span>
+                            </label>
+                            <select asp-for="City" id="City"
+                                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all">
+                                <option value="">-- Chọn Tỉnh/Thành --</option>
+                            </select>
+                            <span asp-validation-for="City" class="text-red-500 text-sm mt-1"></span>
+                        </div>
+                        <div>
+                            <label asp-for="District" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                                Quận/Huyện <span class="text-red-500">*</span>
+                            </label>
+                            <select asp-for="District" id="District"
+                                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all">
+                                <option value="">-- Chọn Quận/Huyện --</option>
+                            </select>
+                            <span asp-validation-for="District" class="text-red-500 text-sm mt-1"></span>
+                        </div>
+                        <div>
+                            <label asp-for="Ward" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                                Phường/Xã <span class="text-red-500">*</span>
+                            </label>
+                            <select asp-for="Ward" id="Ward"
+                                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all">
+                                <option value="">-- Chọn Phường/Xã --</option>
+                            </select>
+                            <span asp-validation-for="Ward" class="text-red-500 text-sm mt-1"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between mt-8">
+                    <a href="@Url.Action("Index", "Home")"
+                       class="px-6 py-2 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm font-semibold">
+                        Bỏ qua
+                    </a>
+                    <button type="submit" name="direction" value="next"
+                            class="px-6 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold text-sm shadow-md">
+                        Tiếp tục
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    var citySelect = document.getElementById('City');
+    var districtSelect = document.getElementById('District');
+    var wardSelect = document.getElementById('Ward');
+    var addressInput = document.getElementById('Address');
+    var latEl = document.getElementById('Latitude');
+    var lngEl = document.getElementById('Longitude');
+
+    var provinces = [];
+
+    fetch('https://provinces.open-api.vn/api/v2/?depth=3')
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            provinces = data || [];
+            provinces.forEach(function (p) {
+                var opt = document.createElement('option');
+                opt.value = p.name;
+                opt.textContent = p.name;
+                opt.dataset.code = p.code;
+                citySelect.appendChild(opt);
+            });
+
+            preselectFromModel();
+        });
+
+    function preselectFromModel() {
+        var currentCity = '@(Model.City ?? "")';
+        var currentDistrict = '@(Model.District ?? "")';
+        var currentWard = '@(Model.Ward ?? "")';
+
+        if (currentCity) {
+            citySelect.value = currentCity;
+            onCityChange(function () {
+                if (currentDistrict) {
+                    districtSelect.value = currentDistrict;
+                    onDistrictChange(function () {
+                        if (currentWard) {
+                            wardSelect.value = currentWard;
+                        }
+                    });
+                }
+            });
+        }
+    }
+
+    function onCityChange(callback) {
+        districtSelect.innerHTML = '<option value="">-- Chọn Quận/Huyện --</option>';
+        wardSelect.innerHTML = '<option value="">-- Chọn Phường/Xã --</option>';
+
+        var selected = provinces.find(function (p) { return p.name === citySelect.value; });
+        if (!selected) { if (callback) callback(); return; }
+
+        selected.districts.forEach(function (d) {
+            var opt = document.createElement('option');
+            opt.value = d.name;
+            opt.textContent = d.name;
+            opt.dataset.code = d.code;
+            districtSelect.appendChild(opt);
+        });
+
+        if (callback) callback();
+        autoGeocode();
+    }
+
+    function onDistrictChange(callback) {
+        wardSelect.innerHTML = '<option value="">-- Chọn Phường/Xã --</option>';
+
+        var selectedProv = provinces.find(function (p) { return p.name === citySelect.value; });
+        if (!selectedProv) { if (callback) callback(); return; }
+
+        var selectedDist = selectedProv.districts.find(function (d) { return d.name === districtSelect.value; });
+        if (!selectedDist) { if (callback) callback(); return; }
+
+        (selectedDist.wards || []).forEach(function (w) {
+            var opt = document.createElement('option');
+            opt.value = w.name;
+            opt.textContent = w.name;
+            wardSelect.appendChild(opt);
+        });
+
+        if (callback) callback();
+        autoGeocode();
+    }
+
+    citySelect.addEventListener('change', function () {
+        onCityChange();
+    });
+
+    districtSelect.addEventListener('change', function () {
+        onDistrictChange();
+    });
+
+    wardSelect.addEventListener('change', function () {
+        autoGeocode();
+    });
+
+    var debounceTimer;
+    addressInput.addEventListener('blur', function () {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(autoGeocode, 300);
+    });
+
+    function autoGeocode() {
+        var detail = (addressInput.value || '').trim();
+        var city = (citySelect.value || '').trim();
+        var dist = (districtSelect.value || '').trim();
+        var ward = (wardSelect.value || '').trim();
+
+        if (!city || !dist || !ward) return;
+
+        var parts = [];
+        if (detail) parts.push(detail);
+        parts.push(ward);
+        parts.push(dist);
+        parts.push(city);
+        var query = parts.join(', ');
+
+        fetch('/Address/Suggest?q=' + encodeURIComponent(query) + '&limit=1')
+            .then(function (r) { return r.json(); })
+            .then(function (items) {
+                if (!items || !items.length) return;
+                var item = items[0];
+
+                var lat = item.latitude != null ? item.latitude : item.Latitude;
+                var lng = item.longitude != null ? item.longitude : item.Longitude;
+
+                if (latEl && lat != null) latEl.value = lat;
+                if (lngEl && lng != null) lngEl.value = lng;
+            })
+            .catch(function () { });
+    }
+})();
+</script>

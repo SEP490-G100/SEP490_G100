@@ -1,0 +1,243 @@
+@model WebSite.Models.Admin.CreateModeratorRequest
+@{
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+    ViewData["Title"] = "Create Moderator";
+}
+
+<!-- ====================================================
+     PAGE HEADER
+     ==================================================== -->
+<div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
+    <div>
+        <span class="section-label">🛡️ Admin Action</span>
+        <h1 class="page-title mt-2">
+            Create <span class="gradient-text">Moderator</span>
+        </h1>
+        <p class="page-subtitle">Add a new moderator to the platform administration team.</p>
+    </div>
+    <a href="/Admin/ManageModerators" class="btn-outline flex-shrink-0">
+        <span class="material-icons-round text-base">arrow_back</span>
+        Back to List
+    </a>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 fade-in-up">
+        <span class="material-icons-round text-base">error_outline</span>
+        @TempData["Error"]
+    </div>
+}
+
+<form method="post" action="/Admin/CreateModerator" onsubmit="return validateForm()">
+    @Html.AntiForgeryToken()
+
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+
+        <!-- =============================================
+             LEFT PANEL — Input fields (2 / 3 width)
+             ============================================= -->
+        <div class="xl:col-span-2 space-y-5">
+
+            <!-- ── Account Credentials ── -->
+            <div class="content-card p-0 fade-in-up">
+                <div class="card-header">
+                    <div class="flex items-center gap-2">
+                        <span class="material-icons-round text-orange-400">lock</span>
+                        <h2>Sign-In Credentials <span class="text-xs text-red-500 font-semibold ml-1">* required</span></h2>
+                    </div>
+                </div>
+                <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                    <!-- Email -->
+                    <div class="field-group sm:col-span-2">
+                        <label class="field-label">Email Address <span class="text-red-400">*</span></label>
+                        <div class="relative">
+                            <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-base pointer-events-none">email</span>
+                            <input id="emailInput" name="Email" type="email" value="@Model.Email"
+                                   placeholder="moderator@nannymatch.vn" required
+                                   class="search-input !pl-9 w-full" />
+                        </div>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="field-group sm:col-span-2">
+                        <label class="field-label">Password <span class="text-red-400">*</span></label>
+                        <div class="relative">
+                            <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-base pointer-events-none">lock_outline</span>
+                            <input id="passwordInput" name="Password" type="password"
+                                   placeholder="Must be at least 8 characters" required
+                                   oninput="validatePassword(this)"
+                                   class="search-input !pl-9 w-full pr-10" />
+                            <button type="button" onclick="togglePassword()"
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none">
+                                <span id="pwdIcon" class="material-icons-round text-base">visibility</span>
+                            </button>
+                        </div>
+                        <p id="password-error" class="text-xs text-red-500 mt-1 hidden">
+                            Password must be at least 8 characters long.
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ── Personal Info ── -->
+            <div class="content-card p-0 fade-in-up" style="animation-delay:.05s;">
+                <div class="card-header">
+                    <div class="flex items-center gap-2">
+                        <span class="material-icons-round text-orange-400">person</span>
+                        <h2>Personal Information</h2>
+                    </div>
+                </div>
+                <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                    <!-- First Name -->
+                    <div class="field-group">
+                        <label class="field-label">First Name <span class="text-red-400">*</span></label>
+                        <input name="FirstName" type="text" value="@Model.FirstName" required
+                               placeholder="e.g. John" class="search-input w-full" />
+                    </div>
+
+                    <!-- Last Name -->
+                    <div class="field-group">
+                        <label class="field-label">Last Name <span class="text-red-400">*</span></label>
+                        <input name="LastName" type="text" value="@Model.LastName" required
+                               placeholder="e.g. Doe" class="search-input w-full" />
+                    </div>
+
+                    <!-- Phone Number -->
+                    <div class="field-group sm:col-span-2">
+                        <label class="field-label">Phone Number <span class="text-gray-400 text-xs normal-case ml-1">(optional)</span></label>
+                        <div class="relative">
+                            <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-base pointer-events-none">phone</span>
+                            <input id="phoneInput" name="PhoneNumber" type="tel"
+                                   value="@Model.PhoneNumber" placeholder="10–11 digits"
+                                   pattern="^[0-9]{10,11}$"
+                                   maxlength="11" oninput="validatePhone(this)"
+                                   class="search-input !pl-9 w-full" />
+                        </div>
+                        <p id="phone-error" class="text-xs text-red-500 mt-1 hidden">
+                            Phone number must be 10–11 digits (numbers only).
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <!-- =============================================
+             RIGHT PANEL — Summary info (1 / 3 width)
+             ============================================= -->
+        <div class="space-y-5">
+
+            <!-- Summary card -->
+            <div class="content-card p-6 text-center fade-in-up" style="animation-delay:.08s;">
+                <div class="w-20 h-20 rounded-full bg-orange-50 flex items-center justify-center text-orange-300 ring-4 ring-orange-50 mb-4 mx-auto dashed-border">
+                    <span class="material-icons-round text-3xl">add_photo_alternate</span>
+                </div>
+
+                <h3 class="font-bold text-gray-900 text-lg">New Moderator</h3>
+                <p class="text-sm text-gray-400 mt-0.5">Fill out all details</p>
+
+                <div class="flex flex-wrap gap-1.5 justify-center mt-3">
+                    <span class="badge badge-mod">Moderator Role</span>
+                </div>
+            </div>
+
+            <!-- Save / Cancel buttons -->
+            <div class="content-card p-4 space-y-2.5 fade-in-up" style="animation-delay:.12s;">
+                <button type="submit" class="btn-primary w-full justify-center">
+                    <span class="material-icons-round text-base">person_add</span>
+                    Create Moderator
+                </button>
+                <a href="/Admin/ManageModerators" class="btn-outline w-full justify-center">
+                    <span class="material-icons-round text-base">close</span>
+                    Cancel
+                </a>
+            </div>
+
+            <div class="bg-orange-50 border border-orange-100 rounded-2xl p-4 flex gap-3 fade-in-up" style="animation-delay:.15s;">
+                <span class="material-icons-round text-orange-400 text-xl flex-shrink-0">info</span>
+                <p class="text-xs text-orange-800 leading-relaxed">
+                    By default, new moderator accounts are created with an <strong class="text-orange-900">Active</strong> status and can sign in immediately using the provided credentials.
+                </p>
+            </div>
+
+        </div>
+    </div>
+</form>
+
+<style>
+.field-group { display: flex; flex-direction: column; gap: .4rem; }
+.field-label {
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: #9CA3AF;
+}
+.dashed-border {
+    border: 2px dashed #FED7AA;
+}
+</style>
+
+@section Scripts {
+<script>
+function validatePhone(input) {
+    var val = input.value.replace(/\D/g, ''); // strip non-digits
+    input.value = val;                         // auto-strip letters
+    var err = document.getElementById('phone-error');
+    if (val.length > 0 && (val.length < 10 || val.length > 11)) {
+        err.classList.remove('hidden');
+        input.classList.add('!border-red-400');
+    } else {
+        err.classList.add('hidden');
+        input.classList.remove('!border-red-400');
+    }
+}
+
+function validatePassword(input) {
+    var err = document.getElementById('password-error');
+    if (input.value.length > 0 && input.value.length < 8) {
+        err.classList.remove('hidden');
+        input.classList.add('!border-red-400');
+    } else {
+        err.classList.add('hidden');
+        input.classList.remove('!border-red-400');
+    }
+}
+
+function togglePassword() {
+    var input = document.getElementById('passwordInput');
+    var icon = document.getElementById('pwdIcon');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.textContent = 'visibility_off';
+    } else {
+        input.type = 'password';
+        icon.textContent = 'visibility';
+    }
+}
+
+function validateForm() {
+    var phone = document.getElementById('phoneInput').value;
+    var pwd = document.getElementById('passwordInput').value;
+
+    if (pwd.length < 8) {
+        document.getElementById('password-error').classList.remove('hidden');
+        document.getElementById('passwordInput').focus();
+        return false;
+    }
+
+    if (phone.length > 0 && !/^[0-9]{10,11}$/.test(phone)) {
+        document.getElementById('phone-error').classList.remove('hidden');
+        document.getElementById('phoneInput').focus();
+        return false;
+    }
+
+    return true;
+}
+</script>
+}

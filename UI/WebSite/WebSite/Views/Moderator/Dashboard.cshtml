@@ -1,0 +1,313 @@
+@using WebSite.Models.Account
+@{
+    Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
+    ViewData["Title"] = "Dashboard";
+
+    int totalUsers    = ViewBag.TotalUsers    ?? 0;
+    int totalParents  = ViewBag.TotalParents  ?? 0;
+    int totalNannies  = ViewBag.TotalNannies  ?? 0;
+    int totalInactive = ViewBag.TotalInactive ?? 0;
+    var recentAccounts = ViewBag.RecentAccounts as List<AccountDto> ?? new List<AccountDto>();
+}
+
+<!-- ====================================================
+     PAGE HEADER  — Home-style section label + gradient title
+     ==================================================== -->
+<div class="mb-7 fade-in-up">
+    <span class="section-label">System Overview</span>
+    <h1 class="page-title mt-2">
+        Welcome back,
+        <span class="gradient-text">@(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? "Moderator")</span>!
+    </h1>
+    <p class="page-subtitle">Here's what's happening on NannyMatch today.</p>
+</div>
+
+<!-- ===================================================
+     STAT CARDS
+     =================================================== -->
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-7">
+
+    <!-- Total Users -->
+    <div class="stat-card p-5 fade-in-up fade-in-up-delay-1">
+        <div class="flex items-start justify-between mb-4">
+            <div class="icon-badge" style="background:linear-gradient(135deg,#FFF7ED,#FED7AA);">
+                <span class="material-icons-round text-orange-500 text-2xl">people</span>
+            </div>
+            <span class="section-label text-[10px] px-2 py-0.5">All</span>
+        </div>
+        <div class="stat-number mb-0.5">@totalUsers.ToString("N0")</div>
+        <div class="text-sm text-gray-500 font-semibold mb-3">Total Users</div>
+        <div class="flex gap-3 text-xs text-gray-400">
+            <span class="flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-violet-400 inline-block"></span>
+                @totalParents Parents
+            </span>
+            <span class="flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-blue-400 inline-block"></span>
+                @totalNannies Nannies
+            </span>
+        </div>
+    </div>
+
+    <!-- Parents -->
+    <div class="stat-card p-5 fade-in-up fade-in-up-delay-2">
+        <div class="flex items-start justify-between mb-4">
+            <div class="icon-badge" style="background:linear-gradient(135deg,#EDE9FE,#DDD6FE);">
+                <span class="material-icons-round text-violet-500 text-2xl">supervisor_account</span>
+            </div>
+            <span class="badge badge-parent">Parent</span>
+        </div>
+        <div class="stat-number mb-0.5">@totalParents.ToString("N0")</div>
+        <div class="text-sm text-gray-500 font-semibold mb-3">Parents</div>
+        @if (totalUsers > 0)
+        {
+            var pct = (double)totalParents / totalUsers * 100;
+            <div>
+                <div class="flex justify-between text-[10px] text-gray-400 mb-1">
+                    <span>Share</span><span class="font-bold text-violet-500">@pct.ToString("F0")%</span>
+                </div>
+                <div class="w-full bg-gray-100 rounded-full h-1.5">
+                    <div class="progress-fill bg-gradient-to-r from-violet-400 to-violet-500 h-1.5 rounded-full" style="width:@pct.ToString("F0")%"></div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Nannies -->
+    <div class="stat-card p-5 fade-in-up fade-in-up-delay-3">
+        <div class="flex items-start justify-between mb-4">
+            <div class="icon-badge" style="background:linear-gradient(135deg,#DBEAFE,#BFDBFE);">
+                <span class="material-icons-round text-blue-500 text-2xl">child_care</span>
+            </div>
+            <span class="badge badge-nanny">Nanny</span>
+        </div>
+        <div class="stat-number mb-0.5">@totalNannies.ToString("N0")</div>
+        <div class="text-sm text-gray-500 font-semibold mb-3">Nannies</div>
+        @if (totalUsers > 0)
+        {
+            var pct = (double)totalNannies / totalUsers * 100;
+            <div>
+                <div class="flex justify-between text-[10px] text-gray-400 mb-1">
+                    <span>Share</span><span class="font-bold text-blue-500">@pct.ToString("F0")%</span>
+                </div>
+                <div class="w-full bg-gray-100 rounded-full h-1.5">
+                    <div class="progress-fill bg-gradient-to-r from-blue-400 to-blue-500 h-1.5 rounded-full" style="width:@pct.ToString("F0")%"></div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Inactive accounts -->
+    <div class="stat-card p-5 fade-in-up fade-in-up-delay-4">
+        <div class="flex items-start justify-between mb-4">
+            <div class="icon-badge" style="background:linear-gradient(135deg,#FEE2E2,#FECACA);">
+                <span class="material-icons-round text-red-500 text-2xl">block</span>
+            </div>
+            <span class="badge badge-inactive">Inactive</span>
+        </div>
+        <div class="stat-number mb-0.5">@totalInactive.ToString("N0")</div>
+        <div class="text-sm text-gray-500 font-semibold mb-3">Inactive Accounts</div>
+        @if (totalUsers > 0)
+        {
+            var pct = (double)totalInactive / totalUsers * 100;
+            <div>
+                <div class="flex justify-between text-[10px] text-gray-400 mb-1">
+                    <span>Rate</span><span class="font-bold text-red-500">@pct.ToString("F0")%</span>
+                </div>
+                <div class="w-full bg-gray-100 rounded-full h-1.5">
+                    <div class="progress-fill bg-gradient-to-r from-red-400 to-red-500 h-1.5 rounded-full" style="width:@pct.ToString("F0")%"></div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- ===================================================
+     ROW 2: Quick Actions + Recent Accounts
+     =================================================== -->
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-5 mb-7">
+
+    <!-- Quick Actions -->
+    <div class="content-card p-0 fade-in-up">
+        <div class="card-header">
+            <h2>⚡ Quick Actions</h2>
+        </div>
+        <div class="p-4 space-y-2.5">
+
+            <a href="/Moderator/NannyVerification"
+               class="quick-action-item hover:bg-amber-50 hover:border-amber-200">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center flex-shrink-0">
+                    <span class="material-icons-round text-amber-600 text-lg">verified_user</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-bold text-gray-700">Review Verifications</p>
+                    <p class="text-xs text-gray-400">Pending requests</p>
+                </div>
+                <span class="material-icons-round text-gray-300 text-base">arrow_forward_ios</span>
+            </a>
+
+            <a href="/Moderator/ViewReports"
+               class="quick-action-item hover:bg-red-50 hover:border-red-200">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center flex-shrink-0">
+                    <span class="material-icons-round text-red-500 text-lg">flag</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-bold text-gray-700">Handle Reports</p>
+                    <p class="text-xs text-gray-400">Violation reports</p>
+                </div>
+                <span class="material-icons-round text-gray-300 text-base">arrow_forward_ios</span>
+            </a>
+
+            <a href="/Moderator/ManageAccount"
+               class="quick-action-item hover:bg-orange-50 hover:border-orange-200">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center flex-shrink-0">
+                    <span class="material-icons-round text-orange-500 text-lg">manage_accounts</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-bold text-gray-700">Manage Accounts</p>
+                    <p class="text-xs text-gray-400">@totalUsers total accounts</p>
+                </div>
+                <span class="material-icons-round text-gray-300 text-base">arrow_forward_ios</span>
+            </a>
+
+            <a href="/Moderator/ModerateJobPostings"
+               class="quick-action-item hover:bg-violet-50 hover:border-violet-200">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-100 to-violet-200 flex items-center justify-center flex-shrink-0">
+                    <span class="material-icons-round text-violet-500 text-lg">work</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-bold text-gray-700">Review Job Postings</p>
+                    <p class="text-xs text-gray-400">Pending approval</p>
+                </div>
+                <span class="material-icons-round text-gray-300 text-base">arrow_forward_ios</span>
+            </a>
+
+        </div>
+    </div>
+
+    <!-- Recent Accounts -->
+    <div class="xl:col-span-2 content-card overflow-hidden fade-in-up" style="animation-delay:.1s;">
+        <div class="card-header">
+            <h2>🕐 Recently Joined</h2>
+            <a href="/Moderator/ManageAccount"
+               class="text-sm font-bold px-3 py-1 rounded-lg transition-all"
+               style="color:#F97316;" onmouseover="this.style.background='#FFF7ED'" onmouseout="this.style.background='transparent'">
+                View all →
+            </a>
+        </div>
+
+        @if (!recentAccounts.Any())
+        {
+            <div class="px-6 py-12 text-center text-gray-400 text-sm">
+                <span class="material-icons-round text-4xl mb-2 block text-gray-200">people_outline</span>
+                No user data available yet.
+            </div>
+        }
+        else
+        {
+            <div class="divide-y divide-gray-50">
+                @foreach (var acc in recentAccounts)
+                {
+                    var avatarColors = new[] { "#F97316","#3B82F6","#8B5CF6","#10B981","#F59E0B" };
+                    var bg = avatarColors[Math.Abs(acc.Id.GetHashCode()) % avatarColors.Length];
+                    <div class="flex items-center gap-3 px-5 py-3.5 hover:bg-orange-50/50 transition-colors">
+                        @if (!string.IsNullOrEmpty(acc.AvatarUrl))
+                        {
+                            <img src="@acc.AvatarUrl" class="user-avatar object-cover" style="background:@bg;" />
+                        }
+                        else
+                        {
+                            <div class="user-avatar" style="background:@bg;">@acc.Avatar</div>
+                        }
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-bold text-gray-800 truncate">@acc.FullName</p>
+                            <p class="text-xs text-gray-400 truncate">@acc.Email</p>
+                        </div>
+                        <div class="flex flex-col items-end gap-1 flex-shrink-0">
+                            <span class="badge @(acc.PrimaryRole == "Parent" ? "badge-parent" : acc.PrimaryRole == "Nanny" ? "badge-nanny" : "badge-mod")">@acc.PrimaryRole</span>
+                            <span class="text-[10px] text-gray-400">@acc.CreatedAt.ToString("MMM dd, yyyy")</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<!-- ===================================================
+     User Breakdown — Home-style card with progress bars
+     =================================================== -->
+<div class="content-card p-6 fade-in-up" style="animation-delay:.15s;">
+    <div class="flex items-center gap-3 mb-5">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center">
+            <span class="material-icons-round text-orange-500 text-lg">bar_chart</span>
+        </div>
+        <h2 class="font-bold text-gray-900">User Breakdown</h2>
+    </div>
+
+    @if (totalUsers == 0)
+    {
+        <div class="text-center py-8">
+            <span class="material-icons-round text-4xl text-gray-200 block mb-2">insert_chart_outlined</span>
+            <p class="text-sm text-gray-400">No data available.</p>
+        </div>
+    }
+    else
+    {
+        var pParent = (double)totalParents / totalUsers * 100;
+        var pNanny  = (double)totalNannies / totalUsers * 100;
+        var pOther  = Math.Max(0, 100 - pParent - pNanny);
+
+        <div class="space-y-4">
+            <!-- Parents -->
+            <div class="bg-violet-50/60 rounded-2xl p-4 border border-violet-100">
+                <div class="flex justify-between text-sm mb-2">
+                    <span class="text-gray-700 font-semibold flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-violet-400 inline-block"></span>Parents
+                    </span>
+                    <span class="font-bold text-gray-800">
+                        @totalParents.ToString("N0")
+                        <span class="text-violet-500 font-bold text-xs ml-1">(@pParent.ToString("F0")%)</span>
+                    </span>
+                </div>
+                <div class="w-full bg-violet-100 rounded-full h-2.5">
+                    <div class="progress-fill bg-gradient-to-r from-violet-400 to-violet-600 h-2.5 rounded-full" style="width:@pParent.ToString("F0")%"></div>
+                </div>
+            </div>
+
+            <!-- Nannies -->
+            <div class="bg-blue-50/60 rounded-2xl p-4 border border-blue-100">
+                <div class="flex justify-between text-sm mb-2">
+                    <span class="text-gray-700 font-semibold flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-blue-400 inline-block"></span>Nannies
+                    </span>
+                    <span class="font-bold text-gray-800">
+                        @totalNannies.ToString("N0")
+                        <span class="text-blue-500 font-bold text-xs ml-1">(@pNanny.ToString("F0")%)</span>
+                    </span>
+                </div>
+                <div class="w-full bg-blue-100 rounded-full h-2.5">
+                    <div class="progress-fill bg-gradient-to-r from-blue-400 to-blue-600 h-2.5 rounded-full" style="width:@pNanny.ToString("F0")%"></div>
+                </div>
+            </div>
+
+            @if (pOther > 0)
+            {
+                <!-- Others -->
+                <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                    <div class="flex justify-between text-sm mb-2">
+                        <span class="text-gray-700 font-semibold flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-gray-400 inline-block"></span>Others <span class="text-gray-400 text-xs font-normal">(Mod / Admin)</span>
+                        </span>
+                        <span class="font-bold text-gray-800">
+                            <span class="text-gray-500 font-bold text-xs">(@pOther.ToString("F0")%)</span>
+                        </span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                        <div class="progress-fill bg-gradient-to-r from-gray-400 to-gray-500 h-2.5 rounded-full" style="width:@pOther.ToString("F0")%"></div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

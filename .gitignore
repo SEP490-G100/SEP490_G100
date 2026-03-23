@@ -21,6 +21,7 @@ logs/
 **/appsettings.Development.json
 **/appsettings.Staging.json
 **/appsettings.Production.json
+**/App_Data/DataProtectionKeys/
 
 # ===== OS =====
 .DS_Store

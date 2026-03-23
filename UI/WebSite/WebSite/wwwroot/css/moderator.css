@@ -1,0 +1,462 @@
+/* ============================================================
+   MODERATOR PANEL — CSS
+   Aligned with NannyMatch Home design system
+   ============================================================ */
+
+/* ── Google Font ── */
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
+
+/* ── Design tokens ── */
+:root {
+    --primary: #F97316;
+    --primary-dark: #EA580C;
+    --primary-light: #FFF7ED;
+    --primary-glow: rgba(249,115,22,0.25);
+    --sidebar-bg: #0f172a;
+    --card-radius: 1.25rem;
+    --shadow-card: 0 4px 24px rgba(0,0,0,0.07);
+    --shadow-soft: 0 8px 32px rgba(0,0,0,0.08);
+    --transition: 0.22s cubic-bezier(.4,0,.2,1);
+}
+
+/* ── Gradient text (matches Home gradient-text) ── */
+.gradient-text {
+    background: linear-gradient(135deg, #F97316 0%, #FB923C 50%, #FBBF24 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* ── Section label pill (matches Home section-label) ── */
+.section-label {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, #FFF7ED, #FED7AA);
+    color: #C2410C;
+    border: 1px solid #FDBA74;
+    padding: 0.3rem 0.9rem;
+    border-radius: 9999px;
+    margin-bottom: 0.5rem;
+}
+
+/* ── Page header title style ── */
+.page-title {
+    font-family: 'Quicksand', sans-serif;
+    font-weight: 700;
+    font-size: 1.6rem;
+    color: #111827;
+    line-height: 1.25;
+}
+
+.page-subtitle {
+    font-size: 0.875rem;
+    color: #6B7280;
+    margin-top: 0.25rem;
+}
+
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
+
+.mod-sidebar.collapsed .sidebar-text {
+    display: none !important;
+}
+
+.mod-sidebar.collapsed .nav-link {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.nav-link {
+    transition: background var(--transition), color var(--transition);
+}
+
+.nav-link:hover {
+    background-color: rgba(255,255,255,0.08);
+}
+
+/* ============================================================
+   STAT CARDS  (glassmorphism lift)
+   ============================================================ */
+.stat-card {
+    position: relative;
+    border-radius: var(--card-radius);
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.05);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+    transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--card-radius);
+    background: linear-gradient(135deg, rgba(249,115,22,0.04), rgba(251,191,36,0.03));
+    pointer-events: none;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 40px rgba(249,115,22,0.12);
+    border-color: rgba(249,115,22,0.15);
+}
+
+.stat-card .icon-badge {
+    width: 52px;
+    height: 52px;
+    border-radius: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* ============================================================
+   CONTENT CARDS  (white glass card — matches Home card style)
+   ============================================================ */
+.content-card {
+    background: #fff;
+    border-radius: var(--card-radius);
+    border: 1px solid rgba(0,0,0,0.05);
+    box-shadow: var(--shadow-card);
+    transition: box-shadow var(--transition);
+}
+
+.content-card:hover {
+    box-shadow: var(--shadow-soft);
+}
+
+/* Card section divider */
+.card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.1rem 1.5rem;
+    border-bottom: 1px solid #F3F4F6;
+}
+
+.card-header h2 {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #111827;
+}
+
+/* ============================================================
+   TABLE
+   ============================================================ */
+.mod-table th {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+    color: #6B7280;
+    padding: 0.75rem 1.25rem;
+    background: #F9FAFB;
+    border-bottom: 1px solid #E5E7EB;
+}
+
+.mod-table td {
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid #F3F4F6;
+    font-size: 0.875rem;
+    color: #374151;
+    vertical-align: middle;
+}
+
+.account-row {
+    transition: background var(--transition);
+}
+
+.mod-table tr:hover td {
+    background-color: #FFF7ED;
+}
+
+.mod-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* ============================================================
+   AVATAR
+   ============================================================ */
+.user-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.8rem;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    flex-shrink: 0;
+}
+
+/* ============================================================
+   BADGES
+   ============================================================ */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.22rem 0.7rem;
+    border-radius: 9999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.badge-active   { background: #D1FAE5; color: #065F46; }
+.badge-inactive { background: #FEE2E2; color: #991B1B; }
+.badge-pending  { background: #FEF3C7; color: #92400E; }
+.badge-parent   { background: #EDE9FE; color: #5B21B6; }
+.badge-nanny    { background: #DBEAFE; color: #1E3A8A; }
+.badge-mod      { background: #FCE7F3; color: #9D174D; }
+
+/* ============================================================
+   FORM INPUTS & SEARCH
+   ============================================================ */
+.search-input {
+    border: 1px solid #E5E7EB;
+    border-radius: 0.85rem;
+    padding: 0.55rem 0.9rem 0.55rem 2.4rem;
+    width: 100%;
+    font-size: 0.875rem;
+    font-family: 'Quicksand', sans-serif;
+    background: #F9FAFB;
+    color: #374151;
+    outline: none;
+    transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+}
+
+.search-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-glow);
+    background: #fff;
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn-primary {
+    background: linear-gradient(135deg, #F97316, #EA580C);
+    color: #fff;
+    border-radius: 0.85rem;
+    padding: 0.55rem 1.3rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    font-family: 'Quicksand', sans-serif;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: transform var(--transition), box-shadow var(--transition);
+    box-shadow: 0 4px 14px var(--primary-glow);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(249,115,22,0.4);
+}
+
+.btn-primary:active { transform: translateY(0); }
+
+.btn-sm {
+    padding: 0.3rem 0.75rem;
+    font-size: 0.75rem;
+    border-radius: 0.5rem;
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1.5px solid #E5E7EB;
+    color: #6B7280;
+    border-radius: 0.85rem;
+    padding: 0.5rem 1.1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-family: 'Quicksand', sans-serif;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all var(--transition);
+}
+
+.btn-outline:hover {
+    background: #FFF7ED;
+    border-color: #FDBA74;
+    color: #C2410C;
+}
+
+/* ============================================================
+   PAGINATION
+   ============================================================ */
+.page-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 0.6rem;
+    border: 1px solid #E5E7EB;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+    color: #6B7280;
+    background: #fff;
+    text-decoration: none;
+}
+
+.page-btn:hover,
+.page-btn.active {
+    background: linear-gradient(135deg, #F97316, #EA580C);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 4px 12px var(--primary-glow);
+}
+
+/* ============================================================
+   MODAL
+   ============================================================ */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15,23,42,0.55);
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(6px);
+}
+
+.modal-box {
+    background: #fff;
+    border-radius: 1.5rem;
+    padding: 2rem;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.2);
+    animation: modalSlide 0.28s cubic-bezier(.34,1.56,.64,1);
+}
+
+@keyframes modalSlide {
+    from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+    to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+/* ============================================================
+   QUICK ACTION CARDS  (matches Home service card hover)
+   ============================================================ */
+.quick-action-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    border-radius: 1rem;
+    border: 1px solid #E5E7EB;
+    background: #fff;
+    transition: all var(--transition);
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.quick-action-item:hover {
+    transform: translateX(4px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+/* ============================================================
+   SPARKLINE / PROGRESS BARS
+   ============================================================ */
+.sparkbar {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 40px;
+}
+
+.sparkbar span {
+    flex: 1;
+    border-radius: 3px 3px 0 0;
+    opacity: 0.7;
+    transition: opacity var(--transition);
+}
+
+.sparkbar:hover span { opacity: 1; }
+
+/* Progress bar animated fill */
+.progress-fill {
+    height: 100%;
+    border-radius: inherit;
+    transition: width 0.8s cubic-bezier(.4,0,.2,1);
+}
+
+/* ============================================================
+   CHART PLACEHOLDER
+   ============================================================ */
+.chart-placeholder {
+    background: linear-gradient(135deg, #FFF7ED, #FED7AA);
+    border: 2px dashed #FDBA74;
+    border-radius: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #9A3412;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    min-height: 180px;
+}
+
+/* ============================================================
+   SCROLL REVEAL ANIMATION  (matches Home sec-reveal pattern)
+   ============================================================ */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0);    }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.5s ease forwards;
+}
+
+.fade-in-up-delay-1 { animation-delay: 0.08s; opacity: 0; }
+.fade-in-up-delay-2 { animation-delay: 0.16s; opacity: 0; }
+.fade-in-up-delay-3 { animation-delay: 0.24s; opacity: 0; }
+.fade-in-up-delay-4 { animation-delay: 0.32s; opacity: 0; }
+
+/* ============================================================
+   HEADER GLOW LINE  (top accent bar matching Home orange)
+   ============================================================ */
+.mod-topbar-accent {
+    height: 3px;
+    background: linear-gradient(90deg, #F97316, #FB923C, #FBBF24, #FB923C, #F97316);
+    background-size: 200% auto;
+    animation: shimmer 3s linear infinite;
+}
+
+@keyframes shimmer {
+    0%   { background-position: 0%   center; }
+    100% { background-position: 200% center; }
+}
+
+/* ============================================================
+   STAT NUMBER COUNTER PULSE
+   ============================================================ */
+.stat-number {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #111827;
+    line-height: 1;
+    font-family: 'Quicksand', sans-serif;
+}
