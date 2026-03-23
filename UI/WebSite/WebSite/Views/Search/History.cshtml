@@ -1,0 +1,243 @@
+@{
+    ViewData["Title"] = "Lich su bai dang - NannyMatch";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Head {
+    <link rel="stylesheet" href="~/css/search.css" />
+}
+
+<section class="min-h-screen bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_45%,#fff7ed_100%)] py-10">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+        <div class="rounded-[30px] border border-orange-100 bg-white/90 shadow-[0_24px_60px_rgba(15,23,42,.08)] overflow-hidden">
+            <div class="px-6 py-6 sm:px-8 border-b border-orange-100 bg-[radial-gradient(circle_at_top_right,rgba(255,237,213,.85),transparent_28%),linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.24em] text-orange-500">Bai dang cua toi</p>
+                        <h1 class="mt-2 text-3xl font-bold text-slate-900">Lich su bai dang</h1>
+                        <p class="mt-2 text-sm leading-6 text-slate-500 max-w-2xl">
+                            Theo doi trang thai duyet, ghi chu cua moderator va toan bo thong tin cua cac bai dang ban da tao.
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <a href="/Search"
+                           class="inline-flex items-center justify-center min-h-[48px] px-5 rounded-2xl border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 transition-all">
+                            Quay lai tim bai
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-6 sm:px-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="rounded-3xl border border-slate-100 bg-slate-50 px-5 py-4">
+                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Tong bai dang</p>
+                        <p id="historyTotalCount" class="mt-2 text-3xl font-extrabold text-slate-900">0</p>
+                    </div>
+                    <div class="rounded-3xl border border-amber-100 bg-amber-50/70 px-5 py-4">
+                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-amber-500">Dang cho duyet</p>
+                        <p id="historyPendingCount" class="mt-2 text-3xl font-extrabold text-amber-700">0</p>
+                    </div>
+                    <div class="rounded-3xl border border-orange-100 bg-orange-50/70 px-5 py-4">
+                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-orange-500">Dang hien thi</p>
+                        <p id="historyPublishedCount" class="mt-2 text-3xl font-extrabold text-orange-600">0</p>
+                    </div>
+                </div>
+
+                <div id="historyPageBody" class="space-y-4">
+                    <div class="rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center text-slate-500">
+                        Dang tai lich su bai dang...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    (() => {
+        const moderationLabels = {
+            0: 'Dang cho duyet',
+            1: 'Da bi tu choi',
+            2: 'Cong khai'
+        };
+
+        const postStatusLabels = {
+            1: 'Cong khai',
+            2: 'An bai dang'
+        };
+
+        const rowLabels = ['Morning', 'Afternoon', 'Evening', 'Night'];
+        const dayLabels = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+
+        const escapeHtml = (value) => String(value ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+
+        const formatSalary = (value) => value ? `${(Number(value) / 1000).toFixed(0)}k/gio` : 'Khong xac dinh';
+        const formatSalaryRange = (min, max) => {
+            if (min && max) return `${formatSalary(min)} - ${formatSalary(max)}`;
+            if (min) return `Tu ${formatSalary(min)}`;
+            if (max) return `Den ${formatSalary(max)}`;
+            return 'Khong xac dinh';
+        };
+
+        const formatAgeRange = (min, max) => {
+            if (min && max) return `${min} - ${max} tuoi`;
+            if (min) return `Tu ${min} tuoi`;
+            if (max) return `Den ${max} tuoi`;
+            return 'Khong yeu cau';
+        };
+
+        const renderScheduleGrid = (slots) => {
+            if (!Array.isArray(slots) || !slots.length) {
+                return '<span class="text-sm text-slate-400">Chua chon lich cu the.</span>';
+            }
+
+            const selectedSet = new Set(slots.map((slot) => `${slot.dayOfWeek}-${slot.timeSlot}`));
+            let html = '<div class="schedule-grid schedule-grid--readonly"><div></div>';
+
+            dayLabels.forEach((label) => {
+                html += `<div class="schedule-col-label">${label}</div>`;
+            });
+
+            rowLabels.forEach((rowLabel, timeSlot) => {
+                html += `<div class="schedule-row-label">${rowLabel}</div>`;
+                for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek += 1) {
+                    const active = selectedSet.has(`${dayOfWeek}-${timeSlot}`);
+                    html += `
+                        <div class="schedule-cell ${active ? 'active' : ''}" aria-hidden="true">
+                            <span class="schedule-check">${active ? '&#10003;' : ''}</span>
+                        </div>`;
+                }
+            });
+
+            html += '</div>';
+            return html;
+        };
+
+        const focusJobId = new URLSearchParams(window.location.search).get('jobId');
+
+        async function loadHistoryPage() {
+            const body = document.getElementById('historyPageBody');
+            const totalEl = document.getElementById('historyTotalCount');
+            const pendingEl = document.getElementById('historyPendingCount');
+            const publishedEl = document.getElementById('historyPublishedCount');
+
+            try {
+                const res = await fetch('/Search/MyJobs');
+                const json = await res.json();
+                const jobs = json.data || [];
+
+                totalEl.textContent = jobs.length;
+                pendingEl.textContent = jobs.filter((job) => Number(job.moderationStatus) === 0).length;
+                publishedEl.textContent = jobs.filter((job) => Number(job.status) === 1 && Number(job.moderationStatus) === 2).length;
+
+                if (!jobs.length) {
+                    body.innerHTML = `
+                        <div class="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-6 py-14 text-center">
+                            <span class="material-icons-round text-[34px] text-orange-300">history</span>
+                            <h3 class="mt-3 text-lg font-bold text-slate-900">Ban chua co bai dang nao</h3>
+                            <p class="mt-2 text-sm text-slate-500">Khi ban tao bai dang dau tien, lich su se hien o day.</p>
+                        </div>`;
+                    return;
+                }
+
+                body.innerHTML = jobs.map((job) => `
+                    <article data-job-id="${escapeHtml(job.id)}" class="history-job-card rounded-[28px] border border-slate-100 bg-white shadow-[0_14px_34px_rgba(15,23,42,.06)] overflow-hidden transition-all">
+                        <div class="px-6 py-5 border-b border-slate-100 bg-[linear-gradient(180deg,#ffffff_0%,#fffaf5_100%)]">
+                            <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                                <div>
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <h2 class="text-lg font-bold text-slate-900">${escapeHtml(job.title || 'Tin dang')}</h2>
+                                        <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-extrabold">${escapeHtml(moderationLabels[job.moderationStatus] || 'Dang cap nhat')}</span>
+                                        <span class="px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-extrabold">${escapeHtml(postStatusLabels[job.status] || 'Dang cap nhat')}</span>
+                                    </div>
+                                    <p class="mt-2 text-sm text-slate-500">${escapeHtml([job.location, job.district, job.city].filter(Boolean).join(', ') || 'Chua cap nhat dia diem')}</p>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <div class="text-sm font-bold text-orange-600">
+                                        ${job.salaryNegotiable ? 'Thuong luong' : escapeHtml(formatSalaryRange(job.salaryMin, job.salaryMax))}
+                                    </div>
+                                    ${[0, 2].includes(Number(job.moderationStatus)) ? `
+                                        <a href="/Search/Edit/${job.id}"
+                                           class="inline-flex items-center justify-center min-h-[40px] px-4 rounded-xl border border-orange-200 bg-white text-orange-600 text-sm font-bold hover:bg-orange-50 transition-all">
+                                            Chinh sua
+                                        </a>` : ''}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="px-6 py-5 grid grid-cols-1 xl:grid-cols-[1.15fr_.85fr] gap-5">
+                            <div class="space-y-4">
+                                <div>
+                                    <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Mo ta</p>
+                                    <p class="mt-2 text-sm leading-6 text-slate-600">${escapeHtml(job.description || 'Khong co mo ta chi tiet.')}</p>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div class="rounded-3xl border border-slate-100 bg-slate-50 px-4 py-4">
+                                        <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">So tre</p>
+                                        <p class="mt-2 text-base font-extrabold text-slate-900">${job.numberOfChildren ? `${job.numberOfChildren} be` : 'Chua cap nhat'}</p>
+                                    </div>
+                                    <div class="rounded-3xl border border-slate-100 bg-slate-50 px-4 py-4">
+                                        <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Do tuoi nanny</p>
+                                        <p class="mt-2 text-base font-extrabold text-slate-900">${formatAgeRange(job.minNannyAge, job.maxNannyAge)}</p>
+                                    </div>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Lich ngay muon tuyen</p>
+                                    <div class="mt-3">${renderScheduleGrid(job.scheduleSlots || [])}</div>
+                                </div>
+                            </div>
+
+                            <div class="rounded-3xl border border-orange-100 bg-orange-50/40 px-5 py-4">
+                                <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-orange-500">Chi tiet duyet bai</p>
+                                <div class="mt-4 space-y-3 text-sm text-slate-600">
+                                    <div class="flex items-start justify-between gap-4">
+                                        <span class="font-bold text-slate-500">Trang thai</span>
+                                        <span class="text-right font-bold text-slate-900">${escapeHtml(moderationLabels[job.moderationStatus] || 'Dang cap nhat')}</span>
+                                    </div>
+                                    <div class="flex items-start justify-between gap-4">
+                                        <span class="font-bold text-slate-500">Hien thi</span>
+                                        <span class="text-right font-bold text-slate-900">${escapeHtml(postStatusLabels[job.status] || 'Dang cap nhat')}</span>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-slate-500 mb-2">Ghi chu moderator</p>
+                                        <div class="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm leading-6 text-slate-600">
+                                            ${escapeHtml(job.moderationNote || 'Chua co ghi chu tu moderator.')}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-slate-500 mb-2">Ky nang yeu cau</p>
+                                        <div class="flex flex-wrap gap-2">
+                                            ${(job.skills && job.skills.length)
+                                                ? job.skills.map((skill) => `<span class="px-3 py-1 rounded-full bg-white text-orange-700 text-xs font-bold border border-orange-100">${escapeHtml(skill)}</span>`).join('')
+                                                : '<span class="text-sm text-slate-400">Chua co ky nang yeu cau.</span>'}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </article>`).join('');
+
+                if (focusJobId) {
+                    const target = body.querySelector(`[data-job-id="${focusJobId}"]`);
+                    if (target) {
+                        target.classList.add('ring-4', 'ring-orange-200', 'border-orange-300', 'shadow-[0_18px_42px_rgba(249,115,22,.16)]');
+                        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            } catch {
+                body.innerHTML = `
+                    <div class="rounded-3xl border border-red-100 bg-red-50 px-6 py-10 text-center text-red-600">
+                        Khong tai duoc lich su bai dang.
+                    </div>`;
+            }
+        }
+
+        loadHistoryPage();
+    })();
+</script>

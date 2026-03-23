@@ -1,10 +1,17 @@
-# Normalize all text files to LF in repo
+# Normalize all text files
 * text=auto
 
-# Explicit for common files
+# Force LF for source code & configs
 *.cs     text eol=lf
 *.cshtml text eol=lf
 *.json   text eol=lf
 *.yml    text eol=lf
 *.yaml   text eol=lf
 *.md     text eol=lf
+*.xml    text eol=lf
+*.props  text eol=lf
+*.targets text eol=lf
+
+# Keep Windows scripts CRLF
+*.bat    text eol=crlf
+*.ps1    text eol=crlf

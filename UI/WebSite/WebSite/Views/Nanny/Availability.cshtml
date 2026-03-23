@@ -1,0 +1,87 @@
+@model WebSite.Models.Nanny.NannyAvailabilityViewModel
+@{
+    ViewData["Title"] = "Create your profile";
+}
+
+<div class="min-h-screen bg-[#1f242b] flex items-center justify-center px-4">
+    <div class="w-full max-w-3xl bg-[#2b323b] text-gray-100 rounded-2xl shadow-2xl overflow-hidden">
+        <div class="h-1 bg-[#3b434e]">
+            <div class="h-1 bg-pink-400" style="width:100%"></div>
+        </div>
+        <div class="p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-lg font-semibold">Create your profile</h1>
+                <button type="button" onclick="window.location.href='@Url.Action("Logout", "Auth")'" class="text-gray-400 hover:text-gray-200">×</button>
+            </div>
+
+            @* 1. Thêm khu vực hiển thị lỗi nếu có *@
+            <div asp-validation-summary="ModelOnly" class="text-red-400 text-sm mb-4"></div>
+
+            <div class="flex flex-col items-center mb-8">
+                <div class="w-24 h-24 rounded-full bg-[#3b434e] flex items-center justify-center mb-4">
+                    <span class="text-4xl">⏰</span>
+                </div>
+                <div class="text-sm text-gray-300 px-4 py-2 rounded-full bg-[#3b434e]">
+                    When are you available to work?
+                </div>
+            </div>
+
+            <form asp-action="Availability" asp-controller="Nanny" method="post">
+                @Html.AntiForgeryToken()
+
+                @* 2. Hidden field để giữ UserId (Nếu cần thiết để tránh lỗi FK) *@
+                @* <input type="hidden" asp-for="UserId" /> *@
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm text-left">
+                        <thead>
+                            <tr class="text-gray-300">
+                                <th class="px-4 py-2">Day</th>
+                                <th class="px-4 py-2 text-center">Morning</th>
+                                <th class="px-4 py-2 text-center">Afternoon</th>
+                                <th class="px-4 py-2 text-center">Evening</th>
+                                <th class="px-4 py-2 text-center">Night</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < Model.Days.Count; i++)
+                            {
+                                <tr class="border-t border-[#3b434e]">
+                                    <td class="px-4 py-2">
+                                        @Model.Days[i].DayName
+                                        @* 3. Phải có hidden cho DayName để khi Model bị lỗi và trả về View, tên ngày không bị biến mất *@
+                                        <input type="hidden" asp-for="Days[i].DayName" />
+                                        <input type="hidden" asp-for="Days[i].DayOfWeek" />
+                                    </td>
+                                    <td class="px-4 py-2 text-center">
+                                        <input asp-for="Days[i].Morning" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-teal-500 focus:ring-teal-500 bg-[#1f242b]" />
+                                    </td>
+                                    <td class="px-4 py-2 text-center">
+                                        <input asp-for="Days[i].Afternoon" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-teal-500 focus:ring-teal-500 bg-[#1f242b]" />
+                                    </td>
+                                    <td class="px-4 py-2 text-center">
+                                        <input asp-for="Days[i].Evening" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-teal-500 focus:ring-teal-500 bg-[#1f242b]" />
+                                    </td>
+                                    <td class="px-4 py-2 text-center">
+                                        <input asp-for="Days[i].Night" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-teal-500 focus:ring-teal-500 bg-[#1f242b]" />
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="flex justify-between items-center mt-8">
+                    <a href="@Url.Action("Skills", "Nanny")"
+                       class="px-5 py-2 rounded-full border border-[#3b434e] text-gray-200 hover:bg-[#3b434e] text-sm">
+                        Back
+                    </a>
+                    <button type="submit"
+                            class="px-6 py-2 rounded-full bg-teal-500 hover:bg-teal-400 text-white font-semibold text-sm transition-colors">
+                        Finish
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
