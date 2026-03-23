@@ -66,6 +66,6 @@ jobs:
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: ${{ vars.AZURE_BACKEND_WEBAPP_NAME }}
+          app-name: ${{ vars.AZURE_BACKEND_WEBAPP_NAME || 'nannymatch-api' }}
           slot-name: "Production"
           package: ${{ env.PUBLISH_PATH }}
