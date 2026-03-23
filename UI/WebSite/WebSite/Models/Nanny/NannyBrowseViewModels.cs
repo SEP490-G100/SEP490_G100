@@ -1,8 +1,13 @@
 using System.Text.Json.Serialization;
 
-namespace Nanny_BackEnd.DTOs.Nanny;
+namespace WebSite.Models.Nanny;
 
-public class NannyListRequest
+public class NannyBrowsePageViewModel
+{
+    public List<NannySkillOptionViewModel> SkillOptions { get; set; } = new();
+}
+
+public class NannySearchRequestViewModel
 {
     public string? Keyword { get; set; }
     public string? City { get; set; }
@@ -17,13 +22,16 @@ public class NannyListRequest
     public int? TimeSlot { get; set; }
     public string? SkillIds { get; set; }
     public int Page { get; set; } = 1;
-    public int PageSize { get; set; } = 12;
+    public int PageSize { get; set; } = 20;
 }
 
-public class NannyPagedResultResponse
+public class NannyBrowseApiResponse
 {
-    [JsonPropertyName("items")]
-    public List<NannyListItemResponse> Items { get; set; } = [];
+    [JsonPropertyName("success")]
+    public bool Success { get; set; }
+
+    [JsonPropertyName("data")]
+    public List<NannyListItemViewModel> Data { get; set; } = new();
 
     [JsonPropertyName("totalCount")]
     public int TotalCount { get; set; }
@@ -35,7 +43,16 @@ public class NannyPagedResultResponse
     public int PageSize { get; set; }
 }
 
-public class NannyListItemResponse
+public class NannyDetailApiResponse
+{
+    [JsonPropertyName("success")]
+    public bool Success { get; set; }
+
+    [JsonPropertyName("data")]
+    public NannyDetailViewModel? Data { get; set; }
+}
+
+public class NannyListItemViewModel
 {
     [JsonPropertyName("id")]
     public Guid Id { get; set; }
@@ -89,13 +106,19 @@ public class NannyListItemResponse
     public string? EducationLevelLabel { get; set; }
 
     [JsonPropertyName("skills")]
-    public List<NannySkillResponse> Skills { get; set; } = [];
+    public List<NannySkillOptionViewModel> Skills { get; set; } = new();
 
     [JsonPropertyName("availabilitySlots")]
-    public List<NannyAvailabilitySlotResponse> AvailabilitySlots { get; set; } = [];
+    public List<NannyAvailabilitySlotViewModel> AvailabilitySlots { get; set; } = new();
+
+    [JsonPropertyName("latitude")]
+    public double? Latitude { get; set; }
+
+    [JsonPropertyName("longitude")]
+    public double? Longitude { get; set; }
 }
 
-public class NannyDetailResponse : NannyListItemResponse
+public class NannyDetailViewModel : NannyListItemViewModel
 {
     [JsonPropertyName("phoneNumber")]
     public string? PhoneNumber { get; set; }
@@ -114,15 +137,9 @@ public class NannyDetailResponse : NannyListItemResponse
 
     [JsonPropertyName("verifiedAt")]
     public DateTime? VerifiedAt { get; set; }
-
-    [JsonPropertyName("latitude")]
-    public double? Latitude { get; set; }
-
-    [JsonPropertyName("longitude")]
-    public double? Longitude { get; set; }
 }
 
-public class NannySkillResponse
+public class NannySkillOptionViewModel
 {
     [JsonPropertyName("skillId")]
     public Guid SkillId { get; set; }
@@ -140,7 +157,7 @@ public class NannySkillResponse
     public string? ProficiencyLevelLabel { get; set; }
 }
 
-public class NannyAvailabilitySlotResponse
+public class NannyAvailabilitySlotViewModel
 {
     [JsonPropertyName("dayOfWeek")]
     public int DayOfWeek { get; set; }

@@ -340,7 +340,12 @@
     var isHomePage = (ViewContext.RouteData.Values["controller"]?.ToString() == "Home" &&
                       ViewContext.RouteData.Values["action"]?.ToString() == "Index");
     var currentCtrl = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
     string NavCls(string ctrl) => currentCtrl.Equals(ctrl, StringComparison.OrdinalIgnoreCase)
+        ? "nm-nav-link active"
+        : "nm-nav-link";
+    var nannyListNavCls = currentCtrl.Equals("Nanny", StringComparison.OrdinalIgnoreCase) &&
+                          currentAction.Equals("List", StringComparison.OrdinalIgnoreCase)
         ? "nm-nav-link active"
         : "nm-nav-link";
 }
@@ -363,6 +368,7 @@
                 <div class="hidden md:flex items-center gap-1 nm-nav-links">
                     <a href="/" class="@NavCls("Home")">Trang chủ</a>
                     <a href="/Search" class="@NavCls("Search")">Tìm bảo mẫu</a>
+                    <a href="/Nanny/List" class="@nannyListNavCls">Tìm nanny</a>
                     <a href="#how-it-works" class="nm-nav-link">Cách hoạt động</a>
                 </div>
 

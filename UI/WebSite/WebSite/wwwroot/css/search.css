@@ -5,7 +5,7 @@
 }
 
 .list-panel {
-    width: 500px;
+    width: 800px;
     min-width: 260px;
     overflow-y: auto;
     background: linear-gradient(180deg, #fffdfb 0%, #fff7ed 100%);
@@ -439,6 +439,14 @@
 .form-input:hover {
     border-color: #c6d2e0;
     background: linear-gradient(180deg, #ffffff, #f8fbff);
+}
+
+.form-select-native-hidden {
+    display: none !important;
+}
+
+.form-select-picker-input {
+    cursor: pointer;
 }
 
 .form-input.is-invalid,
@@ -893,8 +901,8 @@ select.form-input.bg-gray-50 {
 .modal-footer {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: .85rem;
-    padding: 0 1.5rem 1.5rem;
+    gap: 1.85rem;
+    padding: 0 1.5rem 3.5rem;
 }
 
 .modal-btn {

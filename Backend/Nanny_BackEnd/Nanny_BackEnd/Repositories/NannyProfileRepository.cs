@@ -57,6 +57,11 @@ public class NannyProfileRepository
         if (request.VerificationStatus.HasValue)
             query = query.Where(n => n.VerificationStatus == request.VerificationStatus.Value);
 
+        if (request.MinExpectedSalary.HasValue)
+            query = query.Where(n =>
+                (n.ExpectedSalaryMin.HasValue && n.ExpectedSalaryMin.Value >= request.MinExpectedSalary.Value) ||
+                (n.ExpectedSalaryMax.HasValue && n.ExpectedSalaryMax.Value >= request.MinExpectedSalary.Value));
+
         if (request.MaxExpectedSalary.HasValue)
             query = query.Where(n =>
                 (n.ExpectedSalaryMin.HasValue && n.ExpectedSalaryMin.Value <= request.MaxExpectedSalary.Value) ||
