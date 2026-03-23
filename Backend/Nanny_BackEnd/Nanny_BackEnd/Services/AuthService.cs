@@ -296,6 +296,9 @@ public class AuthService
         var roles = await _userRepo.GetRolesAsync(user.Id);
         var (accessToken, expiresAt, jwtId) = _jwt.GenerateAccessToken(user, roles);
         var refreshToken = _jwt.GenerateRefreshToken();
+        var firstName = user.FirstName ?? string.Empty;
+        var lastName = user.LastName ?? string.Empty;
+        var email = user.Email ?? string.Empty;
 
         _tokenRepo.Add(new RefreshToken
         {
@@ -316,13 +319,13 @@ public class AuthService
             User = new UserDto
             {
                 Id = user.Id,
-                Email = user.Email,
-                FirstName = user.FirstName,
-                LastName = user.LastName,
+                Email = email,
+                FirstName = firstName,
+                LastName = lastName,
                 AvatarUrl = user.AvatarUrl,
                 EmailConfirmed = user.EmailConfirmed,
                 AuthProvider = user.AuthProvider == (int)AuthProvider.Google ? "google" : "email",
-                Roles = roles
+                Roles = roles.Where(static r => !string.IsNullOrWhiteSpace(r)).ToList()
             }
         };
     }
