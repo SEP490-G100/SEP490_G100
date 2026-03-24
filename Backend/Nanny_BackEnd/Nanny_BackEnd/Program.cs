@@ -158,8 +158,12 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("UiPolicy");
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHealthChecks("/health");
+
 app.Run();
