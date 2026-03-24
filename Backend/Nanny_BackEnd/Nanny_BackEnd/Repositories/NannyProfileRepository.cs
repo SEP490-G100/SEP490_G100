@@ -67,11 +67,23 @@ public class NannyProfileRepository
                 (n.ExpectedSalaryMin.HasValue && n.ExpectedSalaryMin.Value <= request.MaxExpectedSalary.Value) ||
                 (n.ExpectedSalaryMax.HasValue && n.ExpectedSalaryMax.Value <= request.MaxExpectedSalary.Value));
 
-        if (request.DayOfWeek.HasValue)
-            query = query.Where(n => n.NannyAvailabilities.Any(a => !a.IsDeleted && a.IsAvailable && a.DayOfWeek == request.DayOfWeek.Value));
+        if (request.DayOfWeek.HasValue && request.TimeSlot.HasValue)
+        {
+            // When both filters are provided, they must match on the same availability slot.
+            query = query.Where(n => n.NannyAvailabilities.Any(a =>
+                !a.IsDeleted &&
+                a.IsAvailable &&
+                a.DayOfWeek == request.DayOfWeek.Value &&
+                a.TimeSlot == request.TimeSlot.Value));
+        }
+        else
+        {
+            if (request.DayOfWeek.HasValue)
+                query = query.Where(n => n.NannyAvailabilities.Any(a => !a.IsDeleted && a.IsAvailable && a.DayOfWeek == request.DayOfWeek.Value));
 
-        if (request.TimeSlot.HasValue)
-            query = query.Where(n => n.NannyAvailabilities.Any(a => !a.IsDeleted && a.IsAvailable && a.TimeSlot == request.TimeSlot.Value));
+            if (request.TimeSlot.HasValue)
+                query = query.Where(n => n.NannyAvailabilities.Any(a => !a.IsDeleted && a.IsAvailable && a.TimeSlot == request.TimeSlot.Value));
+        }
 
         var skillIdList = skillIds.Distinct().ToList();
         if (skillIdList.Count > 0)

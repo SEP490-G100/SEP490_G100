@@ -399,11 +399,11 @@
 .nanny-map-marker__pin {
     position: absolute;
     left: 50%;
-    top: 2px;
-    width: 22px;
-    height: 22px;
-    border-radius: 50% 50% 50% 0;
-    transform: translateX(-50%) rotate(-45deg);
+    top: 6px;
+    width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    transform: translateX(-50%);
     background: linear-gradient(135deg, #fb923c, #f97316);
     border: 3px solid #fff;
     box-shadow: 0 14px 28px rgba(249,115,22,.28);
@@ -418,18 +418,31 @@
     height: 8px;
     border-radius: 999px;
     background: #fff;
-    transform: translate(-50%, -50%) rotate(45deg);
+    transform: translate(-50%, -50%);
 }
 
 .nanny-map-marker.active .nanny-map-marker__pin {
     top: -12px;
-    transform: translateX(-50%) rotate(-45deg) scale(1.24);
-    box-shadow: 0 26px 40px rgba(249,115,22,.52);
+    transform: translateX(-50%) scale(1.28);
+    box-shadow: 0 28px 40px rgba(249,115,22,.56);
 }
 
 .nanny-map-marker.active .nanny-map-marker__halo {
     opacity: 1;
     transform: scale(1.5);
+}
+
+.nanny-map-marker.active::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 30px;
+    width: 18px;
+    height: 11px;
+    border-radius: 999px;
+    background: rgba(249,115,22,.34);
+    transform: translateX(-50%);
+    filter: blur(7px);
 }
 
 .nanny-empty {

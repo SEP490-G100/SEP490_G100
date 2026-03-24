@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebSite.Models.Search;
 
@@ -32,11 +33,16 @@ public class SearchController : Controller
     }
 
     [HttpGet]
+    [Authorize]
     public IActionResult History() => View();
 
     [HttpGet]
+    [Authorize]
     public async Task<IActionResult> Edit(Guid id)
     {
+        if (!await canEditJob(id))
+            return RedirectToAction(nameof(Index));
+
         ViewBag.JobId = id;
         ViewBag.SkillOptions = await getSkillOptionsForView();
         return View();
@@ -76,6 +82,7 @@ public class SearchController : Controller
     }
 
     [HttpGet]
+    [Authorize]
     public async Task<IActionResult> MyJobs()
     {
         SetAuthHeader();
@@ -96,6 +103,7 @@ public class SearchController : Controller
     }
 
     [HttpGet]
+    [Authorize]
     public async Task<IActionResult> Prefill()
     {
         SetAuthHeader();
@@ -123,8 +131,12 @@ public class SearchController : Controller
 
     // ── POST /Search/CreateJob ──────────────────────────────
     [HttpPost]
+    [Authorize]
     public async Task<IActionResult> CreateJob([FromBody] JsonElement body)
     {
+        if (!isParentRole())
+            return StatusCode(403, new { success = false, message = "Ban khong co quyen dang tin tim bao mau." });
+
         SetAuthHeader();
         try
         {
@@ -139,8 +151,12 @@ public class SearchController : Controller
 
     // ── PUT /Search/UpdateJob/{id} ──────────────────────────
     [HttpPut]
+    [Authorize]
     public async Task<IActionResult> UpdateJob(Guid id, [FromBody] JsonElement body)
     {
+        if (!await canEditJob(id))
+            return StatusCode(403, new { success = false, message = "Ban khong co quyen chinh sua bai dang nay." });
+
         SetAuthHeader();
         try
         {
@@ -155,8 +171,12 @@ public class SearchController : Controller
 
     // ── DELETE /Search/DeleteJob/{id} ───────────────────────
     [HttpDelete]
+    [Authorize]
     public async Task<IActionResult> DeleteJob(Guid id)
     {
+        if (!await canEditJob(id))
+            return StatusCode(403, new { success = false, message = "Ban khong co quyen xoa bai dang nay." });
+
         SetAuthHeader();
         try
         {
@@ -298,5 +318,43 @@ public class SearchController : Controller
         {
             return [];
         }
+    }
+
+    private async Task<bool> canEditJob(Guid jobId)
+    {
+        SetAuthHeader();
+        try
+        {
+            var response = await _http.GetAsync("/api/job-postings/my");
+            if (!response.IsSuccessStatusCode) return false;
+
+            var json = await response.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("data", out var dataEl) || dataEl.ValueKind != JsonValueKind.Array)
+                return false;
+
+            foreach (var item in dataEl.EnumerateArray())
+            {
+                if (!item.TryGetProperty("id", out var idEl)) continue;
+                if (Guid.TryParse(idEl.GetString(), out var ownedId) && ownedId == jobId)
+                    return true;
+            }
+
+            return false;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private bool isParentRole()
+    {
+        if (User.IsInRole("Parent"))
+            return true;
+
+        return User.Claims.Any(c =>
+            c.Type == System.Security.Claims.ClaimTypes.Role &&
+            string.Equals(c.Value, "Parent", StringComparison.OrdinalIgnoreCase));
     }
 }

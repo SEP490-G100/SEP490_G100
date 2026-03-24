@@ -1,6 +1,7 @@
 let nannyMap;
 let nannyMarkers = [];
 let nannyProfiles = [];
+let nannyAllProfiles = [];
 let nannySearchTimer = null;
 let nannyProvinces = [];
 let nannyLocationPromise = null;
@@ -9,8 +10,10 @@ let nannyProvinceCatalogPromise = null;
 const nannyAutocompleteDropdowns = new Map();
 const nannyAddressSuggestionCache = new Map();
 const nannyDistrictOptionsCache = new Map();
+const nannyGeoCache = new Map();
 const nannySelectPickerSyncHandlers = [];
 let nannyScheduleFilters = [];
+let suppressNextNannyMapMove = false;
 const NANNY_DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 const NANNY_TIME_LABELS = ['Morning', 'Afternoon', 'Evening', 'Night'];
 const NANNY_FALLBACK_PROVINCES = [
@@ -136,11 +139,15 @@ const NANNY_FALLBACK_DISTRICTS_BY_CITY = {
   'hue': ['Quận Phú Xuân', 'Quận Thuận Hóa', 'Thị xã Hương Thủy', 'Thị xã Hương Trà']
 };
 
+const NANNY_GEO_DEFAULT = { lat: 16.047, lng: 108.206, zoom: 6 };
 const NANNY_GEO_FALLBACK = {
-  'Ho Chi Minh': { lat: 10.776, lng: 106.701, zoom: 11 },
-  'Thanh pho Ho Chi Minh': { lat: 10.776, lng: 106.701, zoom: 11 },
-  'Ha Noi': { lat: 21.028, lng: 105.854, zoom: 11 },
-  'Da Nang': { lat: 16.054, lng: 108.202, zoom: 11 }
+  'ho chi minh': { lat: 10.776, lng: 106.701, zoom: 11 },
+  'hcm': { lat: 10.776, lng: 106.701, zoom: 11 },
+  'ha noi': { lat: 21.028, lng: 105.854, zoom: 11 },
+  'da nang': { lat: 16.054, lng: 108.202, zoom: 11 },
+  'hai phong': { lat: 20.844, lng: 106.688, zoom: 11 },
+  'can tho': { lat: 10.046, lng: 105.746, zoom: 11 },
+  'hue': { lat: 16.463, lng: 107.59, zoom: 11 }
 };
 
 function escapeHtml(value) {
@@ -165,6 +172,19 @@ function normalizeAdministrativeName(value) {
     .replace(/^thanh pho\s+/i, '')
     .replace(/^tp\.?\s*/i, '')
     .replace(/^tinh\s+/i, '');
+}
+
+function getNannyGeoCacheKey(cityName) {
+  const normalized = normalizeAdministrativeName(cityName);
+  return normalized || '__empty__';
+}
+
+function getNannyStaticGeoFallback(cityName) {
+  return NANNY_GEO_FALLBACK[getNannyGeoCacheKey(cityName)] || NANNY_GEO_DEFAULT;
+}
+
+function isFiniteCoordinate(value) {
+  return Number.isFinite(Number(value));
 }
 
 function formatCurrency(value) {
@@ -296,6 +316,63 @@ async function fetchNannyAddressSuggestions(query) {
   } catch {
     return [];
   }
+}
+
+async function resolveNannyCityGeo(cityName) {
+  const key = getNannyGeoCacheKey(cityName);
+  if (nannyGeoCache.has(key)) {
+    return nannyGeoCache.get(key);
+  }
+
+  let resolved = getNannyStaticGeoFallback(cityName);
+  const cityValue = String(cityName ?? '').trim();
+  if (cityValue.length >= 2) {
+    const suggestions = await fetchNannyAddressSuggestions(`${cityValue}, Vietnam`);
+    const first = suggestions.find((item) => isFiniteCoordinate(item?.latitude) && isFiniteCoordinate(item?.longitude));
+    if (first) {
+      resolved = {
+        lat: Number(first.latitude),
+        lng: Number(first.longitude),
+        zoom: 11
+      };
+    }
+  }
+
+  nannyGeoCache.set(key, resolved);
+  return resolved;
+}
+
+async function hydrateNannyGeoForMap(items) {
+  if (!Array.isArray(items) || !items.length) return;
+
+  const missingCities = new Map();
+
+  items.forEach((profile) => {
+    if (isFiniteCoordinate(profile?.latitude) && isFiniteCoordinate(profile?.longitude)) {
+      profile.__isGeoFallback = false;
+      return;
+    }
+
+    const cityValue = String(profile?.city ?? '').trim();
+    const key = getNannyGeoCacheKey(cityValue);
+    if (key !== '__empty__' && !missingCities.has(key)) {
+      missingCities.set(key, cityValue);
+    }
+  });
+
+  await Promise.all(
+    Array.from(missingCities.values()).map((cityName) => resolveNannyCityGeo(cityName))
+  );
+
+  items.forEach((profile) => {
+    if (isFiniteCoordinate(profile?.latitude) && isFiniteCoordinate(profile?.longitude)) return;
+
+    const cityValue = String(profile?.city ?? '').trim();
+    const fallback = nannyGeoCache.get(getNannyGeoCacheKey(cityValue)) || getNannyStaticGeoFallback(cityValue);
+    profile.latitude = fallback.lat;
+    profile.longitude = fallback.lng;
+    profile.__isGeoFallback = true;
+  });
 }
 
 function uniqueNannyValues(values, query) {
@@ -638,39 +715,94 @@ function initNannyMap() {
     attribution: '&copy; CartoDB',
     maxZoom: 19
   }).addTo(nannyMap);
+
+  nannyMap.on('moveend', () => {
+    if (suppressNextNannyMapMove) {
+      suppressNextNannyMapMove = false;
+      return;
+    }
+
+    renderNannyProfilesForCurrentBounds(false);
+  });
+}
+
+function getCurrentNannyMapBounds() {
+  if (!nannyMap) return null;
+  const bounds = nannyMap.getBounds();
+  return bounds?.isValid?.() ? bounds : null;
+}
+
+function getNannyProfilesInCurrentBounds(items) {
+  const collection = Array.isArray(items) ? items : [];
+  const bounds = getCurrentNannyMapBounds();
+  if (!bounds) return collection;
+
+  return collection.filter((profile) => {
+    if (!isFiniteCoordinate(profile?.latitude) || !isFiniteCoordinate(profile?.longitude)) return false;
+    return bounds.contains([Number(profile.latitude), Number(profile.longitude)]);
+  });
+}
+
+function renderNannyProfilesForCurrentBounds(fitToMarkers = false) {
+  const visibleItems = getNannyProfilesInCurrentBounds(nannyAllProfiles);
+  nannyProfiles = visibleItems;
+  renderNannyCards(visibleItems, { fitToMarkers });
 }
 
 function getNannyPoint(profile, idx) {
-  const fallback = NANNY_GEO_FALLBACK[profile.city] || NANNY_GEO_FALLBACK['Ho Chi Minh'];
-  const baseLat = Number(profile.latitude ?? fallback.lat);
-  const baseLng = Number(profile.longitude ?? fallback.lng);
+  const fallback = getNannyStaticGeoFallback(profile?.city);
+  const hasExactCoordinates =
+    isFiniteCoordinate(profile?.latitude) &&
+    isFiniteCoordinate(profile?.longitude) &&
+    profile?.__isGeoFallback !== true;
+
+  const baseLat = hasExactCoordinates ? Number(profile.latitude) : Number(profile?.latitude ?? fallback.lat);
+  const baseLng = hasExactCoordinates ? Number(profile.longitude) : Number(profile?.longitude ?? fallback.lng);
+  const shouldJitter = !hasExactCoordinates;
+
+  const latOffset = shouldJitter ? ((idx % 4) - 1.5) * 0.0022 : 0;
+  const lngOffset = shouldJitter ? ((Math.floor(idx / 4) % 4) - 1.5) * 0.0022 : 0;
 
   return {
-    lat: baseLat + ((idx % 4) - 1.5) * 0.0022,
-    lng: baseLng + ((Math.floor(idx / 4) % 4) - 1.5) * 0.0022,
-    zoom: profile.latitude && profile.longitude ? 13 : fallback.zoom
+    lat: baseLat + latOffset,
+    lng: baseLng + lngOffset,
+    zoom: hasExactCoordinates ? 13 : fallback.zoom,
+    radius: hasExactCoordinates ? 500 : 1800
   };
 }
 
 function clearNannyMarkers() {
-  nannyMarkers.forEach((entry) => entry.marker?.remove());
+  nannyMarkers.forEach((entry) => {
+    entry.marker?.remove();
+    entry.circle?.remove();
+  });
   nannyMarkers = [];
 }
 
-function setNannyMarkerHover(idx, active) {
+function setNannyMarkerHover(idx, active, openPopup = false) {
   const markerData = nannyMarkers[idx];
   if (!markerData) return;
   markerData.element?.classList.toggle('active', active);
+  markerData.circle?.setStyle({
+    color: active ? '#f97316' : '#fdba74',
+    fillColor: active ? '#fb923c' : '#fdba74',
+    fillOpacity: active ? 0.18 : 0.1,
+    weight: active ? 2 : 1
+  });
+  if (active && openPopup) markerData.marker?.openPopup();
+  if (!active) markerData.marker?.closePopup();
 }
 
 function focusNannyMarker(idx) {
   const markerData = nannyMarkers[idx];
   if (!markerData || !nannyMap) return;
+  suppressNextNannyMapMove = true;
   nannyMap.flyTo([markerData.point.lat, markerData.point.lng], markerData.point.zoom || 13, { duration: 0.4 });
-  setNannyMarkerHover(idx, true);
+  setNannyMarkerHover(idx, true, true);
 }
 
-function renderNannyCards(items) {
+function renderNannyCards(items, options = {}) {
+  const { fitToMarkers = false } = options;
   const list = document.getElementById('nannyList');
   const count = document.getElementById('nannyResultCount');
   if (!list || !count) return;
@@ -732,13 +864,34 @@ function renderNannyCards(items) {
     });
 
     const marker = L.marker([point.lat, point.lng], { icon }).addTo(nannyMap);
-    nannyMarkers.push({ marker, point, element: marker.getElement() });
+    const circle = L.circle([point.lat, point.lng], {
+      radius: point.radius,
+      color: '#fdba74',
+      fillColor: '#fdba74',
+      fillOpacity: 0.1,
+      weight: 1
+    }).addTo(nannyMap);
+
+    marker.bindPopup(`
+      <div class="text-sm font-semibold text-slate-700">${escapeHtml(profile.fullName || 'Bao mau')}</div>
+      <div class="text-xs text-slate-500 mt-1">${escapeHtml([profile.district, profile.city].filter(Boolean).join(', ') || 'Chua cap nhat khu vuc')}</div>
+    `);
+
+    nannyMarkers.push({ marker, circle, point, element: marker.getElement() });
   });
+
+  if (fitToMarkers && nannyMap && nannyMarkers.length) {
+    const bounds = L.latLngBounds(
+      nannyMarkers.map((entry) => [entry.point.lat, entry.point.lng])
+    );
+    suppressNextNannyMapMove = true;
+    nannyMap.fitBounds(bounds, { padding: [24, 24], maxZoom: 13 });
+  }
 
   list.querySelectorAll('.nanny-card').forEach((card) => {
     const idx = Number(card.dataset.idx);
-    card.addEventListener('mouseenter', () => setNannyMarkerHover(idx, true));
-    card.addEventListener('mouseleave', () => setNannyMarkerHover(idx, false));
+    card.addEventListener('mouseenter', () => setNannyMarkerHover(idx, true, true));
+    card.addEventListener('mouseleave', () => setNannyMarkerHover(idx, false, false));
     card.addEventListener('click', () => {
       list.querySelectorAll('.nanny-card').forEach((item) => item.classList.remove('active'));
       card.classList.add('active');
@@ -783,9 +936,12 @@ async function doNannySearch() {
     const response = await fetch(`/Nanny/BrowseData?${params.toString()}`, { credentials: 'same-origin' });
     const json = await response.json();
     const rawProfiles = Array.isArray(json.data) ? json.data : [];
-    nannyProfiles = nannyScheduleFilters.length > 1 ? applyNannyScheduleFilter(rawProfiles) : rawProfiles;
-    renderNannyCards(nannyProfiles);
+    await hydrateNannyGeoForMap(rawProfiles);
+    nannyAllProfiles = nannyScheduleFilters.length > 1 ? applyNannyScheduleFilter(rawProfiles) : rawProfiles;
+    nannyProfiles = nannyAllProfiles;
+    renderNannyCards(nannyAllProfiles, { fitToMarkers: true });
   } catch {
+    nannyAllProfiles = [];
     nannyProfiles = [];
     renderNannyCards([]);
   }
