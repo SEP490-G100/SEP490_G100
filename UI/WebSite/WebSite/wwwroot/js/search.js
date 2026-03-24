@@ -24,6 +24,8 @@ const autocompleteDropdowns = new Map();
 const selectPickerSyncFns = [];
 const addressSuggestionCache = new Map();
 const districtOptionsCache = new Map();
+const ownedJobIds = new Set();
+let ownedJobsLoaded = false;
 const FALLBACK_PROVINCES = [
   'Thành phố Hà Nội',
   'Thành phố Hồ Chí Minh',
@@ -512,6 +514,47 @@ function showToast(message) {
   showToast._timer = setTimeout(() => toast.classList.remove('show'), 2600);
 }
 
+function isLoggedIn() {
+  return typeof IS_AUTH !== 'undefined' && IS_AUTH === true;
+}
+
+function normalizeGuid(value) {
+  return String(value ?? '').trim().toLowerCase();
+}
+
+function setOwnedJobs(collection) {
+  ownedJobIds.clear();
+  (Array.isArray(collection) ? collection : []).forEach((job) => {
+    if (job?.id) ownedJobIds.add(normalizeGuid(job.id));
+  });
+}
+
+function canEditJob(job) {
+  if (!isLoggedIn() || !job?.id) return false;
+  return ownedJobIds.has(normalizeGuid(job.id));
+}
+
+window.canEditJob = canEditJob;
+
+async function loadOwnedJobs() {
+  if (!isLoggedIn()) {
+    setOwnedJobs([]);
+    ownedJobsLoaded = true;
+    return;
+  }
+
+  try {
+    const res = await fetch('/Search/MyJobs', { credentials: 'same-origin' });
+    const json = await res.json();
+    if (json?.success) setOwnedJobs(json.data);
+    else setOwnedJobs([]);
+  } catch {
+    setOwnedJobs([]);
+  } finally {
+    ownedJobsLoaded = true;
+  }
+}
+
 function openHistory() {
   window.location.href = '/Search/History';
 }
@@ -854,6 +897,11 @@ function setEditStatus(status) {
 }
 
 async function openCreate() {
+  if (!isLoggedIn()) {
+    window.location.href = '/Auth/Login';
+    return;
+  }
+
   await loadLocationData();
   document.getElementById('createForm')?.reset();
   const createSkillSelect = document.getElementById('cf-skillSelect');
@@ -915,6 +963,11 @@ function validatePayload(payload) {
 }
 
 async function submitCreate() {
+  if (!isLoggedIn()) {
+    window.location.href = '/Auth/Login';
+    return;
+  }
+
   if (isSubmittingCreate) return;
   const payload = getCreatePayload();
   const error = validatePayload(payload);
@@ -964,6 +1017,10 @@ async function submitCreate() {
 
 async function openEdit(job) {
   if (!job?.id) return;
+  if (!canEditJob(job)) {
+    showToast('Ban khong co quyen chinh sua bai dang nay.');
+    return;
+  }
   window.location.href = `/Search/Edit/${job.id}`;
 }
 
@@ -974,12 +1031,20 @@ function closeEdit() {
 
 async function submitEdit() {
   if (editingJobId) {
+    if (!ownedJobIds.has(normalizeGuid(editingJobId))) {
+      showToast('Ban khong co quyen chinh sua bai dang nay.');
+      return;
+    }
     window.location.href = `/Search/Edit/${editingJobId}`;
   }
 }
 
 async function deleteJob() {
   if (!editingJobId) return;
+  if (!ownedJobIds.has(normalizeGuid(editingJobId))) {
+    showToast('Ban khong co quyen xoa bai dang nay.');
+    return;
+  }
   if (!confirm('Ban co chac muon xoa bai dang nay?')) return;
   try {
     const res = await fetch(`/Search/DeleteJob/${editingJobId}`, { method: 'DELETE', credentials: 'same-origin' });
@@ -1045,7 +1110,7 @@ function handleEditCityChange() {
   handleCityChange('ef');
 }
 
-function bootstrapSearchPage() {
+async function bootstrapSearchPage() {
   ['cf-city', 'cf-district', 'ef-city', 'ef-district', 'cf-typeText', 'cf-childProfileText', 'cf-skillSelectText'].forEach((id) => {
     document.getElementById(id)?.setAttribute('autocomplete', 'off');
   });
@@ -1055,7 +1120,8 @@ function bootstrapSearchPage() {
   attachCreateSelectPickers();
   initMap();
   loadLocationData();
-  doSearch();
+  await loadOwnedJobs();
+  await doSearch();
 }
 
 if (document.readyState === 'loading') {

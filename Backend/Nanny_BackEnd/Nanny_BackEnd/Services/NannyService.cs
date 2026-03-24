@@ -91,7 +91,9 @@ public class NannyService
                 .OrderBy(slot => slot.TimeSlot)
                 .ThenBy(slot => slot.DayOfWeek)
                 .Select(MapAvailabilitySlot)
-                .ToList()
+                .ToList(),
+            Latitude = (double?)nanny.User.Latitude,
+            Longitude = (double?)nanny.User.Longitude
         };
     }
 
@@ -125,8 +127,8 @@ public class NannyService
             MaxTravelDistance = nanny.MaxTravelDistance,
             ProfileCompleteness = nanny.ProfileCompleteness,
             VerifiedAt = nanny.VerifiedAt,
-            Latitude = (double?)nanny.User.Latitude,
-            Longitude = (double?)nanny.User.Longitude
+            Latitude = listItem.Latitude,
+            Longitude = listItem.Longitude
         };
     }
 

@@ -90,32 +90,7 @@ builder.Services.AddCors(options =>
         policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
 
 builder.Services.AddHttpClient();
-builder.Services.AddHealthChecks();
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("UiPolicy", policy =>
-    {
-        var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
-
-        if (allowedOrigins is { Length: > 0 })
-        {
-            policy.WithOrigins(allowedOrigins)
-                .AllowAnyHeader()
-                .AllowAnyMethod();
-            return;
-        }
-
-        policy.AllowAnyOrigin()
-            .AllowAnyHeader()
-            .AllowAnyMethod();
-    });
-});
-builder.Services.Configure<VietQrOptions>(builder.Configuration.GetSection("VietQr"));
-builder.Services.AddHttpClient("VietQr", c =>
-{
-    c.BaseAddress = new Uri(builder.Configuration["VietQr:BaseUrl"] ?? "https://api.vietqr.io/v2/");
-    c.Timeout = TimeSpan.FromSeconds(30);
-});
+builder.Services.Configure<VnPayOptions>(builder.Configuration.GetSection("VnPay"));
 // Nominatim (OpenStreetMap geocoding) — User-Agent bắt buộc theo ToS
 builder.Services.AddHttpClient("Nominatim", c =>
 {
@@ -163,7 +138,7 @@ builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<SubscriptionService>();
 builder.Services.AddScoped<ExportService>();
 builder.Services.AddScoped<NotificationService>();
-builder.Services.AddScoped<VietQrService>();
+builder.Services.AddScoped<VnPayService>();
 builder.Services.AddScoped<FaqService>();
 builder.Services.AddScoped<BlogCategoryService>();
 builder.Services.AddScoped<BlogService>();

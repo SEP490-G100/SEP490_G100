@@ -35,6 +35,7 @@ public class AddressController : Controller
     /// <summary>
     /// Gợi ý địa điểm tại Việt Nam. Trả về JSON: [{ displayName, latitude, longitude, city, district, ward }].
     /// </summary>
+    [AllowAnonymous]
     [HttpGet("Suggest")]
     public async Task<IActionResult> Suggest([FromQuery] string? q, [FromQuery] int limit = 8)
     {

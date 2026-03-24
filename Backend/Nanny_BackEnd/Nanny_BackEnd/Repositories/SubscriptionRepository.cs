@@ -140,6 +140,17 @@ public class SubscriptionRepository
         await _db.Transactions
             .FirstOrDefaultAsync(t => t.PaymentGatewayTransactionId == gatewayCode && !t.IsDeleted);
 
+    public async Task<bool> existsGatewayTransactionCode(string gatewayCode) =>
+        await _db.Transactions
+            .AnyAsync(t => t.PaymentGatewayTransactionId == gatewayCode && !t.IsDeleted);
+
+    public async Task<List<Transaction>> getUserSubscriptionTransactions(Guid userId, int maxItems = 30) =>
+        await _db.Transactions
+            .Where(t => t.UserId == userId && !t.IsDeleted && t.Type == 1)
+            .OrderByDescending(t => t.CreatedAt)
+            .Take(maxItems)
+            .ToListAsync();
+
     public void addTransaction(Transaction transaction) => _db.Transactions.Add(transaction);
 
     public void addUserSubscription(UserSubscription subscription) => _db.UserSubscriptions.Add(subscription);

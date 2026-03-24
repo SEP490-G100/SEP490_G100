@@ -6,4 +6,6 @@ public class CreateSubscriptionPaymentRequest
 {
     [Required(ErrorMessage = "Goi subscription khong duoc de trong.")]
     public Guid SubscriptionPlanId { get; set; }
+
+    public string? ClientIp { get; set; }
 }
