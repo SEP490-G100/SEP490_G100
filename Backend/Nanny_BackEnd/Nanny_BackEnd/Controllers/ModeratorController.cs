@@ -16,12 +16,25 @@ public class ModeratorController : ControllerBase
     private readonly UserService _userService;
     private readonly VerificationRequestService _verificationService;
     private readonly JobService _jobService;
+    private readonly DashboardService _dashboardService;
 
-    public ModeratorController(UserService userService, VerificationRequestService verificationService, JobService jobService)
+    public ModeratorController(
+        UserService userService,
+        VerificationRequestService verificationService,
+        JobService jobService,
+        DashboardService dashboardService)
     {
         _userService = userService;
         _verificationService = verificationService;
         _jobService = jobService;
+        _dashboardService = dashboardService;
+    }
+
+    [HttpGet("dashboard")]
+    public async Task<IActionResult> GetDashboard()
+    {
+        var stats = await _dashboardService.GetDashboardStatsAsync();
+        return Ok(new { success = true, data = stats });
     }
 
     // ─────────────────────────────────────────────────────

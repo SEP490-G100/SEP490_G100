@@ -175,6 +175,10 @@ public class UserRepository
         await _db.Users.CountAsync(u => !u.IsDeleted &&
             u.UserRoles.Any(ur => !ur.IsDeleted && ur.Role.Name == roleName));
 
+    /// <summary>Number of non-deleted users in a specific status.</summary>
+    public async Task<int> GetUserCountByStatusAsync(int status) =>
+        await _db.Users.CountAsync(u => !u.IsDeleted && u.Status == status);
+
     /// <summary>
     /// Hard-delete: remove UserRoles first (FK), then the User row itself.
     /// </summary>
@@ -189,4 +193,3 @@ public class UserRepository
     }
     public async Task SaveChangesAsync() => await _db.SaveChangesAsync();
 }
-

@@ -336,6 +336,8 @@
 
 @section Scripts {
 <script>
+    const currentStatusFilter = '@currentStatus';
+
     // ── VIEW ACCOUNT MODAL ──
     function viewAccount(id) {
         var btn = document.getElementById('view-' + id);
@@ -402,6 +404,12 @@
         .then(function(data) {
             closeModal('toggleModal');
             if (data.success) {
+                var shouldReloadFilteredList = currentStatusFilter !== '' && currentStatusFilter !== String(newStatus);
+                if (shouldReloadFilteredList) {
+                    window.location.reload();
+                    return;
+                }
+
                 var cell = document.getElementById('status-cell-' + id);
                 if (cell) {
                     var dot   = cell.querySelector('div');

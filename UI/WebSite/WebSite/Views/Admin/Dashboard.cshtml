@@ -1,21 +1,23 @@
 @model WebSite.Models.Admin.AdminDashboardDto
+@using System.Text.Json
 @{
     Layout = "~/Views/Admin/_AdminLayout.cshtml";
     ViewData["Title"] = "Dashboard";
+
+    var totalOperationalQueue = Model.PendingVerifications + Model.PendingJobPostings + Model.PendingReports;
 }
 
-<!-- PAGE HEADER -->
 <div class="mb-7 fade-in-up flex flex-col sm:flex-row sm:items-end justify-between gap-4">
     <div>
-        <span class="section-label"> System Overview</span>
+        <span class="section-label">System Overview</span>
         <h1 class="page-title mt-2">
             Welcome, <span class="gradient-text">Admin</span>!
         </h1>
-        <p class="page-subtitle">Monitor platform performance, users, and revenue at a glance.</p>
+        <p class="page-subtitle">Track revenue, growth, subscriptions, and platform operations from one command view.</p>
     </div>
-    
+
     <div>
-        <a href="/Admin/ExportData" 
+        <a href="/Admin/ExportData"
            class="inline-flex items-center gap-2 bg-gradient-to-r from-orange-400 to-orange-500 text-white px-5 py-2.5 rounded-xl font-semibold shadow-lg shadow-orange-500/30 hover:shadow-orange-500/40 hover:-translate-y-0.5 transition-all">
             <span class="material-icons-round text-xl">download</span>
             Export System Data
@@ -23,69 +25,31 @@
     </div>
 </div>
 
-<!-- STAT CARDS -->
 <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-7">
-
-    <!-- Total Users -->
     <div class="stat-card p-5 fade-in-up fade-in-up-delay-1">
         <div class="flex items-start justify-between mb-4">
             <div class="icon-badge" style="background:linear-gradient(135deg,#FFF7ED,#FED7AA);">
-                <span class="material-icons-round text-orange-500 text-2xl">people</span>
-            </div>
-            <span class="section-label text-[10px] px-2 py-0.5">All</span>
-        </div>
-        <div class="stat-number mb-0.5">@Model.TotalUsers.ToString("N0")</div>
-        <div class="text-sm text-gray-500 font-semibold mb-3">Total Users</div>
-        <div class="flex gap-3 text-xs text-gray-400">
-            <span class="flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-violet-400 inline-block"></span>@Model.TotalParents Parents
-            </span>
-            <span class="flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-blue-400 inline-block"></span>@Model.TotalNannies Nannies
-            </span>
-        </div>
-    </div>
-
-    <!-- Moderators -->
-    <div class="stat-card p-5 fade-in-up fade-in-up-delay-2">
-        <div class="flex items-start justify-between mb-4">
-            <div class="icon-badge" style="background:linear-gradient(135deg,#FFF7ED,#FFEDD5);">
-                <span class="material-icons-round text-orange-500 text-2xl">manage_accounts</span>
-            </div>
-            <span class="badge badge-mod">Moderator</span>
-        </div>
-        <div class="stat-number mb-0.5">@Model.TotalModerators.ToString("N0")</div>
-        <div class="text-sm text-gray-500 font-semibold mb-3">Moderators</div>
-        @if (Model.TotalUsers > 0)
-        {
-            var pct = (double)Model.TotalModerators / Model.TotalUsers * 100;
-            <div>
-                <div class="flex justify-between text-[10px] text-gray-400 mb-1">
-                    <span>Share</span><span class="font-bold text-orange-500">@pct.ToString("F0")%</span>
-                </div>
-                <div class="w-full bg-gray-100 rounded-full h-1.5">
-                    <div class="progress-fill bg-gradient-to-r from-orange-400 to-orange-500 h-1.5 rounded-full" style="width:@pct.ToString("F0")%"></div>
-                </div>
-            </div>
-        }
-    </div>
-
-    <!-- Revenue -->
-    <div class="stat-card p-5 fade-in-up fade-in-up-delay-3">
-        <div class="flex items-start justify-between mb-4">
-            <div class="icon-badge" style="background:linear-gradient(135deg,#D1FAE5,#A7F3D0);">
-                <span class="material-icons-round text-emerald-500 text-2xl">payments</span>
+                <span class="material-icons-round text-orange-500 text-2xl">payments</span>
             </div>
             <span class="badge badge-active">Revenue</span>
         </div>
-        <div class="stat-number mb-0.5">
-            @Model.TotalRevenue.ToString("N0")<span class="text-sm text-gray-400 font-normal ml-1">₫</span>
-        </div>
+        <div class="stat-number mb-0.5">@Model.TotalRevenue.ToString("N0")<span class="text-sm text-gray-400 font-normal ml-1">VND</span></div>
         <div class="text-sm text-gray-500 font-semibold">Total Revenue</div>
     </div>
 
-    <!-- Subscriptions -->
-    <div class="stat-card p-5 fade-in-up fade-in-up-delay-4">
+    <div class="stat-card p-5 fade-in-up fade-in-up-delay-2">
+        <div class="flex items-start justify-between mb-4">
+            <div class="icon-badge" style="background:linear-gradient(135deg,#ECFDF5,#D1FAE5);">
+                <span class="material-icons-round text-emerald-500 text-2xl">people</span>
+            </div>
+            <span class="badge badge-active">Users</span>
+        </div>
+        <div class="stat-number mb-0.5 text-emerald-600">@Model.TotalUsers.ToString("N0")</div>
+        <div class="text-sm text-gray-500 font-semibold mb-3">Total Users</div>
+        <div class="text-xs text-gray-400">Active: @Model.ActiveUsers.ToString("N0") | Inactive: @Model.InactiveUsers.ToString("N0")</div>
+    </div>
+
+    <div class="stat-card p-5 fade-in-up fade-in-up-delay-3">
         <div class="flex items-start justify-between mb-4">
             <div class="icon-badge" style="background:linear-gradient(135deg,#EDE9FE,#DDD6FE);">
                 <span class="material-icons-round text-violet-500 text-2xl">card_membership</span>
@@ -94,71 +58,141 @@
         </div>
         <div class="stat-number mb-0.5">@Model.TotalSubscriptions.ToString("N0")</div>
         <div class="text-sm text-gray-500 font-semibold mb-3">Total Subscriptions</div>
-        <div class="flex gap-3 text-xs text-gray-400">
-            <span class="flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span>@Model.ActiveSubs Active
-            </span>
-            <span class="flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-gray-300 inline-block"></span>@Model.ExpiredSubs Expired
-            </span>
+        <div class="text-xs text-gray-400">Active: @Model.ActiveSubs.ToString("N0") | Expired: @Model.ExpiredSubs.ToString("N0")</div>
+    </div>
+
+    <div class="stat-card p-5 fade-in-up fade-in-up-delay-4">
+        <div class="flex items-start justify-between mb-4">
+            <div class="icon-badge" style="background:linear-gradient(135deg,#FEF3C7,#FDE68A);">
+                <span class="material-icons-round text-amber-500 text-2xl">pending_actions</span>
+            </div>
+            <span class="badge badge-pending">Ops Queue</span>
         </div>
+        <div class="stat-number mb-0.5 text-amber-600">@totalOperationalQueue.ToString("N0")</div>
+        <div class="text-sm text-gray-500 font-semibold mb-3">Operational Queue</div>
+        <div class="text-xs text-gray-400">@Model.PendingVerifications verifications, @Model.PendingJobPostings jobs, @Model.PendingReports reports</div>
     </div>
 </div>
 
-<!-- PLATFORM HEALTH (NEW ROW) -->
-<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 mb-7">
-
-    <!-- Pending Verifications -->
-    <div class="stat-card p-5 fade-in-up fade-in-up-delay-5">
-        <div class="flex items-start justify-between mb-4">
-            <div class="icon-badge" style="background:linear-gradient(135deg,#FEF2F2,#FEE2E2);">
-                <span class="material-icons-round text-red-500 text-2xl">policy</span>
-            </div>
-            <span class="badge badge-pending">Action Required</span>
-        </div>
-        <div class="stat-number mb-0.5 text-red-600">@Model.PendingVerifications.ToString("N0")</div>
-        <div class="text-sm text-gray-500 font-semibold mb-3">Pending Verifications</div>
-        <p class="text-xs text-gray-400">Nanny profiles waiting for moderator approval.</p>
-    </div>
-
-    <!-- Active Jobs -->
-    <div class="stat-card p-5 fade-in-up fade-in-up-delay-6">
-        <div class="flex items-start justify-between mb-4">
-            <div class="icon-badge" style="background:linear-gradient(135deg,#F0FDF4,#DCFCE7);">
-                <span class="material-icons-round text-green-500 text-2xl">work</span>
-            </div>
-            <span class="badge badge-active">Active</span>
-        </div>
-        <div class="stat-number mb-0.5 text-green-600">@Model.ActiveJobPostings.ToString("N0")</div>
-        <div class="text-sm text-gray-500 font-semibold mb-3">Open Job Postings</div>
-        <p class="text-xs text-gray-400">Parents actively looking for nannies right now.</p>
-    </div>
-
-    <!-- Total Contracts -->
-    <div class="stat-card p-5 fade-in-up fade-in-up-delay-7">
-        <div class="flex items-start justify-between mb-4">
-            <div class="icon-badge" style="background:linear-gradient(135deg,#EFF6FF,#DBEAFE);">
-                <span class="material-icons-round text-blue-500 text-2xl">handshake</span>
-            </div>
-            <span class="badge badge-parent">Success</span>
-        </div>
-        <div class="stat-number mb-0.5 text-blue-600">@Model.TotalContracts.ToString("N0")</div>
-        <div class="text-sm text-gray-500 font-semibold mb-3">Total Contracts</div>
-        <p class="text-xs text-gray-400">Successful matches made on NannyMatch.</p>
-    </div>
-
-</div>
-
-<!-- ROW 2: Quick Actions + Recent Transactions -->
 <div class="grid grid-cols-1 xl:grid-cols-3 gap-5 mb-7">
+    <div class="xl:col-span-2 content-card p-6 fade-in-up">
+        <div class="flex items-center justify-between mb-5 gap-3">
+            <div>
+                <h2 class="font-bold text-gray-900">Revenue Trend</h2>
+                <p class="text-sm text-gray-400">Revenue performance for the selected period.</p>
+            </div>
+            <div class="inline-flex rounded-xl border border-orange-100 bg-orange-50 p-1">
+                <button type="button" class="revenue-range-btn px-3 py-1.5 text-xs font-bold rounded-lg bg-white text-orange-500 shadow-sm" data-range="7">7 Days</button>
+                <button type="button" class="revenue-range-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500" data-range="30">30 Days</button>
+                <button type="button" class="revenue-range-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500" data-range="12">12 Months</button>
+            </div>
+        </div>
+        <div class="h-[340px]">
+            <canvas id="revenueChart"></canvas>
+        </div>
+    </div>
 
-    <!-- Quick Actions -->
+    <div class="content-card p-6 fade-in-up">
+        <div class="flex items-center justify-between mb-5">
+            <div>
+                <h2 class="font-bold text-gray-900">User Composition</h2>
+                <p class="text-sm text-gray-400">Current mix of parents, nannies, and moderators.</p>
+            </div>
+            <span class="section-label text-[10px] px-2 py-0.5">Live</span>
+        </div>
+        <div class="h-[340px]">
+            <canvas id="userCompositionChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-5 mb-7">
+    <div class="xl:col-span-2 content-card p-6 fade-in-up">
+        <div class="flex items-center justify-between mb-5 gap-3">
+            <div>
+                <h2 class="font-bold text-gray-900">New Users Over Time</h2>
+                <p class="text-sm text-gray-400">User growth for the selected period.</p>
+            </div>
+            <div class="inline-flex rounded-xl border border-orange-100 bg-orange-50 p-1">
+                <button type="button" class="user-growth-range-btn px-3 py-1.5 text-xs font-bold rounded-lg bg-white text-orange-500 shadow-sm" data-range="7">7 Days</button>
+                <button type="button" class="user-growth-range-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500" data-range="30">30 Days</button>
+                <button type="button" class="user-growth-range-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500" data-range="12">12 Months</button>
+            </div>
+        </div>
+        <div class="h-[320px]">
+            <canvas id="userGrowthChart"></canvas>
+        </div>
+    </div>
+
+    <div class="content-card p-6 fade-in-up">
+        <div class="flex items-center justify-between mb-5">
+            <div>
+                <h2 class="font-bold text-gray-900">Account Status</h2>
+                <p class="text-sm text-gray-400">How many accounts are active versus inactive.</p>
+            </div>
+            <span class="section-label text-[10px] px-2 py-0.5">Live</span>
+        </div>
+        <div class="h-[320px]">
+            <canvas id="userStatusChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-5 mb-7">
+    <div class="xl:col-span-2 content-card p-6 fade-in-up">
+        <div class="flex items-center justify-between mb-5 gap-3">
+            <div>
+                <h2 class="font-bold text-gray-900">Subscription Growth</h2>
+                <p class="text-sm text-gray-400">Subscription volume for the selected period.</p>
+            </div>
+            <div class="inline-flex rounded-xl border border-orange-100 bg-orange-50 p-1">
+                <button type="button" class="subscription-range-btn px-3 py-1.5 text-xs font-bold rounded-lg bg-white text-orange-500 shadow-sm" data-range="7">7 Days</button>
+                <button type="button" class="subscription-range-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500" data-range="30">30 Days</button>
+                <button type="button" class="subscription-range-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500" data-range="12">12 Months</button>
+            </div>
+        </div>
+        <div class="h-[320px]">
+            <canvas id="subscriptionTrendChart"></canvas>
+        </div>
+    </div>
+
+    <div class="content-card p-6 fade-in-up">
+        <div class="flex items-center justify-between mb-5">
+            <div>
+                <h2 class="font-bold text-gray-900">Subscription Health</h2>
+                <p class="text-sm text-gray-400">Active versus expired subscriptions.</p>
+            </div>
+            <span class="section-label text-[10px] px-2 py-0.5">Live</span>
+        </div>
+        <div class="h-[320px]">
+            <canvas id="subscriptionHealthChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-5 mb-7">
+    <div class="xl:col-span-2 content-card p-6 fade-in-up">
+        <div class="flex items-center justify-between mb-5 gap-3">
+            <div>
+                <h2 class="font-bold text-gray-900">Operational Queue</h2>
+                <p class="text-sm text-gray-400">Pending moderation workload for the selected period.</p>
+            </div>
+            <div class="inline-flex rounded-xl border border-orange-100 bg-orange-50 p-1">
+                <button type="button" class="operations-range-btn px-3 py-1.5 text-xs font-bold rounded-lg bg-white text-orange-500 shadow-sm" data-range="7">7 Days</button>
+                <button type="button" class="operations-range-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500" data-range="30">30 Days</button>
+                <button type="button" class="operations-range-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500" data-range="12">12 Months</button>
+            </div>
+        </div>
+        <div class="h-[320px]">
+            <canvas id="operationsChart"></canvas>
+        </div>
+    </div>
+
     <div class="content-card p-0 fade-in-up">
         <div class="card-header">
-            <h2>⚡ Quick Actions</h2>
+            <h2>Quick Actions</h2>
         </div>
         <div class="p-4 space-y-2.5">
-
             <a href="/Admin/ManageModerators"
                class="quick-action-item hover:bg-orange-50 hover:border-orange-200">
                 <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center flex-shrink-0">
@@ -166,7 +200,7 @@
                 </div>
                 <div class="flex-1 min-w-0">
                     <p class="text-sm font-bold text-gray-700">Manage Moderators</p>
-                    <p class="text-xs text-gray-400">@Model.TotalModerators active accounts</p>
+                    <p class="text-xs text-gray-400">@Model.TotalModerators moderator accounts</p>
                 </div>
                 <span class="material-icons-round text-gray-300 text-base">arrow_forward_ios</span>
             </a>
@@ -183,103 +217,457 @@
                 <span class="material-icons-round text-gray-300 text-base">arrow_forward_ios</span>
             </a>
 
+            <a href="/Admin/ExportData"
+               class="quick-action-item hover:bg-violet-50 hover:border-violet-200">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-100 to-violet-200 flex items-center justify-center flex-shrink-0">
+                    <span class="material-icons-round text-violet-500 text-lg">download</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-bold text-gray-700">Export Data</p>
+                    <p class="text-xs text-gray-400">Download current system snapshot</p>
+                </div>
+                <span class="material-icons-round text-gray-300 text-base">arrow_forward_ios</span>
+            </a>
         </div>
-    </div>
-
-    <!-- Recent Transactions -->
-    <div class="xl:col-span-2 content-card overflow-hidden fade-in-up" style="animation-delay:.1s;">
-        <div class="card-header">
-            <h2>🕐 Recent Transactions</h2>
-        </div>
-
-        @if (!Model.RecentTransactions.Any())
-        {
-            <div class="px-6 py-12 text-center text-gray-400 text-sm">
-                <span class="material-icons-round text-4xl mb-2 block text-gray-200">receipt_long</span>
-                No transactions yet.
-            </div>
-        }
-        else
-        {
-            <div class="divide-y divide-gray-50">
-                @foreach (var tx in Model.RecentTransactions)
-                {
-                    var statusCls = tx.Status == 1 ? "badge-active" : tx.Status == 0 ? "badge-pending" : "badge-inactive";
-                    <div class="flex items-center gap-3 px-5 py-3.5 hover:bg-orange-50/50 transition-colors">
-                        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center flex-shrink-0">
-                            <span class="material-icons-round text-orange-500 text-base">receipt_long</span>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <p class="text-sm font-bold text-gray-800 truncate">@tx.UserName</p>
-                            <p class="text-xs text-gray-400 truncate">@tx.UserEmail</p>
-                        </div>
-                        <div class="flex flex-col items-end gap-1 flex-shrink-0">
-                            <span class="font-bold text-sm text-gray-800">@tx.Amount.ToString("N0") ₫</span>
-                            <span class="badge @statusCls">@tx.StatusLabel</span>
-                        </div>
-                    </div>
-                }
-            </div>
-        }
     </div>
 </div>
 
-<!-- User Breakdown -->
-<div class="content-card p-6 fade-in-up" style="animation-delay:.15s;">
-    <div class="flex items-center gap-3 mb-5">
-        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center">
-            <span class="material-icons-round text-orange-500 text-lg">bar_chart</span>
-        </div>
-        <h2 class="font-bold text-gray-900">User Breakdown</h2>
+<div class="content-card overflow-hidden fade-in-up" style="animation-delay:.1s;">
+    <div class="card-header">
+        <h2>Recent Transactions</h2>
     </div>
 
-    @if (Model.TotalUsers == 0)
+    @if (!Model.RecentTransactions.Any())
     {
-        <div class="text-center py-8">
-            <span class="material-icons-round text-4xl text-gray-200 block mb-2">insert_chart_outlined</span>
-            <p class="text-sm text-gray-400">No data available.</p>
+        <div class="px-6 py-12 text-center text-gray-400 text-sm">
+            <span class="material-icons-round text-4xl mb-2 block text-gray-200">receipt_long</span>
+            No transactions yet.
         </div>
     }
     else
     {
-        var pParent = (double)Model.TotalParents    / Model.TotalUsers * 100;
-        var pNanny  = (double)Model.TotalNannies    / Model.TotalUsers * 100;
-        var pMod    = (double)Model.TotalModerators / Model.TotalUsers * 100;
-
-        <div class="space-y-4">
-            <div class="bg-violet-50/60 rounded-2xl p-4 border border-violet-100">
-                <div class="flex justify-between text-sm mb-2">
-                    <span class="text-gray-700 font-semibold flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-violet-400 inline-block"></span>Parents
-                    </span>
-                    <span class="font-bold text-gray-800">@Model.TotalParents.ToString("N0") <span class="text-violet-500 font-bold text-xs ml-1">(@pParent.ToString("F0")%)</span></span>
+        <div class="divide-y divide-gray-50">
+            @foreach (var tx in Model.RecentTransactions)
+            {
+                var statusCls = tx.Status == 1 ? "badge-active" : tx.Status == 0 ? "badge-pending" : "badge-inactive";
+                <div class="flex items-center gap-3 px-5 py-3.5 hover:bg-orange-50/50 transition-colors">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center flex-shrink-0">
+                        <span class="material-icons-round text-orange-500 text-base">receipt_long</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-bold text-gray-800 truncate">@tx.UserName</p>
+                        <p class="text-xs text-gray-400 truncate">@tx.UserEmail</p>
+                    </div>
+                    <div class="text-xs text-gray-400 flex-shrink-0">@tx.TypeLabel</div>
+                    <div class="flex flex-col items-end gap-1 flex-shrink-0">
+                        <span class="font-bold text-sm text-gray-800">@tx.Amount.ToString("N0") VND</span>
+                        <span class="badge @statusCls">@tx.StatusLabel</span>
+                    </div>
                 </div>
-                <div class="w-full bg-violet-100 rounded-full h-2.5">
-                    <div class="progress-fill bg-gradient-to-r from-violet-400 to-violet-600 h-2.5 rounded-full" style="width:@pParent.ToString("F0")%"></div>
-                </div>
-            </div>
-            <div class="bg-blue-50/60 rounded-2xl p-4 border border-blue-100">
-                <div class="flex justify-between text-sm mb-2">
-                    <span class="text-gray-700 font-semibold flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-blue-400 inline-block"></span>Nannies
-                    </span>
-                    <span class="font-bold text-gray-800">@Model.TotalNannies.ToString("N0") <span class="text-blue-500 font-bold text-xs ml-1">(@pNanny.ToString("F0")%)</span></span>
-                </div>
-                <div class="w-full bg-blue-100 rounded-full h-2.5">
-                    <div class="progress-fill bg-gradient-to-r from-blue-400 to-blue-600 h-2.5 rounded-full" style="width:@pNanny.ToString("F0")%"></div>
-                </div>
-            </div>
-            <div class="bg-orange-50/60 rounded-2xl p-4 border border-orange-100">
-                <div class="flex justify-between text-sm mb-2">
-                    <span class="text-gray-700 font-semibold flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-orange-400 inline-block"></span>Moderators
-                    </span>
-                    <span class="font-bold text-gray-800">@Model.TotalModerators.ToString("N0") <span class="text-orange-500 font-bold text-xs ml-1">(@pMod.ToString("F0")%)</span></span>
-                </div>
-                <div class="w-full bg-orange-100 rounded-full h-2.5">
-                    <div class="progress-fill bg-gradient-to-r from-orange-400 to-orange-600 h-2.5 rounded-full" style="width:@pMod.ToString("F0")%"></div>
-                </div>
-            </div>
+            }
         </div>
     }
 </div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script>
+        const revenue7 = @Html.Raw(JsonSerializer.Serialize(Model.Revenue7Days));
+        const revenue30 = @Html.Raw(JsonSerializer.Serialize(Model.Revenue30Days));
+        const revenue12 = @Html.Raw(JsonSerializer.Serialize(Model.Revenue12Months));
+        const subscription7 = @Html.Raw(JsonSerializer.Serialize(Model.Subscription7Days));
+        const subscription30 = @Html.Raw(JsonSerializer.Serialize(Model.Subscription30Days));
+        const subscription12 = @Html.Raw(JsonSerializer.Serialize(Model.Subscription12Months));
+        const userGrowth7 = @Html.Raw(JsonSerializer.Serialize(Model.NewUsers7Days));
+        const userGrowth30 = @Html.Raw(JsonSerializer.Serialize(Model.NewUsers30Days));
+        const userGrowth12 = @Html.Raw(JsonSerializer.Serialize(Model.NewUsers12Months));
+        const userComposition = @Html.Raw(JsonSerializer.Serialize(new[] { Model.TotalParents, Model.TotalNannies, Model.TotalModerators }));
+        const userStatus = @Html.Raw(JsonSerializer.Serialize(new[] { Model.ActiveUsers, Model.InactiveUsers }));
+        const subscriptionHealth = @Html.Raw(JsonSerializer.Serialize(new[] { Model.ActiveSubs, Model.ExpiredSubs }));
+        const queue7 = @Html.Raw(JsonSerializer.Serialize(Model.Queue7Days));
+        const queue30 = @Html.Raw(JsonSerializer.Serialize(Model.Queue30Days));
+        const queue12 = @Html.Raw(JsonSerializer.Serialize(Model.Queue12Months));
+
+        const chartFont = {
+            family: 'Quicksand, sans-serif',
+            size: 12
+        };
+
+        const baseLegend = {
+            position: 'bottom',
+            labels: {
+                usePointStyle: true,
+                pointStyle: 'circle',
+                padding: 18,
+                font: chartFont
+            }
+        };
+
+        const applyRangeButtonState = (selector, activeButton) => {
+            document.querySelectorAll(selector).forEach(item => {
+                item.classList.remove('bg-white', 'text-orange-500', 'shadow-sm');
+                item.classList.add('text-gray-500');
+            });
+
+            activeButton.classList.add('bg-white', 'text-orange-500', 'shadow-sm');
+            activeButton.classList.remove('text-gray-500');
+        };
+
+        const buildQueueDataset = (queueRange) => ({
+            labels: queueRange.Timeline.map(item => item.Label),
+            datasets: [
+                {
+                    label: 'Pending Verifications',
+                    data: queueRange.Timeline.map(item => item.PendingVerifications),
+                    borderColor: '#F59E0B',
+                    backgroundColor: 'rgba(245, 158, 11, 0.12)',
+                    pointBackgroundColor: '#F59E0B',
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    borderWidth: 3,
+                    tension: 0.35,
+                    fill: false
+                },
+                {
+                    label: 'Pending Job Postings',
+                    data: queueRange.Timeline.map(item => item.PendingJobPostings),
+                    borderColor: '#8B5CF6',
+                    backgroundColor: 'rgba(139, 92, 246, 0.12)',
+                    pointBackgroundColor: '#8B5CF6',
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    borderWidth: 3,
+                    tension: 0.35,
+                    fill: false
+                },
+                {
+                    label: 'Pending Reports',
+                    data: queueRange.Timeline.map(item => item.PendingReports),
+                    borderColor: '#EF4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                    pointBackgroundColor: '#EF4444',
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    borderWidth: 3,
+                    tension: 0.35,
+                    fill: false
+                }
+            ]
+        });
+
+        const revenueCanvas = document.getElementById('revenueChart');
+        let revenueChart = null;
+        if (revenueCanvas) {
+            revenueChart = new Chart(revenueCanvas, {
+                type: 'line',
+                data: {
+                    labels: revenue7.map(item => item.Label),
+                    datasets: [{
+                        label: 'Revenue',
+                        data: revenue7.map(item => item.Revenue),
+                        borderColor: '#F97316',
+                        backgroundColor: 'rgba(249, 115, 22, 0.16)',
+                        fill: true,
+                        tension: 0.35,
+                        borderWidth: 3,
+                        pointRadius: 3,
+                        pointHoverRadius: 5
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: chartFont }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                font: chartFont
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        document.querySelectorAll('.revenue-range-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                if (!revenueChart) {
+                    return;
+                }
+
+                const nextData = button.dataset.range === '30'
+                    ? revenue30
+                    : button.dataset.range === '12'
+                        ? revenue12
+                        : revenue7;
+
+                revenueChart.data.labels = nextData.map(item => item.Label);
+                revenueChart.data.datasets[0].data = nextData.map(item => item.Revenue);
+                revenueChart.update();
+
+                applyRangeButtonState('.revenue-range-btn', button);
+            });
+        });
+
+        const compositionCanvas = document.getElementById('userCompositionChart');
+        if (compositionCanvas) {
+            new Chart(compositionCanvas, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Parents', 'Nannies', 'Moderators'],
+                    datasets: [{
+                        data: userComposition,
+                        backgroundColor: ['#8B5CF6', '#3B82F6', '#F97316'],
+                        borderColor: '#FFFFFF',
+                        borderWidth: 4,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    cutout: '60%',
+                    plugins: {
+                        legend: baseLegend
+                    }
+                }
+            });
+        }
+
+        const growthCanvas = document.getElementById('userGrowthChart');
+        let growthChart = null;
+        if (growthCanvas) {
+            growthChart = new Chart(growthCanvas, {
+                type: 'line',
+                data: {
+                    labels: userGrowth7.map(item => item.Label),
+                    datasets: [{
+                        label: 'New Users',
+                        data: userGrowth7.map(item => item.NewUsers),
+                        borderColor: '#10B981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.14)',
+                        fill: true,
+                        tension: 0.35,
+                        borderWidth: 3,
+                        pointRadius: 2,
+                        pointHoverRadius: 4
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                maxRotation: 0,
+                                autoSkip: true,
+                                maxTicksLimit: 10,
+                                font: chartFont
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0,
+                                font: chartFont
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        document.querySelectorAll('.user-growth-range-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                if (!growthChart) {
+                    return;
+                }
+
+                const nextData = button.dataset.range === '30'
+                    ? userGrowth30
+                    : button.dataset.range === '12'
+                        ? userGrowth12
+                        : userGrowth7;
+
+                growthChart.data.labels = nextData.map(item => item.Label);
+                growthChart.data.datasets[0].data = nextData.map(item => item.NewUsers);
+                growthChart.update();
+
+                applyRangeButtonState('.user-growth-range-btn', button);
+            });
+        });
+
+        const statusCanvas = document.getElementById('userStatusChart');
+        if (statusCanvas) {
+            new Chart(statusCanvas, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Active', 'Inactive'],
+                    datasets: [{
+                        data: userStatus,
+                        backgroundColor: ['#10B981', '#EF4444'],
+                        borderColor: '#FFFFFF',
+                        borderWidth: 4,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    cutout: '60%',
+                    plugins: {
+                        legend: baseLegend
+                    }
+                }
+            });
+        }
+
+        const subscriptionTrendCanvas = document.getElementById('subscriptionTrendChart');
+        let subscriptionChart = null;
+        if (subscriptionTrendCanvas) {
+            subscriptionChart = new Chart(subscriptionTrendCanvas, {
+                type: 'bar',
+                data: {
+                    labels: subscription7.map(item => item.Label),
+                    datasets: [{
+                        label: 'Subscriptions',
+                        data: subscription7.map(item => item.Count),
+                        backgroundColor: '#8B5CF6',
+                        borderRadius: 10,
+                        borderSkipped: false,
+                        maxBarThickness: 42
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: chartFont }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0,
+                                font: chartFont
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        document.querySelectorAll('.subscription-range-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                if (!subscriptionChart) {
+                    return;
+                }
+
+                const nextData = button.dataset.range === '30'
+                    ? subscription30
+                    : button.dataset.range === '12'
+                        ? subscription12
+                        : subscription7;
+
+                subscriptionChart.data.labels = nextData.map(item => item.Label);
+                subscriptionChart.data.datasets[0].data = nextData.map(item => item.Count);
+                subscriptionChart.update();
+
+                applyRangeButtonState('.subscription-range-btn', button);
+            });
+        });
+
+        const subscriptionHealthCanvas = document.getElementById('subscriptionHealthChart');
+        if (subscriptionHealthCanvas) {
+            new Chart(subscriptionHealthCanvas, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Active', 'Expired'],
+                    datasets: [{
+                        data: subscriptionHealth,
+                        backgroundColor: ['#10B981', '#CBD5E1'],
+                        borderColor: '#FFFFFF',
+                        borderWidth: 4,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    cutout: '60%',
+                    plugins: {
+                        legend: baseLegend
+                    }
+                }
+            });
+        }
+
+        const operationsCanvas = document.getElementById('operationsChart');
+        let operationsChart = null;
+        if (operationsCanvas) {
+            operationsChart = new Chart(operationsCanvas, {
+                type: 'line',
+                data: buildQueueDataset(queue7),
+                options: {
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: baseLegend
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                maxRotation: 0,
+                                font: chartFont
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grace: '5%',
+                            ticks: {
+                                precision: 0,
+                                font: chartFont
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        document.querySelectorAll('.operations-range-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                if (!operationsChart) {
+                    return;
+                }
+
+                const nextData = button.dataset.range === '30'
+                    ? queue30
+                    : button.dataset.range === '12'
+                        ? queue12
+                        : queue7;
+                const nextDataset = buildQueueDataset(nextData);
+
+                operationsChart.data.labels = nextDataset.labels;
+                operationsChart.data.datasets.forEach((dataset, index) => {
+                    dataset.data = nextDataset.datasets[index].data;
+                });
+                operationsChart.update();
+
+                applyRangeButtonState('.operations-range-btn', button);
+            });
+        });
+    </script>
+}

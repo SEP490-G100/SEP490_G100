@@ -9,6 +9,7 @@ using WebSite.Models.Account;
 using WebSite.Models.FAQ;
 using WebSite.Models.BlogCategory;
 using WebSite.Models.Blog;
+using WebSite.Models.Moderator;
 using WebSite.Models.Search;
 using System.Text.Json.Serialization;
 
@@ -31,22 +32,29 @@ public class ModeratorController : Controller
     // ──────────────────────────────────────────────
     public async Task<IActionResult> Dashboard()
     {
-        // Fetch a small page to get total counts for each role/status
-        var allUsers  = await FetchAccountsAsync(page: 1, pageSize: 1);
-        var parents   = await FetchAccountsAsync(role: "Parent",    page: 1, pageSize: 1);
-        var nannies   = await FetchAccountsAsync(role: "Nanny",     page: 1, pageSize: 1);
-        var inactive  = await FetchAccountsAsync(status: 0,         page: 1, pageSize: 1);
+        var model = new ModeratorDashboardDto();
+        var token = HttpContext.Session.GetString("AccessToken");
 
-        // Recent accounts (for activity feed)
-        var recent    = await FetchAccountsAsync(page: 1, pageSize: 5);
+        var dashboardRequest = new HttpRequestMessage(HttpMethod.Get, "/api/Moderator/dashboard");
+        if (!string.IsNullOrEmpty(token))
+            dashboardRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        ViewBag.TotalUsers    = allUsers?.TotalCount  ?? 0;
-        ViewBag.TotalParents  = parents?.TotalCount   ?? 0;
-        ViewBag.TotalNannies  = nannies?.TotalCount   ?? 0;
-        ViewBag.TotalInactive = inactive?.TotalCount  ?? 0;
-        ViewBag.RecentAccounts = recent?.Items ?? new List<AccountDto>();
+        try
+        {
+            var dashboardResponse = await _http.SendAsync(dashboardRequest);
+            var dashboardJson = await dashboardResponse.Content.ReadAsStringAsync();
+            var dashboardResult = JsonSerializer.Deserialize<ApiResult<ApiModeratorDashboardStatsDto>>(dashboardJson, JsonOpts);
+            model = dashboardResult?.Data?.ToViewModel() ?? new ModeratorDashboardDto();
+        }
+        catch
+        {
+            TempData["Error"] = "Khong the tai du lieu dashboard moderator.";
+        }
 
-        return View();
+        var recent = await FetchAccountsAsync(page: 1, pageSize: 5);
+        model.RecentAccounts = recent?.Items ?? new List<AccountDto>();
+
+        return View(model);
     }
 
     // ──────────────────────────────────────────────
