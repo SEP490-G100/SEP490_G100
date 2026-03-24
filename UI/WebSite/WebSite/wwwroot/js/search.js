@@ -17,8 +17,66 @@ let isSubmittingCreate = false;
 let isSubmittingEdit = false;
 let provinces = [];
 let locationDataPromise = null;
+let provinceCatalog = [];
+let provinceCatalogPromise = null;
 let suppressNextMapSearch = false;
 const autocompleteDropdowns = new Map();
+const selectPickerSyncFns = [];
+const addressSuggestionCache = new Map();
+const districtOptionsCache = new Map();
+const FALLBACK_PROVINCES = [
+  'Thành phố Hà Nội',
+  'Thành phố Hồ Chí Minh',
+  'Thành phố Hải Phòng',
+  'Thành phố Huế',
+  'Thành phố Đà Nẵng',
+  'Thành phố Cần Thơ',
+  'Tỉnh Cao Bằng',
+  'Tỉnh Điện Biên',
+  'Tỉnh Lai Châu',
+  'Tỉnh Sơn La',
+  'Tỉnh Lạng Sơn',
+  'Tỉnh Quảng Ninh',
+  'Tỉnh Thanh Hóa',
+  'Tỉnh Nghệ An',
+  'Tỉnh Hà Tĩnh',
+  'Tỉnh Tuyên Quang',
+  'Tỉnh Lào Cai',
+  'Tỉnh Thái Nguyên',
+  'Tỉnh Phú Thọ',
+  'Tỉnh Bắc Ninh',
+  'Tỉnh Hưng Yên',
+  'Tỉnh Ninh Bình',
+  'Tỉnh Quảng Trị',
+  'Tỉnh Quảng Ngãi',
+  'Tỉnh Gia Lai',
+  'Tỉnh Khánh Hòa',
+  'Tỉnh Lâm Đồng',
+  'Tỉnh Đắk Lắk',
+  'Tỉnh Đồng Nai',
+  'Tỉnh Tây Ninh',
+  'Tỉnh Vĩnh Long',
+  'Tỉnh Đồng Tháp',
+  'Tỉnh Cà Mau',
+  'Tỉnh An Giang'
+];
+const FALLBACK_DISTRICTS_BY_CITY = {
+  'ho chi minh': [
+    'Quận 1', 'Quận 3', 'Quận 4', 'Quận 5', 'Quận 6', 'Quận 7', 'Quận 8',
+    'Quận 10', 'Quận 11', 'Quận 12', 'Quận Bình Thạnh', 'Quận Gò Vấp',
+    'Quận Phú Nhuận', 'Quận Tân Bình', 'Quận Tân Phú', 'Thành phố Thủ Đức',
+    'Huyện Bình Chánh', 'Huyện Cần Giờ', 'Huyện Củ Chi', 'Huyện Hóc Môn', 'Huyện Nhà Bè'
+  ],
+  'ha noi': [
+    'Quận Ba Đình', 'Quận Hoàn Kiếm', 'Quận Tây Hồ', 'Quận Long Biên', 'Quận Cầu Giấy',
+    'Quận Đống Đa', 'Quận Hai Bà Trưng', 'Quận Hoàng Mai', 'Quận Thanh Xuân',
+    'Quận Bắc Từ Liêm', 'Quận Nam Từ Liêm', 'Quận Hà Đông'
+  ],
+  'da nang': ['Quận Hải Châu', 'Quận Thanh Khê', 'Quận Sơn Trà', 'Quận Ngũ Hành Sơn', 'Quận Liên Chiểu', 'Huyện Hòa Vang'],
+  'can tho': ['Quận Ninh Kiều', 'Quận Bình Thủy', 'Quận Cái Răng', 'Quận Ô Môn', 'Quận Thốt Nốt'],
+  'hai phong': ['Quận Hồng Bàng', 'Quận Ngô Quyền', 'Quận Lê Chân', 'Quận Hải An', 'Quận Kiến An', 'Quận Dương Kinh', 'Quận Đồ Sơn'],
+  'hue': ['Quận Phú Xuân', 'Quận Thuận Hóa', 'Thị xã Hương Thủy', 'Thị xã Hương Trà']
+};
 
 const DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 const ROW_LABELS = ['Morning', 'Afternoon', 'Evening', 'Night'];
@@ -33,12 +91,14 @@ const GEO_FALLBACK = {
 function loadLocationData() {
   if (locationDataPromise) return locationDataPromise;
 
-  locationDataPromise = fetch('https://provinces.open-api.vn/api/v2/?depth=3')
+  // Attach autocomplete ngay, dù nguồn ngoài chậm/lỗi thì vẫn có fallback để dùng.
+  attachLocationAutocomplete('cf');
+  attachLocationAutocomplete('ef');
+
+  locationDataPromise = fetch('https://provinces.open-api.vn/api/v2/?depth=2')
     .then((response) => response.ok ? response.json() : [])
     .then((data) => {
       provinces = Array.isArray(data) ? data : [];
-      attachLocationAutocomplete('cf');
-      attachLocationAutocomplete('ef');
       return provinces;
     })
     .catch(() => {
@@ -57,13 +117,168 @@ function normalizeText(value) {
     .trim();
 }
 
+function normalizeAdministrativeName(value) {
+  return normalizeText(value)
+    .replace(/^thanh pho\s+/i, '')
+    .replace(/^tp\.?\s*/i, '')
+    .replace(/^tinh\s+/i, '');
+}
+
 function getProvinceOptions() {
   return provinces.map((province) => province.name);
 }
 
 function getDistrictOptions(cityName) {
-  const selectedProvince = provinces.find((province) => province.name === cityName);
+  const normalizedCity = normalizeAdministrativeName(cityName);
+  const selectedProvince = provinces.find((province) =>
+    normalizeAdministrativeName(province.name) === normalizedCity
+  );
   return (selectedProvince?.districts || []).map((district) => district.name);
+}
+
+function getFallbackDistrictOptions(cityName) {
+  return FALLBACK_DISTRICTS_BY_CITY[normalizeAdministrativeName(cityName)] || [];
+}
+
+function getDistrictCacheKey(cityName) {
+  return normalizeAdministrativeName(cityName);
+}
+
+function cacheDistrictOptions(cityName, values) {
+  districtOptionsCache.set(getDistrictCacheKey(cityName), values);
+  return values;
+}
+
+function getCachedDistrictOptions(cityName) {
+  return districtOptionsCache.get(getDistrictCacheKey(cityName)) || [];
+}
+
+function loadProvinceCatalog() {
+  if (provinceCatalogPromise) return provinceCatalogPromise;
+
+  provinceCatalogPromise = fetch('https://provinces.open-api.vn/api/v2/p/')
+    .then((response) => response.ok ? response.json() : [])
+    .then((data) => {
+      provinceCatalog = Array.isArray(data) ? data : [];
+      return provinceCatalog;
+    })
+    .catch(() => {
+      provinceCatalog = [];
+      return provinceCatalog;
+    });
+
+  return provinceCatalogPromise;
+}
+
+async function fetchDistrictOptionsByCity(cityName) {
+  const normalizedCity = String(cityName ?? '').trim();
+  if (!normalizedCity) return [];
+
+  const cached = getCachedDistrictOptions(normalizedCity);
+  if (cached.length) return cached;
+
+  const localOptions = getDistrictOptions(normalizedCity);
+  if (localOptions.length) {
+    return cacheDistrictOptions(normalizedCity, localOptions);
+  }
+
+  const fallbackOptions = getFallbackDistrictOptions(normalizedCity);
+  if (fallbackOptions.length) {
+    return cacheDistrictOptions(normalizedCity, fallbackOptions);
+  }
+
+  try {
+    const response = await fetch(`/Address/Districts?city=${encodeURIComponent(normalizedCity)}`, {
+      credentials: 'same-origin'
+    });
+    if (!response.ok) return [];
+
+    const data = await response.json();
+    const districts = Array.isArray(data)
+      ? data.filter(Boolean)
+      : [];
+    if (districts.length) {
+      return cacheDistrictOptions(normalizedCity, districts);
+    }
+    return cacheDistrictOptions(normalizedCity, fallbackOptions);
+  } catch {
+    return cacheDistrictOptions(normalizedCity, fallbackOptions);
+  }
+}
+
+async function fetchAddressSuggestions(query) {
+  const normalized = String(query ?? '').trim();
+  if (normalized.length < 2) return [];
+
+  const cacheKey = normalizeText(normalized);
+  if (addressSuggestionCache.has(cacheKey)) {
+    return addressSuggestionCache.get(cacheKey) || [];
+  }
+
+  try {
+    const response = await fetch(`/Address/Suggest?q=${encodeURIComponent(normalized)}&limit=10`, { credentials: 'same-origin' });
+    if (!response.ok) return [];
+    const json = await response.json();
+    const items = Array.isArray(json) ? json : [];
+    addressSuggestionCache.set(cacheKey, items);
+    return items;
+  } catch {
+    return [];
+  }
+}
+
+function uniqueNormalizedValues(values, query) {
+  const seen = new Set();
+  return values
+    .filter((value) => value && (!query || normalizeText(value).includes(normalizeText(query))))
+    .filter((value) => {
+      const key = normalizeText(value);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 12);
+}
+
+async function getProvinceOptionsAsync(query) {
+  if (provinces.length) {
+    return uniqueNormalizedValues(getProvinceOptions(), query);
+  }
+
+  if (!String(query ?? '').trim()) {
+    return [...FALLBACK_PROVINCES];
+  }
+
+  const suggestions = await fetchAddressSuggestions(query);
+  const values = uniqueNormalizedValues(suggestions.map((item) => item.city), query);
+  return values.length ? values : uniqueNormalizedValues(FALLBACK_PROVINCES, query);
+}
+
+async function getDistrictOptionsAsync(cityName, query) {
+  const normalizedCity = String(cityName ?? '').trim();
+  if (!normalizedCity) return [];
+  const normalizedCityKey = normalizeAdministrativeName(normalizedCity);
+
+  const localValues = uniqueNormalizedValues(await fetchDistrictOptionsByCity(normalizedCity), query);
+  if (localValues.length) {
+    return localValues;
+  }
+
+  if (!String(query ?? '').trim()) {
+    return [];
+  }
+
+  const compositeQuery = [query, normalizedCity].filter(Boolean).join(', ');
+  const suggestions = await fetchAddressSuggestions(compositeQuery);
+  return uniqueNormalizedValues(
+    suggestions
+      .filter((item) => {
+        if (!item.city) return true;
+        return normalizeAdministrativeName(item.city).includes(normalizedCityKey);
+      })
+      .map((item) => item.district),
+    query
+  );
 }
 
 function getAutocompleteKey(prefix, kind) {
@@ -113,11 +328,12 @@ function attachAutocomplete(prefix, kind, optionGetter, onSelect) {
   input.insertAdjacentElement('afterend', dropdown);
   autocompleteDropdowns.set(getAutocompleteKey(prefix, kind), dropdown);
 
-  const showForQuery = () => {
-    const query = normalizeText(input.value);
-    const filtered = optionGetter()
-      .filter((option) => !query || normalizeText(option).includes(query))
-      .slice(0, 12);
+  let requestToken = 0;
+  const showForQuery = async () => {
+    const currentToken = ++requestToken;
+    const rawQuery = input.value.trim();
+    const filtered = await Promise.resolve(optionGetter(rawQuery));
+    if (currentToken !== requestToken) return;
 
     renderAutocompleteOptions(prefix, kind, filtered, (value) => {
       input.value = value;
@@ -137,7 +353,7 @@ function attachLocationAutocomplete(prefix) {
   attachAutocomplete(
     prefix,
     'city',
-    () => getProvinceOptions(),
+    (query) => getProvinceOptionsAsync(query),
     (value) => {
       const districtInput = document.getElementById(`${prefix}-district`);
       if (districtInput) districtInput.value = '';
@@ -148,9 +364,92 @@ function attachLocationAutocomplete(prefix) {
   attachAutocomplete(
     prefix,
     'district',
-    () => getDistrictOptions(document.getElementById(`${prefix}-city`)?.value.trim() || ''),
+    (query) => getDistrictOptionsAsync(document.getElementById(`${prefix}-city`)?.value.trim() || '', query),
     () => {}
   );
+}
+
+function attachSelectPicker(prefix, kind, selectId, inputId, emptyLabel, onValueChanged) {
+  const select = document.getElementById(selectId);
+  const input = document.getElementById(inputId);
+  if (!select || !input || input.dataset.acReady === 'true') return;
+
+  input.dataset.acReady = 'true';
+  input.parentElement?.classList.add('autocomplete-field');
+
+  const dropdown = document.createElement('ul');
+  dropdown.className = 'ac-dropdown';
+  input.insertAdjacentElement('afterend', dropdown);
+  autocompleteDropdowns.set(getAutocompleteKey(prefix, kind), dropdown);
+  const normalizedEmptyLabel = normalizeText(emptyLabel);
+
+  const syncFromSelect = () => {
+    const selectedOption = select.options[select.selectedIndex];
+    input.value = selectedOption ? selectedOption.text.trim() : emptyLabel;
+  };
+
+  selectPickerSyncFns.push(syncFromSelect);
+
+  const buildOptions = (query) => {
+    const normalizedQuery = normalizeText(query);
+    return Array.from(select.options)
+      .map((option) => ({ value: option.value, label: option.text.trim() }))
+      .filter((option) => option.label && (!normalizedQuery || normalizeText(option.label).includes(normalizedQuery)))
+      .slice(0, 16);
+  };
+
+  const renderOptions = (query) => {
+    const options = buildOptions(query);
+    if (!options.length) {
+      dropdown.innerHTML = '';
+      dropdown.classList.remove('show');
+      return;
+    }
+
+    dropdown.innerHTML = options.map((option) => `
+      <li data-value="${escapeHtml(option.value)}" data-label="${escapeHtml(option.label)}">${escapeHtml(option.label)}</li>
+    `).join('');
+    dropdown.classList.add('show');
+
+    dropdown.querySelectorAll('li').forEach((item) => {
+      item.addEventListener('mousedown', (event) => {
+        event.preventDefault();
+        select.value = item.dataset.value || '';
+        input.value = item.dataset.label || emptyLabel;
+        if (typeof onValueChanged === 'function') onValueChanged(select.value);
+        hideAutocomplete(prefix, kind);
+      });
+    });
+  };
+
+  syncFromSelect();
+  input.addEventListener('focus', () => {
+    const currentValue = input.value.trim();
+    const shouldOpenAll = !currentValue || select.value === '' || normalizeText(currentValue) === normalizedEmptyLabel;
+    renderOptions(shouldOpenAll ? '' : currentValue);
+  });
+  input.addEventListener('click', () => {
+    const currentValue = input.value.trim();
+    const shouldOpenAll = !currentValue || select.value === '' || normalizeText(currentValue) === normalizedEmptyLabel;
+    renderOptions(shouldOpenAll ? '' : currentValue);
+  });
+  input.addEventListener('input', () => renderOptions(input.value.trim()));
+  input.addEventListener('blur', () => {
+    setTimeout(() => {
+      hideAutocomplete(prefix, kind);
+      syncFromSelect();
+    }, 120);
+  });
+}
+
+function syncSelectPickerTexts() {
+  selectPickerSyncFns.forEach((syncFn) => syncFn());
+}
+
+function attachCreateSelectPickers() {
+  attachSelectPicker('cf', 'typePicker', 'cf-type', 'cf-typeText', 'Chọn loại công việc');
+  attachSelectPicker('cf', 'childPicker', 'cf-childProfileId', 'cf-childProfileText', 'Chọn trẻ', () => handleCreateChildChange());
+  attachSelectPicker('cf', 'skillPicker', 'cf-skillSelect', 'cf-skillSelectText', 'Chọn kỹ năng cần yêu cầu');
 }
 
 function handleCityChange(prefix, explicitCityValue) {
@@ -159,9 +458,13 @@ function handleCityChange(prefix, explicitCityValue) {
   if (!cityInput) return;
 
   const cityValue = (explicitCityValue ?? cityInput.value).trim();
-  const allowedDistricts = getDistrictOptions(cityValue);
+  const allowedDistricts = getCachedDistrictOptions(cityValue);
   if (districtInput && districtInput.value && !allowedDistricts.includes(districtInput.value.trim())) {
     districtInput.value = '';
+  }
+
+  if (cityValue) {
+    fetchDistrictOptionsByCity(cityValue);
   }
 }
 
@@ -441,6 +744,7 @@ function renderChildren(prefix, selectedChildId) {
     ? collection.map((child) => `<option value="${escapeHtml(child.id)}">${escapeHtml(child.label)}</option>`).join('')
     : '<option value="">Chua co Child Profile</option>';
   if (selectedChildId) select.value = selectedChildId;
+  syncSelectPickerTexts();
   setProfileFields(prefix, getSelectedChild(prefix));
 }
 
@@ -510,6 +814,7 @@ function addSelectedSkillToCollection(selectId, collection, containerId, removeH
   if (!value || collection.includes(value)) return;
   collection.push(value);
   select.value = '';
+  syncSelectPickerTexts();
   renderSkillCollection(containerId, collection, removeHandlerName);
 }
 
@@ -551,6 +856,8 @@ function setEditStatus(status) {
 async function openCreate() {
   await loadLocationData();
   document.getElementById('createForm')?.reset();
+  const createSkillSelect = document.getElementById('cf-skillSelect');
+  if (createSkillSelect) createSkillSelect.value = '';
   createSkills = [];
   createSchedule = [];
   createChildren = [];
@@ -565,6 +872,7 @@ async function openCreate() {
     if (json.success && json.data) applyPrefill('cf', json.data, json.data.selectedChildProfileId);
   } catch { }
 
+  syncSelectPickerTexts();
   document.getElementById('createModal')?.classList.add('show');
 }
 
@@ -738,6 +1046,13 @@ function handleEditCityChange() {
 }
 
 function bootstrapSearchPage() {
+  ['cf-city', 'cf-district', 'ef-city', 'ef-district', 'cf-typeText', 'cf-childProfileText', 'cf-skillSelectText'].forEach((id) => {
+    document.getElementById(id)?.setAttribute('autocomplete', 'off');
+  });
+  ['createForm', 'editForm'].forEach((id) => {
+    document.getElementById(id)?.setAttribute('autocomplete', 'off');
+  });
+  attachCreateSelectPickers();
   initMap();
   loadLocationData();
   doSearch();

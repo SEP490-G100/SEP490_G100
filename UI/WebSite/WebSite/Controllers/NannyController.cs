@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebSite.Models;
@@ -25,6 +26,71 @@ public class NannyController : Controller
         var token = GetToken();
         if (!string.IsNullOrEmpty(token))
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        else
+            _http.DefaultRequestHeaders.Authorization = null;
+    }
+
+    [AllowAnonymous]
+    [HttpGet]
+    public async Task<IActionResult> List()
+    {
+        var vm = new NannyBrowsePageViewModel();
+        SetAuthHeader();
+
+        try
+        {
+            var response = await _http.GetAsync("/api/onboarding/skills");
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync();
+                var apiResult = JsonSerializer.Deserialize<ApiResult<List<NannySkillOptionViewModel>>>(json, JsonOpts);
+                vm.SkillOptions = apiResult?.Data ?? new();
+            }
+        }
+        catch
+        {
+            vm.SkillOptions = new();
+        }
+
+        return View(vm);
+    }
+
+    [AllowAnonymous]
+    [HttpGet]
+    public async Task<IActionResult> BrowseData([FromQuery] NannySearchRequestViewModel request)
+    {
+        SetAuthHeader();
+
+        var query = new Dictionary<string, string?>();
+        AddQuery(query, "keyword", request.Keyword);
+        AddQuery(query, "city", request.City);
+        AddQuery(query, "district", request.District);
+        AddQuery(query, "minAge", request.MinAge);
+        AddQuery(query, "maxAge", request.MaxAge);
+        AddQuery(query, "minExperience", request.MinExperience);
+        AddQuery(query, "minExpectedSalary", request.MinExpectedSalary);
+        AddQuery(query, "maxExpectedSalary", request.MaxExpectedSalary);
+        AddQuery(query, "verificationStatus", request.VerificationStatus);
+        AddQuery(query, "dayOfWeek", request.DayOfWeek);
+        AddQuery(query, "timeSlot", request.TimeSlot);
+        AddQuery(query, "skillIds", request.SkillIds);
+        AddQuery(query, "page", request.Page);
+        AddQuery(query, "pageSize", request.PageSize);
+
+        var url = QueryHelpers.AddQueryString("/api/nannies", query!);
+        var response = await _http.GetAsync(url);
+        var json = await response.Content.ReadAsStringAsync();
+        return Content(json, "application/json");
+    }
+
+    [AllowAnonymous]
+    [HttpGet]
+    public async Task<IActionResult> DetailData(Guid id)
+    {
+        SetAuthHeader();
+        var response = await _http.GetAsync($"/api/nannies/{id}");
+        var json = await response.Content.ReadAsStringAsync();
+        return Content(json, "application/json");
     }
 
     [HttpGet]
@@ -134,5 +200,19 @@ public class NannyController : Controller
 
         return RedirectToAction("Start", "Onboarding");
     }
-}
 
+    private static void AddQuery<T>(IDictionary<string, string?> query, string key, T? value)
+    {
+        if (value == null) return;
+
+        var stringValue = value switch
+        {
+            string s when string.IsNullOrWhiteSpace(s) => null,
+            string s => s,
+            _ => Convert.ToString(value)
+        };
+
+        if (!string.IsNullOrWhiteSpace(stringValue))
+            query[key] = stringValue;
+    }
+}

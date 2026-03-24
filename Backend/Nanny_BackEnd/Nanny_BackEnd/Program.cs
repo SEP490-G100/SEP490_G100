@@ -149,6 +149,7 @@ builder.Services.AddScoped<EmailService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ProfileService>();
 builder.Services.AddScoped<OnboardingService>();
+builder.Services.AddScoped<NannyService>();
 builder.Services.AddScoped<NannyProfileRepository>();
 builder.Services.AddScoped<NannySkillRepository>();
 builder.Services.AddScoped<NannyAvailabilityRepository>();

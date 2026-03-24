@@ -1,0 +1,861 @@
+let nannyMap;
+let nannyMarkers = [];
+let nannyProfiles = [];
+let nannySearchTimer = null;
+let nannyProvinces = [];
+let nannyLocationPromise = null;
+let nannyProvinceCatalog = [];
+let nannyProvinceCatalogPromise = null;
+const nannyAutocompleteDropdowns = new Map();
+const nannyAddressSuggestionCache = new Map();
+const nannyDistrictOptionsCache = new Map();
+const nannySelectPickerSyncHandlers = [];
+let nannyScheduleFilters = [];
+const NANNY_DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+const NANNY_TIME_LABELS = ['Morning', 'Afternoon', 'Evening', 'Night'];
+const NANNY_FALLBACK_PROVINCES = [
+    'Thành phố Hà Nội',
+    'Tỉnh Cao Bằng',
+    'Tỉnh Tuyên Quang',
+    'Tỉnh Điện Biên',
+    'Tỉnh Lai Châu',
+    'Tỉnh Sơn La',
+    'Tỉnh Lào Cai',
+    'Tỉnh Thái Nguyên',
+    'Tỉnh Lạng Sơn',
+    'Tỉnh Quảng Ninh',
+    'Tỉnh Bắc Ninh',
+    'Tỉnh Phú Thọ',
+    'Thành phố Hải Phòng',
+    'Tỉnh Hưng Yên',
+    'Tỉnh Ninh Bình',
+    'Tỉnh Thanh Hóa',
+    'Tỉnh Nghệ An',
+    'Tỉnh Hà Tĩnh',
+    'Tỉnh Quảng Trị',
+    'Thành phố Huế',
+    'Thành phố Đà Nẵng',
+    'Tỉnh Quảng Ngãi',
+    'Tỉnh Gia Lai',
+    'Tỉnh Khánh Hòa',
+    'Tỉnh Đắk Lắk',
+    'Tỉnh Lâm Đồng',
+    'Tỉnh Đồng Nai',
+    'Thành phố Hồ Chí Minh',
+    'Tỉnh Tây Ninh',
+    'Tỉnh Đồng Tháp',
+    'Tỉnh Vĩnh Long',
+    'Tỉnh An Giang',
+    'Thành phố Cần Thơ',
+    'Tỉnh Cà Mau'
+];
+const NANNY_FALLBACK_DISTRICTS_BY_CITY = {
+  'ho chi minh': [
+    'Quận 1', 'Quận 3', 'Quận 4', 'Quận 5', 'Quận 6', 'Quận 7', 'Quận 8',
+    'Quận 10', 'Quận 11', 'Quận 12', 'Quận Bình Thạnh', 'Quận Gò Vấp',
+    'Quận Phú Nhuận', 'Quận Tân Bình', 'Quận Tân Phú', 'Thành phố Thủ Đức',
+    'Huyện Bình Chánh', 'Huyện Cần Giờ', 'Huyện Củ Chi', 'Huyện Hóc Môn', 'Huyện Nhà Bè'
+  ],
+    'ha noi': [
+        'Phường Hoàn Kiếm',
+        'Phường Cửa Nam',
+        'Phường Ba Đình',
+        'Phường Ngọc Hà',
+        'Phường Giảng Võ',
+        'Phường Kim Mã',
+        'Phường Đống Đa',
+        'Phường Ô Chợ Dừa',
+        'Phường Văn Miếu - Quốc Tử Giám',
+        'Phường Kim Liên',
+        'Phường Láng',
+        'Phường Ô Chợ Dừa',
+        'Phường Hai Bà Trưng',
+        'Phường Bạch Mai',
+        'Phường Vĩnh Tuy',
+        'Phường Thanh Nhàn',
+        'Phường Hoàng Mai',
+        'Phường Tương Mai',
+        'Phường Định Công',
+        'Phường Hoàng Liệt',
+        'Phường Yên Sở',
+        'Phường Thanh Xuân',
+        'Phường Khương Đình',
+        'Phường Phương Liệt',
+        'Phường Hạ Đình',
+        'Phường Cầu Giấy',
+        'Phường Nghĩa Đô',
+        'Phường Yên Hòa',
+        'Phường Tây Hồ',
+        'Phường Phú Thượng',
+        'Phường Đông Ngạc',
+        'Phường Thượng Cát',
+        'Phường Xuân Đỉnh',
+        'Phường Từ Liêm',
+        'Phường Tây Tựu',
+        'Phường Đại Mỗ',
+        'Phường Long Biên',
+        'Phường Bồ Đề',
+        'Phường Việt Hưng',
+        'Phường Phúc Lợi',
+        'Phường Hà Đông',
+        'Phường Dương Nội',
+        'Phường Yên Nghĩa',
+        'Phường Phú Lương',
+        'Phường Kiến Hưng',
+        'Phường Thanh Liệt',
+        'Phường Sơn Tây',
+        'Phường Tùng Thiện',
+
+        'Xã Thanh Trì',
+        'Xã Đại Thanh',
+        'Xã Nam Phù',
+        'Xã Ngọc Hồi',
+        'Xã Thượng Phúc',
+        'Xã Thường Tín',
+        'Xã Chương Dương',
+        'Xã Hồng Vân',
+        'Xã Phú Xuyên',
+        'Xã Phượng Dực',
+        'Xã Chuyên Mỹ',
+        'Xã Vân Đình',
+        'Xã Quảng Bị',
+        'Xã Quốc Oai',
+        'Xã Hưng Đạo',
+        'Xã Kiều Phú',
+        'Xã Phú Cát',
+        'Xã Hoài Đức',
+        'Xã Dương Hòa',
+        'Xã Sơn Đồng',
+        'Xã An Khánh',
+        'Xã Đan Phượng',
+        'Xã Tiến Thắng'
+    ],
+  'da nang': ['Quận Hải Châu', 'Quận Thanh Khê', 'Quận Sơn Trà', 'Quận Ngũ Hành Sơn', 'Quận Liên Chiểu', 'Huyện Hòa Vang'],
+  'can tho': ['Quận Ninh Kiều', 'Quận Bình Thủy', 'Quận Cái Răng', 'Quận Ô Môn', 'Quận Thốt Nốt'],
+  'hai phong': ['Quận Hồng Bàng', 'Quận Ngô Quyền', 'Quận Lê Chân', 'Quận Hải An', 'Quận Kiến An', 'Quận Dương Kinh', 'Quận Đồ Sơn'],
+  'hue': ['Quận Phú Xuân', 'Quận Thuận Hóa', 'Thị xã Hương Thủy', 'Thị xã Hương Trà']
+};
+
+const NANNY_GEO_FALLBACK = {
+  'Ho Chi Minh': { lat: 10.776, lng: 106.701, zoom: 11 },
+  'Thanh pho Ho Chi Minh': { lat: 10.776, lng: 106.701, zoom: 11 },
+  'Ha Noi': { lat: 21.028, lng: 105.854, zoom: 11 },
+  'Da Nang': { lat: 16.054, lng: 108.202, zoom: 11 }
+};
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function normalizeText(value) {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+function normalizeAdministrativeName(value) {
+  return normalizeText(value)
+    .replace(/^thanh pho\s+/i, '')
+    .replace(/^tp\.?\s*/i, '')
+    .replace(/^tinh\s+/i, '');
+}
+
+function formatCurrency(value) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount) || amount <= 0) return 'Thỏa thuận';
+  return new Intl.NumberFormat('vi-VN').format(amount) + ' VND';
+}
+
+function formatSalary(min, max) {
+  if (min && max) return `${formatCurrency(min)} - ${formatCurrency(max)}`;
+  if (min) return `Từ ${formatCurrency(min)}`;
+  if (max) return `Đến ${formatCurrency(max)}`;
+  return 'Thỏa thuận';
+}
+
+function debounceNannySearch() {
+  clearTimeout(nannySearchTimer);
+  nannySearchTimer = setTimeout(doNannySearch, 320);
+}
+
+function getAutocompleteKey(kind) {
+  return `nanny-${kind}`;
+}
+
+function hideAutocomplete(kind) {
+  const dropdown = nannyAutocompleteDropdowns.get(getAutocompleteKey(kind));
+  if (!dropdown) return;
+  dropdown.classList.remove('show');
+}
+
+function getProvinceOptions() {
+  return nannyProvinces.map((province) => province.name);
+}
+
+function getDistrictOptions(cityName) {
+  const normalizedCity = normalizeAdministrativeName(cityName);
+  const selectedProvince = nannyProvinces.find((province) =>
+    normalizeAdministrativeName(province.name) === normalizedCity
+  );
+  return (selectedProvince?.districts || []).map((district) => district.name);
+}
+
+function getNannyFallbackDistrictOptions(cityName) {
+  return NANNY_FALLBACK_DISTRICTS_BY_CITY[normalizeAdministrativeName(cityName)] || [];
+}
+
+function getNannyDistrictCacheKey(cityName) {
+  return normalizeAdministrativeName(cityName);
+}
+
+function cacheNannyDistrictOptions(cityName, values) {
+  nannyDistrictOptionsCache.set(getNannyDistrictCacheKey(cityName), values);
+  return values;
+}
+
+function getCachedNannyDistrictOptions(cityName) {
+  return nannyDistrictOptionsCache.get(getNannyDistrictCacheKey(cityName)) || [];
+}
+
+function loadNannyProvinceCatalog() {
+  if (nannyProvinceCatalogPromise) return nannyProvinceCatalogPromise;
+
+  nannyProvinceCatalogPromise = fetch('https://provinces.open-api.vn/api/v2/p/')
+    .then((response) => response.ok ? response.json() : [])
+    .then((data) => {
+      nannyProvinceCatalog = Array.isArray(data) ? data : [];
+      return nannyProvinceCatalog;
+    })
+    .catch(() => {
+      nannyProvinceCatalog = [];
+      return nannyProvinceCatalog;
+    });
+
+  return nannyProvinceCatalogPromise;
+}
+
+async function fetchNannyDistrictOptionsByCity(cityName) {
+  const normalizedCity = String(cityName ?? '').trim();
+  if (!normalizedCity) return [];
+
+  const cached = getCachedNannyDistrictOptions(normalizedCity);
+  if (cached.length) return cached;
+
+  const localOptions = getDistrictOptions(normalizedCity);
+  if (localOptions.length) {
+    return cacheNannyDistrictOptions(normalizedCity, localOptions);
+  }
+
+  const fallbackOptions = getNannyFallbackDistrictOptions(normalizedCity);
+  if (fallbackOptions.length) {
+    return cacheNannyDistrictOptions(normalizedCity, fallbackOptions);
+  }
+
+  try {
+    const response = await fetch(`/Address/Districts?city=${encodeURIComponent(normalizedCity)}`, {
+      credentials: 'same-origin'
+    });
+    if (!response.ok) return [];
+
+    const data = await response.json();
+    const districts = Array.isArray(data)
+      ? data.filter(Boolean)
+      : [];
+    if (districts.length) {
+      return cacheNannyDistrictOptions(normalizedCity, districts);
+    }
+    return cacheNannyDistrictOptions(normalizedCity, fallbackOptions);
+  } catch {
+    return cacheNannyDistrictOptions(normalizedCity, fallbackOptions);
+  }
+}
+
+async function fetchNannyAddressSuggestions(query) {
+  const normalized = String(query ?? '').trim();
+  if (normalized.length < 2) return [];
+
+  const cacheKey = normalizeText(normalized);
+  if (nannyAddressSuggestionCache.has(cacheKey)) {
+    return nannyAddressSuggestionCache.get(cacheKey) || [];
+  }
+
+  try {
+    const response = await fetch(`/Address/Suggest?q=${encodeURIComponent(normalized)}&limit=10`, { credentials: 'same-origin' });
+    if (!response.ok) return [];
+    const json = await response.json();
+    const items = Array.isArray(json) ? json : [];
+    nannyAddressSuggestionCache.set(cacheKey, items);
+    return items;
+  } catch {
+    return [];
+  }
+}
+
+function uniqueNannyValues(values, query) {
+  const seen = new Set();
+  return values
+    .filter((value) => value && (!query || normalizeText(value).includes(normalizeText(query))))
+    .filter((value) => {
+      const key = normalizeText(value);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 12);
+}
+
+async function getProvinceOptionsAsync(query) {
+  if (nannyProvinces.length) {
+    return uniqueNannyValues(getProvinceOptions(), query);
+  }
+
+  if (!String(query ?? '').trim()) {
+    return [...NANNY_FALLBACK_PROVINCES];
+  }
+
+  const suggestions = await fetchNannyAddressSuggestions(query);
+  const values = uniqueNannyValues(suggestions.map((item) => item.city), query);
+  return values.length ? values : uniqueNannyValues(NANNY_FALLBACK_PROVINCES, query);
+}
+
+async function getDistrictOptionsAsync(cityName, query) {
+  const normalizedCity = String(cityName ?? '').trim();
+  if (!normalizedCity) return [];
+  const normalizedCityKey = normalizeAdministrativeName(normalizedCity);
+
+  const localValues = uniqueNannyValues(await fetchNannyDistrictOptionsByCity(normalizedCity), query);
+  if (localValues.length) {
+    return localValues;
+  }
+
+  if (!String(query ?? '').trim()) {
+    return [];
+  }
+
+  const compositeQuery = [query, normalizedCity].filter(Boolean).join(', ');
+  const suggestions = await fetchNannyAddressSuggestions(compositeQuery);
+  return uniqueNannyValues(
+    suggestions
+      .filter((item) => {
+        if (!item.city) return true;
+        return normalizeAdministrativeName(item.city).includes(normalizedCityKey);
+      })
+      .map((item) => item.district),
+    query
+  );
+}
+
+function handleNannyCityChange(explicitCityValue) {
+  const cityInput = document.getElementById('nannyCity');
+  const districtInput = document.getElementById('nannyDistrict');
+  if (!cityInput) return;
+
+  const cityValue = (explicitCityValue ?? cityInput.value).trim();
+  const allowedDistricts = getCachedNannyDistrictOptions(cityValue);
+  if (districtInput && districtInput.value && !allowedDistricts.includes(districtInput.value.trim())) {
+    districtInput.value = '';
+  }
+
+  if (cityValue) {
+    fetchNannyDistrictOptionsByCity(cityValue);
+  }
+}
+
+function renderAutocompleteOptions(kind, options, onSelect) {
+  const dropdown = nannyAutocompleteDropdowns.get(getAutocompleteKey(kind));
+  if (!dropdown) return;
+
+  if (!options.length) {
+    dropdown.innerHTML = '';
+    dropdown.classList.remove('show');
+    return;
+  }
+
+  dropdown.innerHTML = options.map((option) => `<li data-value="${escapeHtml(option)}">${escapeHtml(option)}</li>`).join('');
+  dropdown.classList.add('show');
+
+  dropdown.querySelectorAll('li').forEach((item) => {
+    item.addEventListener('mousedown', (event) => {
+      event.preventDefault();
+      onSelect(item.dataset.value || '');
+    });
+  });
+}
+
+function getAutocompleteInputId(kind) {
+  if (kind === 'city') return 'nannyCity';
+  if (kind === 'district') return 'nannyDistrict';
+  return '';
+}
+
+function attachAutocomplete(kind, optionGetter, onSelect) {
+  const inputId = getAutocompleteInputId(kind);
+  const input = inputId ? document.getElementById(inputId) : null;
+  if (!input || input.dataset.acReady === 'true') return;
+
+  input.dataset.acReady = 'true';
+  input.parentElement?.classList.add('autocomplete-field');
+
+  const dropdown = document.createElement('ul');
+  dropdown.className = 'ac-dropdown';
+  input.insertAdjacentElement('afterend', dropdown);
+  nannyAutocompleteDropdowns.set(getAutocompleteKey(kind), dropdown);
+
+  let requestToken = 0;
+  const showForQuery = async () => {
+    const currentToken = ++requestToken;
+    const rawQuery = input.value.trim();
+    const filtered = await Promise.resolve(optionGetter(rawQuery));
+    if (currentToken !== requestToken) return;
+
+    renderAutocompleteOptions(kind, filtered, (value) => {
+      input.value = value;
+      onSelect(value);
+      hideAutocomplete(kind);
+    });
+  };
+
+  input.addEventListener('focus', showForQuery);
+  input.addEventListener('input', showForQuery);
+  input.addEventListener('blur', () => {
+    setTimeout(() => hideAutocomplete(kind), 120);
+  });
+}
+
+function attachLocationAutocomplete() {
+  attachAutocomplete('city', (query) => getProvinceOptionsAsync(query), (value) => {
+    const districtInput = document.getElementById('nannyDistrict');
+    if (districtInput) districtInput.value = '';
+    handleNannyCityChange(value);
+  });
+
+  attachAutocomplete(
+    'district',
+    (query) => getDistrictOptionsAsync(document.getElementById('nannyCity')?.value.trim() || '', query),
+    () => {}
+  );
+}
+
+function attachSelectPicker(kind, selectId, textInputId, emptyLabel) {
+  const select = document.getElementById(selectId);
+  const input = document.getElementById(textInputId);
+  if (!select || !input || input.dataset.acReady === 'true') return;
+
+  input.dataset.acReady = 'true';
+  input.parentElement?.classList.add('autocomplete-field');
+  input.classList.add('nanny-filter--picker');
+
+  const dropdown = document.createElement('ul');
+  dropdown.className = 'ac-dropdown';
+  input.insertAdjacentElement('afterend', dropdown);
+  nannyAutocompleteDropdowns.set(getAutocompleteKey(kind), dropdown);
+
+  const syncTextFromSelect = () => {
+    const selectedOption = select.options[select.selectedIndex];
+    input.value = selectedOption ? selectedOption.text.trim() : emptyLabel;
+  };
+
+  if (!nannySelectPickerSyncHandlers.includes(syncTextFromSelect)) {
+    nannySelectPickerSyncHandlers.push(syncTextFromSelect);
+  }
+
+  const getFilteredOptions = (query) => {
+    const normalizedQuery = normalizeText(query);
+    return Array.from(select.options)
+      .map((option) => ({ value: option.value, label: option.text.trim() }))
+      .filter((option) => option.label && (!normalizedQuery || normalizeText(option.label).includes(normalizedQuery)))
+      .slice(0, 16);
+  };
+
+  const renderOptions = (query) => {
+    const options = getFilteredOptions(query);
+    if (!options.length) {
+      dropdown.innerHTML = '';
+      dropdown.classList.remove('show');
+      return;
+    }
+
+    dropdown.innerHTML = options.map((option) => `
+      <li data-value="${escapeHtml(option.value)}" data-label="${escapeHtml(option.label)}">${escapeHtml(option.label)}</li>
+    `).join('');
+    dropdown.classList.add('show');
+
+    dropdown.querySelectorAll('li').forEach((item) => {
+      item.addEventListener('mousedown', (event) => {
+        event.preventDefault();
+        select.value = item.dataset.value || '';
+        input.value = item.dataset.label || emptyLabel;
+        hideAutocomplete(kind);
+      });
+    });
+  };
+
+  syncTextFromSelect();
+  input.addEventListener('focus', () => renderOptions(input.value === emptyLabel ? '' : input.value.trim()));
+  input.addEventListener('click', () => renderOptions(input.value === emptyLabel ? '' : input.value.trim()));
+  input.addEventListener('input', () => renderOptions(input.value.trim()));
+  input.addEventListener('blur', () => {
+    setTimeout(() => {
+      hideAutocomplete(kind);
+      syncTextFromSelect();
+    }, 120);
+  });
+}
+
+function syncSelectPickerText() {
+  nannySelectPickerSyncHandlers.forEach((syncFn) => syncFn());
+}
+
+function attachSkillAndVerificationAutocomplete() {
+  attachSelectPicker('skill', 'nannySkillId', 'nannySkillText', 'Tất cả kỹ năng');
+  attachSelectPicker('verification', 'nannyVerification', 'nannyVerificationText', 'Tất cả trạng thái');
+}
+
+function getNannyScheduleFilterKey(dayOfWeek, timeSlot) {
+  return `${dayOfWeek}-${timeSlot}`;
+}
+
+function renderNannyScheduleFilter() {
+  const container = document.getElementById('nannyScheduleFilter');
+  if (!container) return;
+
+  const selected = new Set(
+    nannyScheduleFilters.map((slot) => getNannyScheduleFilterKey(slot.dayOfWeek, slot.timeSlot))
+  );
+
+  let html = '<div></div>';
+  NANNY_DAY_LABELS.forEach((label) => { html += `<div class="nanny-schedule-col-label">${label}</div>`; });
+
+  NANNY_TIME_LABELS.forEach((rowLabel, timeSlot) => {
+    html += `<div class="nanny-schedule-row-label">${rowLabel}</div>`;
+    for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek += 1) {
+      const isActive = selected.has(getNannyScheduleFilterKey(dayOfWeek, timeSlot));
+      html += `
+        <button type="button"
+                class="nanny-schedule-cell ${isActive ? 'active' : ''}"
+                onclick="toggleNannyScheduleFilter(${dayOfWeek}, ${timeSlot})"
+                aria-label="${rowLabel} - ${NANNY_DAY_LABELS[dayOfWeek]}">
+          <span class="nanny-schedule-check">${isActive ? '&#10003;' : ''}</span>
+        </button>`;
+    }
+  });
+
+  container.innerHTML = html;
+}
+
+function toggleNannyScheduleFilter(dayOfWeek, timeSlot) {
+  const key = getNannyScheduleFilterKey(dayOfWeek, timeSlot);
+  const index = nannyScheduleFilters.findIndex((slot) => getNannyScheduleFilterKey(slot.dayOfWeek, slot.timeSlot) === key);
+  if (index >= 0) nannyScheduleFilters.splice(index, 1);
+  else nannyScheduleFilters.push({ dayOfWeek, timeSlot });
+  renderNannyScheduleFilter();
+}
+
+function applyNannyScheduleFilter(items) {
+  if (!Array.isArray(items) || !nannyScheduleFilters.length) return Array.isArray(items) ? items : [];
+  const selected = new Set(
+    nannyScheduleFilters.map((slot) => getNannyScheduleFilterKey(slot.dayOfWeek, slot.timeSlot))
+  );
+
+  return items.filter((profile) => {
+    const slots = Array.isArray(profile?.availabilitySlots) ? profile.availabilitySlots : [];
+    return slots.some((slot) => selected.has(getNannyScheduleFilterKey(Number(slot.dayOfWeek), Number(slot.timeSlot))));
+  });
+}
+
+function loadLocationData() {
+  if (nannyLocationPromise) return nannyLocationPromise;
+
+  // Attach autocomplete ngay, để người dùng vẫn chọn được khi API ngoài chậm/lỗi.
+  attachLocationAutocomplete();
+
+  nannyLocationPromise = fetch('https://provinces.open-api.vn/api/v2/?depth=2')
+    .then((response) => (response.ok ? response.json() : []))
+    .then((data) => {
+      nannyProvinces = Array.isArray(data) ? data : [];
+      return nannyProvinces;
+    })
+    .catch(() => {
+      nannyProvinces = [];
+      return nannyProvinces;
+    });
+
+  return nannyLocationPromise;
+}
+
+function openNannyFilters() {
+  renderNannyScheduleFilter();
+  document.getElementById('nannyFilterModal')?.classList.add('show');
+}
+
+function closeNannyFilters() {
+  document.getElementById('nannyFilterModal')?.classList.remove('show');
+}
+
+function resetNannyFilters() {
+  const ids = [
+    'nannyCity',
+    'nannyDistrict',
+    'nannySkillId',
+    'nannySkillText',
+    'nannyVerification',
+    'nannyVerificationText',
+    'nannyExperience',
+    'nannyAgeMin',
+    'nannySalaryMin',
+    'nannySalaryMax'
+  ];
+
+  ids.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  nannyScheduleFilters = [];
+  syncSelectPickerText();
+  renderNannyScheduleFilter();
+
+  doNannySearch();
+}
+
+function applyNannyFilters() {
+  closeNannyFilters();
+  doNannySearch();
+}
+
+function initNannyMap() {
+  const mapEl = document.getElementById('nannyMap');
+  if (nannyMap || !mapEl || typeof L === 'undefined') return;
+
+  nannyMap = L.map('nannyMap', { zoomControl: true }).setView([10.776, 106.701], 11);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; CartoDB',
+    maxZoom: 19
+  }).addTo(nannyMap);
+}
+
+function getNannyPoint(profile, idx) {
+  const fallback = NANNY_GEO_FALLBACK[profile.city] || NANNY_GEO_FALLBACK['Ho Chi Minh'];
+  const baseLat = Number(profile.latitude ?? fallback.lat);
+  const baseLng = Number(profile.longitude ?? fallback.lng);
+
+  return {
+    lat: baseLat + ((idx % 4) - 1.5) * 0.0022,
+    lng: baseLng + ((Math.floor(idx / 4) % 4) - 1.5) * 0.0022,
+    zoom: profile.latitude && profile.longitude ? 13 : fallback.zoom
+  };
+}
+
+function clearNannyMarkers() {
+  nannyMarkers.forEach((entry) => entry.marker?.remove());
+  nannyMarkers = [];
+}
+
+function setNannyMarkerHover(idx, active) {
+  const markerData = nannyMarkers[idx];
+  if (!markerData) return;
+  markerData.element?.classList.toggle('active', active);
+}
+
+function focusNannyMarker(idx) {
+  const markerData = nannyMarkers[idx];
+  if (!markerData || !nannyMap) return;
+  nannyMap.flyTo([markerData.point.lat, markerData.point.lng], markerData.point.zoom || 13, { duration: 0.4 });
+  setNannyMarkerHover(idx, true);
+}
+
+function renderNannyCards(items) {
+  const list = document.getElementById('nannyList');
+  const count = document.getElementById('nannyResultCount');
+  if (!list || !count) return;
+
+  count.textContent = `${items.length} hồ sơ`;
+  clearNannyMarkers();
+
+  if (!items.length) {
+    list.innerHTML = `
+      <div class="nanny-empty">
+        <span class="material-icons-round">search_off</span>
+        <h3>Không tìm thấy hồ sơ phù hợp</h3>
+        <p>Thử thay đổi từ khóa, khu vực hoặc kỹ năng để mở rộng kết quả.</p>
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = items.map((profile, idx) => {
+    const topSkills = Array.isArray(profile.skills) ? profile.skills.slice(0, 3) : [];
+    return `
+      <article class="nanny-card" data-idx="${idx}" data-id="${escapeHtml(profile.id)}">
+        <div class="nanny-card__avatar-wrap">
+          <img class="nanny-card__avatar" src="${escapeHtml(profile.avatarUrl || '/img/nanny-logo.jpg')}" alt="${escapeHtml(profile.fullName)}" />
+        </div>
+        <div class="nanny-card__body">
+          <div class="nanny-card__head">
+            <div>
+              <h3>${escapeHtml(profile.fullName || 'Bảo mẫu')}</h3>
+              <p>${escapeHtml([profile.district, profile.city].filter(Boolean).join(', ') || 'Chưa cập nhật khu vực')}</p>
+            </div>
+            <span class="nanny-card__salary">${escapeHtml(formatSalary(profile.expectedSalaryMin, profile.expectedSalaryMax))}</span>
+          </div>
+          <p class="nanny-card__bio">${escapeHtml(profile.bio || 'Hồ sơ chưa có mô tả giới thiệu.')}</p>
+          <div class="nanny-card__meta">
+            <span class="nanny-pill nanny-pill--orange">${escapeHtml(profile.verificationStatusLabel || 'Chưa xác minh')}</span>
+            <span class="nanny-pill">${profile.age ? `${profile.age} tuổi` : 'Chưa rõ tuổi'}</span>
+            <span class="nanny-pill">${profile.yearsOfExperience ? `${profile.yearsOfExperience} năm KN` : 'Chưa rõ KN'}</span>
+          </div>
+          <div class="nanny-card__skills">
+            ${topSkills.length
+              ? topSkills.map((skill) => `<span class="nanny-skill-chip">${escapeHtml(skill.skillName || '')}</span>`).join('')
+              : '<span class="nanny-card__muted">Chưa có kỹ năng nổi bật</span>'}
+          </div>
+        </div>
+      </article>`;
+  }).join('');
+
+  items.forEach((profile, idx) => {
+    const point = getNannyPoint(profile, idx);
+    const icon = L.divIcon({
+      className: '',
+      html: `
+        <div class="nanny-map-marker">
+          <span class="nanny-map-marker__halo"></span>
+          <span class="nanny-map-marker__pin"><span class="nanny-map-marker__core"></span></span>
+        </div>`,
+      iconSize: [28, 36],
+      iconAnchor: [14, 30]
+    });
+
+    const marker = L.marker([point.lat, point.lng], { icon }).addTo(nannyMap);
+    nannyMarkers.push({ marker, point, element: marker.getElement() });
+  });
+
+  list.querySelectorAll('.nanny-card').forEach((card) => {
+    const idx = Number(card.dataset.idx);
+    card.addEventListener('mouseenter', () => setNannyMarkerHover(idx, true));
+    card.addEventListener('mouseleave', () => setNannyMarkerHover(idx, false));
+    card.addEventListener('click', () => {
+      list.querySelectorAll('.nanny-card').forEach((item) => item.classList.remove('active'));
+      card.classList.add('active');
+      focusNannyMarker(idx);
+      openNannyDetail(items[idx].id);
+    });
+  });
+}
+
+async function doNannySearch() {
+  const params = new URLSearchParams({
+    page: '1',
+    pageSize: '20'
+  });
+
+  const keyword = document.getElementById('nannyKeyword')?.value.trim();
+  const city = document.getElementById('nannyCity')?.value.trim();
+  const district = document.getElementById('nannyDistrict')?.value.trim();
+  const skillId = document.getElementById('nannySkillId')?.value.trim();
+  const verificationStatus = document.getElementById('nannyVerification')?.value.trim();
+  const minExperience = document.getElementById('nannyExperience')?.value.trim();
+  const minAge = document.getElementById('nannyAgeMin')?.value.trim();
+  const minExpectedSalary = document.getElementById('nannySalaryMin')?.value.trim();
+  const maxExpectedSalary = document.getElementById('nannySalaryMax')?.value.trim();
+  const singleScheduleFilter = nannyScheduleFilters.length === 1 ? nannyScheduleFilters[0] : null;
+
+  if (keyword) params.append('keyword', keyword);
+  if (city) params.append('city', city);
+  if (district) params.append('district', district);
+  if (skillId) params.append('skillIds', skillId);
+  if (verificationStatus) params.append('verificationStatus', verificationStatus);
+  if (minExperience) params.append('minExperience', minExperience);
+  if (minAge) params.append('minAge', minAge);
+  if (minExpectedSalary) params.append('minExpectedSalary', minExpectedSalary);
+  if (maxExpectedSalary) params.append('maxExpectedSalary', maxExpectedSalary);
+  if (singleScheduleFilter) {
+    params.append('dayOfWeek', String(singleScheduleFilter.dayOfWeek));
+    params.append('timeSlot', String(singleScheduleFilter.timeSlot));
+  }
+
+  try {
+    const response = await fetch(`/Nanny/BrowseData?${params.toString()}`, { credentials: 'same-origin' });
+    const json = await response.json();
+    const rawProfiles = Array.isArray(json.data) ? json.data : [];
+    nannyProfiles = nannyScheduleFilters.length > 1 ? applyNannyScheduleFilter(rawProfiles) : rawProfiles;
+    renderNannyCards(nannyProfiles);
+  } catch {
+    nannyProfiles = [];
+    renderNannyCards([]);
+  }
+}
+
+function renderAvailability(slots) {
+  if (!Array.isArray(slots) || !slots.length) {
+    return '<span class="nanny-card__muted">Chưa cập nhật lịch rảnh.</span>';
+  }
+
+  return slots
+    .map((slot) => `<span class="nanny-availability-chip">${escapeHtml(slot.dayLabel)} - ${escapeHtml(slot.timeSlotLabel)}</span>`)
+    .join('');
+}
+
+async function openNannyDetail(id) {
+  if (!id) return;
+
+  try {
+    const response = await fetch(`/Nanny/DetailData?id=${encodeURIComponent(id)}`, { credentials: 'same-origin' });
+    const json = await response.json();
+    const detail = json?.data;
+    if (!detail) return;
+
+    document.getElementById('nd-avatar').src = detail.avatarUrl || '/img/nanny-logo.jpg';
+    document.getElementById('nd-name').textContent = detail.fullName || 'Bảo mẫu';
+    document.getElementById('nd-location').textContent = [detail.address, detail.ward, detail.district, detail.city].filter(Boolean).join(', ') || 'Chưa cập nhật địa chỉ';
+    document.getElementById('nd-verify').textContent = detail.verificationStatusLabel || 'Đang cập nhật';
+    document.getElementById('nd-bio').textContent = detail.bio || 'Hồ sơ chưa có mô tả.';
+    document.getElementById('nd-phone').textContent = detail.phoneNumber || 'Chưa cập nhật';
+    document.getElementById('nd-address').textContent = [detail.address, detail.ward, detail.district, detail.city].filter(Boolean).join(', ') || 'Chưa cập nhật';
+    document.getElementById('nd-travel').textContent = detail.maxTravelDistance ? `${detail.maxTravelDistance} km` : 'Chưa cập nhật';
+    document.getElementById('nd-completeness').textContent = `${detail.profileCompleteness || 0}%`;
+    document.getElementById('nd-age').textContent = detail.age ? `${detail.age} tuổi` : 'Chưa rõ tuổi';
+    document.getElementById('nd-exp').textContent = detail.yearsOfExperience ? `${detail.yearsOfExperience} năm kinh nghiệm` : 'Chưa rõ kinh nghiệm';
+    document.getElementById('nd-education').textContent = detail.educationLevelLabel || 'Chưa cập nhật học vấn';
+    document.getElementById('nd-salary').textContent = formatSalary(detail.expectedSalaryMin, detail.expectedSalaryMax);
+
+    const skillsEl = document.getElementById('nd-skills');
+    skillsEl.innerHTML = Array.isArray(detail.skills) && detail.skills.length
+      ? detail.skills.map((skill) => `
+          <span class="nanny-detail-skill">
+            ${escapeHtml(skill.skillName || '')}
+            ${skill.proficiencyLevelLabel ? `<small>${escapeHtml(skill.proficiencyLevelLabel)}</small>` : ''}
+          </span>`).join('')
+      : '<span class="nanny-card__muted">Chưa có kỹ năng được khai báo.</span>';
+
+    document.getElementById('nd-availability').innerHTML = renderAvailability(detail.availabilitySlots || []);
+    document.getElementById('nannyDetailModal')?.classList.add('show');
+  } catch {
+  }
+}
+
+function closeNannyDetail() {
+  document.getElementById('nannyDetailModal')?.classList.remove('show');
+}
+
+function bootstrapNannyListPage() {
+  ['nannyCity', 'nannyDistrict', 'nannySkillText', 'nannyVerificationText'].forEach((id) => {
+    document.getElementById(id)?.setAttribute('autocomplete', 'off');
+  });
+  attachSkillAndVerificationAutocomplete();
+  renderNannyScheduleFilter();
+  initNannyMap();
+  loadLocationData();
+  doNannySearch();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootstrapNannyListPage, { once: true });
+} else {
+  bootstrapNannyListPage();
+}
