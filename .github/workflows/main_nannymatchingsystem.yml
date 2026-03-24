@@ -39,7 +39,6 @@ jobs:
         with:
           name: frontend-publish
           path: ${{ env.PUBLISH_PATH }}
-          if-no-files-found: error
 
   deploy:
     runs-on: windows-latest
@@ -54,8 +53,10 @@ jobs:
         with:
           name: frontend-publish
           path: ${{ env.PUBLISH_PATH }}
+
       - name: Print deploying commit
         run: echo "Deploying frontend commit ${{ github.sha }}"
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
