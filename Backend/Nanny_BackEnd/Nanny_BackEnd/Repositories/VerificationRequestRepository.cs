@@ -24,6 +24,7 @@ public class VerificationRequestRepository
         var query = _db.VerificationRequests
             .Include(v => v.NannyProfile)
                 .ThenInclude(np => np.User)
+            .Include(v => v.ReviewedByNavigation)
             .Where(v => !v.IsDeleted)
             .AsQueryable();
 
@@ -74,6 +75,7 @@ public class VerificationRequestRepository
     public async Task<List<VerificationRequest>> GetRequestsByNannyProfileAsync(Guid nannyProfileId)
     {
         return await _db.VerificationRequests
+            .Include(v => v.ReviewedByNavigation)
             .Include(v => v.VerificationDocuments.Where(d => !d.IsDeleted))
             .Where(v => v.NannyProfileId == nannyProfileId && !v.IsDeleted)
             .OrderByDescending(v => v.CreatedAt)

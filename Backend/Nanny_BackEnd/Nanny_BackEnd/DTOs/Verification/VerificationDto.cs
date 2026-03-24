@@ -10,6 +10,9 @@ public class VerificationRequestListDto
     public int Status { get; set; }                // 1=Pending, 2=Approved, 3=Rejected
     public DateTime CreatedAt { get; set; }
     public DateTime? ReviewedAt { get; set; }
+    public Guid? ReviewedBy { get; set; }
+    public string? ReviewedByName { get; set; }
+    public string? RejectionReason { get; set; }
 
     // Nanny info (from User via NannyProfile)
     public Guid NannyUserId { get; set; }

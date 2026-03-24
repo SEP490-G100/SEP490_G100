@@ -32,6 +32,11 @@ public class VerificationRequestService
             Status         = v.Status,
             CreatedAt      = v.CreatedAt,
             ReviewedAt     = v.ReviewedAt,
+            ReviewedBy     = v.ReviewedBy,
+            ReviewedByName = v.ReviewedByNavigation == null
+                ? null
+                : $"{v.ReviewedByNavigation.FirstName} {v.ReviewedByNavigation.LastName}".Trim(),
+            RejectionReason = v.RejectionReason,
             NannyUserId    = v.NannyProfile.UserId,
             NannyFirstName = v.NannyProfile.User.FirstName,
             NannyLastName  = v.NannyProfile.User.LastName,
@@ -154,8 +159,12 @@ public class VerificationRequestService
             NannyProfileId = v.NannyProfileId,
             Status = v.Status,
             CreatedAt = v.CreatedAt,
-            ReviewedAt = v.ReviewedAt
-            // Ignoring deep NannyProfile/User mappings here since Nanny only sees their own requests
+            ReviewedAt = v.ReviewedAt,
+            ReviewedBy = v.ReviewedBy,
+            ReviewedByName = v.ReviewedByNavigation == null
+                ? null
+                : $"{v.ReviewedByNavigation.FirstName} {v.ReviewedByNavigation.LastName}".Trim(),
+            RejectionReason = v.RejectionReason
         }).ToList();
     }
 
