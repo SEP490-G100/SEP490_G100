@@ -566,7 +566,7 @@ public class JobService
 
     private static string? getBirthTypeLabel(int? birthType)
     {
-        if (!birthType.HasValue || !Enum.IsDefined(typeof(ChildAgeGroup), birthType.Value))
+        if (!birthType.HasValue || !Enum.IsDefined(typeof(ChildAgeGroup), (byte)birthType.Value))
             return null;
 
         return EnumDisplayHelper.GetDisplayName((ChildAgeGroup)birthType.Value);

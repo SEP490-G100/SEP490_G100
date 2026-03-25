@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Json;
+using System.Linq;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -65,6 +66,11 @@ public class AuthController : Controller
             return Redirect("/Admin/Dashboard");
         if (loginData.User.Roles.Contains("Moderator", StringComparer.OrdinalIgnoreCase))
             return Redirect("/Moderator/Dashboard");
+
+        // Nếu user chưa có role (đặc biệt case đăng ký/đăng nhập Google lần đầu),
+        // luôn bắt buộc chọn role trước khi chạy onboarding theo role.
+        if (loginData.User?.Roles == null || !loginData.User.Roles.Any())
+            return RedirectToAction("ChooseRole", "Auth");
 
         // Sau khi đăng nhập, kiểm tra trạng thái onboarding (kèm Bearer token)
         try
@@ -147,6 +153,11 @@ public class AuthController : Controller
             return Redirect("/Admin/Dashboard");
         if (loginData.User.Roles.Contains("Moderator", StringComparer.OrdinalIgnoreCase))
             return Redirect("/Moderator/Dashboard");
+
+        // Nếu user chưa có role (đặc biệt case đăng ký Google lần đầu),
+        // luôn bắt buộc chọn role trước khi chạy onboarding theo role.
+        if (loginData.User?.Roles == null || !loginData.User.Roles.Any())
+            return RedirectToAction("ChooseRole", "Auth");
 
         try
         {
@@ -271,6 +282,8 @@ public class AuthController : Controller
             return View(model);
         }
 
+        // Xoá session đang giữ token Pending để buộc đăng nhập lại với token mới (đã kích hoạt)
+        // Nếu không làm bước này, Login GET sẽ phát hiện cookie cũ và redirect thẳng "/" bỏ qua onboarding
         HttpContext.Session.Clear();
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
@@ -278,6 +291,9 @@ public class AuthController : Controller
         return RedirectToAction("Login");
     }
 
+    /// <summary>
+    /// Cho phép user chọn vai trò (Nanny hoặc Parent) khi lần đầu tiên đăng nhập
+    /// </summary>
     [Authorize, HttpGet]
     public IActionResult ChooseRole() => View();
 
@@ -306,12 +322,18 @@ public class AuthController : Controller
             };
             
             var response = await _http.SendAsync(request);
-            var result = await ReadApiResult(response);
+            var result = await ReadApiResult<LoginResponseDto>(response);
 
             if (result == null || !result.Success)
             {
                 ModelState.AddModelError("", result?.Message ?? "Lỗi khi cập nhật vai trò. Vui lòng thử lại.");
                 return View();
+            }
+
+            // Backend trả về token mới chứa role đã cập nhật → refresh session + cookie claims
+            if (result.Data != null)
+            {
+                await SignInUserAsync(result.Data);
             }
 
             // Sau khi set role thành công, chuyển hướng tới Onboarding/Start
@@ -358,6 +380,14 @@ public class AuthController : Controller
 
         TempData["Success"] = "Đổi mật khẩu thành công!";
         return RedirectToAction("ChangePassword");
+    }
+
+    /// <summary>Trả về JWT access token từ session — dùng bởi SignalR JS client.</summary>
+    [Authorize, HttpGet]
+    public IActionResult GetToken()
+    {
+        var token = HttpContext.Session.GetString("AccessToken") ?? "";
+        return Content(token, "text/plain");
     }
 
     [HttpPost, ValidateAntiForgeryToken]

@@ -1,4 +1,4 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
@@ -27,7 +27,7 @@ public class AdminController : Controller
         try
         {
             var response = await _http.SendAsync(request);
-            var json     = await response.Content.ReadAsStringAsync();
+            var json = await response.Content.ReadAsStringAsync();
             if (!response.IsSuccessStatusCode)
             {
                 TempData["Error"] = $"Lỗi API lấy dữ liệu Dashboard ({(int)response.StatusCode}). Vui lòng kiểm tra lại quyền truy cập.";
@@ -59,8 +59,8 @@ public class AdminController : Controller
         try
         {
             var response = await _http.SendAsync(request);
-            var json     = await response.Content.ReadAsStringAsync();
-            var result   = JsonSerializer.Deserialize<ApiResult<AccountListResponse>>(json, JsonOpts);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult<AccountListResponse>>(json, JsonOpts);
             return View(result?.Data ?? new AccountListResponse());
         }
         catch
@@ -78,12 +78,12 @@ public class AdminController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateModerator(CreateModeratorRequest model)
     {
-        var body    = JsonSerializer.Serialize(new
+        var body = JsonSerializer.Serialize(new
         {
-            email       = model.Email,
-            password    = model.Password,
-            firstName   = model.FirstName,
-            lastName    = model.LastName,
+            email = model.Email,
+            password = model.Password,
+            firstName = model.FirstName,
+            lastName = model.LastName,
             phoneNumber = model.PhoneNumber
         });
         var request = new HttpRequestMessage(HttpMethod.Post, "/api/admin/moderators")
@@ -95,7 +95,7 @@ public class AdminController : Controller
         try
         {
             var response = await _http.SendAsync(request);
-            var json     = await response.Content.ReadAsStringAsync();
+            var json = await response.Content.ReadAsStringAsync();
             if (string.IsNullOrWhiteSpace(json))
             {
                 TempData["Error"] = $"API trả về rỗng (HTTP {(int)response.StatusCode}).";
@@ -125,8 +125,8 @@ public class AdminController : Controller
         try
         {
             var response = await _http.SendAsync(request);
-            var json     = await response.Content.ReadAsStringAsync();
-            var result   = JsonSerializer.Deserialize<ApiResult<AccountDto>>(json, JsonOpts);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult<AccountDto>>(json, JsonOpts);
             if (result?.Success != true || result.Data == null)
             {
                 TempData["Error"] = "Không tìm thấy Moderator.";
@@ -148,10 +148,10 @@ public class AdminController : Controller
     {
         var body = JsonSerializer.Serialize(new
         {
-            firstName   = model.FirstName,
-            lastName    = model.LastName,
+            firstName = model.FirstName,
+            lastName = model.LastName,
             phoneNumber = model.PhoneNumber,
-            status      = model.Status
+            status = model.Status
         });
         var request = new HttpRequestMessage(HttpMethod.Patch, $"/api/admin/moderators/{id}")
         {
@@ -162,7 +162,7 @@ public class AdminController : Controller
         try
         {
             var response = await _http.SendAsync(request);
-            var json     = await response.Content.ReadAsStringAsync();
+            var json = await response.Content.ReadAsStringAsync();
             if (string.IsNullOrWhiteSpace(json))
             {
                 TempData["Error"] = $"API trả về rỗng (HTTP {(int)response.StatusCode}).";
@@ -190,8 +190,8 @@ public class AdminController : Controller
         try
         {
             var response = await _http.SendAsync(request);
-            var json     = await response.Content.ReadAsStringAsync();
-            var result   = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
             TempData[result?.Success == true ? "Success" : "Error"] = result?.Message ?? "Đã xoá.";
         }
         catch (Exception ex) { TempData["Error"] = $"Lỗi: {ex.Message}"; }
@@ -215,8 +215,8 @@ public class AdminController : Controller
 
             var stream = await response.Content.ReadAsStreamAsync();
             var contentType = response.Content.Headers.ContentType?.ToString() ?? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            var fileName = response.Content.Headers.ContentDisposition?.FileNameStar 
-                ?? response.Content.Headers.ContentDisposition?.FileName?.Replace("\"", "") 
+            var fileName = response.Content.Headers.ContentDisposition?.FileNameStar
+                ?? response.Content.Headers.ContentDisposition?.FileName?.Replace("\"", "")
                 ?? $"NannyMatch_SystemData_{DateTime.Now:yyyyMMdd}.xlsx";
 
             return File(stream, contentType, fileName);

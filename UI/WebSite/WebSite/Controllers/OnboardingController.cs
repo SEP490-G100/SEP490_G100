@@ -45,6 +45,14 @@ public class OnboardingController : Controller
         if (status == null || !status.RequiresOnboarding || status.NextStep == "Completed")
             return RedirectToAction("Index", "Home");
 
+        // Defensive: nếu backend trả NextStep theo Parent/Nanny nhưng role chưa được chọn,
+        // ép user quay về màn chọn role.
+        if (string.IsNullOrWhiteSpace(status.Role) ||
+            status.Role.Equals("User", StringComparison.OrdinalIgnoreCase))
+        {
+            return RedirectToAction("ChooseRole", "Auth");
+        }
+
         return status.NextStep switch
         {
             "SelectRole" => RedirectToAction("ChooseRole", "Auth"),
