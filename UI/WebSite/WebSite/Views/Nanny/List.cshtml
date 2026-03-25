@@ -2,6 +2,8 @@
 @{
     ViewData["Title"] = "Danh sách bảo mẫu - NannyMatch";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
+    var isParent = User.IsInRole("Parent");
 }
 
 @section Head {
@@ -35,6 +37,13 @@
                     <span class="material-icons-round text-[18px]">tune</span>
                     Bộ lọc
                 </button>
+                @if (isParent)
+                {
+                    <a href="/Nanny/Favorites" class="nanny-filter-trigger">
+                        <span class="material-icons-round text-[18px]">favorite</span>
+                        Nanny yêu thích
+                    </a>
+                }
                 <span id="nannyResultCount" class="nanny-toolbar__count">Đang tải...</span>
                 <a href="/Subscription" class="nanny-upgrade-btn">
                     <span class="material-icons-round text-[18px]">workspace_premium</span>
@@ -203,6 +212,12 @@
                             <span id="nd-education" class="nanny-chip">Học vấn</span>
                             <span id="nd-salary" class="nanny-chip nanny-chip--strong">Lương mong muốn</span>
                         </div>
+                        <div class="nanny-detail-actions">
+                            <button type="button" id="nd-favoriteBtn" class="nanny-detail-favorite hidden" onclick="toggleNannyFavoriteFromDetail(event)">
+                                <span class="material-icons-round">favorite_border</span>
+                                <span id="nd-favoriteBtnText">Yêu thích</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -238,6 +253,10 @@
 </div>
 
 @section Scripts {
+    <script>
+        const IS_AUTH = @(isAuthenticated ? "true" : "false");
+        const IS_PARENT = @(isParent ? "true" : "false");
+    </script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="~/js/nanny-list.js" asp-append-version="true"></script>
 

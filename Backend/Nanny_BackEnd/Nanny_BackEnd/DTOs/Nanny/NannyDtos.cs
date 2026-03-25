@@ -43,6 +43,9 @@ public class NannyListItemResponse
     [JsonPropertyName("userId")]
     public Guid UserId { get; set; }
 
+    [JsonPropertyName("isFavorite")]
+    public bool IsFavorite { get; set; }
+
     [JsonPropertyName("fullName")]
     public string FullName { get; set; } = "";
 
@@ -93,6 +96,12 @@ public class NannyListItemResponse
 
     [JsonPropertyName("availabilitySlots")]
     public List<NannyAvailabilitySlotResponse> AvailabilitySlots { get; set; } = [];
+
+    [JsonPropertyName("latitude")]
+    public double? Latitude { get; set; }
+
+    [JsonPropertyName("longitude")]
+    public double? Longitude { get; set; }
 }
 
 public class NannyDetailResponse : NannyListItemResponse
@@ -115,11 +124,6 @@ public class NannyDetailResponse : NannyListItemResponse
     [JsonPropertyName("verifiedAt")]
     public DateTime? VerifiedAt { get; set; }
 
-    [JsonPropertyName("latitude")]
-    public double? Latitude { get; set; }
-
-    [JsonPropertyName("longitude")]
-    public double? Longitude { get; set; }
 }
 
 public class NannySkillResponse

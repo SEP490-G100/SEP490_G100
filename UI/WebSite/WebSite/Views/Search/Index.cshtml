@@ -2,6 +2,8 @@
     ViewData["Title"] = "Tìm bảo mẫu - NannyMatch";
     Layout = "~/Views/Shared/_Layout.cshtml";
     var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
+    var isParent = User.IsInRole("Parent");
+    var isNanny = User.IsInRole("Nanny");
     var userName = User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? "";
     var skillOptions = ViewBag.SkillOptions as IEnumerable<WebSite.Models.Search.JobSkillOption>
         ?? System.Linq.Enumerable.Empty<WebSite.Models.Search.JobSkillOption>();
@@ -35,7 +37,7 @@
         </div>
 
         <span id="resultCount" class="text-sm text-gray-400 font-semibold whitespace-nowrap">Đang tải...</span>
-        @if (isAuthenticated)
+        @if (isParent)
         {
             <button onclick="openHistory()"
                     class="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-orange-200 bg-white hover:bg-orange-50 text-orange-600 text-sm font-bold transition-all">
@@ -45,6 +47,13 @@
                     class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold shadow-md hover:shadow-lg transition-all">
                 <span class="material-icons-round text-base">add_circle</span>Đăng tin
             </button>
+        }
+        @if (isNanny)
+        {
+            <a href="/Search/SavedJobs"
+               class="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-orange-200 bg-white hover:bg-orange-50 text-orange-600 text-sm font-bold transition-all">
+                <span class="material-icons-round text-base">bookmark</span>Bài đăng đã lưu
+            </a>
         }
         <button onclick="openPremium()"
                 class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-white text-sm font-bold shadow-md transition-all"
@@ -466,8 +475,6 @@
     </div>
 </div>
 
-<div id="toast" class="bg-gray-900 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-2xl"></div>
-
 @section Scripts {
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -626,6 +633,8 @@ function switchSearchTab(tab) {
 <script>
 const API_URL = '/Search/Jobs';
 const IS_AUTH = @(isAuthenticated ? "true" : "false");
+const IS_PARENT = @(isParent ? "true" : "false");
+const IS_NANNY = @(isNanny ? "true" : "false");
 const CURRENT_USER_NAME = '@userName';
 
 (() => {
@@ -650,7 +659,8 @@ const CURRENT_USER_NAME = '@userName';
     const bindPreviewEditButton = (job) => {
         const button = ensurePreviewEditButton();
         if (!button || !job) return;
-        const canEdit = [0, 2].includes(Number(job.moderationStatus)) && !!job.id;
+        const canEditByOwner = typeof window.canEditJob === 'function' ? window.canEditJob(job) : false;
+        const canEdit = canEditByOwner && [0, 2].includes(Number(job.moderationStatus)) && !!job.id;
         button.classList.toggle('hidden', !canEdit);
         if (canEdit) button.href = `/Search/Edit/${job.id}`;
         else button.removeAttribute('href');

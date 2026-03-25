@@ -24,6 +24,8 @@ const autocompleteDropdowns = new Map();
 const selectPickerSyncFns = [];
 const addressSuggestionCache = new Map();
 const districtOptionsCache = new Map();
+const ownedJobIds = new Set();
+let ownedJobsLoaded = false;
 const FALLBACK_PROVINCES = [
   'Thành phố Hà Nội',
   'Thành phố Hồ Chí Minh',
@@ -503,13 +505,117 @@ function formatAgeRange(min, max) {
   return 'Khong yeu cau';
 }
 
-function showToast(message) {
-  const toast = document.getElementById('toast');
-  if (!toast) return;
-  toast.textContent = message;
-  toast.classList.add('show');
-  clearTimeout(showToast._timer);
-  showToast._timer = setTimeout(() => toast.classList.remove('show'), 2600);
+function showToast(message, type = 'info') {
+  if (typeof window.showToast === 'function' && window.showToast !== showToast) {
+    window.showToast(message, { type });
+  }
+}
+
+function isLoggedIn() {
+  return typeof IS_AUTH !== 'undefined' && IS_AUTH === true;
+}
+
+function isNannyRole() {
+  return typeof IS_NANNY !== 'undefined' && IS_NANNY === true;
+}
+
+function normalizeGuid(value) {
+  return String(value ?? '').trim().toLowerCase();
+}
+
+function setOwnedJobs(collection) {
+  ownedJobIds.clear();
+  (Array.isArray(collection) ? collection : []).forEach((job) => {
+    if (job?.id) ownedJobIds.add(normalizeGuid(job.id));
+  });
+}
+
+function canEditJob(job) {
+  if (!isLoggedIn() || !job?.id) return false;
+  return ownedJobIds.has(normalizeGuid(job.id));
+}
+
+window.canEditJob = canEditJob;
+
+function updateJobFavoriteUi(jobId, isFavorite) {
+  const normalizedId = normalizeGuid(jobId);
+  document.querySelectorAll(`.job-save-btn[data-job-id="${normalizedId}"]`).forEach((button) => {
+    button.classList.toggle('active', !!isFavorite);
+    button.setAttribute('aria-pressed', isFavorite ? 'true' : 'false');
+    button.title = isFavorite ? 'Bo luu bai dang' : 'Luu bai dang';
+    button.setAttribute('aria-label', button.title);
+    const icon = button.querySelector('.material-icons-round');
+    if (icon) icon.textContent = isFavorite ? 'bookmark' : 'bookmark_border';
+  });
+}
+
+function setJobFavoriteState(jobId, isFavorite) {
+  const normalizedId = normalizeGuid(jobId);
+  currentJobs = currentJobs.map((job) => {
+    if (normalizeGuid(job?.id) === normalizedId) return { ...job, isFavorite: !!isFavorite };
+    return job;
+  });
+  updateJobFavoriteUi(jobId, !!isFavorite);
+}
+
+async function toggleJobFavorite(jobId, event) {
+  event?.stopPropagation?.();
+
+  if (!isLoggedIn()) {
+    showToast('Vui long dang nhap de luu bai dang.', 'warning');
+    return;
+  }
+
+  if (!isNannyRole()) {
+    showToast('Chi Nanny moi co quyen luu bai dang.', 'warning');
+    return;
+  }
+
+  try {
+    const response = await fetch(`/Search/ToggleFavoriteJob?jobPostingId=${encodeURIComponent(jobId)}`, {
+      method: 'POST',
+      credentials: 'same-origin'
+    });
+    const json = await response.json();
+    const payload = json?.raw && typeof json.raw === 'object' ? json.raw : json;
+    const isSuccess = !!(json?.success || payload?.success);
+
+    if (!isSuccess) {
+      showToast(json?.message || 'Khong the cap nhat luu bai dang.', 'error');
+      return;
+    }
+
+    const favoriteState = typeof payload?.isFavorite === 'boolean'
+      ? payload.isFavorite
+      : !!json?.isFavorite;
+
+    setJobFavoriteState(jobId, favoriteState);
+    showToast(
+      payload?.message || json?.message || (favoriteState ? 'Da luu bai dang.' : 'Da bo luu bai dang.'),
+      favoriteState ? 'success' : 'info'
+    );
+  } catch {
+    showToast('Khong the cap nhat luu bai dang.', 'error');
+  }
+}
+
+async function loadOwnedJobs() {
+  if (!isLoggedIn()) {
+    setOwnedJobs([]);
+    ownedJobsLoaded = true;
+    return;
+  }
+
+  try {
+    const res = await fetch('/Search/MyJobs', { credentials: 'same-origin' });
+    const json = await res.json();
+    if (json?.success) setOwnedJobs(json.data);
+    else setOwnedJobs([]);
+  } catch {
+    setOwnedJobs([]);
+  } finally {
+    ownedJobsLoaded = true;
+  }
 }
 
 function openHistory() {
@@ -649,7 +755,19 @@ function renderJobs(jobs) {
           <h3 class="text-[18px] leading-6 font-extrabold text-slate-900">${escapeHtml(job.title || 'Tin dang')}</h3>
           <p class="mt-2 text-sm font-semibold text-slate-500">${escapeHtml(job.parentName || 'Phu huynh')}</p>
         </div>
-        <span class="shrink-0 rounded-full bg-orange-50 px-3 py-1 text-xs font-extrabold text-orange-700">${escapeHtml(formatSalaryRange(job.salaryMin, job.salaryMax, job.salaryNegotiable))}</span>
+        <div class="job-card__head-right">
+          <span class="shrink-0 rounded-full bg-orange-50 px-3 py-1 text-xs font-extrabold text-orange-700">${escapeHtml(formatSalaryRange(job.salaryMin, job.salaryMax, job.salaryNegotiable))}</span>
+          ${isNannyRole() ? `
+            <button type="button"
+                    class="job-save-btn ${job.isFavorite ? 'active' : ''}"
+                    data-job-id="${escapeHtml(normalizeGuid(job.id))}"
+                    aria-pressed="${job.isFavorite ? 'true' : 'false'}"
+                    aria-label="${job.isFavorite ? 'Bo luu bai dang' : 'Luu bai dang'}"
+                    title="${job.isFavorite ? 'Bo luu bai dang' : 'Luu bai dang'}"
+                    onclick="toggleJobFavorite('${escapeJs(job.id)}', event)">
+              <span class="material-icons-round">${job.isFavorite ? 'bookmark' : 'bookmark_border'}</span>
+            </button>` : ''}
+        </div>
       </div>
       <p class="mt-3 text-sm font-semibold text-orange-600">${escapeHtml([job.location, job.district, job.city].filter(Boolean).join(', ') || 'Chua cap nhat dia diem')}</p>
       <p class="mt-3 text-sm leading-6 text-slate-500 line-clamp-2">${escapeHtml(job.description || 'Khong co mo ta.')}</p>
@@ -854,6 +972,11 @@ function setEditStatus(status) {
 }
 
 async function openCreate() {
+  if (!isLoggedIn()) {
+    window.location.href = '/Auth/Login';
+    return;
+  }
+
   await loadLocationData();
   document.getElementById('createForm')?.reset();
   const createSkillSelect = document.getElementById('cf-skillSelect');
@@ -915,6 +1038,11 @@ function validatePayload(payload) {
 }
 
 async function submitCreate() {
+  if (!isLoggedIn()) {
+    window.location.href = '/Auth/Login';
+    return;
+  }
+
   if (isSubmittingCreate) return;
   const payload = getCreatePayload();
   const error = validatePayload(payload);
@@ -964,6 +1092,10 @@ async function submitCreate() {
 
 async function openEdit(job) {
   if (!job?.id) return;
+  if (!canEditJob(job)) {
+    showToast('Ban khong co quyen chinh sua bai dang nay.');
+    return;
+  }
   window.location.href = `/Search/Edit/${job.id}`;
 }
 
@@ -974,12 +1106,20 @@ function closeEdit() {
 
 async function submitEdit() {
   if (editingJobId) {
+    if (!ownedJobIds.has(normalizeGuid(editingJobId))) {
+      showToast('Ban khong co quyen chinh sua bai dang nay.');
+      return;
+    }
     window.location.href = `/Search/Edit/${editingJobId}`;
   }
 }
 
 async function deleteJob() {
   if (!editingJobId) return;
+  if (!ownedJobIds.has(normalizeGuid(editingJobId))) {
+    showToast('Ban khong co quyen xoa bai dang nay.');
+    return;
+  }
   if (!confirm('Ban co chac muon xoa bai dang nay?')) return;
   try {
     const res = await fetch(`/Search/DeleteJob/${editingJobId}`, { method: 'DELETE', credentials: 'same-origin' });
@@ -1045,7 +1185,7 @@ function handleEditCityChange() {
   handleCityChange('ef');
 }
 
-function bootstrapSearchPage() {
+async function bootstrapSearchPage() {
   ['cf-city', 'cf-district', 'ef-city', 'ef-district', 'cf-typeText', 'cf-childProfileText', 'cf-skillSelectText'].forEach((id) => {
     document.getElementById(id)?.setAttribute('autocomplete', 'off');
   });
@@ -1055,7 +1195,8 @@ function bootstrapSearchPage() {
   attachCreateSelectPickers();
   initMap();
   loadLocationData();
-  doSearch();
+  await loadOwnedJobs();
+  await doSearch();
 }
 
 if (document.readyState === 'loading') {

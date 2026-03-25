@@ -1,3 +1,4 @@
+using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
 using Nanny_BackEnd.DTOs.Recommendation;
@@ -15,7 +16,7 @@ public class RecommendationRepository
     }
 
     // ──────────────────────────────────────────────────────────────
-    // Hard Filter: Nanny candidates cho một Job
+    // Internal transfer types
     // ──────────────────────────────────────────────────────────────
 
     public class NannyCandidate
@@ -52,11 +53,14 @@ public class RecommendationRepository
         public List<JobRequiredSkillDto> RequiredSkills { get; set; } = new();
     }
 
+    // ──────────────────────────────────────────────────────────────
+    // Hard Filter: Nanny candidates cho một Job
+    // ──────────────────────────────────────────────────────────────
+
     /// <summary>
     /// Hard filter: lấy danh sách nanny candidates cho một job.
-    /// Điều kiện: IsDeleted=0, VerificationStatus=2, User.Status=1,
-    /// tuổi trong range, lương overlap (khi cả 2 có giá trị),
-    /// lịch phủ TẤT CẢ IsRequired=1 slots, ít nhất 1 skill khớp.
+    /// EF Core query không bao gồm Embedding (đã Ignore trong OnModelCreatingPartial).
+    /// Embedding được load riêng bằng raw SQL sau khi hard filter.
     /// </summary>
     public async Task<List<NannyCandidate>> GetNannyCandidatesAsync(Guid jobId)
     {
@@ -70,13 +74,11 @@ public class RecommendationRepository
 
         var today = DateOnly.FromDateTime(DateTime.Today);
 
-        // Set required skill IDs (job side)
         var requiredSkillIds = job.JobRequirements
             .Where(r => r.IsRequired)
             .Select(r => r.SkillId)
             .ToHashSet();
 
-        // Set required schedule slots (DayOfWeek, TimeSlot)
         var requiredSlots = job.JobScheduleRequirements
             .Select(s => (s.DayOfWeek, s.TimeSlot))
             .ToHashSet();
@@ -88,10 +90,9 @@ public class RecommendationRepository
             .Include(n => n.NannyAvailabilities.Where(a => !a.IsDeleted && a.IsAvailable))
             .Where(n =>
                 !n.IsDeleted &&
-                n.VerificationStatus == 2 &&       // Approved
-                n.User.Status == 1);               // Active
+                n.VerificationStatus == 2 &&
+                n.User.Status == 1);
 
-        // Tuổi nanny filter (MinNannyAge / MaxNannyAge)
         if (job.MinNannyAge.HasValue)
         {
             var maxBirth = today.AddYears(-job.MinNannyAge.Value);
@@ -103,7 +104,6 @@ public class RecommendationRepository
             query = query.Where(n => n.User.DateOfBirth == null || n.User.DateOfBirth >= minBirth);
         }
 
-        // Lương overlap: chỉ filter khi CẢ 2 bên có giá trị
         if (job.SalaryMin.HasValue && job.SalaryMax.HasValue)
         {
             query = query.Where(n =>
@@ -114,60 +114,57 @@ public class RecommendationRepository
         var candidates = await query.ToListAsync();
 
         // In-memory filter: lịch và skill
-        var result = new List<NannyCandidate>();
-
+        var passed = new List<NannyProfile>();
         foreach (var n in candidates)
         {
-            // Schedule: nanny phải có TẤT CẢ required slots
             if (requiredSlots.Count > 0)
             {
                 var nannySlots = n.NannyAvailabilities
                     .Select(a => (a.DayOfWeek, a.TimeSlot))
                     .ToHashSet();
-
-                if (!requiredSlots.IsSubsetOf(nannySlots))
-                    continue;
+                if (!requiredSlots.IsSubsetOf(nannySlots)) continue;
             }
 
-            // Skill: ít nhất 1 skill khớp (nếu job có required skills)
             if (requiredSkillIds.Count > 0)
             {
                 var nannySkillIds = n.NannySkills.Select(s => s.SkillId).ToHashSet();
-                if (!requiredSkillIds.Overlaps(nannySkillIds))
-                    continue;
+                if (!requiredSkillIds.Overlaps(nannySkillIds)) continue;
             }
 
-            result.Add(new NannyCandidate
-            {
-                NannyProfileId = n.Id,
-                UserId = n.UserId,
-                FullName = $"{n.User.FirstName} {n.User.LastName}".Trim(),
-                AvatarUrl = n.User.AvatarUrl,
-                Bio = n.Bio,
-                YearsOfExperience = n.YearsOfExperience,
-                EducationLevel = n.EducationLevel,
-                AverageRating = n.AverageRating,
-                TotalReviews = n.TotalReviews,
-                MaxTravelDistance = n.MaxTravelDistance,
-                Latitude = n.User.Latitude,
-                Longitude = n.User.Longitude,
-                Embedding = n.Embedding,
-                Skills = n.NannySkills.Select(s => new NannySkillDto
-                {
-                    SkillName = s.Skill.Name,
-                    ProficiencyLevel = s.ProficiencyLevel
-                }).ToList()
-            });
+            passed.Add(n);
         }
 
-        return result;
+        // Load embeddings via raw SQL (batch)
+        var passedIds = passed.Select(n => n.Id).ToList();
+        var embeddings = await LoadNannyEmbeddingsAsync(passedIds);
+
+        return passed.Select(n => new NannyCandidate
+        {
+            NannyProfileId = n.Id,
+            UserId = n.UserId,
+            FullName = $"{n.User.FirstName} {n.User.LastName}".Trim(),
+            AvatarUrl = n.User.AvatarUrl,
+            Bio = n.Bio,
+            YearsOfExperience = n.YearsOfExperience,
+            EducationLevel = n.EducationLevel,
+            AverageRating = n.AverageRating,
+            TotalReviews = n.TotalReviews,
+            MaxTravelDistance = n.MaxTravelDistance,
+            Latitude = n.User.Latitude,
+            Longitude = n.User.Longitude,
+            Embedding = embeddings.GetValueOrDefault(n.Id),
+            Skills = n.NannySkills.Select(s => new NannySkillDto
+            {
+                SkillName = s.Skill.Name,
+                ProficiencyLevel = s.ProficiencyLevel
+            }).ToList()
+        }).ToList();
     }
 
-    /// <summary>
-    /// Hard filter: lấy danh sách job candidates cho một nanny.
-    /// Điều kiện: IsDeleted=0, Status=1(Public), ModerationStatus=2(Approved),
-    /// lương overlap (khi cả 2 có giá trị), ít nhất 1 skill khớp.
-    /// </summary>
+    // ──────────────────────────────────────────────────────────────
+    // Hard Filter: Job candidates cho một Nanny
+    // ──────────────────────────────────────────────────────────────
+
     public async Task<List<JobCandidate>> GetJobCandidatesAsync(Guid nannyProfileId)
     {
         var nanny = await _db.NannyProfiles
@@ -183,10 +180,9 @@ public class RecommendationRepository
                 .ThenInclude(r => r.Skill)
             .Where(j =>
                 !j.IsDeleted &&
-                j.Status == 1 &&               // Public
-                j.ModerationStatus == 2);      // Approved
+                j.Status == 1 &&
+                j.ModerationStatus == 2);
 
-        // Lương overlap: chỉ filter khi CẢ 2 bên có giá trị
         if (nanny.ExpectedSalaryMin.HasValue && nanny.ExpectedSalaryMax.HasValue)
         {
             query = query.Where(j =>
@@ -196,9 +192,7 @@ public class RecommendationRepository
 
         var jobs = await query.ToListAsync();
 
-        // In-memory filter: skill
-        var result = new List<JobCandidate>();
-
+        var passed = new List<JobPosting>();
         foreach (var j in jobs)
         {
             var jobRequiredSkillIds = j.JobRequirements
@@ -206,36 +200,39 @@ public class RecommendationRepository
                 .Select(r => r.SkillId)
                 .ToHashSet();
 
-            // Ít nhất 1 skill khớp (nếu job có required skills)
             if (jobRequiredSkillIds.Count > 0 && !jobRequiredSkillIds.Overlaps(nannySkillIds))
                 continue;
 
-            result.Add(new JobCandidate
-            {
-                JobId = j.Id,
-                Title = j.Title,
-                Description = j.Description,
-                City = j.City,
-                District = j.District,
-                SalaryMin = j.SalaryMin,
-                SalaryMax = j.SalaryMax,
-                SalaryNegotiable = j.SalaryNegotiable,
-                Latitude = j.Latitude,
-                Longitude = j.Longitude,
-                Embedding = j.Embedding,
-                RequiredSkills = j.JobRequirements.Select(r => new JobRequiredSkillDto
-                {
-                    SkillName = r.Skill.Name,
-                    MinProficiencyLevel = r.MinProficiencyLevel
-                }).ToList()
-            });
+            passed.Add(j);
         }
 
-        return result;
+        // Load embeddings via raw SQL (batch)
+        var passedIds = passed.Select(j => j.Id).ToList();
+        var embeddings = await LoadJobEmbeddingsAsync(passedIds);
+
+        return passed.Select(j => new JobCandidate
+        {
+            JobId = j.Id,
+            Title = j.Title,
+            Description = j.Description,
+            City = j.City,
+            District = j.District,
+            SalaryMin = j.SalaryMin,
+            SalaryMax = j.SalaryMax,
+            SalaryNegotiable = j.SalaryNegotiable,
+            Latitude = j.Latitude,
+            Longitude = j.Longitude,
+            Embedding = embeddings.GetValueOrDefault(j.Id),
+            RequiredSkills = j.JobRequirements.Select(r => new JobRequiredSkillDto
+            {
+                SkillName = r.Skill.Name,
+                MinProficiencyLevel = r.MinProficiencyLevel
+            }).ToList()
+        }).ToList();
     }
 
     // ──────────────────────────────────────────────────────────────
-    // Read models cho embedding
+    // Read models cho embedding (Admin endpoints)
     // ──────────────────────────────────────────────────────────────
 
     public async Task<NannyReadModelDto?> GetNannyReadModelAsync(Guid nannyProfileId)
@@ -247,6 +244,9 @@ public class RecommendationRepository
             .FirstOrDefaultAsync(x => x.Id == nannyProfileId && !x.IsDeleted);
 
         if (n == null) return null;
+
+        var embs = await LoadNannyEmbeddingsAsync(new List<Guid> { nannyProfileId });
+        var (embedding, updatedAt) = await LoadNannyEmbeddingWithTimestampAsync(nannyProfileId);
 
         return new NannyReadModelDto
         {
@@ -264,8 +264,8 @@ public class RecommendationRepository
             Latitude = n.User.Latitude,
             Longitude = n.User.Longitude,
             DateOfBirth = n.User.DateOfBirth,
-            Embedding = n.Embedding,
-            EmbeddingUpdatedAt = n.EmbeddingUpdatedAt
+            Embedding = embedding,
+            EmbeddingUpdatedAt = updatedAt
         };
     }
 
@@ -278,6 +278,8 @@ public class RecommendationRepository
             .FirstOrDefaultAsync(x => x.Id == jobId && !x.IsDeleted);
 
         if (j == null) return null;
+
+        var (embedding, updatedAt) = await LoadJobEmbeddingWithTimestampAsync(jobId);
 
         return new JobReadModelDto
         {
@@ -297,18 +299,23 @@ public class RecommendationRepository
             Longitude = j.Longitude,
             City = j.City,
             District = j.District,
-            Embedding = j.Embedding,
-            EmbeddingUpdatedAt = j.EmbeddingUpdatedAt
+            Embedding = embedding,
+            EmbeddingUpdatedAt = updatedAt
         };
     }
 
     public async Task<List<NannyReadModelDto>> GetPendingEmbedNanniesAsync()
     {
+        // Get IDs where Embedding IS NULL via raw SQL (property is Ignored in EF Core)
+        var pendingIds = await GetIdsWithNullEmbeddingAsync("NannyProfiles");
+
+        if (!pendingIds.Any()) return new List<NannyReadModelDto>();
+
         var nannies = await _db.NannyProfiles
             .Include(n => n.User)
             .Include(n => n.NannySkills.Where(s => !s.IsDeleted))
                 .ThenInclude(s => s.Skill)
-            .Where(n => !n.IsDeleted && n.Embedding == null)
+            .Where(n => pendingIds.Contains(n.Id))
             .ToListAsync();
 
         return nannies.Select(n => new NannyReadModelDto
@@ -327,18 +334,22 @@ public class RecommendationRepository
             Latitude = n.User.Latitude,
             Longitude = n.User.Longitude,
             DateOfBirth = n.User.DateOfBirth,
-            Embedding = n.Embedding,
-            EmbeddingUpdatedAt = n.EmbeddingUpdatedAt
+            Embedding = null,           // pending — không có embedding
+            EmbeddingUpdatedAt = null
         }).ToList();
     }
 
     public async Task<List<JobReadModelDto>> GetPendingEmbedJobsAsync()
     {
+        var pendingIds = await GetIdsWithNullEmbeddingAsync("JobPostings");
+
+        if (!pendingIds.Any()) return new List<JobReadModelDto>();
+
         var jobs = await _db.JobPostings
             .Include(j => j.ChildProfile)
             .Include(j => j.JobRequirements.Where(r => !r.IsDeleted))
                 .ThenInclude(r => r.Skill)
-            .Where(j => !j.IsDeleted && j.Embedding == null)
+            .Where(j => pendingIds.Contains(j.Id))
             .ToListAsync();
 
         return jobs.Select(j => new JobReadModelDto
@@ -359,32 +370,132 @@ public class RecommendationRepository
             Longitude = j.Longitude,
             City = j.City,
             District = j.District,
-            Embedding = j.Embedding,
-            EmbeddingUpdatedAt = j.EmbeddingUpdatedAt
+            Embedding = null,
+            EmbeddingUpdatedAt = null
         }).ToList();
     }
 
     // ──────────────────────────────────────────────────────────────
-    // Embedding persistence
+    // Embedding persistence (raw SQL — EF Core ignores these columns)
     // ──────────────────────────────────────────────────────────────
 
     public async Task SaveNannyEmbeddingAsync(Guid nannyProfileId, string embeddingJson)
     {
-        var n = await _db.NannyProfiles.FindAsync(nannyProfileId);
-        if (n == null) return;
+        var conn = _db.Database.GetDbConnection();
+        if (conn.State != ConnectionState.Open) await conn.OpenAsync();
 
-        n.Embedding = embeddingJson;
-        n.EmbeddingUpdatedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "UPDATE NannyProfiles SET Embedding = @emb, EmbeddingUpdatedAt = @ts WHERE Id = @id";
+        AddParam(cmd, "@emb", embeddingJson);
+        AddParam(cmd, "@ts", DateTime.UtcNow);
+        AddParam(cmd, "@id", nannyProfileId);
+        await cmd.ExecuteNonQueryAsync();
     }
 
     public async Task SaveJobEmbeddingAsync(Guid jobId, string embeddingJson)
     {
-        var j = await _db.JobPostings.FindAsync(jobId);
-        if (j == null) return;
+        var conn = _db.Database.GetDbConnection();
+        if (conn.State != ConnectionState.Open) await conn.OpenAsync();
 
-        j.Embedding = embeddingJson;
-        j.EmbeddingUpdatedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "UPDATE JobPostings SET Embedding = @emb, EmbeddingUpdatedAt = @ts WHERE Id = @id";
+        AddParam(cmd, "@emb", embeddingJson);
+        AddParam(cmd, "@ts", DateTime.UtcNow);
+        AddParam(cmd, "@id", jobId);
+        await cmd.ExecuteNonQueryAsync();
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Raw SQL helpers (private)
+    // ──────────────────────────────────────────────────────────────
+
+    /// <summary>Load Embedding (only) for a batch of nanny IDs.</summary>
+    private async Task<Dictionary<Guid, string?>> LoadNannyEmbeddingsAsync(IEnumerable<Guid> ids)
+    {
+        return await LoadEmbeddingsAsync("NannyProfiles", ids);
+    }
+
+    /// <summary>Load Embedding (only) for a batch of job IDs.</summary>
+    private async Task<Dictionary<Guid, string?>> LoadJobEmbeddingsAsync(IEnumerable<Guid> ids)
+    {
+        return await LoadEmbeddingsAsync("JobPostings", ids);
+    }
+
+    /// <summary>Load Embedding + EmbeddingUpdatedAt for a single nanny.</summary>
+    private async Task<(string? Embedding, DateTime? UpdatedAt)> LoadNannyEmbeddingWithTimestampAsync(Guid id)
+    {
+        return await LoadEmbeddingWithTimestampAsync("NannyProfiles", id);
+    }
+
+    /// <summary>Load Embedding + EmbeddingUpdatedAt for a single job.</summary>
+    private async Task<(string? Embedding, DateTime? UpdatedAt)> LoadJobEmbeddingWithTimestampAsync(Guid id)
+    {
+        return await LoadEmbeddingWithTimestampAsync("JobPostings", id);
+    }
+
+    private async Task<Dictionary<Guid, string?>> LoadEmbeddingsAsync(string table, IEnumerable<Guid> ids)
+    {
+        var idList = ids.ToList();
+        var result = new Dictionary<Guid, string?>();
+        if (!idList.Any()) return result;
+
+        var conn = _db.Database.GetDbConnection();
+        if (conn.State != ConnectionState.Open) await conn.OpenAsync();
+
+        using var cmd = conn.CreateCommand();
+        var paramNames = idList.Select((_, i) => $"@p{i}").ToList();
+        cmd.CommandText = $"SELECT Id, Embedding FROM {table} WHERE Id IN ({string.Join(",", paramNames)})";
+        for (int i = 0; i < idList.Count; i++)
+            AddParam(cmd, $"@p{i}", idList[i]);
+
+        using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            var rowId = reader.GetGuid(0);
+            var emb = reader.IsDBNull(1) ? null : reader.GetString(1);
+            result[rowId] = emb;
+        }
+        return result;
+    }
+
+    private async Task<(string? Embedding, DateTime? UpdatedAt)> LoadEmbeddingWithTimestampAsync(string table, Guid id)
+    {
+        var conn = _db.Database.GetDbConnection();
+        if (conn.State != ConnectionState.Open) await conn.OpenAsync();
+
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = $"SELECT Embedding, EmbeddingUpdatedAt FROM {table} WHERE Id = @id";
+        AddParam(cmd, "@id", id);
+
+        using var reader = await cmd.ExecuteReaderAsync();
+        if (!await reader.ReadAsync()) return (null, null);
+
+        var emb = reader.IsDBNull(0) ? null : reader.GetString(0);
+        var ts  = reader.IsDBNull(1) ? (DateTime?)null : reader.GetDateTime(1);
+        return (emb, ts);
+    }
+
+    /// <summary>Get IDs of rows where IsDeleted=0 AND Embedding IS NULL.</summary>
+    private async Task<List<Guid>> GetIdsWithNullEmbeddingAsync(string table)
+    {
+        var conn = _db.Database.GetDbConnection();
+        if (conn.State != ConnectionState.Open) await conn.OpenAsync();
+
+        var result = new List<Guid>();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = $"SELECT Id FROM {table} WHERE IsDeleted = 0 AND Embedding IS NULL";
+
+        using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+            result.Add(reader.GetGuid(0));
+        return result;
+    }
+
+    private static void AddParam(System.Data.Common.DbCommand cmd, string name, object? value)
+    {
+        var p = cmd.CreateParameter();
+        p.ParameterName = name;
+        p.Value = value ?? DBNull.Value;
+        cmd.Parameters.Add(p);
     }
 }

@@ -8,6 +8,7 @@ public class SearchJobResponse
     public Guid? ParentProfileId { get; set; }
     public Guid? ChildProfileId { get; set; }
     public bool IsOwner { get; set; }
+    public bool IsFavorite { get; set; }
     public string Title { get; set; } = "";
     public string Description { get; set; } = "";
     public string ParentName { get; set; } = "";

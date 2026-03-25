@@ -9,34 +9,88 @@ namespace Nanny_BackEnd.Services;
 public class NannyService
 {
     private readonly NannyProfileRepository _nannyProfileRepository;
+    private readonly FavoriteRepository _favoriteRepository;
+    private readonly NotificationService _notificationService;
 
-    public NannyService(NannyProfileRepository nannyProfileRepository)
+    public NannyService(
+        NannyProfileRepository nannyProfileRepository,
+        FavoriteRepository favoriteRepository,
+        NotificationService notificationService)
     {
         _nannyProfileRepository = nannyProfileRepository;
+        _favoriteRepository = favoriteRepository;
+        _notificationService = notificationService;
     }
 
-    public async Task<NannyPagedResultResponse> GetListAsync(NannyListRequest request)
+    public async Task<NannyPagedResultResponse> GetListAsync(NannyListRequest request, Guid? currentParentProfileId = null)
     {
         var parsedSkillIds = ParseSkillIds(request.SkillIds);
         var page = request.Page < 1 ? 1 : request.Page;
         var pageSize = request.PageSize < 1 ? 12 : Math.Min(request.PageSize, 50);
         var (items, totalCount) = await _nannyProfileRepository.SearchAsync(request, parsedSkillIds);
+        var favoriteNannyIds = currentParentProfileId.HasValue
+            ? await _favoriteRepository.getFavoriteNannyIds(currentParentProfileId.Value, items.Select(item => item.Id))
+            : [];
 
         return new NannyPagedResultResponse
         {
-            Items = items.Select(MapToListResponse).ToList(),
+            Items = items.Select(item => MapToListResponse(item, favoriteNannyIds)).ToList(),
             TotalCount = totalCount,
             Page = page,
             PageSize = pageSize
         };
     }
 
-    public async Task<NannyDetailResponse> GetDetailAsync(Guid nannyProfileId)
+    public async Task<NannyDetailResponse> GetDetailAsync(Guid nannyProfileId, Guid? currentParentProfileId = null)
     {
         var nanny = await _nannyProfileRepository.GetDetailAsync(nannyProfileId)
             ?? throw new KeyNotFoundException("Khong tim thay ho so nanny.");
 
-        return MapToDetailResponse(nanny);
+        var isFavorite = currentParentProfileId.HasValue &&
+                         await _favoriteRepository.isFavoriteNanny(currentParentProfileId.Value, nannyProfileId);
+
+        return MapToDetailResponse(nanny, isFavorite);
+    }
+
+    public async Task<NannyPagedResultResponse> GetFavoritesAsync(Guid parentProfileId, int page = 1, int pageSize = 12)
+    {
+        page = page < 1 ? 1 : page;
+        pageSize = pageSize < 1 ? 12 : Math.Min(pageSize, 50);
+
+        var (items, totalCount) = await _favoriteRepository.getFavoriteNannies(parentProfileId, page, pageSize);
+        var favoriteNannyIds = items.Select(item => item.Id).ToHashSet();
+
+        return new NannyPagedResultResponse
+        {
+            Items = items.Select(item => MapToListResponse(item, favoriteNannyIds)).ToList(),
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize
+        };
+    }
+
+    public async Task<(bool IsFavorite, Guid NannyUserId)> ToggleFavoriteAsync(Guid parentProfileId, Guid nannyProfileId, Guid actorUserId)
+    {
+        var nanny = await _nannyProfileRepository.GetDetailAsync(nannyProfileId)
+            ?? throw new KeyNotFoundException("Khong tim thay ho so nanny.");
+
+        if (nanny.IsDeleted || nanny.User.IsDeleted)
+            throw new InvalidOperationException("Ho so nanny khong hop le.");
+
+        var isFavorite = await _favoriteRepository.toggleFavoriteNanny(parentProfileId, nannyProfileId, actorUserId);
+        if (isFavorite)
+        {
+            await _notificationService.createNotification(
+                nanny.UserId,
+                "Ho so cua ban vua duoc yeu thich",
+                "Co mot phu huynh vua tim ho so cua ban.",
+                NotificationTypes.NannyProfileFavorited,
+                nannyProfileId,
+                "NannyProfile",
+                actorUserId);
+        }
+
+        return (isFavorite, nanny.UserId);
     }
 
     private static List<Guid> ParseSkillIds(string? skillIds)
@@ -52,7 +106,7 @@ public class NannyService
             .ToList();
     }
 
-    private static NannyListItemResponse MapToListResponse(NannyProfile nanny)
+    private static NannyListItemResponse MapToListResponse(NannyProfile nanny, HashSet<Guid>? favoriteNannyIds = null)
     {
         var educationLevel = nanny.EducationLevel.HasValue && Enum.IsDefined(typeof(EducationLevel), nanny.EducationLevel.Value)
             ? (EducationLevel?)nanny.EducationLevel.Value
@@ -65,6 +119,7 @@ public class NannyService
         {
             Id = nanny.Id,
             UserId = nanny.UserId,
+            IsFavorite = favoriteNannyIds?.Contains(nanny.Id) == true,
             FullName = $"{nanny.User.FirstName} {nanny.User.LastName}".Trim(),
             AvatarUrl = nanny.User.AvatarUrl,
             Bio = nanny.Bio,
@@ -91,17 +146,20 @@ public class NannyService
                 .OrderBy(slot => slot.TimeSlot)
                 .ThenBy(slot => slot.DayOfWeek)
                 .Select(MapAvailabilitySlot)
-                .ToList()
+                .ToList(),
+            Latitude = (double?)nanny.User.Latitude,
+            Longitude = (double?)nanny.User.Longitude
         };
     }
 
-    private static NannyDetailResponse MapToDetailResponse(NannyProfile nanny)
+    private static NannyDetailResponse MapToDetailResponse(NannyProfile nanny, bool isFavorite)
     {
-        var listItem = MapToListResponse(nanny);
+        var listItem = MapToListResponse(nanny, isFavorite ? [nanny.Id] : []);
         return new NannyDetailResponse
         {
             Id = listItem.Id,
             UserId = listItem.UserId,
+            IsFavorite = listItem.IsFavorite,
             FullName = listItem.FullName,
             AvatarUrl = listItem.AvatarUrl,
             Bio = listItem.Bio,
@@ -125,8 +183,8 @@ public class NannyService
             MaxTravelDistance = nanny.MaxTravelDistance,
             ProfileCompleteness = nanny.ProfileCompleteness,
             VerifiedAt = nanny.VerifiedAt,
-            Latitude = (double?)nanny.User.Latitude,
-            Longitude = (double?)nanny.User.Longitude
+            Latitude = listItem.Latitude,
+            Longitude = listItem.Longitude
         };
     }
 

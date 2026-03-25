@@ -60,6 +60,18 @@ public class SubscriptionController : ControllerBase
     }
 
     [Authorize]
+    [HttpGet("transactions")]
+    public async Task<IActionResult> GetTransactionHistory()
+    {
+        var userId = getCurrentUserId();
+        if (!userId.HasValue)
+            return Unauthorized(fail("Khong xac dinh duoc nguoi dung hien tai."));
+
+        var history = await _subscriptionService.getTransactionHistory(userId.Value);
+        return Ok(success(history, history.Count));
+    }
+
+    [Authorize]
     [HttpPost("subscribe")]
     public async Task<IActionResult> Subscribe([FromBody] SubscribeRequest request)
     {
@@ -95,6 +107,8 @@ public class SubscriptionController : ControllerBase
         if (!userId.HasValue)
             return Unauthorized(fail("Khong xac dinh duoc nguoi dung hien tai."));
 
+        request.ClientIp ??= HttpContext.Connection.RemoteIpAddress?.ToString();
+
         try
         {
             var session = await _subscriptionService.createPayment(userId.Value, request);
@@ -126,17 +140,22 @@ public class SubscriptionController : ControllerBase
     }
 
     [AllowAnonymous]
-    [HttpPost("vietqr/callback")]
-    public async Task<IActionResult> VietQrCallback(
-        [FromBody] VietQrWebhookRequest request,
-        [FromHeader(Name = "x-webhook-token")] string? webhookToken,
-        [FromHeader(Name = "secure-token")] string? secureToken)
+    [HttpGet("vnpay/return")]
+    public async Task<IActionResult> VnPayReturn()
     {
-        if (!_subscriptionService.isVietQrWebhookAuthorized(webhookToken ?? secureToken))
-            return Unauthorized(fail("Webhook token khong hop le."));
+        var result = await _subscriptionService.handleVnPayReturn(Request.Query);
+        if (!string.IsNullOrWhiteSpace(result.RedirectUrl))
+            return Redirect(result.RedirectUrl);
 
-        var processed = await _subscriptionService.handleVietQrWebhook(request);
-        return Ok(new { success = true, processed });
+        return BadRequest(fail(result.Message));
+    }
+
+    [AllowAnonymous]
+    [HttpGet("vnpay/ipn")]
+    public async Task<IActionResult> VnPayIpn()
+    {
+        var result = await _subscriptionService.handleVnPayIpn(Request.Query);
+        return Ok(result);
     }
 
     [Authorize]
