@@ -3,6 +3,8 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using WebSite.Hubs;
 
 namespace WebSite.Controllers;
 
@@ -11,11 +13,13 @@ public class CommunicationController : Controller
 {
     private readonly HttpClient _http;
     private readonly string _apiBaseUrl;
+    private readonly IHubContext<NotificationHub> _notificationHub;
 
-    public CommunicationController(IHttpClientFactory httpFactory, IConfiguration config)
+    public CommunicationController(IHttpClientFactory httpFactory, IConfiguration config, IHubContext<NotificationHub> notificationHub)
     {
         _http = httpFactory.CreateClient("BackendApi");
         _apiBaseUrl = (config["ApiSettings:BaseUrl"] ?? "").TrimEnd('/');
+        _notificationHub = notificationHub;
     }
 
     // GET /Communication  — Trang chat chính
@@ -59,8 +63,17 @@ public class CommunicationController : Controller
     {
         setAuthHeader();
         var content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
-        return await proxy(() =>
+        var result = await proxy(() =>
             _http.PostAsync($"/api/communication/conversations/{conversationId}/messages", content));
+        if (result is ContentResult { StatusCode: >= 200 and < 300 })
+        {
+            await _notificationHub.Clients.Group("role:Moderator").SendAsync("notification:new", new
+            {
+                type = "message-to-moderator"
+            });
+        }
+
+        return result;
     }
 
     // DELETE /Communication/DeleteMessage/{id}
@@ -77,7 +90,16 @@ public class CommunicationController : Controller
     {
         setAuthHeader();
         var content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
-        return await proxy(() => _http.PostAsync($"/api/communication/messages/{id}/report", content));
+        var result = await proxy(() => _http.PostAsync($"/api/communication/messages/{id}/report", content));
+        if (result is ContentResult { StatusCode: >= 200 and < 300 })
+        {
+            await _notificationHub.Clients.Group("role:Moderator").SendAsync("notification:new", new
+            {
+                type = "report-submitted"
+            });
+        }
+
+        return result;
     }
 
     // PATCH /Communication/UpdateStatus/{id}

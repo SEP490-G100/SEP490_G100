@@ -19,7 +19,7 @@ public class NannyVerificationRequestController : ControllerBase
 
     [Authorize(Roles = "Nanny")]
     [HttpGet("nanny-requests")]
-    public async Task<IActionResult> GetMyRequests()
+    public async Task<IActionResult> GetMyRequests([FromQuery] int? status = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 3)
     {
         var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!Guid.TryParse(userIdString, out var userId))
@@ -27,8 +27,27 @@ public class NannyVerificationRequestController : ControllerBase
             return Unauthorized();
         }
 
-        var requests = await _verificationService.GetNannyRequestsAsync(userId);
+        var requests = await _verificationService.GetNannyRequestsAsync(userId, status, page, pageSize);
         return Ok(new { success = true, data = requests });
+    }
+
+    [Authorize(Roles = "Nanny")]
+    [HttpGet("nanny-requests/{id:guid}")]
+    public async Task<IActionResult> GetMyRequestDetail(Guid id)
+    {
+        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdString, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var (success, data, message) = await _verificationService.GetNannyRequestDetailAsync(userId, id);
+        if (!success || data == null)
+        {
+            return NotFound(new { success = false, message = message ?? "Khong tim thay yeu cau xac minh." });
+        }
+
+        return Ok(new { success = true, data });
     }
 
     [Authorize(Roles = "Nanny")]

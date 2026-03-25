@@ -42,6 +42,7 @@ public class VerificationRequestDetailDto
     public string?  RejectionReason { get; set; }
     public DateTime CreatedAt       { get; set; }
     public DateTime? ReviewedAt     { get; set; }
+    public string?  ReviewedByName  { get; set; }
 
     public Guid    NannyUserId      { get; set; }
     public string  NannyFirstName   { get; set; } = "";

@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
     <link href="~/css/moderator.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -515,8 +516,30 @@
                 }
             });
 
+            const connectNotificationRealtime = async () => {
+                if (!window.signalR) return;
+
+                const connection = new signalR.HubConnectionBuilder()
+                    .withUrl('/hubs/notifications')
+                    .withAutomaticReconnect()
+                    .build();
+
+                connection.on('notification:new', async () => {
+                    window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
+                });
+
+                connection.onreconnected(() => {
+                    window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
+                });
+
+                try {
+                    await connection.start();
+                } catch {
+                }
+            };
+
             loadUnreadCount();
-            window.setInterval(loadUnreadCount, 30000);
+            connectNotificationRealtime();
         })();
     </script>
     @await RenderSectionAsync("Scripts", required: false)

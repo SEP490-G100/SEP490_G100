@@ -33,6 +33,7 @@ public class VerificationRequestDetailDto
     public DateTime CreatedAt { get; set; }
     public DateTime? ReviewedAt { get; set; }
     public Guid? ReviewedBy { get; set; }
+    public string? ReviewedByName { get; set; }
 
     // Nanny info
     public Guid NannyUserId { get; set; }

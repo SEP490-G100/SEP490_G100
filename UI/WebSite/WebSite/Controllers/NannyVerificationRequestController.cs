@@ -4,7 +4,9 @@ using System.Text.Json;
 using Azure;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using WebSite.Enums;
+using WebSite.Hubs;
 using WebSite.Models;
 using WebSite.Models.Profile;
 using WebSite.Models.Verification;
@@ -17,6 +19,7 @@ public class NannyVerificationRequestController : Controller
 {
     private readonly HttpClient _http;
     private readonly IVerificationDocumentStorageService _storageService;
+    private readonly IHubContext<NotificationHub> _notificationHub;
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
     private static readonly HashSet<string> AllowedDocumentExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -30,10 +33,12 @@ public class NannyVerificationRequestController : Controller
 
     public NannyVerificationRequestController(
         IHttpClientFactory httpFactory,
-        IVerificationDocumentStorageService storageService)
+        IVerificationDocumentStorageService storageService,
+        IHubContext<NotificationHub> notificationHub)
     {
         _http = httpFactory.CreateClient("BackendApi");
         _storageService = storageService;
+        _notificationHub = notificationHub;
     }
 
     private void AddAuthHeader()
@@ -46,20 +51,59 @@ public class NannyVerificationRequestController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(int? status = null, int page = 1)
     {
+        ViewBag.Status = status;
         AddAuthHeader();
-        var response = await _http.GetAsync("/api/NannyVerificationRequest/nanny-requests");
+
+        var queryParts = new List<string> { $"page={page}", "pageSize=3" };
+        if (status.HasValue)
+        {
+            queryParts.Add($"status={status.Value}");
+        }
+
+        var response = await _http.GetAsync($"/api/NannyVerificationRequest/nanny-requests?{string.Join("&", queryParts)}");
         if (!response.IsSuccessStatusCode)
         {
-            TempData["Error"] = "Không thể lấy danh sách yêu cầu xác minh.";
-            return View(new List<VerificationRequestListViewModel>());
+            TempData["Error"] = "Khong the tai danh sach yeu cau xac minh.";
+            return View(new VerificationRequestListResponse
+            {
+                Page = page,
+                PageSize = 3
+            });
         }
 
         var json = await response.Content.ReadAsStringAsync();
-        var apiResult = JsonSerializer.Deserialize<ApiResult<List<VerificationRequestListViewModel>>>(json, JsonOptions);
+        var apiResult = JsonSerializer.Deserialize<ApiResult<VerificationRequestListResponse>>(json, JsonOptions);
 
-        return View(apiResult?.Data ?? new List<VerificationRequestListViewModel>());
+        return View(apiResult?.Data ?? new VerificationRequestListResponse
+        {
+            Page = page,
+            PageSize = 3
+        });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> NannyViewVerificationDetail(Guid id)
+    {
+        AddAuthHeader();
+
+        var response = await _http.GetAsync($"/api/NannyVerificationRequest/nanny-requests/{id}");
+        if (!response.IsSuccessStatusCode)
+        {
+            TempData["Error"] = "Khong tim thay chi tiet yeu cau xac minh.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var json = await response.Content.ReadAsStringAsync();
+        var apiResult = JsonSerializer.Deserialize<ApiResult<VerificationRequestDetailDto>>(json, JsonOptions);
+        if (apiResult?.Success != true || apiResult.Data == null)
+        {
+            TempData["Error"] = apiResult?.Message ?? "Khong tim thay chi tiet yeu cau xac minh.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        return View("~/Views/NannyVerificationRequest/NannyViewVerificationDetail.cshtml", apiResult.Data);
     }
 
     [HttpGet]
@@ -68,7 +112,7 @@ public class NannyVerificationRequestController : Controller
         var model = new SubmitVerificationRequestViewModel();
         if (!await PopulateProfileInfoAsync(model))
         {
-            TempData["Error"] = "Vui lòng cập nhật hồ sơ cá nhân trước khi gửi yêu cầu.";
+            TempData["Error"] = "Vui long cap nhat ho so ca nhan truoc khi gui yeu cau.";
             return RedirectToAction("Index", "Profile");
         }
 
@@ -81,19 +125,19 @@ public class NannyVerificationRequestController : Controller
     {
         if (!await PopulateProfileInfoAsync(model))
         {
-            TempData["Error"] = "Vui lòng cập nhật hồ sơ cá nhân trước khi gửi yêu cầu.";
+            TempData["Error"] = "Vui long cap nhat ho so ca nhan truoc khi gui yeu cau.";
             return RedirectToAction("Index", "Profile");
         }
 
         ValidateUploadSection(
             model.IdentityCardFiles,
             nameof(model.IdentityCardFiles),
-            "Bạn phải upload ảnh cho mục căn cước công dân.",
+            "Ban phai upload anh cho muc can cuoc cong dan.",
             isRequired: true);
         ValidateUploadSection(
             model.CertificateFiles,
             nameof(model.CertificateFiles),
-            "Bạn phải upload ảnh cho mục bằng cấp và chứng chỉ.",
+            "Ban phai upload anh cho muc bang cap va chung chi.",
             isRequired: true);
         ValidateUploadSection(
             model.HealthCertificateFiles,
@@ -108,25 +152,25 @@ public class NannyVerificationRequestController : Controller
 
         AddAuthHeader();
 
-        var docs = new List<object>();
+        var documents = new List<object>();
         try
         {
-            await AddDocumentsAsync(model.IdentityCardFiles, VerificationDocumentType.IdentityCard, docs);
-            await AddDocumentsAsync(model.CertificateFiles, VerificationDocumentType.DegreeCertificate, docs);
-            await AddDocumentsAsync(model.HealthCertificateFiles, VerificationDocumentType.HealthCertificate, docs);
+            await AddDocumentsAsync(model.IdentityCardFiles, VerificationDocumentType.IdentityCard, documents);
+            await AddDocumentsAsync(model.CertificateFiles, VerificationDocumentType.DegreeCertificate, documents);
+            await AddDocumentsAsync(model.HealthCertificateFiles, VerificationDocumentType.HealthCertificate, documents);
         }
         catch (InvalidOperationException ex)
         {
             TempData["Error"] = ex.Message;
-            return RedirectToAction("Submit");
+            return RedirectToAction(nameof(Submit));
         }
         catch (RequestFailedException)
         {
-            TempData["Error"] = "Không thể upload tài liệu lên Azure Blob Storage. Vui lòng thử lại sau.";
-            return RedirectToAction("Submit");
+            TempData["Error"] = "Khong the upload tai lieu len Azure Blob Storage. Vui long thu lai sau.";
+            return RedirectToAction(nameof(Submit));
         }
 
-        var payload = JsonSerializer.Serialize(new { Documents = docs });
+        var payload = JsonSerializer.Serialize(new { Documents = documents });
         var jsonContent = new StringContent(payload, Encoding.UTF8, "application/json");
         var response = await _http.PostAsync("/api/NannyVerificationRequest/submit", jsonContent);
 
@@ -138,18 +182,22 @@ public class NannyVerificationRequestController : Controller
         }
         catch (JsonException)
         {
-            TempData["Error"] = "Lỗi hệ thống từ server. Vui lòng thử lại sau.";
-            return RedirectToAction("Submit");
+            TempData["Error"] = "Loi he thong tu server. Vui long thu lai sau.";
+            return RedirectToAction(nameof(Submit));
         }
 
         if (!response.IsSuccessStatusCode || result == null || !result.Success)
         {
-            TempData["Error"] = result?.Message ?? "Gửi yêu cầu thất bại.";
-            return RedirectToAction("Submit");
+            TempData["Error"] = result?.Message ?? "Gui yeu cau that bai.";
+            return RedirectToAction(nameof(Submit));
         }
 
-        TempData["Success"] = "Gửi yêu cầu xác minh thành công.";
-        return RedirectToAction("Index");
+        TempData["Success"] = "Gui yeu cau xac minh thanh cong.";
+        await _notificationHub.Clients.Group("role:Moderator").SendAsync("notification:new", new
+        {
+            type = "verification-request-submitted"
+        });
+        return RedirectToAction(nameof(Index));
     }
 
     private async Task<bool> PopulateProfileInfoAsync(SubmitVerificationRequestViewModel model)
@@ -199,13 +247,13 @@ public class NannyVerificationRequestController : Controller
         {
             if (!IsSupportedDocument(file))
             {
-                ModelState.AddModelError(fieldName, "Bạn phải upload file định dạng ảnh hoặc pdf.");
+                ModelState.AddModelError(fieldName, "Ban phai upload file dinh dang anh hoac pdf.");
                 return;
             }
 
             if (file.Length > MaxDocumentSizeInBytes)
             {
-                ModelState.AddModelError(fieldName, "Bạn chỉ đc upload file kích thước tối đa 5mb.");
+                ModelState.AddModelError(fieldName, "Ban chi duoc upload file kich thuoc toi da 5mb.");
                 return;
             }
         }
@@ -232,7 +280,7 @@ public class NannyVerificationRequestController : Controller
     private async Task AddDocumentsAsync(
         List<IFormFile>? files,
         VerificationDocumentType documentType,
-        List<object> docs)
+        List<object> documents)
     {
         if (files == null || files.Count == 0)
         {
@@ -243,7 +291,7 @@ public class NannyVerificationRequestController : Controller
         {
             var documentUrl = await _storageService.UploadAsync(file, documentType);
 
-            docs.Add(new
+            documents.Add(new
             {
                 DocumentType = (int)documentType,
                 DocumentUrl = documentUrl,

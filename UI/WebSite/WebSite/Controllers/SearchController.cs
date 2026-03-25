@@ -2,6 +2,8 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using WebSite.Hubs;
 using WebSite.Models.Search;
 
 namespace WebSite.Controllers;
@@ -17,11 +19,14 @@ namespace WebSite.Controllers;
 public class SearchController : Controller
 {
     private readonly HttpClient _http;
+    private readonly IHubContext<NotificationHub> _notificationHub;
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
 
-    public SearchController(IHttpClientFactory httpFactory)
+    public SearchController(IHttpClientFactory httpFactory, IHubContext<NotificationHub> notificationHub
+)
     {
         _http = httpFactory.CreateClient("BackendApi");
+        _notificationHub = notificationHub;
     }
 
     // ── GET /Search ─────────────────────────────────────────
@@ -178,6 +183,13 @@ public class SearchController : Controller
         try
         {
             var response = await _http.PostAsJsonAsync("/api/job-postings", body);
+            if (response.IsSuccessStatusCode)
+            {
+                await _notificationHub.Clients.Group("role:Moderator").SendAsync("notification:new", new
+                {
+                    type = "job-posting-review-required"
+                });
+            }
             return await ProxyApiResponse(response);
         }
         catch (Exception ex)

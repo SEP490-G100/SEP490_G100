@@ -1,99 +1,183 @@
-@model List<WebSite.Models.Verification.VerificationRequestListViewModel>
+@model WebSite.Models.Verification.VerificationRequestListResponse
 @{
-    ViewData["Title"] = "Lich su yeu cau xac minh";
+    ViewData["Title"] = "Verification Requests";
+
+    var currentStatus = ViewBag.Status as int?;
+    var currentPage = Model?.Page ?? 1;
+    var totalPages = Model?.TotalPages ?? 1;
+    var items = Model?.Items ?? new List<WebSite.Models.Verification.VerificationRequestListDto>();
 }
 
-<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-10">
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+@section Head {
+    <link href="~/css/moderator.css" rel="stylesheet" />
+}
+
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
         <div>
-            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">Yeu cau xac minh</h1>
-            <p class="text-gray-600 dark:text-gray-400">Theo doi trang thai cac yeu cau xac minh ho so Nanny cua ban.</p>
+            <span class="section-label">Verification History</span>
+            <h1 class="page-title mt-2">
+                My <span class="gradient-text">Verification Requests</span>
+            </h1>
+            <p class="page-subtitle">Track every submission, review status, and moderator feedback in one place.</p>
         </div>
-        <div>
-            <a href="@Url.Action("Submit", "NannyVerificationRequest")"
-               class="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:-translate-y-0.5 transition-all">
-                <span class="material-icons-round text-xl">upload_file</span>
-                Gui yeu cau moi
+        <div class="flex items-center gap-2">
+            <span class="badge badge-pending px-3 py-1.5">@(Model?.TotalCount ?? 0) Total</span>
+            <a href="@Url.Action("Submit", "NannyVerificationRequest")" class="btn-primary flex items-center gap-2">
+                <span class="material-icons-round text-base">upload_file</span>
+                New Request
             </a>
         </div>
     </div>
 
+    @if (TempData["Error"] != null)
+    {
+        <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 fade-in-up">
+            <span class="material-icons-round text-base">error_outline</span>
+            @TempData["Error"]
+        </div>
+    }
     @if (TempData["Success"] != null)
     {
-        <div class="mb-6 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-300 px-4 py-3 rounded-xl flex items-center gap-3">
-            <span class="material-icons-round text-green-500">check_circle</span>
-            <p>@TempData["Success"]</p>
+        <div class="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 fade-in-up">
+            <span class="material-icons-round text-base">check_circle_outline</span>
+            @TempData["Success"]
         </div>
     }
 
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700/50 overflow-hidden">
-        @if (!Model.Any())
-        {
-            <div class="p-12 text-center">
-                <div class="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span class="material-icons-round text-4xl text-gray-400">folder_open</span>
+    <form method="get" action="/NannyVerificationRequest" id="filterForm">
+        <div class="content-card p-4 mb-5 fade-in-up" style="animation-delay:.05s;">
+            <div class="flex flex-col md:flex-row gap-3 md:items-center">
+                <div class="relative md:w-60">
+                    <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">toggle_on</span>
+                    <select name="status"
+                            onchange="this.form.submit()"
+                            class="search-input w-full !pl-9 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
+                        <option value="">All Statuses</option>
+                        <option value="1" selected="@(currentStatus == 1 ? "selected" : null)">Pending</option>
+                        <option value="2" selected="@(currentStatus == 2 ? "selected" : null)">Approved</option>
+                        <option value="3" selected="@(currentStatus == 3 ? "selected" : null)">Rejected</option>
+                    </select>
                 </div>
-                <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Chua co yeu cau nao</h3>
-                <p class="text-gray-500 dark:text-gray-400 max-w-sm mx-auto">Ban chua gui bat ky yeu cau xac minh nao. Hay gui yeu cau de nhan huy hieu da xac minh.</p>
             </div>
-        }
-        else
-        {
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-700">
-                            <th class="py-4 px-6 text-sm font-semibold text-gray-600 dark:text-gray-400">Ngay gui</th>
-                            <th class="py-4 px-6 text-sm font-semibold text-gray-600 dark:text-gray-400">Trang thai</th>
-                            <th class="py-4 px-6 text-sm font-semibold text-gray-600 dark:text-gray-400">Xac minh boi</th>
-                            <th class="py-4 px-6 text-sm font-semibold text-gray-600 dark:text-gray-400">Thoi diem xac minh</th>
-                            <th class="py-4 px-6 text-sm font-semibold text-gray-600 dark:text-gray-400">Ly do tu choi</th>
+        </div>
+    </form>
+
+    <div class="content-card overflow-hidden fade-in-up" style="animation-delay:.1s;">
+        <div class="card-header">
+            <span class="text-sm text-gray-500">
+                Showing <span class="font-bold text-gray-800">@items.Count</span>
+                of <span class="font-bold text-gray-800">@(Model?.TotalCount ?? 0)</span> request(s)
+            </span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full mod-table">
+                <thead>
+                    <tr>
+                        <th class="text-left">#</th>
+                        <th class="text-left">Submitted</th>
+                        <th class="text-left">Status</th>
+                        <th class="text-left">Reviewed By</th>
+                        <th class="text-left">Reviewed At</th>
+                        <th class="text-left">Feedback</th>
+                        <th class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!items.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-16 text-gray-400">
+                                <span class="material-icons-round text-5xl mb-3 block text-gray-200">verified_user</span>
+                                <p class="font-semibold text-gray-400">No verification requests found.</p>
+                                <p class="text-xs text-gray-300 mt-1">Try another status filter or submit a new request.</p>
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                        @foreach (var req in Model)
+                    }
+                    else
+                    {
+                        var rowNumber = ((currentPage - 1) * (Model?.PageSize ?? 3)) + 1;
+                        foreach (var item in items)
                         {
-                            <tr class="hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors">
-                                <td class="py-4 px-6">
-                                    <div class="flex items-center gap-3">
-                                        <span class="material-icons-round text-gray-400 text-xl">event</span>
-                                        <span class="font-medium text-gray-900 dark:text-white">@req.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                            <tr class="account-row">
+                                <td class="text-gray-300 text-xs font-mono">@rowNumber</td>
+                                <td>
+                                    <div class="flex flex-col">
+                                        <span class="font-semibold text-gray-800">@item.CreatedAt.ToString("dd/MM/yyyy")</span>
+                                        <span class="text-xs text-gray-400">@item.CreatedAt.ToString("HH:mm")</span>
                                     </div>
                                 </td>
-                                <td class="py-4 px-6">
-                                    @if (req.Status == (int)WebSite.Enums.NannyVerificationRequestStatus.Pending)
-                                    {
-                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800/50">
-                                            <span class="material-icons-round text-[14px]">pending</span> Dang cho
-                                        </span>
-                                    }
-                                    else if (req.Status == (int)WebSite.Enums.NannyVerificationRequestStatus.Approved)
-                                    {
-                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800/50">
-                                            <span class="material-icons-round text-[14px]">check_circle</span> Da duyet
-                                        </span>
-                                    }
-                                    else if (req.Status == (int)WebSite.Enums.NannyVerificationRequestStatus.Rejected)
-                                    {
-                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800/50">
-                                            <span class="material-icons-round text-[14px]">cancel</span> Bi tu choi
-                                        </span>
-                                    }
+                                <td>
+                                    <span class="badge @item.StatusClass">@item.StatusLabel</span>
                                 </td>
-                                <td class="py-4 px-6 text-gray-600 dark:text-gray-400 text-sm"> 
-                                    Moderator @(!string.IsNullOrWhiteSpace(req.ReviewedByName) ? req.ReviewedByName : "-")
+                                <td class="text-gray-500 text-sm">
+                                    @(!string.IsNullOrWhiteSpace(item.ReviewedByName) ? item.ReviewedByName : "-")
                                 </td>
-                                <td class="py-4 px-6 text-gray-600 dark:text-gray-400 text-sm">
-                                    @(req.ReviewedAt.HasValue ? req.ReviewedAt.Value.ToString("dd/MM/yyyy HH:mm") : "-")
+                                <td class="text-gray-500 text-sm">
+                                    @(item.ReviewedAt.HasValue ? item.ReviewedAt.Value.ToString("dd/MM/yyyy HH:mm") : "-")
                                 </td>
-                                <td class="py-4 px-6 text-gray-600 dark:text-gray-400 text-sm max-w-xs whitespace-normal break-words">
-                                    @(!string.IsNullOrWhiteSpace(req.RejectionReason) ? req.RejectionReason : "-")
+                                <td class="text-gray-500 text-sm max-w-xs">
+                                    <span class="line-clamp-2 break-words">
+                                        @(!string.IsNullOrWhiteSpace(item.RejectionReason) ? item.RejectionReason : "-")
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <a href="@Url.Action("NannyViewVerificationDetail", "NannyVerificationRequest", new { id = item.Id })"
+                                       class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-orange-50 text-orange-600 border border-orange-200 hover:bg-orange-100 transition-all"
+                                       title="View detail">
+                                        <span class="material-icons-round text-sm">visibility</span>
+                                    </a>
                                 </td>
                             </tr>
+
+                            rowNumber++;
                         }
-                    </tbody>
-                </table>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="flex items-center justify-between px-6 py-4 border-t border-gray-50">
+            <span class="text-sm text-gray-400">
+                Page <span class="font-bold text-gray-600">@currentPage</span>
+                of <span class="font-bold text-gray-600">@totalPages</span>
+            </span>
+            <div class="flex gap-1.5">
+                @if (currentPage > 1)
+                {
+                    <a href="?status=@currentStatus&page=@(currentPage - 1)" class="page-btn">
+                        <span class="material-icons-round text-sm">chevron_left</span>
+                    </a>
+                }
+                else
+                {
+                    <button class="page-btn opacity-30 cursor-not-allowed" disabled>
+                        <span class="material-icons-round text-sm">chevron_left</span>
+                    </button>
+                }
+
+                @for (int pageNumber = Math.Max(1, currentPage - 2); pageNumber <= Math.Min(totalPages, currentPage + 2); pageNumber++)
+                {
+                    <a href="?status=@currentStatus&page=@pageNumber"
+                       class="page-btn @(pageNumber == currentPage ? "active" : "")">
+                        @pageNumber
+                    </a>
+                }
+
+                @if (currentPage < totalPages)
+                {
+                    <a href="?status=@currentStatus&page=@(currentPage + 1)" class="page-btn">
+                        <span class="material-icons-round text-sm">chevron_right</span>
+                    </a>
+                }
+                else
+                {
+                    <button class="page-btn opacity-30 cursor-not-allowed" disabled>
+                        <span class="material-icons-round text-sm">chevron_right</span>
+                    </button>
+                }
             </div>
-        }
+        </div>
     </div>
 </div>

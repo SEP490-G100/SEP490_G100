@@ -61,17 +61,17 @@ public class AdminController : Controller
             var response = await _http.SendAsync(request);
             var json = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<ApiResult<AccountListResponse>>(json, JsonOpts);
-            return View(result?.Data ?? new AccountListResponse());
+            return View("~/Views/Admin/ModeratorAccount/ManageModerators.cshtml", result?.Data ?? new AccountListResponse());
         }
         catch
         {
             TempData["Error"] = "Không thể tải danh sách Moderator.";
-            return View(new AccountListResponse());
+            return View("~/Views/Admin/ModeratorAccount/ManageModerators.cshtml", new AccountListResponse());
         }
     }
 
     // ── Create Moderator GET ────────────────────────────
-    public IActionResult CreateModerator() => View(new CreateModeratorRequest());
+    public IActionResult CreateModerator() => View("~/Views/Admin/ModeratorAccount/CreateModerator.cshtml", new CreateModeratorRequest());
 
     // ── Create Moderator POST ───────────────────────────
     [HttpPost]
@@ -99,7 +99,7 @@ public class AdminController : Controller
             if (string.IsNullOrWhiteSpace(json))
             {
                 TempData["Error"] = $"API trả về rỗng (HTTP {(int)response.StatusCode}).";
-                return View(model);
+                return View("~/Views/Admin/ModeratorAccount/CreateModerator.cshtml", model);
             }
             var result = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
             if (result?.Success == true)
@@ -108,12 +108,12 @@ public class AdminController : Controller
                 return RedirectToAction(nameof(ManageModerators));
             }
             TempData["Error"] = result?.Message ?? "Tạo Moderator thất bại.";
-            return View(model);
+            return View("~/Views/Admin/ModeratorAccount/CreateModerator.cshtml", model);
         }
         catch (Exception ex)
         {
             TempData["Error"] = $"Lỗi kết nối: {ex.Message}";
-            return View(model);
+            return View("~/Views/Admin/ModeratorAccount/CreateModerator.cshtml", model);
         }
     }
 
@@ -132,7 +132,7 @@ public class AdminController : Controller
                 TempData["Error"] = "Không tìm thấy Moderator.";
                 return RedirectToAction(nameof(ManageModerators));
             }
-            return View(result.Data);
+            return View("~/Views/Admin/ModeratorAccount/EditModerator.cshtml", result.Data);
         }
         catch
         {

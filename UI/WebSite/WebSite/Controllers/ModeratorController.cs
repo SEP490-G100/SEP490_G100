@@ -84,7 +84,7 @@ public class ModeratorController : Controller
             result = new AccountListResponse();
         }
 
-        return View(result);
+        return View("~/Views/Moderator/Account/ManageAccount.cshtml", result);
     }
 
     // ──────────────────────────────────────────────
@@ -144,7 +144,7 @@ public class ModeratorController : Controller
                 TempData["Error"] = "Không tìm thấy tài khoản.";
                 return RedirectToAction(nameof(ManageAccount));
             }
-            return View(result.Data);
+            return View("~/Views/Moderator/Account/EditAccount.cshtml", result.Data);
         }
         catch
         {
@@ -337,20 +337,20 @@ public class ModeratorController : Controller
             }
             catch { ViewBag.Categories = new List<string>(); }
 
-            return View(result?.Data ?? new FaqListResponse());
+            return View("~/Views/Moderator/FAQ/ManageFAQ.cshtml", result?.Data ?? new FaqListResponse());
         }
         catch
         {
             TempData["Error"] = "Không thể tải danh sách FAQ.";
             ViewBag.Categories = new List<string>();
-            return View(new FaqListResponse());
+            return View("~/Views/Moderator/FAQ/ManageFAQ.cshtml", new FaqListResponse());
         }
     }
 
     // ──────────────────────────────────────────────
     // GET /Moderator/CreateFAQ
     // ──────────────────────────────────────────────
-    public IActionResult CreateFAQ() => View(new CreateFaqRequest());
+    public IActionResult CreateFAQ() => View("~/Views/Moderator/FAQ/CreateFAQ.cshtml", new CreateFaqRequest());
 
     // ──────────────────────────────────────────────
     // POST /Moderator/CreateFAQ
@@ -386,12 +386,12 @@ public class ModeratorController : Controller
                 return RedirectToAction(nameof(ManageFAQ));
             }
             TempData["Error"] = result?.Message ?? "Tạo FAQ thất bại.";
-            return View(model);
+                return View("~/Views/Moderator/FAQ/CreateFAQ.cshtml", model);
         }
         catch (Exception ex)
         {
             TempData["Error"] = $"Lỗi kết nối: {ex.Message}";
-            return View(model);
+            return View("~/Views/Moderator/FAQ/CreateFAQ.cshtml", model);
         }
     }
 
@@ -415,7 +415,7 @@ public class ModeratorController : Controller
                 TempData["Error"] = "Không tìm thấy FAQ.";
                 return RedirectToAction(nameof(ManageFAQ));
             }
-            return View(result.Data);
+            return View("~/Views/Moderator/FAQ/ViewFAQDetail.cshtml", result.Data);
         }
         catch
         {
