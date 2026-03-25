@@ -73,7 +73,7 @@
                     <span class="material-icons-round text-gray-400 text-base">phone</span>
                     <div>
                         <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold">Phone</p>
-                        <p class="font-semibold text-gray-700">@(Model.NannyPhoneNumber ?? "—")</p>
+                        <p class="font-semibold text-gray-700">@(Model.NannyPhoneNumber ?? "â€”")</p>
                     </div>
                 </div>
                 @{
@@ -86,7 +86,7 @@
                     <span class="material-icons-round text-gray-400 text-base">cake</span>
                     <div>
                         <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold">Date of Birth</p>
-                        <p class="font-semibold text-gray-700">@(Model.NannyDateOfBirth.HasValue ? Model.NannyDateOfBirth.Value.ToString("MMM dd, yyyy") : "—")</p>
+                        <p class="font-semibold text-gray-700">@(Model.NannyDateOfBirth.HasValue ? Model.NannyDateOfBirth.Value.ToString("MMM dd, yyyy") : "â€”")</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
@@ -100,14 +100,14 @@
                     <span class="material-icons-round text-gray-400 text-base">location_on</span>
                     <div>
                         <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold">Home Address</p>
-                        <p class="font-semibold text-gray-700">@(string.IsNullOrWhiteSpace(fullAddress) ? "—" : fullAddress)</p>
+                        <p class="font-semibold text-gray-700">@(string.IsNullOrWhiteSpace(fullAddress) ? "â€”" : fullAddress)</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
                     <span class="material-icons-round text-gray-400 text-base">work_history</span>
                     <div>
                         <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold">Experience</p>
-                        <p class="font-semibold text-gray-700">@(Model.YearsOfExperience.HasValue ? $"{Model.YearsOfExperience} years" : "—")</p>
+                        <p class="font-semibold text-gray-700">@(Model.YearsOfExperience.HasValue ? $"{Model.YearsOfExperience} years" : "â€”")</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
@@ -121,14 +121,14 @@
                     <span class="material-icons-round text-gray-400 text-base">payments</span>
                     <div>
                         <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold">Expected Salary</p>
-                        <p class="font-semibold text-gray-700">@(Model.ExpectedSalaryMin?.ToString("N0") ?? "—") - @(Model.ExpectedSalaryMax?.ToString("N0") ?? "—") VND (@salaryTypeStr)</p>
+                        <p class="font-semibold text-gray-700">@(Model.ExpectedSalaryMin?.ToString("N0") ?? "â€”") - @(Model.ExpectedSalaryMax?.ToString("N0") ?? "â€”") VND (@salaryTypeStr)</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
                     <span class="material-icons-round text-gray-400 text-base">commute</span>
                     <div>
                         <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold">Max Travel Distance</p>
-                        <p class="font-semibold text-gray-700">@(Model.MaxTravelDistance.HasValue ? $"{Model.MaxTravelDistance} km" : "—")</p>
+                        <p class="font-semibold text-gray-700">@(Model.MaxTravelDistance.HasValue ? $"{Model.MaxTravelDistance} km" : "â€”")</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">

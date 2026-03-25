@@ -211,12 +211,12 @@ public class ModeratorController : Controller
             var response = await _http.SendAsync(request);
             var json = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<ApiResult<WebSite.Models.Verification.VerificationRequestListResponse>>(json, JsonOpts);
-            return View(result?.Data ?? new WebSite.Models.Verification.VerificationRequestListResponse());
+            return View("~/Views/Moderator/NannyVerification/ManageNannyVerification.cshtml", result?.Data ?? new WebSite.Models.Verification.VerificationRequestListResponse());
         }
         catch
         {
             TempData["Error"] = "Không thể tải danh sách xác minh.";
-            return View(new WebSite.Models.Verification.VerificationRequestListResponse());
+            return View("~/Views/Moderator/NannyVerification/ManageNannyVerification.cshtml", new WebSite.Models.Verification.VerificationRequestListResponse());
         }
     }
 
@@ -240,7 +240,7 @@ public class ModeratorController : Controller
                 TempData["Error"] = "Không tìm thấy yêu cầu xác minh.";
                 return RedirectToAction(nameof(ManageNannyVerification));
             }
-            return View(result.Data);
+            return View("~/Views/Moderator/NannyVerification/ViewNannyVerificationDetail.cshtml", result.Data);
         }
         catch
         {
