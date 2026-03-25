@@ -35,6 +35,7 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new DateOnlyJsonConverter());
     });
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddHealthChecks();
 
 // Swagger + JWT
 builder.Services.AddSwaggerGen(c =>
@@ -86,8 +87,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 // CORS
 builder.Services.AddCors(options =>
+{
+    options.AddPolicy("UiPolicy", policy =>
+        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
     options.AddDefaultPolicy(policy =>
-        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
+        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+});
 
 builder.Services.AddHttpClient();
 builder.Services.Configure<VnPayOptions>(builder.Configuration.GetSection("VnPay"));
