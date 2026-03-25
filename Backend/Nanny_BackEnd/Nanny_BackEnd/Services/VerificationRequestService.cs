@@ -197,11 +197,12 @@ public class VerificationRequestService
 
         foreach (var doc in request.Documents)
         {
+            var documentType = doc.DocumentType is >= 1 and <= 4 ? doc.DocumentType : 1;
             verificationReq.VerificationDocuments.Add(new Nanny_BackEnd.Models.VerificationDocument
             {
                 Id = Guid.NewGuid(),
                 VerificationRequestId = verificationReq.Id,
-                DocumentType = 1, // DocumentType is 1 as requested
+                DocumentType = documentType,
                 DocumentUrl = doc.DocumentUrl,
                 FileName = doc.FileName,
                 FileSize = doc.FileSize,

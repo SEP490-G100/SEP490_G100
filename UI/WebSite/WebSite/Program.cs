@@ -1,9 +1,14 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
+using WebSite.Models.Storage;
+using WebSite.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
+builder.Services.Configure<AzureBlobStorageOptions>(
+    builder.Configuration.GetSection(AzureBlobStorageOptions.SectionName));
+builder.Services.AddScoped<IVerificationDocumentStorageService, AzureBlobVerificationDocumentStorageService>();
 
 // Session
 builder.Services.AddDistributedMemoryCache();

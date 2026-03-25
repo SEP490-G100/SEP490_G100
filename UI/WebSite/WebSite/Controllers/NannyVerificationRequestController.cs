@@ -1,10 +1,13 @@
 using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
+using Azure;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebSite.Models;
 using WebSite.Models.Profile;
 using WebSite.Models.Verification;
+using WebSite.Services;
 
 namespace WebSite.Controllers;
 
@@ -12,20 +15,32 @@ namespace WebSite.Controllers;
 public class NannyVerificationRequestController : Controller
 {
     private readonly HttpClient _http;
-    private readonly Microsoft.AspNetCore.Hosting.IWebHostEnvironment _env;
-    private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
+    private readonly IVerificationDocumentStorageService _storageService;
+    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
+    private static readonly HashSet<string> AllowedImageExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".webp"
+    };
+    private const long MaxImageSizeInBytes = 5 * 1024 * 1024;
 
-    public NannyVerificationRequestController(IHttpClientFactory httpFactory, Microsoft.AspNetCore.Hosting.IWebHostEnvironment env)
+    public NannyVerificationRequestController(
+        IHttpClientFactory httpFactory,
+        IVerificationDocumentStorageService storageService)
     {
         _http = httpFactory.CreateClient("BackendApi");
-        _env = env;
+        _storageService = storageService;
     }
 
     private void AddAuthHeader()
     {
         var token = HttpContext.Session.GetString("AccessToken");
         if (!string.IsNullOrEmpty(token))
+        {
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        }
     }
 
     [HttpGet]
@@ -40,7 +55,7 @@ public class NannyVerificationRequestController : Controller
         }
 
         var json = await response.Content.ReadAsStringAsync();
-        var apiResult = JsonSerializer.Deserialize<ApiResult<List<VerificationRequestListViewModel>>>(json, _jsonOptions);
+        var apiResult = JsonSerializer.Deserialize<ApiResult<List<VerificationRequestListViewModel>>>(json, JsonOptions);
 
         return View(apiResult?.Data ?? new List<VerificationRequestListViewModel>());
     }
@@ -48,31 +63,12 @@ public class NannyVerificationRequestController : Controller
     [HttpGet]
     public async Task<IActionResult> Submit()
     {
-        AddAuthHeader();
-        var response = await _http.GetAsync("/api/profile");
-        if (!response.IsSuccessStatusCode)
+        var model = new SubmitVerificationRequestViewModel();
+        if (!await PopulateProfileInfoAsync(model))
         {
             TempData["Error"] = "Vui lòng cập nhật hồ sơ cá nhân trước khi gửi yêu cầu.";
             return RedirectToAction("Index", "Profile");
         }
-
-        var json = await response.Content.ReadAsStringAsync();
-        var profileResult = JsonSerializer.Deserialize<ApiResult<PersonalProfileViewModel>>(json, _jsonOptions);
-        var profile = profileResult?.Data;
-
-        if (profile == null)
-            return RedirectToAction("Index", "Profile");
-
-        var model = new SubmitVerificationRequestViewModel
-        {
-            NannyFirstName = profile.FirstName,
-            NannyLastName = profile.LastName,
-            NannyEmail = profile.Email,
-            NannyAvatarUrl = profile.AvatarUrl,
-            NannyCity = profile.City,
-            NannyAddress = profile.Address,
-            PhoneNumber = profile.PhoneNumber
-        };
 
         return View(model);
     }
@@ -81,49 +77,65 @@ public class NannyVerificationRequestController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Submit(SubmitVerificationRequestViewModel model)
     {
+        if (!await PopulateProfileInfoAsync(model))
+        {
+            TempData["Error"] = "Vui lòng cập nhật hồ sơ cá nhân trước khi gửi yêu cầu.";
+            return RedirectToAction("Index", "Profile");
+        }
+
+        ValidateUploadSection(
+            model.IdentityCardFiles,
+            nameof(model.IdentityCardFiles),
+            "Bạn phải upload ảnh cho mục căn cước công dân.",
+            isRequired: true);
+        ValidateUploadSection(
+            model.CertificateFiles,
+            nameof(model.CertificateFiles),
+            "Bạn phải upload ảnh cho mục bằng cấp và chứng chỉ.",
+            isRequired: true);
+        ValidateUploadSection(
+            model.HealthCertificateFiles,
+            nameof(model.HealthCertificateFiles),
+            requiredMessage: null,
+            isRequired: false);
+
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
         AddAuthHeader();
 
-        if (model.Files == null || !model.Files.Any())
-        {
-            ModelState.AddModelError("", "Bạn phải tải lên ít nhất một tài liệu.");
-            return View(model); // Pre-fill lost, ideally we'd re-fetch profile to keep read-only data
-        }
-
-        var uploadsFolder = Path.Combine(_env.WebRootPath, "img", "verificationRequest");
-        Directory.CreateDirectory(uploadsFolder);
-
         var docs = new List<object>();
-
-        foreach (var file in model.Files)
-        {
-            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-            var newFileName = $"{Guid.NewGuid()}{ext}";
-            var filePath = Path.Combine(uploadsFolder, newFileName);
-
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
-
-            docs.Add(new {
-                DocumentUrl = $"/img/verificationRequest/{newFileName}",
-                FileName = file.FileName,
-                FileSize = (int)file.Length
-            });
-        }
-
-        var jsonContent = new StringContent(JsonSerializer.Serialize(new { Documents = docs }), System.Text.Encoding.UTF8, "application/json");
-        var response = await _http.PostAsync("/api/NannyVerificationRequest/submit", jsonContent);
-        
-        var json = await response.Content.ReadAsStringAsync();
-        ApiResult result = null;
         try
         {
-            result = JsonSerializer.Deserialize<ApiResult>(json, _jsonOptions);
+            await AddDocumentsAsync(model.IdentityCardFiles, 1, docs);
+            await AddDocumentsAsync(model.CertificateFiles, 2, docs);
+            await AddDocumentsAsync(model.HealthCertificateFiles, 4, docs);
+        }
+        catch (InvalidOperationException ex)
+        {
+            TempData["Error"] = ex.Message;
+            return RedirectToAction("Submit");
+        }
+        catch (RequestFailedException)
+        {
+            TempData["Error"] = "Không thể upload tài liệu lên Azure Blob Storage. Vui lòng thử lại sau.";
+            return RedirectToAction("Submit");
+        }
+
+        var payload = JsonSerializer.Serialize(new { Documents = docs });
+        var jsonContent = new StringContent(payload, Encoding.UTF8, "application/json");
+        var response = await _http.PostAsync("/api/NannyVerificationRequest/submit", jsonContent);
+
+        var json = await response.Content.ReadAsStringAsync();
+        ApiResult? result;
+        try
+        {
+            result = JsonSerializer.Deserialize<ApiResult>(json, JsonOptions);
         }
         catch (JsonException)
         {
-            // Log the actual response for debugging if needed, but show user-friendly message
             TempData["Error"] = "Lỗi hệ thống từ server. Vui lòng thử lại sau.";
             return RedirectToAction("Submit");
         }
@@ -131,10 +143,110 @@ public class NannyVerificationRequestController : Controller
         if (!response.IsSuccessStatusCode || result == null || !result.Success)
         {
             TempData["Error"] = result?.Message ?? "Gửi yêu cầu thất bại.";
-            return RedirectToAction("Submit"); // Redirect to reload profile data
+            return RedirectToAction("Submit");
         }
 
         TempData["Success"] = "Gửi yêu cầu xác minh thành công.";
         return RedirectToAction("Index");
+    }
+
+    private async Task<bool> PopulateProfileInfoAsync(SubmitVerificationRequestViewModel model)
+    {
+        AddAuthHeader();
+        var response = await _http.GetAsync("/api/profile");
+        if (!response.IsSuccessStatusCode)
+        {
+            return false;
+        }
+
+        var json = await response.Content.ReadAsStringAsync();
+        var profileResult = JsonSerializer.Deserialize<ApiResult<PersonalProfileViewModel>>(json, JsonOptions);
+        var profile = profileResult?.Data;
+        if (profile == null)
+        {
+            return false;
+        }
+
+        model.NannyFirstName = profile.FirstName;
+        model.NannyLastName = profile.LastName;
+        model.NannyEmail = profile.Email;
+        model.NannyAvatarUrl = profile.AvatarUrl;
+        model.NannyCity = profile.City;
+        model.NannyAddress = profile.Address;
+        model.PhoneNumber = profile.PhoneNumber;
+        return true;
+    }
+
+    private void ValidateUploadSection(
+        List<IFormFile>? files,
+        string fieldName,
+        string? requiredMessage,
+        bool isRequired)
+    {
+        if (files == null || files.Count == 0)
+        {
+            if (isRequired && !string.IsNullOrWhiteSpace(requiredMessage))
+            {
+                ModelState.AddModelError(fieldName, requiredMessage);
+            }
+
+            return;
+        }
+
+        foreach (var file in files)
+        {
+            if (!IsSupportedImage(file))
+            {
+                ModelState.AddModelError(fieldName, "Bạn phải upload file định dạng ảnh, jpg ...");
+                return;
+            }
+
+            if (file.Length > MaxImageSizeInBytes)
+            {
+                ModelState.AddModelError(fieldName, "Bạn chỉ đc upload file ảnh kích thước tối đa 5mb");
+                return;
+            }
+        }
+    }
+
+    private static bool IsSupportedImage(IFormFile file)
+    {
+        if (file == null || string.IsNullOrWhiteSpace(file.FileName))
+        {
+            return false;
+        }
+
+        var extension = Path.GetExtension(file.FileName);
+        if (!AllowedImageExtensions.Contains(extension))
+        {
+            return false;
+        }
+
+        return string.IsNullOrWhiteSpace(file.ContentType)
+            || file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async Task AddDocumentsAsync(
+        List<IFormFile>? files,
+        int documentType,
+        List<object> docs)
+    {
+        if (files == null || files.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var file in files)
+        {
+            var documentUrl = await _storageService.UploadAsync(file, documentType);
+
+            docs.Add(new
+            {
+                DocumentType = documentType,
+                DocumentUrl = documentUrl,
+                FileName = file.FileName,
+                FileSize = (int)file.Length
+            });
+        }
     }
 }

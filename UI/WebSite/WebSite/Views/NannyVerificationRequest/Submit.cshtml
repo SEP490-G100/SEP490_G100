@@ -3,13 +3,13 @@
     ViewData["Title"] = "Gửi yêu cầu xác minh";
 }
 
-<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-10">
-    <div class="flex items-center justify-between mb-8">
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-10">
+    <div class="flex items-center justify-between gap-4 mb-8">
         <div>
             <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">Gửi yêu cầu xác minh</h1>
-            <p class="text-gray-600 dark:text-gray-400">Vui lòng kiểm tra thông tin và tải lên các tài liệu cần thiết</p>
+            <p class="text-gray-600 dark:text-gray-400">Vui lòng kiểm tra thông tin và tải lên 3 nhóm tài liệu xác minh riêng biệt.</p>
         </div>
-        <a href="@Url.Action("Index", "NannyVerificationRequest")" 
+        <a href="@Url.Action("Index", "NannyVerificationRequest")"
            class="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-medium transition-colors">
             <span class="material-icons-round">arrow_back</span>
             Trở về
@@ -23,16 +23,16 @@
             <p>@TempData["Error"]</p>
         </div>
     }
+
     @if (!ViewData.ModelState.IsValid)
     {
-        <div class="mb-6 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300 px-4 py-3 rounded-xl flex flex-col gap-1">
+        <div class="mb-6 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300 px-4 py-3 rounded-xl">
             <div asp-validation-summary="All" class="text-sm"></div>
         </div>
     }
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- Thông tin hồ sơ (Readonly) -->
-        <div class="lg:col-span-1">
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+        <div class="lg:col-span-2 min-w-0">
             <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-700/50 p-6">
                 <div class="text-center mb-6">
                     <div class="w-24 h-24 mx-auto bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden mb-4 border-4 border-white dark:border-gray-800 shadow-lg">
@@ -48,46 +48,92 @@
                         }
                     </div>
                     <h3 class="font-bold text-xl text-gray-900 dark:text-white">@Model.NannyFirstName @Model.NannyLastName</h3>
-                    <p class="text-gray-500 text-sm">@Model.NannyEmail</p>
+                    <p class="text-gray-500 text-sm break-all">@Model.NannyEmail</p>
                 </div>
 
-                <div class="space-y-4">
-                    <div>
-                        <caption class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Số điện thoại</caption>
-                        <p class="text-gray-900 dark:text-gray-200 font-medium">@(string.IsNullOrEmpty(Model.PhoneNumber) ? "Chưa cung cấp" : Model.PhoneNumber)</p>
+                <div class="space-y-4 min-w-0">
+                    <div class="rounded-xl bg-gray-50 dark:bg-gray-900/40 p-4">
+                        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Số điện thoại</div>
+                        <p class="text-gray-900 dark:text-gray-200 font-medium break-words">@(string.IsNullOrEmpty(Model.PhoneNumber) ? "Chưa cung cấp" : Model.PhoneNumber)</p>
                     </div>
-                    <div>
-                        <caption class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Khu vực làm việc</caption>
-                        <p class="text-gray-900 dark:text-gray-200 font-medium">@(string.IsNullOrEmpty(Model.NannyCity) ? "Chưa cập nhật" : Model.NannyCity)</p>
+                    <div class="rounded-xl bg-gray-50 dark:bg-gray-900/40 p-4">
+                        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Khu vực làm việc</div>
+                        <p class="text-gray-900 dark:text-gray-200 font-medium break-words">@(string.IsNullOrEmpty(Model.NannyCity) ? "Chưa cập nhật" : Model.NannyCity)</p>
                     </div>
-                    <div>
-                        <caption class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Địa chỉ</caption>
-                        <p class="text-gray-900 dark:text-gray-200 font-medium">@(string.IsNullOrEmpty(Model.NannyAddress) ? "Chưa cập nhật" : Model.NannyAddress)</p>
+                    <div class="rounded-xl bg-gray-50 dark:bg-gray-900/40 p-4">
+                        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Địa chỉ</div>
+                        <p class="text-gray-900 dark:text-gray-200 font-medium break-words">@(string.IsNullOrEmpty(Model.NannyAddress) ? "Chưa cập nhật" : Model.NannyAddress)</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Form Tải tài liệu -->
-        <div class="lg:col-span-2">
-            <form asp-action="Submit" method="post" enctype="multipart/form-data" class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-700/50 p-6 sm:p-8 space-y-8">
-                
-                <!-- Files Upload -->
-                <div>
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-2">
-                        <span class="material-icons-round text-orange-500">upload_file</span>
-                        Tài liệu xác minh (CCCD, Bằng cấp, v.v.) <span class="text-red-500">*</span>
-                    </h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                        Vui lòng tải lên ảnh chụp CCCD, bằng cấp, chứng chỉ liên quan. (Bắt buộc)
-                    </p>
-                    <div class="relative border-2 border-dashed border-orange-200 dark:border-gray-600 rounded-xl bg-orange-50/50 dark:bg-gray-700/30 p-8 text-center hover:bg-orange-50 dark:hover:bg-gray-700 transition-colors group cursor-pointer" onclick="document.getElementById('Files').click()">
-                        <input type="file" id="Files" name="Files" multiple accept=".jpg,.jpeg,.png" class="hidden" onchange="handleFileSelect('Files', 'filesPreview', event)" />
-                        <span class="material-icons-round text-4xl text-orange-400 dark:text-gray-400 group-hover:scale-110 transition-transform mb-3 block">cloud_upload</span>
-                        <p class="font-semibold text-gray-700 dark:text-gray-300">Nhấn để chọn ảnh</p>
-                        <p class="text-xs text-gray-500 mt-2">Định dạng JPG, PNG (Tối đa 5MB/ảnh)</p>
+        <div class="lg:col-span-3">
+            <form asp-action="Submit" method="post" enctype="multipart/form-data" class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-700/50 p-6 sm:p-8 space-y-6">
+                @Html.AntiForgeryToken()
+
+                <div class="rounded-2xl border border-orange-200 dark:border-gray-700 bg-orange-50/60 dark:bg-gray-900/30 p-5">
+                    <div class="flex items-start gap-3">
+                        <span class="material-icons-round text-orange-500 text-2xl">badge</span>
+                        <div class="min-w-0 flex-1">
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white">1. Upload căn cước công dân <span class="text-red-500">*</span></h3>
+                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Tải ảnh rõ nét của căn cước công dân. Bạn có thể chọn nhiều ảnh nếu cần mặt trước và mặt sau.</p>
+                        </div>
                     </div>
-                    <div id="filesPreview" class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+                    <div class="mt-4 relative border-2 border-dashed border-orange-200 dark:border-gray-600 rounded-xl bg-white/70 dark:bg-gray-700/30 p-8 text-center hover:bg-orange-50 dark:hover:bg-gray-700 transition-colors group cursor-pointer"
+                         onclick="document.getElementById('IdentityCardFiles').click()">
+                        <input asp-for="IdentityCardFiles" id="IdentityCardFiles" multiple accept=".jpg,.jpeg,.png,.webp" class="hidden"
+                               onchange="handleFileSelect('IdentityCardFiles', 'identityCardPreview', 'identityCardError', event)" />
+                        <span class="material-icons-round text-4xl text-orange-400 dark:text-gray-400 group-hover:scale-110 transition-transform mb-3 block">cloud_upload</span>
+                        <p class="font-semibold text-gray-700 dark:text-gray-300">Nhấn để chọn ảnh CCCD</p>
+                        <p class="text-xs text-gray-500 mt-2">Chỉ nhận file ảnh JPG, JPEG, PNG, WEBP. Tối đa 5MB mỗi ảnh.</p>
+                    </div>
+                    <span asp-validation-for="IdentityCardFiles" class="mt-3 block text-sm text-red-600"></span>
+                    <p id="identityCardError" class="mt-2 text-sm text-red-600 hidden"></p>
+                    <div id="identityCardPreview" class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+                </div>
+
+                <div class="rounded-2xl border border-orange-200 dark:border-gray-700 bg-orange-50/60 dark:bg-gray-900/30 p-5">
+                    <div class="flex items-start gap-3">
+                        <span class="material-icons-round text-orange-500 text-2xl">school</span>
+                        <div class="min-w-0 flex-1">
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white">2. Upload bằng cấp và chứng chỉ <span class="text-red-500">*</span></h3>
+                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Chỉ được upload file ảnh và mỗi ảnh phải không vượt quá 5MB.</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 relative border-2 border-dashed border-orange-200 dark:border-gray-600 rounded-xl bg-white/70 dark:bg-gray-700/30 p-8 text-center hover:bg-orange-50 dark:hover:bg-gray-700 transition-colors group cursor-pointer"
+                         onclick="document.getElementById('CertificateFiles').click()">
+                        <input asp-for="CertificateFiles" id="CertificateFiles" multiple accept=".jpg,.jpeg,.png,.webp" class="hidden"
+                               onchange="handleFileSelect('CertificateFiles', 'certificatePreview', 'certificateError', event)" />
+                        <span class="material-icons-round text-4xl text-orange-400 dark:text-gray-400 group-hover:scale-110 transition-transform mb-3 block">workspace_premium</span>
+                        <p class="font-semibold text-gray-700 dark:text-gray-300">Nhấn để chọn ảnh bằng cấp, chứng chỉ</p>
+                        <p class="text-xs text-gray-500 mt-2">Nếu file không đúng định dạng ảnh sẽ báo "Bạn phải upload file định dạng ảnh, jpg ...".</p>
+                        <p class="text-xs text-gray-500">Nếu ảnh lớn hơn 5MB sẽ báo "Bạn chỉ đc upload file ảnh kích thước tối đa 5mb".</p>
+                    </div>
+                    <span asp-validation-for="CertificateFiles" class="mt-3 block text-sm text-red-600"></span>
+                    <p id="certificateError" class="mt-2 text-sm text-red-600 hidden"></p>
+                    <div id="certificatePreview" class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+                </div>
+
+                <div class="rounded-2xl border border-orange-200 dark:border-gray-700 bg-orange-50/60 dark:bg-gray-900/30 p-5">
+                    <div class="flex items-start gap-3">
+                        <span class="material-icons-round text-orange-500 text-2xl">medical_services</span>
+                        <div class="min-w-0 flex-1">
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white">3. Upload giấy khám sức khỏe</h3>
+                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Mục này hỗ trợ bổ sung thêm tài liệu sức khỏe để hồ sơ đầy đủ hơn.</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 relative border-2 border-dashed border-orange-200 dark:border-gray-600 rounded-xl bg-white/70 dark:bg-gray-700/30 p-8 text-center hover:bg-orange-50 dark:hover:bg-gray-700 transition-colors group cursor-pointer"
+                         onclick="document.getElementById('HealthCertificateFiles').click()">
+                        <input asp-for="HealthCertificateFiles" id="HealthCertificateFiles" multiple accept=".jpg,.jpeg,.png,.webp" class="hidden"
+                               onchange="handleFileSelect('HealthCertificateFiles', 'healthCertificatePreview', 'healthCertificateError', event)" />
+                        <span class="material-icons-round text-4xl text-orange-400 dark:text-gray-400 group-hover:scale-110 transition-transform mb-3 block">health_and_safety</span>
+                        <p class="font-semibold text-gray-700 dark:text-gray-300">Nhấn để chọn ảnh giấy khám sức khỏe</p>
+                        <p class="text-xs text-gray-500 mt-2">Chỉ nhận file ảnh JPG, JPEG, PNG, WEBP. Tối đa 5MB mỗi ảnh.</p>
+                    </div>
+                    <span asp-validation-for="HealthCertificateFiles" class="mt-3 block text-sm text-red-600"></span>
+                    <p id="healthCertificateError" class="mt-2 text-sm text-red-600 hidden"></p>
+                    <div id="healthCertificatePreview" class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
                 </div>
 
                 <div class="pt-4 flex justify-end">
@@ -101,19 +147,43 @@
 </div>
 
 @section Scripts {
+    <partial name="_ValidationScriptsPartial" />
     <script>
         const store = {
-            'Files': new DataTransfer()
+            IdentityCardFiles: new DataTransfer(),
+            CertificateFiles: new DataTransfer(),
+            HealthCertificateFiles: new DataTransfer()
         };
+
+        const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp"];
+        const maxFileSize = 5 * 1024 * 1024;
+
+        function showError(errorId, message) {
+            const errorElement = document.getElementById(errorId);
+            if (!errorElement) {
+                return;
+            }
+
+            if (message) {
+                errorElement.textContent = message;
+                errorElement.classList.remove("hidden");
+                return;
+            }
+
+            errorElement.textContent = "";
+            errorElement.classList.add("hidden");
+        }
 
         function removeFile(inputId, index, previewId) {
             const originalDt = store[inputId];
             const newDt = new DataTransfer();
+
             for (let i = 0; i < originalDt.files.length; i++) {
                 if (i !== index) {
                     newDt.items.add(originalDt.files[i]);
                 }
             }
+
             store[inputId] = newDt;
             document.getElementById(inputId).files = newDt.files;
             renderPreviews(inputId, previewId);
@@ -121,14 +191,14 @@
 
         function renderPreviews(inputId, previewId) {
             const previewContainer = document.getElementById(previewId);
-            previewContainer.innerHTML = '';
+            previewContainer.innerHTML = "";
             const files = store[inputId].files;
-            
+
             Array.from(files).forEach((file, index) => {
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    const div = document.createElement('div');
-                    div.className = 'relative aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm group';
+                reader.onload = function (e) {
+                    const div = document.createElement("div");
+                    div.className = "relative aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm group";
                     div.innerHTML = `
                         <img src="${e.target.result}" class="w-full h-full object-cover" />
                         <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-2">
@@ -139,20 +209,52 @@
                         </div>
                     `;
                     previewContainer.appendChild(div);
-                }
+                };
                 reader.readAsDataURL(file);
             });
         }
 
-        function handleFileSelect(inputId, previewId, event) {
-            const newFiles = event.target.files;
-            if (newFiles && newFiles.length > 0) {
-                Array.from(newFiles).forEach(file => {
-                    store[inputId].items.add(file);
-                });
-                document.getElementById(inputId).files = store[inputId].files;
-                renderPreviews(inputId, previewId);
+        function validateFile(file) {
+            const lowerName = (file.name || "").toLowerCase();
+            const isValidExtension = allowedExtensions.some(extension => lowerName.endsWith(extension));
+            const isImageContentType = !file.type || file.type.startsWith("image/");
+
+            if (!isValidExtension || !isImageContentType) {
+                return "Bạn phải upload file định dạng ảnh, jpg ...";
             }
+
+            if (file.size > maxFileSize) {
+                return "Bạn chỉ đc upload file ảnh kích thước tối đa 5mb";
+            }
+
+            return "";
+        }
+
+        function handleFileSelect(inputId, previewId, errorId, event) {
+            showError(errorId, "");
+
+            const input = event.target;
+            const newFiles = input.files;
+            if (!newFiles || newFiles.length === 0) {
+                return;
+            }
+
+            for (const file of Array.from(newFiles)) {
+                const validationMessage = validateFile(file);
+                if (validationMessage) {
+                    showError(errorId, validationMessage);
+                    input.value = "";
+                    return;
+                }
+            }
+
+            for (const file of Array.from(newFiles)) {
+                store[inputId].items.add(file);
+            }
+
+            input.files = store[inputId].files;
+            renderPreviews(inputId, previewId);
+            input.value = "";
         }
     </script>
 }

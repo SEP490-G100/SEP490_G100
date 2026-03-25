@@ -102,6 +102,7 @@ public class SubmitVerificationRequestDto
 
 public class UploadedVerificationDocumentDto
 {
+    public int DocumentType { get; set; }
     public string DocumentUrl { get; set; } = null!;
     public string FileName { get; set; } = null!;
     public int FileSize { get; set; }
