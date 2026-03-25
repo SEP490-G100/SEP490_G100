@@ -1,5 +1,6 @@
 using Nanny_BackEnd.DTOs.Verification;
 using Nanny_BackEnd.Enums;
+using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Repositories;
 
 namespace Nanny_BackEnd.Services;
@@ -8,11 +9,16 @@ public class VerificationRequestService
 {
     private readonly VerificationRequestRepository _repo;
     private readonly Microsoft.AspNetCore.Hosting.IWebHostEnvironment _env;
+    private readonly NotificationService _notificationService;
 
-    public VerificationRequestService(VerificationRequestRepository repo, Microsoft.AspNetCore.Hosting.IWebHostEnvironment env)
+    public VerificationRequestService(
+        VerificationRequestRepository repo,
+        Microsoft.AspNetCore.Hosting.IWebHostEnvironment env,
+        NotificationService notificationService)
     {
         _repo = repo;
         _env = env;
+        _notificationService = notificationService;
     }
 
     public async Task<VerificationRequestListResponse> GetListAsync(
@@ -244,6 +250,13 @@ public class VerificationRequestService
 
         _repo.AddRequest(verificationReq);
         await _repo.SaveChangesAsync();
+        await _notificationService.createNotificationForModerators(
+            "Co yeu cau xac minh moi",
+            "Mot nanny vua gui yeu cau xac minh moi va dang cho moderator xem xet.",
+            NotificationTypes.VerificationRequestSubmitted,
+            verificationReq.Id,
+            "VerificationRequest",
+            userId);
 
         return (true, "Gửi yêu cầu xác minh thành công.");
     }

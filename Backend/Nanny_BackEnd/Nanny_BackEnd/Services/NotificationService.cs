@@ -8,10 +8,12 @@ namespace Nanny_BackEnd.Services;
 public class NotificationService
 {
     private readonly SubscriptionRepository _subscriptionRepo;
+    private readonly UserRepository _userRepo;
 
-    public NotificationService(SubscriptionRepository subscriptionRepo)
+    public NotificationService(SubscriptionRepository subscriptionRepo, UserRepository userRepo)
     {
         _subscriptionRepo = subscriptionRepo;
+        _userRepo = userRepo;
     }
 
     public async Task<NotificationListResponse> getMyNotifications(Guid userId, int page, int pageSize)
@@ -115,6 +117,63 @@ public class NotificationService
         await _subscriptionRepo.saveChanges();
     }
 
+    public async Task createNotificationForUsers(
+        IEnumerable<Guid> userIds,
+        string title,
+        string content,
+        int type,
+        Guid? relatedEntityId = null,
+        string? relatedEntityType = null,
+        Guid? createdBy = null)
+    {
+        var distinctUserIds = userIds
+            .Where(id => id != Guid.Empty)
+            .Distinct()
+            .ToList();
+
+        if (distinctUserIds.Count == 0)
+            return;
+
+        foreach (var userId in distinctUserIds)
+        {
+            _subscriptionRepo.addNotification(new Notification
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                Title = title,
+                Content = content,
+                Type = type,
+                IsRead = false,
+                RelatedEntityId = relatedEntityId,
+                RelatedEntityType = relatedEntityType,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = createdBy,
+                IsDeleted = false
+            });
+        }
+
+        await _subscriptionRepo.saveChanges();
+    }
+
+    public async Task createNotificationForModerators(
+        string title,
+        string content,
+        int type,
+        Guid? relatedEntityId = null,
+        string? relatedEntityType = null,
+        Guid? createdBy = null)
+    {
+        var moderatorIds = await _userRepo.GetActiveUserIdsByRoleAsync("Moderator");
+        await createNotificationForUsers(
+            moderatorIds,
+            title,
+            content,
+            type,
+            relatedEntityId,
+            relatedEntityType,
+            createdBy);
+    }
+
     private async Task<int> createSubscriptionExpiryReminders(int daysBeforeExpiry)
     {
         var targetDate = DateTime.UtcNow.Date.AddDays(daysBeforeExpiry);
@@ -211,6 +270,14 @@ public class NotificationService
                 $"/Search/History?jobId={notification.RelatedEntityId.Value}",
             NotificationTypes.JobPostingPending when notification.RelatedEntityId.HasValue =>
                 $"/Search/History?jobId={notification.RelatedEntityId.Value}",
+            NotificationTypes.VerificationRequestSubmitted when notification.RelatedEntityId.HasValue =>
+                $"/Moderator/ViewNannyVerificationDetail/{notification.RelatedEntityId.Value}",
+            NotificationTypes.ReportSubmitted =>
+                "/Moderator/ViewReports",
+            NotificationTypes.MessageToModerator when notification.RelatedEntityId.HasValue =>
+                $"/Communication?conversationId={notification.RelatedEntityId.Value}",
+            NotificationTypes.JobPostingReviewRequired when notification.RelatedEntityId.HasValue =>
+                $"/Moderator/ViewJobPostingDetail/{notification.RelatedEntityId.Value}",
             NotificationTypes.NannyProfileFavorited =>
                 "/Nanny/Profile",
             _ => null

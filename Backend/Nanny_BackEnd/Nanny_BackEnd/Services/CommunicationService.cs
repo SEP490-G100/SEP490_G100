@@ -1,4 +1,5 @@
 using Nanny_BackEnd.DTOs.Communication;
+using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
 
@@ -7,8 +8,18 @@ namespace Nanny_BackEnd.Services;
 public class CommunicationService
 {
     private readonly CommunicationRepository _repo;
+    private readonly NotificationService _notificationService;
+    private readonly UserRepository _userRepo;
 
-    public CommunicationService(CommunicationRepository repo) => _repo = repo;
+    public CommunicationService(
+        CommunicationRepository repo,
+        NotificationService notificationService,
+        UserRepository userRepo)
+    {
+        _repo = repo;
+        _notificationService = notificationService;
+        _userRepo = userRepo;
+    }
 
     // ─── Lấy danh sách hội thoại ─────────────────────────────────────────────
 
@@ -148,6 +159,26 @@ public class CommunicationService
         var saved = await _repo.GetMessageByIdAsync(message.Id) ?? message;
         saved.SenderUser = myParticipant.User ?? new User { Id = senderId, FirstName = "Nguoi", LastName = "Dung", Email = "" };
 
+        var participants = await _repo.GetParticipantsByConversationIdAsync(dto.ConversationId);
+        var moderatorRecipientIds = new List<Guid>();
+        foreach (var participant in participants.Where(p => p.UserId != senderId))
+        {
+            if (await _userRepo.HasRolesAsync(participant.UserId, ["Moderator"]))
+                moderatorRecipientIds.Add(participant.UserId);
+        }
+
+        if (moderatorRecipientIds.Count > 0)
+        {
+            await _notificationService.createNotificationForUsers(
+                moderatorRecipientIds,
+                "Co tin nhan moi gui toi moderator",
+                $"{getDisplayName(saved.SenderUser)} vua gui mot tin nhan moi can moderator phan hoi.",
+                NotificationTypes.MessageToModerator,
+                dto.ConversationId,
+                "Conversation",
+                senderId);
+        }
+
         return mapMessage(saved, senderId);
     }
 
@@ -178,7 +209,7 @@ public class CommunicationService
         if (message.SenderUserId == reporterUserId)
             throw new InvalidOperationException("Ban khong the bao cao tin nhan cua chinh minh.");
 
-        _repo.AddReport(new Report
+        var report = new Report
         {
             Id = Guid.NewGuid(),
             ReporterUserId = reporterUserId,
@@ -190,9 +221,19 @@ public class CommunicationService
             CreatedAt = DateTime.UtcNow,
             CreatedBy = reporterUserId,
             IsDeleted = false
-        });
+        };
+        _repo.AddReport(report);
 
         await _repo.SaveChangesAsync();
+
+        var reporter = await _userRepo.FindByIdAsync(reporterUserId);
+        await _notificationService.createNotificationForModerators(
+            "Co bao cao moi can xu ly",
+            $"{getDisplayName(reporter)} vua gui mot bao cao moi trong he thong.",
+            NotificationTypes.ReportSubmitted,
+            report.Id,
+            "Report",
+            reporterUserId);
     }
 
     // ─── Cập nhật trạng thái hội thoại (Block/Hide) ──────────────────────────

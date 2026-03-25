@@ -116,6 +116,14 @@ public class UserRepository
             .Select(ur => ur.Role.Name)
             .AnyAsync(n => roleNames.Contains(n));
 
+    public async Task<List<Guid>> GetActiveUserIdsByRoleAsync(string roleName) =>
+        await _db.Users
+            .Where(u => !u.IsDeleted
+                && u.Status == 1
+                && u.UserRoles.Any(ur => !ur.IsDeleted && ur.Role.Name == roleName))
+            .Select(u => u.Id)
+            .ToListAsync();
+
     // ── Admin moderator management ─────────────────────────────────────────
 
     /// <summary>Paginated list of users who have a specific role.</summary>

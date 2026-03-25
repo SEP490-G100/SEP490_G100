@@ -12,6 +12,10 @@ public static class NotificationTypes
     public const int JobPostingRejected = 8;
     public const int JobPostingPending = 9;
     public const int NannyProfileFavorited = 10;
+    public const int VerificationRequestSubmitted = 11;
+    public const int ReportSubmitted = 12;
+    public const int MessageToModerator = 13;
+    public const int JobPostingReviewRequired = 14;
 
     public static string getLabel(int type) => type switch
     {
@@ -25,6 +29,10 @@ public static class NotificationTypes
         JobPostingRejected => "Bai dang bi tu choi",
         JobPostingPending => "Bai dang dang cho duyet",
         NannyProfileFavorited => "Ho so duoc yeu thich",
+        VerificationRequestSubmitted => "Yeu cau xac minh moi",
+        ReportSubmitted => "Bao cao moi",
+        MessageToModerator => "Tin nhan toi moderator",
+        JobPostingReviewRequired => "Bai dang moi can duyet",
         _ => "Thong bao he thong"
     };
 }

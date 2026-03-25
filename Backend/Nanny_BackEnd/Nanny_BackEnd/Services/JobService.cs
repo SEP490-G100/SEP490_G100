@@ -190,6 +190,13 @@ public class JobService
             job.Id,
             "JobPosting",
             null);
+        await _notificationService.createNotificationForModerators(
+            "Co bai dang moi can duyet",
+            $"Phu huynh {getDisplayName(parentProfile.User)} vua gui bai dang \"{job.Title}\" de moderator xem xet.",
+            NotificationTypes.JobPostingReviewRequired,
+            job.Id,
+            "JobPosting",
+            parentProfile.UserId);
         return job.Id;
     }
 
@@ -441,6 +448,13 @@ public class JobService
     {
         if (minNannyAge.HasValue && maxNannyAge.HasValue && minNannyAge > maxNannyAge)
             throw new InvalidOperationException("Do tuoi toi thieu khong duoc lon hon do tuoi toi da cua bao mau.");
+    }
+
+    private static string getDisplayName(User? user)
+    {
+        if (user == null) return "Phu huynh";
+        var fullName = $"{user.FirstName} {user.LastName}".Trim();
+        return string.IsNullOrWhiteSpace(fullName) ? user.Email : fullName;
     }
 
     private static SearchJobResponse mapToListItem(
