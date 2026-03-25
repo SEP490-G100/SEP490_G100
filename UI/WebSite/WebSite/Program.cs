@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using WebSite.Models.Storage;
 using WebSite.Services;
+using WebSite.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +10,7 @@ builder.Services.AddRazorPages();
 builder.Services.Configure<AzureBlobStorageOptions>(
     builder.Configuration.GetSection(AzureBlobStorageOptions.SectionName));
 builder.Services.AddScoped<IVerificationDocumentStorageService, AzureBlobVerificationDocumentStorageService>();
+builder.Services.AddSignalR();
 
 // Session
 builder.Services.AddDistributedMemoryCache();
@@ -56,5 +58,6 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+app.MapHub<NotificationHub>("/hubs/notifications");
 
 app.Run();

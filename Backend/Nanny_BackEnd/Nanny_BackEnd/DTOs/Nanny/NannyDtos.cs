@@ -43,6 +43,9 @@ public class NannyListItemResponse
     [JsonPropertyName("userId")]
     public Guid UserId { get; set; }
 
+    [JsonPropertyName("isFavorite")]
+    public bool IsFavorite { get; set; }
+
     [JsonPropertyName("fullName")]
     public string FullName { get; set; } = "";
 

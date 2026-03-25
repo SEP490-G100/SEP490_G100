@@ -30,6 +30,9 @@ public class SearchJobResponse
     [JsonPropertyName("isOwner")]
     public bool IsOwner { get; set; }
 
+    [JsonPropertyName("isFavorite")]
+    public bool IsFavorite { get; set; }
+
     [JsonPropertyName("title")]
     public string Title { get; set; } = "";
 

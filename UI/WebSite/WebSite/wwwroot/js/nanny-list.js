@@ -14,6 +14,7 @@ const nannyGeoCache = new Map();
 const nannySelectPickerSyncHandlers = [];
 let nannyScheduleFilters = [];
 let suppressNextNannyMapMove = false;
+let currentNannyDetailId = null;
 const NANNY_DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 const NANNY_TIME_LABELS = ['Morning', 'Afternoon', 'Evening', 'Night'];
 const NANNY_FALLBACK_PROVINCES = [
@@ -198,6 +199,101 @@ function formatSalary(min, max) {
   if (min) return `Từ ${formatCurrency(min)}`;
   if (max) return `Đến ${formatCurrency(max)}`;
   return 'Thỏa thuận';
+}
+
+function isLoggedIn() {
+  return typeof IS_AUTH !== 'undefined' && IS_AUTH === true;
+}
+
+function isParentRole() {
+  return typeof IS_PARENT !== 'undefined' && IS_PARENT === true;
+}
+
+function showNannyToast(message, type = 'info') {
+  if (!message) return;
+  if (typeof window.showToast === 'function') {
+    window.showToast(message, { type });
+  }
+}
+
+function normalizeGuid(value) {
+  return String(value ?? '').trim().toLowerCase();
+}
+
+function updateNannyFavoriteUi(nannyId, isFavorite) {
+  const normalized = normalizeGuid(nannyId);
+  document.querySelectorAll(`.nanny-card-favorite[data-nanny-id="${normalized}"]`).forEach((button) => {
+    button.classList.toggle('active', !!isFavorite);
+    button.setAttribute('aria-pressed', isFavorite ? 'true' : 'false');
+    button.title = isFavorite ? 'Bo yeu thich' : 'Yeu thich nanny';
+    const icon = button.querySelector('.material-icons-round');
+    if (icon) icon.textContent = isFavorite ? 'favorite' : 'favorite_border';
+  });
+
+  const detailButton = document.getElementById('nd-favoriteBtn');
+  const detailIcon = detailButton?.querySelector('.material-icons-round');
+  const detailText = document.getElementById('nd-favoriteBtnText');
+  if (detailButton && currentNannyDetailId && normalizeGuid(currentNannyDetailId) === normalized) {
+    detailButton.classList.toggle('active', !!isFavorite);
+    if (detailIcon) detailIcon.textContent = isFavorite ? 'favorite' : 'favorite_border';
+    if (detailText) detailText.textContent = isFavorite ? 'Bo yeu thich' : 'Yeu thich';
+  }
+}
+
+function setNannyFavoriteState(nannyId, isFavorite) {
+  const normalized = normalizeGuid(nannyId);
+
+  nannyAllProfiles = nannyAllProfiles.map((profile) => {
+    if (normalizeGuid(profile?.id) === normalized) return { ...profile, isFavorite: !!isFavorite };
+    return profile;
+  });
+
+  nannyProfiles = nannyProfiles.map((profile) => {
+    if (normalizeGuid(profile?.id) === normalized) return { ...profile, isFavorite: !!isFavorite };
+    return profile;
+  });
+
+  updateNannyFavoriteUi(nannyId, isFavorite);
+}
+
+async function toggleNannyFavorite(nannyId, event) {
+  event?.stopPropagation?.();
+
+  if (!isLoggedIn()) {
+    showNannyToast('Vui long dang nhap de yeu thich nanny.', 'warning');
+    return;
+  }
+
+  if (!isParentRole()) {
+    showNannyToast('Chi Parent moi co quyen yeu thich nanny.', 'warning');
+    return;
+  }
+
+  try {
+    const response = await fetch(`/Nanny/ToggleFavorite?id=${encodeURIComponent(nannyId)}`, {
+      method: 'POST',
+      credentials: 'same-origin'
+    });
+    const json = await response.json();
+    if (!json?.success) {
+      showNannyToast(json?.message || 'Khong the cap nhat yeu thich nanny.', 'error');
+      return;
+    }
+
+    const favoriteState = !!json.isFavorite;
+    setNannyFavoriteState(nannyId, favoriteState);
+    showNannyToast(
+      json.message || (favoriteState ? 'Da yeu thich nanny.' : 'Da bo yeu thich nanny.'),
+      favoriteState ? 'success' : 'info'
+    );
+  } catch {
+    showNannyToast('Khong the cap nhat yeu thich nanny.', 'error');
+  }
+}
+
+function toggleNannyFavoriteFromDetail(event) {
+  if (!currentNannyDetailId) return;
+  toggleNannyFavorite(currentNannyDetailId, event);
 }
 
 function debounceNannySearch() {
@@ -833,7 +929,18 @@ function renderNannyCards(items, options = {}) {
               <h3>${escapeHtml(profile.fullName || 'Bảo mẫu')}</h3>
               <p>${escapeHtml([profile.district, profile.city].filter(Boolean).join(', ') || 'Chưa cập nhật khu vực')}</p>
             </div>
-            <span class="nanny-card__salary">${escapeHtml(formatSalary(profile.expectedSalaryMin, profile.expectedSalaryMax))}</span>
+            <div class="nanny-card__head-actions">
+              <span class="nanny-card__salary">${escapeHtml(formatSalary(profile.expectedSalaryMin, profile.expectedSalaryMax))}</span>
+              ${isParentRole() ? `
+                <button type="button"
+                        class="nanny-card-favorite ${profile.isFavorite ? 'active' : ''}"
+                        data-nanny-id="${escapeHtml(normalizeGuid(profile.id))}"
+                        aria-pressed="${profile.isFavorite ? 'true' : 'false'}"
+                        title="${profile.isFavorite ? 'Bo yeu thich' : 'Yeu thich nanny'}"
+                        onclick="toggleNannyFavorite('${escapeHtml(profile.id)}', event)">
+                  <span class="material-icons-round">${profile.isFavorite ? 'favorite' : 'favorite_border'}</span>
+                </button>` : ''}
+            </div>
           </div>
           <p class="nanny-card__bio">${escapeHtml(profile.bio || 'Hồ sơ chưa có mô tả giới thiệu.')}</p>
           <div class="nanny-card__meta">
@@ -989,6 +1096,19 @@ async function openNannyDetail(id) {
           </span>`).join('')
       : '<span class="nanny-card__muted">Chưa có kỹ năng được khai báo.</span>';
 
+    currentNannyDetailId = detail.id || id;
+
+    const favoriteButton = document.getElementById('nd-favoriteBtn');
+    if (favoriteButton) {
+      favoriteButton.classList.toggle('hidden', !isParentRole());
+      favoriteButton.classList.toggle('active', !!detail.isFavorite);
+      const icon = favoriteButton.querySelector('.material-icons-round');
+      const text = document.getElementById('nd-favoriteBtnText');
+      if (icon) icon.textContent = detail.isFavorite ? 'favorite' : 'favorite_border';
+      if (text) text.textContent = detail.isFavorite ? 'Bo yeu thich' : 'Yeu thich';
+    }
+
+    setNannyFavoriteState(currentNannyDetailId, !!detail.isFavorite);
     document.getElementById('nd-availability').innerHTML = renderAvailability(detail.availabilitySlots || []);
     document.getElementById('nannyDetailModal')?.classList.add('show');
   } catch {
@@ -996,6 +1116,7 @@ async function openNannyDetail(id) {
 }
 
 function closeNannyDetail() {
+  currentNannyDetailId = null;
   document.getElementById('nannyDetailModal')?.classList.remove('show');
 }
 

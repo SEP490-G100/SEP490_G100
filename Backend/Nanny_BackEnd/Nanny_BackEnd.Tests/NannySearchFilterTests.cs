@@ -99,7 +99,10 @@ public class NannySearchFilterTests
 
             var db = new Sep490NannyDbContext(options);
             var repo = new NannyProfileRepository(db);
-            var service = new NannyService(repo);
+            var favoriteRepo = new FavoriteRepository(db);
+            var subscriptionRepo = new SubscriptionRepository(db);
+            var notificationService = new NotificationService(subscriptionRepo);
+            var service = new NannyService(repo, favoriteRepo, notificationService);
             var fixture = new TestFixture(db, service);
             await fixture.Seed();
             return fixture;

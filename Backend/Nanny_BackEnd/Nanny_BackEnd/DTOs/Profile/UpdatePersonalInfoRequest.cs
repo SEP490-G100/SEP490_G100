@@ -14,4 +14,13 @@ public class UpdatePersonalInfoRequest
     public string? Ward { get; set; }
     public decimal? Latitude { get; set; }
     public decimal? Longitude { get; set; }
+
+    // Nanny-specific fields (optional, only applied for nanny role)
+    public string? Bio { get; set; }
+    public int? YearsOfExperience { get; set; }
+    public int? EducationLevel { get; set; }
+    public decimal? ExpectedSalaryMin { get; set; }
+    public decimal? ExpectedSalaryMax { get; set; }
+    public int? MaxTravelDistance { get; set; }
+    public List<Guid>? SkillIds { get; set; }
 }

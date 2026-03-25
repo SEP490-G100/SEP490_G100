@@ -378,18 +378,14 @@ function confirmToggle(id, sortOrder, wasActive) {
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
 function showToast(type, msg) {
-    var toast = document.getElementById('toast');
-    toast.style.background = type === 'success'
-        ? 'linear-gradient(135deg,#10B981,#059669)'
-        : 'linear-gradient(135deg,#EF4444,#DC2626)';
-    toast.style.boxShadow = type === 'success'
-        ? '0 8px 24px rgba(16,185,129,0.4)'
-        : '0 8px 24px rgba(239,68,68,0.4)';
-    document.getElementById('toastIcon').textContent = type === 'success' ? 'check_circle' : 'error';
-    document.getElementById('toastMsg').textContent  = msg;
-    toast.classList.remove('hidden');
-    toast.classList.add('flex');
-    setTimeout(function() { toast.classList.add('hidden'); toast.classList.remove('flex'); }, 3500);
+    var normalizedType = String(type || 'info').toLowerCase();
+    var mappedType = normalizedType === 'success'
+        ? 'success'
+        : (normalizedType === 'warning' || normalizedType === 'warn' ? 'warning' : 'error');
+
+    if (typeof window.showToast === 'function') {
+        window.showToast(msg || '', { type: mappedType });
+    }
 }
 </script>
 }

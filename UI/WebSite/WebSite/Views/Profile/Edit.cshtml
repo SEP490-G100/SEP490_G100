@@ -1,210 +1,255 @@
-@using WebSite.Controllers
 @using WebSite.Models.Profile
 @model EditPersonalInfoViewModel
 
 @{
-    ViewData["Title"] = "Chỉnh sửa thông tin cá nhân";
+    ViewData["Title"] = "Chỉnh sửa hồ sơ";
+    var avatarUrl = (Model.AvatarUrl ?? "").Trim();
 }
 
-<div class="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50/30 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-4xl mx-auto">
-        <!-- Header -->
-        <div class="mb-8">
-            <span class="section-label">✏️ Chỉnh sửa</span>
-            <h1 class="text-4xl font-bold text-gray-900 dark:text-white mt-3" style="font-family:'Quicksand',sans-serif">
-                Cập nhật <span class="gradient-text">thông tin</span>
-            </h1>
-            <div class="section-divider left mt-4"></div>
-        </div>
-
-        <!-- Form Card -->
-        <div class="bg-white dark:bg-gray-800/80 rounded-3xl p-8 lg:p-10 shadow-soft border border-gray-100/80 dark:border-gray-700/50 backdrop-blur-sm">
-            <form method="post">
-                @Html.AntiForgeryToken()
-
-                <!-- Personal Information -->
-                <div class="space-y-6 mb-8">
-                    <h3 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                        <span class="material-icons-round text-orange-500">person</span>
-                        Thông tin cá nhân
-                    </h3>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- First Name -->
-                        <div>
-                            <label for="FirstName" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                                Họ <span class="text-red-500">*</span>
-                            </label>
-                            <input type="text" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                                   id="FirstName" name="FirstName" value="@Model.FirstName" required>
-                            @Html.ValidationMessageFor(m => m.FirstName, "", new { @class = "text-red-500 text-sm mt-1" })
-                        </div>
-
-                        <!-- Last Name -->
-                        <div>
-                            <label for="LastName" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                                Tên <span class="text-red-500">*</span>
-                            </label>
-                            <input type="text" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                                   id="LastName" name="LastName" value="@Model.LastName" required>
-                            @Html.ValidationMessageFor(m => m.LastName, "", new { @class = "text-red-500 text-sm mt-1" })
-                        </div>
-
-                        <!-- Phone Number -->
-                        <div>
-                            <label for="PhoneNumber" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                                📱 Số điện thoại
-                            </label>
-                            <input type="tel" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                                   id="PhoneNumber" name="PhoneNumber" value="@Model.PhoneNumber">
-                            @Html.ValidationMessageFor(m => m.PhoneNumber, "", new { @class = "text-red-500 text-sm mt-1" })
-                        </div>
-
-                        <!-- Date of Birth -->
-                        <div>
-                            <label for="DateOfBirth" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                                🎂 Ngày sinh
-                            </label>
-                            <input type="date" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                                   id="DateOfBirth" name="DateOfBirth" value="@Model.DateOfBirth?.ToString("yyyy-MM-dd")">
-                            @Html.ValidationMessageFor(m => m.DateOfBirth, "", new { @class = "text-red-500 text-sm mt-1" })
-                        </div>
-
-                        <!-- Gender -->
-                        <div>
-                            <label for="Gender" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                                👥 Giới tính
-                            </label>
-                            <select class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                                    id="Gender" name="Gender">
-                                <option value="">-- Chọn giới tính --</option>
-                                <option value="0" selected="@(Model.Gender == 0)">Nam</option>
-                                <option value="1" selected="@(Model.Gender == 1)">Nữ</option>
-                                <option value="2" selected="@(Model.Gender == 2)">Khác</option>
-                            </select>
-                            @Html.ValidationMessageFor(m => m.Gender, "", new { @class = "text-red-500 text-sm mt-1" })
-                        </div>
-
-                        <!-- Avatar URL -->
-                        <div>
-                            <label for="AvatarUrl" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                                🖼️ URL hình ảnh
-                            </label>
-                            <input type="url" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                                   id="AvatarUrl" name="AvatarUrl" value="@Model.AvatarUrl" placeholder="https://...">
-                            @Html.ValidationMessageFor(m => m.AvatarUrl, "", new { @class = "text-red-500 text-sm mt-1" })
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Address Section -->
-                <div class="border-t border-gray-100 dark:border-gray-700/50 pt-8 space-y-6 mb-8">
-                    <h3 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                        <span class="material-icons-round text-orange-500">location_on</span>
-                        Địa chỉ
-                    </h3>
-
-                    <!-- Full Address: người dùng nhập chi tiết, dùng Tỉnh/Quận/Phường để xác định vị trí -->
-                    <div>
-                        <label for="Address" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                            📍 Địa chỉ chi tiết
-                        </label>
-                        <input type="text" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                               id="Address" name="Address" value="@Model.Address" placeholder="Số nhà, tên đường,...">
-                        @Html.ValidationMessageFor(m => m.Address, "", new { @class = "text-red-500 text-sm mt-1" })
-                    </div>
-
-                    <!-- City, District, Ward -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div>
-                            <label for="City" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                                Thành phố/Tỉnh
-                            </label>
-                            <select class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                                    id="City" name="City">
-                                <option value="">-- Chọn Tỉnh/Thành --</option>
-                            </select>
-                            @Html.ValidationMessageFor(m => m.City, "", new { @class = "text-red-500 text-sm mt-1" })
-                        </div>
-                        <div>
-                            <label for="District" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                                Quận/Huyện
-                            </label>
-                            <select class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                                    id="District" name="District">
-                                <option value="">-- Chọn Quận/Huyện --</option>
-                            </select>
-                            @Html.ValidationMessageFor(m => m.District, "", new { @class = "text-red-500 text-sm mt-1" })
-                        </div>
-                        <div>
-                            <label for="Ward" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                                Phường/Xã
-                            </label>
-                            <select class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                                    id="Ward" name="Ward">
-                                <option value="">-- Chọn Phường/Xã --</option>
-                            </select>
-                            @Html.ValidationMessageFor(m => m.Ward, "", new { @class = "text-red-500 text-sm mt-1" })
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Map Section -->
-                <div class="border-t border-gray-100 dark:border-gray-700/50 pt-8 space-y-6 mb-8">
-                    <h3 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                        <span class="material-icons-round text-orange-500">map</span>
-                        Vị trí trên bản đồ
-                    </h3>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">Kéo dấu marker để chọn vị trí của bạn</p>
-                    
-                    <div id="map" class="w-full h-64 md:h-96 rounded-2xl border-2 border-gray-200 dark:border-gray-700/50 overflow-hidden shadow-lg"></div>
-
-                    <input type="hidden" id="Latitude" name="Latitude" value="@Model.Latitude">
-                    <input type="hidden" id="Longitude" name="Longitude" value="@Model.Longitude">
-
-                    <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-900/30 rounded-lg p-4">
-                        <p class="text-sm text-blue-800 dark:text-blue-300">
-                            <span class="font-bold">Tọa độ hiện tại:</span> <span id="coords-display">@Model.Latitude, @Model.Longitude</span>
-                        </p>
-                    </div>
-                    @Html.ValidationMessageFor(m => m.Latitude, "", new { @class = "text-red-500 text-sm mt-1" })
-                </div>
-
-                <!-- Action Buttons -->
-                <div class="flex flex-col sm:flex-row gap-3 pt-8 border-t border-gray-100 dark:border-gray-700/50">
-                    <a href="@Url.Action("Index", "Profile")" 
-                       class="flex items-center justify-center gap-2 px-6 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-bold rounded-xl transition-all duration-300">
-                        <span class="material-icons-round">close</span>
-                        Hủy
-                    </a>
-                    <button type="submit" 
-                            class="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl flex-1 sm:flex-none">
-                        <span class="material-icons-round">save</span>
-                        Lưu thay đổi
-                    </button>
-                </div>
-            </form>
-        </div>
+<div class="h-32 sm:h-40 bg-gradient-to-r from-orange-400 to-orange-600 relative overflow-hidden shadow-lg">
+    <div class="absolute inset-0 opacity-20">
+        <div class="absolute top-0 left-0 w-64 h-64 bg-white rounded-full blur-3xl -ml-20 -mt-20"></div>
+        <div class="absolute bottom-0 right-0 w-64 h-64 bg-white rounded-full blur-3xl -mr-20 -mb-20"></div>
     </div>
 </div>
-        padding: 0.5rem 0.75rem;
-    }
 
-    .form-control:focus,
-    .form-select:focus {
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-    }
+<div class="max-w-4xl mx-auto px-4 sm:px-6 -mt-16 sm:-mt-20 pb-20 relative z-10">
+    <div class="mb-8 px-4 text-center md:text-left">
+        <span class="inline-flex items-center gap-2 px-3 py-1 bg-white/20 backdrop-blur-md text-white text-xs font-bold rounded-full border border-white/30 uppercase tracking-wider mb-3">
+            Chỉnh sửa hồ sơ
+        </span>
+        <h1 class="text-3xl sm:text-4xl font-bold text-white mb-2" style="font-family:'Quicksand',sans-serif">Cập nhật thông tin cá nhân</h1>
+    </div>
 
-    .btn {
-        border-radius: 5px;
-        padding: 0.5rem 1rem;
-    }
+    <div class="bg-white/90 rounded-3xl p-8 lg:p-10 shadow-soft border border-gray-100/80 backdrop-blur-md">
+        <form method="post" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
 
-    .text-danger {
-        font-size: 0.875rem;
-        margin-top: 0.25rem;
-    }
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div class="lg:col-span-4">
+                    <div class="sticky top-6 bg-white rounded-3xl p-6 border border-gray-100 shadow-soft">
+                        <h3 class="text-lg font-bold text-gray-900 mb-4">Ảnh đại diện</h3>
+                        <div class="flex flex-col items-center">
+                            <img id="avatarPreview"
+                                 class="@((string.IsNullOrWhiteSpace(avatarUrl) ? "hidden " : "") + "w-40 h-40 rounded-3xl object-cover border border-gray-200 bg-gray-50")"
+                                 src="@avatarUrl"
+                                 alt="Avatar preview" />
+                            <div class="w-full mt-4">
+                                <label for="AvatarFile" class="block text-sm font-bold text-gray-700 mb-2">Tải ảnh (.jpg, .png)</label>
+                                <input type="file" asp-for="AvatarFile" accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                                       class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 transition-all" />
+                                <div id="avatarUploadError" class="hidden mt-2 text-sm text-red-600"></div>
+                            </div>
+                            <input type="hidden" asp-for="AvatarUrl" value="@avatarUrl" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-8">
+                    <div class="space-y-6 mb-8">
+                        <h3 class="text-xl font-bold text-gray-900">Thông tin cá nhân</h3>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="FirstName" class="block text-sm font-bold text-gray-700 mb-2">Họ <span class="text-red-500">*</span></label>
+                                <input type="text" id="FirstName" name="FirstName" value="@Model.FirstName" required
+                                       class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none text-gray-900 font-medium" />
+                            </div>
+                            <div>
+                                <label for="LastName" class="block text-sm font-bold text-gray-700 mb-2">Tên <span class="text-red-500">*</span></label>
+                                <input type="text" id="LastName" name="LastName" value="@Model.LastName" required
+                                       class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none text-gray-900 font-medium" />
+                            </div>
+                            <div>
+                                <label for="PhoneNumber" class="block text-sm font-bold text-gray-700 mb-2">Số điện thoại</label>
+                                <input type="text" id="PhoneNumber" name="PhoneNumber" value="@Model.PhoneNumber"
+                                       class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none text-gray-900 font-medium" />
+                            </div>
+                            <div>
+                                <label for="DateOfBirth" class="block text-sm font-bold text-gray-700 mb-2">Ngày sinh</label>
+                                <input type="date" id="DateOfBirth" name="DateOfBirth" value="@Model.DateOfBirth?.ToString("yyyy-MM-dd")"
+                                       class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none text-gray-900 font-medium" />
+                            </div>
+                            <div>
+                                <label for="Gender" class="block text-sm font-bold text-gray-700 mb-2">Giới tính</label>
+                                <select id="Gender" name="Gender"
+                                        class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none text-gray-900 font-medium">
+                                    <option value="">-- Chọn giới tính --</option>
+                                    <option value="0" selected="@(Model.Gender == 0)">Nam</option>
+                                    <option value="1" selected="@(Model.Gender == 1)">Nữ</option>
+                                    <option value="2" selected="@(Model.Gender == 2)">Khác</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (Model.IsNanny)
+                    {
+                        <div class="border-t border-gray-100 pt-8 space-y-6 mb-8">
+                            <h3 class="text-xl font-bold text-gray-900">Thông tin nghề nghiệp (Bảo mẫu)</h3>
+
+                            <div>
+                                <label for="Bio" class="block text-sm font-bold text-gray-700 mb-2">Giới thiệu bản thân</label>
+                                <textarea id="Bio" name="Bio" rows="3"
+                                          class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none text-gray-900 font-medium">@Model.Bio</textarea>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label for="YearsOfExperience" class="block text-sm font-bold text-gray-700 mb-2">Số năm kinh nghiệm</label>
+                                    <input type="number" min="0" id="YearsOfExperience" name="YearsOfExperience" value="@Model.YearsOfExperience"
+                                           class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none text-gray-900 font-medium" />
+                                </div>
+                                <div>
+                                    <label for="EducationLevel" class="block text-sm font-bold text-gray-700 mb-2">Trình độ học vấn</label>
+                                    <select id="EducationLevel" name="EducationLevel"
+                                            class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none text-gray-900 font-medium">
+                                        <option value="">-- Chọn trình độ học vấn --</option>
+                                        <option value="0" selected="@(Model.EducationLevel == 0)">Trung học</option>
+                                        <option value="1" selected="@(Model.EducationLevel == 1)">Cao đẳng</option>
+                                        <option value="2" selected="@(Model.EducationLevel == 2)">Đại học</option>
+                                        <option value="3" selected="@(Model.EducationLevel == 3)">Thạc sĩ</option>
+                                        <option value="4" selected="@(Model.EducationLevel == 4)">Khác</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label for="ExpectedSalaryMin" class="block text-sm font-bold text-gray-700 mb-2">Mức lương tối thiểu</label>
+                                    <div class="relative">
+                                        <input type="number" step="1000" min="0" id="ExpectedSalaryMin" name="ExpectedSalaryMin" value="@Model.ExpectedSalaryMin"
+                                               class="w-full px-5 py-4 pr-16 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none text-gray-900 font-medium" />
+                                        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-500">VND</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="ExpectedSalaryMax" class="block text-sm font-bold text-gray-700 mb-2">Mức lương tối đa</label>
+                                    <div class="relative">
+                                        <input type="number" step="1000" min="0" id="ExpectedSalaryMax" name="ExpectedSalaryMax" value="@Model.ExpectedSalaryMax"
+                                               class="w-full px-5 py-4 pr-16 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none text-gray-900 font-medium" />
+                                        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-500">VND</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="MaxTravelDistance" class="block text-sm font-bold text-gray-700 mb-2">Khoảng cách di chuyển tối đa (km)</label>
+                                <input type="number" min="0" id="MaxTravelDistance" name="MaxTravelDistance" value="@Model.MaxTravelDistance"
+                                       class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none text-gray-900 font-medium" />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Kỹ năng đã chọn</label>
+                            @if (Model.AvailableSkills.Any())
+                            {
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 p-4 rounded-2xl bg-gray-50 border border-gray-200">
+                                    @foreach (var skill in Model.AvailableSkills)
+                                    {
+                                        <label class="flex items-center gap-2 text-sm text-gray-800">
+                                            @if (Model.SelectedSkillIds.Contains(skill.SkillId))
+                                            {
+                                                <input type="checkbox"
+                                                       name="SelectedSkillIds"
+                                                       value="@skill.SkillId"
+                                                       checked
+                                                       class="rounded border-gray-300 text-orange-600 focus:ring-orange-500" />
+                                            }
+                                            else
+                                            {
+                                                <input type="checkbox"
+                                                       name="SelectedSkillIds"
+                                                       value="@skill.SkillId"
+                                                       class="rounded border-gray-300 text-orange-600 focus:ring-orange-500" />
+                                            }
+                                            <span>@skill.SkillName</span>
+                                        </label>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="text-sm text-gray-500">Không tải được danh sách kỹ năng.</p>
+                            }
+                        </div>
+                    }
+
+                    <div class="border-t border-gray-100 pt-8 space-y-6 mb-8">
+                        <h3 class="text-xl font-bold text-gray-900">Địa chỉ</h3>
+
+                        <div>
+                            <label for="Address" class="block text-sm font-bold text-gray-700 mb-2">Địa chỉ chi tiết</label>
+                            <input type="text" id="Address" name="Address" value="@Model.Address" placeholder="Số nhà, tên đường..."
+                                   class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none text-gray-900 font-medium" />
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <label for="City" class="block text-sm font-bold text-gray-700 mb-2">Tỉnh/Thành</label>
+                                @if (!string.IsNullOrWhiteSpace(Model.City))
+                                {
+                                    <p class="text-xs text-gray-500 mb-2">Đang chọn: <span class="font-semibold">@Model.City</span></p>
+                                }
+                                <select id="City" name="City"
+                                        class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none text-gray-900 font-medium">
+                                    <option value="">-- Chọn Tỉnh/Thành --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="District" class="block text-sm font-bold text-gray-700 mb-2">Quận/Huyện</label>
+                                @if (!string.IsNullOrWhiteSpace(Model.District))
+                                {
+                                    <p class="text-xs text-gray-500 mb-2">Đang chọn: <span class="font-semibold">@Model.District</span></p>
+                                }
+                                <select id="District" name="District"
+                                        class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none text-gray-900 font-medium">
+                                    <option value="">-- Chọn Quận/Huyện --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="Ward" class="block text-sm font-bold text-gray-700 mb-2">Phường/Xã</label>
+                                @if (!string.IsNullOrWhiteSpace(Model.Ward))
+                                {
+                                    <p class="text-xs text-gray-500 mb-2">Đang chọn: <span class="font-semibold">@Model.Ward</span></p>
+                                }
+                                <select id="Ward" name="Ward"
+                                        class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none text-gray-900 font-medium">
+                                    <option value="">-- Chọn Phường/Xã --</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-gray-100 pt-8 space-y-6 mb-8">
+                        <h3 class="text-xl font-bold text-gray-900">Vị trí trên bản đồ</h3>
+                        <div id="map" class="w-full h-64 md:h-96 rounded-2xl border-2 border-gray-200 overflow-hidden shadow-lg"></div>
+                        <input type="hidden" id="Latitude" name="Latitude" value="@Model.Latitude">
+                        <input type="hidden" id="Longitude" name="Longitude" value="@Model.Longitude">
+                        <p class="text-sm text-blue-700 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            Tọa độ hiện tại: <span id="coords-display">@Model.Latitude, @Model.Longitude</span>
+                        </p>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-3 pt-8 border-t border-gray-100">
+                        <a href="@Url.Action("Index", "Profile")"
+                           class="flex-1 flex items-center justify-center gap-2 px-8 py-4 bg-gray-100 text-gray-700 font-bold rounded-2xl transition-all hover:bg-gray-200">
+                            Hủy bỏ
+                        </a>
+                        <button type="submit"
+                                class="flex-1 flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold rounded-2xl transition-all shadow-glow">
+                            Lưu thay đổi
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .shadow-soft { box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05); }
+    .shadow-glow { box-shadow: 0 10px 25px -5px rgba(249, 115, 22, 0.4); }
 </style>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -212,52 +257,95 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        // 1. Lấy tọa độ từ Model (mặc định là Hà Nội nếu chưa có dữ liệu)
+        var avatarInput = document.getElementById('AvatarFile');
+        var avatarErr = document.getElementById('avatarUploadError');
+        var avatarPreview = document.getElementById('avatarPreview');
+        var currentAvatarUrl = '@avatarUrl';
+        var objectUrl = null;
+
+        function showAvatarError(msg) {
+            avatarErr.textContent = msg || '';
+            avatarErr.classList.toggle('hidden', !msg);
+        }
+
+        function clearPreview() {
+            if (objectUrl) { try { URL.revokeObjectURL(objectUrl); } catch (e) {} objectUrl = null; }
+            if (avatarPreview) {
+                avatarPreview.src = '';
+                avatarPreview.classList.add('hidden');
+            }
+        }
+
+        function setPreview(src) {
+            if (!avatarPreview) return;
+            avatarPreview.src = src;
+            avatarPreview.classList.remove('hidden');
+        }
+
+        function isAllowedImage(file) {
+            if (!file) return false;
+            var name = (file.name || '').toLowerCase();
+            return name.endsWith('.png') || name.endsWith('.jpg') || name.endsWith('.jpeg');
+        }
+
+        if (currentAvatarUrl && avatarPreview) setPreview(currentAvatarUrl);
+
+        if (avatarInput) {
+            avatarInput.addEventListener('change', function() {
+                showAvatarError('');
+                var file = avatarInput.files && avatarInput.files[0] ? avatarInput.files[0] : null;
+                if (!file) {
+                    clearPreview();
+                    if (currentAvatarUrl) setPreview(currentAvatarUrl);
+                    return;
+                }
+                if (!isAllowedImage(file)) {
+                    avatarInput.value = '';
+                    clearPreview();
+                    showAvatarError('Chỉ cho phép ảnh .png, .jpg, .jpeg.');
+                    if (currentAvatarUrl) setPreview(currentAvatarUrl);
+                    return;
+                }
+                clearPreview();
+                objectUrl = URL.createObjectURL(file);
+                setPreview(objectUrl);
+            });
+        }
+
         var initialLat = parseFloat(document.getElementById('Latitude').value) || 21.0285;
         var initialLng = parseFloat(document.getElementById('Longitude').value) || 105.8542;
-
-        // 2. Khởi tạo bản đồ
         var map = L.map('map').setView([initialLat, initialLng], 13);
 
-        // 3. Thêm lớp nền bản đồ (OpenStreetMap)
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
-        // 4. Tạo Marker có thể kéo thả (draggable)
-        var marker = L.marker([initialLat, initialLng], {
-            draggable: true
-        }).addTo(map);
-
-        // 5. Sự kiện khi kéo thả Marker
-        marker.on('dragend', function(event) {
-            var position = marker.getLatLng();
-            updateCoordinates(position.lat, position.lng);
-        });
-
-        // 6. Sự kiện khi click vào một điểm bất kỳ trên bản đồ
-        map.on('click', function(e) {
-            var lat = e.latlng.lat;
-            var lng = e.latlng.lng;
-            marker.setLatLng([lat, lng]);
-            updateCoordinates(lat, lng);
-        });
+        var marker = L.marker([initialLat, initialLng], { draggable: true }).addTo(map);
 
         function updateCoordinates(lat, lng) {
-            // Cập nhật vào input hidden để submit form
             document.getElementById('Latitude').value = lat.toFixed(6);
             document.getElementById('Longitude').value = lng.toFixed(6);
-
-            // Hiển thị text cho người dùng xem
             document.getElementById('coords-display').innerText = lat.toFixed(6) + ", " + lng.toFixed(6);
         }
 
-        // Dropdown Tỉnh/Thành - Quận/Huyện - Phường/Xã + tự geocode Lat/Lng theo địa chỉ đầy đủ (VN)
+        marker.on('dragend', function() {
+            var p = marker.getLatLng();
+            updateCoordinates(p.lat, p.lng);
+        });
+
+        map.on('click', function(e) {
+            marker.setLatLng([e.latlng.lat, e.latlng.lng]);
+            updateCoordinates(e.latlng.lat, e.latlng.lng);
+        });
+
         var citySelect = document.getElementById('City');
         var districtSelect = document.getElementById('District');
         var wardSelect = document.getElementById('Ward');
         var addressInput = document.getElementById('Address');
         var provinces = [];
+        var currentCity = '@(Model.City ?? "")';
+        var currentDistrict = '@(Model.District ?? "")';
+        var currentWard = '@(Model.Ward ?? "")';
 
         fetch('https://provinces.open-api.vn/api/v2/?depth=3')
             .then(function (r) { return r.json(); })
@@ -267,32 +355,21 @@
                     var opt = document.createElement('option');
                     opt.value = p.name;
                     opt.textContent = p.name;
-                    opt.dataset.code = p.code;
                     citySelect.appendChild(opt);
                 });
 
-                preselectFromModel();
+                if (currentCity) {
+                    citySelect.value = currentCity;
+                    onCityChange(function() {
+                        if (currentDistrict) {
+                            districtSelect.value = currentDistrict;
+                            onDistrictChange(function() {
+                                if (currentWard) wardSelect.value = currentWard;
+                            });
+                        }
+                    });
+                }
             });
-
-        function preselectFromModel() {
-            var currentCity = '@(Model.City ?? "")';
-            var currentDistrict = '@(Model.District ?? "")';
-            var currentWard = '@(Model.Ward ?? "")';
-
-            if (currentCity) {
-                citySelect.value = currentCity;
-                onCityChange(function () {
-                    if (currentDistrict) {
-                        districtSelect.value = currentDistrict;
-                        onDistrictChange(function () {
-                            if (currentWard) {
-                                wardSelect.value = currentWard;
-                            }
-                        });
-                    }
-                });
-            }
-        }
 
         function onCityChange(callback) {
             districtSelect.innerHTML = '<option value="">-- Chọn Quận/Huyện --</option>';
@@ -305,7 +382,6 @@
                 var opt = document.createElement('option');
                 opt.value = d.name;
                 opt.textContent = d.name;
-                opt.dataset.code = d.code;
                 districtSelect.appendChild(opt);
             });
 
@@ -333,31 +409,16 @@
             autoGeocode();
         }
 
-        citySelect.addEventListener('change', function () {
-            onCityChange();
-        });
+        citySelect.addEventListener('change', function () { onCityChange(); });
+        districtSelect.addEventListener('change', function () { onDistrictChange(); });
+        wardSelect.addEventListener('change', function () { autoGeocode(); });
+        addressInput.addEventListener('blur', function () { autoGeocode(); });
 
-        districtSelect.addEventListener('change', function () {
-            onDistrictChange();
-        });
-
-        wardSelect.addEventListener('change', function () {
-            autoGeocode();
-        });
-
-        var debounceTimer;
-        addressInput.addEventListener('blur', function () {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(autoGeocode, 300);
-        });
-
-        // Lấy Lat/Lng từ backend theo địa chỉ đầy đủ (VN)
         function autoGeocode() {
             var detail = (addressInput.value || '').trim();
             var city = (citySelect.value || '').trim();
             var dist = (districtSelect.value || '').trim();
             var ward = (wardSelect.value || '').trim();
-
             if (!city || !dist || !ward) return;
 
             var parts = [];
@@ -372,17 +433,15 @@
                 .then(function (items) {
                     if (!items || !items.length) return;
                     var item = items[0];
-
                     var lat = item.latitude != null ? item.latitude : item.Latitude;
                     var lng = item.longitude != null ? item.longitude : item.Longitude;
-
                     if (lat != null && lng != null) {
                         updateCoordinates(parseFloat(lat), parseFloat(lng));
                         marker.setLatLng([lat, lng]);
                         map.setView([lat, lng], 13);
                     }
                 })
-                .catch(function () { });
+                .catch(function () {});
         }
     });
 </script>
