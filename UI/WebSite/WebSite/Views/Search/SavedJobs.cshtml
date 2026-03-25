@@ -1,0 +1,174 @@
+@{
+    ViewData["Title"] = "Bai dang da luu - NannyMatch";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<section class="min-h-screen bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_45%,#fff7ed_100%)] py-10">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+        <div class="rounded-[30px] border border-orange-100 bg-white/90 shadow-[0_24px_60px_rgba(15,23,42,.08)] overflow-hidden">
+            <div class="px-6 py-6 sm:px-8 border-b border-orange-100 bg-[radial-gradient(circle_at_top_right,rgba(255,237,213,.85),transparent_28%),linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.24em] text-orange-500">Nanny zone</p>
+                        <h1 class="mt-2 text-3xl font-bold text-slate-900">Danh sach bai dang da luu</h1>
+                        <p class="mt-2 text-sm leading-6 text-slate-500 max-w-2xl">
+                            Tat ca cac bai dang ban da save de theo doi va ung tuyen khi can.
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <a href="/Search"
+                           class="inline-flex items-center justify-center min-h-[48px] px-5 rounded-2xl border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 transition-all">
+                            Quay lai tim bai dang
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-6 sm:px-8">
+                <div class="mb-5 rounded-3xl border border-slate-100 bg-slate-50 px-5 py-4">
+                    <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Tong bai dang da luu</p>
+                    <p id="savedJobsCount" class="mt-2 text-3xl font-extrabold text-slate-900">0</p>
+                </div>
+
+                <div id="savedJobsList" class="space-y-4">
+                    <div class="rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center text-slate-500">
+                        Dang tai bai dang da luu...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    (() => {
+        const listEl = document.getElementById('savedJobsList');
+        const countEl = document.getElementById('savedJobsCount');
+
+        const moderationLabels = {
+            0: 'Dang cho duyet',
+            1: 'Da bi tu choi',
+            2: 'Da duyet'
+        };
+
+        const escapeHtml = (value) => String(value ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+
+        const notify = (message, type = 'info') => {
+            if (typeof window.showToast === 'function') {
+                window.showToast(message, { type });
+            }
+        };
+
+        const formatSalary = (value) => {
+            const amount = Number(value);
+            if (!Number.isFinite(amount) || amount <= 0) return null;
+            return `${new Intl.NumberFormat('vi-VN').format(amount)} VND`;
+        };
+
+        const formatSalaryRange = (min, max, negotiable) => {
+            if (negotiable) return 'Thuong luong';
+            const minText = formatSalary(min);
+            const maxText = formatSalary(max);
+            if (minText && maxText) return `${minText} - ${maxText}`;
+            if (minText) return `Tu ${minText}`;
+            if (maxText) return `Den ${maxText}`;
+            return 'Khong xac dinh';
+        };
+
+        async function removeSavedJob(jobId) {
+            try {
+                const response = await fetch(`/Search/ToggleFavoriteJob?jobPostingId=${encodeURIComponent(jobId)}`, {
+                    method: 'POST',
+                    credentials: 'same-origin'
+                });
+                const json = await response.json();
+                if (!json?.success) {
+                    notify(json?.message || 'Khong the cap nhat bai dang da luu.', 'error');
+                    return;
+                }
+
+                if (json.isFavorite) {
+                    notify('Bai dang van dang o trang thai da luu.', 'warning');
+                    return;
+                }
+
+                notify('Da bo bai dang khoi danh sach da luu.', 'info');
+                await loadSavedJobs();
+            } catch {
+                notify('Loi ket noi server.', 'error');
+            }
+        }
+
+        function renderItems(items) {
+            if (!Array.isArray(items) || !items.length) {
+                listEl.innerHTML = `
+                    <div class="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-6 py-14 text-center">
+                        <span class="material-icons-round text-[34px] text-orange-300">bookmark_border</span>
+                        <h3 class="mt-3 text-lg font-bold text-slate-900">Ban chua luu bai dang nao</h3>
+                        <p class="mt-2 text-sm text-slate-500">Khi ban save bai dang, danh sach se hien thi tai day.</p>
+                    </div>`;
+                return;
+            }
+
+            listEl.innerHTML = items.map((job) => {
+                const location = [job.location, job.district, job.city].filter(Boolean).join(', ') || 'Chua cap nhat dia diem';
+                const skills = Array.isArray(job.skills) ? job.skills : [];
+                const skillChips = skills.slice(0, 5)
+                    .map((skill) => `<span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">${escapeHtml(skill)}</span>`)
+                    .join('');
+
+                return `
+                    <article class="rounded-[26px] border border-slate-100 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,.05)]">
+                        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                            <div>
+                                <h2 class="text-lg font-extrabold text-slate-900">${escapeHtml(job.title || 'Tin dang')}</h2>
+                                <p class="mt-1 text-sm font-semibold text-slate-500">${escapeHtml(job.parentName || 'Phu huynh')}</p>
+                                <p class="mt-2 text-sm font-semibold text-orange-600">${escapeHtml(location)}</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-extrabold">${escapeHtml(formatSalaryRange(job.salaryMin, job.salaryMax, job.salaryNegotiable))}</span>
+                                <button type="button"
+                                        onclick="window.__removeSavedJob('${escapeHtml(job.id)}')"
+                                        class="inline-flex items-center justify-center min-h-[36px] px-3 rounded-xl border border-slate-200 bg-white text-slate-600 text-xs font-extrabold hover:bg-slate-50 transition-all">
+                                    Bo luu
+                                </button>
+                            </div>
+                        </div>
+
+                        <p class="mt-3 text-sm leading-6 text-slate-600 line-clamp-2">${escapeHtml(job.description || 'Khong co mo ta.')}</p>
+
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            <span class="px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold">${escapeHtml(moderationLabels[job.moderationStatus] || 'Dang cap nhat')}</span>
+                            <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">${job.numberOfChildren ? `${job.numberOfChildren} be` : 'Chua ro so tre'}</span>
+                            ${skillChips || '<span class="text-sm text-slate-400">Chua co ky nang.</span>'}
+                        </div>
+                    </article>`;
+            }).join('');
+        }
+
+        async function loadSavedJobs() {
+            try {
+                const response = await fetch('/Search/SavedJobsData?page=1&pageSize=30', { credentials: 'same-origin' });
+                const json = await response.json();
+                const items = json?.data ?? [];
+                const total = Number(json?.total ?? items.length ?? 0);
+
+                countEl.textContent = Number.isFinite(total) ? String(total) : '0';
+                renderItems(items);
+            } catch {
+                listEl.innerHTML = `
+                    <div class="rounded-3xl border border-red-100 bg-red-50 px-6 py-10 text-center text-red-600">
+                        Khong tai duoc danh sach bai dang da luu.
+                    </div>`;
+            }
+        }
+
+        window.__removeSavedJob = removeSavedJob;
+        loadSavedJobs();
+    })();
+</script>

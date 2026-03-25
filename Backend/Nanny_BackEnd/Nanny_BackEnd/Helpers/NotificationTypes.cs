@@ -11,6 +11,7 @@ public static class NotificationTypes
     public const int JobPostingApproved = 7;
     public const int JobPostingRejected = 8;
     public const int JobPostingPending = 9;
+    public const int NannyProfileFavorited = 10;
 
     public static string getLabel(int type) => type switch
     {
@@ -23,6 +24,7 @@ public static class NotificationTypes
         JobPostingApproved => "Bai dang da duoc duyet",
         JobPostingRejected => "Bai dang bi tu choi",
         JobPostingPending => "Bai dang dang cho duyet",
+        NannyProfileFavorited => "Ho so duoc yeu thich",
         _ => "Thong bao he thong"
     };
 }
