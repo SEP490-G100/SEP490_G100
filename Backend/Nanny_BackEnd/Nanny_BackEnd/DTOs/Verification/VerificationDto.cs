@@ -58,8 +58,31 @@ public class VerificationRequestDetailDto
     public int SalaryType { get; set; }
     public int? MaxTravelDistance { get; set; }
 
+    public List<VerificationSkillDto> Skills { get; set; } = new();
+    public List<VerificationCertificateDto> Certificates { get; set; } = new();
+
     // Documents
     public List<VerificationDocumentDto> Documents { get; set; } = new();
+}
+
+public class VerificationSkillDto
+{
+    public Guid Id { get; set; }
+    public Guid SkillId { get; set; }
+    public string SkillName { get; set; } = null!;
+    public string SkillCategory { get; set; } = null!;
+    public int? ProficiencyLevel { get; set; }
+}
+
+public class VerificationCertificateDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = null!;
+    public string? IssuingOrganization { get; set; }
+    public DateOnly? IssueDate { get; set; }
+    public DateOnly? ExpiryDate { get; set; }
+    public string? CertificateUrl { get; set; }
+    public int VerificationStatus { get; set; }
 }
 
 public class VerificationDocumentDto

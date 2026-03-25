@@ -80,8 +80,8 @@
                                         </span>
                                     }
                                 </td>
-                                <td class="py-4 px-6 text-gray-600 dark:text-gray-400 text-sm">
-                                    @(!string.IsNullOrWhiteSpace(req.ReviewedByName) ? req.ReviewedByName : "-")
+                                <td class="py-4 px-6 text-gray-600 dark:text-gray-400 text-sm"> 
+                                    Moderator @(!string.IsNullOrWhiteSpace(req.ReviewedByName) ? req.ReviewedByName : "-")
                                 </td>
                                 <td class="py-4 px-6 text-gray-600 dark:text-gray-400 text-sm">
                                     @(req.ReviewedAt.HasValue ? req.ReviewedAt.Value.ToString("dd/MM/yyyy HH:mm") : "-")

@@ -93,6 +93,32 @@ public class VerificationRequestService
             ExpectedSalaryMax  = v.NannyProfile.ExpectedSalaryMax,
             SalaryType         = v.NannyProfile.SalaryType,
             MaxTravelDistance  = v.NannyProfile.MaxTravelDistance,
+            Skills = v.NannyProfile.NannySkills
+                .Where(ns => !ns.IsDeleted)
+                .OrderBy(ns => ns.Skill.Category)
+                .ThenBy(ns => ns.Skill.Name)
+                .Select(ns => new VerificationSkillDto
+                {
+                    Id = ns.Id,
+                    SkillId = ns.SkillId,
+                    SkillName = ns.Skill.Name,
+                    SkillCategory = ns.Skill.Category,
+                    ProficiencyLevel = ns.ProficiencyLevel
+                }).ToList(),
+            Certificates = v.NannyProfile.NannyCertificates
+                .Where(c => !c.IsDeleted)
+                .OrderByDescending(c => c.IssueDate)
+                .ThenBy(c => c.Name)
+                .Select(c => new VerificationCertificateDto
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    IssuingOrganization = c.IssuingOrganization,
+                    IssueDate = c.IssueDate,
+                    ExpiryDate = c.ExpiryDate,
+                    CertificateUrl = c.CertificateUrl,
+                    VerificationStatus = c.VerificationStatus
+                }).ToList(),
 
             Documents = v.VerificationDocuments.Select(d => new VerificationDocumentDto
             {
@@ -107,7 +133,7 @@ public class VerificationRequestService
         return (true, dto, null);
     }
 
-    public async Task<(bool Success, int StatusCode, string Message)> ReviewAsync(Guid id, ReviewVerificationRequest request)
+    public async Task<(bool Success, int StatusCode, string Message)> ReviewAsync(Guid id, Guid moderatorId, ReviewVerificationRequest request)
     {
         // Action: 2 = Approved, 3 = Rejected
         if (request.Action != (int)Enums.NannyVerificationRequestStatus.Approved && request.Action != (int)Enums.NannyVerificationRequestStatus.Rejected)
@@ -126,10 +152,11 @@ public class VerificationRequestService
 
         // Update VerificationRequest
         v.Status          = request.Action;     // 2 = Approved, 3 = Rejected
-        v.ReviewedBy      = request.ReviewedBy;
+        v.ReviewedBy      = moderatorId;
         v.ReviewedAt      = DateTime.UtcNow;
         v.RejectionReason = request.Action == (int)Enums.NannyVerificationRequestStatus.Rejected ? request.RejectionReason?.Trim() : null;
         v.UpdatedAt       = DateTime.UtcNow;
+        v.UpdatedBy       = moderatorId;
 
         // Sync NannyProfile.VerificationStatus accordingly
         var nannyProfile = await _repo.GetNannyProfileAsync(v.NannyProfileId);
@@ -137,8 +164,9 @@ public class VerificationRequestService
         {
             nannyProfile.VerificationStatus = (int)(Enums.NannyVerificationRequestStatus)request.Action; // 1=Approved, 2=Rejected
             nannyProfile.VerifiedAt = request.Action == (int)Enums.NannyVerificationRequestStatus.Approved ? DateTime.UtcNow : null;
-            nannyProfile.VerifiedBy = request.Action == (int)Enums.NannyVerificationRequestStatus.Approved ? request.ReviewedBy : null;
+            nannyProfile.VerifiedBy = request.Action == (int)Enums.NannyVerificationRequestStatus.Approved ? moderatorId : null;
             nannyProfile.UpdatedAt  = DateTime.UtcNow;
+            nannyProfile.UpdatedBy  = moderatorId;
         }
 
         await _repo.SaveChangesAsync();

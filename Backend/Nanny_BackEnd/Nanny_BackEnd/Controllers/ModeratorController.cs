@@ -123,7 +123,11 @@ public class ModeratorController : ControllerBase
     [HttpPatch("verifications/{id:guid}/review")]
     public async Task<IActionResult> ReviewVerification(Guid id, [FromBody] ReviewVerificationRequest request)
     {
-        var result = await _verificationService.ReviewAsync(id, request);
+        var moderatorId = getCurrentUserId();
+        if (!moderatorId.HasValue)
+            return Unauthorized(new { success = false, message = "Khong xac dinh duoc moderator." });
+
+        var result = await _verificationService.ReviewAsync(id, moderatorId.Value, request);
 
         if (!result.Success)
             return StatusCode(result.StatusCode, new { success = false, message = result.Message });

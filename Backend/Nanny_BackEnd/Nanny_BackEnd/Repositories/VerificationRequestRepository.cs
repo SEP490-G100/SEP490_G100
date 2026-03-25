@@ -56,6 +56,11 @@ public class VerificationRequestRepository
         return await _db.VerificationRequests
             .Include(v => v.NannyProfile)
                 .ThenInclude(np => np.User)
+            .Include(v => v.NannyProfile)
+                .ThenInclude(np => np.NannySkills.Where(ns => !ns.IsDeleted))
+                    .ThenInclude(ns => ns.Skill)
+            .Include(v => v.NannyProfile)
+                .ThenInclude(np => np.NannyCertificates.Where(c => !c.IsDeleted))
             .Include(v => v.VerificationDocuments.Where(d => !d.IsDeleted))
             .FirstOrDefaultAsync(v => v.Id == id && !v.IsDeleted);
     }
