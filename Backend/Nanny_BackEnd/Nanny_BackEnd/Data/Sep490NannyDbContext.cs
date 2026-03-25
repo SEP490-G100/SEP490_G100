@@ -385,13 +385,21 @@ public partial class Sep490NannyDbContext : DbContext
         {
             entity.HasIndex(e => e.ChildProfileId, "IX_JobPostings_ChildProfileId").HasFilter("([IsDeleted]=(0))");
 
+            entity.HasIndex(e => new { e.Latitude, e.Longitude }, "IX_JobPostings_Coordinates").HasFilter("([IsDeleted]=(0) AND [Status]=(1))");
+
+            entity.HasIndex(e => new { e.City, e.District }, "IX_JobPostings_Location").HasFilter("([IsDeleted]=(0))");
+
             entity.HasIndex(e => e.ParentProfileId, "IX_JobPostings_ParentProfileId").HasFilter("([IsDeleted]=(0))");
+
+            entity.HasIndex(e => new { e.SalaryMin, e.SalaryMax }, "IX_JobPostings_Salary").HasFilter("([IsDeleted]=(0))");
 
             entity.HasIndex(e => new { e.City, e.District, e.CreatedAt }, "IX_JobPostings_Search")
                 .IsDescending(false, false, true)
                 .HasFilter("([IsDeleted]=(0))");
 
             entity.HasIndex(e => new { e.Status, e.ModerationStatus }, "IX_JobPostings_Status").HasFilter("([IsDeleted]=(0))");
+
+            entity.HasIndex(e => new { e.Status, e.ModerationStatus, e.IsDeleted }, "IX_JobPostings_StatusFilter").HasFilter("([IsDeleted]=(0) AND [Status]=(1))");
 
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.City).HasMaxLength(100);
@@ -420,6 +428,8 @@ public partial class Sep490NannyDbContext : DbContext
 
         modelBuilder.Entity<JobRequirement>(entity =>
         {
+            entity.HasIndex(e => new { e.JobPostingId, e.IsDeleted }, "IX_JobRequirements_JobPosting").HasFilter("([IsDeleted]=(0))");
+
             entity.HasIndex(e => new { e.JobPostingId, e.SkillId }, "UQ_JobRequirements_JobPostingId_SkillId")
                 .IsUnique()
                 .HasFilter("([IsDeleted]=(0))");
@@ -440,6 +450,8 @@ public partial class Sep490NannyDbContext : DbContext
 
         modelBuilder.Entity<JobScheduleRequirement>(entity =>
         {
+            entity.HasIndex(e => new { e.JobPostingId, e.DayOfWeek, e.TimeSlot }, "IX_JobScheduleRequirements_Lookup").HasFilter("([IsDeleted]=(0))");
+
             entity.HasIndex(e => new { e.JobPostingId, e.DayOfWeek, e.TimeSlot }, "UQ_JobScheduleRequirements").IsUnique();
 
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
@@ -473,6 +485,8 @@ public partial class Sep490NannyDbContext : DbContext
 
         modelBuilder.Entity<NannyAvailability>(entity =>
         {
+            entity.HasIndex(e => new { e.NannyProfileId, e.DayOfWeek, e.TimeSlot }, "IX_NannyAvailabilities_Lookup").HasFilter("([IsDeleted]=(0) AND [IsAvailable]=(1))");
+
             entity.HasIndex(e => new { e.NannyProfileId, e.DayOfWeek, e.TimeSlot }, "UQ_NannyAvailabilities_NannyProfileId_DayOfWeek_TimeSlot")
                 .IsUnique()
                 .HasFilter("([IsDeleted]=(0))");
@@ -507,6 +521,12 @@ public partial class Sep490NannyDbContext : DbContext
 
             entity.HasIndex(e => new { e.ExpectedSalaryMin, e.ExpectedSalaryMax }, "IX_NannyProfiles_ExpectedSalary").HasFilter("([IsDeleted]=(0))");
 
+            entity.HasIndex(e => new { e.ExpectedSalaryMin, e.ExpectedSalaryMax }, "IX_NannyProfiles_Salary").HasFilter("([IsDeleted]=(0))");
+
+            entity.HasIndex(e => e.UserId, "IX_NannyProfiles_UserId").HasFilter("([IsDeleted]=(0))");
+
+            entity.HasIndex(e => new { e.VerificationStatus, e.IsDeleted }, "IX_NannyProfiles_VerificationFilter").HasFilter("([IsDeleted]=(0))");
+
             entity.HasIndex(e => e.VerificationStatus, "IX_NannyProfiles_VerificationStatus").HasFilter("([IsDeleted]=(0))");
 
             entity.HasIndex(e => e.UserId, "UQ_NannyProfiles_UserId")
@@ -531,6 +551,8 @@ public partial class Sep490NannyDbContext : DbContext
 
         modelBuilder.Entity<NannySkill>(entity =>
         {
+            entity.HasIndex(e => new { e.NannyProfileId, e.IsDeleted }, "IX_NannySkills_Profile").HasFilter("([IsDeleted]=(0))");
+
             entity.HasIndex(e => new { e.NannyProfileId, e.SkillId }, "UQ_NannySkills_NannyProfileId_SkillId")
                 .IsUnique()
                 .HasFilter("([IsDeleted]=(0))");
@@ -735,6 +757,8 @@ public partial class Sep490NannyDbContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
+            entity.HasIndex(e => new { e.Latitude, e.Longitude }, "IX_Users_Coordinates").HasFilter("([IsDeleted]=(0))");
+
             entity.HasIndex(e => new { e.City, e.District }, "IX_Users_Location");
 
             entity.HasIndex(e => e.Status, "IX_Users_Status").HasFilter("([IsDeleted]=(0))");

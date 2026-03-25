@@ -45,6 +45,10 @@ public partial class NannyProfile
 
     public bool IsDeleted { get; set; }
 
+    public string? Embedding { get; set; }
+
+    public DateTime? EmbeddingUpdatedAt { get; set; }
+
     public virtual ICollection<ContactRequest> ContactRequests { get; set; } = new List<ContactRequest>();
 
     public virtual ICollection<FavoriteJobPosting> FavoriteJobPostings { get; set; } = new List<FavoriteJobPosting>();

@@ -168,6 +168,12 @@ builder.Services.AddScoped<FaqService>();
 builder.Services.AddScoped<BlogCategoryService>();
 builder.Services.AddScoped<BlogService>();
 
+// Recommendation feature
+builder.Services.Configure<AzureOpenAIOptions>(builder.Configuration.GetSection("AzureOpenAI"));
+builder.Services.AddScoped<RecommendationRepository>();
+builder.Services.AddScoped<EmbeddingService>();
+builder.Services.AddScoped<RecommendationService>();
+
 
 // Background Services
 if (!builder.Environment.IsDevelopment())

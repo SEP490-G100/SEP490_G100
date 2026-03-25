@@ -14,15 +14,17 @@
 }
 
 .nanny-toolbar {
-    display: grid;
-    grid-template-columns: minmax(280px, 1fr) auto;
-    gap: 16px;
+    display: flex;
     align-items: center;
+    gap: 12px;
     padding: 16px 22px 12px;
+    flex-wrap: wrap;
 }
 
 .nanny-toolbar__search {
     position: relative;
+    flex: 1;
+    min-width: 220px;
 }
 
 .nanny-toolbar__search span {
@@ -812,11 +814,17 @@
 
 @media (max-width: 1280px) {
     .nanny-toolbar {
-        grid-template-columns: 1fr;
+        flex-wrap: wrap;
+    }
+
+    .nanny-toolbar__search {
+        order: 1;
+        flex: 1 1 100%;
     }
 
     .nanny-toolbar__actions {
-        justify-self: start;
+        order: 2;
+        width: 100%;
     }
 }
 
