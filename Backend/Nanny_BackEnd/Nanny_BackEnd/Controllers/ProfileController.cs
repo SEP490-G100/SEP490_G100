@@ -75,6 +75,21 @@ public class ProfileController : ControllerBase
         }
     }
 
+    [NonAction]
+    public async Task<IActionResult> AddCertificate([FromBody] CreateNannyCertificateRequest request)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            await _profileService.AddNannyCertificateAsync(userId, request);
+            return Ok(new { success = true, message = "Thêm chứng chỉ thành công." });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(Fail(ex.Message));
+        }
+    }
+
     /// <summary>
     /// Get all child profiles (Parent only)
     /// </summary>
