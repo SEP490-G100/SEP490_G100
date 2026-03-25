@@ -77,16 +77,16 @@
                         <span class="material-icons-round text-orange-500 text-2xl">badge</span>
                         <div class="min-w-0 flex-1">
                             <h3 class="text-lg font-bold text-gray-900 dark:text-white">1. Upload căn cước công dân <span class="text-red-500">*</span></h3>
-                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Tải ảnh rõ nét của căn cước công dân. Bạn có thể chọn nhiều ảnh nếu cần mặt trước và mặt sau.</p>
+                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Tải ảnh hoặc file PDF rõ nét của căn cước công dân. Bạn có thể chọn nhiều file nếu cần mặt trước và mặt sau.</p>
                         </div>
                     </div>
                     <div class="mt-4 relative border-2 border-dashed border-orange-200 dark:border-gray-600 rounded-xl bg-white/70 dark:bg-gray-700/30 p-8 text-center hover:bg-orange-50 dark:hover:bg-gray-700 transition-colors group cursor-pointer"
                          onclick="document.getElementById('IdentityCardFiles').click()">
-                        <input asp-for="IdentityCardFiles" id="IdentityCardFiles" multiple accept=".jpg,.jpeg,.png,.webp" class="hidden"
+                        <input asp-for="IdentityCardFiles" id="IdentityCardFiles" multiple accept=".jpg,.jpeg,.png,.webp,.pdf" class="hidden"
                                onchange="handleFileSelect('IdentityCardFiles', 'identityCardPreview', 'identityCardError', event)" />
                         <span class="material-icons-round text-4xl text-orange-400 dark:text-gray-400 group-hover:scale-110 transition-transform mb-3 block">cloud_upload</span>
-                        <p class="font-semibold text-gray-700 dark:text-gray-300">Nhấn để chọn ảnh CCCD</p>
-                        <p class="text-xs text-gray-500 mt-2">Chỉ nhận file ảnh JPG, JPEG, PNG, WEBP. Tối đa 5MB mỗi ảnh.</p>
+                        <p class="font-semibold text-gray-700 dark:text-gray-300">Nhấn để chọn file CCCD</p>
+                        <p class="text-xs text-gray-500 mt-2">Chỉ nhận file ảnh JPG, JPEG, PNG, WEBP hoặc PDF. Tối đa 5MB mỗi file.</p>
                     </div>
                     <span asp-validation-for="IdentityCardFiles" class="mt-3 block text-sm text-red-600"></span>
                     <p id="identityCardError" class="mt-2 text-sm text-red-600 hidden"></p>
@@ -98,17 +98,17 @@
                         <span class="material-icons-round text-orange-500 text-2xl">school</span>
                         <div class="min-w-0 flex-1">
                             <h3 class="text-lg font-bold text-gray-900 dark:text-white">2. Upload bằng cấp và chứng chỉ <span class="text-red-500">*</span></h3>
-                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Chỉ được upload file ảnh và mỗi ảnh phải không vượt quá 5MB.</p>
+                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Chỉ được upload file ảnh hoặc PDF và mỗi file phải không vượt quá 5MB.</p>
                         </div>
                     </div>
                     <div class="mt-4 relative border-2 border-dashed border-orange-200 dark:border-gray-600 rounded-xl bg-white/70 dark:bg-gray-700/30 p-8 text-center hover:bg-orange-50 dark:hover:bg-gray-700 transition-colors group cursor-pointer"
                          onclick="document.getElementById('CertificateFiles').click()">
-                        <input asp-for="CertificateFiles" id="CertificateFiles" multiple accept=".jpg,.jpeg,.png,.webp" class="hidden"
+                        <input asp-for="CertificateFiles" id="CertificateFiles" multiple accept=".jpg,.jpeg,.png,.webp,.pdf" class="hidden"
                                onchange="handleFileSelect('CertificateFiles', 'certificatePreview', 'certificateError', event)" />
                         <span class="material-icons-round text-4xl text-orange-400 dark:text-gray-400 group-hover:scale-110 transition-transform mb-3 block">workspace_premium</span>
-                        <p class="font-semibold text-gray-700 dark:text-gray-300">Nhấn để chọn ảnh bằng cấp, chứng chỉ</p>
-                        <p class="text-xs text-gray-500 mt-2">Nếu file không đúng định dạng ảnh sẽ báo "Bạn phải upload file định dạng ảnh, jpg ...".</p>
-                        <p class="text-xs text-gray-500">Nếu ảnh lớn hơn 5MB sẽ báo "Bạn chỉ đc upload file ảnh kích thước tối đa 5mb".</p>
+                        <p class="font-semibold text-gray-700 dark:text-gray-300">Nhấn để chọn file bằng cấp, chứng chỉ</p>
+                        <p class="text-xs text-gray-500 mt-2">Nếu file không đúng định dạng sẽ báo "Bạn phải upload file định dạng ảnh hoặc pdf."</p>
+                        <p class="text-xs text-gray-500">Nếu file lớn hơn 5MB sẽ báo "Bạn chỉ đc upload file kích thước tối đa 5mb."</p>
                     </div>
                     <span asp-validation-for="CertificateFiles" class="mt-3 block text-sm text-red-600"></span>
                     <p id="certificateError" class="mt-2 text-sm text-red-600 hidden"></p>
@@ -120,16 +120,16 @@
                         <span class="material-icons-round text-orange-500 text-2xl">medical_services</span>
                         <div class="min-w-0 flex-1">
                             <h3 class="text-lg font-bold text-gray-900 dark:text-white">3. Upload giấy khám sức khỏe</h3>
-                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Mục này hỗ trợ bổ sung thêm tài liệu sức khỏe để hồ sơ đầy đủ hơn.</p>
+                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Mục này hỗ trợ bổ sung thêm ảnh hoặc file PDF giấy khám sức khỏe để hồ sơ đầy đủ hơn.</p>
                         </div>
                     </div>
                     <div class="mt-4 relative border-2 border-dashed border-orange-200 dark:border-gray-600 rounded-xl bg-white/70 dark:bg-gray-700/30 p-8 text-center hover:bg-orange-50 dark:hover:bg-gray-700 transition-colors group cursor-pointer"
                          onclick="document.getElementById('HealthCertificateFiles').click()">
-                        <input asp-for="HealthCertificateFiles" id="HealthCertificateFiles" multiple accept=".jpg,.jpeg,.png,.webp" class="hidden"
+                        <input asp-for="HealthCertificateFiles" id="HealthCertificateFiles" multiple accept=".jpg,.jpeg,.png,.webp,.pdf" class="hidden"
                                onchange="handleFileSelect('HealthCertificateFiles', 'healthCertificatePreview', 'healthCertificateError', event)" />
                         <span class="material-icons-round text-4xl text-orange-400 dark:text-gray-400 group-hover:scale-110 transition-transform mb-3 block">health_and_safety</span>
-                        <p class="font-semibold text-gray-700 dark:text-gray-300">Nhấn để chọn ảnh giấy khám sức khỏe</p>
-                        <p class="text-xs text-gray-500 mt-2">Chỉ nhận file ảnh JPG, JPEG, PNG, WEBP. Tối đa 5MB mỗi ảnh.</p>
+                        <p class="font-semibold text-gray-700 dark:text-gray-300">Nhấn để chọn file giấy khám sức khỏe</p>
+                        <p class="text-xs text-gray-500 mt-2">Chỉ nhận file ảnh JPG, JPEG, PNG, WEBP hoặc PDF. Tối đa 5MB mỗi file.</p>
                     </div>
                     <span asp-validation-for="HealthCertificateFiles" class="mt-3 block text-sm text-red-600"></span>
                     <p id="healthCertificateError" class="mt-2 text-sm text-red-600 hidden"></p>
@@ -155,7 +155,7 @@
             HealthCertificateFiles: new DataTransfer()
         };
 
-        const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp"];
+        const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp", ".pdf"];
         const maxFileSize = 5 * 1024 * 1024;
 
         function showError(errorId, message) {
@@ -195,6 +195,27 @@
             const files = store[inputId].files;
 
             Array.from(files).forEach((file, index) => {
+                const isPdf = (file.name || "").toLowerCase().endsWith(".pdf");
+
+                if (isPdf) {
+                    const div = document.createElement("div");
+                    div.className = "relative aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm group bg-red-50 dark:bg-gray-800/60";
+                    div.innerHTML = `
+                        <div class="w-full h-full flex flex-col items-center justify-center p-3 text-center">
+                            <span class="material-icons-round text-4xl text-red-500 mb-2">picture_as_pdf</span>
+                            <span class="text-xs font-semibold text-gray-700 dark:text-gray-200 break-all line-clamp-3" title="${file.name}">${file.name}</span>
+                        </div>
+                        <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-2">
+                            <span class="text-white text-xs font-semibold text-center break-all mb-2 line-clamp-2" title="${file.name}">${file.name}</span>
+                            <button type="button" onclick="event.stopPropagation(); removeFile('${inputId}', ${index}, '${previewId}')" class="bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 transition-colors shadow flex items-center justify-center">
+                                <span class="material-icons-round text-sm block leading-none">delete</span>
+                            </button>
+                        </div>
+                    `;
+                    previewContainer.appendChild(div);
+                    return;
+                }
+
                 const reader = new FileReader();
                 reader.onload = function (e) {
                     const div = document.createElement("div");
@@ -217,14 +238,16 @@
         function validateFile(file) {
             const lowerName = (file.name || "").toLowerCase();
             const isValidExtension = allowedExtensions.some(extension => lowerName.endsWith(extension));
-            const isImageContentType = !file.type || file.type.startsWith("image/");
+            const isSupportedContentType = !file.type
+                || file.type.startsWith("image/")
+                || file.type === "application/pdf";
 
-            if (!isValidExtension || !isImageContentType) {
-                return "Bạn phải upload file định dạng ảnh, jpg ...";
+            if (!isValidExtension || !isSupportedContentType) {
+                return "Bạn phải upload file định dạng ảnh hoặc pdf.";
             }
 
             if (file.size > maxFileSize) {
-                return "Bạn chỉ đc upload file ảnh kích thước tối đa 5mb";
+                return "Bạn chỉ đc upload file kích thước tối đa 5mb.";
             }
 
             return "";
@@ -254,7 +277,6 @@
 
             input.files = store[inputId].files;
             renderPreviews(inputId, previewId);
-            input.value = "";
         }
     </script>
 }

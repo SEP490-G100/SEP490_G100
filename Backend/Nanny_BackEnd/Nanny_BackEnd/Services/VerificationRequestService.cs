@@ -1,4 +1,5 @@
 using Nanny_BackEnd.DTOs.Verification;
+using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Repositories;
 
 namespace Nanny_BackEnd.Services;
@@ -197,7 +198,9 @@ public class VerificationRequestService
 
         foreach (var doc in request.Documents)
         {
-            var documentType = doc.DocumentType is >= 1 and <= 4 ? doc.DocumentType : 1;
+            var documentType = Enum.IsDefined(typeof(VerificationDocumentType), doc.DocumentType)
+                ? doc.DocumentType
+                : (int)VerificationDocumentType.IdentityCard;
             verificationReq.VerificationDocuments.Add(new Nanny_BackEnd.Models.VerificationDocument
             {
                 Id = Guid.NewGuid(),

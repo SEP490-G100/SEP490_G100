@@ -1,5 +1,7 @@
 namespace WebSite.Models.Verification;
 
+using WebSite.Enums;
+
 public class VerificationRequestListResponse
 {
     public List<VerificationRequestListDto> Items { get; set; } = new();
@@ -89,19 +91,17 @@ public class VerificationDocumentDto
 
     public string TypeLabel => DocumentType switch
     {
-        1 => "National ID",
-        2 => "Degree / Certificate",
-        3 => "Background Check",
-        4 => "Health Certificate",
+        (int)VerificationDocumentType.IdentityCard => "National ID",
+        (int)VerificationDocumentType.DegreeCertificate => "Degree / Certificate",
+        (int)VerificationDocumentType.HealthCertificate => "Health Certificate",
         _ => "Document"
     };
 
     public string TypeIcon => DocumentType switch
     {
-        1 => "badge",
-        2 => "school",
-        3 => "verified_user",
-        4 => "medical_services",
+        (int)VerificationDocumentType.IdentityCard => "badge",
+        (int)VerificationDocumentType.DegreeCertificate => "school",
+        (int)VerificationDocumentType.HealthCertificate => "medical_services",
         _ => "description"
     };
 

@@ -4,6 +4,7 @@ using System.Text.Json;
 using Azure;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using WebSite.Enums;
 using WebSite.Models;
 using WebSite.Models.Profile;
 using WebSite.Models.Verification;
@@ -17,14 +18,15 @@ public class NannyVerificationRequestController : Controller
     private readonly HttpClient _http;
     private readonly IVerificationDocumentStorageService _storageService;
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
-    private static readonly HashSet<string> AllowedImageExtensions = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly HashSet<string> AllowedDocumentExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".jpg",
         ".jpeg",
         ".png",
-        ".webp"
+        ".webp",
+        ".pdf"
     };
-    private const long MaxImageSizeInBytes = 5 * 1024 * 1024;
+    private const long MaxDocumentSizeInBytes = 5 * 1024 * 1024;
 
     public NannyVerificationRequestController(
         IHttpClientFactory httpFactory,
@@ -109,9 +111,9 @@ public class NannyVerificationRequestController : Controller
         var docs = new List<object>();
         try
         {
-            await AddDocumentsAsync(model.IdentityCardFiles, 1, docs);
-            await AddDocumentsAsync(model.CertificateFiles, 2, docs);
-            await AddDocumentsAsync(model.HealthCertificateFiles, 4, docs);
+            await AddDocumentsAsync(model.IdentityCardFiles, VerificationDocumentType.IdentityCard, docs);
+            await AddDocumentsAsync(model.CertificateFiles, VerificationDocumentType.DegreeCertificate, docs);
+            await AddDocumentsAsync(model.HealthCertificateFiles, VerificationDocumentType.HealthCertificate, docs);
         }
         catch (InvalidOperationException ex)
         {
@@ -195,21 +197,21 @@ public class NannyVerificationRequestController : Controller
 
         foreach (var file in files)
         {
-            if (!IsSupportedImage(file))
+            if (!IsSupportedDocument(file))
             {
-                ModelState.AddModelError(fieldName, "Bạn phải upload file định dạng ảnh, jpg ...");
+                ModelState.AddModelError(fieldName, "Bạn phải upload file định dạng ảnh hoặc pdf.");
                 return;
             }
 
-            if (file.Length > MaxImageSizeInBytes)
+            if (file.Length > MaxDocumentSizeInBytes)
             {
-                ModelState.AddModelError(fieldName, "Bạn chỉ đc upload file ảnh kích thước tối đa 5mb");
+                ModelState.AddModelError(fieldName, "Bạn chỉ đc upload file kích thước tối đa 5mb.");
                 return;
             }
         }
     }
 
-    private static bool IsSupportedImage(IFormFile file)
+    private static bool IsSupportedDocument(IFormFile file)
     {
         if (file == null || string.IsNullOrWhiteSpace(file.FileName))
         {
@@ -217,18 +219,19 @@ public class NannyVerificationRequestController : Controller
         }
 
         var extension = Path.GetExtension(file.FileName);
-        if (!AllowedImageExtensions.Contains(extension))
+        if (!AllowedDocumentExtensions.Contains(extension))
         {
             return false;
         }
 
         return string.IsNullOrWhiteSpace(file.ContentType)
-            || file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
+            || file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(file.ContentType, "application/pdf", StringComparison.OrdinalIgnoreCase);
     }
 
     private async Task AddDocumentsAsync(
         List<IFormFile>? files,
-        int documentType,
+        VerificationDocumentType documentType,
         List<object> docs)
     {
         if (files == null || files.Count == 0)
@@ -242,7 +245,7 @@ public class NannyVerificationRequestController : Controller
 
             docs.Add(new
             {
-                DocumentType = documentType,
+                DocumentType = (int)documentType,
                 DocumentUrl = documentUrl,
                 FileName = file.FileName,
                 FileSize = (int)file.Length

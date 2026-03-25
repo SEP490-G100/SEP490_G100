@@ -1,13 +1,14 @@
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Microsoft.Extensions.Options;
+using WebSite.Enums;
 using WebSite.Models.Storage;
 
 namespace WebSite.Services;
 
 public interface IVerificationDocumentStorageService
 {
-    Task<string> UploadAsync(IFormFile file, int documentType, CancellationToken cancellationToken = default);
+    Task<string> UploadAsync(IFormFile file, VerificationDocumentType documentType, CancellationToken cancellationToken = default);
 }
 
 public class AzureBlobVerificationDocumentStorageService : IVerificationDocumentStorageService
@@ -19,7 +20,7 @@ public class AzureBlobVerificationDocumentStorageService : IVerificationDocument
         _options = options.Value;
     }
 
-    public async Task<string> UploadAsync(IFormFile file, int documentType, CancellationToken cancellationToken = default)
+    public async Task<string> UploadAsync(IFormFile file, VerificationDocumentType documentType, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(_options.ConnectionString))
         {
@@ -52,11 +53,11 @@ public class AzureBlobVerificationDocumentStorageService : IVerificationDocument
         return blobClient.Uri.ToString();
     }
 
-    private static string GetFolderName(int documentType) => documentType switch
+    private static string GetFolderName(VerificationDocumentType documentType) => documentType switch
     {
-        1 => "identity-card",
-        2 => "degree-certificate",
-        4 => "health-certificate",
+        VerificationDocumentType.IdentityCard => "identity-card",
+        VerificationDocumentType.DegreeCertificate => "degree-certificate",
+        VerificationDocumentType.HealthCertificate => "health-certificate",
         _ => "other"
     };
 
@@ -73,6 +74,7 @@ public class AzureBlobVerificationDocumentStorageService : IVerificationDocument
             ".jpeg" => "image/jpeg",
             ".png" => "image/png",
             ".webp" => "image/webp",
+            ".pdf" => "application/pdf",
             _ => "application/octet-stream"
         };
     }
