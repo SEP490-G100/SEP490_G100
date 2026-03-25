@@ -8,6 +8,8 @@
     var hasSpecialNeeds = !string.IsNullOrWhiteSpace(Model.SpecialNeeds);
     var hasSkills = Model.Skills.Any();
     var hasSchedule = Model.ScheduleSlots.Any();
+    var dayLabels = new[] { "Mo", "Tu", "We", "Th", "Fr", "Sa", "Su" };
+    var rowLabels = new[] { "Morning", "Afternoon", "Evening", "Night" };
 }
 
 <div class="flex items-center gap-2 text-sm text-gray-400 mb-6 fade-in-up">
@@ -185,25 +187,30 @@
                 }
                 else
                 {
-                    <div class="space-y-2">
-                        @foreach (var slot in Model.ScheduleSlots)
-                        {
-                            var dayLabel = slot.DayOfWeek switch
+                    var selectedSet = new HashSet<string>(
+                        Model.ScheduleSlots.Select(slot => $"{slot.DayOfWeek}-{slot.TimeSlot}")
+                    );
+
+                    <div class="schedule-grid-card">
+                        <div class="schedule-grid schedule-grid--readonly">
+                            <div></div>
+                            @foreach (var dayLabel in dayLabels)
                             {
-                                1 => "Monday",
-                                2 => "Tuesday",
-                                3 => "Wednesday",
-                                4 => "Thursday",
-                                5 => "Friday",
-                                6 => "Saturday",
-                                7 => "Sunday",
-                                _ => $"Day {slot.DayOfWeek}"
-                            };
-                            <div class="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 flex items-center justify-between gap-3">
-                                <span class="font-semibold text-gray-700">@dayLabel</span>
-                                <span class="text-sm text-gray-500">Slot @slot.TimeSlot</span>
-                            </div>
-                        }
+                                <div class="schedule-col-label">@dayLabel</div>
+                            }
+
+                            @for (var timeSlot = 0; timeSlot < rowLabels.Length; timeSlot++)
+                            {
+                                <div class="schedule-row-label">@rowLabels[timeSlot]</div>
+                                @for (var dayOfWeek = 0; dayOfWeek < dayLabels.Length; dayOfWeek++)
+                                {
+                                    var active = selectedSet.Contains($"{dayOfWeek}-{timeSlot}");
+                                    <div class="schedule-cell @(active ? "active" : "")" aria-hidden="true">
+                                        <span class="schedule-check">@(active ? Html.Raw("&#10003;") : Html.Raw(""))</span>
+                                    </div>
+                                }
+                            }
+                        </div>
                     </div>
                 }
             </div>
@@ -218,7 +225,6 @@
             <form asp-action="ReviewJobPosting" method="post">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" value="@Model.Id" />
-                <input type="hidden" name="returnToDetail" value="true" />
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
                     <label class="decision-card group">
@@ -261,5 +267,91 @@
     .decision-card:last-child input:checked + .inner {
         border-color: #F87171;
         background-color: #FEF2F2;
+    }
+
+    .schedule-grid-card {
+        border: 1px solid #fed7aa;
+        border-radius: 28px;
+        padding: 1.5rem 1rem;
+        background: linear-gradient(180deg, #ffffff 0%, #fffaf5 100%);
+        overflow-x: auto;
+    }
+
+    .schedule-grid {
+        min-width: 560px;
+        display: grid;
+        grid-template-columns: 140px repeat(7, minmax(52px, 1fr));
+        gap: 1rem 0.85rem;
+        align-items: center;
+    }
+
+    .schedule-col-label {
+        text-align: center;
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: #334155;
+    }
+
+    .schedule-row-label {
+        font-size: 1rem;
+        font-weight: 800;
+        color: #334155;
+        white-space: nowrap;
+    }
+
+    .schedule-cell {
+        width: 52px;
+        height: 52px;
+        margin: 0 auto;
+        border-radius: 999px;
+        border: 2px solid #dbe4f0;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 18px rgba(148, 163, 184, 0.08);
+    }
+
+    .schedule-cell.active {
+        border-color: #f97316;
+        background: linear-gradient(180deg, #fb923c 0%, #f97316 100%);
+        box-shadow: 0 16px 28px rgba(249, 115, 22, 0.28);
+    }
+
+    .schedule-check {
+        font-size: 1.6rem;
+        line-height: 1;
+        font-weight: 800;
+        color: transparent;
+    }
+
+    .schedule-cell.active .schedule-check {
+        color: #ffffff;
+    }
+
+    @@media (max-width: 640px) {
+        .schedule-grid-card {
+            padding: 1rem 0.85rem;
+        }
+
+        .schedule-grid {
+            min-width: 510px;
+            grid-template-columns: 118px repeat(7, minmax(44px, 1fr));
+            gap: 0.75rem 0.6rem;
+        }
+
+        .schedule-col-label,
+        .schedule-row-label {
+            font-size: 0.95rem;
+        }
+
+        .schedule-cell {
+            width: 44px;
+            height: 44px;
+        }
+
+        .schedule-check {
+            font-size: 1.35rem;
+        }
     }
 </style>

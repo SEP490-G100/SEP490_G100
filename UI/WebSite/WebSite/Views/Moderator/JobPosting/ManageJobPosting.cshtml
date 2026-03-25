@@ -2,7 +2,7 @@
 @model  JobPostingListResponse
 @{
     Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
-    ViewData["Title"] = "Manage Job Postings";
+    ViewData["Title"] = "Job Posting Management";
 
     var currentSearch = ViewBag.Search as string ?? "";
     var currentStatus = ViewBag.Status as string ?? "";
@@ -12,16 +12,17 @@
     var items = Model?.Items ?? new List<WebSite.Models.Search.SearchJobResponse>();
 }
 
-<!-- ====================================================
-     PAGE HEADER
-     ==================================================== -->
+<!-- PAGE HEADER -->
 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
     <div>
-        <span class="section-label">Job Management</span>
+        <span class="section-label">Job Posting Management</span>
         <h1 class="page-title mt-2">
-            Manage <span class="gradient-text">Job Postings</span>
+            Parent <span class="gradient-text">Job Postings</span>
         </h1>
-        <p class="page-subtitle">Review, approve or reject job postings from parents.</p>
+        <p class="page-subtitle">Review parent submissions and open each posting in a dedicated detail page before making a decision.</p>
+    </div>
+    <div class="flex gap-2 text-sm">
+        <span class="badge badge-pending px-3 py-1.5">@(Model?.TotalCount ?? 0) Total</span>
     </div>
 </div>
 
@@ -41,9 +42,7 @@
     </div>
 }
 
-<!-- ====================================================
-     FILTER / SEARCH FORM
-     ==================================================== -->
+<!-- FILTER / SEARCH FORM -->
 <form method="get" action="/Moderator/ManageJobPosting" id="filterForm">
     <div class="content-card p-4 mb-5 fade-in-up" style="animation-delay:.05s;">
         <div class="flex flex-col md:flex-row gap-3">
@@ -62,7 +61,7 @@
                 <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">visibility</span>
                 <select name="status" onchange="this.form.submit()"
                         class="search-input md:w-36 !pl-9 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
-                    <option value="">All statuses</option>
+                    <option value="">All Statuses</option>
                     <option value="1" selected="@(currentStatus == "1" ? "selected" : null)">Public</option>
                     <option value="2" selected="@(currentStatus == "2" ? "selected" : null)">Hidden</option>
                 </select>
@@ -73,7 +72,7 @@
                 <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">gavel</span>
                 <select name="moderationStatus" onchange="this.form.submit()"
                         class="search-input md:w-44 !pl-9 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
-                    <option value="">Moderation</option>
+                    <option value="">All Moderation</option>
                     <option value="0" selected="@(currentModStatus == "0" ? "selected" : null)">Pending</option>
                     <option value="1" selected="@(currentModStatus == "1" ? "selected" : null)">Rejected</option>
                     <option value="2" selected="@(currentModStatus == "2" ? "selected" : null)">Approved</option>
@@ -89,9 +88,7 @@
     </div>
 </form>
 
-<!-- ====================================================
-     JOB TABLE
-     ==================================================== -->
+<!-- TABLE -->
 <div class="content-card overflow-hidden fade-in-up" style="animation-delay:.1s;">
 
     <div class="card-header">
@@ -119,7 +116,8 @@
                     <tr>
                         <td colspan="6" class="text-center py-16 text-gray-400">
                             <span class="material-icons-round text-5xl mb-3 block text-gray-200">work_outline</span>
-                            <p class="font-semibold text-gray-400">No job postings found matching your criteria.</p>
+                            <p class="font-semibold text-gray-400">No job postings found.</p>
+                            <p class="text-xs text-gray-300 mt-1">Try adjusting the filter above.</p>
                         </td>
                     </tr>
                 }
@@ -139,16 +137,28 @@
                         _ => "Unknown"
                     };
 
-                    <tr>
+                    <tr class="account-row">
                         <td class="text-gray-300 text-xs font-mono">@rowNum</td>
                         <td>
-                            <div class="flex flex-col">
+                            <div class="flex flex-col gap-1">
                                 <span class="font-bold text-gray-800 line-clamp-1">@item.Title</span>
-                                <span class="text-[10px] text-gray-400 font-mono">ID: @item.Id</span>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="text-[10px] text-gray-400 font-mono">ID: @item.Id</span>
+                                    @if (item.FeaturedBadge)
+                                    {
+                                        <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2.5 py-1 text-[10px] font-semibold text-amber-600">
+                                            <span class="material-icons-round text-xs">workspace_premium</span>
+                                            Featured
+                                        </span>
+                                    }
+                                </div>
                             </div>
                         </td>
                         <td>
-                            <span class="text-gray-600 text-sm font-medium">@item.ParentName</span>
+                            <div class="flex flex-col">
+                                <span class="text-gray-700 text-sm font-semibold">@item.ParentName</span>
+                                <span class="text-xs text-gray-400">@(string.IsNullOrWhiteSpace(item.City) ? "No city" : item.City)</span>
+                            </div>
                         </td>
                         <td>
                             @if (item.Status == 1) { <span class="badge badge-active">Public</span> }
@@ -160,9 +170,9 @@
                         <td>
                             <div class="flex items-center justify-center gap-1.5">
                                 <a href="/Moderator/ViewJobPostingDetail/@item.Id"
-                                   class="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all text-xs font-bold flex items-center gap-1">
+                                   class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-orange-50 text-orange-600 border border-orange-200 hover:bg-orange-100 transition-all">
                                     <span class="material-icons-round text-sm">visibility</span>
-                                    View Detail
+                                    Review
                                 </a>
                             </div>
                         </td>

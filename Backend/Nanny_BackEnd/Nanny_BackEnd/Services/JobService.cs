@@ -277,6 +277,7 @@ public class JobService
         job.ModerationNote = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
         job.ModeratedAt = nowUtc;
         job.ModeratedBy = moderatorUserId;
+        job.UpdatedBy = moderatorUserId;
         job.PublishedAt = approved && job.Status == (int)JobPostingStatus.Public ? nowUtc : null;
         job.ClosedAt = approved
             ? (job.Status == (int)JobPostingStatus.Hidden ? nowUtc : null)
@@ -664,6 +665,7 @@ public class JobService
         job.ModerationNote = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
         job.ModeratedAt = nowUtc;
         job.ModeratedBy = moderatorUserId;
+        job.UpdatedBy = moderatorUserId;
 
         if (moderationStatus == (int)JobPostingModerationStatus.Approved)
         {
