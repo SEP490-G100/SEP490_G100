@@ -990,9 +990,36 @@ public class ModeratorController : Controller
         return View("~/Views/Moderator/JobPosting/ManageJobPosting.cshtml", new JobPostingListResponse());
     }
 
+    [HttpGet]
+    public async Task<IActionResult> ViewJobPostingDetail(Guid id)
+    {
+        var token = HttpContext.Session.GetString("AccessToken");
+        _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        try
+        {
+            var response = await _http.GetAsync($"/api/Moderator/job-postings/{id}");
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult<JobPostingDetailResponse>>(json, JsonOpts);
+
+            if (result?.Success != true || result.Data == null)
+            {
+                TempData["Error"] = result?.Message ?? "Could not find the job posting.";
+                return RedirectToAction(nameof(ManageJobPosting));
+            }
+
+            return View("~/Views/Moderator/JobPosting/ViewJobPostingDetail.cshtml", result.Data);
+        }
+        catch
+        {
+            TempData["Error"] = "Could not load the job posting detail.";
+            return RedirectToAction(nameof(ManageJobPosting));
+        }
+    }
+
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ReviewJobPosting(Guid id, int action, string? note)
+    public async Task<IActionResult> ReviewJobPosting(Guid id, int action, string? note, bool returnToDetail = false)
     {
         var token = HttpContext.Session.GetString("AccessToken");
         _http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
@@ -1010,7 +1037,10 @@ public class ModeratorController : Controller
             TempData["Error"] = "Review failed: " + errorJson;
         }
 
-        return RedirectToAction("ManageJobPosting");
+        if (returnToDetail)
+            return RedirectToAction(nameof(ViewJobPostingDetail), new { id });
+
+        return RedirectToAction(nameof(ManageJobPosting));
     }
 }
 

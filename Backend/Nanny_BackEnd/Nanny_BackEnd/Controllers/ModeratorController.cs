@@ -5,12 +5,13 @@ using Nanny_BackEnd.DTOs.JobPosting;
 using Nanny_BackEnd.Services;
 using Nanny_BackEnd.Enums;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Nanny_BackEnd.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-//[Authorize(Roles = "Moderator")]
+[Authorize(Roles = "Moderator")]
 public class ModeratorController : ControllerBase
 {
     private readonly UserService _userService;

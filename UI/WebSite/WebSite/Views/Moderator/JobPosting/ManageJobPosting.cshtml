@@ -62,7 +62,7 @@
                 <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">visibility</span>
                 <select name="status" onchange="this.form.submit()"
                         class="search-input md:w-36 !pl-9 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
-                    <option value="">Status</option>
+                    <option value="">All statuses</option>
                     <option value="1" selected="@(currentStatus == "1" ? "selected" : null)">Public</option>
                     <option value="2" selected="@(currentStatus == "2" ? "selected" : null)">Hidden</option>
                 </select>
@@ -123,7 +123,7 @@
                         </td>
                     </tr>
                 }
-                @{int rowNum = ((currentPage - 1) * Model?.PageSize ?? 10) + 1;}
+                @{ var rowNum = ((currentPage - 1) * (Model?.PageSize ?? 10)) + 1; }
                 @foreach (var item in items)
                 {
                     var modBadge = item.ModerationStatus switch {
@@ -159,11 +159,11 @@
                         </td>
                         <td>
                             <div class="flex items-center justify-center gap-1.5">
-                                <button onclick="openReviewModal('@item.Id', '@item.Title')" 
-                                        class="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all text-xs font-bold flex items-center gap-1">
-                                    <span class="material-icons-round text-sm">rate_review</span>
-                                    Moderate
-                                </button>
+                                <a href="/Moderator/ViewJobPostingDetail/@item.Id"
+                                   class="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all text-xs font-bold flex items-center gap-1">
+                                    <span class="material-icons-round text-sm">visibility</span>
+                                    View Detail
+                                </a>
                             </div>
                         </td>
                     </tr>
@@ -174,104 +174,41 @@
     </div>
 
     <!-- Pagination -->
-    @if (totalPages > 1)
-    {
-        <div class="flex items-center justify-between px-6 py-4 border-t border-gray-50">
-            <span class="text-sm text-gray-400">
-                Page <span class="font-bold text-gray-600">@currentPage</span> of <span class="font-bold text-gray-600">@totalPages</span>
-            </span>
-            <div class="flex gap-1.5">
-                @for (int p = 1; p <= totalPages; p++)
-                {
-                    <a href="?search=@currentSearch&status=@currentStatus&moderationStatus=@currentModStatus&page=@p"
-                       class="page-btn @(p == currentPage ? "active" : "")">@p</a>
-                }
-            </div>
+    <div class="flex items-center justify-between px-6 py-4 border-t border-gray-50">
+        <span class="text-sm text-gray-400">
+            Page <span class="font-bold text-gray-600">@currentPage</span>
+            of <span class="font-bold text-gray-600">@totalPages</span>
+        </span>
+        <div class="flex gap-1.5">
+            @if (currentPage > 1)
+            {
+                <a href="?search=@currentSearch&status=@currentStatus&moderationStatus=@currentModStatus&page=@(currentPage - 1)" class="page-btn">
+                    <span class="material-icons-round text-sm">chevron_left</span>
+                </a>
+            }
+            else
+            {
+                <button class="page-btn opacity-30 cursor-not-allowed" disabled>
+                    <span class="material-icons-round text-sm">chevron_left</span>
+                </button>
+            }
+            @for (int p = Math.Max(1, currentPage - 2); p <= Math.Min(totalPages, currentPage + 2); p++)
+            {
+                <a href="?search=@currentSearch&status=@currentStatus&moderationStatus=@currentModStatus&page=@p"
+                   class="page-btn @(p == currentPage ? "active" : "")">@p</a>
+            }
+            @if (currentPage < totalPages)
+            {
+                <a href="?search=@currentSearch&status=@currentStatus&moderationStatus=@currentModStatus&page=@(currentPage + 1)" class="page-btn">
+                    <span class="material-icons-round text-sm">chevron_right</span>
+                </a>
+            }
+            else
+            {
+                <button class="page-btn opacity-30 cursor-not-allowed" disabled>
+                    <span class="material-icons-round text-sm">chevron_right</span>
+                </button>
+            }
         </div>
-    }
-</div>
-
-<!-- ====================================================
-     REVIEW MODAL
-     ==================================================== -->
-<div id="reviewModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeModal('reviewModal')">
-    <div class="modal-box max-w-md scale-in">
-        <div class="flex items-center justify-between mb-5">
-            <h3 class="text-lg font-bold text-gray-900">Moderate Job Posting</h3>
-            <button onclick="closeModal('reviewModal')"
-                    class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 transition-all">
-                <span class="material-icons-round">close</span>
-            </button>
-        </div>
-
-        <div class="mb-6 p-4 rounded-2xl bg-blue-50 border border-blue-100 italic text-sm text-blue-700 leading-relaxed" id="reviewJobTitle">
-        </div>
-
-        <form asp-action="ReviewJobPosting" method="post">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="id" id="reviewJobId" />
-            
-            <div class="mb-5">
-                <label class="block text-xs font-bold text-gray-400 uppercase mb-3 tracking-wider">Select Decision</label>
-                <div class="grid grid-cols-2 gap-3">
-                    <label class="decision-card group">
-                        <input type="radio" name="action" value="2" required class="hidden" />
-                        <div class="inner border-2 border-gray-100 rounded-2xl p-4 flex flex-col items-center gap-2 transition-all group-hover:bg-emerald-50 peer-checked:border-emerald-400 peer-checked:bg-emerald-50">
-                            <span class="material-icons-round text-emerald-500 text-3xl">check_circle</span>
-                            <span class="text-xs font-bold text-gray-700">Approve</span>
-                        </div>
-                    </label>
-                    <label class="decision-card group">
-                        <input type="radio" name="action" value="1" required class="hidden" />
-                        <div class="inner border-2 border-gray-100 rounded-2xl p-4 flex flex-col items-center gap-2 transition-all group-hover:bg-red-50 peer-checked:border-red-400 peer-checked:bg-red-50">
-                            <span class="material-icons-round text-red-500 text-3xl">cancel</span>
-                            <span class="text-xs font-bold text-gray-700">Reject</span>
-                        </div>
-                    </label>
-                </div>
-            </div>
-
-            <div class="mb-6">
-                <label class="block text-xs font-bold text-gray-400 uppercase mb-2 tracking-wider">Internal Note / Feedback</label>
-                <textarea name="note" rows="3" placeholder="Enter reason or feedback for the parent..." 
-                          class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none resize-none transition-all"></textarea>
-            </div>
-
-            <div class="flex gap-2.5">
-                <button type="button" onclick="closeModal('reviewModal')" class="btn-outline flex-1 justify-center py-3">Cancel</button>
-                <button type="submit" class="btn-primary flex-1 justify-center shadow-lg shadow-blue-500/20 py-3">Confirm Review</button>
-            </div>
-        </form>
     </div>
 </div>
-
-<style>
-    .decision-card input:checked + .inner {
-        border-color: #34D399; /* emerald-400 for approve */
-        background-color: #ECFDF5;
-    }
-    .decision-card:last-child input:checked + .inner {
-        border-color: #F87171; /* red-400 for reject */
-        background-color: #FEF2F2;
-    }
-    .scale-in { animation: scaleIn 0.2s ease-out forwards; }
-    @@keyframes scaleIn {
-        from { transform: scale(0.95); opacity: 0; }
-        to { transform: scale(1); opacity: 1; }
-    }
-</style>
-
-<script>
-    function openReviewModal(id, title) {
-        document.getElementById('reviewJobId').value = id;
-        document.getElementById('reviewJobTitle').textContent = 'Reviewing job: "' + title + '"';
-        let modal = document.getElementById('reviewModal');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-    }
-    function closeModal(id) {
-        let modal = document.getElementById(id);
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-    }
-</script>

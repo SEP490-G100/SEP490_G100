@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nanny_BackEnd.DTOs.Blog;
 using Nanny_BackEnd.Services;
@@ -7,7 +8,7 @@ namespace Nanny_BackEnd.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-//[Authorize(Roles = "Moderator")]
+[Authorize(Roles = "Moderator")]
 public class BlogController : ControllerBase
 {
     private readonly BlogService _svc;

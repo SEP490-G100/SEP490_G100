@@ -8,7 +8,7 @@ namespace Nanny_BackEnd.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-//[Authorize(Roles = "Moderator")]
+[Authorize(Roles = "Moderator")]
 public class FaqController : ControllerBase
 {
     private readonly FaqService _faqService;
