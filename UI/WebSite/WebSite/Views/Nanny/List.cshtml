@@ -1,0 +1,228 @@
+@model WebSite.Models.Nanny.NannyBrowsePageViewModel
+@{
+    ViewData["Title"] = "Danh sách bảo mẫu - NannyMatch";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
+    var isParent = User.IsInRole("Parent");
+}
+
+@section Head {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="~/css/nanny-list.css" asp-append-version="true" />
+}
+
+<div class="nanny-page">
+    <div class="nanny-toolbar-shell">
+        <div class="nanny-toolbar">
+            <div class="nanny-toolbar__search">
+                <span class="material-icons-round">search</span>
+                <input id="nannyKeyword" type="text" placeholder="Tìm theo tên, kỹ năng hoặc mô tả..." oninput="debounceNannySearch()" />
+            </div>
+            <div class="nanny-toolbar__actions">
+                <button type="button" class="nanny-filter-trigger" onclick="openNannyFilters()">
+                    <span class="material-icons-round text-[18px]">tune</span>
+                    Bộ lọc
+                </button>
+                @if (isParent)
+                {
+                    <a href="/Nanny/Favorites" class="nanny-filter-trigger">
+                        <span class="material-icons-round text-[18px]">favorite</span>
+                        Nanny yêu thích
+                    </a>
+                }
+                <span id="nannyResultCount" class="nanny-toolbar__count">Đang tải...</span>
+                <a href="/Subscription" class="nanny-upgrade-btn">
+                    <span class="material-icons-round text-[18px]">workspace_premium</span>
+                    Upgrade
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="nanny-layout">
+        <div class="nanny-list-panel">
+            <div id="nannyList" class="nanny-list"></div>
+        </div>
+        <div class="nanny-map-panel">
+            <div id="nannyMap" style="z-index: 0;"></div>
+        </div>
+    </div>
+</div>
+
+<div id="nannyFilterModal" class="nmodal fixed inset-0 z-50 bg-black/40 backdrop-blur-sm items-center justify-center px-4" onclick="if(event.target===this)closeNannyFilters()">
+    <div class="nmodal-box nanny-filter-modal bg-white rounded-2xl w-full max-w-4xl shadow-2xl relative">
+        <div class="nanny-filter-modal__header">
+            <div>
+                <p class="nanny-filter-modal__kicker">Bộ lọc tìm kiếm</p>
+                <h2 class="nanny-filter-modal__title">Tìm nanny phù hợp nhanh hơn</h2>
+                <p class="nanny-filter-modal__subtitle">Chọn khu vực, kỹ năng, độ tuổi, kinh nghiệm và khoảng lương để thu hẹp danh sách hồ sơ.</p>
+            </div>
+            <button type="button" onclick="closeNannyFilters()" class="nanny-detail-close material-icons-round">close</button>
+        </div>
+        <div class="nanny-filter-modal__body">
+            <div class="nanny-filter-groups">
+                <section class="nanny-filter-group">
+                    <div class="nanny-filter-group__head">
+                        <span class="material-icons-round">location_on</span>
+                        <div>
+                            <h3>Khu vực làm việc</h3>
+                            <p>Chọn tỉnh/thành phố và quận/huyện theo dữ liệu hành chính mới nhất.</p>
+                        </div>
+                    </div>
+                    <div class="nanny-toolbar__filters nanny-toolbar__filters--modal">
+                        <div class="nanny-filter-field">
+                            <label for="nannyCity">Thành phố/Tỉnh</label>
+                            <input id="nannyCity" type="text" class="nanny-filter" placeholder="Nhập để gợi ý thành phố" autocomplete="off" />
+                        </div>
+                        <div class="nanny-filter-field">
+                            <label for="nannyDistrict">Quận/Huyện</label>
+                            <input id="nannyDistrict" type="text" class="nanny-filter" placeholder="Chọn quận/huyện phù hợp" autocomplete="off" />
+                        </div>
+                    </div>
+                </section>
+
+                <section class="nanny-filter-group">
+                    <div class="nanny-filter-group__head">
+                        <span class="material-icons-round">payments</span>
+                        <div>
+                            <h3>Kinh nghiệm và mức lương</h3>
+                            <p>Lọc theo số năm kinh nghiệm, độ tuổi và khoảng lương mong muốn.</p>
+                        </div>
+                    </div>
+                    <div class="nanny-toolbar__filters nanny-toolbar__filters--modal nanny-toolbar__filters--modal-compact">
+                        <div class="nanny-filter-field">
+                            <label for="nannyExperience">Kinh nghiệm từ</label>
+                            <input id="nannyExperience" type="number" min="0" class="nanny-filter nanny-filter--sm" placeholder="Ví dụ: 3" />
+                        </div>
+                        <div class="nanny-filter-field">
+                            <label for="nannyAgeMin">Tuổi từ</label>
+                            <input id="nannyAgeMin" type="number" min="18" class="nanny-filter nanny-filter--sm" placeholder="Ví dụ: 25" />
+                        </div>
+                        <div class="nanny-filter-field">
+                            <label for="nannySalaryMin">Lương từ</label>
+                            <input id="nannySalaryMin" type="number" min="0" step="500000" class="nanny-filter nanny-filter--sm" placeholder="Ví dụ: 8000000" />
+                        </div>
+                        <div class="nanny-filter-field">
+                            <label for="nannySalaryMax">Lương đến</label>
+                            <input id="nannySalaryMax" type="number" min="0" step="500000" class="nanny-filter nanny-filter--sm" placeholder="Ví dụ: 15000000" />
+                        </div>
+                    </div>
+                </section>
+
+                <section class="nanny-filter-group">
+                    <div class="nanny-filter-group__head">
+                        <span class="material-icons-round">verified</span>
+                        <div>
+                            <h3>Kỹ năng và xác minh</h3>
+                            <p>Thu hẹp danh sách theo kỹ năng nổi bật và trạng thái xác minh.</p>
+                        </div>
+                    </div>
+                    <div class="nanny-toolbar__filters nanny-toolbar__filters--modal">
+                        <div class="nanny-filter-field">
+                            <label for="nannySkillText">Kỹ năng</label>
+                            <input id="nannySkillText" type="text" class="nanny-filter" placeholder="Tất cả kỹ năng" autocomplete="off" />
+                            <select id="nannySkillId" class="nanny-filter nanny-filter--native" tabindex="-1" aria-hidden="true">
+                                <option value="">Tất cả kỹ năng</option>
+                                @foreach (var skill in Model.SkillOptions)
+                                {
+                                    <option value="@skill.SkillId">@skill.SkillName</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="nanny-filter-field">
+                            <label for="nannyVerificationText">Xác minh</label>
+                            <input id="nannyVerificationText" type="text" class="nanny-filter" placeholder="Tất cả trạng thái" autocomplete="off" />
+                            <select id="nannyVerification" class="nanny-filter nanny-filter--native" tabindex="-1" aria-hidden="true">
+                                <option value="">Tất cả trạng thái</option>
+                                <option value="2">Đã duyệt</option>
+                                <option value="1">Đang chờ</option>
+                                <option value="0">Chưa gửi</option>
+                            </select>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="nanny-filter-group">
+                    <div class="nanny-filter-group__head">
+                        <span class="material-icons-round">calendar_month</span>
+                        <div>
+                            <h3>Lịch rảnh theo ngày</h3>
+                            <p>Chọn một hoặc nhiều khung giờ để lọc nanny có lịch phù hợp.</p>
+                        </div>
+                    </div>
+                    <div id="nannyScheduleFilter" class="nanny-filter-schedule"></div>
+                </section>
+            </div>
+        </div>
+        <div class="nanny-filter-modal__footer">
+            <button type="button" class="nanny-filter-btn nanny-filter-btn--ghost" onclick="resetNannyFilters()">Đặt lại</button>
+            <button type="button" class="nanny-filter-btn nanny-filter-btn--primary" onclick="applyNannyFilters()">Áp dụng bộ lọc</button>
+        </div>
+    </div>
+</div>
+
+<div id="nannyDetailModal" class="nmodal fixed inset-0 z-50 bg-black/50 backdrop-blur-sm items-center justify-center px-4" onclick="if(event.target===this)closeNannyDetail()">
+    <div class="nmodal-box nanny-detail-box bg-white rounded-2xl w-full max-w-4xl shadow-2xl relative">
+        <div class="modal-scroll">
+            <div class="nanny-detail-header">
+                <button onclick="closeNannyDetail()" class="nanny-detail-close material-icons-round">close</button>
+                <div class="nanny-detail-hero">
+                    <img id="nd-avatar" src="/img/nanny-logo.jpg" alt="Avatar nanny" class="nanny-detail-avatar" />
+                    <div class="nanny-detail-hero__content">
+                        <div class="nanny-detail-badge" id="nd-verify">Đang cập nhật</div>
+                        <h2 id="nd-name">Tên bảo mẫu</h2>
+                        <p id="nd-location">Khu vực hoạt động</p>
+                        <div class="nanny-detail-chips">
+                            <span id="nd-age" class="nanny-chip">Tuổi</span>
+                            <span id="nd-exp" class="nanny-chip">Kinh nghiệm</span>
+                            <span id="nd-education" class="nanny-chip">Học vấn</span>
+                            <span id="nd-salary" class="nanny-chip nanny-chip--strong">Lương mong muốn</span>
+                        </div>
+                        <div class="nanny-detail-actions">
+                            <button type="button" id="nd-favoriteBtn" class="nanny-detail-favorite hidden" onclick="toggleNannyFavoriteFromDetail(event)">
+                                <span class="material-icons-round">favorite_border</span>
+                                <span id="nd-favoriteBtnText">Yêu thích</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="nanny-detail-grid">
+                <section class="nanny-detail-card">
+                    <h3>Giới thiệu</h3>
+                    <p id="nd-bio" class="nanny-detail-text">Chưa có mô tả.</p>
+                </section>
+
+                <section class="nanny-detail-card">
+                    <h3>Thông tin liên hệ</h3>
+                    <div class="nanny-meta-list">
+                        <div><span>Số điện thoại</span><strong id="nd-phone">Chưa cập nhật</strong></div>
+                        <div><span>Địa chỉ</span><strong id="nd-address">Chưa cập nhật</strong></div>
+                        <div><span>Bán kính di chuyển</span><strong id="nd-travel">Chưa cập nhật</strong></div>
+                        <div><span>Độ hoàn thiện hồ sơ</span><strong id="nd-completeness">0%</strong></div>
+                    </div>
+                </section>
+
+                <section class="nanny-detail-card nanny-detail-card--wide">
+                    <h3>Kỹ năng nổi bật</h3>
+                    <div id="nd-skills" class="nanny-detail-skill-list"></div>
+                </section>
+
+                <section class="nanny-detail-card nanny-detail-card--wide">
+                    <h3>Lịch rảnh</h3>
+                    <div id="nd-availability" class="nanny-detail-availability"></div>
+                </section>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const IS_AUTH = @(isAuthenticated ? "true" : "false");
+        const IS_PARENT = @(isParent ? "true" : "false");
+    </script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="~/js/nanny-list.js" asp-append-version="true"></script>
+}

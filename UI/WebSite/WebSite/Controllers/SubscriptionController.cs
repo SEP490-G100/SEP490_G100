@@ -48,15 +48,31 @@ public class SubscriptionController : Controller
         var result = await readApiResult<SubscriptionPaymentSessionViewModel>(response);
         if (result == null || !result.Success)
         {
-            TempData["SubscriptionError"] = result?.Message ?? "Khong the mua goi luc nay.";
+            var message = result?.Message ?? "Khong the mua goi luc nay.";
+            if (isAjaxRequest())
+                return Json(new { success = false, message });
+
+            TempData["SubscriptionError"] = message;
             return RedirectToAction(nameof(Index));
         }
 
         if (string.IsNullOrWhiteSpace(result.Data?.CheckoutUrl))
         {
-            TempData["SubscriptionError"] = "Khong tao duoc lien ket thanh toan.";
+            const string message = "Khong tao duoc lien ket thanh toan.";
+            if (isAjaxRequest())
+                return Json(new { success = false, message });
+
+            TempData["SubscriptionError"] = message;
             return RedirectToAction(nameof(Index));
         }
+
+        if (isAjaxRequest())
+            return Json(new
+            {
+                success = true,
+                message = "Da tao giao dich cho thanh toan.",
+                data = result.Data
+            });
 
         return Redirect(result.Data.CheckoutUrl);
     }
@@ -155,6 +171,11 @@ public class SubscriptionController : Controller
         if (currentResult?.Success == true)
             page.CurrentSubscription = currentResult.Data;
 
+        var transactionResponse = await _http.GetAsync("/api/subscriptions/transactions");
+        var transactionResult = await readApiResult<List<SubscriptionTransactionViewModel>>(transactionResponse);
+        if (transactionResult?.Success == true && transactionResult.Data != null)
+            page.Transactions = transactionResult.Data;
+
         return page;
     }
 
@@ -233,4 +254,7 @@ public class SubscriptionController : Controller
             return new ApiResult<T> { Success = false, Message = $"Loi server (HTTP {(int)response.StatusCode})." };
         }
     }
+
+    private bool isAjaxRequest() =>
+        string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
 }

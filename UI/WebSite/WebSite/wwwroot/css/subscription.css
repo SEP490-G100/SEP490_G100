@@ -388,6 +388,223 @@
     border-color: rgba(239, 68, 68, 0.18);
 }
 
+.sub-history {
+    margin-top: 24px;
+}
+
+.sub-empty-inline {
+    border: 1px dashed #d1d5db;
+    border-radius: 18px;
+    padding: 18px;
+    color: #6b7280;
+    font-weight: 700;
+    background: #f9fafb;
+}
+
+.sub-trans-list {
+    display: grid;
+    gap: 12px;
+}
+
+.sub-trans-item {
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(230px, auto);
+    gap: 16px;
+    background: #fff;
+}
+
+.sub-trans-kicker {
+    margin: 0;
+    color: #9ca3af;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.sub-trans-item h3 {
+    margin: 8px 0;
+    font-size: 17px;
+    color: #111827;
+    word-break: break-all;
+}
+
+.sub-trans-desc {
+    margin: 0;
+    color: #6b7280;
+}
+
+.sub-trans-meta {
+    display: grid;
+    justify-items: end;
+    align-content: center;
+    gap: 6px;
+}
+
+.sub-trans-meta b {
+    font-size: 18px;
+    color: #111827;
+}
+
+.sub-trans-meta span {
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.sub-trans-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding: 0 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.sub-trans-badge.pending {
+    background: #fff7ed;
+    color: #c2410c;
+}
+
+.sub-trans-badge.success {
+    background: #ecfdf5;
+    color: #047857;
+}
+
+.sub-trans-badge.failed {
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+.sub-trans-badge.unknown {
+    background: #f3f4f6;
+    color: #4b5563;
+}
+
+.sub-pay-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: none;
+}
+
+.sub-pay-modal[aria-hidden="false"] {
+    display: block;
+}
+
+.sub-pay-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(2, 6, 23, 0.52);
+    backdrop-filter: blur(3px);
+}
+
+.sub-pay-panel {
+    position: relative;
+    width: min(920px, calc(100% - 32px));
+    margin: clamp(20px, 8vh, 54px) auto 0;
+    border-radius: 24px;
+    border: 1px solid rgba(249, 115, 22, 0.22);
+    background:
+        radial-gradient(circle at top right, rgba(251, 191, 36, 0.16), transparent 32%),
+        #fff;
+    box-shadow: 0 28px 68px rgba(2, 6, 23, 0.32);
+    padding: 24px 24px 20px;
+}
+
+.sub-pay-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    border: 1px solid rgba(249, 115, 22, 0.3);
+    background: #fff;
+    color: #c2410c;
+    font-size: 24px;
+    line-height: 1;
+}
+
+.sub-pay-kicker {
+    margin: 0 0 8px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: #c2410c;
+    text-transform: uppercase;
+}
+
+.sub-pay-title {
+    margin: 0;
+    font-size: 30px;
+    color: #111827;
+}
+
+.sub-pay-desc {
+    margin: 8px 0 18px;
+    color: #6b7280;
+}
+
+.sub-pay-main {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: 320px minmax(0, 1fr);
+    align-items: stretch;
+}
+
+.sub-pay-qr-wrap {
+    border-radius: 18px;
+    border: 1px solid #e5e7eb;
+    padding: 10px;
+    background: #fff;
+}
+
+.sub-pay-qr {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: contain;
+    display: block;
+}
+
+.sub-pay-info {
+    border-radius: 18px;
+    border: 1px solid rgba(249, 115, 22, 0.2);
+    background: #fff7ed;
+    padding: 14px;
+    display: grid;
+    gap: 10px;
+}
+
+.sub-pay-info-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    align-items: baseline;
+}
+
+.sub-pay-info-row span {
+    color: #9ca3af;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.sub-pay-info-row b {
+    color: #111827;
+    font-size: 14px;
+    text-align: right;
+}
+
+.sub-pay-actions {
+    margin-top: 16px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
 @media (max-width: 1024px) {
     .sub-hero,
     .sub-grid {
@@ -417,5 +634,21 @@
 
     .sub-status-metrics {
         grid-template-columns: 1fr;
+    }
+
+    .sub-pay-main {
+        grid-template-columns: 1fr;
+    }
+
+    .sub-pay-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .sub-trans-item {
+        grid-template-columns: 1fr;
+    }
+
+    .sub-trans-meta {
+        justify-items: start;
     }
 }

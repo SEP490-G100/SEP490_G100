@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Nanny_BackEnd.Data;
@@ -183,7 +184,7 @@ public class SubscriptionJobTests
         Assert.NotNull(updatedJob.ClosedAt);
 
         var myJobs = await fixture.JobService.getMyJobs(fixture.FreeParentProfileId);
-        var historyItem = Assert.Single(myJobs.Where(j => j.Id == jobId));
+        var historyItem = Assert.Single(myJobs, j => j.Id == jobId);
         Assert.Equal((int)JobPostingStatus.Hidden, historyItem.Status);
         Assert.Equal((int)JobPostingModerationStatus.Approved, historyItem.ModerationStatus);
     }
@@ -303,6 +304,189 @@ public class SubscriptionJobTests
         Assert.Contains(notifications, n => n.Title.Contains("3 ngay"));
     }
 
+    [Fact]
+    public async Task CreatePayment_CreatesPendingTransaction_AndCheckoutSession()
+    {
+        await using var fixture = await TestFixture.create();
+
+        var plan = (await fixture.SubscriptionService.getPlans()).Single(p => p.Code == "PLUS");
+
+        var session = await fixture.SubscriptionService.createPayment(
+            fixture.FreeParentUserId,
+            new CreateSubscriptionPaymentRequest { SubscriptionPlanId = plan.Id });
+
+        Assert.NotEqual(Guid.Empty, session.TransactionId);
+        Assert.Equal(plan.Price, session.Amount);
+        Assert.False(string.IsNullOrWhiteSpace(session.CheckoutUrl));
+
+        var transaction = await fixture.Db.Transactions.SingleAsync(t => t.Id == session.TransactionId);
+        Assert.Equal(1, transaction.Status);
+        Assert.Equal(1, transaction.Type);
+        Assert.Equal(session.OrderCode.ToString(), transaction.PaymentGatewayTransactionId);
+        Assert.StartsWith("NM PLUS ", transaction.Description, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task VietQrWebhook_MatchedPayment_ActivatesSubscription_AndCreatesNotification()
+    {
+        await using var fixture = await TestFixture.create();
+        var plan = (await fixture.SubscriptionService.getPlans()).Single(p => p.Code == "PLUS");
+
+        var session = await fixture.SubscriptionService.createPayment(
+            fixture.FreeParentUserId,
+            new CreateSubscriptionPaymentRequest { SubscriptionPlanId = plan.Id });
+
+        var processed = await fixture.SubscriptionService.handleVietQrWebhook(new VietQrWebhookRequest
+        {
+            Data =
+            [
+                new VietQrWebhookPaymentData
+                {
+                    OrderCode = session.OrderCode,
+                    Amount = plan.Price,
+                    Code = "00"
+                }
+            ]
+        });
+
+        Assert.Equal(1, processed);
+
+        var transaction = await fixture.Db.Transactions.SingleAsync(t => t.Id == session.TransactionId);
+        Assert.Equal(2, transaction.Status);
+        Assert.NotNull(transaction.CompletedAt);
+
+        var subscription = await fixture.Db.UserSubscriptions.SingleAsync(s =>
+            s.PaymentTransactionId == transaction.Id && !s.IsDeleted);
+        Assert.Equal(1, subscription.Status);
+
+        Assert.True(await fixture.Db.Notifications.AnyAsync(n =>
+            n.UserId == fixture.FreeParentUserId &&
+            n.Type == NotificationTypes.SubscriptionPurchased &&
+            n.RelatedEntityId == subscription.Id));
+    }
+
+    [Fact]
+    public async Task VietQrWebhook_MismatchedAmount_MarksTransactionFailed_WithoutSubscription()
+    {
+        await using var fixture = await TestFixture.create();
+        var plan = (await fixture.SubscriptionService.getPlans()).Single(p => p.Code == "PLUS");
+
+        var session = await fixture.SubscriptionService.createPayment(
+            fixture.FreeParentUserId,
+            new CreateSubscriptionPaymentRequest { SubscriptionPlanId = plan.Id });
+
+        var processed = await fixture.SubscriptionService.handleVietQrWebhook(new VietQrWebhookRequest
+        {
+            Data =
+            [
+                new VietQrWebhookPaymentData
+                {
+                    OrderCode = session.OrderCode,
+                    Amount = plan.Price + 10000,
+                    Code = "00"
+                }
+            ]
+        });
+
+        Assert.Equal(0, processed);
+
+        var transaction = await fixture.Db.Transactions.SingleAsync(t => t.Id == session.TransactionId);
+        Assert.Equal(3, transaction.Status);
+
+        Assert.False(await fixture.Db.UserSubscriptions.AnyAsync(s =>
+            s.PaymentTransactionId == transaction.Id && !s.IsDeleted));
+        Assert.False(await fixture.Db.Notifications.AnyAsync(n =>
+            n.UserId == fixture.FreeParentUserId &&
+            n.Type == NotificationTypes.SubscriptionPurchased));
+    }
+
+    [Fact]
+    public async Task VietQrWebhook_DuplicateFailedCallback_DoesNotOverrideSuccess()
+    {
+        await using var fixture = await TestFixture.create();
+        var plan = (await fixture.SubscriptionService.getPlans()).Single(p => p.Code == "PLUS");
+
+        var session = await fixture.SubscriptionService.createPayment(
+            fixture.FreeParentUserId,
+            new CreateSubscriptionPaymentRequest { SubscriptionPlanId = plan.Id });
+
+        var firstProcessed = await fixture.SubscriptionService.handleVietQrWebhook(new VietQrWebhookRequest
+        {
+            Data =
+            [
+                new VietQrWebhookPaymentData
+                {
+                    OrderCode = session.OrderCode,
+                    Amount = plan.Price,
+                    Code = "00"
+                }
+            ]
+        });
+
+        var secondProcessed = await fixture.SubscriptionService.handleVietQrWebhook(new VietQrWebhookRequest
+        {
+            Data =
+            [
+                new VietQrWebhookPaymentData
+                {
+                    OrderCode = session.OrderCode,
+                    Amount = plan.Price + 10,
+                    Code = "99"
+                }
+            ]
+        });
+
+        Assert.Equal(1, firstProcessed);
+        Assert.Equal(0, secondProcessed);
+
+        var transaction = await fixture.Db.Transactions.SingleAsync(t => t.Id == session.TransactionId);
+        Assert.Equal(2, transaction.Status);
+
+        Assert.Equal(1, await fixture.Db.UserSubscriptions.CountAsync(s =>
+            s.PaymentTransactionId == transaction.Id && !s.IsDeleted));
+    }
+
+    [Fact]
+    public async Task VietQrWebhook_InvalidTransactionDescription_DoesNotThrow_AndMarksFailed()
+    {
+        await using var fixture = await TestFixture.create();
+
+        var transaction = new Transaction
+        {
+            Id = Guid.NewGuid(),
+            UserId = fixture.FreeParentUserId,
+            Amount = 299000m,
+            PaymentGatewayTransactionId = "998877665",
+            Status = 1,
+            Description = "INVALID CONTENT",
+            Type = 1,
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = fixture.FreeParentUserId
+        };
+
+        fixture.Db.Transactions.Add(transaction);
+        await fixture.Db.SaveChangesAsync();
+
+        var ex = await Record.ExceptionAsync(() => fixture.SubscriptionService.handleVietQrWebhook(new VietQrWebhookRequest
+        {
+            Data =
+            [
+                new VietQrWebhookPaymentData
+                {
+                    OrderCode = 998877665,
+                    Amount = 299000m,
+                    Code = "00"
+                }
+            ]
+        }));
+
+        Assert.Null(ex);
+
+        var updated = await fixture.Db.Transactions.SingleAsync(t => t.Id == transaction.Id);
+        Assert.Equal(3, updated.Status);
+        Assert.False(await fixture.Db.UserSubscriptions.AnyAsync(s => s.PaymentTransactionId == transaction.Id && !s.IsDeleted));
+    }
+
     private sealed class TestFixture : IAsyncDisposable
     {
         private TestFixture(
@@ -341,17 +525,16 @@ public class SubscriptionJobTests
             var jobRepo = new JobRepository(db);
             var subscriptionRepo = new SubscriptionRepository(db);
             var notificationService = new NotificationService(subscriptionRepo);
-            var vietQrService = new VietQrService(
-                new FakeHttpClientFactory(),
-                Options.Create(new VietQrOptions
-                {
-                    BaseUrl = "https://api.vietqr.io/v2/",
-                    ClientId = "test-client",
-                    ApiKey = "test-key",
-                    SuccessUrl = "https://example.test/success",
-                    CancelUrl = "https://example.test/cancel"
-                }));
-            var subscriptionService = new SubscriptionService(subscriptionRepo, notificationService, vietQrService);
+            var vnPayService = new VnPayService(Options.Create(new VnPayOptions
+            {
+                TmnCode = "TESTTMN",
+                HashSecret = "TEST_HASH_SECRET",
+                PaymentUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html",
+                ReturnUrl = "https://api.example.test/api/subscriptions/vnpay/return",
+                SuccessUrl = "https://ui.example.test/Subscription/PaymentResult?transactionId={transactionId}",
+                CancelUrl = "https://ui.example.test/Subscription/PaymentResult?cancelled=true&transactionId={transactionId}"
+            }));
+            var subscriptionService = new SubscriptionService(subscriptionRepo, notificationService, vnPayService);
             var geo = new GeocodingService(new FakeHttpClientFactory());
             var jobService = new JobService(jobRepo, favoriteRepo, geo, subscriptionService, notificationService);
 
@@ -450,10 +633,51 @@ public class SubscriptionJobTests
 
     private sealed class FakeHttpMessageHandler : HttpMessageHandler
     {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
-            Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            if (request.RequestUri?.AbsolutePath.Contains("paymentRequests", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                var orderCode = 123456789;
+                var amount = 0;
+                var description = "NM PLUS 123456789";
+                var body = request.Content == null ? null : await request.Content.ReadAsStringAsync(cancellationToken);
+
+                if (!string.IsNullOrWhiteSpace(body))
+                {
+                    using var json = JsonDocument.Parse(body);
+                    if (json.RootElement.TryGetProperty("orderCode", out var orderCodeProp))
+                        orderCode = orderCodeProp.GetInt32();
+                    if (json.RootElement.TryGetProperty("amount", out var amountProp))
+                        amount = amountProp.GetInt32();
+                    if (json.RootElement.TryGetProperty("description", out var descProp))
+                        description = descProp.GetString() ?? description;
+                }
+
+                var payload = JsonSerializer.Serialize(new
+                {
+                    code = "00",
+                    desc = "success",
+                    data = new
+                    {
+                        id = $"PAY-{orderCode}",
+                        amount,
+                        description,
+                        orderCode,
+                        status = "PENDING",
+                        checkoutUrl = $"https://pay.example.test/checkout/{orderCode}"
+                    }
+                });
+
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(payload)
+                };
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent("[]")
-            });
+            };
+        }
     }
 }

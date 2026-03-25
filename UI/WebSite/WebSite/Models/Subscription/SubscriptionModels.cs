@@ -179,6 +179,7 @@ public class SubscriptionPageViewModel
     public string Summary { get; set; } = "";
     public SubscriptionBenefitViewModel FreeBenefits { get; set; } = new();
     public List<SubscriptionPlanViewModel> Plans { get; set; } = [];
+    public List<SubscriptionTransactionViewModel> Transactions { get; set; } = [];
     public UserSubscriptionViewModel? CurrentSubscription { get; set; }
     public bool HasActiveSubscription => CurrentSubscription?.IsActive == true;
     public bool IsParent => string.Equals(CurrentRole, "Parent", StringComparison.OrdinalIgnoreCase);

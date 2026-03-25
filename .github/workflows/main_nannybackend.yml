@@ -1,13 +1,17 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
-name: Build and deploy ASP.Net Core app to Azure Web App - NannyMatchingSystem
+name: Build and deploy ASP.Net Core backend to Azure Web App
 
 on:
   push:
     branches:
       - main
   workflow_dispatch:
+
+env:
+  PROJECT_PATH: Backend/Nanny_BackEnd/Nanny_BackEnd/Nanny_BackEnd.csproj
+  PUBLISH_PATH: ${{ github.workspace }}/backendapp
 
 jobs:
   build:
@@ -24,16 +28,16 @@ jobs:
           dotnet-version: "8.x"
 
       - name: Build with dotnet
-        run: dotnet build UI/WebSite/WebSite/WebSite.csproj --configuration Release
+        run: dotnet build ${{ env.PROJECT_PATH }} --configuration Release
 
       - name: dotnet publish
-        run: dotnet publish UI/WebSite/WebSite/WebSite.csproj -c Release --no-build -o "${{ github.workspace }}/myapp"
+        run: dotnet publish ${{ env.PROJECT_PATH }} -c Release --no-build -o "${{ env.PUBLISH_PATH }}"
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
-          name: .net-app
-          path: ${{ github.workspace }}/myapp
+          name: .net-backend-app
+          path: ${{ env.PUBLISH_PATH }}
 
   deploy:
     runs-on: windows-latest
@@ -46,18 +50,19 @@ jobs:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
-          name: .net-app
+          name: .net-backend-app
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_9C56DF3D6716487B91E70FA177A72210 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_43FFE5235E15427DB1ED26E84AA37A13 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_D7C3EE1323584A28AFE9B863DCA68F88 }}
+          client-id: ${{ secrets.AZURE_BACKEND_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_BACKEND_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_BACKEND_SUBSCRIPTION_ID }}
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: "NannyMatchingSystem"
+          app-name: ${{ vars.AZURE_BACKEND_WEBAPP_NAME }}
           slot-name: "Production"
           package: .

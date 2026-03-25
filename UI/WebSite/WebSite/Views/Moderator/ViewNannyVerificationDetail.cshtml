@@ -311,7 +311,9 @@
     function validateReject() {
         var reason = document.getElementById('rejectionReason').value.trim();
         if (!reason) {
-            alert('Please provide a rejection reason before submitting.');
+            if (typeof window.showToast === 'function') {
+                window.showToast('Please provide a rejection reason before submitting.', { type: 'warning' });
+            }
             return false;
         }
         return confirm('Reject this nanny verification with the provided reason?');
