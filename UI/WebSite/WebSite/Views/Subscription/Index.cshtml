@@ -281,6 +281,11 @@
             if (!forms.length) return;
 
             const antiForgeryToken = document.querySelector('.js-purchase-form input[name="__RequestVerificationToken"]')?.value;
+            const notify = (message, type = 'error') => {
+                if (typeof window.showToast === 'function') {
+                    window.showToast(message, { type });
+                }
+            };
 
             forms.forEach((form) => {
                 form.addEventListener('submit', async (event) => {
@@ -307,19 +312,19 @@
 
                         const result = await response.json();
                         if (!result?.success || !result?.data) {
-                            alert(result?.message || 'Khong tao duoc giao dich thanh toan.');
+                            notify(result?.message || 'Khong tao duoc giao dich thanh toan.', 'error');
                             return;
                         }
 
                         const data = result.data;
                         if (!data.checkoutUrl) {
-                            alert('Khong tao duoc lien ket thanh toan.');
+                            notify('Khong tao duoc lien ket thanh toan.', 'error');
                             return;
                         }
 
                         window.location.href = data.checkoutUrl;
                     } catch {
-                        alert('Khong tao duoc giao dich thanh toan. Vui long thu lai.');
+                        notify('Khong tao duoc giao dich thanh toan. Vui long thu lai.', 'error');
                     } finally {
                         submitBtn.disabled = false;
                         submitBtn.textContent = oldLabel;

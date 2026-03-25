@@ -181,8 +181,6 @@
     </div>
 </section>
 
-<div id="toast" class="bg-gray-900 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-2xl"></div>
-
 @section Scripts {
 <script>
 const JOB_ID = '@jobId';
@@ -202,13 +200,10 @@ function escapeHtml(value) {
         .replaceAll("'", '&#39;');
 }
 
-function showToast(message) {
-    const toast = document.getElementById('toast');
-    if (!toast) return;
-    toast.textContent = message;
-    toast.classList.add('show');
-    clearTimeout(showToast._timer);
-    showToast._timer = setTimeout(() => toast.classList.remove('show'), 2600);
+function showToast(message, type = 'info') {
+    if (typeof window.showToast === 'function') {
+        window.showToast(message, { type });
+    }
 }
 
 function showNotice(message, kind) {
@@ -330,7 +325,7 @@ async function loadEditPage() {
             showNotice('Neu ban chinh sua bai dang cong khai va luu lai, bai dang se quay ve trang thai cho duyet.', 'info');
         }
     } catch {
-        showToast('Khong tai duoc thong tin bai dang');
+        showToast('Khong tai duoc thong tin bai dang', 'error');
     }
 }
 
@@ -382,18 +377,18 @@ document.getElementById('editPageForm')?.addEventListener('submit', async (event
         });
         const json = await res.json();
         if (!json.success) {
-            showToast(json.message || 'Cap nhat that bai');
+            showToast(json.message || 'Cap nhat that bai', 'error');
             submitBtn.disabled = false;
             submitBtn.textContent = 'Luu thay doi';
             return;
         }
 
-        showToast('Cap nhat thanh cong. Bai dang da duoc gui moderator duyet lai');
+        showToast('Cap nhat thanh cong. Bai dang da duoc gui moderator duyet lai', 'success');
         setTimeout(() => {
             window.location.href = `/Search/History?jobId=${JOB_ID}`;
         }, 900);
     } catch {
-        showToast('Loi ket noi server');
+        showToast('Loi ket noi server', 'error');
         submitBtn.disabled = false;
         submitBtn.textContent = 'Luu thay doi';
     }
