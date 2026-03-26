@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
 using Nanny_BackEnd.DTOs.Profile;
 using Nanny_BackEnd.Models;
@@ -76,7 +76,7 @@ public class OnboardingService
             return status;
         }
 
-        // N?u ch?a ch?n role m� ?� c� th�ng tin c? b?n, y�u c?u ch?n role
+        // Nếu chưa chọn role mà đã có thông tin cơ bản, yêu cầu chọn role
         if (string.IsNullOrEmpty(role))
         {
             return new OnboardingStatusDto
@@ -119,7 +119,7 @@ public class OnboardingService
                 return finalStatus;
             }
 
-            // Parent ?� ?? th�ng tin
+            // Parent đã đủ thông tin
             finalStatus.RequiresOnboarding = false;
             finalStatus.NextStep = "Completed";
             return finalStatus;

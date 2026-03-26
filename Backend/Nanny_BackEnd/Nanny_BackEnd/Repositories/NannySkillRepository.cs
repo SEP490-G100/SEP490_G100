@@ -12,6 +12,7 @@ public class NannySkillRepository
 
     public async Task<List<NannySkill>> GetByNannyProfileIdAsync(Guid nannyProfileId) =>
         await _db.NannySkills
+            .Include(s => s.Skill)
             .Where(s => s.NannyProfileId == nannyProfileId && !s.IsDeleted)
             .ToListAsync();
 
@@ -21,4 +22,3 @@ public class NannySkillRepository
 
     public async Task SaveChangesAsync() => await _db.SaveChangesAsync();
 }
-

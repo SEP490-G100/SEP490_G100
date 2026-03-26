@@ -1,6 +1,9 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using WebSite.Hubs;
 using WebSite.Models.Search;
 
 namespace WebSite.Controllers;
@@ -16,11 +19,13 @@ namespace WebSite.Controllers;
 public class SearchController : Controller
 {
     private readonly HttpClient _http;
+    private readonly IHubContext<NotificationHub> _notificationHub;
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
 
-    public SearchController(IHttpClientFactory httpFactory)
+    public SearchController(IHttpClientFactory httpFactory, IHubContext<NotificationHub> notificationHub)
     {
         _http = httpFactory.CreateClient("BackendApi");
+        _notificationHub = notificationHub;
     }
 
     // ── GET /Search ─────────────────────────────────────────
@@ -32,11 +37,36 @@ public class SearchController : Controller
     }
 
     [HttpGet]
+    [Authorize]
     public IActionResult History() => View();
 
     [HttpGet]
+    [Authorize]
+    public IActionResult SavedJobs()
+    {
+        if (!isNannyRole())
+            return RedirectToAction(nameof(Index));
+
+        return View();
+    }
+
+    [HttpGet]
+    [Authorize]
+    public IActionResult Applications()
+    {
+        if (!isNannyRole())
+            return RedirectToAction(nameof(Index));
+
+        return View();
+    }
+
+    [HttpGet]
+    [Authorize]
     public async Task<IActionResult> Edit(Guid id)
     {
+        if (!await canEditJob(id))
+            return RedirectToAction(nameof(Index));
+
         ViewBag.JobId = id;
         ViewBag.SkillOptions = await getSkillOptionsForView();
         return View();
@@ -76,6 +106,7 @@ public class SearchController : Controller
     }
 
     [HttpGet]
+    [Authorize]
     public async Task<IActionResult> MyJobs()
     {
         SetAuthHeader();
@@ -96,6 +127,34 @@ public class SearchController : Controller
     }
 
     [HttpGet]
+    [Authorize]
+    public async Task<IActionResult> SavedJobsData([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    {
+        if (!isNannyRole())
+            return StatusCode(403, new { success = false, total = 0, data = Array.Empty<object>(), message = "Ban khong co quyen xem bai dang da luu." });
+
+        page = page < 1 ? 1 : page;
+        pageSize = pageSize < 1 ? 20 : Math.Min(pageSize, 50);
+
+        SetAuthHeader();
+        try
+        {
+            var response = await _http.GetAsync($"/api/search/jobs/favorite/me?page={page}&pageSize={pageSize}");
+            if (!response.IsSuccessStatusCode)
+                return Json(new { success = false, total = 0, data = Array.Empty<object>() });
+
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<SearchApiResult>(json, JsonOpts);
+            return Json(new { success = result?.Success ?? false, total = result?.Total ?? 0, data = result?.Data ?? [] });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, total = 0, data = Array.Empty<object>(), error = ex.Message });
+        }
+    }
+
+    [HttpGet]
+    [Authorize]
     public async Task<IActionResult> Prefill()
     {
         SetAuthHeader();
@@ -123,8 +182,12 @@ public class SearchController : Controller
 
     // ── POST /Search/CreateJob ──────────────────────────────
     [HttpPost]
+    [Authorize]
     public async Task<IActionResult> CreateJob([FromBody] JsonElement body)
     {
+        if (!isParentRole())
+            return StatusCode(403, new { success = false, message = "Ban khong co quyen dang tin tim bao mau." });
+
         SetAuthHeader();
         try
         {
@@ -139,8 +202,12 @@ public class SearchController : Controller
 
     // ── PUT /Search/UpdateJob/{id} ──────────────────────────
     [HttpPut]
+    [Authorize]
     public async Task<IActionResult> UpdateJob(Guid id, [FromBody] JsonElement body)
     {
+        if (!isParentRole())
+            return StatusCode(403, new { success = false, message = "Ban khong co quyen chinh sua bai dang nay." });
+
         SetAuthHeader();
         try
         {
@@ -155,8 +222,12 @@ public class SearchController : Controller
 
     // ── DELETE /Search/DeleteJob/{id} ───────────────────────
     [HttpDelete]
+    [Authorize]
     public async Task<IActionResult> DeleteJob(Guid id)
     {
+        if (!await canEditJob(id))
+            return StatusCode(403, new { success = false, message = "Ban khong co quyen xoa bai dang nay." });
+
         SetAuthHeader();
         try
         {
@@ -181,6 +252,130 @@ public class SearchController : Controller
             return Content(json, "application/json");
         }
         catch { return StatusCode(500); }
+    }
+
+    [HttpPost]
+    [Authorize]
+    public async Task<IActionResult> ToggleFavoriteJob(Guid jobPostingId)
+    {
+        if (!isNannyRole())
+            return StatusCode(403, new { success = false, message = "Ban khong co quyen luu bai dang." });
+
+        SetAuthHeader();
+        try
+        {
+            var response = await _http.PostAsync($"/api/search/jobs/favorite/{jobPostingId}/toggle", null);
+            return await ProxyApiResponse(response);
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpPost]
+    [Authorize]
+    public async Task<IActionResult> ApplyJob(Guid jobPostingId)
+    {
+        if (!isNannyRole())
+            return StatusCode(403, new { success = false, message = "Ban khong co quyen ung tuyen bai dang." });
+
+        SetAuthHeader();
+        try
+        {
+            var response = await _http.PostAsync($"/api/search/jobs/{jobPostingId}/apply", null);
+            var json = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode &&
+                tryParseApplyEventPayload(json, out var parentUserId, out var nannyUserId))
+            {
+                if (parentUserId != Guid.Empty)
+                {
+                    await _notificationHub.Clients.User(parentUserId.ToString()).SendAsync("notification:new", new
+                    {
+                        title = "Co nanny vua ung tuyen bai dang cua ban",
+                        message = "Hay vao notification de xem chi tiet don ung tuyen.",
+                        type = "job-application-received",
+                        relatedId = jobPostingId
+                    });
+                }
+
+                if (nannyUserId != Guid.Empty)
+                {
+                    await _notificationHub.Clients.User(nannyUserId.ToString()).SendAsync("notification:new", new
+                    {
+                        title = "Ban da gui don ung tuyen",
+                        message = "Don ung tuyen da duoc gui. Vui long cho Parent phan hoi.",
+                        type = "job-application-submitted",
+                        relatedId = jobPostingId
+                    });
+                }
+            }
+
+            return new ContentResult
+            {
+                Content = string.IsNullOrWhiteSpace(json) ? "{}" : json,
+                ContentType = "application/json",
+                StatusCode = (int)response.StatusCode
+            };
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpGet]
+    [Authorize]
+    public async Task<IActionResult> MyApplicationsData([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    {
+        if (!isNannyRole())
+            return StatusCode(403, new { success = false, total = 0, data = Array.Empty<object>(), message = "Ban khong co quyen xem lich su ung tuyen." });
+
+        page = page < 1 ? 1 : page;
+        pageSize = pageSize < 1 ? 20 : Math.Min(pageSize, 50);
+
+        SetAuthHeader();
+        try
+        {
+            var response = await _http.GetAsync($"/api/search/jobs/applications/me?page={page}&pageSize={pageSize}");
+            var json = await response.Content.ReadAsStringAsync();
+            return new ContentResult
+            {
+                Content = string.IsNullOrWhiteSpace(json) ? "{}" : json,
+                ContentType = "application/json",
+                StatusCode = (int)response.StatusCode
+            };
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, total = 0, data = Array.Empty<object>(), message = ex.Message });
+        }
+    }
+
+    [HttpPost]
+    [Authorize]
+    public async Task<IActionResult> WithdrawApplication(Guid applicationId)
+    {
+        if (!isNannyRole())
+            return StatusCode(403, new { success = false, message = "Ban khong co quyen huy don ung tuyen." });
+
+        SetAuthHeader();
+        try
+        {
+            var response = await _http.PostAsync($"/api/search/jobs/applications/{applicationId}/withdraw", null);
+            var json = await response.Content.ReadAsStringAsync();
+            return new ContentResult
+            {
+                Content = string.IsNullOrWhiteSpace(json) ? "{}" : json,
+                ContentType = "application/json",
+                StatusCode = (int)response.StatusCode
+            };
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
     }
 
     // ── Helper: đính kèm JWT token từ session ──────────────
@@ -297,6 +492,89 @@ public class SearchController : Controller
         catch
         {
             return [];
+        }
+    }
+
+    private async Task<bool> canEditJob(Guid jobId)
+    {
+        SetAuthHeader();
+        try
+        {
+            var response = await _http.GetAsync("/api/job-postings/my");
+            if (!response.IsSuccessStatusCode) return false;
+
+            var json = await response.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("data", out var dataEl) || dataEl.ValueKind != JsonValueKind.Array)
+                return false;
+
+            foreach (var item in dataEl.EnumerateArray())
+            {
+                if (!item.TryGetProperty("id", out var idEl)) continue;
+                if (Guid.TryParse(idEl.GetString(), out var ownedId) && ownedId == jobId)
+                    return true;
+            }
+
+            return false;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private bool isParentRole()
+    {
+        if (User.IsInRole("Parent"))
+            return true;
+
+        return User.Claims.Any(c =>
+            c.Type == System.Security.Claims.ClaimTypes.Role &&
+            string.Equals(c.Value, "Parent", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private bool isNannyRole()
+    {
+        if (User.IsInRole("Nanny"))
+            return true;
+
+        return User.Claims.Any(c =>
+            c.Type == System.Security.Claims.ClaimTypes.Role &&
+            string.Equals(c.Value, "Nanny", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool tryParseApplyEventPayload(string json, out Guid parentUserId, out Guid nannyUserId)
+    {
+        parentUserId = Guid.Empty;
+        nannyUserId = Guid.Empty;
+        if (string.IsNullOrWhiteSpace(json))
+            return false;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            if (!root.TryGetProperty("success", out var successEl) || successEl.ValueKind != JsonValueKind.True)
+                return false;
+
+            if (!root.TryGetProperty("data", out var dataEl) || dataEl.ValueKind != JsonValueKind.Object)
+                return false;
+
+            if (dataEl.TryGetProperty("parentUserId", out var parentIdEl) &&
+                parentIdEl.ValueKind == JsonValueKind.String &&
+                Guid.TryParse(parentIdEl.GetString(), out var parsedParentId))
+                parentUserId = parsedParentId;
+
+            if (dataEl.TryGetProperty("nannyUserId", out var nannyIdEl) &&
+                nannyIdEl.ValueKind == JsonValueKind.String &&
+                Guid.TryParse(nannyIdEl.GetString(), out var parsedNannyId))
+                nannyUserId = parsedNannyId;
+
+            return parentUserId != Guid.Empty || nannyUserId != Guid.Empty;
+        }
+        catch
+        {
+            return false;
         }
     }
 }

@@ -56,7 +56,8 @@
                             </div>
                             <div>
                                 <label class="form-label">Loai cong viec</label>
-                                <select id="ef-type" class="form-input">
+                                <input type="text" id="ef-typeText" class="form-input form-select-picker-input" autocomplete="off" placeholder="Chon loai cong viec" />
+                                <select id="ef-type" class="form-input form-select-native-hidden">
                                     <option value="1">Full-time</option>
                                     <option value="2">Part-time</option>
                                     <option value="3">Qua dem</option>
@@ -64,15 +65,15 @@
                             </div>
                             <div>
                                 <label class="form-label">So tre can cham</label>
-                                <input type="number" id="ef-children" class="form-input" min="1" max="10" />
+                                <input type="number" id="ef-children" class="form-input bg-gray-50" min="1" max="10" readonly />
                             </div>
                             <div>
                                 <label class="form-label">Luong toi thieu</label>
-                                <input type="number" id="ef-salMin" class="form-input" />
+                                <input type="text" id="ef-salMin" inputmode="numeric" class="form-input" placeholder="VD: 1.000.000" />
                             </div>
                             <div>
                                 <label class="form-label">Luong toi da</label>
-                                <input type="number" id="ef-salMax" class="form-input" />
+                                <input type="text" id="ef-salMax" inputmode="numeric" class="form-input" placeholder="VD: 3.000.000" />
                             </div>
                             <div class="md:col-span-2">
                                 <label class="form-label">Tuy chon luong</label>
@@ -132,7 +133,8 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div class="md:col-span-2">
                                 <label class="form-label">Chon tre</label>
-                                <select id="ef-childProfileId" class="form-input"></select>
+                                <input type="text" id="ef-childProfileText" class="form-input form-select-picker-input" autocomplete="off" placeholder="Chon tre" />
+                                <select id="ef-childProfileId" class="form-input form-select-native-hidden"></select>
                             </div>
                             <div>
                                 <label class="form-label">Dac diem</label>
@@ -157,11 +159,12 @@
                             </div>
                         </div>
                         <div class="flex gap-2 items-center">
-                            <select id="ef-skillSelect" class="form-input">
+                            <input type="text" id="ef-skillSelectText" class="form-input form-select-picker-input" autocomplete="off" placeholder="Chon ky nang can yeu cau" />
+                            <select id="ef-skillSelect" class="form-input form-select-native-hidden">
                                 <option value="">Chon ky nang can yeu cau</option>
                                 @foreach (var skill in skillOptions)
                                 {
-                                    <option value="@skill.SkillName">@skill.SkillName</option>
+                                    <option value="@skill.SkillName">@skill.SkillName@(string.IsNullOrWhiteSpace(skill.Category) ? "" : $" - {skill.Category}")</option>
                                 }
                             </select>
                             <button type="button" id="ef-addSkill" class="icon-pill-btn">
@@ -173,7 +176,12 @@
 
                     <div class="flex flex-col-reverse sm:flex-row gap-3">
                         <a href="/Search/History" class="modal-btn modal-btn-secondary flex-1 text-center">Huy</a>
-                        <button type="submit" id="editPageSubmit" class="modal-btn modal-btn-primary flex-1">Luu thay doi</button>
+                        <button type="submit" id="editPageSubmit" class="modal-btn modal-btn-primary flex-1">
+                            <span class="modal-btn__content">
+                                <span class="modal-btn__spinner" aria-hidden="true"></span>
+                                <span class="modal-btn__label">Luu thay doi</span>
+                            </span>
+                        </button>
                     </div>
                 </form>
             </div>
@@ -181,14 +189,18 @@
     </div>
 </section>
 
-<div id="toast" class="bg-gray-900 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-2xl"></div>
-
 @section Scripts {
 <script>
 const JOB_ID = '@jobId';
 let editChildren = [];
 let editSkills = [];
 let editSchedule = [];
+const autocompleteDropdowns = new Map();
+const selectPickerSyncFns = [];
+let initialFormSignature = '';
+let hasLoadedEditData = false;
+let isSubmittingEdit = false;
+let currentModerationStatus = null;
 
 const DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 const ROW_LABELS = ['Morning', 'Afternoon', 'Evening', 'Night'];
@@ -202,13 +214,179 @@ function escapeHtml(value) {
         .replaceAll("'", '&#39;');
 }
 
-function showToast(message) {
-    const toast = document.getElementById('toast');
-    if (!toast) return;
-    toast.textContent = message;
-    toast.classList.add('show');
-    clearTimeout(showToast._timer);
-    showToast._timer = setTimeout(() => toast.classList.remove('show'), 2600);
+function showToast(message, type = 'info') {
+    if (typeof window.showToast === 'function' && window.showToast !== showToast) {
+        window.showToast(message, { type });
+        return;
+    }
+
+    const fallback = document.createElement('div');
+    fallback.style.position = 'fixed';
+    fallback.style.right = '16px';
+    fallback.style.bottom = '16px';
+    fallback.style.zIndex = '12060';
+    fallback.style.padding = '10px 12px';
+    fallback.style.borderRadius = '10px';
+    fallback.style.background = '#0f172a';
+    fallback.style.color = '#fff';
+    fallback.style.fontSize = '13px';
+    fallback.style.fontWeight = '700';
+    fallback.textContent = message;
+    document.body.appendChild(fallback);
+    window.setTimeout(() => fallback.remove(), 2200);
+}
+
+function sanitizeMoneyDigits(value) {
+    return String(value ?? '').replace(/[^\d]/g, '');
+}
+
+function formatMoneyInputValue(value) {
+    const digits = sanitizeMoneyDigits(value);
+    if (!digits) return '';
+    const normalized = digits.replace(/^0+(?=\d)/, '');
+    const amount = Number(normalized || '0');
+    return Number.isFinite(amount) ? amount.toLocaleString('vi-VN') : '';
+}
+
+function parseMoneyInput(value) {
+    const digits = sanitizeMoneyDigits(value);
+    if (!digits) return null;
+    const normalized = digits.replace(/^0+(?=\d)/, '');
+    const amount = Number(normalized || '0');
+    return Number.isFinite(amount) ? amount : null;
+}
+
+function bindMoneyInputFormatting(inputId) {
+    const input = document.getElementById(inputId);
+    if (!input || input.dataset.moneyReady === 'true') return;
+
+    input.dataset.moneyReady = 'true';
+    const applyFormat = () => {
+        input.value = formatMoneyInputValue(input.value);
+    };
+
+    input.addEventListener('input', applyFormat);
+    input.addEventListener('blur', applyFormat);
+    applyFormat();
+}
+
+function initMoneyInputs() {
+    ['ef-salMin', 'ef-salMax'].forEach(bindMoneyInputFormatting);
+}
+
+function pushHistoryToast(message, type = 'success') {
+    try {
+        sessionStorage.setItem('nm:historyToast', JSON.stringify({
+            message: String(message || ''),
+            type: String(type || 'info'),
+            createdAt: Date.now()
+        }));
+    } catch {
+        // Ignore storage errors (private mode/quota), flow still redirects.
+    }
+}
+
+function redirectToHistory(jobId) {
+    window.location.href = `/Search/History?jobId=${encodeURIComponent(jobId)}`;
+}
+
+function normalizeText(value) {
+    return String(value ?? '').toLowerCase().trim();
+}
+
+function getAutocompleteKey(prefix, kind) {
+    return `${prefix}-${kind}`;
+}
+
+function hideAutocomplete(prefix, kind) {
+    const dropdown = autocompleteDropdowns.get(getAutocompleteKey(prefix, kind));
+    if (!dropdown) return;
+    dropdown.classList.remove('show');
+}
+
+function attachSelectPicker(prefix, kind, selectId, inputId, emptyLabel, onValueChanged) {
+    const select = document.getElementById(selectId);
+    const input = document.getElementById(inputId);
+    if (!select || !input || input.dataset.acReady === 'true') return;
+
+    input.dataset.acReady = 'true';
+    input.parentElement?.classList.add('autocomplete-field');
+
+    const dropdown = document.createElement('ul');
+    dropdown.className = 'ac-dropdown';
+    input.insertAdjacentElement('afterend', dropdown);
+    autocompleteDropdowns.set(getAutocompleteKey(prefix, kind), dropdown);
+
+    const normalizedEmptyLabel = normalizeText(emptyLabel);
+
+    const syncFromSelect = () => {
+        const selectedOption = select.options[select.selectedIndex];
+        input.value = selectedOption ? selectedOption.text.trim() : emptyLabel;
+    };
+    selectPickerSyncFns.push(syncFromSelect);
+
+    const buildOptions = (query) => {
+        const normalizedQuery = normalizeText(query);
+        return Array.from(select.options)
+            .map((option) => ({ value: option.value, label: option.text.trim() }))
+            .filter((option) => option.label && (!normalizedQuery || normalizeText(option.label).includes(normalizedQuery)))
+            .slice(0, 16);
+    };
+
+    const renderOptions = (query) => {
+        const options = buildOptions(query);
+        if (!options.length) {
+            dropdown.innerHTML = '';
+            dropdown.classList.remove('show');
+            return;
+        }
+
+        dropdown.innerHTML = options.map((option) => `
+            <li data-value="${escapeHtml(option.value)}" data-label="${escapeHtml(option.label)}">${escapeHtml(option.label)}</li>
+        `).join('');
+        dropdown.classList.add('show');
+
+        dropdown.querySelectorAll('li').forEach((item) => {
+            item.addEventListener('mousedown', (event) => {
+                event.preventDefault();
+                select.value = item.dataset.value || '';
+                input.value = item.dataset.label || emptyLabel;
+                if (typeof onValueChanged === 'function') onValueChanged(select.value);
+                updateSubmitState();
+                hideAutocomplete(prefix, kind);
+            });
+        });
+    };
+
+    syncFromSelect();
+    input.addEventListener('focus', () => {
+        const currentValue = input.value.trim();
+        const shouldOpenAll = !currentValue || select.value === '' || normalizeText(currentValue) === normalizedEmptyLabel;
+        renderOptions(shouldOpenAll ? '' : currentValue);
+    });
+    input.addEventListener('click', () => {
+        const currentValue = input.value.trim();
+        const shouldOpenAll = !currentValue || select.value === '' || normalizeText(currentValue) === normalizedEmptyLabel;
+        renderOptions(shouldOpenAll ? '' : currentValue);
+    });
+    input.addEventListener('input', () => renderOptions(input.value.trim()));
+    input.addEventListener('blur', () => {
+        setTimeout(() => {
+            hideAutocomplete(prefix, kind);
+            syncFromSelect();
+            updateSubmitState();
+        }, 120);
+    });
+}
+
+function syncSelectPickerTexts() {
+    selectPickerSyncFns.forEach((syncFn) => syncFn());
+}
+
+function attachEditSelectPickers() {
+    attachSelectPicker('ef', 'typePicker', 'ef-type', 'ef-typeText', 'Chon loai cong viec');
+    attachSelectPicker('ef', 'childPicker', 'ef-childProfileId', 'ef-childProfileText', 'Chon tre', () => setProfileFields(getSelectedChild()));
+    attachSelectPicker('ef', 'skillPicker', 'ef-skillSelect', 'ef-skillSelectText', 'Chon ky nang can yeu cau');
 }
 
 function showNotice(message, kind) {
@@ -224,6 +402,7 @@ function setEditStatus(status) {
     document.querySelectorAll('#ef-statusToggle .status-option').forEach((button) => {
         button.classList.toggle('active', Number(button.dataset.status) === status);
     });
+    updateSubmitState();
 }
 
 function renderScheduleGrid() {
@@ -249,6 +428,7 @@ function renderScheduleGrid() {
             if (idx >= 0) editSchedule.splice(idx, 1);
             else editSchedule.push({ dayOfWeek, timeSlot });
             renderScheduleGrid();
+            updateSubmitState();
         });
     });
 }
@@ -264,8 +444,176 @@ function renderSkillCollection() {
         button.addEventListener('click', () => {
             editSkills = editSkills.filter(skill => skill !== button.dataset.skill);
             renderSkillCollection();
+            updateSubmitState();
         });
     });
+}
+
+function getValidEditSkills() {
+    const select = document.getElementById('ef-skillSelect');
+    if (!select) return [...editSkills];
+
+    const allowedSkills = new Set(
+        Array.from(select.options)
+            .map((option) => option.value?.trim())
+            .filter((value) => !!value)
+    );
+
+    return editSkills.filter((skill) => allowedSkills.has(skill));
+}
+
+function normalizeScheduleForCompare(slots) {
+    return [...(Array.isArray(slots) ? slots : [])]
+        .map((slot) => `${Number(slot.dayOfWeek)}-${Number(slot.timeSlot)}`)
+        .sort()
+        .join('|');
+}
+
+function normalizeSkillsForCompare(skills) {
+    return [...(Array.isArray(skills) ? skills : [])]
+        .map((skill) => String(skill ?? '').trim().toLowerCase())
+        .filter((skill) => !!skill)
+        .sort()
+        .join('|');
+}
+
+function getCurrentFormSignature() {
+    return JSON.stringify({
+        title: document.getElementById('ef-title')?.value?.trim() || '',
+        description: document.getElementById('ef-desc')?.value?.trim() || '',
+        jobType: Number(document.getElementById('ef-type')?.value || 0),
+        numberOfChildren: Number(document.getElementById('ef-children')?.value || 0),
+        childProfileId: document.getElementById('ef-childProfileId')?.value || '',
+        salaryMin: document.getElementById('ef-salMin')?.value?.trim() || '',
+        salaryMax: document.getElementById('ef-salMax')?.value?.trim() || '',
+        salaryNegotiable: !!document.getElementById('ef-negotiable')?.checked,
+        location: document.getElementById('ef-location')?.value?.trim() || '',
+        city: document.getElementById('ef-city')?.value?.trim() || '',
+        district: document.getElementById('ef-district')?.value?.trim() || '',
+        minNannyAge: document.getElementById('ef-minAge')?.value?.trim() || '',
+        maxNannyAge: document.getElementById('ef-maxAge')?.value?.trim() || '',
+        status: Number(document.getElementById('ef-status')?.value || 0),
+        schedule: normalizeScheduleForCompare(editSchedule),
+        skills: normalizeSkillsForCompare(editSkills)
+    });
+}
+
+function focusInvalidField(fieldId) {
+    const element = document.getElementById(fieldId);
+    if (!element) return;
+    try {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } catch {
+        // Ignore scroll errors.
+    }
+    window.setTimeout(() => {
+        try { element.focus({ preventScroll: true }); }
+        catch { element.focus(); }
+    }, 120);
+}
+
+function validateEditPayload(payload) {
+    const title = String(payload?.title ?? '').trim();
+    if (!title || title.length < 5 || title.length > 200) {
+        return { message: 'Tieu de bai dang phai tu 5 den 200 ky tu.', fieldId: 'ef-title' };
+    }
+
+    const description = String(payload?.description ?? '').trim();
+    if (!description || description.length < 10 || description.length > 3000) {
+        return { message: 'Mo ta chi tiet phai tu 10 den 3000 ky tu.', fieldId: 'ef-desc' };
+    }
+
+    if (![1, 2, 3].includes(Number(payload?.jobType))) {
+        return { message: 'Loai cong viec khong hop le.', fieldId: 'ef-typeText' };
+    }
+
+    const children = Number(payload?.numberOfChildren || 0);
+    if (!Number.isFinite(children) || children < 1 || children > 10) {
+        return { message: 'So tre can cham phai tu 1 den 10.', fieldId: 'ef-children' };
+    }
+
+    if (!payload?.childProfileId) {
+        return { message: 'Vui long chon tre tu Child Profile.', fieldId: 'ef-childProfileText' };
+    }
+
+    const location = String(payload?.location ?? '').trim();
+    if (!location || location.length < 3 || location.length > 300) {
+        return { message: 'Dia chi chi tiet phai tu 3 den 300 ky tu.', fieldId: 'ef-location' };
+    }
+
+    const city = String(payload?.city ?? '').trim();
+    if (!city || city.length > 100) {
+        return { message: 'Thanh pho la bat buoc va toi da 100 ky tu.', fieldId: 'ef-city' };
+    }
+
+    const district = String(payload?.district ?? '').trim();
+    if (!district || district.length > 100) {
+        return { message: 'Quan/Huyen la bat buoc va toi da 100 ky tu.', fieldId: 'ef-district' };
+    }
+
+    const salaryMin = payload?.salaryMin;
+    const salaryMax = payload?.salaryMax;
+    if (salaryMin != null && (!Number.isFinite(salaryMin) || salaryMin < 0 || salaryMin > 100000000)) {
+        return { message: 'Luong toi thieu phai tu 0 den 100,000,000.', fieldId: 'ef-salMin' };
+    }
+    if (salaryMax != null && (!Number.isFinite(salaryMax) || salaryMax < 0 || salaryMax > 100000000)) {
+        return { message: 'Luong toi da phai tu 0 den 100,000,000.', fieldId: 'ef-salMax' };
+    }
+    if (salaryMin != null && salaryMax != null && Number(salaryMin) > Number(salaryMax)) {
+        return { message: 'Luong toi thieu khong duoc lon hon luong toi da.', fieldId: 'ef-salMin' };
+    }
+
+    const minAge = payload?.minNannyAge;
+    const maxAge = payload?.maxNannyAge;
+    if (minAge != null && (!Number.isFinite(minAge) || minAge < 18 || minAge > 80)) {
+        return { message: 'Do tuoi bao mau tu phai trong khoang 18-80.', fieldId: 'ef-minAge' };
+    }
+    if (maxAge != null && (!Number.isFinite(maxAge) || maxAge < 18 || maxAge > 80)) {
+        return { message: 'Do tuoi bao mau den phai trong khoang 18-80.', fieldId: 'ef-maxAge' };
+    }
+    if (minAge != null && maxAge != null && Number(minAge) > Number(maxAge)) {
+        return { message: 'Do tuoi tu khong duoc lon hon do tuoi den.', fieldId: 'ef-minAge' };
+    }
+
+    if (!Array.isArray(payload?.skills) || payload.skills.length < 1) {
+        return { message: 'Vui long chon it nhat 1 ky nang.', fieldId: 'ef-skillSelectText' };
+    }
+    if (payload.skills.length > 20) {
+        return { message: 'Toi da 20 ky nang cho moi bai dang.', fieldId: 'ef-skillSelectText' };
+    }
+
+    if (!Array.isArray(payload?.scheduleSlots) || payload.scheduleSlots.length < 1) {
+        return { message: 'Vui long chon it nhat 1 khung lich.', fieldId: 'ef-schedule' };
+    }
+
+    if (![1, 2].includes(Number(payload?.status))) {
+        return { message: 'Trang thai bai dang khong hop le.', fieldId: 'ef-statusToggle' };
+    }
+
+    return null;
+}
+
+function isFormDirty() {
+    if (!hasLoadedEditData) return false;
+    return getCurrentFormSignature() !== initialFormSignature;
+}
+
+function updateSubmitState() {
+    const submitBtn = document.getElementById('editPageSubmit');
+    if (!submitBtn) return;
+
+    const disabled = !hasLoadedEditData || isSubmittingEdit || !isFormDirty();
+    submitBtn.disabled = disabled;
+    submitBtn.classList.toggle('is-loading', isSubmittingEdit);
+    submitBtn.setAttribute('aria-busy', isSubmittingEdit ? 'true' : 'false');
+    submitBtn.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+    const submitLabel = submitBtn.querySelector('.modal-btn__label');
+    if (submitLabel) {
+        submitLabel.textContent = isSubmittingEdit ? 'Dang luu...' : 'Luu thay doi';
+    }
+    submitBtn.title = disabled && !isSubmittingEdit
+        ? 'Khong co thay doi de luu'
+        : '';
 }
 
 function setProfileFields(child) {
@@ -286,6 +634,7 @@ function renderChildren(selectedChildId) {
         ? editChildren.map(child => `<option value="${escapeHtml(child.id)}">${escapeHtml(child.label)}</option>`).join('')
         : '<option value="">Chua co Child Profile</option>';
     if (selectedChildId) select.value = selectedChildId;
+    syncSelectPickerTexts();
     setProfileFields(getSelectedChild());
 }
 
@@ -308,8 +657,8 @@ async function loadEditPage() {
         document.getElementById('ef-desc').value = job.description || '';
         document.getElementById('ef-type').value = job.jobType || 1;
         document.getElementById('ef-children').value = job.numberOfChildren || prefill.numberOfChildren || 1;
-        document.getElementById('ef-salMin').value = job.salaryMin || '';
-        document.getElementById('ef-salMax').value = job.salaryMax || '';
+        document.getElementById('ef-salMin').value = formatMoneyInputValue(job.salaryMin);
+        document.getElementById('ef-salMax').value = formatMoneyInputValue(job.salaryMax);
         document.getElementById('ef-negotiable').checked = !!job.salaryNegotiable;
         document.getElementById('ef-location').value = job.location || '';
         document.getElementById('ef-city').value = job.city || '';
@@ -317,6 +666,7 @@ async function loadEditPage() {
         document.getElementById('ef-minAge').value = job.minNannyAge || '';
         document.getElementById('ef-maxAge').value = job.maxNannyAge || '';
         setEditStatus(Number(job.status) || 1);
+        syncSelectPickerTexts();
 
         editSkills = Array.isArray(job.skills) ? [...job.skills] : [];
         editSchedule = Array.isArray(job.scheduleSlots) ? job.scheduleSlots.map(slot => ({ dayOfWeek: slot.dayOfWeek, timeSlot: slot.timeSlot })) : [];
@@ -329,8 +679,15 @@ async function loadEditPage() {
         } else if (Number(job.moderationStatus) === 2) {
             showNotice('Neu ban chinh sua bai dang cong khai va luu lai, bai dang se quay ve trang thai cho duyet.', 'info');
         }
+        currentModerationStatus = Number(job.moderationStatus);
+
+        initialFormSignature = getCurrentFormSignature();
+        hasLoadedEditData = true;
+        updateSubmitState();
     } catch {
-        showToast('Khong tai duoc thong tin bai dang');
+        showToast('Khong tai duoc thong tin bai dang', 'error');
+        hasLoadedEditData = false;
+        updateSubmitState();
     }
 }
 
@@ -341,7 +698,13 @@ document.getElementById('ef-addSkill')?.addEventListener('click', () => {
     if (!value || editSkills.includes(value)) return;
     editSkills.push(value);
     select.value = '';
+    syncSelectPickerTexts();
     renderSkillCollection();
+});
+
+document.querySelectorAll('#editPageForm input, #editPageForm textarea, #editPageForm select').forEach((element) => {
+    element.addEventListener('input', updateSubmitState);
+    element.addEventListener('change', updateSubmitState);
 });
 
 document.querySelectorAll('#ef-statusToggle .status-option').forEach((button) => {
@@ -350,6 +713,19 @@ document.querySelectorAll('#ef-statusToggle .status-option').forEach((button) =>
 
 document.getElementById('editPageForm')?.addEventListener('submit', async (event) => {
     event.preventDefault();
+    if (!hasLoadedEditData) return;
+    if (!isFormDirty()) {
+        showToast('Chua co thay doi de luu.', 'info');
+        updateSubmitState();
+        return;
+    }
+
+    const validSkills = getValidEditSkills();
+    if (validSkills.length !== editSkills.length) {
+        editSkills = validSkills;
+        renderSkillCollection();
+        showToast('Mot so ky nang cu khong con hoat dong, he thong da bo qua de ban luu duoc bai dang.', 'warning');
+    }
 
     const payload = {
         title: document.getElementById('ef-title').value.trim(),
@@ -357,48 +733,95 @@ document.getElementById('editPageForm')?.addEventListener('submit', async (event
         jobType: Number(document.getElementById('ef-type').value),
         numberOfChildren: Number(document.getElementById('ef-children').value || 1),
         childProfileId: document.getElementById('ef-childProfileId').value || null,
-        salaryMin: document.getElementById('ef-salMin').value ? Number(document.getElementById('ef-salMin').value) : null,
-        salaryMax: document.getElementById('ef-salMax').value ? Number(document.getElementById('ef-salMax').value) : null,
+        salaryMin: parseMoneyInput(document.getElementById('ef-salMin').value),
+        salaryMax: parseMoneyInput(document.getElementById('ef-salMax').value),
         salaryNegotiable: document.getElementById('ef-negotiable').checked,
         location: document.getElementById('ef-location').value.trim(),
         city: document.getElementById('ef-city').value.trim(),
         district: document.getElementById('ef-district').value.trim(),
         minNannyAge: document.getElementById('ef-minAge').value ? Number(document.getElementById('ef-minAge').value) : null,
         maxNannyAge: document.getElementById('ef-maxAge').value ? Number(document.getElementById('ef-maxAge').value) : null,
-        skills: editSkills,
+        skills: validSkills,
         scheduleSlots: editSchedule,
         status: Number(document.getElementById('ef-status').value || 1)
     };
+    const validationError = validateEditPayload(payload);
+    if (validationError) {
+        showToast(validationError.message, 'warning');
+        if (validationError.fieldId) focusInvalidField(validationError.fieldId);
+        return;
+    }
 
     const submitBtn = document.getElementById('editPageSubmit');
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Dang luu...';
+    isSubmittingEdit = true;
+    updateSubmitState();
+    let shouldKeepDisabledForRedirect = false;
 
     try {
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort(), 15000);
         const res = await fetch(`/Search/UpdateJob/${JOB_ID}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            credentials: 'same-origin',
+            body: JSON.stringify(payload),
+            signal: controller.signal
         });
-        const json = await res.json();
-        if (!json.success) {
-            showToast(json.message || 'Cap nhat that bai');
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Luu thay doi';
+        window.clearTimeout(timeoutId);
+
+        const contentType = res.headers.get('content-type') || '';
+        let json = null;
+        if (contentType.toLowerCase().includes('application/json')) {
+            json = await res.json();
+        } else {
+            const text = await res.text();
+            json = { success: false, message: text || 'Phan hoi khong hop le tu server.' };
+        }
+
+        const payloadResult = json?.raw && typeof json.raw === 'object' ? json.raw : json;
+        const isSuccess = !!(json?.success || payloadResult?.success);
+        if (!isSuccess) {
+            const firstError = json?.errors && typeof json.errors === 'object'
+                ? Object.values(json.errors).flat().find(Boolean)
+                : null;
+            showToast(firstError || payloadResult?.message || json?.message || 'Cap nhat that bai', 'error');
             return;
         }
 
-        showToast('Cap nhat thanh cong. Bai dang da duoc gui moderator duyet lai');
-        setTimeout(() => {
-            window.location.href = `/Search/History?jobId=${JOB_ID}`;
-        }, 900);
-    } catch {
-        showToast('Loi ket noi server');
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Luu thay doi';
+        const successMessage = currentModerationStatus === 0
+            ? 'Da cap nhat bai dang dang cho duyet.'
+            : (payloadResult?.message || 'Cap nhat thanh cong. Bai dang da duoc gui moderator duyet lai');
+        pushHistoryToast(successMessage, 'success');
+        shouldKeepDisabledForRedirect = true;
+        redirectToHistory(JOB_ID);
+    } catch (error) {
+        if (error?.name === 'AbortError') {
+            showToast('Het thoi gian cho luu thay doi. Vui long thu lai.', 'error');
+        } else {
+            showToast('Loi ket noi server', 'error');
+        }
+    } finally {
+        if (!shouldKeepDisabledForRedirect) {
+            isSubmittingEdit = false;
+            updateSubmitState();
+        }
     }
 });
 
-loadEditPage();
+function initializeEditPage() {
+    ['ef-typeText', 'ef-childProfileText', 'ef-skillSelectText'].forEach((id) => {
+        document.getElementById(id)?.setAttribute('autocomplete', 'off');
+    });
+    initMoneyInputs();
+    attachEditSelectPickers();
+    updateSubmitState();
+    loadEditPage();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeEditPage, { once: true });
+} else {
+    initializeEditPage();
+}
 </script>
 }

@@ -17,8 +17,69 @@ let isSubmittingCreate = false;
 let isSubmittingEdit = false;
 let provinces = [];
 let locationDataPromise = null;
+let provinceCatalog = [];
+let provinceCatalogPromise = null;
 let suppressNextMapSearch = false;
 const autocompleteDropdowns = new Map();
+const selectPickerSyncFns = [];
+const addressSuggestionCache = new Map();
+const districtOptionsCache = new Map();
+const ownedJobIds = new Set();
+const appliedJobIds = new Set();
+let ownedJobsLoaded = false;
+const FALLBACK_PROVINCES = [
+  'Thành phố Hà Nội',
+  'Thành phố Hồ Chí Minh',
+  'Thành phố Hải Phòng',
+  'Thành phố Huế',
+  'Thành phố Đà Nẵng',
+  'Thành phố Cần Thơ',
+  'Tỉnh Cao Bằng',
+  'Tỉnh Điện Biên',
+  'Tỉnh Lai Châu',
+  'Tỉnh Sơn La',
+  'Tỉnh Lạng Sơn',
+  'Tỉnh Quảng Ninh',
+  'Tỉnh Thanh Hóa',
+  'Tỉnh Nghệ An',
+  'Tỉnh Hà Tĩnh',
+  'Tỉnh Tuyên Quang',
+  'Tỉnh Lào Cai',
+  'Tỉnh Thái Nguyên',
+  'Tỉnh Phú Thọ',
+  'Tỉnh Bắc Ninh',
+  'Tỉnh Hưng Yên',
+  'Tỉnh Ninh Bình',
+  'Tỉnh Quảng Trị',
+  'Tỉnh Quảng Ngãi',
+  'Tỉnh Gia Lai',
+  'Tỉnh Khánh Hòa',
+  'Tỉnh Lâm Đồng',
+  'Tỉnh Đắk Lắk',
+  'Tỉnh Đồng Nai',
+  'Tỉnh Tây Ninh',
+  'Tỉnh Vĩnh Long',
+  'Tỉnh Đồng Tháp',
+  'Tỉnh Cà Mau',
+  'Tỉnh An Giang'
+];
+const FALLBACK_DISTRICTS_BY_CITY = {
+  'ho chi minh': [
+    'Quận 1', 'Quận 3', 'Quận 4', 'Quận 5', 'Quận 6', 'Quận 7', 'Quận 8',
+    'Quận 10', 'Quận 11', 'Quận 12', 'Quận Bình Thạnh', 'Quận Gò Vấp',
+    'Quận Phú Nhuận', 'Quận Tân Bình', 'Quận Tân Phú', 'Thành phố Thủ Đức',
+    'Huyện Bình Chánh', 'Huyện Cần Giờ', 'Huyện Củ Chi', 'Huyện Hóc Môn', 'Huyện Nhà Bè'
+  ],
+  'ha noi': [
+    'Quận Ba Đình', 'Quận Hoàn Kiếm', 'Quận Tây Hồ', 'Quận Long Biên', 'Quận Cầu Giấy',
+    'Quận Đống Đa', 'Quận Hai Bà Trưng', 'Quận Hoàng Mai', 'Quận Thanh Xuân',
+    'Quận Bắc Từ Liêm', 'Quận Nam Từ Liêm', 'Quận Hà Đông'
+  ],
+  'da nang': ['Quận Hải Châu', 'Quận Thanh Khê', 'Quận Sơn Trà', 'Quận Ngũ Hành Sơn', 'Quận Liên Chiểu', 'Huyện Hòa Vang'],
+  'can tho': ['Quận Ninh Kiều', 'Quận Bình Thủy', 'Quận Cái Răng', 'Quận Ô Môn', 'Quận Thốt Nốt'],
+  'hai phong': ['Quận Hồng Bàng', 'Quận Ngô Quyền', 'Quận Lê Chân', 'Quận Hải An', 'Quận Kiến An', 'Quận Dương Kinh', 'Quận Đồ Sơn'],
+  'hue': ['Quận Phú Xuân', 'Quận Thuận Hóa', 'Thị xã Hương Thủy', 'Thị xã Hương Trà']
+};
 
 const DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 const ROW_LABELS = ['Morning', 'Afternoon', 'Evening', 'Night'];
@@ -33,12 +94,14 @@ const GEO_FALLBACK = {
 function loadLocationData() {
   if (locationDataPromise) return locationDataPromise;
 
-  locationDataPromise = fetch('https://provinces.open-api.vn/api/v2/?depth=3')
+  // Attach autocomplete ngay, dù nguồn ngoài chậm/lỗi thì vẫn có fallback để dùng.
+  attachLocationAutocomplete('cf');
+  attachLocationAutocomplete('ef');
+
+  locationDataPromise = fetch('https://provinces.open-api.vn/api/v2/?depth=2')
     .then((response) => response.ok ? response.json() : [])
     .then((data) => {
       provinces = Array.isArray(data) ? data : [];
-      attachLocationAutocomplete('cf');
-      attachLocationAutocomplete('ef');
       return provinces;
     })
     .catch(() => {
@@ -57,13 +120,168 @@ function normalizeText(value) {
     .trim();
 }
 
+function normalizeAdministrativeName(value) {
+  return normalizeText(value)
+    .replace(/^thanh pho\s+/i, '')
+    .replace(/^tp\.?\s*/i, '')
+    .replace(/^tinh\s+/i, '');
+}
+
 function getProvinceOptions() {
   return provinces.map((province) => province.name);
 }
 
 function getDistrictOptions(cityName) {
-  const selectedProvince = provinces.find((province) => province.name === cityName);
+  const normalizedCity = normalizeAdministrativeName(cityName);
+  const selectedProvince = provinces.find((province) =>
+    normalizeAdministrativeName(province.name) === normalizedCity
+  );
   return (selectedProvince?.districts || []).map((district) => district.name);
+}
+
+function getFallbackDistrictOptions(cityName) {
+  return FALLBACK_DISTRICTS_BY_CITY[normalizeAdministrativeName(cityName)] || [];
+}
+
+function getDistrictCacheKey(cityName) {
+  return normalizeAdministrativeName(cityName);
+}
+
+function cacheDistrictOptions(cityName, values) {
+  districtOptionsCache.set(getDistrictCacheKey(cityName), values);
+  return values;
+}
+
+function getCachedDistrictOptions(cityName) {
+  return districtOptionsCache.get(getDistrictCacheKey(cityName)) || [];
+}
+
+function loadProvinceCatalog() {
+  if (provinceCatalogPromise) return provinceCatalogPromise;
+
+  provinceCatalogPromise = fetch('https://provinces.open-api.vn/api/v2/p/')
+    .then((response) => response.ok ? response.json() : [])
+    .then((data) => {
+      provinceCatalog = Array.isArray(data) ? data : [];
+      return provinceCatalog;
+    })
+    .catch(() => {
+      provinceCatalog = [];
+      return provinceCatalog;
+    });
+
+  return provinceCatalogPromise;
+}
+
+async function fetchDistrictOptionsByCity(cityName) {
+  const normalizedCity = String(cityName ?? '').trim();
+  if (!normalizedCity) return [];
+
+  const cached = getCachedDistrictOptions(normalizedCity);
+  if (cached.length) return cached;
+
+  const localOptions = getDistrictOptions(normalizedCity);
+  if (localOptions.length) {
+    return cacheDistrictOptions(normalizedCity, localOptions);
+  }
+
+  const fallbackOptions = getFallbackDistrictOptions(normalizedCity);
+  if (fallbackOptions.length) {
+    return cacheDistrictOptions(normalizedCity, fallbackOptions);
+  }
+
+  try {
+    const response = await fetch(`/Address/Districts?city=${encodeURIComponent(normalizedCity)}`, {
+      credentials: 'same-origin'
+    });
+    if (!response.ok) return [];
+
+    const data = await response.json();
+    const districts = Array.isArray(data)
+      ? data.filter(Boolean)
+      : [];
+    if (districts.length) {
+      return cacheDistrictOptions(normalizedCity, districts);
+    }
+    return cacheDistrictOptions(normalizedCity, fallbackOptions);
+  } catch {
+    return cacheDistrictOptions(normalizedCity, fallbackOptions);
+  }
+}
+
+async function fetchAddressSuggestions(query) {
+  const normalized = String(query ?? '').trim();
+  if (normalized.length < 2) return [];
+
+  const cacheKey = normalizeText(normalized);
+  if (addressSuggestionCache.has(cacheKey)) {
+    return addressSuggestionCache.get(cacheKey) || [];
+  }
+
+  try {
+    const response = await fetch(`/Address/Suggest?q=${encodeURIComponent(normalized)}&limit=10`, { credentials: 'same-origin' });
+    if (!response.ok) return [];
+    const json = await response.json();
+    const items = Array.isArray(json) ? json : [];
+    addressSuggestionCache.set(cacheKey, items);
+    return items;
+  } catch {
+    return [];
+  }
+}
+
+function uniqueNormalizedValues(values, query) {
+  const seen = new Set();
+  return values
+    .filter((value) => value && (!query || normalizeText(value).includes(normalizeText(query))))
+    .filter((value) => {
+      const key = normalizeText(value);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 12);
+}
+
+async function getProvinceOptionsAsync(query) {
+  if (provinces.length) {
+    return uniqueNormalizedValues(getProvinceOptions(), query);
+  }
+
+  if (!String(query ?? '').trim()) {
+    return [...FALLBACK_PROVINCES];
+  }
+
+  const suggestions = await fetchAddressSuggestions(query);
+  const values = uniqueNormalizedValues(suggestions.map((item) => item.city), query);
+  return values.length ? values : uniqueNormalizedValues(FALLBACK_PROVINCES, query);
+}
+
+async function getDistrictOptionsAsync(cityName, query) {
+  const normalizedCity = String(cityName ?? '').trim();
+  if (!normalizedCity) return [];
+  const normalizedCityKey = normalizeAdministrativeName(normalizedCity);
+
+  const localValues = uniqueNormalizedValues(await fetchDistrictOptionsByCity(normalizedCity), query);
+  if (localValues.length) {
+    return localValues;
+  }
+
+  if (!String(query ?? '').trim()) {
+    return [];
+  }
+
+  const compositeQuery = [query, normalizedCity].filter(Boolean).join(', ');
+  const suggestions = await fetchAddressSuggestions(compositeQuery);
+  return uniqueNormalizedValues(
+    suggestions
+      .filter((item) => {
+        if (!item.city) return true;
+        return normalizeAdministrativeName(item.city).includes(normalizedCityKey);
+      })
+      .map((item) => item.district),
+    query
+  );
 }
 
 function getAutocompleteKey(prefix, kind) {
@@ -113,11 +331,12 @@ function attachAutocomplete(prefix, kind, optionGetter, onSelect) {
   input.insertAdjacentElement('afterend', dropdown);
   autocompleteDropdowns.set(getAutocompleteKey(prefix, kind), dropdown);
 
-  const showForQuery = () => {
-    const query = normalizeText(input.value);
-    const filtered = optionGetter()
-      .filter((option) => !query || normalizeText(option).includes(query))
-      .slice(0, 12);
+  let requestToken = 0;
+  const showForQuery = async () => {
+    const currentToken = ++requestToken;
+    const rawQuery = input.value.trim();
+    const filtered = await Promise.resolve(optionGetter(rawQuery));
+    if (currentToken !== requestToken) return;
 
     renderAutocompleteOptions(prefix, kind, filtered, (value) => {
       input.value = value;
@@ -137,7 +356,7 @@ function attachLocationAutocomplete(prefix) {
   attachAutocomplete(
     prefix,
     'city',
-    () => getProvinceOptions(),
+    (query) => getProvinceOptionsAsync(query),
     (value) => {
       const districtInput = document.getElementById(`${prefix}-district`);
       if (districtInput) districtInput.value = '';
@@ -148,9 +367,92 @@ function attachLocationAutocomplete(prefix) {
   attachAutocomplete(
     prefix,
     'district',
-    () => getDistrictOptions(document.getElementById(`${prefix}-city`)?.value.trim() || ''),
+    (query) => getDistrictOptionsAsync(document.getElementById(`${prefix}-city`)?.value.trim() || '', query),
     () => {}
   );
+}
+
+function attachSelectPicker(prefix, kind, selectId, inputId, emptyLabel, onValueChanged) {
+  const select = document.getElementById(selectId);
+  const input = document.getElementById(inputId);
+  if (!select || !input || input.dataset.acReady === 'true') return;
+
+  input.dataset.acReady = 'true';
+  input.parentElement?.classList.add('autocomplete-field');
+
+  const dropdown = document.createElement('ul');
+  dropdown.className = 'ac-dropdown';
+  input.insertAdjacentElement('afterend', dropdown);
+  autocompleteDropdowns.set(getAutocompleteKey(prefix, kind), dropdown);
+  const normalizedEmptyLabel = normalizeText(emptyLabel);
+
+  const syncFromSelect = () => {
+    const selectedOption = select.options[select.selectedIndex];
+    input.value = selectedOption ? selectedOption.text.trim() : emptyLabel;
+  };
+
+  selectPickerSyncFns.push(syncFromSelect);
+
+  const buildOptions = (query) => {
+    const normalizedQuery = normalizeText(query);
+    return Array.from(select.options)
+      .map((option) => ({ value: option.value, label: option.text.trim() }))
+      .filter((option) => option.label && (!normalizedQuery || normalizeText(option.label).includes(normalizedQuery)))
+      .slice(0, 16);
+  };
+
+  const renderOptions = (query) => {
+    const options = buildOptions(query);
+    if (!options.length) {
+      dropdown.innerHTML = '';
+      dropdown.classList.remove('show');
+      return;
+    }
+
+    dropdown.innerHTML = options.map((option) => `
+      <li data-value="${escapeHtml(option.value)}" data-label="${escapeHtml(option.label)}">${escapeHtml(option.label)}</li>
+    `).join('');
+    dropdown.classList.add('show');
+
+    dropdown.querySelectorAll('li').forEach((item) => {
+      item.addEventListener('mousedown', (event) => {
+        event.preventDefault();
+        select.value = item.dataset.value || '';
+        input.value = item.dataset.label || emptyLabel;
+        if (typeof onValueChanged === 'function') onValueChanged(select.value);
+        hideAutocomplete(prefix, kind);
+      });
+    });
+  };
+
+  syncFromSelect();
+  input.addEventListener('focus', () => {
+    const currentValue = input.value.trim();
+    const shouldOpenAll = !currentValue || select.value === '' || normalizeText(currentValue) === normalizedEmptyLabel;
+    renderOptions(shouldOpenAll ? '' : currentValue);
+  });
+  input.addEventListener('click', () => {
+    const currentValue = input.value.trim();
+    const shouldOpenAll = !currentValue || select.value === '' || normalizeText(currentValue) === normalizedEmptyLabel;
+    renderOptions(shouldOpenAll ? '' : currentValue);
+  });
+  input.addEventListener('input', () => renderOptions(input.value.trim()));
+  input.addEventListener('blur', () => {
+    setTimeout(() => {
+      hideAutocomplete(prefix, kind);
+      syncFromSelect();
+    }, 120);
+  });
+}
+
+function syncSelectPickerTexts() {
+  selectPickerSyncFns.forEach((syncFn) => syncFn());
+}
+
+function attachCreateSelectPickers() {
+  attachSelectPicker('cf', 'typePicker', 'cf-type', 'cf-typeText', 'Chọn loại công việc');
+  attachSelectPicker('cf', 'childPicker', 'cf-childProfileId', 'cf-childProfileText', 'Chọn trẻ', () => handleCreateChildChange());
+  attachSelectPicker('cf', 'skillPicker', 'cf-skillSelect', 'cf-skillSelectText', 'Chọn kỹ năng cần yêu cầu');
 }
 
 function handleCityChange(prefix, explicitCityValue) {
@@ -159,9 +461,13 @@ function handleCityChange(prefix, explicitCityValue) {
   if (!cityInput) return;
 
   const cityValue = (explicitCityValue ?? cityInput.value).trim();
-  const allowedDistricts = getDistrictOptions(cityValue);
+  const allowedDistricts = getCachedDistrictOptions(cityValue);
   if (districtInput && districtInput.value && !allowedDistricts.includes(districtInput.value.trim())) {
     districtInput.value = '';
+  }
+
+  if (cityValue) {
+    fetchDistrictOptionsByCity(cityValue);
   }
 }
 
@@ -193,6 +499,44 @@ function formatSalaryRange(min, max, negotiable) {
   return 'Khong xac dinh';
 }
 
+function sanitizeMoneyDigits(value) {
+  return String(value ?? '').replace(/[^\d]/g, '');
+}
+
+function formatMoneyInputValue(value) {
+  const digits = sanitizeMoneyDigits(value);
+  if (!digits) return '';
+  const normalized = digits.replace(/^0+(?=\d)/, '');
+  const amount = Number(normalized || '0');
+  return Number.isFinite(amount) ? amount.toLocaleString('vi-VN') : '';
+}
+
+function parseMoneyInput(value) {
+  const digits = sanitizeMoneyDigits(value);
+  if (!digits) return null;
+  const normalized = digits.replace(/^0+(?=\d)/, '');
+  const amount = Number(normalized || '0');
+  return Number.isFinite(amount) ? amount : null;
+}
+
+function bindMoneyInputFormatting(inputId) {
+  const input = document.getElementById(inputId);
+  if (!input || input.dataset.moneyReady === 'true') return;
+
+  input.dataset.moneyReady = 'true';
+  const applyFormat = () => {
+    input.value = formatMoneyInputValue(input.value);
+  };
+
+  input.addEventListener('input', applyFormat);
+  input.addEventListener('blur', applyFormat);
+  applyFormat();
+}
+
+function initMoneyInputs() {
+  ['cf-salMin', 'cf-salMax', 'ef-salMin', 'ef-salMax'].forEach(bindMoneyInputFormatting);
+}
+
 function formatAgeRange(min, max) {
   if (min && max) return `${min} - ${max} tuoi`;
   if (min) return `Tu ${min} tuoi`;
@@ -200,13 +544,269 @@ function formatAgeRange(min, max) {
   return 'Khong yeu cau';
 }
 
-function showToast(message) {
-  const toast = document.getElementById('toast');
-  if (!toast) return;
-  toast.textContent = message;
-  toast.classList.add('show');
-  clearTimeout(showToast._timer);
-  showToast._timer = setTimeout(() => toast.classList.remove('show'), 2600);
+function notifyToast(message, type = 'info') {
+  if (typeof window.showToast === 'function') {
+    window.showToast(message, { type });
+  }
+}
+
+function isLoggedIn() {
+  return typeof IS_AUTH !== 'undefined' && IS_AUTH === true;
+}
+
+function isNannyRole() {
+  return typeof IS_NANNY !== 'undefined' && IS_NANNY === true;
+}
+
+function normalizeGuid(value) {
+  return String(value ?? '').trim().toLowerCase();
+}
+
+function setOwnedJobs(collection) {
+  ownedJobIds.clear();
+  (Array.isArray(collection) ? collection : []).forEach((job) => {
+    if (job?.id) ownedJobIds.add(normalizeGuid(job.id));
+  });
+}
+
+function canEditJob(job) {
+  if (!isLoggedIn() || !job?.id) return false;
+  return ownedJobIds.has(normalizeGuid(job.id));
+}
+
+window.canEditJob = canEditJob;
+
+function isJobApplied(jobId) {
+  return appliedJobIds.has(normalizeGuid(jobId));
+}
+
+function setJobAppliedState(jobId, isApplied) {
+  const normalizedId = normalizeGuid(jobId);
+  if (!normalizedId) return;
+
+  if (isApplied) appliedJobIds.add(normalizedId);
+  else appliedJobIds.delete(normalizedId);
+
+  currentJobs = currentJobs.map((job) => {
+    if (normalizeGuid(job?.id) === normalizedId) return { ...job, isApplied: !!isApplied };
+    return job;
+  });
+}
+
+function updateJobFavoriteUi(jobId, isFavorite) {
+  const normalizedId = normalizeGuid(jobId);
+  document.querySelectorAll(`.job-save-btn[data-job-id="${normalizedId}"]`).forEach((button) => {
+    button.classList.toggle('active', !!isFavorite);
+    button.setAttribute('aria-pressed', isFavorite ? 'true' : 'false');
+    button.title = isFavorite ? 'Bo luu bai dang' : 'Luu bai dang';
+    button.setAttribute('aria-label', button.title);
+    const icon = button.querySelector('.material-icons-round');
+    if (icon) icon.textContent = isFavorite ? 'bookmark' : 'bookmark_border';
+  });
+}
+
+function setJobFavoriteState(jobId, isFavorite) {
+  const normalizedId = normalizeGuid(jobId);
+  currentJobs = currentJobs.map((job) => {
+    if (normalizeGuid(job?.id) === normalizedId) return { ...job, isFavorite: !!isFavorite };
+    return job;
+  });
+  updateJobFavoriteUi(jobId, !!isFavorite);
+}
+
+async function toggleJobFavorite(jobId, event) {
+  event?.stopPropagation?.();
+
+  if (!isLoggedIn()) {
+    notifyToast('Vui long dang nhap de luu bai dang.', 'warning');
+    return;
+  }
+
+  if (!isNannyRole()) {
+    notifyToast('Chi Nanny moi co quyen luu bai dang.', 'warning');
+    return;
+  }
+
+  try {
+    const response = await fetch(`/Search/ToggleFavoriteJob?jobPostingId=${encodeURIComponent(jobId)}`, {
+      method: 'POST',
+      credentials: 'same-origin'
+    });
+    const json = await response.json();
+    const payload = json?.raw && typeof json.raw === 'object' ? json.raw : json;
+    const isSuccess = !!(json?.success || payload?.success);
+
+    if (!isSuccess) {
+      notifyToast(json?.message || 'Khong the cap nhat luu bai dang.', 'error');
+      return;
+    }
+
+    const favoriteState = typeof payload?.isFavorite === 'boolean'
+      ? payload.isFavorite
+      : !!json?.isFavorite;
+
+    setJobFavoriteState(jobId, favoriteState);
+    notifyToast(
+      payload?.message || json?.message || (favoriteState ? 'Da luu bai dang.' : 'Da bo luu bai dang.'),
+      favoriteState ? 'success' : 'info'
+    );
+  } catch {
+    notifyToast('Khong the cap nhat luu bai dang.', 'error');
+  }
+}
+
+async function loadOwnedJobs() {
+  if (!isLoggedIn()) {
+    setOwnedJobs([]);
+    ownedJobsLoaded = true;
+    return;
+  }
+
+  try {
+    const res = await fetch('/Search/MyJobs', { credentials: 'same-origin' });
+    const json = await res.json();
+    if (json?.success) setOwnedJobs(json.data);
+    else setOwnedJobs([]);
+  } catch {
+    setOwnedJobs([]);
+  } finally {
+    ownedJobsLoaded = true;
+  }
+}
+
+function canApplyJob(job) {
+  if (!isLoggedIn() || !isNannyRole() || !job?.id) return false;
+  if (canEditJob(job)) return false;
+
+  const moderationStatus = Number(job.moderationStatus);
+  const postStatus = Number(job.status);
+  return moderationStatus === 2 && postStatus === 1;
+}
+
+function updatePreviewActionButtons(job) {
+  const editBtn = document.getElementById('pv-editBtn');
+  const applyBtn = document.getElementById('pv-applyBtn');
+  const applyTextEl = document.getElementById('pv-applyBtnText');
+
+  if (editBtn) {
+    const canEditByOwner = canEditJob(job);
+    const canEdit = canEditByOwner && [0, 2].includes(Number(job?.moderationStatus)) && !!job?.id;
+    editBtn.classList.toggle('hidden', !canEdit);
+    if (canEdit) editBtn.href = `/Search/Edit/${job.id}`;
+    else editBtn.removeAttribute('href');
+  }
+
+  if (applyBtn) {
+    const canApply = canApplyJob(job);
+    applyBtn.classList.toggle('hidden', !canApply);
+
+    if (canApply) {
+      const applied = isJobApplied(job.id);
+      applyBtn.disabled = applied;
+      applyBtn.classList.toggle('opacity-60', applied);
+      applyBtn.classList.toggle('cursor-not-allowed', applied);
+      applyBtn.dataset.jobId = job.id;
+      applyBtn.onclick = (event) => applyJob(job.id, event);
+      if (applyTextEl) applyTextEl.textContent = applied ? 'Da ung tuyen' : 'Ung tuyen ngay';
+    } else {
+      applyBtn.disabled = false;
+      applyBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+      applyBtn.onclick = null;
+      applyBtn.removeAttribute('data-job-id');
+      if (applyTextEl) applyTextEl.textContent = 'Ung tuyen ngay';
+    }
+  }
+}
+
+async function applyJob(jobId, event) {
+  event?.preventDefault?.();
+  event?.stopPropagation?.();
+
+  if (!isLoggedIn()) {
+    notifyToast('Vui long dang nhap de ung tuyen bai dang.', 'warning');
+    window.location.href = '/Auth/Login';
+    return;
+  }
+
+  if (!isNannyRole()) {
+    notifyToast('Chi Nanny moi co quyen ung tuyen bai dang.', 'warning');
+    return;
+  }
+
+  if (!jobId) {
+    notifyToast('Khong tim thay bai dang de ung tuyen.', 'error');
+    return;
+  }
+
+  if (isJobApplied(jobId)) {
+    notifyToast('Ban da gui don ung tuyen cho bai dang nay.', 'info');
+    return;
+  }
+
+  const applyBtn = document.getElementById('pv-applyBtn');
+  const applyTextEl = document.getElementById('pv-applyBtnText');
+  const previousText = applyTextEl?.textContent || 'Ung tuyen ngay';
+
+  try {
+    if (applyBtn) {
+      applyBtn.disabled = true;
+      applyBtn.classList.add('opacity-60', 'cursor-not-allowed');
+    }
+    if (applyTextEl) applyTextEl.textContent = 'Dang gui...';
+
+    const response = await fetch(`/Search/ApplyJob?jobPostingId=${encodeURIComponent(jobId)}`, {
+      method: 'POST',
+      credentials: 'same-origin'
+    });
+    const json = await response.json();
+    const payload = json?.raw && typeof json.raw === 'object' ? json.raw : json;
+    const isSuccess = !!(json?.success || payload?.success);
+
+    if (!isSuccess) {
+      notifyToast(json?.message || payload?.message || 'Khong the ung tuyen bai dang.', 'error');
+      if (applyBtn) {
+        applyBtn.disabled = false;
+        applyBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+      }
+      if (applyTextEl) applyTextEl.textContent = previousText;
+      return;
+    }
+
+    setJobAppliedState(jobId, true);
+    const activeJob = currentJobs.find((job) => normalizeGuid(job?.id) === normalizeGuid(jobId));
+    if (activeJob) updatePreviewActionButtons(activeJob);
+
+    notifyToast('Gui don thanh cong. Vui long cho Parent phan hoi.', 'success');
+    window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
+  } catch {
+    notifyToast('Khong the ung tuyen bai dang.', 'error');
+    if (applyBtn) {
+      applyBtn.disabled = false;
+      applyBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+    }
+    if (applyTextEl) applyTextEl.textContent = previousText;
+  }
+}
+
+async function loadAppliedJobs() {
+  appliedJobIds.clear();
+
+  if (!isLoggedIn() || !isNannyRole()) return;
+
+  try {
+    const res = await fetch('/Search/MyApplicationsData?page=1&pageSize=200', { credentials: 'same-origin' });
+    const json = await res.json();
+    const items = Array.isArray(json?.data) ? json.data : [];
+
+    items.forEach((item) => {
+      const status = Number(item?.status);
+      if (item?.jobPostingId && status !== 3) {
+        appliedJobIds.add(normalizeGuid(item.jobPostingId));
+      }
+    });
+  } catch {
+    // Keep UI responsive even when this request fails.
+  }
 }
 
 function openHistory() {
@@ -346,7 +946,19 @@ function renderJobs(jobs) {
           <h3 class="text-[18px] leading-6 font-extrabold text-slate-900">${escapeHtml(job.title || 'Tin dang')}</h3>
           <p class="mt-2 text-sm font-semibold text-slate-500">${escapeHtml(job.parentName || 'Phu huynh')}</p>
         </div>
-        <span class="shrink-0 rounded-full bg-orange-50 px-3 py-1 text-xs font-extrabold text-orange-700">${escapeHtml(formatSalaryRange(job.salaryMin, job.salaryMax, job.salaryNegotiable))}</span>
+        <div class="job-card__head-right">
+          <span class="shrink-0 rounded-full bg-orange-50 px-3 py-1 text-xs font-extrabold text-orange-700">${escapeHtml(formatSalaryRange(job.salaryMin, job.salaryMax, job.salaryNegotiable))}</span>
+          ${isNannyRole() ? `
+            <button type="button"
+                    class="job-save-btn ${job.isFavorite ? 'active' : ''}"
+                    data-job-id="${escapeHtml(normalizeGuid(job.id))}"
+                    aria-pressed="${job.isFavorite ? 'true' : 'false'}"
+                    aria-label="${job.isFavorite ? 'Bo luu bai dang' : 'Luu bai dang'}"
+                    title="${job.isFavorite ? 'Bo luu bai dang' : 'Luu bai dang'}"
+                    onclick="toggleJobFavorite('${escapeJs(job.id)}', event)">
+              <span class="material-icons-round">${job.isFavorite ? 'bookmark' : 'bookmark_border'}</span>
+            </button>` : ''}
+        </div>
       </div>
       <p class="mt-3 text-sm font-semibold text-orange-600">${escapeHtml([job.location, job.district, job.city].filter(Boolean).join(', ') || 'Chua cap nhat dia diem')}</p>
       <p class="mt-3 text-sm leading-6 text-slate-500 line-clamp-2">${escapeHtml(job.description || 'Khong co mo ta.')}</p>
@@ -354,6 +966,7 @@ function renderJobs(jobs) {
         <span class="px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold">${escapeHtml(JOB_TYPES[job.jobType] || 'Khac')}</span>
         <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">${escapeHtml(MODERATION_LABELS[job.moderationStatus] || 'Dang cap nhat')}</span>
         <span class="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold">${job.numberOfChildren ? `${job.numberOfChildren} be` : 'Chua ro'}</span>
+        ${isNannyRole() && isJobApplied(job.id) ? '<span class="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold">Da ung tuyen</span>' : ''}
       </div>
     </article>`).join('');
 
@@ -441,6 +1054,7 @@ function renderChildren(prefix, selectedChildId) {
     ? collection.map((child) => `<option value="${escapeHtml(child.id)}">${escapeHtml(child.label)}</option>`).join('')
     : '<option value="">Chua co Child Profile</option>';
   if (selectedChildId) select.value = selectedChildId;
+  syncSelectPickerTexts();
   setProfileFields(prefix, getSelectedChild(prefix));
 }
 
@@ -510,6 +1124,7 @@ function addSelectedSkillToCollection(selectId, collection, containerId, removeH
   if (!value || collection.includes(value)) return;
   collection.push(value);
   select.value = '';
+  syncSelectPickerTexts();
   renderSkillCollection(containerId, collection, removeHandlerName);
 }
 
@@ -549,8 +1164,15 @@ function setEditStatus(status) {
 }
 
 async function openCreate() {
+  if (!isLoggedIn()) {
+    window.location.href = '/Auth/Login';
+    return;
+  }
+
   await loadLocationData();
   document.getElementById('createForm')?.reset();
+  const createSkillSelect = document.getElementById('cf-skillSelect');
+  if (createSkillSelect) createSkillSelect.value = '';
   createSkills = [];
   createSchedule = [];
   createChildren = [];
@@ -565,6 +1187,7 @@ async function openCreate() {
     if (json.success && json.data) applyPrefill('cf', json.data, json.data.selectedChildProfileId);
   } catch { }
 
+  syncSelectPickerTexts();
   document.getElementById('createModal')?.classList.add('show');
 }
 
@@ -580,8 +1203,8 @@ function getCreatePayload() {
     jobType: Number(document.getElementById('cf-type')?.value || 1),
     numberOfChildren: Number(document.getElementById('cf-children')?.value || 1),
     childProfileId: document.getElementById('cf-childProfileId')?.value || null,
-    salaryMin: document.getElementById('cf-salMin')?.value ? Number(document.getElementById('cf-salMin').value) : null,
-    salaryMax: document.getElementById('cf-salMax')?.value ? Number(document.getElementById('cf-salMax').value) : null,
+    salaryMin: parseMoneyInput(document.getElementById('cf-salMin')?.value),
+    salaryMax: parseMoneyInput(document.getElementById('cf-salMax')?.value),
     salaryNegotiable: !!document.getElementById('cf-negotiable')?.checked,
     location: document.getElementById('cf-location')?.value.trim() || '',
     city: document.getElementById('cf-city')?.value.trim() || '',
@@ -607,11 +1230,16 @@ function validatePayload(payload) {
 }
 
 async function submitCreate() {
+  if (!isLoggedIn()) {
+    window.location.href = '/Auth/Login';
+    return;
+  }
+
   if (isSubmittingCreate) return;
   const payload = getCreatePayload();
   const error = validatePayload(payload);
   if (error) {
-    showToast(error);
+    notifyToast(error);
     return;
   }
 
@@ -631,7 +1259,7 @@ async function submitCreate() {
     });
     const json = await res.json();
     if (!json.success) {
-      showToast(json.message || 'Dang bai that bai');
+      notifyToast(json.message || 'Dang bai that bai');
       isSubmittingCreate = false;
       if (submitBtn) {
         submitBtn.disabled = false;
@@ -641,11 +1269,11 @@ async function submitCreate() {
     }
 
     closeCreate();
-    showToast('Bai dang da duoc tao va dang cho moderator duyet');
+    notifyToast('Bai dang da duoc tao va dang cho moderator duyet');
     window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
     doSearch();
   } catch {
-    showToast('Loi ket noi server');
+    notifyToast('Loi ket noi server');
     isSubmittingCreate = false;
     if (submitBtn) {
       submitBtn.disabled = false;
@@ -656,6 +1284,10 @@ async function submitCreate() {
 
 async function openEdit(job) {
   if (!job?.id) return;
+  if (!canEditJob(job)) {
+    notifyToast('Ban khong co quyen chinh sua bai dang nay.');
+    return;
+  }
   window.location.href = `/Search/Edit/${job.id}`;
 }
 
@@ -666,25 +1298,33 @@ function closeEdit() {
 
 async function submitEdit() {
   if (editingJobId) {
+    if (!ownedJobIds.has(normalizeGuid(editingJobId))) {
+      notifyToast('Ban khong co quyen chinh sua bai dang nay.');
+      return;
+    }
     window.location.href = `/Search/Edit/${editingJobId}`;
   }
 }
 
 async function deleteJob() {
   if (!editingJobId) return;
+  if (!ownedJobIds.has(normalizeGuid(editingJobId))) {
+    notifyToast('Ban khong co quyen xoa bai dang nay.');
+    return;
+  }
   if (!confirm('Ban co chac muon xoa bai dang nay?')) return;
   try {
     const res = await fetch(`/Search/DeleteJob/${editingJobId}`, { method: 'DELETE', credentials: 'same-origin' });
     const json = await res.json();
     if (!json.success) {
-      showToast(json.message || 'Xoa that bai');
+      notifyToast(json.message || 'Xoa that bai');
       return;
     }
     closeEdit();
-    showToast('Da xoa bai dang');
+    notifyToast('Da xoa bai dang');
     doSearch();
   } catch {
-    showToast('Loi ket noi server');
+    notifyToast('Loi ket noi server');
   }
 }
 
@@ -722,6 +1362,8 @@ function openPreview(job) {
     parentBtn.href = job.parentProfileId ? `/ParentProfile/Detail/${job.parentProfileId}` : '#';
   }
 
+  updatePreviewActionButtons(job);
+
   document.getElementById('previewModal')?.classList.add('show');
 }
 
@@ -737,10 +1379,20 @@ function handleEditCityChange() {
   handleCityChange('ef');
 }
 
-function bootstrapSearchPage() {
+async function bootstrapSearchPage() {
+  ['cf-city', 'cf-district', 'ef-city', 'ef-district', 'cf-typeText', 'cf-childProfileText', 'cf-skillSelectText'].forEach((id) => {
+    document.getElementById(id)?.setAttribute('autocomplete', 'off');
+  });
+  ['createForm', 'editForm'].forEach((id) => {
+    document.getElementById(id)?.setAttribute('autocomplete', 'off');
+  });
+  attachCreateSelectPickers();
+  initMoneyInputs();
   initMap();
   loadLocationData();
-  doSearch();
+  await loadOwnedJobs();
+  await loadAppliedJobs();
+  await doSearch();
 }
 
 if (document.readyState === 'loading') {
@@ -754,3 +1406,4 @@ window.addEventListener('pageshow', () => {
     bootstrapSearchPage();
   }
 });
+
