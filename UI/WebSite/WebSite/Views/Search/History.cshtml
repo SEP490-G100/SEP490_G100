@@ -5,6 +5,175 @@
 
 @section Head {
     <link rel="stylesheet" href="~/css/search.css" />
+    <style>
+        .history-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .35rem;
+            padding: .32rem .74rem;
+            border-radius: 999px;
+            border: 1px solid transparent;
+            font-size: .72rem;
+            line-height: 1.1;
+            font-weight: 800;
+            letter-spacing: .01em;
+        }
+
+        .history-badge::before {
+            content: "";
+            width: .4rem;
+            height: .4rem;
+            border-radius: 999px;
+            background: currentColor;
+            opacity: .88;
+        }
+
+        .history-badge--approved {
+            border-color: #86efac;
+            background: #f0fdf4;
+            color: #166534;
+        }
+
+        .history-badge--pending {
+            border-color: #fdba74;
+            background: #fff7ed;
+            color: #c2410c;
+        }
+
+        .history-badge--rejected {
+            border-color: #fca5a5;
+            background: #fef2f2;
+            color: #b91c1c;
+        }
+
+        .history-badge--hidden {
+            border-color: #cbd5e1;
+            background: #f8fafc;
+            color: #475569;
+        }
+
+        .history-job-card--approved {
+            border-color: #bbf7d0 !important;
+            box-shadow: 0 14px 34px rgba(34, 197, 94, .10);
+        }
+
+        .history-job-card--pending {
+            border-color: #fed7aa !important;
+            box-shadow: 0 14px 34px rgba(249, 115, 22, .09);
+        }
+
+        .history-job-card--rejected {
+            border-color: #fecaca !important;
+            box-shadow: 0 14px 34px rgba(220, 38, 38, .08);
+        }
+
+        .history-approval-panel--approved {
+            border-color: #bbf7d0 !important;
+            background: linear-gradient(180deg, rgba(240, 253, 244, .94), rgba(255, 255, 255, .98));
+        }
+
+        .history-approval-panel--pending {
+            border-color: #fed7aa !important;
+            background: linear-gradient(180deg, rgba(255, 247, 237, .92), rgba(255, 255, 255, .98));
+        }
+
+        .history-approval-panel--rejected {
+            border-color: #fecaca !important;
+            background: linear-gradient(180deg, rgba(254, 242, 242, .94), rgba(255, 255, 255, .98));
+        }
+
+        .history-schedule .schedule-cell.active {
+            background: linear-gradient(135deg, #fb923c, #f97316);
+            border-color: #ea580c;
+            color: #fff;
+            box-shadow: 0 10px 20px rgba(249, 115, 22, .26);
+        }
+
+        .history-schedule .schedule-cell.active:hover {
+            background: linear-gradient(135deg, #fb923c, #f97316);
+            border-color: #ea580c;
+        }
+
+        .history-description-box {
+            margin-top: .55rem;
+            border: 1px solid #fed7aa;
+            background: linear-gradient(180deg, #fffaf5 0%, #ffffff 100%);
+            border-radius: 1rem;
+            padding: .8rem .95rem;
+        }
+
+        .history-stat-card {
+            border-radius: 1.2rem;
+            border: 1px solid #e2e8f0;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            padding: 1rem 1.15rem;
+            transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+        }
+
+        .history-stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 28px rgba(15, 23, 42, .08);
+        }
+
+        .history-stat-card--total {
+            border-color: #cbd5e1;
+        }
+
+        .history-stat-card--pending {
+            border-color: #fed7aa;
+            background: linear-gradient(180deg, #fffaf5 0%, #ffffff 100%);
+        }
+
+        .history-stat-card--public {
+            border-color: #fdba74;
+            background: linear-gradient(180deg, #fff7ed 0%, #ffffff 100%);
+        }
+
+        .history-job-card {
+            transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+        }
+
+        .history-job-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 22px 36px rgba(15,23,42,.10);
+        }
+
+        .history-salary-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 2rem;
+            padding: 0 .86rem;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #fff7ed, #ffedd5);
+            color: #c2410c;
+            font-size: .78rem;
+            font-weight: 800;
+            border: 1px solid #fed7aa;
+            white-space: nowrap;
+        }
+
+        .history-note-box {
+            border-radius: 1rem;
+            border: 1px solid #e2e8f0;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            padding: .74rem .84rem;
+        }
+
+        .history-skill-chip {
+            display: inline-flex;
+            align-items: center;
+            min-height: 1.75rem;
+            border-radius: 999px;
+            border: 1px solid #fed7aa;
+            background: #ffffff;
+            color: #c2410c;
+            font-size: .72rem;
+            font-weight: 800;
+            padding: 0 .72rem;
+        }
+    </style>
 }
 
 <section class="min-h-screen bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_45%,#fff7ed_100%)] py-10">
@@ -30,21 +199,21 @@
 
             <div class="px-6 py-6 sm:px-8">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div class="rounded-3xl border border-slate-100 bg-slate-50 px-5 py-4">
+                    <div class="history-stat-card history-stat-card--total">
                         <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Tong bai dang</p>
                         <p id="historyTotalCount" class="mt-2 text-3xl font-extrabold text-slate-900">0</p>
                     </div>
-                    <div class="rounded-3xl border border-amber-100 bg-amber-50/70 px-5 py-4">
+                    <div class="history-stat-card history-stat-card--pending">
                         <p class="text-xs font-bold uppercase tracking-[0.18em] text-amber-500">Dang cho duyet</p>
                         <p id="historyPendingCount" class="mt-2 text-3xl font-extrabold text-amber-700">0</p>
                     </div>
-                    <div class="rounded-3xl border border-orange-100 bg-orange-50/70 px-5 py-4">
+                    <div class="history-stat-card history-stat-card--public">
                         <p class="text-xs font-bold uppercase tracking-[0.18em] text-orange-500">Dang hien thi</p>
                         <p id="historyPublishedCount" class="mt-2 text-3xl font-extrabold text-orange-600">0</p>
                     </div>
                 </div>
 
-                <div id="historyPageBody" class="space-y-4">
+                <div id="historyPageBody" class="space-y-5">
                     <div class="rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center text-slate-500">
                         Dang tai lich su bai dang...
                     </div>
@@ -56,6 +225,7 @@
 
 <script>
     (() => {
+        const HISTORY_TOAST_KEY = 'nm:historyToast';
         const moderationLabels = {
             0: 'Dang cho duyet',
             1: 'Da bi tu choi',
@@ -65,6 +235,25 @@
         const postStatusLabels = {
             1: 'Cong khai',
             2: 'An bai dang'
+        };
+        const moderationBadgeClasses = {
+            0: 'history-badge history-badge--pending',
+            1: 'history-badge history-badge--rejected',
+            2: 'history-badge history-badge--approved'
+        };
+        const postStatusBadgeClasses = {
+            1: 'history-badge history-badge--approved',
+            2: 'history-badge history-badge--hidden'
+        };
+        const cardToneClasses = {
+            0: 'history-job-card--pending',
+            1: 'history-job-card--rejected',
+            2: 'history-job-card--approved'
+        };
+        const approvalPanelToneClasses = {
+            0: 'history-approval-panel--pending',
+            1: 'history-approval-panel--rejected',
+            2: 'history-approval-panel--approved'
         };
 
         const rowLabels = ['Morning', 'Afternoon', 'Evening', 'Night'];
@@ -76,6 +265,45 @@
             .replaceAll('>', '&gt;')
             .replaceAll('"', '&quot;')
             .replaceAll("'", '&#39;');
+
+        const showHistoryToast = (message, type = 'info') => {
+            if (!message) return;
+            if (typeof window.showToast === 'function') {
+                window.showToast(message, { type });
+                return;
+            }
+
+            const fallback = document.createElement('div');
+            fallback.style.position = 'fixed';
+            fallback.style.right = '16px';
+            fallback.style.bottom = '16px';
+            fallback.style.zIndex = '12060';
+            fallback.style.padding = '10px 12px';
+            fallback.style.borderRadius = '10px';
+            fallback.style.background = '#0f172a';
+            fallback.style.color = '#fff';
+            fallback.style.fontSize = '13px';
+            fallback.style.fontWeight = '700';
+            fallback.textContent = String(message);
+            document.body.appendChild(fallback);
+            window.setTimeout(() => fallback.remove(), 2200);
+        };
+
+        const consumeHistoryToast = () => {
+            try {
+                const raw = sessionStorage.getItem(HISTORY_TOAST_KEY);
+                if (!raw) return;
+                sessionStorage.removeItem(HISTORY_TOAST_KEY);
+
+                const parsed = JSON.parse(raw);
+                const createdAt = Number(parsed?.createdAt || 0);
+                if (!createdAt || Date.now() - createdAt > 60000) return;
+
+                showHistoryToast(parsed?.message || 'Cap nhat bai dang thanh cong.', parsed?.type || 'success');
+            } catch {
+                // Ignore invalid storage payloads.
+            }
+        };
 
         const formatSalary = (value) => value ? `${(Number(value) / 1000).toFixed(0)}k/gio` : 'Khong xac dinh';
         const formatSalaryRange = (min, max) => {
@@ -98,7 +326,7 @@
             }
 
             const selectedSet = new Set(slots.map((slot) => `${slot.dayOfWeek}-${slot.timeSlot}`));
-            let html = '<div class="schedule-grid schedule-grid--readonly"><div></div>';
+            let html = '<div class="schedule-grid schedule-grid--readonly history-schedule"><div></div>';
 
             dayLabels.forEach((label) => {
                 html += `<div class="schedule-col-label">${label}</div>`;
@@ -147,19 +375,19 @@
                 }
 
                 body.innerHTML = jobs.map((job) => `
-                    <article data-job-id="${escapeHtml(job.id)}" class="history-job-card rounded-[28px] border border-slate-100 bg-white shadow-[0_14px_34px_rgba(15,23,42,.06)] overflow-hidden transition-all">
+                    <article data-job-id="${escapeHtml(job.id)}" class="history-job-card ${cardToneClasses[Number(job.moderationStatus)] || 'history-job-card--pending'} rounded-[28px] border border-slate-100 bg-white shadow-[0_14px_34px_rgba(15,23,42,.06)] overflow-hidden">
                         <div class="px-6 py-5 border-b border-slate-100 bg-[linear-gradient(180deg,#ffffff_0%,#fffaf5_100%)]">
                             <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                                 <div>
                                     <div class="flex flex-wrap items-center gap-2">
                                         <h2 class="text-lg font-bold text-slate-900">${escapeHtml(job.title || 'Tin dang')}</h2>
-                                        <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-extrabold">${escapeHtml(moderationLabels[job.moderationStatus] || 'Dang cap nhat')}</span>
-                                        <span class="px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-extrabold">${escapeHtml(postStatusLabels[job.status] || 'Dang cap nhat')}</span>
+                                        <span class="${moderationBadgeClasses[Number(job.moderationStatus)] || 'history-badge history-badge--pending'}">${escapeHtml(moderationLabels[job.moderationStatus] || 'Dang cap nhat')}</span>
+                                        <span class="${postStatusBadgeClasses[Number(job.status)] || 'history-badge history-badge--hidden'}">${escapeHtml(postStatusLabels[job.status] || 'Dang cap nhat')}</span>
                                     </div>
                                     <p class="mt-2 text-sm text-slate-500">${escapeHtml([job.location, job.district, job.city].filter(Boolean).join(', ') || 'Chua cap nhat dia diem')}</p>
                                 </div>
                                 <div class="flex items-center gap-3">
-                                    <div class="text-sm font-bold text-orange-600">
+                                    <div class="history-salary-badge">
                                         ${job.salaryNegotiable ? 'Thuong luong' : escapeHtml(formatSalaryRange(job.salaryMin, job.salaryMax))}
                                     </div>
                                     ${[0, 2].includes(Number(job.moderationStatus)) ? `
@@ -175,7 +403,9 @@
                             <div class="space-y-4">
                                 <div>
                                     <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Mo ta</p>
-                                    <p class="mt-2 text-sm leading-6 text-slate-600">${escapeHtml(job.description || 'Khong co mo ta chi tiet.')}</p>
+                                    <div class="history-description-box">
+                                        <p class="text-sm leading-6 text-slate-600">${escapeHtml(job.description || 'Khong co mo ta chi tiet.')}</p>
+                                    </div>
                                 </div>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div class="rounded-3xl border border-slate-100 bg-slate-50 px-4 py-4">
@@ -193,20 +423,20 @@
                                 </div>
                             </div>
 
-                            <div class="rounded-3xl border border-orange-100 bg-orange-50/40 px-5 py-4">
+                            <div class="history-approval-panel ${approvalPanelToneClasses[Number(job.moderationStatus)] || 'history-approval-panel--pending'} rounded-3xl border border-orange-100 bg-orange-50/40 px-5 py-4">
                                 <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-orange-500">Chi tiet duyet bai</p>
                                 <div class="mt-4 space-y-3 text-sm text-slate-600">
                                     <div class="flex items-start justify-between gap-4">
                                         <span class="font-bold text-slate-500">Trang thai</span>
-                                        <span class="text-right font-bold text-slate-900">${escapeHtml(moderationLabels[job.moderationStatus] || 'Dang cap nhat')}</span>
+                                        <span class="${moderationBadgeClasses[Number(job.moderationStatus)] || 'history-badge history-badge--pending'}">${escapeHtml(moderationLabels[job.moderationStatus] || 'Dang cap nhat')}</span>
                                     </div>
                                     <div class="flex items-start justify-between gap-4">
                                         <span class="font-bold text-slate-500">Hien thi</span>
-                                        <span class="text-right font-bold text-slate-900">${escapeHtml(postStatusLabels[job.status] || 'Dang cap nhat')}</span>
+                                        <span class="${postStatusBadgeClasses[Number(job.status)] || 'history-badge history-badge--hidden'}">${escapeHtml(postStatusLabels[job.status] || 'Dang cap nhat')}</span>
                                     </div>
                                     <div>
                                         <p class="font-bold text-slate-500 mb-2">Ghi chu moderator</p>
-                                        <div class="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm leading-6 text-slate-600">
+                                        <div class="history-note-box text-sm leading-6 text-slate-600">
                                             ${escapeHtml(job.moderationNote || 'Chua co ghi chu tu moderator.')}
                                         </div>
                                     </div>
@@ -214,7 +444,7 @@
                                         <p class="font-bold text-slate-500 mb-2">Ky nang yeu cau</p>
                                         <div class="flex flex-wrap gap-2">
                                             ${(job.skills && job.skills.length)
-                                                ? job.skills.map((skill) => `<span class="px-3 py-1 rounded-full bg-white text-orange-700 text-xs font-bold border border-orange-100">${escapeHtml(skill)}</span>`).join('')
+                                                ? job.skills.map((skill) => `<span class="history-skill-chip">${escapeHtml(skill)}</span>`).join('')
                                                 : '<span class="text-sm text-slate-400">Chua co ky nang yeu cau.</span>'}
                                         </div>
                                     </div>
@@ -239,5 +469,6 @@
         }
 
         loadHistoryPage();
+        window.setTimeout(consumeHistoryToast, 120);
     })();
 </script>

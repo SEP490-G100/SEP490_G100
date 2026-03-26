@@ -1,7 +1,5 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
-name: Build and deploy ASP.Net Core backend to Azure Web App
+# .github/workflows/main_nannybackend.yml
+name: Build and deploy ASP.NET Core backend to Azure Web App
 
 on:
   push:
@@ -12,6 +10,7 @@ on:
 env:
   PROJECT_PATH: Backend/Nanny_BackEnd/Nanny_BackEnd/Nanny_BackEnd.csproj
   PUBLISH_PATH: ${{ github.workspace }}/backendapp
+  APP_NAME: nannymatch-api
 
 jobs:
   build:
@@ -20,24 +19,26 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout source
+        uses: actions/checkout@v4
 
-      - name: Set up .NET Core
+      - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "8.x"
+          dotnet-version: "8.0.x"
 
-      - name: Build with dotnet
-        run: dotnet build ${{ env.PROJECT_PATH }} --configuration Release
+      - name: Build
+        run: dotnet build "${{ env.PROJECT_PATH }}" --configuration Release
 
-      - name: dotnet publish
-        run: dotnet publish ${{ env.PROJECT_PATH }} -c Release --no-build -o "${{ env.PUBLISH_PATH }}"
+      - name: Publish
+        run: dotnet publish "${{ env.PROJECT_PATH }}" -c Release --no-build -o "${{ env.PUBLISH_PATH }}"
 
-      - name: Upload artifact for deployment job
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: .net-backend-app
+          name: backend-publish
           path: ${{ env.PUBLISH_PATH }}
+          if-no-files-found: error
 
   deploy:
     runs-on: windows-latest
@@ -47,12 +48,16 @@ jobs:
       contents: read
 
     steps:
-      - name: Download artifact from build job
+      - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: .net-backend-app
+          name: backend-publish
+          path: ${{ env.PUBLISH_PATH }}
 
-      - name: Login to Azure
+      - name: Print deploying commit
+        run: echo "Deploying backend commit ${{ github.sha }}"
+
+      - name: Login to Azure (OIDC)
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_BACKEND_CLIENT_ID }}
@@ -60,9 +65,8 @@ jobs:
           subscription-id: ${{ secrets.AZURE_BACKEND_SUBSCRIPTION_ID }}
 
       - name: Deploy to Azure Web App
-        id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: ${{ vars.AZURE_BACKEND_WEBAPP_NAME }}
-          slot-name: "Production"
-          package: .
+          app-name: ${{ env.APP_NAME }}
+          slot-name: Production
+          package: ${{ env.PUBLISH_PATH }}

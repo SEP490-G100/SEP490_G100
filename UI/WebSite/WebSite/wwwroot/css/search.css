@@ -954,6 +954,37 @@ select.form-input.bg-gray-50 {
     border: 1px solid transparent;
 }
 
+.modal-btn__content {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .55rem;
+}
+
+.modal-btn__spinner {
+    width: 16px;
+    height: 16px;
+    border-radius: 999px;
+    border: 2px solid rgba(255, 255, 255, .75);
+    border-right-color: transparent;
+    display: none;
+    animation: modalBtnSpin .7s linear infinite;
+}
+
+.modal-btn.is-loading .modal-btn__spinner {
+    display: inline-block;
+}
+
+.modal-btn.is-loading {
+    pointer-events: none;
+}
+
+@keyframes modalBtnSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 .modal-btn-primary {
     background: linear-gradient(135deg, #fb923c, #f97316);
     color: #fff;

@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
 using Nanny_BackEnd.DTOs.Search;
+using Nanny_BackEnd.Enums;
+using Nanny_BackEnd.Helpers;
+using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Services;
 
 namespace Nanny_BackEnd.Controllers;
@@ -14,11 +17,13 @@ public class SearchController : ControllerBase
 {
     private readonly JobService _jobSvc;
     private readonly Sep490NannyDbContext _db;
+    private readonly NotificationService _notificationService;
 
-    public SearchController(JobService jobSvc, Sep490NannyDbContext db)
+    public SearchController(JobService jobSvc, Sep490NannyDbContext db, NotificationService notificationService)
     {
         _jobSvc = jobSvc;
         _db = db;
+        _notificationService = notificationService;
     }
 
     [AllowAnonymous]
@@ -149,6 +154,240 @@ public class SearchController : ControllerBase
         }
     }
 
+    [Authorize]
+    [HttpPost("jobs/{jobPostingId:guid}/apply")]
+    public async Task<IActionResult> ApplyJob(Guid jobPostingId)
+    {
+        try
+        {
+            if (!User.IsInRole("Nanny"))
+                return StatusCode(403, Fail("Chi nanny moi co quyen ung tuyen bai dang."));
+
+            var userId = GetCurrentUserId();
+            var nannyProfile = await _db.NannyProfiles
+                .Include(n => n.User)
+                .FirstOrDefaultAsync(n => n.UserId == userId && !n.IsDeleted);
+
+            if (nannyProfile == null)
+                return BadRequest(Fail("Tai khoan khong phai nanny."));
+
+            var job = await _db.JobPostings
+                .Include(j => j.ParentProfile)
+                .ThenInclude(p => p.User)
+                .FirstOrDefaultAsync(j => j.Id == jobPostingId && !j.IsDeleted);
+
+            if (job == null)
+                return NotFound(Fail("Khong tim thay bai dang."));
+
+            if (job.Status != (int)JobPostingStatus.Public ||
+                job.ModerationStatus != (int)JobPostingModerationStatus.Approved)
+                return BadRequest(Fail("Bai dang hien khong san sang de ung tuyen."));
+
+            if (job.ParentProfile?.UserId == userId)
+                return BadRequest(Fail("Ban khong the ung tuyen bai dang cua chinh minh."));
+
+            var nowUtc = DateTime.UtcNow;
+            var existingApplication = await _db.JobApplications
+                .FirstOrDefaultAsync(a =>
+                    a.JobPostingId == jobPostingId &&
+                    a.NannyProfileId == nannyProfile.Id &&
+                    !a.IsDeleted);
+
+            JobApplication application;
+            var isReapplied = false;
+            if (existingApplication != null)
+            {
+                if (existingApplication.Status != 3)
+                    return Conflict(Fail("Ban da gui don ung tuyen cho bai dang nay."));
+
+                existingApplication.Status = 0;
+                existingApplication.WithdrawnAt = null;
+                existingApplication.ReviewedAt = null;
+                existingApplication.RejectionReason = null;
+                existingApplication.UpdatedAt = nowUtc;
+                existingApplication.UpdatedBy = userId;
+                application = existingApplication;
+                isReapplied = true;
+            }
+            else
+            {
+                application = new JobApplication
+                {
+                    Id = Guid.NewGuid(),
+                    JobPostingId = jobPostingId,
+                    NannyProfileId = nannyProfile.Id,
+                    Status = 0,
+                    RejectionReason = null,
+                    ReviewedAt = null,
+                    WithdrawnAt = null,
+                    CreatedAt = nowUtc,
+                    CreatedBy = userId,
+                    UpdatedAt = null,
+                    UpdatedBy = null,
+                    IsDeleted = false
+                };
+                _db.JobApplications.Add(application);
+            }
+
+            await _db.SaveChangesAsync();
+
+            var nannyName = $"{nannyProfile.User?.FirstName} {nannyProfile.User?.LastName}".Trim();
+            if (string.IsNullOrWhiteSpace(nannyName)) nannyName = "Mot nanny";
+
+            var parentUserId = job.ParentProfile?.UserId ?? Guid.Empty;
+            if (parentUserId != Guid.Empty)
+            {
+                await _notificationService.createNotification(
+                    parentUserId,
+                    "Co nanny vua ung tuyen bai dang cua ban",
+                    $"{nannyName} vua gui don ung tuyen cho bai dang \"{job.Title}\".",
+                    NotificationTypes.JobApplicationReceived,
+                    job.Id,
+                    "JobPosting",
+                    userId);
+            }
+
+            await _notificationService.createNotification(
+                userId,
+                "Ban da gui don ung tuyen",
+                $"Don ung tuyen cua ban cho bai dang \"{job.Title}\" da duoc gui. Vui long cho Parent phan hoi.",
+                NotificationTypes.JobApplicationSubmitted,
+                application.Id,
+                "JobApplication",
+                userId);
+
+            return Ok(new
+            {
+                success = true,
+                data = new
+                {
+                    applicationId = application.Id,
+                    jobPostingId = jobPostingId,
+                    parentUserId = parentUserId,
+                    nannyUserId = userId
+                },
+                message = isReapplied
+                    ? "Ban da gui lai don ung tuyen. Vui long cho Parent phan hoi."
+                    : "Ban da ung tuyen thanh cong. Vui long cho Parent phan hoi."
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, Fail(ex.Message));
+        }
+    }
+
+    [Authorize]
+    [HttpGet("jobs/applications/me")]
+    public async Task<IActionResult> MyApplications([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    {
+        try
+        {
+            if (!User.IsInRole("Nanny"))
+                return StatusCode(403, Fail("Chi nanny moi co quyen xem lich su ung tuyen."));
+
+            page = page < 1 ? 1 : page;
+            pageSize = pageSize < 1 ? 20 : Math.Min(pageSize, 50);
+
+            var userId = GetCurrentUserId();
+            var nannyProfile = await _db.NannyProfiles
+                .FirstOrDefaultAsync(n => n.UserId == userId && !n.IsDeleted);
+            if (nannyProfile == null)
+                return BadRequest(Fail("Tai khoan khong phai nanny."));
+
+            var baseQuery = _db.JobApplications
+                .Where(a => a.NannyProfileId == nannyProfile.Id && !a.IsDeleted)
+                .Include(a => a.JobPosting)
+                    .ThenInclude(j => j.ParentProfile)
+                        .ThenInclude(p => p.User)
+                .AsQueryable();
+
+            var totalCount = await baseQuery.CountAsync();
+            var items = await baseQuery
+                .OrderByDescending(a => a.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var data = items.Select(a => new
+            {
+                id = a.Id,
+                jobPostingId = a.JobPostingId,
+                jobTitle = a.JobPosting?.Title ?? "Tin dang",
+                parentName = $"{a.JobPosting?.ParentProfile?.User?.FirstName} {a.JobPosting?.ParentProfile?.User?.LastName}".Trim(),
+                city = a.JobPosting?.City,
+                district = a.JobPosting?.District,
+                location = a.JobPosting?.Location,
+                status = a.Status,
+                statusLabel = getApplicationStatusLabel(a.Status),
+                canWithdraw = a.Status == 0,
+                appliedAt = a.CreatedAt,
+                reviewedAt = a.ReviewedAt,
+                withdrawnAt = a.WithdrawnAt
+            }).ToList();
+
+            return Ok(new
+            {
+                success = true,
+                total = totalCount,
+                page,
+                pageSize,
+                data
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, Fail(ex.Message));
+        }
+    }
+
+    [Authorize]
+    [HttpPost("jobs/applications/{applicationId:guid}/withdraw")]
+    public async Task<IActionResult> WithdrawApplication(Guid applicationId)
+    {
+        try
+        {
+            if (!User.IsInRole("Nanny"))
+                return StatusCode(403, Fail("Chi nanny moi co quyen huy don ung tuyen."));
+
+            var userId = GetCurrentUserId();
+            var nannyProfile = await _db.NannyProfiles
+                .FirstOrDefaultAsync(n => n.UserId == userId && !n.IsDeleted);
+            if (nannyProfile == null)
+                return BadRequest(Fail("Tai khoan khong phai nanny."));
+
+            var application = await _db.JobApplications
+                .FirstOrDefaultAsync(a =>
+                    a.Id == applicationId &&
+                    a.NannyProfileId == nannyProfile.Id &&
+                    !a.IsDeleted);
+
+            if (application == null)
+                return NotFound(Fail("Khong tim thay don ung tuyen."));
+
+            if (application.Status != 0)
+                return BadRequest(Fail("Chi don dang cho duyet moi co the huy."));
+
+            var nowUtc = DateTime.UtcNow;
+            application.Status = 3; // Withdrawn
+            application.WithdrawnAt = nowUtc;
+            application.UpdatedAt = nowUtc;
+            application.UpdatedBy = userId;
+
+            await _db.SaveChangesAsync();
+
+            return Ok(new
+            {
+                success = true,
+                message = "Ban da huy don ung tuyen."
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, Fail(ex.Message));
+        }
+    }
+
     private Guid GetCurrentUserId()
     {
         var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
@@ -169,6 +408,18 @@ public class SearchController : ControllerBase
             .Where(n => n.UserId == userId && !n.IsDeleted)
             .Select(n => (Guid?)n.Id)
             .FirstOrDefaultAsync();
+    }
+
+    private static string getApplicationStatusLabel(int status)
+    {
+        return status switch
+        {
+            0 => "Dang cho duyet",
+            1 => "Da duoc chap nhan",
+            2 => "Da bi tu choi",
+            3 => "Da huy",
+            _ => "Dang cap nhat"
+        };
     }
 
     private static object Fail(string message) => new { success = false, message };
