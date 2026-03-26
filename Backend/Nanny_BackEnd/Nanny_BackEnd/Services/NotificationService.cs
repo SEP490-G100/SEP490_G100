@@ -213,6 +213,8 @@ public class NotificationService
                 $"/Search/History?jobId={notification.RelatedEntityId.Value}",
             NotificationTypes.NannyProfileFavorited =>
                 "/Nanny/Profile",
+            NotificationTypes.JobApplicationSubmitted =>
+                "/Search/Applications",
             _ => null
         };
     }

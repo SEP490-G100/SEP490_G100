@@ -10,6 +10,7 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            gap: .35rem;
             padding: .32rem .74rem;
             border-radius: 999px;
             border: 1px solid transparent;
@@ -17,6 +18,15 @@
             line-height: 1.1;
             font-weight: 800;
             letter-spacing: .01em;
+        }
+
+        .history-badge::before {
+            content: "";
+            width: .4rem;
+            height: .4rem;
+            border-radius: 999px;
+            background: currentColor;
+            opacity: .88;
         }
 
         .history-badge--approved {
@@ -92,6 +102,77 @@
             border-radius: 1rem;
             padding: .8rem .95rem;
         }
+
+        .history-stat-card {
+            border-radius: 1.2rem;
+            border: 1px solid #e2e8f0;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            padding: 1rem 1.15rem;
+            transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+        }
+
+        .history-stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 28px rgba(15, 23, 42, .08);
+        }
+
+        .history-stat-card--total {
+            border-color: #cbd5e1;
+        }
+
+        .history-stat-card--pending {
+            border-color: #fed7aa;
+            background: linear-gradient(180deg, #fffaf5 0%, #ffffff 100%);
+        }
+
+        .history-stat-card--public {
+            border-color: #fdba74;
+            background: linear-gradient(180deg, #fff7ed 0%, #ffffff 100%);
+        }
+
+        .history-job-card {
+            transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+        }
+
+        .history-job-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 22px 36px rgba(15,23,42,.10);
+        }
+
+        .history-salary-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 2rem;
+            padding: 0 .86rem;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #fff7ed, #ffedd5);
+            color: #c2410c;
+            font-size: .78rem;
+            font-weight: 800;
+            border: 1px solid #fed7aa;
+            white-space: nowrap;
+        }
+
+        .history-note-box {
+            border-radius: 1rem;
+            border: 1px solid #e2e8f0;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            padding: .74rem .84rem;
+        }
+
+        .history-skill-chip {
+            display: inline-flex;
+            align-items: center;
+            min-height: 1.75rem;
+            border-radius: 999px;
+            border: 1px solid #fed7aa;
+            background: #ffffff;
+            color: #c2410c;
+            font-size: .72rem;
+            font-weight: 800;
+            padding: 0 .72rem;
+        }
     </style>
 }
 
@@ -118,21 +199,21 @@
 
             <div class="px-6 py-6 sm:px-8">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div class="rounded-3xl border border-slate-100 bg-slate-50 px-5 py-4">
+                    <div class="history-stat-card history-stat-card--total">
                         <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Tong bai dang</p>
                         <p id="historyTotalCount" class="mt-2 text-3xl font-extrabold text-slate-900">0</p>
                     </div>
-                    <div class="rounded-3xl border border-amber-100 bg-amber-50/70 px-5 py-4">
+                    <div class="history-stat-card history-stat-card--pending">
                         <p class="text-xs font-bold uppercase tracking-[0.18em] text-amber-500">Dang cho duyet</p>
                         <p id="historyPendingCount" class="mt-2 text-3xl font-extrabold text-amber-700">0</p>
                     </div>
-                    <div class="rounded-3xl border border-orange-100 bg-orange-50/70 px-5 py-4">
+                    <div class="history-stat-card history-stat-card--public">
                         <p class="text-xs font-bold uppercase tracking-[0.18em] text-orange-500">Dang hien thi</p>
                         <p id="historyPublishedCount" class="mt-2 text-3xl font-extrabold text-orange-600">0</p>
                     </div>
                 </div>
 
-                <div id="historyPageBody" class="space-y-4">
+                <div id="historyPageBody" class="space-y-5">
                     <div class="rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center text-slate-500">
                         Dang tai lich su bai dang...
                     </div>
@@ -294,7 +375,7 @@
                 }
 
                 body.innerHTML = jobs.map((job) => `
-                    <article data-job-id="${escapeHtml(job.id)}" class="history-job-card ${cardToneClasses[Number(job.moderationStatus)] || 'history-job-card--pending'} rounded-[28px] border border-slate-100 bg-white shadow-[0_14px_34px_rgba(15,23,42,.06)] overflow-hidden transition-all">
+                    <article data-job-id="${escapeHtml(job.id)}" class="history-job-card ${cardToneClasses[Number(job.moderationStatus)] || 'history-job-card--pending'} rounded-[28px] border border-slate-100 bg-white shadow-[0_14px_34px_rgba(15,23,42,.06)] overflow-hidden">
                         <div class="px-6 py-5 border-b border-slate-100 bg-[linear-gradient(180deg,#ffffff_0%,#fffaf5_100%)]">
                             <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                                 <div>
@@ -306,7 +387,7 @@
                                     <p class="mt-2 text-sm text-slate-500">${escapeHtml([job.location, job.district, job.city].filter(Boolean).join(', ') || 'Chua cap nhat dia diem')}</p>
                                 </div>
                                 <div class="flex items-center gap-3">
-                                    <div class="text-sm font-bold text-orange-600">
+                                    <div class="history-salary-badge">
                                         ${job.salaryNegotiable ? 'Thuong luong' : escapeHtml(formatSalaryRange(job.salaryMin, job.salaryMax))}
                                     </div>
                                     ${[0, 2].includes(Number(job.moderationStatus)) ? `
@@ -355,7 +436,7 @@
                                     </div>
                                     <div>
                                         <p class="font-bold text-slate-500 mb-2">Ghi chu moderator</p>
-                                        <div class="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm leading-6 text-slate-600">
+                                        <div class="history-note-box text-sm leading-6 text-slate-600">
                                             ${escapeHtml(job.moderationNote || 'Chua co ghi chu tu moderator.')}
                                         </div>
                                     </div>
@@ -363,7 +444,7 @@
                                         <p class="font-bold text-slate-500 mb-2">Ky nang yeu cau</p>
                                         <div class="flex flex-wrap gap-2">
                                             ${(job.skills && job.skills.length)
-                                                ? job.skills.map((skill) => `<span class="px-3 py-1 rounded-full bg-white text-orange-700 text-xs font-bold border border-orange-100">${escapeHtml(skill)}</span>`).join('')
+                                                ? job.skills.map((skill) => `<span class="history-skill-chip">${escapeHtml(skill)}</span>`).join('')
                                                 : '<span class="text-sm text-slate-400">Chua co ky nang yeu cau.</span>'}
                                         </div>
                                     </div>

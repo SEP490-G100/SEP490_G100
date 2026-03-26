@@ -247,6 +247,15 @@ public class SearchController : ControllerBase
                     userId);
             }
 
+            await _notificationService.createNotification(
+                userId,
+                "Ban da gui don ung tuyen",
+                $"Don ung tuyen cua ban cho bai dang \"{job.Title}\" da duoc gui. Vui long cho Parent phan hoi.",
+                NotificationTypes.JobApplicationSubmitted,
+                application.Id,
+                "JobApplication",
+                userId);
+
             return Ok(new
             {
                 success = true,
@@ -254,7 +263,8 @@ public class SearchController : ControllerBase
                 {
                     applicationId = application.Id,
                     jobPostingId = jobPostingId,
-                    parentUserId = parentUserId
+                    parentUserId = parentUserId,
+                    nannyUserId = userId
                 },
                 message = isReapplied
                     ? "Ban da gui lai don ung tuyen. Vui long cho Parent phan hoi."

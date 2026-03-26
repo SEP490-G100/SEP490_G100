@@ -1,0 +1,308 @@
+@{
+    ViewData["Title"] = "Lich su ung tuyen - NannyMatch";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Head {
+    <style>
+        .app-stat-card {
+            border-radius: 1.2rem;
+            border: 1px solid #e2e8f0;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            padding: 1rem 1.15rem;
+            transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+        }
+
+        .app-stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 28px rgba(15, 23, 42, .08);
+        }
+
+        .app-stat-card--total {
+            border-color: #cbd5e1;
+        }
+
+        .app-stat-card--pending {
+            border-color: #fed7aa;
+            background: linear-gradient(180deg, #fffaf5 0%, #ffffff 100%);
+        }
+
+        .app-stat-card--withdrawn {
+            border-color: #fecaca;
+            background: linear-gradient(180deg, #fff5f5 0%, #ffffff 100%);
+        }
+
+        .app-item-card {
+            border-radius: 1.35rem;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            padding: 1.2rem;
+            box-shadow: 0 12px 28px rgba(15, 23, 42, .05);
+            transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+        }
+
+        .app-item-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 34px rgba(15, 23, 42, .09);
+            border-color: #fdba74;
+        }
+
+        .app-status-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            border-radius: 999px;
+            border: 1px solid transparent;
+            padding: .32rem .72rem;
+            font-size: .74rem;
+            font-weight: 800;
+            letter-spacing: .015em;
+        }
+
+        .app-status-dot {
+            width: .42rem;
+            height: .42rem;
+            border-radius: 999px;
+            background: currentColor;
+            opacity: .9;
+        }
+
+        .app-timeline {
+            margin-top: .85rem;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: .75rem;
+        }
+
+        .app-time-card {
+            border-radius: .95rem;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            padding: .72rem .85rem;
+        }
+
+        .app-time-label {
+            font-size: .67rem;
+            text-transform: uppercase;
+            letter-spacing: .14em;
+            font-weight: 800;
+            color: #94a3b8;
+        }
+
+        .app-time-value {
+            margin-top: .3rem;
+            font-size: .82rem;
+            font-weight: 700;
+            color: #334155;
+        }
+
+        @@media (max-width: 900px) {
+            .app-timeline {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+}
+
+<section class="min-h-screen bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_45%,#fff7ed_100%)] py-10">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+        <div class="rounded-[30px] border border-orange-100 bg-white/90 shadow-[0_24px_60px_rgba(15,23,42,.08)] overflow-hidden">
+            <div class="px-6 py-6 sm:px-8 border-b border-orange-100 bg-[radial-gradient(circle_at_top_right,rgba(255,237,213,.85),transparent_28%),linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.24em] text-orange-500">Nanny zone</p>
+                        <h1 class="mt-2 text-3xl font-bold text-slate-900">Lich su ung tuyen</h1>
+                        <p class="mt-2 text-sm leading-6 text-slate-500 max-w-2xl">
+                            Theo doi cac don da gui cho Parent, xem trang thai va huy don khi don dang cho duyet.
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <a href="/Search"
+                           class="inline-flex items-center justify-center min-h-[48px] px-5 rounded-2xl border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 transition-all">
+                            Quay lai tim bai
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-6 sm:px-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="app-stat-card app-stat-card--total">
+                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Tong don</p>
+                        <p id="applicationTotalCount" class="mt-2 text-3xl font-extrabold text-slate-900">0</p>
+                    </div>
+                    <div class="app-stat-card app-stat-card--pending">
+                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-amber-500">Dang cho duyet</p>
+                        <p id="applicationPendingCount" class="mt-2 text-3xl font-extrabold text-amber-700">0</p>
+                    </div>
+                    <div class="app-stat-card app-stat-card--withdrawn">
+                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-rose-500">Da huy</p>
+                        <p id="applicationWithdrawnCount" class="mt-2 text-3xl font-extrabold text-rose-600">0</p>
+                    </div>
+                </div>
+
+                <div id="applicationList" class="space-y-5">
+                    <div class="rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center text-slate-500">
+                        Dang tai lich su ung tuyen...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    (() => {
+        const listEl = document.getElementById('applicationList');
+        const totalEl = document.getElementById('applicationTotalCount');
+        const pendingEl = document.getElementById('applicationPendingCount');
+        const withdrawnEl = document.getElementById('applicationWithdrawnCount');
+
+        const STATUS_STYLES = {
+            0: 'border-amber-200 bg-amber-50 text-amber-700',
+            1: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+            2: 'border-rose-200 bg-rose-50 text-rose-700',
+            3: 'border-slate-200 bg-slate-100 text-slate-600'
+        };
+
+        const escapeHtml = (value) => String(value ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+
+        const notify = (message, type = 'info') => {
+            if (!message) return;
+            if (typeof window.showToast === 'function') {
+                window.showToast(message, { type });
+            }
+        };
+
+        const formatDateTime = (value) => {
+            if (!value) return 'Chua cap nhat';
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return 'Chua cap nhat';
+            return new Intl.DateTimeFormat('vi-VN', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            }).format(date);
+        };
+
+        const formatLocation = (item) => {
+            const parts = [item?.location, item?.district, item?.city].filter(Boolean);
+            return parts.length ? parts.join(', ') : 'Chua cap nhat dia diem';
+        };
+
+        const getStatusClass = (status) => STATUS_STYLES[Number(status)] || 'border-slate-200 bg-slate-100 text-slate-600';
+
+        async function withdrawApplication(applicationId) {
+            if (!applicationId) return;
+
+            const confirmed = window.confirm('Ban chac chan muon huy don ung tuyen nay?');
+            if (!confirmed) return;
+
+            try {
+                const response = await fetch(`/Search/WithdrawApplication?applicationId=${encodeURIComponent(applicationId)}`, {
+                    method: 'POST',
+                    credentials: 'same-origin'
+                });
+                const json = await response.json();
+                if (!json?.success) {
+                    notify(json?.message || 'Khong the huy don ung tuyen.', 'error');
+                    return;
+                }
+
+                notify(json?.message || 'Da huy don ung tuyen.', 'success');
+                await loadApplications();
+            } catch {
+                notify('Loi ket noi server.', 'error');
+            }
+        }
+
+        function renderItems(items) {
+            if (!Array.isArray(items) || !items.length) {
+                listEl.innerHTML = `
+                    <div class="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-6 py-14 text-center">
+                        <span class="material-icons-round text-[34px] text-orange-300">assignment</span>
+                        <h3 class="mt-3 text-lg font-bold text-slate-900">Ban chua ung tuyen bai dang nao</h3>
+                        <p class="mt-2 text-sm text-slate-500">Khi ban apply, lich su se hien thi tai day.</p>
+                    </div>`;
+                return;
+            }
+
+            listEl.innerHTML = items.map((item) => {
+                const statusClass = getStatusClass(item.status);
+                return `
+                    <article class="app-item-card">
+                        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                            <div class="min-w-0">
+                                <h2 class="text-lg font-extrabold text-slate-900 break-words">${escapeHtml(item.jobTitle || 'Tin dang')}</h2>
+                                <p class="mt-1 text-sm font-semibold text-slate-500">Parent: ${escapeHtml(item.parentName || 'Chua cap nhat')}</p>
+                                <p class="mt-2 text-sm font-semibold text-orange-600">${escapeHtml(formatLocation(item))}</p>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="app-status-chip ${statusClass}">
+                                    <span class="app-status-dot"></span>
+                                    ${escapeHtml(item.statusLabel || 'Dang cap nhat')}
+                                </span>
+                                ${item.canWithdraw ? `
+                                    <button type="button"
+                                            onclick="window.__withdrawApplication('${escapeHtml(item.id)}')"
+                                            class="inline-flex items-center justify-center min-h-[38px] px-3.5 rounded-xl border border-rose-200 bg-white text-rose-600 text-xs font-extrabold hover:bg-rose-50 transition-all">
+                                        Huy don
+                                    </button>` : ''}
+                            </div>
+                        </div>
+
+                        <div class="app-timeline">
+                            <div class="app-time-card">
+                                <p class="app-time-label">Ngay gui don</p>
+                                <p class="app-time-value">${escapeHtml(formatDateTime(item.appliedAt))}</p>
+                            </div>
+                            <div class="app-time-card">
+                                <p class="app-time-label">Ngay duyet</p>
+                                <p class="app-time-value">${escapeHtml(formatDateTime(item.reviewedAt))}</p>
+                            </div>
+                            <div class="app-time-card">
+                                <p class="app-time-label">Ngay huy</p>
+                                <p class="app-time-value">${escapeHtml(formatDateTime(item.withdrawnAt))}</p>
+                            </div>
+                        </div>
+                    </article>`;
+            }).join('');
+        }
+
+        async function loadApplications() {
+            try {
+                const response = await fetch('/Search/MyApplicationsData?page=1&pageSize=30', { credentials: 'same-origin' });
+                const json = await response.json();
+
+                if (!json?.success) {
+                    notify(json?.message || 'Khong tai duoc lich su ung tuyen.', 'error');
+                }
+
+                const items = Array.isArray(json?.data) ? json.data : [];
+                const total = Number(json?.total ?? items.length);
+                const pending = items.filter((item) => Number(item?.status) === 0).length;
+                const withdrawn = items.filter((item) => Number(item?.status) === 3).length;
+
+                totalEl.textContent = Number.isFinite(total) ? String(total) : '0';
+                pendingEl.textContent = String(pending);
+                withdrawnEl.textContent = String(withdrawn);
+                renderItems(items);
+            } catch {
+                listEl.innerHTML = `
+                    <div class="rounded-3xl border border-red-100 bg-red-50 px-6 py-10 text-center text-red-600">
+                        Khong tai duoc lich su ung tuyen.
+                    </div>`;
+            }
+        }
+
+        window.__withdrawApplication = withdrawApplication;
+        loadApplications();
+    })();
+</script>
