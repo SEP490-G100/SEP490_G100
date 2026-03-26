@@ -191,7 +191,7 @@ public class SearchController : Controller
     [Authorize]
     public async Task<IActionResult> UpdateJob(Guid id, [FromBody] JsonElement body)
     {
-        if (!await canEditJob(id))
+        if (!isParentRole())
             return StatusCode(403, new { success = false, message = "Ban khong co quyen chinh sua bai dang nay." });
 
         SetAuthHeader();
