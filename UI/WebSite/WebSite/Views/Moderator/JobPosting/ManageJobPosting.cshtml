@@ -125,10 +125,10 @@
                 @foreach (var item in items)
                 {
                     var modBadge = item.ModerationStatus switch {
-                        0 => "badge-pending",
-                        1 => "badge-inactive",
-                        2 => "badge-active",
-                        _ => "badge-pending"
+                        0 => "job-badge--pending",
+                        1 => "job-badge--rejected",
+                        2 => "job-badge--approved",
+                        _ => "job-badge--pending"
                     };
                     var modLabel = item.ModerationStatus switch {
                         0 => "Pending",
@@ -161,11 +161,11 @@
                             </div>
                         </td>
                         <td>
-                            @if (item.Status == 1) { <span class="badge badge-active">Public</span> }
-                            else { <span class="badge badge-inactive">Hidden</span> }
+                            @if (item.Status == 1) { <span class="job-badge job-badge--public">Public</span> }
+                            else { <span class="job-badge job-badge--hidden">Hidden</span> }
                         </td>
                         <td>
-                            <span class="badge @modBadge">@modLabel</span>
+                            <span class="job-badge @modBadge">@modLabel</span>
                         </td>
                         <td>
                             <div class="flex items-center justify-center gap-1.5">

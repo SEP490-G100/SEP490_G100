@@ -12,13 +12,14 @@ public static class NotificationTypes
     public const int JobPostingRejected = 8;
     public const int JobPostingPending = 9;
     public const int NannyProfileFavorited = 10;
-    public const int VerificationRequestSubmitted = 11;
+    public const int VerificationRequestSubmitted = 18;
     public const int ReportSubmitted = 12;
     public const int MessageToModerator = 13;
     public const int JobPostingReviewRequired = 14;
     public const int VerificationRequestApproved = 15;
     public const int VerificationRequestRejected = 16;
     public const int VerificationRequestCreated = 17;
+    public const int JobApplicationSubmitted = 11;
 
     public static string getLabel(int type) => type switch
     {
@@ -39,6 +40,7 @@ public static class NotificationTypes
         VerificationRequestApproved => "Yeu cau xac minh duoc chap thuan",
         VerificationRequestRejected => "Yeu cau xac minh bi tu choi",
         VerificationRequestCreated => "Da gui yeu cau xac minh",
+        JobApplicationSubmitted => "Don ung tuyen da gui",
         _ => "Thong bao he thong"
     };
 }

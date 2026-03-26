@@ -286,6 +286,8 @@ public class NotificationService
                 $"/Moderator/ViewJobPostingDetail/{notification.RelatedEntityId.Value}",
             NotificationTypes.NannyProfileFavorited =>
                 "/Nanny/Profile",
+            NotificationTypes.JobApplicationSubmitted =>
+                "/Search/Applications",
             _ => null
         };
     }

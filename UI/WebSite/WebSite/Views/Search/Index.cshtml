@@ -36,6 +36,10 @@
         }
         @if (isNanny)
         {
+            <a href="/Search/Applications"
+               class="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-bold transition-all">
+                <span class="material-icons-round text-base">work_history</span>Lich su ung tuyen
+            </a>
             <a href="/Search/SavedJobs"
                class="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-orange-200 bg-white hover:bg-orange-50 text-orange-600 text-sm font-bold transition-all">
                 <span class="material-icons-round text-base">bookmark</span>Bài đăng đã lưu
@@ -101,11 +105,11 @@
                         </div>
                         <div>
                             <label class="form-label" >Lương tối thiểu</label>
-                            <input type="number" id="cf-salMin" style="border-radius: 10px;" class="form-input" />
+                            <input type="text" id="cf-salMin" inputmode="numeric" style="border-radius: 10px;" class="form-input" placeholder="VD: 1.000.000" />
                         </div>
                         <div>
                             <label class="form-label" >Lương tối đa</label>
-                            <input type="number" id="cf-salMax" style="border-radius: 10px;" class="form-input" />
+                            <input type="text" id="cf-salMax" inputmode="numeric" style="border-radius: 10px;" class="form-input" placeholder="VD: 3.000.000" />
                         </div>
                         <div class="md:col-span-2">
                             <label class="form-label">Tùy chọn lương</label>
@@ -261,11 +265,11 @@
                         </div>
                         <div>
                             <label class="form-label">Lương tối thiểu</label>
-                            <input type="number" id="ef-salMin" class="form-input" />
+                            <input type="text" id="ef-salMin" inputmode="numeric" class="form-input" placeholder="VD: 1.000.000" />
                         </div>
                         <div>
                             <label class="form-label">Lương tối đa</label>
-                            <input type="number" id="ef-salMax" class="form-input" />
+                            <input type="text" id="ef-salMax" inputmode="numeric" class="form-input" placeholder="VD: 3.000.000" />
                         </div>
                         <div class="md:col-span-2">
                             <label class="form-label">Tùy chọn lương</label>
@@ -423,10 +427,24 @@
                 <p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Mô tả công việc</p>
                 <p id="pv-desc" class="text-sm text-gray-700 whitespace-pre-line leading-relaxed"></p>
             </div>
-            <a id="pv-parentBtn" href="#" target="_blank" class="w-full py-3 rounded-xl border border-orange-200 text-orange-600 bg-orange-50 hover:bg-orange-100 font-bold text-sm transition-all inline-flex items-center justify-center gap-2">
-                <span class="material-icons-round text-base">person</span>
-                <span id="pv-parentBtnText">Xem chi tiết hồ sơ người đăng</span>
-            </a>
+            <div id="pv-actionGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button id="pv-applyBtn"
+                        type="button"
+                        class="hidden w-full py-3 rounded-xl border border-orange-200 text-orange-600 bg-orange-50 hover:bg-orange-100 font-bold text-sm transition-all inline-flex items-center justify-center gap-2">
+                    <span class="material-icons-round text-base">send</span>
+                    <span id="pv-applyBtnText">Ung tuyen ngay</span>
+                </button>
+                <a id="pv-editBtn"
+                   href="#"
+                   class="hidden w-full py-3 rounded-xl border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 font-bold text-sm transition-all inline-flex items-center justify-center gap-2">
+                    <span class="material-icons-round text-base">edit</span>
+                    <span>Chinh sua bai dang</span>
+                </a>
+                <a id="pv-parentBtn" href="#" target="_blank" class="w-full py-3 rounded-xl border border-orange-200 text-orange-600 bg-orange-50 hover:bg-orange-100 font-bold text-sm transition-all inline-flex items-center justify-center gap-2">
+                    <span class="material-icons-round text-base">person</span>
+                    <span id="pv-parentBtnText">Xem chi tiet ho so nguoi dang</span>
+                </a>
+            </div>
         </div>
         </div>
     </div>
@@ -456,50 +474,7 @@ const IS_PARENT = @(isParent ? "true" : "false");
 const IS_NANNY = @(isNanny ? "true" : "false");
 const CURRENT_USER_NAME = '@userName';
 
-(() => {
-    const ensurePreviewEditButton = () => {
-        const parentButton = document.getElementById('pv-parentBtn');
-        if (!parentButton || document.getElementById('pv-editBtn')) return document.getElementById('pv-editBtn');
-
-        const editButton = document.createElement('a');
-        editButton.id = 'pv-editBtn';
-        editButton.href = '#';
-        editButton.className = 'hidden w-full py-3 rounded-xl border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 font-bold text-sm transition-all inline-flex items-center justify-center gap-2';
-        editButton.innerHTML = '<span class="material-icons-round text-base">edit</span><span>Chinh sua bai dang</span>';
-
-        const actionGrid = document.createElement('div');
-        actionGrid.className = 'grid grid-cols-1 sm:grid-cols-2 gap-3';
-        parentButton.parentNode.insertBefore(actionGrid, parentButton);
-        actionGrid.appendChild(editButton);
-        actionGrid.appendChild(parentButton);
-        return editButton;
-    };
-
-    const bindPreviewEditButton = (job) => {
-        const button = ensurePreviewEditButton();
-        if (!button || !job) return;
-        const canEditByOwner = typeof window.canEditJob === 'function' ? window.canEditJob(job) : false;
-        const canEdit = canEditByOwner && [0, 2].includes(Number(job.moderationStatus)) && !!job.id;
-        button.classList.toggle('hidden', !canEdit);
-        if (canEdit) button.href = `/Search/Edit/${job.id}`;
-        else button.removeAttribute('href');
-    };
-
-    const hookPreview = () => {
-        if (typeof window.openPreview !== 'function' || window.openPreview.__nmWrapped) return;
-        const original = window.openPreview;
-        window.openPreview = function(job) {
-            const result = original.apply(this, arguments);
-            bindPreviewEditButton(job);
-            return result;
-        };
-        window.openPreview.__nmWrapped = true;
-    };
-
-    document.addEventListener('DOMContentLoaded', hookPreview);
-    setTimeout(hookPreview, 0);
-    setTimeout(hookPreview, 300);
-})();
 </script>
 <script src="~/js/search.js" asp-append-version="true"></script>
 }
+
