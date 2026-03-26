@@ -1,87 +1,123 @@
 @model WebSite.Models.Nanny.NannyAvailabilityViewModel
 @{
-    ViewData["Title"] = "Create your profile";
+    ViewData["Title"] = "Nanny Availability";
+    var dayColumns = Model.Days.Select((d, i) => new { Index = i, d.DayName }).ToList();
+    var slotRows = new[]
+    {
+        new { Slot = 0, Label = "Morning", Name = "Morning" },
+        new { Slot = 1, Label = "Afternoon", Name = "Afternoon" },
+        new { Slot = 2, Label = "Evening", Name = "Evening" },
+        new { Slot = 3, Label = "Night", Name = "Night" }
+    };
 }
 
-<div class="min-h-screen bg-[#1f242b] flex items-center justify-center px-4">
-    <div class="w-full max-w-3xl bg-[#2b323b] text-gray-100 rounded-2xl shadow-2xl overflow-hidden">
-        <div class="h-1 bg-[#3b434e]">
-            <div class="h-1 bg-pink-400" style="width:100%"></div>
-        </div>
-        <div class="p-8">
-            <div class="flex justify-between items-center mb-6">
-                <h1 class="text-lg font-semibold">Create your profile</h1>
-                <button type="button" onclick="window.location.href='@Url.Action("Logout", "Auth")'" class="text-gray-400 hover:text-gray-200">×</button>
+@section Head {
+    <link rel="stylesheet" href="~/css/search.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/profile.css" asp-append-version="true" />
+}
+
+<section class="availability-shell">
+    <div class="availability-box">
+        <div class="availability-panel">
+            <div class="availability-head">
+                <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-orange-500">Nanny onboarding</p>
+                <h1 class="mt-2 text-2xl sm:text-3xl font-bold text-slate-900" style="font-family:'Quicksand',sans-serif">Chon lich lam viec</h1>
+                <p class="mt-2 text-sm text-slate-500">UI dong bo voi lich tren JobPostList.</p>
             </div>
 
-            @* 1. Thêm khu vực hiển thị lỗi nếu có *@
-            <div asp-validation-summary="ModelOnly" class="text-red-400 text-sm mb-4"></div>
+            <div class="availability-body">
+                <div asp-validation-summary="ModelOnly" class="text-red-500 text-sm mb-4"></div>
 
-            <div class="flex flex-col items-center mb-8">
-                <div class="w-24 h-24 rounded-full bg-[#3b434e] flex items-center justify-center mb-4">
-                    <span class="text-4xl">⏰</span>
-                </div>
-                <div class="text-sm text-gray-300 px-4 py-2 rounded-full bg-[#3b434e]">
-                    When are you available to work?
-                </div>
-            </div>
+                <form asp-action="Availability" asp-controller="Nanny" method="post">
+                    @Html.AntiForgeryToken()
 
-            <form asp-action="Availability" asp-controller="Nanny" method="post">
-                @Html.AntiForgeryToken()
+                    @for (var i = 0; i < Model.Days.Count; i++)
+                    {
+                        <input type="hidden" name="Days[@i].DayName" value="@Model.Days[i].DayName" />
+                        <input type="hidden" name="Days[@i].DayOfWeek" value="@Model.Days[i].DayOfWeek" />
+                    }
 
-                @* 2. Hidden field để giữ UserId (Nếu cần thiết để tránh lỗi FK) *@
-                @* <input type="hidden" asp-for="UserId" /> *@
+                    <div class="section-card schedule-card">
+                        <div class="schedule-header">
+                            <div>
+                                <p class="section-title">Weekly schedule</p>
+                                <p class="section-caption">Chon cac khung gio ban co the nhan viec.</p>
+                            </div>
+                        </div>
 
-                <div class="overflow-x-auto">
-                    <table class="min-w-full text-sm text-left">
-                        <thead>
-                            <tr class="text-gray-300">
-                                <th class="px-4 py-2">Day</th>
-                                <th class="px-4 py-2 text-center">Morning</th>
-                                <th class="px-4 py-2 text-center">Afternoon</th>
-                                <th class="px-4 py-2 text-center">Evening</th>
-                                <th class="px-4 py-2 text-center">Night</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @for (int i = 0; i < Model.Days.Count; i++)
+                        <div class="schedule-grid" id="availabilityGrid">
+                            <div></div>
+                            @foreach (var day in dayColumns)
                             {
-                                <tr class="border-t border-[#3b434e]">
-                                    <td class="px-4 py-2">
-                                        @Model.Days[i].DayName
-                                        @* 3. Phải có hidden cho DayName để khi Model bị lỗi và trả về View, tên ngày không bị biến mất *@
-                                        <input type="hidden" asp-for="Days[i].DayName" />
-                                        <input type="hidden" asp-for="Days[i].DayOfWeek" />
-                                    </td>
-                                    <td class="px-4 py-2 text-center">
-                                        <input asp-for="Days[i].Morning" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-teal-500 focus:ring-teal-500 bg-[#1f242b]" />
-                                    </td>
-                                    <td class="px-4 py-2 text-center">
-                                        <input asp-for="Days[i].Afternoon" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-teal-500 focus:ring-teal-500 bg-[#1f242b]" />
-                                    </td>
-                                    <td class="px-4 py-2 text-center">
-                                        <input asp-for="Days[i].Evening" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-teal-500 focus:ring-teal-500 bg-[#1f242b]" />
-                                    </td>
-                                    <td class="px-4 py-2 text-center">
-                                        <input asp-for="Days[i].Night" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-teal-500 focus:ring-teal-500 bg-[#1f242b]" />
-                                    </td>
-                                </tr>
+                                <div class="schedule-col-label">@day.DayName</div>
                             }
-                        </tbody>
-                    </table>
-                </div>
 
-                <div class="flex justify-between items-center mt-8">
-                    <a href="@Url.Action("Skills", "Nanny")"
-                       class="px-5 py-2 rounded-full border border-[#3b434e] text-gray-200 hover:bg-[#3b434e] text-sm">
-                        Back
-                    </a>
-                    <button type="submit"
-                            class="px-6 py-2 rounded-full bg-teal-500 hover:bg-teal-400 text-white font-semibold text-sm transition-colors">
-                        Finish
-                    </button>
-                </div>
-            </form>
+                            @foreach (var row in slotRows)
+                            {
+                                <div class="schedule-row-label">@row.Label</div>
+                                @for (var i = 0; i < Model.Days.Count; i++)
+                                {
+                                    var inputId = $"day-{i}-slot-{row.Slot}";
+                                    var isActive = row.Slot switch
+                                    {
+                                        0 => Model.Days[i].Morning,
+                                        1 => Model.Days[i].Afternoon,
+                                        2 => Model.Days[i].Evening,
+                                        _ => Model.Days[i].Night
+                                    };
+                                    var inputName = $"Days[{i}].{row.Name}";
+
+                                    <input type="hidden" name="@inputName" value="false" />
+                                    <input type="checkbox"
+                                           id="@inputId"
+                                           name="@inputName"
+                                           value="true"
+                                           class="availability-checkbox"
+                                           @(isActive ? "checked" : null) />
+
+                                    <button type="button"
+                                            class="schedule-cell @(isActive ? "active" : "")"
+                                            data-input-id="@inputId"
+                                            aria-pressed="@(isActive ? "true" : "false")">
+                                        <span class="schedule-check">@(isActive ? Html.Raw("&#10003;") : Html.Raw(""))</span>
+                                    </button>
+                                }
+                            }
+                        </div>
+                    </div>
+
+                    <div class="availability-actions">
+                        <a href="@Url.Action("Skills", "Nanny")" class="ghost-btn">Back</a>
+                        <button type="submit" class="profile-primary-btn">Finish</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-</div>
+</section>
+
+@section Scripts {
+    <script>
+        (function () {
+            var grid = document.getElementById('availabilityGrid');
+            if (!grid) return;
+
+            grid.querySelectorAll('.schedule-cell[data-input-id]').forEach(function (cell) {
+                cell.addEventListener('click', function () {
+                    var inputId = cell.getAttribute('data-input-id');
+                    if (!inputId) return;
+                    var checkbox = document.getElementById(inputId);
+                    if (!checkbox) return;
+
+                    checkbox.checked = !checkbox.checked;
+                    var isActive = checkbox.checked;
+                    cell.classList.toggle('active', isActive);
+                    cell.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+
+                    var check = cell.querySelector('.schedule-check');
+                    if (check) check.innerHTML = isActive ? '&#10003;' : '';
+                });
+            });
+        })();
+    </script>
+}

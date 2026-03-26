@@ -39,4 +39,14 @@ public class AddressController : Controller
         var json = await response.Content.ReadAsStringAsync();
         return Content(json, "application/json");
     }
+
+    [HttpGet("LocationTree")]
+    public async Task<IActionResult> LocationTree(CancellationToken cancellationToken)
+    {
+        SetAuthHeader();
+        var response = await _http.GetAsync("/api/address/location-tree", cancellationToken);
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
+        Response.StatusCode = (int)response.StatusCode;
+        return Content(json, "application/json", System.Text.Encoding.UTF8);
+    }
 }

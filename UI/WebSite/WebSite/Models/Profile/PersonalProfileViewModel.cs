@@ -20,7 +20,6 @@ namespace WebSite.Models.Profile
 
         public bool IsParent => Roles.Any(r => r.Equals("Parent", StringComparison.OrdinalIgnoreCase));
         public bool IsNanny => Roles.Any(r => r.Equals("Nanny", StringComparison.OrdinalIgnoreCase));
-
         // Parent
         public string? FamilyDescription { get; set; }
         public int? NumberOfChildren { get; set; }

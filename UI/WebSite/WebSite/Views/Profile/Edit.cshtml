@@ -2,307 +2,291 @@
 @model EditPersonalInfoViewModel
 
 @{
-    ViewData["Title"] = "Chỉnh sửa hồ sơ";
+    ViewData["Title"] = "Chinh sua ho so";
     var avatarUrl = (Model.AvatarUrl ?? "").Trim();
+    var isNanny = Model.IsNanny;
+    var dobMax = DateOnly.FromDateTime(DateTime.Today.AddYears(-18)).ToString("yyyy-MM-dd");
 }
 
-<div class="h-32 sm:h-40 bg-gradient-to-r from-orange-400 to-orange-600 relative overflow-hidden shadow-lg">
-    <div class="absolute inset-0 opacity-20">
-        <div class="absolute top-0 left-0 w-64 h-64 bg-white rounded-full blur-3xl -ml-20 -mt-20"></div>
-        <div class="absolute bottom-0 right-0 w-64 h-64 bg-white rounded-full blur-3xl -mr-20 -mb-20"></div>
-    </div>
-</div>
+@section Head {
+    <link rel="stylesheet" href="~/css/profile.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/search.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+}
 
-<div class="max-w-4xl mx-auto px-4 sm:px-6 -mt-16 sm:-mt-20 pb-20 relative z-10">
-    <div class="mb-8 px-4 text-center md:text-left">
-        <span class="inline-flex items-center gap-2 px-3 py-1 bg-white/20 backdrop-blur-md text-white text-xs font-bold rounded-full border border-white/30 uppercase tracking-wider mb-3">
-            Chỉnh sửa hồ sơ
-        </span>
-        <h1 class="text-3xl sm:text-4xl font-bold text-white mb-2" style="font-family:'Quicksand',sans-serif">Cập nhật thông tin cá nhân</h1>
-    </div>
+<section class="profile-page">
+    <div class="profile-shell">
+        <div class="profile-header">
+            <div class="flex-1 min-w-[220px]">
+                <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-orange-500">Profile</p>
+                <h1 class="mt-2 text-3xl font-bold text-slate-900" style="font-family:'Quicksand',sans-serif">Chinh sua thong tin ca nhan</h1>
+                <p class="mt-2 text-sm text-slate-500">Mau giao dien moi dong bo mau sac voi homepage.</p>
+            </div>
+        </div>
 
-    <div class="bg-white/90 rounded-3xl p-8 lg:p-10 shadow-soft border border-gray-100/80 backdrop-blur-md">
-        <form method="post" enctype="multipart/form-data">
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                <div asp-validation-summary="ModelOnly"></div>
+            </div>
+        }
+
+        <form id="editProfileForm" method="post" enctype="multipart/form-data" class="mt-4">
             @Html.AntiForgeryToken()
 
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                <div class="lg:col-span-4">
-                    <div class="sticky top-6 bg-white rounded-3xl p-6 border border-gray-100 shadow-soft">
-                        <h3 class="text-lg font-bold text-gray-900 mb-4">Ảnh đại diện</h3>
+            <div class="profile-grid">
+                <div class="space-y-4">
+                    <div class="profile-card">
+                        <h3>Thong tin ca nhan</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="form-label" for="FirstName">Ho</label>
+                                <input asp-for="FirstName" id="FirstName" class="form-input" required />
+                            </div>
+                            <div>
+                                <label class="form-label" for="LastName">Ten</label>
+                                <input asp-for="LastName" id="LastName" class="form-input" required />
+                            </div>
+                            <div>
+                                <label class="form-label" for="PhoneNumber">Dien thoai</label>
+                                <input asp-for="PhoneNumber" id="PhoneNumber" class="form-input" />
+                            </div>
+                            <div>
+                                <label class="form-label" for="DateOfBirth">Ngay sinh</label>
+                                <input asp-for="DateOfBirth" id="DateOfBirth" type="date" max="@dobMax" class="form-input" />
+                                @if (isNanny)
+                                {
+                                    <p class="text-xs text-slate-500 mt-1">Nanny phai du 18 tuoi tro len.</p>
+                                }
+                                <p id="dobError" class="hidden text-xs text-red-600 mt-1"></p>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <label class="form-label">Gioi tinh</label>
+                            <input type="hidden" asp-for="Gender" id="Gender" />
+                            <div class="inline-grid grid-cols-2 gap-2 p-2 rounded-2xl border border-slate-200 bg-slate-50" style="max-width:280px">
+                                <button type="button" class="gender-btn" data-value="0">Nam</button>
+                                <button type="button" class="gender-btn" data-value="1">Nu</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (isNanny)
+                    {
+                        <div class="profile-card profile-card-soft">
+                            <h3>Thong tin nghe nghiep (Nanny)</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="form-label" for="Bio">Gioi thieu</label>
+                                    <textarea asp-for="Bio" id="Bio" rows="3" class="form-input resize-none"></textarea>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="form-label" for="YearsOfExperience">Nam kinh nghiem</label>
+                                        <input asp-for="YearsOfExperience" id="YearsOfExperience" type="number" min="0" class="form-input" />
+                                    </div>
+                                    <div>
+                                        <label class="form-label" for="EducationLevel">Hoc van</label>
+                                        <select asp-for="EducationLevel" id="EducationLevel" class="form-input">
+                                            <option value="">-- Chon --</option>
+                                            <option value="0">Trung hoc</option>
+                                            <option value="1">Cao dang</option>
+                                            <option value="2">Dai hoc</option>
+                                            <option value="3">Thac si</option>
+                                            <option value="4">Khac</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="form-label" for="ExpectedSalaryMin">Luong toi thieu</label>
+                                        <input asp-for="ExpectedSalaryMin" id="ExpectedSalaryMin" type="number" min="0" step="1000" class="form-input" />
+                                    </div>
+                                    <div>
+                                        <label class="form-label" for="ExpectedSalaryMax">Luong toi da</label>
+                                        <input asp-for="ExpectedSalaryMax" id="ExpectedSalaryMax" type="number" min="0" step="1000" class="form-input" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="form-label" for="MaxTravelDistance">Khoang cach di chuyen toi da (km)</label>
+                                    <input asp-for="MaxTravelDistance" id="MaxTravelDistance" type="number" min="0" class="form-input" />
+                                </div>
+                                <div>
+                                    <label class="form-label">Ky nang</label>
+                                    @if (Model.AvailableSkills.Any())
+                                    {
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 p-4 rounded-2xl border border-orange-100 bg-white">
+                                            @foreach (var skill in Model.AvailableSkills)
+                                            {
+                                                var checkedAttr = Model.SelectedSkillIds.Contains(skill.SkillId);
+                                                <label class="flex items-center gap-2 text-sm text-slate-700 font-semibold">
+                                                    <input type="checkbox"
+                                                           name="SelectedSkillIds"
+                                                           value="@skill.SkillId"
+                                                           @(checkedAttr ? "checked" : null)
+                                                           class="rounded border-gray-300 text-orange-600 focus:ring-orange-500" />
+                                                    <span>@skill.SkillName</span>
+                                                </label>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <p class="text-sm text-slate-500">Khong tai duoc danh sach ky nang.</p>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="profile-card">
+                        <h3>Dia chi va ban do</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="form-label" for="Address">Dia chi chi tiet</label>
+                                <input asp-for="Address" id="Address" class="form-input" placeholder="So nha, ten duong..." />
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="form-label" for="City">Tinh/Thanh</label>
+                                    <select asp-for="City" id="City" class="form-input">
+                                        <option value="">-- Chon Tinh/Thanh --</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="form-label" for="District">Quan/Huyen</label>
+                                    <select asp-for="District" id="District" class="form-input">
+                                        <option value="">-- Chon Quan/Huyen --</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="form-label" for="Ward">Phuong/Xa</label>
+                                    <select asp-for="Ward" id="Ward" class="form-input">
+                                        <option value="">-- Chon Phuong/Xa --</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div id="addressLoadError" class="hidden text-sm text-red-600"></div>
+                            <div id="map" class="profile-map"></div>
+                            <input asp-for="Latitude" id="Latitude" type="hidden" />
+                            <input asp-for="Longitude" id="Longitude" type="hidden" />
+                            <p class="text-xs font-semibold text-slate-500">Toa do: <span id="coords-display">@Model.Latitude, @Model.Longitude</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="profile-card">
+                        <h3>Anh dai dien</h3>
                         <div class="flex flex-col items-center">
                             <img id="avatarPreview"
                                  class="@((string.IsNullOrWhiteSpace(avatarUrl) ? "hidden " : "") + "w-40 h-40 rounded-3xl object-cover border border-gray-200 bg-gray-50")"
                                  src="@avatarUrl"
                                  alt="Avatar preview" />
-                            <div class="w-full mt-4">
-                                <label for="AvatarFile" class="block text-sm font-bold text-gray-700 mb-2">Tải ảnh (.jpg, .png)</label>
-                                <input type="file" asp-for="AvatarFile" accept=".jpg,.jpeg,.png,image/jpeg,image/png"
-                                       class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 transition-all" />
-                                <div id="avatarUploadError" class="hidden mt-2 text-sm text-red-600"></div>
-                            </div>
                             <input type="hidden" asp-for="AvatarUrl" value="@avatarUrl" />
-                        </div>
-                    </div>
-                </div>
 
-                <div class="lg:col-span-8">
-                    <div class="space-y-6 mb-8">
-                        <h3 class="text-xl font-bold text-gray-900">Thông tin cá nhân</h3>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label for="FirstName" class="block text-sm font-bold text-gray-700 mb-2">Họ <span class="text-red-500">*</span></label>
-                                <input type="text" id="FirstName" name="FirstName" value="@Model.FirstName" required
-                                       class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none text-gray-900 font-medium" />
+                            <div class="w-full mt-4">
+                                <label class="form-label" for="AvatarFile">Upload anh (.jpg, .png)</label>
+                                <input type="file" asp-for="AvatarFile" id="AvatarFile" accept=".jpg,.png" class="form-input" />
+                                <p class="text-xs text-slate-500 mt-1">Chi cho phep file .jpg hoac .png</p>
+                                <p id="avatarUploadError" class="hidden text-xs text-red-600 mt-1"></p>
                             </div>
-                            <div>
-                                <label for="LastName" class="block text-sm font-bold text-gray-700 mb-2">Tên <span class="text-red-500">*</span></label>
-                                <input type="text" id="LastName" name="LastName" value="@Model.LastName" required
-                                       class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none text-gray-900 font-medium" />
-                            </div>
-                            <div>
-                                <label for="PhoneNumber" class="block text-sm font-bold text-gray-700 mb-2">Số điện thoại</label>
-                                <input type="text" id="PhoneNumber" name="PhoneNumber" value="@Model.PhoneNumber"
-                                       class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none text-gray-900 font-medium" />
-                            </div>
-                            <div>
-                                <label for="DateOfBirth" class="block text-sm font-bold text-gray-700 mb-2">Ngày sinh</label>
-                                <input type="date" id="DateOfBirth" name="DateOfBirth" value="@Model.DateOfBirth?.ToString("yyyy-MM-dd")"
-                                       class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none text-gray-900 font-medium" />
-                            </div>
-                            <div>
-                                <label for="Gender" class="block text-sm font-bold text-gray-700 mb-2">Giới tính</label>
-                                <select id="Gender" name="Gender"
-                                        class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none text-gray-900 font-medium">
-                                    <option value="">-- Chọn giới tính --</option>
-                                    <option value="0" selected="@(Model.Gender == 0)">Nam</option>
-                                    <option value="1" selected="@(Model.Gender == 1)">Nữ</option>
-                                    <option value="2" selected="@(Model.Gender == 2)">Khác</option>
-                                </select>
+                            <div class="w-full mt-3">
+                                <label class="form-label" for="avatarPathDisplay">Duong dan file da chon</label>
+                                <input type="text" id="avatarPathDisplay" class="form-input" readonly value="" />
                             </div>
                         </div>
                     </div>
 
-                    @if (Model.IsNanny)
-                    {
-                        <div class="border-t border-gray-100 pt-8 space-y-6 mb-8">
-                            <h3 class="text-xl font-bold text-gray-900">Thông tin nghề nghiệp (Bảo mẫu)</h3>
-
-                            <div>
-                                <label for="Bio" class="block text-sm font-bold text-gray-700 mb-2">Giới thiệu bản thân</label>
-                                <textarea id="Bio" name="Bio" rows="3"
-                                          class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none text-gray-900 font-medium">@Model.Bio</textarea>
-                            </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label for="YearsOfExperience" class="block text-sm font-bold text-gray-700 mb-2">Số năm kinh nghiệm</label>
-                                    <input type="number" min="0" id="YearsOfExperience" name="YearsOfExperience" value="@Model.YearsOfExperience"
-                                           class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none text-gray-900 font-medium" />
-                                </div>
-                                <div>
-                                    <label for="EducationLevel" class="block text-sm font-bold text-gray-700 mb-2">Trình độ học vấn</label>
-                                    <select id="EducationLevel" name="EducationLevel"
-                                            class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none text-gray-900 font-medium">
-                                        <option value="">-- Chọn trình độ học vấn --</option>
-                                        <option value="0" selected="@(Model.EducationLevel == 0)">Trung học</option>
-                                        <option value="1" selected="@(Model.EducationLevel == 1)">Cao đẳng</option>
-                                        <option value="2" selected="@(Model.EducationLevel == 2)">Đại học</option>
-                                        <option value="3" selected="@(Model.EducationLevel == 3)">Thạc sĩ</option>
-                                        <option value="4" selected="@(Model.EducationLevel == 4)">Khác</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label for="ExpectedSalaryMin" class="block text-sm font-bold text-gray-700 mb-2">Mức lương tối thiểu</label>
-                                    <div class="relative">
-                                        <input type="number" step="1000" min="0" id="ExpectedSalaryMin" name="ExpectedSalaryMin" value="@Model.ExpectedSalaryMin"
-                                               class="w-full px-5 py-4 pr-16 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none text-gray-900 font-medium" />
-                                        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-500">VND</span>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label for="ExpectedSalaryMax" class="block text-sm font-bold text-gray-700 mb-2">Mức lương tối đa</label>
-                                    <div class="relative">
-                                        <input type="number" step="1000" min="0" id="ExpectedSalaryMax" name="ExpectedSalaryMax" value="@Model.ExpectedSalaryMax"
-                                               class="w-full px-5 py-4 pr-16 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none text-gray-900 font-medium" />
-                                        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-500">VND</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label for="MaxTravelDistance" class="block text-sm font-bold text-gray-700 mb-2">Khoảng cách di chuyển tối đa (km)</label>
-                                <input type="number" min="0" id="MaxTravelDistance" name="MaxTravelDistance" value="@Model.MaxTravelDistance"
-                                       class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none text-gray-900 font-medium" />
-                            </div>
+                    <div class="profile-card">
+                        <h3>Hanh dong</h3>
+                        <div class="space-y-2">
+                            <a href="@Url.Action("Index", "Profile")" class="ghost-btn w-full">Huy bo</a>
+                            <button type="submit" class="profile-primary-btn w-full">Luu thong tin</button>
                         </div>
-
-                        <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">Kỹ năng đã chọn</label>
-                            @if (Model.AvailableSkills.Any())
-                            {
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 p-4 rounded-2xl bg-gray-50 border border-gray-200">
-                                    @foreach (var skill in Model.AvailableSkills)
-                                    {
-                                        <label class="flex items-center gap-2 text-sm text-gray-800">
-                                            @if (Model.SelectedSkillIds.Contains(skill.SkillId))
-                                            {
-                                                <input type="checkbox"
-                                                       name="SelectedSkillIds"
-                                                       value="@skill.SkillId"
-                                                       checked
-                                                       class="rounded border-gray-300 text-orange-600 focus:ring-orange-500" />
-                                            }
-                                            else
-                                            {
-                                                <input type="checkbox"
-                                                       name="SelectedSkillIds"
-                                                       value="@skill.SkillId"
-                                                       class="rounded border-gray-300 text-orange-600 focus:ring-orange-500" />
-                                            }
-                                            <span>@skill.SkillName</span>
-                                        </label>
-                                    }
-                                </div>
-                            }
-                            else
-                            {
-                                <p class="text-sm text-gray-500">Không tải được danh sách kỹ năng.</p>
-                            }
-                        </div>
-                    }
-
-                    <div class="border-t border-gray-100 pt-8 space-y-6 mb-8">
-                        <h3 class="text-xl font-bold text-gray-900">Địa chỉ</h3>
-
-                        <div>
-                            <label for="Address" class="block text-sm font-bold text-gray-700 mb-2">Địa chỉ chi tiết</label>
-                            <input type="text" id="Address" name="Address" value="@Model.Address" placeholder="Số nhà, tên đường..."
-                                   class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none text-gray-900 font-medium" />
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div>
-                                <label for="City" class="block text-sm font-bold text-gray-700 mb-2">Tỉnh/Thành</label>
-                                @if (!string.IsNullOrWhiteSpace(Model.City))
-                                {
-                                    <p class="text-xs text-gray-500 mb-2">Đang chọn: <span class="font-semibold">@Model.City</span></p>
-                                }
-                                <select id="City" name="City"
-                                        class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none text-gray-900 font-medium">
-                                    <option value="">-- Chọn Tỉnh/Thành --</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="District" class="block text-sm font-bold text-gray-700 mb-2">Quận/Huyện</label>
-                                @if (!string.IsNullOrWhiteSpace(Model.District))
-                                {
-                                    <p class="text-xs text-gray-500 mb-2">Đang chọn: <span class="font-semibold">@Model.District</span></p>
-                                }
-                                <select id="District" name="District"
-                                        class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none text-gray-900 font-medium">
-                                    <option value="">-- Chọn Quận/Huyện --</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="Ward" class="block text-sm font-bold text-gray-700 mb-2">Phường/Xã</label>
-                                @if (!string.IsNullOrWhiteSpace(Model.Ward))
-                                {
-                                    <p class="text-xs text-gray-500 mb-2">Đang chọn: <span class="font-semibold">@Model.Ward</span></p>
-                                }
-                                <select id="Ward" name="Ward"
-                                        class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none text-gray-900 font-medium">
-                                    <option value="">-- Chọn Phường/Xã --</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="border-t border-gray-100 pt-8 space-y-6 mb-8">
-                        <h3 class="text-xl font-bold text-gray-900">Vị trí trên bản đồ</h3>
-                        <div id="map" class="w-full h-64 md:h-96 rounded-2xl border-2 border-gray-200 overflow-hidden shadow-lg"></div>
-                        <input type="hidden" id="Latitude" name="Latitude" value="@Model.Latitude">
-                        <input type="hidden" id="Longitude" name="Longitude" value="@Model.Longitude">
-                        <p class="text-sm text-blue-700 bg-blue-50 border border-blue-200 rounded-lg p-3">
-                            Tọa độ hiện tại: <span id="coords-display">@Model.Latitude, @Model.Longitude</span>
-                        </p>
-                    </div>
-
-                    <div class="flex flex-col sm:flex-row gap-3 pt-8 border-t border-gray-100">
-                        <a href="@Url.Action("Index", "Profile")"
-                           class="flex-1 flex items-center justify-center gap-2 px-8 py-4 bg-gray-100 text-gray-700 font-bold rounded-2xl transition-all hover:bg-gray-200">
-                            Hủy bỏ
-                        </a>
-                        <button type="submit"
-                                class="flex-1 flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold rounded-2xl transition-all shadow-glow">
-                            Lưu thay đổi
-                        </button>
                     </div>
                 </div>
             </div>
         </form>
     </div>
+</section>
+
+<div id="profileToast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] rounded-xl border border-orange-200 bg-orange-500 text-white px-4 py-3 text-sm font-bold shadow-xl">
+    @((TempData["Success"] ?? "").ToString())
 </div>
 
-<style>
-    .shadow-soft { box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05); }
-    .shadow-glow { box-shadow: 0 10px 25px -5px rgba(249, 115, 22, 0.4); }
-</style>
+@section Scripts {
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var isNanny = @(isNanny ? "true" : "false");
+            var form = document.getElementById("editProfileForm");
+            var dobInput = document.getElementById("DateOfBirth");
+            var dobError = document.getElementById("dobError");
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        var avatarInput = document.getElementById('AvatarFile');
-        var avatarErr = document.getElementById('avatarUploadError');
-        var avatarPreview = document.getElementById('avatarPreview');
-        var currentAvatarUrl = '@avatarUrl';
-        var objectUrl = null;
-
-        function showAvatarError(msg) {
-            avatarErr.textContent = msg || '';
-            avatarErr.classList.toggle('hidden', !msg);
-        }
-
-        function clearPreview() {
-            if (objectUrl) { try { URL.revokeObjectURL(objectUrl); } catch (e) {} objectUrl = null; }
-            if (avatarPreview) {
-                avatarPreview.src = '';
-                avatarPreview.classList.add('hidden');
+            var genderInput = document.getElementById("Gender");
+            var genderButtons = document.querySelectorAll(".gender-btn");
+            function syncGenderUI() {
+                var current = (genderInput.value || "").trim();
+                genderButtons.forEach(function (btn) {
+                    var active = btn.getAttribute("data-value") === current;
+                    btn.classList.toggle("status-option", true);
+                    btn.classList.toggle("active", active);
+                });
             }
-        }
+            genderButtons.forEach(function (btn) {
+                btn.addEventListener("click", function () {
+                    genderInput.value = btn.getAttribute("data-value");
+                    syncGenderUI();
+                });
+            });
+            syncGenderUI();
 
-        function setPreview(src) {
-            if (!avatarPreview) return;
-            avatarPreview.src = src;
-            avatarPreview.classList.remove('hidden');
-        }
+            var avatarInput = document.getElementById("AvatarFile");
+            var avatarErr = document.getElementById("avatarUploadError");
+            var avatarPreview = document.getElementById("avatarPreview");
+            var avatarPathDisplay = document.getElementById("avatarPathDisplay");
+            var currentAvatarUrl = "@avatarUrl";
+            var objectUrl = null;
 
-        function isAllowedImage(file) {
-            if (!file) return false;
-            var name = (file.name || '').toLowerCase();
-            return name.endsWith('.png') || name.endsWith('.jpg') || name.endsWith('.jpeg');
-        }
+            function showAvatarError(msg) {
+                avatarErr.textContent = msg || "";
+                avatarErr.classList.toggle("hidden", !msg);
+            }
+            function isAllowedImage(file) {
+                if (!file) return false;
+                var name = (file.name || "").toLowerCase();
+                return name.endsWith(".jpg") || name.endsWith(".png");
+            }
+            function clearPreview() {
+                if (objectUrl) { try { URL.revokeObjectURL(objectUrl); } catch (e) { } objectUrl = null; }
+                avatarPreview.src = "";
+                avatarPreview.classList.add("hidden");
+            }
+            function setPreview(src) {
+                avatarPreview.src = src;
+                avatarPreview.classList.remove("hidden");
+            }
 
-        if (currentAvatarUrl && avatarPreview) setPreview(currentAvatarUrl);
+            if (currentAvatarUrl) setPreview(currentAvatarUrl);
+            avatarPathDisplay.value = "";
 
-        if (avatarInput) {
-            avatarInput.addEventListener('change', function() {
-                showAvatarError('');
+            avatarInput.addEventListener("change", function () {
+                showAvatarError("");
                 var file = avatarInput.files && avatarInput.files[0] ? avatarInput.files[0] : null;
+                avatarPathDisplay.value = avatarInput.value || "";
+
                 if (!file) {
                     clearPreview();
                     if (currentAvatarUrl) setPreview(currentAvatarUrl);
                     return;
                 }
                 if (!isAllowedImage(file)) {
-                    avatarInput.value = '';
+                    avatarInput.value = "";
+                    avatarPathDisplay.value = "";
                     clearPreview();
-                    showAvatarError('Chỉ cho phép ảnh .png, .jpg, .jpeg.');
+                    showAvatarError("Chi cho phep file .jpg hoac .png.");
                     if (currentAvatarUrl) setPreview(currentAvatarUrl);
                     return;
                 }
@@ -310,138 +294,201 @@
                 objectUrl = URL.createObjectURL(file);
                 setPreview(objectUrl);
             });
-        }
 
-        var initialLat = parseFloat(document.getElementById('Latitude').value) || 21.0285;
-        var initialLng = parseFloat(document.getElementById('Longitude').value) || 105.8542;
-        var map = L.map('map').setView([initialLat, initialLng], 13);
+            function validateNannyDob() {
+                if (!isNanny) return true;
+                var value = dobInput.value;
+                if (!value) {
+                    dobError.textContent = "Vui long chon ngay sinh.";
+                    dobError.classList.remove("hidden");
+                    return false;
+                }
+                var dob = new Date(value + "T00:00:00");
+                var today = new Date();
+                var age = today.getFullYear() - dob.getFullYear();
+                var monthDiff = today.getMonth() - dob.getMonth();
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) age--;
+                if (age < 18) {
+                    dobError.textContent = "Nanny phai tu 18 tuoi tro len.";
+                    dobError.classList.remove("hidden");
+                    return false;
+                }
+                dobError.classList.add("hidden");
+                dobError.textContent = "";
+                return true;
+            }
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
+            form.addEventListener("submit", function (e) {
+                if (!validateNannyDob()) e.preventDefault();
+            });
+            dobInput.addEventListener("change", validateNannyDob);
 
-        var marker = L.marker([initialLat, initialLng], { draggable: true }).addTo(map);
+            var toast = document.getElementById("profileToast");
+            if (toast && toast.textContent.trim()) {
+                toast.classList.remove("hidden");
+                setTimeout(function () {
+                    toast.classList.add("hidden");
+                }, 2500);
+            }
 
-        function updateCoordinates(lat, lng) {
-            document.getElementById('Latitude').value = lat.toFixed(6);
-            document.getElementById('Longitude').value = lng.toFixed(6);
-            document.getElementById('coords-display').innerText = lat.toFixed(6) + ", " + lng.toFixed(6);
-        }
+            var initialLat = parseFloat(document.getElementById("Latitude").value) || 21.0285;
+            var initialLng = parseFloat(document.getElementById("Longitude").value) || 105.8542;
+            var map = L.map("map").setView([initialLat, initialLng], 13);
+            L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+                attribution: "&copy; CartoDB",
+                maxZoom: 19
+            }).addTo(map);
 
-        marker.on('dragend', function() {
-            var p = marker.getLatLng();
-            updateCoordinates(p.lat, p.lng);
-        });
+            var marker = L.marker([initialLat, initialLng], { draggable: true }).addTo(map);
 
-        map.on('click', function(e) {
-            marker.setLatLng([e.latlng.lat, e.latlng.lng]);
-            updateCoordinates(e.latlng.lat, e.latlng.lng);
-        });
+            function updateCoordinates(lat, lng) {
+                document.getElementById("Latitude").value = lat.toFixed(6);
+                document.getElementById("Longitude").value = lng.toFixed(6);
+                document.getElementById("coords-display").innerText = lat.toFixed(6) + ", " + lng.toFixed(6);
+            }
+            marker.on("dragend", function () {
+                var p = marker.getLatLng();
+                updateCoordinates(p.lat, p.lng);
+            });
+            map.on("click", function (e) {
+                marker.setLatLng([e.latlng.lat, e.latlng.lng]);
+                updateCoordinates(e.latlng.lat, e.latlng.lng);
+            });
 
-        var citySelect = document.getElementById('City');
-        var districtSelect = document.getElementById('District');
-        var wardSelect = document.getElementById('Ward');
-        var addressInput = document.getElementById('Address');
-        var provinces = [];
-        var currentCity = '@(Model.City ?? "")';
-        var currentDistrict = '@(Model.District ?? "")';
-        var currentWard = '@(Model.Ward ?? "")';
+            var citySelect = document.getElementById("City");
+            var districtSelect = document.getElementById("District");
+            var wardSelect = document.getElementById("Ward");
+            var addressInput = document.getElementById("Address");
+            var addressLoadError = document.getElementById("addressLoadError");
+            var provinces = [];
+            var currentCity = "@(Model.City ?? "")";
+            var currentDistrict = "@(Model.District ?? "")";
+            var currentWard = "@(Model.Ward ?? "")";
 
-        fetch('https://provinces.open-api.vn/api/v2/?depth=3')
-            .then(function (r) { return r.json(); })
-            .then(function (data) {
-                provinces = data || [];
-                provinces.forEach(function (p) {
-                    var opt = document.createElement('option');
-                    opt.value = p.name;
-                    opt.textContent = p.name;
-                    citySelect.appendChild(opt);
+            setAddressSelectState(true);
+            fetch("/Address/LocationTree")
+                .then(function (r) {
+                    if (!r.ok) throw new Error("address-load-failed");
+                    return r.json();
+                })
+                .then(function (data) {
+                    provinces = data || [];
+                    provinces.forEach(function (p) {
+                        var opt = document.createElement("option");
+                        opt.value = p.name;
+                        opt.textContent = p.name;
+                        citySelect.appendChild(opt);
+                    });
+                    if (currentCity) {
+                        setSelectByNormalized(citySelect, currentCity);
+                        onCityChange(function () {
+                            if (currentDistrict) {
+                                setSelectByNormalized(districtSelect, currentDistrict);
+                                onDistrictChange(function () {
+                                    if (currentWard) setSelectByNormalized(wardSelect, currentWard);
+                                });
+                            }
+                        });
+                    }
+                    showAddressLoadError("");
+                    setAddressSelectState(false);
+                })
+                .catch(function () {
+                    provinces = [];
+                    setAddressSelectState(true);
+                    showAddressLoadError("Khong tai duoc danh sach tinh thanh.");
                 });
 
-                if (currentCity) {
-                    citySelect.value = currentCity;
-                    onCityChange(function() {
-                        if (currentDistrict) {
-                            districtSelect.value = currentDistrict;
-                            onDistrictChange(function() {
-                                if (currentWard) wardSelect.value = currentWard;
-                            });
-                        }
-                    });
-                }
-            });
-
-        function onCityChange(callback) {
-            districtSelect.innerHTML = '<option value="">-- Chọn Quận/Huyện --</option>';
-            wardSelect.innerHTML = '<option value="">-- Chọn Phường/Xã --</option>';
-
-            var selected = provinces.find(function (p) { return p.name === citySelect.value; });
-            if (!selected) { if (callback) callback(); return; }
-
-            selected.districts.forEach(function (d) {
-                var opt = document.createElement('option');
-                opt.value = d.name;
-                opt.textContent = d.name;
-                districtSelect.appendChild(opt);
-            });
-
-            if (callback) callback();
-            autoGeocode();
-        }
-
-        function onDistrictChange(callback) {
-            wardSelect.innerHTML = '<option value="">-- Chọn Phường/Xã --</option>';
-
-            var selectedProv = provinces.find(function (p) { return p.name === citySelect.value; });
-            if (!selectedProv) { if (callback) callback(); return; }
-
-            var selectedDist = selectedProv.districts.find(function (d) { return d.name === districtSelect.value; });
-            if (!selectedDist) { if (callback) callback(); return; }
-
-            (selectedDist.wards || []).forEach(function (w) {
-                var opt = document.createElement('option');
-                opt.value = w.name;
-                opt.textContent = w.name;
-                wardSelect.appendChild(opt);
-            });
-
-            if (callback) callback();
-            autoGeocode();
-        }
-
-        citySelect.addEventListener('change', function () { onCityChange(); });
-        districtSelect.addEventListener('change', function () { onDistrictChange(); });
-        wardSelect.addEventListener('change', function () { autoGeocode(); });
-        addressInput.addEventListener('blur', function () { autoGeocode(); });
-
-        function autoGeocode() {
-            var detail = (addressInput.value || '').trim();
-            var city = (citySelect.value || '').trim();
-            var dist = (districtSelect.value || '').trim();
-            var ward = (wardSelect.value || '').trim();
-            if (!city || !dist || !ward) return;
-
-            var parts = [];
-            if (detail) parts.push(detail);
-            parts.push(ward);
-            parts.push(dist);
-            parts.push(city);
-            var query = parts.join(', ');
-
-            fetch('/Address/Suggest?q=' + encodeURIComponent(query) + '&limit=1')
-                .then(function (r) { return r.json(); })
-                .then(function (items) {
-                    if (!items || !items.length) return;
-                    var item = items[0];
-                    var lat = item.latitude != null ? item.latitude : item.Latitude;
-                    var lng = item.longitude != null ? item.longitude : item.Longitude;
-                    if (lat != null && lng != null) {
-                        updateCoordinates(parseFloat(lat), parseFloat(lng));
-                        marker.setLatLng([lat, lng]);
-                        map.setView([lat, lng], 13);
+            function setAddressSelectState(disabled) {
+                citySelect.disabled = disabled;
+                districtSelect.disabled = disabled;
+                wardSelect.disabled = disabled;
+            }
+            function showAddressLoadError(message) {
+                addressLoadError.textContent = message || "";
+                addressLoadError.classList.toggle("hidden", !message);
+            }
+            function normalizeText(value) {
+                return (value || "")
+                    .toLowerCase()
+                    .normalize("NFD")
+                    .replace(/[\u0300-\u036f]/g, "")
+                    .replace(/đ/g, "d")
+                    .trim();
+            }
+            function setSelectByNormalized(selectEl, value) {
+                var target = normalizeText(value);
+                if (!target) return;
+                for (var i = 0; i < selectEl.options.length; i++) {
+                    if (normalizeText(selectEl.options[i].value) === target) {
+                        selectEl.value = selectEl.options[i].value;
+                        return;
                     }
-                })
-                .catch(function () {});
-        }
-    });
-</script>
+                }
+            }
+            function onCityChange(callback) {
+                districtSelect.innerHTML = '<option value="">-- Chon Quan/Huyen --</option>';
+                wardSelect.innerHTML = '<option value="">-- Chon Phuong/Xa --</option>';
+                var selectedCity = normalizeText(citySelect.value);
+                var selected = provinces.find(function (p) { return normalizeText(p.name) === selectedCity; });
+                if (!selected) { if (callback) callback(); return; }
+                selected.districts.forEach(function (d) {
+                    var opt = document.createElement("option");
+                    opt.value = d.name;
+                    opt.textContent = d.name;
+                    districtSelect.appendChild(opt);
+                });
+                if (callback) callback();
+                autoGeocode();
+            }
+            function onDistrictChange(callback) {
+                wardSelect.innerHTML = '<option value="">-- Chon Phuong/Xa --</option>';
+                var selectedCity = normalizeText(citySelect.value);
+                var selectedProv = provinces.find(function (p) { return normalizeText(p.name) === selectedCity; });
+                if (!selectedProv) { if (callback) callback(); return; }
+                var selectedDistrict = normalizeText(districtSelect.value);
+                var selectedDist = selectedProv.districts.find(function (d) { return normalizeText(d.name) === selectedDistrict; });
+                if (!selectedDist) { if (callback) callback(); return; }
+                (selectedDist.wards || []).forEach(function (w) {
+                    var opt = document.createElement("option");
+                    opt.value = w.name;
+                    opt.textContent = w.name;
+                    wardSelect.appendChild(opt);
+                });
+                if (callback) callback();
+                autoGeocode();
+            }
+            citySelect.addEventListener("change", function () { onCityChange(); });
+            districtSelect.addEventListener("change", function () { onDistrictChange(); });
+            wardSelect.addEventListener("change", function () { autoGeocode(); });
+            addressInput.addEventListener("blur", function () { autoGeocode(); });
+
+            function autoGeocode() {
+                var detail = (addressInput.value || "").trim();
+                var city = (citySelect.value || "").trim();
+                var dist = (districtSelect.value || "").trim();
+                var ward = (wardSelect.value || "").trim();
+                if (!city || !dist || !ward) return;
+                var parts = [];
+                if (detail) parts.push(detail);
+                parts.push(ward, dist, city);
+                var query = parts.join(", ");
+
+                fetch("/Address/Suggest?q=" + encodeURIComponent(query) + "&limit=1")
+                    .then(function (r) { return r.json(); })
+                    .then(function (items) {
+                        if (!items || !items.length) return;
+                        var item = items[0];
+                        var lat = item.latitude != null ? item.latitude : item.Latitude;
+                        var lng = item.longitude != null ? item.longitude : item.Longitude;
+                        if (lat != null && lng != null) {
+                            updateCoordinates(parseFloat(lat), parseFloat(lng));
+                            marker.setLatLng([lat, lng]);
+                            map.setView([lat, lng], 13);
+                        }
+                    })
+                    .catch(function () { });
+            }
+        });
+    </script>
+}

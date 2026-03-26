@@ -27,4 +27,5 @@ public class FavoriteRepository
         });
         await _db.SaveChangesAsync();
     }
+
 }
