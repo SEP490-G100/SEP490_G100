@@ -1056,12 +1056,68 @@ async function doNannySearch() {
 
 function renderAvailability(slots) {
   if (!Array.isArray(slots) || !slots.length) {
-    return '<span class="nanny-card__muted">Chưa cập nhật lịch rảnh.</span>';
+    return '<span class="nanny-card__muted">Chua cap nhat lich ranh.</span>';
   }
 
-  return slots
-    .map((slot) => `<span class="nanny-availability-chip">${escapeHtml(slot.dayLabel)} - ${escapeHtml(slot.timeSlotLabel)}</span>`)
-    .join('');
+  const dayAliases = {
+    mo: 0, mon: 0, monday: 0, 'thu 2': 0, thuhai: 0,
+    tu: 1, tue: 1, tues: 1, tuesday: 1, 'thu 3': 1, thuba: 1,
+    we: 2, wed: 2, wednesday: 2, 'thu 4': 2, thutu: 2,
+    th: 3, thu: 3, thur: 3, thurs: 3, thursday: 3, 'thu 5': 3, thunam: 3,
+    fr: 4, fri: 4, friday: 4, 'thu 6': 4, thusau: 4,
+    sa: 5, sat: 5, saturday: 5, 'thu 7': 5, thubay: 5,
+    su: 6, sun: 6, sunday: 6, cn: 6, 'chu nhat': 6
+  };
+  const timeAliases = {
+    morning: 0, sang: 0,
+    afternoon: 1, chieu: 1,
+    evening: 2, toi: 2,
+    night: 3, dem: 3
+  };
+
+  const parseDayOfWeek = (slot) => {
+    const raw = Number(slot?.dayOfWeek);
+    if (Number.isInteger(raw) && raw >= 0 && raw <= 6) return raw;
+
+    const key = normalizeText(slot?.dayLabel);
+    if (!key) return null;
+    if (Object.prototype.hasOwnProperty.call(dayAliases, key)) return dayAliases[key];
+    return dayAliases[key.slice(0, 3)] ?? dayAliases[key.slice(0, 2)] ?? null;
+  };
+
+  const parseTimeSlot = (slot) => {
+    const raw = Number(slot?.timeSlot);
+    if (Number.isInteger(raw) && raw >= 0 && raw <= 3) return raw;
+
+    const key = normalizeText(slot?.timeSlotLabel);
+    if (!key) return null;
+    return timeAliases[key] ?? null;
+  };
+
+  const selected = new Set();
+  slots.forEach((slot) => {
+    const dayOfWeek = parseDayOfWeek(slot);
+    const timeSlot = parseTimeSlot(slot);
+    if (dayOfWeek == null || timeSlot == null) return;
+    selected.add(`${dayOfWeek}-${timeSlot}`);
+  });
+
+  let html = '<div class="nanny-detail-availability-grid"><div></div>';
+  NANNY_DAY_LABELS.forEach((label) => { html += `<div class="nanny-schedule-col-label">${label}</div>`; });
+
+  NANNY_TIME_LABELS.forEach((rowLabel, timeSlot) => {
+    html += `<div class="nanny-schedule-row-label">${rowLabel}</div>`;
+    for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek += 1) {
+      const isActive = selected.has(`${dayOfWeek}-${timeSlot}`);
+      html += `
+        <div class="nanny-schedule-cell ${isActive ? 'active' : ''}" aria-hidden="true">
+          <span class="nanny-schedule-check">${isActive ? '&#10003;' : ''}</span>
+        </div>`;
+    }
+  });
+
+  html += '</div>';
+  return html;
 }
 
 async function openNannyDetail(id) {
@@ -1118,6 +1174,12 @@ async function openNannyDetail(id) {
 function closeNannyDetail() {
   currentNannyDetailId = null;
   document.getElementById('nannyDetailModal')?.classList.remove('show');
+}
+
+function viewNannyProfileDetail(event) {
+  event?.stopPropagation?.();
+  if (!currentNannyDetailId) return;
+  openNannyDetail(currentNannyDetailId);
 }
 
 function bootstrapNannyListPage() {

@@ -162,7 +162,7 @@
 </div>
 
 <div id="nannyDetailModal" class="nmodal fixed inset-0 z-50 bg-black/50 backdrop-blur-sm items-center justify-center px-4" onclick="if(event.target===this)closeNannyDetail()">
-    <div class="nmodal-box nanny-detail-box bg-white rounded-2xl w-full max-w-4xl shadow-2xl relative">
+    <div class="nmodal-box nanny-detail-box bg-white rounded-[32px] w-full max-w-4xl shadow-2xl relative">
         <div class="modal-scroll">
             <div class="nanny-detail-header">
                 <button onclick="closeNannyDetail()" class="nanny-detail-close material-icons-round">close</button>
@@ -213,6 +213,13 @@
                     <h3>Lịch rảnh</h3>
                     <div id="nd-availability" class="nanny-detail-availability"></div>
                 </section>
+            </div>
+
+            <div class="nanny-detail-bottom-action">
+                <button type="button" id="nd-viewProfileBtn" class="nanny-detail-view-btn" onclick="viewNannyProfileDetail(event)">
+                    <span class="material-icons-round">visibility</span>
+                    Xem chi tiet ho so Nanny
+                </button>
             </div>
         </div>
     </div>
