@@ -159,6 +159,9 @@ public class JobPostingDetailResponse
     [JsonPropertyName("parentProfileId")]
     public Guid ParentProfileId { get; set; }
 
+    [JsonPropertyName("parentUserId")]
+    public Guid ParentUserId { get; set; }
+
     [JsonPropertyName("childProfileId")]
     public Guid? ChildProfileId { get; set; }
 

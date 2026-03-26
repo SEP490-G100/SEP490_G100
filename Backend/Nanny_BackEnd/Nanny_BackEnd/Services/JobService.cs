@@ -533,6 +533,7 @@ public class JobService
         {
             Id = job.Id,
             ParentProfileId = job.ParentProfileId,
+            ParentUserId = job.ParentProfile?.UserId ?? Guid.Empty,
             ChildProfileId = job.ChildProfileId,
             ParentName = $"{job.ParentProfile?.User?.FirstName} {job.ParentProfile?.User?.LastName}".Trim(),
             Title = job.Title,

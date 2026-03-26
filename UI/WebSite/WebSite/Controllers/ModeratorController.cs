@@ -3,7 +3,9 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using WebSite.Enums;
+using WebSite.Hubs;
 using WebSite.Models;
 using WebSite.Models.Account;
 using WebSite.Models.FAQ;
@@ -20,11 +22,13 @@ namespace WebSite.Controllers;
 public class ModeratorController : Controller
 {
     private readonly HttpClient _http;
+    private readonly IHubContext<NotificationHub> _notificationHub;
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
 
-    public ModeratorController(IHttpClientFactory httpFactory)
+    public ModeratorController(IHttpClientFactory httpFactory, IHubContext<NotificationHub> notificationHub)
     {
         _http = httpFactory.CreateClient("BackendApi");
+        _notificationHub = notificationHub;
     }
 
     // ──────────────────────────────────────────────
@@ -237,14 +241,14 @@ public class ModeratorController : Controller
             var result = JsonSerializer.Deserialize<ApiResult<WebSite.Models.Verification.VerificationRequestDetailDto>>(json, JsonOpts);
             if (result?.Success != true || result.Data == null)
             {
-                TempData["Error"] = "Không tìm thấy yêu cầu xác minh.";
+                TempData["Error"] = "Khong tim thay yeu cau xac minh.";
                 return RedirectToAction(nameof(ManageNannyVerification));
             }
             return View("~/Views/Moderator/NannyVerification/ViewNannyVerificationDetail.cshtml", result.Data);
         }
         catch
         {
-            TempData["Error"] = "Lỗi kết nối đến API.";
+            TempData["Error"] = "Loi ket noi den API.";
             return RedirectToAction(nameof(ManageNannyVerification));
         }
     }
@@ -254,7 +258,7 @@ public class ModeratorController : Controller
     // ──────────────────────────────────────────────
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ReviewVerification(Guid id, int action, string? rejectionReason)
+    public async Task<IActionResult> ReviewVerification(Guid id, int action, string? rejectionReason, Guid? nannyUserId = null)
     {
         var body = JsonSerializer.Serialize(new
         {
@@ -276,16 +280,35 @@ public class ModeratorController : Controller
             var result = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
 
             if (result?.Success == true)
-                TempData["Success"] = action == 2 ? "Đã duyệt hồ sơ thành công." : "Đã từ chối hồ sơ.";
-            else
-                TempData["Error"] = result?.Message ?? "Xử lý thất bại.";
+            {
+                if (nannyUserId.HasValue && nannyUserId.Value != Guid.Empty)
+                {
+                    await _notificationHub.Clients.Group($"user:{nannyUserId.Value}").SendAsync("notification:new", new
+                    {
+                        type = action == 2 ? "verification-approved" : "verification-rejected",
+                        title = action == 2 ? "Yeu cau xac minh da duoc chap thuan" : "Yeu cau xac minh da bi tu choi",
+                        message = action == 2
+                            ? "Yeu cau xac minh cua ban da duoc chap thuan."
+                            : "Yeu cau xac minh cua ban da bi tu choi.",
+                        toastType = action == 2 ? "success" : "warning"
+                    });
+                }
+
+                return RedirectToAction(nameof(ManageNannyVerification), new
+                {
+                    toastType = action == 2 ? "success" : "warning",
+                    toastMessage = action == 2 ? "Da duyet ho so thanh cong." : "Da tu choi ho so."
+                });
+            }
+
+            TempData["Error"] = result?.Message ?? "Xu ly that bai.";
+            return RedirectToAction(nameof(ManageNannyVerification));
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"Lỗi kết nối: {ex.Message}";
+            TempData["Error"] = $"Loi ket noi: {ex.Message}";
+            return RedirectToAction(nameof(ManageNannyVerification));
         }
-
-        return RedirectToAction(nameof(ManageNannyVerification));
     }
 
     public IActionResult ViewReports()         => View();
@@ -1019,7 +1042,7 @@ public class ModeratorController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ReviewJobPosting(Guid id, int action, string? note, bool returnToDetail = false)
+    public async Task<IActionResult> ReviewJobPosting(Guid id, int action, string? note, Guid? parentUserId = null, bool returnToDetail = false)
     {
         var token = HttpContext.Session.GetString("AccessToken");
         _http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
@@ -1030,6 +1053,18 @@ public class ModeratorController : Controller
         if (response.IsSuccessStatusCode)
         {
             TempData["Success"] = "Job posting reviewed successfully.";
+            if (parentUserId.HasValue && parentUserId.Value != Guid.Empty)
+            {
+                await _notificationHub.Clients.Group($"user:{parentUserId.Value}").SendAsync("notification:new", new
+                {
+                    type = action == 2 ? "job-posting-approved" : "job-posting-rejected",
+                    title = action == 2 ? "Bai dang da duoc duyet" : "Bai dang da bi tu choi",
+                    message = action == 2
+                        ? "Bai dang cua ban da duoc moderator duyet."
+                        : "Bai dang cua ban da bi moderator tu choi.",
+                    toastType = action == 2 ? "success" : "warning"
+                });
+            }
         }
         else
         {

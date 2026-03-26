@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -187,8 +188,23 @@ public class SearchController : Controller
             {
                 await _notificationHub.Clients.Group("role:Moderator").SendAsync("notification:new", new
                 {
-                    type = "job-posting-review-required"
+                    type = "job-posting-review-required",
+                    title = "Co bai dang moi can duyet",
+                    message = "Mot parent vua tao job posting moi dang cho moderator duyet.",
+                    toastType = "info"
                 });
+
+                var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (!string.IsNullOrWhiteSpace(currentUserId))
+                {
+                    await _notificationHub.Clients.Group($"user:{currentUserId}").SendAsync("notification:new", new
+                    {
+                        type = "job-posting-pending",
+                        title = "Bai dang da duoc tao",
+                        message = "Bai dang cua ban dang cho moderator duyet.",
+                        toastType = "success"
+                    });
+                }
             }
             return await ProxyApiResponse(response);
         }

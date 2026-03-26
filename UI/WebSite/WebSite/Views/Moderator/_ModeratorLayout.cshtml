@@ -179,6 +179,96 @@
             color: #fdba74;
             margin-bottom: 8px;
         }
+
+        .nm-toast-root {
+            position: fixed;
+            right: 18px;
+            bottom: 18px;
+            z-index: 12050;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .nm-toast {
+            width: min(420px, calc(100vw - 24px));
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            gap: 9px;
+            padding: 12px 14px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, .14);
+            box-shadow: 0 18px 36px rgba(15, 23, 42, .2);
+            color: #fff;
+            transform: translateY(12px) scale(.98);
+            opacity: 0;
+            transition: opacity .22s ease, transform .22s ease;
+            pointer-events: auto;
+            backdrop-filter: blur(6px);
+        }
+
+        .nm-toast.show {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .nm-toast__icon {
+            width: 22px;
+            height: 22px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            border-radius: 999px;
+            background: rgba(255,255,255,.78);
+            color: rgba(15,23,42,.68);
+        }
+
+        .nm-toast__text {
+            font-size: 13px;
+            line-height: 1.45;
+            font-weight: 800;
+            word-break: break-word;
+        }
+
+        .nm-toast__close {
+            width: 22px;
+            height: 22px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            border: none;
+            background: rgba(255, 255, 255, .22);
+            color: #fff;
+            cursor: pointer;
+            font-size: 17px;
+            transition: background .18s ease, transform .18s ease;
+        }
+
+        .nm-toast__close:hover {
+            background: rgba(255, 255, 255, .35);
+            transform: scale(1.03);
+        }
+
+        .nm-toast--info {
+            background: linear-gradient(135deg, rgba(15,23,42,.94), rgba(30,41,59,.94));
+        }
+
+        .nm-toast--success {
+            background: linear-gradient(135deg, #0f8c67, #10946d);
+        }
+
+        .nm-toast--warning {
+            background: linear-gradient(135deg, #c56a09, #ea580c);
+        }
+
+        .nm-toast--error {
+            background: linear-gradient(135deg, #c22525, #dc2626);
+        }
     </style>
 </head>
 <body class="font-display bg-gray-50 text-gray-800" style="font-family:'Quicksand',sans-serif;">
@@ -462,6 +552,34 @@
                 }
             };
 
+            const getRealtimeToastConfig = (payload) => {
+                if (!payload) return null;
+
+                const type = String(payload.type || '').trim().toLowerCase();
+                const message = payload.message || payload.title;
+                if (message) {
+                    return {
+                        message,
+                        type: payload.toastType || 'info'
+                    };
+                }
+
+                switch (type) {
+                    case 'verification-request-submitted':
+                        return { message: 'Co yeu cau xac minh moi dang cho duyet.', type: 'info' };
+                    case 'job-posting-review-required':
+                        return { message: 'Co bai dang moi dang cho moderator duyet.', type: 'info' };
+                    case 'report-submitted':
+                        return { message: 'Co bao cao moi can xu ly.', type: 'warning' };
+                    case 'message-to-moderator':
+                        return { message: 'Co tin nhan moi gui toi moderator.', type: 'info' };
+                    case 'system-warning':
+                        return { message: 'Co canh bao he thong can xu ly.', type: 'warning' };
+                    default:
+                        return null;
+                }
+            };
+
             notificationToggle.addEventListener('click', async () => {
                 notificationMenu.classList.toggle('hidden');
                 if (!notificationMenu.classList.contains('hidden')) {
@@ -524,7 +642,11 @@
                     .withAutomaticReconnect()
                     .build();
 
-                connection.on('notification:new', async () => {
+                connection.on('notification:new', async (payload) => {
+                    const toastConfig = getRealtimeToastConfig(payload);
+                    if (toastConfig && typeof window.showToast === 'function') {
+                        window.showToast(toastConfig.message, { type: toastConfig.type });
+                    }
                     window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
                 });
 
@@ -540,6 +662,26 @@
 
             loadUnreadCount();
             connectNotificationRealtime();
+        })();
+    </script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        (() => {
+            const params = new URLSearchParams(window.location.search);
+            const toastMessage = params.get('toastMessage');
+            const toastType = params.get('toastType') || 'info';
+
+            if (!toastMessage || typeof window.showToast !== 'function') {
+                return;
+            }
+
+            window.showToast(toastMessage, { type: toastType });
+            params.delete('toastMessage');
+            params.delete('toastType');
+
+            const nextQuery = params.toString();
+            const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ''}${window.location.hash || ''}`;
+            window.history.replaceState({}, document.title, nextUrl);
         })();
     </script>
     @await RenderSectionAsync("Scripts", required: false)

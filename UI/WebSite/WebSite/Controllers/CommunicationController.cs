@@ -69,7 +69,10 @@ public class CommunicationController : Controller
         {
             await _notificationHub.Clients.Group("role:Moderator").SendAsync("notification:new", new
             {
-                type = "message-to-moderator"
+                type = "message-to-moderator",
+                title = "Co tin nhan moi toi moderator",
+                message = "Parent hoac nanny vua gui tin nhan moi.",
+                toastType = "info"
             });
         }
 
@@ -95,7 +98,10 @@ public class CommunicationController : Controller
         {
             await _notificationHub.Clients.Group("role:Moderator").SendAsync("notification:new", new
             {
-                type = "report-submitted"
+                type = "report-submitted",
+                title = "Co bao cao moi",
+                message = "Mot report moi vua duoc gui va can moderator xu ly.",
+                toastType = "warning"
             });
         }
 

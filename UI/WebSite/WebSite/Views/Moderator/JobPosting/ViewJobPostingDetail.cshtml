@@ -225,6 +225,7 @@
             <form asp-action="ReviewJobPosting" method="post">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" value="@Model.Id" />
+                <input type="hidden" name="parentUserId" value="@Model.ParentUserId" />
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
                     <label class="decision-card group">

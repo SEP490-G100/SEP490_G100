@@ -84,14 +84,6 @@
     </div>
 </div>
 
-@if (TempData["Error"] != null)
-{
-    <div class="mb-5 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 fade-in-up">
-        <span class="material-icons-round text-base">error_outline</span>
-        @TempData["Error"]
-    </div>
-}
-
 <div class="grid grid-cols-1 xl:grid-cols-12 gap-5">
     <div class="xl:col-span-4 space-y-5">
         <div class="content-card p-5 fade-in-up">
@@ -368,6 +360,7 @@
                           onsubmit="return confirm('Approve this nanny verification?')">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="action" value="2" />
+                        <input type="hidden" name="nannyUserId" value="@Model.NannyUserId" />
                         <button type="submit"
                                 class="w-full flex items-center justify-center gap-2 px-5 py-4 rounded-2xl font-bold text-white text-sm transition-all hover:scale-[1.01] active:scale-[0.99]"
                                 style="background:linear-gradient(135deg,#10B981,#059669); box-shadow:0 4px 14px rgba(16,185,129,0.35);">
@@ -388,6 +381,7 @@
                     <form method="post" action="/Moderator/ReviewVerification/@Model.Id" onsubmit="return validateReject()">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="action" value="3" />
+                        <input type="hidden" name="nannyUserId" value="@Model.NannyUserId" />
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
                             Rejection Reason <span class="text-red-500">*</span>
                         </label>

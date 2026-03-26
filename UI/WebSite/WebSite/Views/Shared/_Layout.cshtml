@@ -621,6 +621,48 @@
                                         </div>`;
                                 };
 
+                                const getRealtimeToastConfig = (payload) => {
+                                    if (!payload) return null;
+
+                                    const type = String(payload.type || '').trim().toLowerCase();
+                                    const message = payload.message || payload.title;
+                                    if (message) {
+                                        return {
+                                            message,
+                                            type: payload.toastType || 'info'
+                                        };
+                                    }
+
+                                    switch (type) {
+                                        case 'verification-request-submitted':
+                                            return { message: 'Co yeu cau xac minh moi dang cho duyet.', type: 'info' };
+                                        case 'verification-request-created':
+                                            return { message: 'Ban vua gui yeu cau xac minh thanh cong.', type: 'success' };
+                                        case 'job-posting-review-required':
+                                            return { message: 'Co bai dang moi dang cho moderator duyet.', type: 'info' };
+                                        case 'report-submitted':
+                                            return { message: 'Co bao cao moi can xu ly.', type: 'warning' };
+                                        case 'message-to-moderator':
+                                            return { message: 'Co tin nhan moi gui toi moderator.', type: 'info' };
+                                        case 'verification-approved':
+                                            return { message: 'Yeu cau xac minh cua ban da duoc chap thuan.', type: 'success' };
+                                        case 'verification-rejected':
+                                            return { message: 'Yeu cau xac minh cua ban da bi tu choi.', type: 'warning' };
+                                        case 'job-posting-approved':
+                                            return { message: 'Bai dang cua ban da duoc duyet.', type: 'success' };
+                                        case 'job-posting-rejected':
+                                            return { message: 'Bai dang cua ban da bi tu choi.', type: 'warning' };
+                                        case 'job-posting-pending':
+                                            return { message: 'Bai dang cua ban dang cho moderator duyet.', type: 'success' };
+                                        case 'nanny-profile-favorited':
+                                            return { message: 'Ho so cua ban vua duoc yeu thich.', type: 'success' };
+                                        case 'system-warning':
+                                            return { message: 'Co canh bao he thong can xu ly.', type: 'warning' };
+                                        default:
+                                            return null;
+                                    }
+                                };
+
                                 const updateBadge = (count) => {
                                     if (!count || count <= 0) {
                                         notificationBadge.classList.add('hidden');
@@ -735,7 +777,11 @@
                                         .withAutomaticReconnect()
                                         .build();
 
-                                    connection.on('notification:new', async () => {
+                                    connection.on('notification:new', async (payload) => {
+                                        const toastConfig = getRealtimeToastConfig(payload);
+                                        if (toastConfig && typeof window.showToast === 'function') {
+                                            window.showToast(toastConfig.message, { type: toastConfig.type });
+                                        }
                                         window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
                                     });
 
@@ -1026,6 +1072,24 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
 
     <script>
+        (() => {
+            const params = new URLSearchParams(window.location.search);
+            const toastMessage = params.get('toastMessage');
+            const toastType = params.get('toastType') || 'info';
+
+            if (!toastMessage || typeof window.showToast !== 'function') {
+                return;
+            }
+
+            window.showToast(toastMessage, { type: toastType });
+            params.delete('toastMessage');
+            params.delete('toastType');
+
+            const nextQuery = params.toString();
+            const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ''}${window.location.hash || ''}`;
+            window.history.replaceState({}, document.title, nextUrl);
+        })();
+
         /* Auto-scroll & Drag/Swipe Marquee */
         document.querySelectorAll('.marquee-container').forEach(function (container) {
             var track = container.querySelector('.marquee-track');

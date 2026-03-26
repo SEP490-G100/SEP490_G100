@@ -4,6 +4,7 @@ public class JobPostingDetailResponse
 {
     public Guid Id { get; set; }
     public Guid ParentProfileId { get; set; }
+    public Guid ParentUserId { get; set; }
     public Guid? ChildProfileId { get; set; }
     public string ParentName { get; set; } = "";
     public string Title { get; set; } = "";

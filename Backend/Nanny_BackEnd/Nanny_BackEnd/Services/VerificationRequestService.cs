@@ -91,10 +91,10 @@ public class VerificationRequestService
         var nannyProfile = await _repo.GetNannyProfileAsync(verificationRequest.NannyProfileId);
         if (nannyProfile != null)
         {
-            nannyProfile.VerificationStatus = request.Action;
-            nannyProfile.VerifiedAt = request.Action == (int)Enums.NannyVerificationRequestStatus.Approved
-                ? DateTime.UtcNow
-                : null;
+            nannyProfile.VerificationStatus = request.Action == (int)Enums.NannyVerificationRequestStatus.Approved
+                ? (int)VerificationStatus.Approved
+                : (int)VerificationStatus.Rejected;
+            nannyProfile.VerifiedAt = DateTime.UtcNow;
             nannyProfile.VerifiedBy = request.Action == (int)Enums.NannyVerificationRequestStatus.Approved
                 ? moderatorId
                 : null;
@@ -103,6 +103,25 @@ public class VerificationRequestService
         }
 
         await _repo.SaveChangesAsync();
+
+        var notificationTitle = request.Action == (int)Enums.NannyVerificationRequestStatus.Approved
+            ? "Yeu cau xac minh cua ban da duoc chap thuan"
+            : "Yeu cau xac minh cua ban da bi tu choi";
+        var notificationContent = request.Action == (int)Enums.NannyVerificationRequestStatus.Approved
+            ? "Moderator da chap thuan yeu cau xac minh cua ban."
+            : $"Moderator da tu choi yeu cau xac minh cua ban. {(string.IsNullOrWhiteSpace(verificationRequest.RejectionReason) ? string.Empty : $"Ly do: {verificationRequest.RejectionReason}")}".Trim();
+        var notificationType = request.Action == (int)Enums.NannyVerificationRequestStatus.Approved
+            ? NotificationTypes.VerificationRequestApproved
+            : NotificationTypes.VerificationRequestRejected;
+
+        await _notificationService.createNotification(
+            verificationRequest.NannyProfile.UserId,
+            notificationTitle,
+            notificationContent,
+            notificationType,
+            verificationRequest.Id,
+            "VerificationRequest",
+            moderatorId);
 
         var message = request.Action == (int)Enums.NannyVerificationRequestStatus.Approved
             ? "Da duyet yeu cau xac minh."
@@ -214,12 +233,28 @@ public class VerificationRequestService
         }
 
         _repo.AddRequest(verificationRequest);
+
+        profile.VerificationStatus = (int)VerificationStatus.Pending;
+        profile.VerifiedAt = DateTime.UtcNow;
+        profile.VerifiedBy = null;
+        profile.UpdatedAt = DateTime.UtcNow;
+        profile.UpdatedBy = userId;
+
         await _repo.SaveChangesAsync();
 
         await _notificationService.createNotificationForModerators(
             "Co yeu cau xac minh moi",
             "Mot nanny vua gui yeu cau xac minh moi va dang cho moderator xem xet.",
             NotificationTypes.VerificationRequestSubmitted,
+            verificationRequest.Id,
+            "VerificationRequest",
+            userId);
+
+        await _notificationService.createNotification(
+            userId,
+            "Ban vua gui yeu cau xac minh thanh cong",
+            "Yeu cau xac minh cua ban da duoc gui thanh cong va dang cho moderator xem xet.",
+            NotificationTypes.VerificationRequestCreated,
             verificationRequest.Id,
             "VerificationRequest",
             userId);

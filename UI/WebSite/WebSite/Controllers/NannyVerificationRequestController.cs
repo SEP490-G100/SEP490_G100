@@ -65,7 +65,6 @@ public class NannyVerificationRequestController : Controller
         var response = await _http.GetAsync($"/api/NannyVerificationRequest/nanny-requests?{string.Join("&", queryParts)}");
         if (!response.IsSuccessStatusCode)
         {
-            TempData["Error"] = "Khong the tai danh sach yeu cau xac minh.";
             return View(new VerificationRequestListResponse
             {
                 Page = page,
@@ -91,16 +90,22 @@ public class NannyVerificationRequestController : Controller
         var response = await _http.GetAsync($"/api/NannyVerificationRequest/nanny-requests/{id}");
         if (!response.IsSuccessStatusCode)
         {
-            TempData["Error"] = "Khong tim thay chi tiet yeu cau xac minh.";
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Index), new
+            {
+                toastType = "error",
+                toastMessage = "Khong tim thay chi tiet yeu cau xac minh."
+            });
         }
 
         var json = await response.Content.ReadAsStringAsync();
         var apiResult = JsonSerializer.Deserialize<ApiResult<VerificationRequestDetailDto>>(json, JsonOptions);
         if (apiResult?.Success != true || apiResult.Data == null)
         {
-            TempData["Error"] = apiResult?.Message ?? "Khong tim thay chi tiet yeu cau xac minh.";
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Index), new
+            {
+                toastType = "error",
+                toastMessage = apiResult?.Message ?? "Khong tim thay chi tiet yeu cau xac minh."
+            });
         }
 
         return View("~/Views/NannyVerificationRequest/NannyViewVerificationDetail.cshtml", apiResult.Data);
@@ -112,8 +117,11 @@ public class NannyVerificationRequestController : Controller
         var model = new SubmitVerificationRequestViewModel();
         if (!await PopulateProfileInfoAsync(model))
         {
-            TempData["Error"] = "Vui long cap nhat ho so ca nhan truoc khi gui yeu cau.";
-            return RedirectToAction("Index", "Profile");
+            return RedirectToAction("Index", "Profile", new
+            {
+                toastType = "error",
+                toastMessage = "Vui long cap nhat ho so ca nhan truoc khi gui yeu cau."
+            });
         }
 
         return View(model);
@@ -125,8 +133,11 @@ public class NannyVerificationRequestController : Controller
     {
         if (!await PopulateProfileInfoAsync(model))
         {
-            TempData["Error"] = "Vui long cap nhat ho so ca nhan truoc khi gui yeu cau.";
-            return RedirectToAction("Index", "Profile");
+            return RedirectToAction("Index", "Profile", new
+            {
+                toastType = "error",
+                toastMessage = "Vui long cap nhat ho so ca nhan truoc khi gui yeu cau."
+            });
         }
 
         ValidateUploadSection(
@@ -161,13 +172,19 @@ public class NannyVerificationRequestController : Controller
         }
         catch (InvalidOperationException ex)
         {
-            TempData["Error"] = ex.Message;
-            return RedirectToAction(nameof(Submit));
+            return RedirectToAction(nameof(Submit), new
+            {
+                toastType = "error",
+                toastMessage = ex.Message
+            });
         }
         catch (RequestFailedException)
         {
-            TempData["Error"] = "Khong the upload tai lieu len Azure Blob Storage. Vui long thu lai sau.";
-            return RedirectToAction(nameof(Submit));
+            return RedirectToAction(nameof(Submit), new
+            {
+                toastType = "error",
+                toastMessage = "Khong the upload tai lieu len Azure Blob Storage. Vui long thu lai sau."
+            });
         }
 
         var payload = JsonSerializer.Serialize(new { Documents = documents });
@@ -182,22 +199,47 @@ public class NannyVerificationRequestController : Controller
         }
         catch (JsonException)
         {
-            TempData["Error"] = "Loi he thong tu server. Vui long thu lai sau.";
-            return RedirectToAction(nameof(Submit));
+            return RedirectToAction(nameof(Submit), new
+            {
+                toastType = "error",
+                toastMessage = "Loi he thong tu server. Vui long thu lai sau."
+            });
         }
 
         if (!response.IsSuccessStatusCode || result == null || !result.Success)
         {
-            TempData["Error"] = result?.Message ?? "Gui yeu cau that bai.";
-            return RedirectToAction(nameof(Submit));
+            return RedirectToAction(nameof(Submit), new
+            {
+                toastType = "error",
+                toastMessage = result?.Message ?? "Gui yeu cau that bai."
+            });
         }
 
-        TempData["Success"] = "Gui yeu cau xac minh thanh cong.";
         await _notificationHub.Clients.Group("role:Moderator").SendAsync("notification:new", new
         {
-            type = "verification-request-submitted"
+            type = "verification-request-submitted",
+            title = "Co yeu cau xac minh moi",
+            message = "Mot nanny vua gui yeu cau xac minh moi.",
+            toastType = "info"
         });
-        return RedirectToAction(nameof(Index));
+
+        var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (!string.IsNullOrWhiteSpace(currentUserId))
+        {
+            await _notificationHub.Clients.Group($"user:{currentUserId}").SendAsync("notification:new", new
+            {
+                type = "verification-request-created",
+                title = "Ban vua gui yeu cau xac minh thanh cong",
+                message = "Ban vua gui yeu cau xac minh thanh cong.",
+                toastType = "success"
+            });
+        }
+
+        return RedirectToAction(nameof(Index), new
+        {
+            toastType = "success",
+            toastMessage = "Ban da gui yeu cau xac minh thanh cong."
+        });
     }
 
     private async Task<bool> PopulateProfileInfoAsync(SubmitVerificationRequestViewModel model)

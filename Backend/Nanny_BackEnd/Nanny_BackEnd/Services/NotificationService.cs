@@ -272,6 +272,12 @@ public class NotificationService
                 $"/Search/History?jobId={notification.RelatedEntityId.Value}",
             NotificationTypes.VerificationRequestSubmitted when notification.RelatedEntityId.HasValue =>
                 $"/Moderator/ViewNannyVerificationDetail/{notification.RelatedEntityId.Value}",
+            NotificationTypes.VerificationRequestApproved when notification.RelatedEntityId.HasValue =>
+                $"/NannyVerificationRequest/NannyViewVerificationDetail/{notification.RelatedEntityId.Value}",
+            NotificationTypes.VerificationRequestRejected when notification.RelatedEntityId.HasValue =>
+                $"/NannyVerificationRequest/NannyViewVerificationDetail/{notification.RelatedEntityId.Value}",
+            NotificationTypes.VerificationRequestCreated when notification.RelatedEntityId.HasValue =>
+                $"/NannyVerificationRequest/NannyViewVerificationDetail/{notification.RelatedEntityId.Value}",
             NotificationTypes.ReportSubmitted =>
                 "/Moderator/ViewReports",
             NotificationTypes.MessageToModerator when notification.RelatedEntityId.HasValue =>

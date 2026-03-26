@@ -16,6 +16,9 @@ public static class NotificationTypes
     public const int ReportSubmitted = 12;
     public const int MessageToModerator = 13;
     public const int JobPostingReviewRequired = 14;
+    public const int VerificationRequestApproved = 15;
+    public const int VerificationRequestRejected = 16;
+    public const int VerificationRequestCreated = 17;
 
     public static string getLabel(int type) => type switch
     {
@@ -33,6 +36,9 @@ public static class NotificationTypes
         ReportSubmitted => "Bao cao moi",
         MessageToModerator => "Tin nhan toi moderator",
         JobPostingReviewRequired => "Bai dang moi can duyet",
+        VerificationRequestApproved => "Yeu cau xac minh duoc chap thuan",
+        VerificationRequestRejected => "Yeu cau xac minh bi tu choi",
+        VerificationRequestCreated => "Da gui yeu cau xac minh",
         _ => "Thong bao he thong"
     };
 }
