@@ -35,14 +35,19 @@ public class JobService
         double? nannyLat = null,
         double? nannyLng = null,
         Guid? currentUserId = null,
-        bool canSeeNannyOnlyJobs = false)
+        bool canSeeNannyOnlyJobs = false,
+        Guid? currentNannyProfileId = null)
     {
         await _jobRepo.hideExpiredPostings();
         if (filters.PageSize > 50) filters.PageSize = 50;
         if (filters.Page < 1) filters.Page = 1;
 
         var jobs = await _jobRepo.searchJobPosting(filters, currentUserId, canSeeNannyOnlyJobs);
-        return jobs.Select(j => mapToListItem(j, nannyLat, nannyLng, currentUserId)).ToList();
+        var favoriteJobIds = currentNannyProfileId.HasValue
+            ? await _favoriteRepo.getFavoriteJobIds(currentNannyProfileId.Value, jobs.Select(j => j.Id))
+            : [];
+
+        return jobs.Select(j => mapToListItem(j, nannyLat, nannyLng, currentUserId, favoriteJobIds)).ToList();
     }
 
     public async Task<List<SearchJobResponse>> getMyJobs(Guid parentProfileId)
@@ -50,6 +55,19 @@ public class JobService
         await _jobRepo.hideExpiredPostings();
         var jobs = await _jobRepo.getListPosting(parentProfileId);
         return jobs.Select(j => mapToListItem(j)).ToList();
+    }
+
+    public async Task<(List<SearchJobResponse> Items, int TotalCount)> getFavoriteJobs(
+        Guid nannyProfileId,
+        int page = 1,
+        int pageSize = 20,
+        Guid? currentUserId = null)
+    {
+        await _jobRepo.hideExpiredPostings();
+        var (jobs, totalCount) = await _favoriteRepo.getFavoriteJobs(nannyProfileId, page, pageSize);
+        var favoriteJobIds = jobs.Select(job => job.Id).ToHashSet();
+        var mapped = jobs.Select(job => mapToListItem(job, null, null, currentUserId, favoriteJobIds)).ToList();
+        return (mapped, totalCount);
     }
 
     public async Task<List<SearchJobResponse>> searchByTitle(string? title)
@@ -310,6 +328,17 @@ public class JobService
         await _favoriteRepo.addFavoriteJob(nannyProfileId, jobPostingId);
     }
 
+    public async Task<bool> toggleFavoriteJob(Guid nannyProfileId, Guid jobPostingId, Guid actorUserId)
+    {
+        var job = await _jobRepo.viewDetailPosting(jobPostingId)
+            ?? throw new KeyNotFoundException("Tin dang khong ton tai.");
+
+        if (job.IsDeleted || job.ModerationStatus != (int)JobPostingModerationStatus.Approved)
+            throw new InvalidOperationException("Khong the luu tin dang nay.");
+
+        return await _favoriteRepo.toggleFavoriteJob(nannyProfileId, jobPostingId, actorUserId);
+    }
+
     private async Task syncRequirements(JobPosting job, IEnumerable<string> skillNames, Guid createdBy)
     {
         var normalized = skillNames
@@ -417,7 +446,8 @@ public class JobService
         JobPosting job,
         double? nannyLat = null,
         double? nannyLng = null,
-        Guid? currentUserId = null)
+        Guid? currentUserId = null,
+        HashSet<Guid>? favoriteJobIds = null)
     {
         var entitlement = getJobEntitlement(job);
         var childSnapshot = getChildSnapshot(job);
@@ -437,6 +467,7 @@ public class JobService
             ParentProfileId = job.ParentProfileId,
             ChildProfileId = job.ChildProfileId,
             IsOwner = currentUserId.HasValue && job.ParentProfile?.UserId == currentUserId.Value,
+            IsFavorite = favoriteJobIds?.Contains(job.Id) == true,
             Title = job.Title,
             Description = job.Description,
             ParentName = $"{job.ParentProfile?.User?.FirstName} {job.ParentProfile?.User?.LastName}".Trim(),

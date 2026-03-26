@@ -5,7 +5,7 @@
 }
 
 .list-panel {
-    width: 500px;
+    width: 800px;
     min-width: 260px;
     overflow-y: auto;
     background: linear-gradient(180deg, #fffdfb 0%, #fff7ed 100%);
@@ -62,12 +62,52 @@
         box-shadow: 0 22px 36px rgba(249, 115, 22, .12), inset 3px 0 0 #f97316;
     }
 
-    .job-card.active {
-        background: linear-gradient(180deg, #ffffff, #fff7ed) !important;
-        border-color: #fb923c !important;
-        transform: translateY(-2px);
-        box-shadow: 0 22px 36px rgba(249, 115, 22, .14), inset 4px 0 0 #f97316;
-    }
+.job-card.active {
+    background: linear-gradient(180deg, #ffffff, #fff7ed) !important;
+    border-color: #fb923c !important;
+    transform: translateY(-2px);
+    box-shadow: 0 22px 36px rgba(249, 115, 22, .14), inset 4px 0 0 #f97316;
+}
+
+.job-card__head-right {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.job-save-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    border: 1px solid #fed7aa;
+    background: #fff;
+    color: #94a3b8;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform .18s ease, box-shadow .18s ease, color .18s ease, border-color .18s ease, background .18s ease;
+    position: relative;
+}
+
+.job-save-btn .material-icons-round {
+    font-size: 18px;
+}
+
+.job-save-btn:hover {
+    transform: translateY(-1px);
+    border-color: #fdba74;
+    color: #f97316;
+    box-shadow: 0 10px 22px rgba(249,115,22,.16);
+}
+
+.job-save-btn.active {
+    background: linear-gradient(135deg, #fff7ed, #ffedd5);
+    border-color: #fb923c;
+    color: #ea580c;
+    box-shadow: 0 10px 24px rgba(249,115,22,.22);
+}
 
 .job-map-marker {
     width: 26px;
@@ -439,6 +479,14 @@
 .form-input:hover {
     border-color: #c6d2e0;
     background: linear-gradient(180deg, #ffffff, #f8fbff);
+}
+
+.form-select-native-hidden {
+    display: none !important;
+}
+
+.form-select-picker-input {
+    cursor: pointer;
 }
 
 .form-input.is-invalid,
@@ -893,8 +941,8 @@ select.form-input.bg-gray-50 {
 .modal-footer {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: .85rem;
-    padding: 0 1.5rem 1.5rem;
+    gap: 1.85rem;
+    padding: 0 1.5rem 3.5rem;
 }
 
 .modal-btn {

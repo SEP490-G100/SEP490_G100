@@ -17,8 +17,68 @@ let isSubmittingCreate = false;
 let isSubmittingEdit = false;
 let provinces = [];
 let locationDataPromise = null;
+let provinceCatalog = [];
+let provinceCatalogPromise = null;
 let suppressNextMapSearch = false;
 const autocompleteDropdowns = new Map();
+const selectPickerSyncFns = [];
+const addressSuggestionCache = new Map();
+const districtOptionsCache = new Map();
+const ownedJobIds = new Set();
+let ownedJobsLoaded = false;
+const FALLBACK_PROVINCES = [
+  'Thành phố Hà Nội',
+  'Thành phố Hồ Chí Minh',
+  'Thành phố Hải Phòng',
+  'Thành phố Huế',
+  'Thành phố Đà Nẵng',
+  'Thành phố Cần Thơ',
+  'Tỉnh Cao Bằng',
+  'Tỉnh Điện Biên',
+  'Tỉnh Lai Châu',
+  'Tỉnh Sơn La',
+  'Tỉnh Lạng Sơn',
+  'Tỉnh Quảng Ninh',
+  'Tỉnh Thanh Hóa',
+  'Tỉnh Nghệ An',
+  'Tỉnh Hà Tĩnh',
+  'Tỉnh Tuyên Quang',
+  'Tỉnh Lào Cai',
+  'Tỉnh Thái Nguyên',
+  'Tỉnh Phú Thọ',
+  'Tỉnh Bắc Ninh',
+  'Tỉnh Hưng Yên',
+  'Tỉnh Ninh Bình',
+  'Tỉnh Quảng Trị',
+  'Tỉnh Quảng Ngãi',
+  'Tỉnh Gia Lai',
+  'Tỉnh Khánh Hòa',
+  'Tỉnh Lâm Đồng',
+  'Tỉnh Đắk Lắk',
+  'Tỉnh Đồng Nai',
+  'Tỉnh Tây Ninh',
+  'Tỉnh Vĩnh Long',
+  'Tỉnh Đồng Tháp',
+  'Tỉnh Cà Mau',
+  'Tỉnh An Giang'
+];
+const FALLBACK_DISTRICTS_BY_CITY = {
+  'ho chi minh': [
+    'Quận 1', 'Quận 3', 'Quận 4', 'Quận 5', 'Quận 6', 'Quận 7', 'Quận 8',
+    'Quận 10', 'Quận 11', 'Quận 12', 'Quận Bình Thạnh', 'Quận Gò Vấp',
+    'Quận Phú Nhuận', 'Quận Tân Bình', 'Quận Tân Phú', 'Thành phố Thủ Đức',
+    'Huyện Bình Chánh', 'Huyện Cần Giờ', 'Huyện Củ Chi', 'Huyện Hóc Môn', 'Huyện Nhà Bè'
+  ],
+  'ha noi': [
+    'Quận Ba Đình', 'Quận Hoàn Kiếm', 'Quận Tây Hồ', 'Quận Long Biên', 'Quận Cầu Giấy',
+    'Quận Đống Đa', 'Quận Hai Bà Trưng', 'Quận Hoàng Mai', 'Quận Thanh Xuân',
+    'Quận Bắc Từ Liêm', 'Quận Nam Từ Liêm', 'Quận Hà Đông'
+  ],
+  'da nang': ['Quận Hải Châu', 'Quận Thanh Khê', 'Quận Sơn Trà', 'Quận Ngũ Hành Sơn', 'Quận Liên Chiểu', 'Huyện Hòa Vang'],
+  'can tho': ['Quận Ninh Kiều', 'Quận Bình Thủy', 'Quận Cái Răng', 'Quận Ô Môn', 'Quận Thốt Nốt'],
+  'hai phong': ['Quận Hồng Bàng', 'Quận Ngô Quyền', 'Quận Lê Chân', 'Quận Hải An', 'Quận Kiến An', 'Quận Dương Kinh', 'Quận Đồ Sơn'],
+  'hue': ['Quận Phú Xuân', 'Quận Thuận Hóa', 'Thị xã Hương Thủy', 'Thị xã Hương Trà']
+};
 
 const DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 const ROW_LABELS = ['Morning', 'Afternoon', 'Evening', 'Night'];
@@ -33,12 +93,14 @@ const GEO_FALLBACK = {
 function loadLocationData() {
   if (locationDataPromise) return locationDataPromise;
 
-  locationDataPromise = fetch('https://provinces.open-api.vn/api/v2/?depth=3')
+  // Attach autocomplete ngay, dù nguồn ngoài chậm/lỗi thì vẫn có fallback để dùng.
+  attachLocationAutocomplete('cf');
+  attachLocationAutocomplete('ef');
+
+  locationDataPromise = fetch('https://provinces.open-api.vn/api/v2/?depth=2')
     .then((response) => response.ok ? response.json() : [])
     .then((data) => {
       provinces = Array.isArray(data) ? data : [];
-      attachLocationAutocomplete('cf');
-      attachLocationAutocomplete('ef');
       return provinces;
     })
     .catch(() => {
@@ -57,13 +119,168 @@ function normalizeText(value) {
     .trim();
 }
 
+function normalizeAdministrativeName(value) {
+  return normalizeText(value)
+    .replace(/^thanh pho\s+/i, '')
+    .replace(/^tp\.?\s*/i, '')
+    .replace(/^tinh\s+/i, '');
+}
+
 function getProvinceOptions() {
   return provinces.map((province) => province.name);
 }
 
 function getDistrictOptions(cityName) {
-  const selectedProvince = provinces.find((province) => province.name === cityName);
+  const normalizedCity = normalizeAdministrativeName(cityName);
+  const selectedProvince = provinces.find((province) =>
+    normalizeAdministrativeName(province.name) === normalizedCity
+  );
   return (selectedProvince?.districts || []).map((district) => district.name);
+}
+
+function getFallbackDistrictOptions(cityName) {
+  return FALLBACK_DISTRICTS_BY_CITY[normalizeAdministrativeName(cityName)] || [];
+}
+
+function getDistrictCacheKey(cityName) {
+  return normalizeAdministrativeName(cityName);
+}
+
+function cacheDistrictOptions(cityName, values) {
+  districtOptionsCache.set(getDistrictCacheKey(cityName), values);
+  return values;
+}
+
+function getCachedDistrictOptions(cityName) {
+  return districtOptionsCache.get(getDistrictCacheKey(cityName)) || [];
+}
+
+function loadProvinceCatalog() {
+  if (provinceCatalogPromise) return provinceCatalogPromise;
+
+  provinceCatalogPromise = fetch('https://provinces.open-api.vn/api/v2/p/')
+    .then((response) => response.ok ? response.json() : [])
+    .then((data) => {
+      provinceCatalog = Array.isArray(data) ? data : [];
+      return provinceCatalog;
+    })
+    .catch(() => {
+      provinceCatalog = [];
+      return provinceCatalog;
+    });
+
+  return provinceCatalogPromise;
+}
+
+async function fetchDistrictOptionsByCity(cityName) {
+  const normalizedCity = String(cityName ?? '').trim();
+  if (!normalizedCity) return [];
+
+  const cached = getCachedDistrictOptions(normalizedCity);
+  if (cached.length) return cached;
+
+  const localOptions = getDistrictOptions(normalizedCity);
+  if (localOptions.length) {
+    return cacheDistrictOptions(normalizedCity, localOptions);
+  }
+
+  const fallbackOptions = getFallbackDistrictOptions(normalizedCity);
+  if (fallbackOptions.length) {
+    return cacheDistrictOptions(normalizedCity, fallbackOptions);
+  }
+
+  try {
+    const response = await fetch(`/Address/Districts?city=${encodeURIComponent(normalizedCity)}`, {
+      credentials: 'same-origin'
+    });
+    if (!response.ok) return [];
+
+    const data = await response.json();
+    const districts = Array.isArray(data)
+      ? data.filter(Boolean)
+      : [];
+    if (districts.length) {
+      return cacheDistrictOptions(normalizedCity, districts);
+    }
+    return cacheDistrictOptions(normalizedCity, fallbackOptions);
+  } catch {
+    return cacheDistrictOptions(normalizedCity, fallbackOptions);
+  }
+}
+
+async function fetchAddressSuggestions(query) {
+  const normalized = String(query ?? '').trim();
+  if (normalized.length < 2) return [];
+
+  const cacheKey = normalizeText(normalized);
+  if (addressSuggestionCache.has(cacheKey)) {
+    return addressSuggestionCache.get(cacheKey) || [];
+  }
+
+  try {
+    const response = await fetch(`/Address/Suggest?q=${encodeURIComponent(normalized)}&limit=10`, { credentials: 'same-origin' });
+    if (!response.ok) return [];
+    const json = await response.json();
+    const items = Array.isArray(json) ? json : [];
+    addressSuggestionCache.set(cacheKey, items);
+    return items;
+  } catch {
+    return [];
+  }
+}
+
+function uniqueNormalizedValues(values, query) {
+  const seen = new Set();
+  return values
+    .filter((value) => value && (!query || normalizeText(value).includes(normalizeText(query))))
+    .filter((value) => {
+      const key = normalizeText(value);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 12);
+}
+
+async function getProvinceOptionsAsync(query) {
+  if (provinces.length) {
+    return uniqueNormalizedValues(getProvinceOptions(), query);
+  }
+
+  if (!String(query ?? '').trim()) {
+    return [...FALLBACK_PROVINCES];
+  }
+
+  const suggestions = await fetchAddressSuggestions(query);
+  const values = uniqueNormalizedValues(suggestions.map((item) => item.city), query);
+  return values.length ? values : uniqueNormalizedValues(FALLBACK_PROVINCES, query);
+}
+
+async function getDistrictOptionsAsync(cityName, query) {
+  const normalizedCity = String(cityName ?? '').trim();
+  if (!normalizedCity) return [];
+  const normalizedCityKey = normalizeAdministrativeName(normalizedCity);
+
+  const localValues = uniqueNormalizedValues(await fetchDistrictOptionsByCity(normalizedCity), query);
+  if (localValues.length) {
+    return localValues;
+  }
+
+  if (!String(query ?? '').trim()) {
+    return [];
+  }
+
+  const compositeQuery = [query, normalizedCity].filter(Boolean).join(', ');
+  const suggestions = await fetchAddressSuggestions(compositeQuery);
+  return uniqueNormalizedValues(
+    suggestions
+      .filter((item) => {
+        if (!item.city) return true;
+        return normalizeAdministrativeName(item.city).includes(normalizedCityKey);
+      })
+      .map((item) => item.district),
+    query
+  );
 }
 
 function getAutocompleteKey(prefix, kind) {
@@ -113,11 +330,12 @@ function attachAutocomplete(prefix, kind, optionGetter, onSelect) {
   input.insertAdjacentElement('afterend', dropdown);
   autocompleteDropdowns.set(getAutocompleteKey(prefix, kind), dropdown);
 
-  const showForQuery = () => {
-    const query = normalizeText(input.value);
-    const filtered = optionGetter()
-      .filter((option) => !query || normalizeText(option).includes(query))
-      .slice(0, 12);
+  let requestToken = 0;
+  const showForQuery = async () => {
+    const currentToken = ++requestToken;
+    const rawQuery = input.value.trim();
+    const filtered = await Promise.resolve(optionGetter(rawQuery));
+    if (currentToken !== requestToken) return;
 
     renderAutocompleteOptions(prefix, kind, filtered, (value) => {
       input.value = value;
@@ -137,7 +355,7 @@ function attachLocationAutocomplete(prefix) {
   attachAutocomplete(
     prefix,
     'city',
-    () => getProvinceOptions(),
+    (query) => getProvinceOptionsAsync(query),
     (value) => {
       const districtInput = document.getElementById(`${prefix}-district`);
       if (districtInput) districtInput.value = '';
@@ -148,9 +366,92 @@ function attachLocationAutocomplete(prefix) {
   attachAutocomplete(
     prefix,
     'district',
-    () => getDistrictOptions(document.getElementById(`${prefix}-city`)?.value.trim() || ''),
+    (query) => getDistrictOptionsAsync(document.getElementById(`${prefix}-city`)?.value.trim() || '', query),
     () => {}
   );
+}
+
+function attachSelectPicker(prefix, kind, selectId, inputId, emptyLabel, onValueChanged) {
+  const select = document.getElementById(selectId);
+  const input = document.getElementById(inputId);
+  if (!select || !input || input.dataset.acReady === 'true') return;
+
+  input.dataset.acReady = 'true';
+  input.parentElement?.classList.add('autocomplete-field');
+
+  const dropdown = document.createElement('ul');
+  dropdown.className = 'ac-dropdown';
+  input.insertAdjacentElement('afterend', dropdown);
+  autocompleteDropdowns.set(getAutocompleteKey(prefix, kind), dropdown);
+  const normalizedEmptyLabel = normalizeText(emptyLabel);
+
+  const syncFromSelect = () => {
+    const selectedOption = select.options[select.selectedIndex];
+    input.value = selectedOption ? selectedOption.text.trim() : emptyLabel;
+  };
+
+  selectPickerSyncFns.push(syncFromSelect);
+
+  const buildOptions = (query) => {
+    const normalizedQuery = normalizeText(query);
+    return Array.from(select.options)
+      .map((option) => ({ value: option.value, label: option.text.trim() }))
+      .filter((option) => option.label && (!normalizedQuery || normalizeText(option.label).includes(normalizedQuery)))
+      .slice(0, 16);
+  };
+
+  const renderOptions = (query) => {
+    const options = buildOptions(query);
+    if (!options.length) {
+      dropdown.innerHTML = '';
+      dropdown.classList.remove('show');
+      return;
+    }
+
+    dropdown.innerHTML = options.map((option) => `
+      <li data-value="${escapeHtml(option.value)}" data-label="${escapeHtml(option.label)}">${escapeHtml(option.label)}</li>
+    `).join('');
+    dropdown.classList.add('show');
+
+    dropdown.querySelectorAll('li').forEach((item) => {
+      item.addEventListener('mousedown', (event) => {
+        event.preventDefault();
+        select.value = item.dataset.value || '';
+        input.value = item.dataset.label || emptyLabel;
+        if (typeof onValueChanged === 'function') onValueChanged(select.value);
+        hideAutocomplete(prefix, kind);
+      });
+    });
+  };
+
+  syncFromSelect();
+  input.addEventListener('focus', () => {
+    const currentValue = input.value.trim();
+    const shouldOpenAll = !currentValue || select.value === '' || normalizeText(currentValue) === normalizedEmptyLabel;
+    renderOptions(shouldOpenAll ? '' : currentValue);
+  });
+  input.addEventListener('click', () => {
+    const currentValue = input.value.trim();
+    const shouldOpenAll = !currentValue || select.value === '' || normalizeText(currentValue) === normalizedEmptyLabel;
+    renderOptions(shouldOpenAll ? '' : currentValue);
+  });
+  input.addEventListener('input', () => renderOptions(input.value.trim()));
+  input.addEventListener('blur', () => {
+    setTimeout(() => {
+      hideAutocomplete(prefix, kind);
+      syncFromSelect();
+    }, 120);
+  });
+}
+
+function syncSelectPickerTexts() {
+  selectPickerSyncFns.forEach((syncFn) => syncFn());
+}
+
+function attachCreateSelectPickers() {
+  attachSelectPicker('cf', 'typePicker', 'cf-type', 'cf-typeText', 'Chọn loại công việc');
+  attachSelectPicker('cf', 'childPicker', 'cf-childProfileId', 'cf-childProfileText', 'Chọn trẻ', () => handleCreateChildChange());
+  attachSelectPicker('cf', 'skillPicker', 'cf-skillSelect', 'cf-skillSelectText', 'Chọn kỹ năng cần yêu cầu');
 }
 
 function handleCityChange(prefix, explicitCityValue) {
@@ -159,9 +460,13 @@ function handleCityChange(prefix, explicitCityValue) {
   if (!cityInput) return;
 
   const cityValue = (explicitCityValue ?? cityInput.value).trim();
-  const allowedDistricts = getDistrictOptions(cityValue);
+  const allowedDistricts = getCachedDistrictOptions(cityValue);
   if (districtInput && districtInput.value && !allowedDistricts.includes(districtInput.value.trim())) {
     districtInput.value = '';
+  }
+
+  if (cityValue) {
+    fetchDistrictOptionsByCity(cityValue);
   }
 }
 
@@ -200,13 +505,117 @@ function formatAgeRange(min, max) {
   return 'Khong yeu cau';
 }
 
-function showToast(message) {
-  const toast = document.getElementById('toast');
-  if (!toast) return;
-  toast.textContent = message;
-  toast.classList.add('show');
-  clearTimeout(showToast._timer);
-  showToast._timer = setTimeout(() => toast.classList.remove('show'), 2600);
+function showToast(message, type = 'info') {
+  if (typeof window.showToast === 'function' && window.showToast !== showToast) {
+    window.showToast(message, { type });
+  }
+}
+
+function isLoggedIn() {
+  return typeof IS_AUTH !== 'undefined' && IS_AUTH === true;
+}
+
+function isNannyRole() {
+  return typeof IS_NANNY !== 'undefined' && IS_NANNY === true;
+}
+
+function normalizeGuid(value) {
+  return String(value ?? '').trim().toLowerCase();
+}
+
+function setOwnedJobs(collection) {
+  ownedJobIds.clear();
+  (Array.isArray(collection) ? collection : []).forEach((job) => {
+    if (job?.id) ownedJobIds.add(normalizeGuid(job.id));
+  });
+}
+
+function canEditJob(job) {
+  if (!isLoggedIn() || !job?.id) return false;
+  return ownedJobIds.has(normalizeGuid(job.id));
+}
+
+window.canEditJob = canEditJob;
+
+function updateJobFavoriteUi(jobId, isFavorite) {
+  const normalizedId = normalizeGuid(jobId);
+  document.querySelectorAll(`.job-save-btn[data-job-id="${normalizedId}"]`).forEach((button) => {
+    button.classList.toggle('active', !!isFavorite);
+    button.setAttribute('aria-pressed', isFavorite ? 'true' : 'false');
+    button.title = isFavorite ? 'Bo luu bai dang' : 'Luu bai dang';
+    button.setAttribute('aria-label', button.title);
+    const icon = button.querySelector('.material-icons-round');
+    if (icon) icon.textContent = isFavorite ? 'bookmark' : 'bookmark_border';
+  });
+}
+
+function setJobFavoriteState(jobId, isFavorite) {
+  const normalizedId = normalizeGuid(jobId);
+  currentJobs = currentJobs.map((job) => {
+    if (normalizeGuid(job?.id) === normalizedId) return { ...job, isFavorite: !!isFavorite };
+    return job;
+  });
+  updateJobFavoriteUi(jobId, !!isFavorite);
+}
+
+async function toggleJobFavorite(jobId, event) {
+  event?.stopPropagation?.();
+
+  if (!isLoggedIn()) {
+    showToast('Vui long dang nhap de luu bai dang.', 'warning');
+    return;
+  }
+
+  if (!isNannyRole()) {
+    showToast('Chi Nanny moi co quyen luu bai dang.', 'warning');
+    return;
+  }
+
+  try {
+    const response = await fetch(`/Search/ToggleFavoriteJob?jobPostingId=${encodeURIComponent(jobId)}`, {
+      method: 'POST',
+      credentials: 'same-origin'
+    });
+    const json = await response.json();
+    const payload = json?.raw && typeof json.raw === 'object' ? json.raw : json;
+    const isSuccess = !!(json?.success || payload?.success);
+
+    if (!isSuccess) {
+      showToast(json?.message || 'Khong the cap nhat luu bai dang.', 'error');
+      return;
+    }
+
+    const favoriteState = typeof payload?.isFavorite === 'boolean'
+      ? payload.isFavorite
+      : !!json?.isFavorite;
+
+    setJobFavoriteState(jobId, favoriteState);
+    showToast(
+      payload?.message || json?.message || (favoriteState ? 'Da luu bai dang.' : 'Da bo luu bai dang.'),
+      favoriteState ? 'success' : 'info'
+    );
+  } catch {
+    showToast('Khong the cap nhat luu bai dang.', 'error');
+  }
+}
+
+async function loadOwnedJobs() {
+  if (!isLoggedIn()) {
+    setOwnedJobs([]);
+    ownedJobsLoaded = true;
+    return;
+  }
+
+  try {
+    const res = await fetch('/Search/MyJobs', { credentials: 'same-origin' });
+    const json = await res.json();
+    if (json?.success) setOwnedJobs(json.data);
+    else setOwnedJobs([]);
+  } catch {
+    setOwnedJobs([]);
+  } finally {
+    ownedJobsLoaded = true;
+  }
 }
 
 function openHistory() {
@@ -346,7 +755,19 @@ function renderJobs(jobs) {
           <h3 class="text-[18px] leading-6 font-extrabold text-slate-900">${escapeHtml(job.title || 'Tin dang')}</h3>
           <p class="mt-2 text-sm font-semibold text-slate-500">${escapeHtml(job.parentName || 'Phu huynh')}</p>
         </div>
-        <span class="shrink-0 rounded-full bg-orange-50 px-3 py-1 text-xs font-extrabold text-orange-700">${escapeHtml(formatSalaryRange(job.salaryMin, job.salaryMax, job.salaryNegotiable))}</span>
+        <div class="job-card__head-right">
+          <span class="shrink-0 rounded-full bg-orange-50 px-3 py-1 text-xs font-extrabold text-orange-700">${escapeHtml(formatSalaryRange(job.salaryMin, job.salaryMax, job.salaryNegotiable))}</span>
+          ${isNannyRole() ? `
+            <button type="button"
+                    class="job-save-btn ${job.isFavorite ? 'active' : ''}"
+                    data-job-id="${escapeHtml(normalizeGuid(job.id))}"
+                    aria-pressed="${job.isFavorite ? 'true' : 'false'}"
+                    aria-label="${job.isFavorite ? 'Bo luu bai dang' : 'Luu bai dang'}"
+                    title="${job.isFavorite ? 'Bo luu bai dang' : 'Luu bai dang'}"
+                    onclick="toggleJobFavorite('${escapeJs(job.id)}', event)">
+              <span class="material-icons-round">${job.isFavorite ? 'bookmark' : 'bookmark_border'}</span>
+            </button>` : ''}
+        </div>
       </div>
       <p class="mt-3 text-sm font-semibold text-orange-600">${escapeHtml([job.location, job.district, job.city].filter(Boolean).join(', ') || 'Chua cap nhat dia diem')}</p>
       <p class="mt-3 text-sm leading-6 text-slate-500 line-clamp-2">${escapeHtml(job.description || 'Khong co mo ta.')}</p>
@@ -441,6 +862,7 @@ function renderChildren(prefix, selectedChildId) {
     ? collection.map((child) => `<option value="${escapeHtml(child.id)}">${escapeHtml(child.label)}</option>`).join('')
     : '<option value="">Chua co Child Profile</option>';
   if (selectedChildId) select.value = selectedChildId;
+  syncSelectPickerTexts();
   setProfileFields(prefix, getSelectedChild(prefix));
 }
 
@@ -510,6 +932,7 @@ function addSelectedSkillToCollection(selectId, collection, containerId, removeH
   if (!value || collection.includes(value)) return;
   collection.push(value);
   select.value = '';
+  syncSelectPickerTexts();
   renderSkillCollection(containerId, collection, removeHandlerName);
 }
 
@@ -549,8 +972,15 @@ function setEditStatus(status) {
 }
 
 async function openCreate() {
+  if (!isLoggedIn()) {
+    window.location.href = '/Auth/Login';
+    return;
+  }
+
   await loadLocationData();
   document.getElementById('createForm')?.reset();
+  const createSkillSelect = document.getElementById('cf-skillSelect');
+  if (createSkillSelect) createSkillSelect.value = '';
   createSkills = [];
   createSchedule = [];
   createChildren = [];
@@ -565,6 +995,7 @@ async function openCreate() {
     if (json.success && json.data) applyPrefill('cf', json.data, json.data.selectedChildProfileId);
   } catch { }
 
+  syncSelectPickerTexts();
   document.getElementById('createModal')?.classList.add('show');
 }
 
@@ -607,6 +1038,11 @@ function validatePayload(payload) {
 }
 
 async function submitCreate() {
+  if (!isLoggedIn()) {
+    window.location.href = '/Auth/Login';
+    return;
+  }
+
   if (isSubmittingCreate) return;
   const payload = getCreatePayload();
   const error = validatePayload(payload);
@@ -656,6 +1092,10 @@ async function submitCreate() {
 
 async function openEdit(job) {
   if (!job?.id) return;
+  if (!canEditJob(job)) {
+    showToast('Ban khong co quyen chinh sua bai dang nay.');
+    return;
+  }
   window.location.href = `/Search/Edit/${job.id}`;
 }
 
@@ -666,12 +1106,20 @@ function closeEdit() {
 
 async function submitEdit() {
   if (editingJobId) {
+    if (!ownedJobIds.has(normalizeGuid(editingJobId))) {
+      showToast('Ban khong co quyen chinh sua bai dang nay.');
+      return;
+    }
     window.location.href = `/Search/Edit/${editingJobId}`;
   }
 }
 
 async function deleteJob() {
   if (!editingJobId) return;
+  if (!ownedJobIds.has(normalizeGuid(editingJobId))) {
+    showToast('Ban khong co quyen xoa bai dang nay.');
+    return;
+  }
   if (!confirm('Ban co chac muon xoa bai dang nay?')) return;
   try {
     const res = await fetch(`/Search/DeleteJob/${editingJobId}`, { method: 'DELETE', credentials: 'same-origin' });
@@ -737,10 +1185,18 @@ function handleEditCityChange() {
   handleCityChange('ef');
 }
 
-function bootstrapSearchPage() {
+async function bootstrapSearchPage() {
+  ['cf-city', 'cf-district', 'ef-city', 'ef-district', 'cf-typeText', 'cf-childProfileText', 'cf-skillSelectText'].forEach((id) => {
+    document.getElementById(id)?.setAttribute('autocomplete', 'off');
+  });
+  ['createForm', 'editForm'].forEach((id) => {
+    document.getElementById(id)?.setAttribute('autocomplete', 'off');
+  });
+  attachCreateSelectPickers();
   initMap();
   loadLocationData();
-  doSearch();
+  await loadOwnedJobs();
+  await doSearch();
 }
 
 if (document.readyState === 'loading') {

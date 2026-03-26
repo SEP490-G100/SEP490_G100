@@ -211,6 +211,8 @@ public class NotificationService
                 $"/Search/History?jobId={notification.RelatedEntityId.Value}",
             NotificationTypes.JobPostingPending when notification.RelatedEntityId.HasValue =>
                 $"/Search/History?jobId={notification.RelatedEntityId.Value}",
+            NotificationTypes.NannyProfileFavorited =>
+                "/Nanny/Profile",
             _ => null
         };
     }

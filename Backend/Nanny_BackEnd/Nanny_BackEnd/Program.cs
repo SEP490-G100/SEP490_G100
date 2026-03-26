@@ -43,6 +43,7 @@ builder.Services.AddSignalR(options =>
     options.EnableDetailedErrors = builder.Environment.IsDevelopment();
 });
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddHealthChecks();
 
 // Swagger + JWT
 builder.Services.AddSwaggerGen(c =>
@@ -123,15 +124,14 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials());
+    options.AddPolicy("UiPolicy", policy =>
+        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+    options.AddDefaultPolicy(policy =>
+        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 });
 
 builder.Services.AddHttpClient();
-builder.Services.Configure<VietQrOptions>(builder.Configuration.GetSection("VietQr"));
-builder.Services.AddHttpClient("VietQr", c =>
-{
-    c.BaseAddress = new Uri(builder.Configuration["VietQr:BaseUrl"] ?? "https://api.vietqr.io/v2/");
-    c.Timeout = TimeSpan.FromSeconds(30);
-});
+builder.Services.Configure<VnPayOptions>(builder.Configuration.GetSection("VnPay"));
 // Nominatim (OpenStreetMap geocoding) — User-Agent bắt buộc theo ToS
 builder.Services.AddHttpClient("Nominatim", c =>
 {
@@ -166,6 +166,7 @@ builder.Services.AddScoped<EmailService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ProfileService>();
 builder.Services.AddScoped<OnboardingService>();
+builder.Services.AddScoped<NannyService>();
 builder.Services.AddScoped<NannyProfileRepository>();
 builder.Services.AddScoped<NannySkillRepository>();
 builder.Services.AddScoped<NannyCertificateRepository>();
@@ -183,6 +184,7 @@ builder.Services.AddScoped<ExportService>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<VietQrService>();
 builder.Services.AddScoped<CommunicationService>();
+builder.Services.AddScoped<VnPayService>();
 builder.Services.AddScoped<FaqService>();
 builder.Services.AddScoped<BlogCategoryService>();
 builder.Services.AddScoped<BlogService>();
@@ -210,5 +212,12 @@ app.MapControllers();
 
 // SignalR hub endpoint — dùng SignalR CORS policy
 app.MapHub<ChatHub>("/hubs/chat").RequireCors("SignalR");
+
+app.UseCors("UiPolicy");
+app.UseCors();
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();
+app.MapHealthChecks("/health");
 
 app.Run();

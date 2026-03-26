@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebSite.Models.Search;
 
@@ -32,11 +33,26 @@ public class SearchController : Controller
     }
 
     [HttpGet]
+    [Authorize]
     public IActionResult History() => View();
 
     [HttpGet]
+    [Authorize]
+    public IActionResult SavedJobs()
+    {
+        if (!isNannyRole())
+            return RedirectToAction(nameof(Index));
+
+        return View();
+    }
+
+    [HttpGet]
+    [Authorize]
     public async Task<IActionResult> Edit(Guid id)
     {
+        if (!await canEditJob(id))
+            return RedirectToAction(nameof(Index));
+
         ViewBag.JobId = id;
         ViewBag.SkillOptions = await getSkillOptionsForView();
         return View();
@@ -76,6 +92,7 @@ public class SearchController : Controller
     }
 
     [HttpGet]
+    [Authorize]
     public async Task<IActionResult> MyJobs()
     {
         SetAuthHeader();
@@ -96,6 +113,34 @@ public class SearchController : Controller
     }
 
     [HttpGet]
+    [Authorize]
+    public async Task<IActionResult> SavedJobsData([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    {
+        if (!isNannyRole())
+            return StatusCode(403, new { success = false, total = 0, data = Array.Empty<object>(), message = "Ban khong co quyen xem bai dang da luu." });
+
+        page = page < 1 ? 1 : page;
+        pageSize = pageSize < 1 ? 20 : Math.Min(pageSize, 50);
+
+        SetAuthHeader();
+        try
+        {
+            var response = await _http.GetAsync($"/api/search/jobs/favorite/me?page={page}&pageSize={pageSize}");
+            if (!response.IsSuccessStatusCode)
+                return Json(new { success = false, total = 0, data = Array.Empty<object>() });
+
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<SearchApiResult>(json, JsonOpts);
+            return Json(new { success = result?.Success ?? false, total = result?.Total ?? 0, data = result?.Data ?? [] });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, total = 0, data = Array.Empty<object>(), error = ex.Message });
+        }
+    }
+
+    [HttpGet]
+    [Authorize]
     public async Task<IActionResult> Prefill()
     {
         SetAuthHeader();
@@ -123,8 +168,12 @@ public class SearchController : Controller
 
     // ── POST /Search/CreateJob ──────────────────────────────
     [HttpPost]
+    [Authorize]
     public async Task<IActionResult> CreateJob([FromBody] JsonElement body)
     {
+        if (!isParentRole())
+            return StatusCode(403, new { success = false, message = "Ban khong co quyen dang tin tim bao mau." });
+
         SetAuthHeader();
         try
         {
@@ -139,8 +188,12 @@ public class SearchController : Controller
 
     // ── PUT /Search/UpdateJob/{id} ──────────────────────────
     [HttpPut]
+    [Authorize]
     public async Task<IActionResult> UpdateJob(Guid id, [FromBody] JsonElement body)
     {
+        if (!await canEditJob(id))
+            return StatusCode(403, new { success = false, message = "Ban khong co quyen chinh sua bai dang nay." });
+
         SetAuthHeader();
         try
         {
@@ -155,8 +208,12 @@ public class SearchController : Controller
 
     // ── DELETE /Search/DeleteJob/{id} ───────────────────────
     [HttpDelete]
+    [Authorize]
     public async Task<IActionResult> DeleteJob(Guid id)
     {
+        if (!await canEditJob(id))
+            return StatusCode(403, new { success = false, message = "Ban khong co quyen xoa bai dang nay." });
+
         SetAuthHeader();
         try
         {
@@ -181,6 +238,25 @@ public class SearchController : Controller
             return Content(json, "application/json");
         }
         catch { return StatusCode(500); }
+    }
+
+    [HttpPost]
+    [Authorize]
+    public async Task<IActionResult> ToggleFavoriteJob(Guid jobPostingId)
+    {
+        if (!isNannyRole())
+            return StatusCode(403, new { success = false, message = "Ban khong co quyen luu bai dang." });
+
+        SetAuthHeader();
+        try
+        {
+            var response = await _http.PostAsync($"/api/search/jobs/favorite/{jobPostingId}/toggle", null);
+            return await ProxyApiResponse(response);
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
     }
 
     // ── Helper: đính kèm JWT token từ session ──────────────
@@ -298,5 +374,53 @@ public class SearchController : Controller
         {
             return [];
         }
+    }
+
+    private async Task<bool> canEditJob(Guid jobId)
+    {
+        SetAuthHeader();
+        try
+        {
+            var response = await _http.GetAsync("/api/job-postings/my");
+            if (!response.IsSuccessStatusCode) return false;
+
+            var json = await response.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("data", out var dataEl) || dataEl.ValueKind != JsonValueKind.Array)
+                return false;
+
+            foreach (var item in dataEl.EnumerateArray())
+            {
+                if (!item.TryGetProperty("id", out var idEl)) continue;
+                if (Guid.TryParse(idEl.GetString(), out var ownedId) && ownedId == jobId)
+                    return true;
+            }
+
+            return false;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private bool isParentRole()
+    {
+        if (User.IsInRole("Parent"))
+            return true;
+
+        return User.Claims.Any(c =>
+            c.Type == System.Security.Claims.ClaimTypes.Role &&
+            string.Equals(c.Value, "Parent", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private bool isNannyRole()
+    {
+        if (User.IsInRole("Nanny"))
+            return true;
+
+        return User.Claims.Any(c =>
+            c.Type == System.Security.Claims.ClaimTypes.Role &&
+            string.Equals(c.Value, "Nanny", StringComparison.OrdinalIgnoreCase));
     }
 }
