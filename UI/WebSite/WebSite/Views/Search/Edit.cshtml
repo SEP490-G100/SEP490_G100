@@ -69,11 +69,11 @@
                             </div>
                             <div>
                                 <label class="form-label">Luong toi thieu</label>
-                                <input type="number" id="ef-salMin" class="form-input" />
+                                <input type="text" id="ef-salMin" inputmode="numeric" class="form-input" placeholder="VD: 1.000.000" />
                             </div>
                             <div>
                                 <label class="form-label">Luong toi da</label>
-                                <input type="number" id="ef-salMax" class="form-input" />
+                                <input type="text" id="ef-salMax" inputmode="numeric" class="form-input" placeholder="VD: 3.000.000" />
                             </div>
                             <div class="md:col-span-2">
                                 <label class="form-label">Tuy chon luong</label>
@@ -234,6 +234,44 @@ function showToast(message, type = 'info') {
     fallback.textContent = message;
     document.body.appendChild(fallback);
     window.setTimeout(() => fallback.remove(), 2200);
+}
+
+function sanitizeMoneyDigits(value) {
+    return String(value ?? '').replace(/[^\d]/g, '');
+}
+
+function formatMoneyInputValue(value) {
+    const digits = sanitizeMoneyDigits(value);
+    if (!digits) return '';
+    const normalized = digits.replace(/^0+(?=\d)/, '');
+    const amount = Number(normalized || '0');
+    return Number.isFinite(amount) ? amount.toLocaleString('vi-VN') : '';
+}
+
+function parseMoneyInput(value) {
+    const digits = sanitizeMoneyDigits(value);
+    if (!digits) return null;
+    const normalized = digits.replace(/^0+(?=\d)/, '');
+    const amount = Number(normalized || '0');
+    return Number.isFinite(amount) ? amount : null;
+}
+
+function bindMoneyInputFormatting(inputId) {
+    const input = document.getElementById(inputId);
+    if (!input || input.dataset.moneyReady === 'true') return;
+
+    input.dataset.moneyReady = 'true';
+    const applyFormat = () => {
+        input.value = formatMoneyInputValue(input.value);
+    };
+
+    input.addEventListener('input', applyFormat);
+    input.addEventListener('blur', applyFormat);
+    applyFormat();
+}
+
+function initMoneyInputs() {
+    ['ef-salMin', 'ef-salMax'].forEach(bindMoneyInputFormatting);
 }
 
 function pushHistoryToast(message, type = 'success') {
@@ -619,8 +657,8 @@ async function loadEditPage() {
         document.getElementById('ef-desc').value = job.description || '';
         document.getElementById('ef-type').value = job.jobType || 1;
         document.getElementById('ef-children').value = job.numberOfChildren || prefill.numberOfChildren || 1;
-        document.getElementById('ef-salMin').value = job.salaryMin || '';
-        document.getElementById('ef-salMax').value = job.salaryMax || '';
+        document.getElementById('ef-salMin').value = formatMoneyInputValue(job.salaryMin);
+        document.getElementById('ef-salMax').value = formatMoneyInputValue(job.salaryMax);
         document.getElementById('ef-negotiable').checked = !!job.salaryNegotiable;
         document.getElementById('ef-location').value = job.location || '';
         document.getElementById('ef-city').value = job.city || '';
@@ -695,8 +733,8 @@ document.getElementById('editPageForm')?.addEventListener('submit', async (event
         jobType: Number(document.getElementById('ef-type').value),
         numberOfChildren: Number(document.getElementById('ef-children').value || 1),
         childProfileId: document.getElementById('ef-childProfileId').value || null,
-        salaryMin: document.getElementById('ef-salMin').value ? Number(document.getElementById('ef-salMin').value) : null,
-        salaryMax: document.getElementById('ef-salMax').value ? Number(document.getElementById('ef-salMax').value) : null,
+        salaryMin: parseMoneyInput(document.getElementById('ef-salMin').value),
+        salaryMax: parseMoneyInput(document.getElementById('ef-salMax').value),
         salaryNegotiable: document.getElementById('ef-negotiable').checked,
         location: document.getElementById('ef-location').value.trim(),
         city: document.getElementById('ef-city').value.trim(),
@@ -774,6 +812,7 @@ function initializeEditPage() {
     ['ef-typeText', 'ef-childProfileText', 'ef-skillSelectText'].forEach((id) => {
         document.getElementById(id)?.setAttribute('autocomplete', 'off');
     });
+    initMoneyInputs();
     attachEditSelectPickers();
     updateSubmitState();
     loadEditPage();

@@ -498,6 +498,44 @@ function formatSalaryRange(min, max, negotiable) {
   return 'Khong xac dinh';
 }
 
+function sanitizeMoneyDigits(value) {
+  return String(value ?? '').replace(/[^\d]/g, '');
+}
+
+function formatMoneyInputValue(value) {
+  const digits = sanitizeMoneyDigits(value);
+  if (!digits) return '';
+  const normalized = digits.replace(/^0+(?=\d)/, '');
+  const amount = Number(normalized || '0');
+  return Number.isFinite(amount) ? amount.toLocaleString('vi-VN') : '';
+}
+
+function parseMoneyInput(value) {
+  const digits = sanitizeMoneyDigits(value);
+  if (!digits) return null;
+  const normalized = digits.replace(/^0+(?=\d)/, '');
+  const amount = Number(normalized || '0');
+  return Number.isFinite(amount) ? amount : null;
+}
+
+function bindMoneyInputFormatting(inputId) {
+  const input = document.getElementById(inputId);
+  if (!input || input.dataset.moneyReady === 'true') return;
+
+  input.dataset.moneyReady = 'true';
+  const applyFormat = () => {
+    input.value = formatMoneyInputValue(input.value);
+  };
+
+  input.addEventListener('input', applyFormat);
+  input.addEventListener('blur', applyFormat);
+  applyFormat();
+}
+
+function initMoneyInputs() {
+  ['cf-salMin', 'cf-salMax', 'ef-salMin', 'ef-salMax'].forEach(bindMoneyInputFormatting);
+}
+
 function formatAgeRange(min, max) {
   if (min && max) return `${min} - ${max} tuoi`;
   if (min) return `Tu ${min} tuoi`;
@@ -1011,8 +1049,8 @@ function getCreatePayload() {
     jobType: Number(document.getElementById('cf-type')?.value || 1),
     numberOfChildren: Number(document.getElementById('cf-children')?.value || 1),
     childProfileId: document.getElementById('cf-childProfileId')?.value || null,
-    salaryMin: document.getElementById('cf-salMin')?.value ? Number(document.getElementById('cf-salMin').value) : null,
-    salaryMax: document.getElementById('cf-salMax')?.value ? Number(document.getElementById('cf-salMax').value) : null,
+    salaryMin: parseMoneyInput(document.getElementById('cf-salMin')?.value),
+    salaryMax: parseMoneyInput(document.getElementById('cf-salMax')?.value),
     salaryNegotiable: !!document.getElementById('cf-negotiable')?.checked,
     location: document.getElementById('cf-location')?.value.trim() || '',
     city: document.getElementById('cf-city')?.value.trim() || '',
@@ -1193,6 +1231,7 @@ async function bootstrapSearchPage() {
     document.getElementById(id)?.setAttribute('autocomplete', 'off');
   });
   attachCreateSelectPickers();
+  initMoneyInputs();
   initMap();
   loadLocationData();
   await loadOwnedJobs();
