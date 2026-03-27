@@ -79,6 +79,16 @@ public class ProfileService
 
     public async Task<PersonalProfileDto> GetPersonalProfileAsync(Guid userId)
     {
+        return await BuildProfileDtoAsync(userId);
+    }
+
+    public async Task<PersonalProfileDto> GetPublicProfileAsync(Guid userId)
+    {
+        return await BuildProfileDtoAsync(userId);
+    }
+
+    private async Task<PersonalProfileDto> BuildProfileDtoAsync(Guid userId)
+    {
         var user = await _userRepo.FindByIdAsync(userId)
             ?? throw new InvalidOperationException("NgÆ°á»i dÃ¹ng khÃ´ng tá»“n táº¡i.");
 

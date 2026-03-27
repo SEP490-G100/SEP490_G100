@@ -5,7 +5,10 @@
     var isNanny = Model.IsNanny;
     var isParent = Model.IsParent;
     var rating = Model.AverageRating ?? 0m;
+    var isReadOnly = Model.IsReadOnlyView;
+    var canEditProfile = !isReadOnly;
     var canShowFavoriteHeart = User.IsInRole("Parent") && isNanny;
+    var canContactNanny = isReadOnly && User.IsInRole("Parent") && isNanny && Model.UserId != Guid.Empty;
 
     string EducationLabel(int? level) => level switch
     {
@@ -88,9 +91,18 @@
                 </div>
             </div>
 
-            <a href="@Url.Action("Edit", "Profile")" class="profile-primary-btn">
-                Chinh sua ho so
-            </a>
+            @if (canEditProfile)
+            {
+                <a href="@Url.Action("Edit", "Profile")" class="profile-primary-btn">
+                    Chinh sua ho so
+                </a>
+            }
+            else if (canContactNanny)
+            {
+                <button type="button" id="contactNannyBtn" data-user-id="@Model.UserId" class="profile-primary-btn">
+                    Contact
+                </button>
+            }
         </div>
 
         <div class="profile-grid">
@@ -251,20 +263,26 @@
                         else
                         {
                             <p class="text-sm text-slate-500 mb-2">Chua co chung chi.</p>
-                            <a href="@Url.Action("Verify", "Profile")" class="text-sm font-semibold text-orange-600 hover:underline">Them chung chi</a>
-                        }
+                            @if (canEditProfile)
+                            {
+                                <a href="@Url.Action("Verify", "Profile")" class="text-sm font-semibold text-orange-600 hover:underline">Them chung chi</a>
+                            }
+                            }
                     </div>
                 }
 
-                @if (isParent || isNanny)
+                @if (isParent)
                 {
                     <div class="profile-card profile-card-soft">
                         <div class="flex items-center justify-between gap-2 mb-3">
                             <h3 class="!mb-0">Thong tin tre</h3>
-                            <a href="@Url.Action("Children", "Profile")"
-                               class="inline-flex items-center justify-center px-4 py-2 rounded-full border border-orange-200 bg-white text-orange-700 text-xs font-bold hover:bg-orange-50">
-                                Edit Child Profile
-                            </a>
+                            @if (!isReadOnly)
+                            {
+                                <a href="@Url.Action("Children", "Profile")"
+                                   class="inline-flex items-center justify-center px-4 py-2 rounded-full border border-orange-200 bg-white text-orange-700 text-xs font-bold hover:bg-orange-50">
+                                    Edit Child Profile
+                                </a>
+                            }
                         </div>
                         <div class="profile-detail-grid">
                             <div class="profile-detail-item">
@@ -327,6 +345,40 @@
                 });
 
                 renderFavoriteState(false);
+            }
+
+            var contactBtn = document.getElementById('contactNannyBtn');
+            if (contactBtn) {
+                contactBtn.addEventListener('click', async function () {
+                    var userId = contactBtn.getAttribute('data-user-id');
+                    if (!userId) return;
+
+                    contactBtn.disabled = true;
+                    var oldText = contactBtn.textContent;
+                    contactBtn.textContent = 'Dang mo chat...';
+
+                    try {
+                        var response = await fetch('/Communication/GetOrCreate', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ otherUserId: userId })
+                        });
+
+                        var json = await response.json();
+                        var conversationId = json?.data?.id;
+                        if (conversationId) {
+                            window.location.href = `/Communication?conversationId=${conversationId}`;
+                            return;
+                        }
+
+                        window.location.href = '/Communication';
+                    } catch {
+                        window.location.href = '/Communication';
+                    } finally {
+                        contactBtn.disabled = false;
+                        contactBtn.textContent = oldText;
+                    }
+                });
             }
 
             var lat = @(Model.Latitude?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "21.0285");

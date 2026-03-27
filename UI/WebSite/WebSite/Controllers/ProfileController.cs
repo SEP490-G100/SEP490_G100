@@ -139,6 +139,45 @@ public class ProfileController : Controller
         }
     }
 
+    [HttpGet]
+    public async Task<IActionResult> ViewUser(Guid userId)
+    {
+        if (userId == Guid.Empty)
+            return RedirectToAction(nameof(Index));
+
+        try
+        {
+            var token = GetTokenFromSession();
+            if (string.IsNullOrEmpty(token))
+            {
+                TempData["Error"] = "Session expired. Please log in again.";
+                return RedirectToAction("Login", "Auth");
+            }
+
+            _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            var response = await _http.GetAsync($"/api/profile/public/{userId}");
+            if (!response.IsSuccessStatusCode)
+                return RedirectToAction(nameof(Index));
+
+            var content = await response.Content.ReadAsStringAsync();
+            var apiResult = JsonSerializer.Deserialize<ApiResultDto>(content, JsonOpts);
+            if (apiResult == null || !apiResult.Success)
+                return RedirectToAction(nameof(Index));
+
+            var profile = JsonSerializer.Deserialize<PersonalProfileViewModel>(
+                JsonSerializer.Serialize(apiResult.Data), JsonOpts) ?? BuildProfileFromClaims();
+
+            profile.AvatarUrl = NormalizeAvatarUrl(profile.AvatarUrl);
+            profile.IsReadOnlyView = true;
+
+            return View("Index", profile);
+        }
+        catch
+        {
+            return RedirectToAction(nameof(Index));
+        }
+    }
+
     // Edit personal information
     [HttpGet]
     public async Task<IActionResult> Edit()
@@ -563,4 +602,3 @@ public class CreateCertificateViewModel
     public string? IssuingOrganization { get; set; }
     public string? CertificateUrl { get; set; }
 }
-
