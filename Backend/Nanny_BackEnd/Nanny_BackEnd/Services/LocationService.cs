@@ -17,6 +17,14 @@ public class LocationService
     private readonly IWebHostEnvironment _env;
     private readonly IMemoryCache _cache;
     private readonly ILogger<LocationService> _logger;
+    private static readonly Dictionary<string, string> ProvinceRenameMap = new(StringComparer.OrdinalIgnoreCase)
+    {
+        { "Thừa Thiên Huế", "Thành phố Huế" }
+    };
+    private static readonly Dictionary<string, string[]> ProvinceAliasMap = new(StringComparer.OrdinalIgnoreCase)
+    {
+        { "Thành phố Huế", ["Thừa Thiên Huế"] }
+    };
 
     public LocationService(IWebHostEnvironment env, IMemoryCache cache, ILogger<LocationService> logger)
     {
@@ -93,6 +101,8 @@ public class LocationService
         foreach (var province in source)
         {
             province.Name = (province.Name ?? "").Trim();
+            if (ProvinceRenameMap.TryGetValue(province.Name, out var renamed) && !string.IsNullOrWhiteSpace(renamed))
+                province.Name = renamed;
             province.Districts ??= [];
             foreach (var district in province.Districts)
             {
@@ -135,11 +145,37 @@ public class LocationService
         {
             var exact = tree.FirstOrDefault(p => normalizeText(p.Name) == cityToken);
             if (exact is not null) return exact;
+
+            var aliasMatched = tree.FirstOrDefault(p => MatchProvinceAlias(p.Name, cityToken));
+            if (aliasMatched is not null) return aliasMatched;
+
             var contains = tree.FirstOrDefault(p => normalizeText(p.Name).Contains(cityToken));
             if (contains is not null) return contains;
         }
 
-        return tree.FirstOrDefault(p => fullQuery.Contains(normalizeText(p.Name)));
+        return tree.FirstOrDefault(p =>
+            fullQuery.Contains(normalizeText(p.Name)) ||
+            MatchProvinceAlias(p.Name, fullQuery));
+    }
+
+    private static bool MatchProvinceAlias(string provinceName, string token)
+    {
+        if (string.IsNullOrWhiteSpace(provinceName) || string.IsNullOrWhiteSpace(token))
+            return false;
+
+        var normalizedToken = normalizeText(token);
+        if (ProvinceAliasMap.TryGetValue(provinceName, out var aliases))
+        {
+            return aliases.Any(alias =>
+            {
+                var normalizedAlias = normalizeText(alias);
+                return normalizedAlias == normalizedToken
+                       || normalizedAlias.Contains(normalizedToken)
+                       || normalizedToken.Contains(normalizedAlias);
+            });
+        }
+
+        return false;
     }
 
     private static DistrictLocationDto? findBestDistrict(ProvinceLocationDto province, string? districtToken, string fullQuery)

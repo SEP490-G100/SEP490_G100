@@ -15,10 +15,6 @@ namespace WebSite.Controllers;
 public class AddressController : Controller
 {
     private readonly HttpClient _http;
-    private static readonly HttpClient ProvinceHttp = new()
-    {
-        Timeout = TimeSpan.FromSeconds(10)
-    };
 
     public AddressController(IHttpClientFactory httpFactory)
     {
@@ -55,9 +51,10 @@ public class AddressController : Controller
         if (string.IsNullOrWhiteSpace(city))
             return Json(Array.Empty<string>());
 
+        SetAuthHeader();
         try
         {
-            var response = await ProvinceHttp.GetAsync("https://provinces.open-api.vn/api/v2/?depth=2");
+            var response = await _http.GetAsync("/api/address/location-tree");
             if (!response.IsSuccessStatusCode)
                 return Json(Array.Empty<string>());
 
@@ -65,7 +62,15 @@ public class AddressController : Controller
             using var document = JsonDocument.Parse(json);
 
             var targetKey = NormalizeAdministrativeName(city);
-            foreach (var province in document.RootElement.EnumerateArray())
+            var root = document.RootElement;
+            var provinceArray = root.ValueKind == JsonValueKind.Array
+                ? root
+                : (root.TryGetProperty("data", out var dataEl) && dataEl.ValueKind == JsonValueKind.Array ? dataEl : default);
+
+            if (provinceArray.ValueKind != JsonValueKind.Array)
+                return Json(Array.Empty<string>());
+
+            foreach (var province in provinceArray.EnumerateArray())
             {
                 var provinceName = province.TryGetProperty("name", out var nameProp) ? nameProp.GetString() : null;
                 if (NormalizeAdministrativeName(provinceName) != targetKey)
@@ -112,6 +117,7 @@ public class AddressController : Controller
             .Replace("tp. ", string.Empty)
             .Replace("tp ", string.Empty)
             .Replace("tinh ", string.Empty)
+            .Replace("thua thien hue", "hue")
             .Trim();
     }
 

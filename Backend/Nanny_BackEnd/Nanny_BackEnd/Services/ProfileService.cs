@@ -305,13 +305,8 @@ public class ProfileService
         if (!string.IsNullOrWhiteSpace(request.Ward))
             user.Ward = request.Ward.Trim();
 
-        // Geocode like job posting (full location -> city/district fallback).
-        var locationForGeo = string.Join(", ",
-            new[] { user.Address, user.Ward }
-                .Where(x => !string.IsNullOrWhiteSpace(x))
-                .Select(x => x!.Trim()));
-
-        var coords = await _geo.geocode(locationForGeo, user.City, user.District);
+        // Geocoding fallback by administrative area only (district -> city).
+        var coords = await _geo.geocode(null, user.City, user.District);
         if (coords.HasValue)
         {
             user.Latitude = coords.Value.Lat;

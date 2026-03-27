@@ -70,70 +70,90 @@ function Resolve-ProvinceCoordinate($provinceName, $cityCoords) {
     return @{ lat = 16.047079; lng = 108.206230 } # VN center fallback
 }
 
-$provinceUrl = "https://raw.githubusercontent.com/madnh/hanhchinhvn/master/dist/tinh_tp.json"
-$districtUrl = "https://raw.githubusercontent.com/madnh/hanhchinhvn/master/dist/quan_huyen.json"
-$wardUrl = "https://raw.githubusercontent.com/madnh/hanhchinhvn/master/dist/xa_phuong.json"
-
-Write-Host "Downloading province/district/ward data..."
-$provinceMap = Get-JsonFromUrl $provinceUrl
-$districtMap = Get-JsonFromUrl $districtUrl
-$wardMap = Get-JsonFromUrl $wardUrl
-$cityCoords = Get-CityCoordinates
-
-$districtByProvince = @{}
-foreach ($p in $districtMap.PSObject.Properties) {
-    $d = $p.Value
-    $provinceCode = [string]$d.parent_code
-    if (-not $districtByProvince.ContainsKey($provinceCode)) {
-        $districtByProvince[$provinceCode] = New-Object System.Collections.ArrayList
+function Normalize-ProvinceName([string]$name) {
+    $normalizedKey = Normalize-Key $name
+    if ($normalizedKey -eq "thua thien hue") {
+        return "Thanh pho Hue"
     }
-    [void]$districtByProvince[$provinceCode].Add($d)
+    return $name
 }
 
-$wardByDistrict = @{}
-foreach ($p in $wardMap.PSObject.Properties) {
-    $w = $p.Value
-    $districtCode = [string]$w.parent_code
-    if (-not $wardByDistrict.ContainsKey($districtCode)) {
-        $wardByDistrict[$districtCode] = New-Object System.Collections.ArrayList
+function Get-PropertyValue($obj, [string[]]$names) {
+    if ($null -eq $obj) { return $null }
+    foreach ($n in $names) {
+        if ($obj.PSObject.Properties.Name -contains $n) {
+            return $obj.$n
+        }
     }
-    [void]$wardByDistrict[$districtCode].Add($w)
+    return $null
+}
+
+function Resolve-ApproxDistrictCoordinate($provinceCoord, $divisionCode) {
+    $seed = 0
+    [void][int]::TryParse([string]$divisionCode, [ref]$seed)
+    $latOffset = ((($seed % 23) - 11) * 0.0022)
+    $lngOffset = ((((($seed / 23) -as [int]) % 23) - 11) * 0.0022)
+    return @{
+        lat = [decimal]($provinceCoord.lat + $latOffset)
+        lng = [decimal]($provinceCoord.lng + $lngOffset)
+    }
+}
+
+$flatDivisionUrl = "https://raw.githubusercontent.com/sunshine-tech/VietnamProvinces/main/vietnam_provinces/data/flat-divisions.json"
+
+Write-Host "Downloading flat divisions data (post-07/2025)..."
+$flatDivisions = Get-JsonFromUrl $flatDivisionUrl
+$cityCoords = Get-CityCoordinates
+
+if ($flatDivisions -is [PSCustomObject] -and ($flatDivisions.PSObject.Properties.Name -contains "data")) {
+    $flatDivisions = $flatDivisions.data
+}
+
+$provinceMap = @{}
+foreach ($item in $flatDivisions) {
+    $provinceCode = Get-PropertyValue $item @("province_code", "provinceCode", "tinh_code", "city_code", "parent_code")
+    $provinceName = Get-PropertyValue $item @("province_name", "provinceName", "province", "tinh", "city_name")
+    $divisionCode = Get-PropertyValue $item @("ward_code", "wardCode", "division_code", "divisionCode", "code")
+    $divisionName = Get-PropertyValue $item @("ward_name", "wardName", "division_name", "divisionName", "name")
+
+    if ([string]::IsNullOrWhiteSpace([string]$provinceName) -or [string]::IsNullOrWhiteSpace([string]$divisionName)) {
+        continue
+    }
+
+    $normalizedProvince = [string](Normalize-ProvinceName ([string]$provinceName))
+    $provinceCodeKey = [string]$provinceCode
+    if ([string]::IsNullOrWhiteSpace($provinceCodeKey)) {
+        $provinceCodeKey = Normalize-Key $normalizedProvince
+    }
+
+    if (-not $provinceMap.ContainsKey($provinceCodeKey)) {
+        $provinceMap[$provinceCodeKey] = [ordered]@{
+            code = if ([string]::IsNullOrWhiteSpace([string]$provinceCode)) { 0 } else { [int]$provinceCode }
+            name = $normalizedProvince
+            divisions = New-Object System.Collections.ArrayList
+        }
+    }
+
+    [void]$provinceMap[$provinceCodeKey].divisions.Add([ordered]@{
+        code = if ([string]::IsNullOrWhiteSpace([string]$divisionCode)) { 0 } else { [int]$divisionCode }
+        name = [string]$divisionName
+    })
 }
 
 $result = New-Object System.Collections.ArrayList
-foreach ($p in $provinceMap.PSObject.Properties) {
-    $province = $p.Value
+foreach ($entry in $provinceMap.GetEnumerator() | Sort-Object { $_.Value.name }) {
+    $province = $entry.Value
     $coord = Resolve-ProvinceCoordinate $province.name $cityCoords
-    $provinceCode = [string]$province.code
-    $provinceDistricts = @()
-    if ($districtByProvince.ContainsKey($provinceCode)) {
-        $provinceDistricts = $districtByProvince[$provinceCode]
-    }
 
     $districtOut = New-Object System.Collections.ArrayList
-    foreach ($d in $provinceDistricts) {
-        $districtCode = [string]$d.code
-        $districtWards = @()
-        if ($wardByDistrict.ContainsKey($districtCode)) {
-            $districtWards = $wardByDistrict[$districtCode]
-        }
-
-        $wardOut = New-Object System.Collections.ArrayList
-        foreach ($w in $districtWards) {
-            [void]$wardOut.Add([ordered]@{
-                code = [int]$w.code
-                name = [string]$w.name
-                latitude = [decimal]$coord.lat
-                longitude = [decimal]$coord.lng
-            })
-        }
-
+    foreach ($division in ($province.divisions | Sort-Object name)) {
+        $dCoord = Resolve-ApproxDistrictCoordinate $coord $division.code
         [void]$districtOut.Add([ordered]@{
-            code = [int]$d.code
-            name = [string]$d.name
-            latitude = [decimal]$coord.lat
-            longitude = [decimal]$coord.lng
-            wards = $wardOut
+            code = [int]$division.code
+            name = [string]$division.name
+            latitude = [decimal]$dCoord.lat
+            longitude = [decimal]$dCoord.lng
+            wards = @()
         })
     }
 

@@ -59,7 +59,7 @@
                         <span asp-validation-for="Address" class="text-red-500 text-sm mt-1"></span>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label asp-for="City" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
                                 Tỉnh/Thành phố <span class="text-red-500">*</span>
@@ -72,23 +72,13 @@
                         </div>
                         <div>
                             <label asp-for="District" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                                Quận/Huyện <span class="text-red-500">*</span>
+                                Phường/Xã <span class="text-red-500">*</span>
                             </label>
                             <select asp-for="District" id="District"
                                     class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all">
-                                <option value="">-- Chọn Quận/Huyện --</option>
-                            </select>
-                            <span asp-validation-for="District" class="text-red-500 text-sm mt-1"></span>
-                        </div>
-                        <div>
-                            <label asp-for="Ward" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                                Phường/Xã <span class="text-red-500">*</span>
-                            </label>
-                            <select asp-for="Ward" id="Ward"
-                                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all">
                                 <option value="">-- Chọn Phường/Xã --</option>
                             </select>
-                            <span asp-validation-for="Ward" class="text-red-500 text-sm mt-1"></span>
+                            <span asp-validation-for="District" class="text-red-500 text-sm mt-1"></span>
                         </div>
                     </div>
                     <div id="addressLoadError" class="hidden text-sm text-red-600"></div>
@@ -176,7 +166,6 @@
 
     var citySelect = document.getElementById('City');
     var districtSelect = document.getElementById('District');
-    var wardSelect = document.getElementById('Ward');
     var addressInput = document.getElementById('Address');
     var latEl = document.getElementById('Latitude');
     var lngEl = document.getElementById('Longitude');
@@ -213,7 +202,6 @@
     function setAddressSelectState(disabled) {
         citySelect.disabled = disabled;
         districtSelect.disabled = disabled;
-        wardSelect.disabled = disabled;
     }
 
     function showAddressLoadError(message) {
@@ -245,26 +233,19 @@
     function preselectFromModel() {
         var currentCity = '@(Model.City ?? "")';
         var currentDistrict = '@(Model.District ?? "")';
-        var currentWard = '@(Model.Ward ?? "")';
-
         if (currentCity) {
             setSelectByNormalized(citySelect, currentCity);
             onCityChange(function () {
                 if (currentDistrict) {
                     setSelectByNormalized(districtSelect, currentDistrict);
-                    onDistrictChange(function () {
-                        if (currentWard) {
-                            setSelectByNormalized(wardSelect, currentWard);
-                        }
-                    });
+                    onDistrictChange();
                 }
             });
         }
     }
 
     function onCityChange(callback) {
-        districtSelect.innerHTML = '<option value="">-- Chọn Quận/Huyện --</option>';
-        wardSelect.innerHTML = '<option value="">-- Chọn Phường/Xã --</option>';
+        districtSelect.innerHTML = '<option value="">-- Chọn Phường/Xã --</option>';
 
         var selectedCity = normalizeText(citySelect.value);
         var selected = provinces.find(function (p) { return normalizeText(p.name) === selectedCity; });
@@ -283,8 +264,6 @@
     }
 
     function onDistrictChange(callback) {
-        wardSelect.innerHTML = '<option value="">-- Chọn Phường/Xã --</option>';
-
         var selectedCity = normalizeText(citySelect.value);
         var selectedProv = provinces.find(function (p) { return normalizeText(p.name) === selectedCity; });
         if (!selectedProv) { if (callback) callback(); return; }
@@ -292,13 +271,6 @@
         var selectedDistrict = normalizeText(districtSelect.value);
         var selectedDist = selectedProv.districts.find(function (d) { return normalizeText(d.name) === selectedDistrict; });
         if (!selectedDist) { if (callback) callback(); return; }
-
-        (selectedDist.wards || []).forEach(function (w) {
-            var opt = document.createElement('option');
-            opt.value = w.name;
-            opt.textContent = w.name;
-            wardSelect.appendChild(opt);
-        });
 
         if (callback) callback();
         autoGeocode();
@@ -312,10 +284,6 @@
         onDistrictChange();
     });
 
-    wardSelect.addEventListener('change', function () {
-        autoGeocode();
-    });
-
     var debounceTimer;
     addressInput.addEventListener('blur', function () {
         clearTimeout(debounceTimer);
@@ -323,17 +291,13 @@
     });
 
     function autoGeocode() {
-        var detail = (addressInput.value || '').trim();
         var city = (citySelect.value || '').trim();
         var dist = (districtSelect.value || '').trim();
-        var ward = (wardSelect.value || '').trim();
 
-        if (!city || !dist || !ward) return;
+        if (!city) return;
 
         var parts = [];
-        if (detail) parts.push(detail);
-        parts.push(ward);
-        parts.push(dist);
+        if (dist) parts.push(dist);
         parts.push(city);
         var query = parts.join(', ');
 
