@@ -3,19 +3,19 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<section class="min-h-screen bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_40%,#f8fafc_100%)] py-10">
+<section class="ncr-page min-h-screen bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_40%,#f8fafc_100%)] py-10">
     <div class="max-w-6xl mx-auto px-4 sm:px-6">
         <div class="rounded-[30px] border border-orange-100 bg-white/95 shadow-[0_22px_56px_rgba(15,23,42,.08)] overflow-hidden">
             <div class="px-6 py-6 sm:px-8 border-b border-orange-100 bg-[radial-gradient(circle_at_top_right,rgba(255,237,213,.82),transparent_32%),linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-orange-500">Nanny zone</p>
-                        <h1 class="mt-2 text-3xl font-bold text-slate-900">Request contact da nhan</h1>
+                        <h1 class="ncr-page-title mt-2 text-3xl font-bold text-slate-900">Request contact da nhan</h1>
                         <p class="mt-2 text-sm leading-6 text-slate-500 max-w-2xl">
                             Kiem tra request contact tu Parent, chap nhan hoac tu choi voi ly do ro rang.
                         </p>
                     </div>
-                    <div class="flex items-center gap-3">
+                    <div class="ncr-header-actions flex items-center gap-3">
                         <a href="/Nanny/List"
                            class="inline-flex items-center justify-center min-h-[46px] px-5 rounded-2xl border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 transition-all">
                             Quay lai tim nanny
@@ -345,6 +345,108 @@
         opacity: 0;
     }
 
+    @@media (max-width: 767px) {
+        .ncr-page {
+            padding-top: 1.4rem;
+            padding-bottom: 1.9rem;
+        }
+
+        .ncr-page-title {
+            font-size: 1.68rem;
+            line-height: 1.2;
+        }
+
+        .ncr-header-actions {
+            width: 100%;
+        }
+
+        .ncr-header-actions > a {
+            width: 100%;
+        }
+
+        #receivedContactSummary {
+            gap: .55rem;
+        }
+
+        #receivedContactSummary .ncr-stat-card {
+            padding: .78rem .82rem;
+        }
+
+        .ncr-stat-icon {
+            right: 9px;
+            top: 9px;
+            font-size: 15px;
+        }
+
+        .ncr-filter-shell {
+            flex-wrap: nowrap !important;
+            overflow-x: auto;
+            padding: 8px;
+            gap: 8px;
+            scrollbar-width: none;
+        }
+
+        .ncr-filter-shell::-webkit-scrollbar {
+            display: none;
+        }
+
+        .ncr-filter-btn {
+            flex: 0 0 auto;
+            min-height: 34px;
+            padding: 0 12px;
+            font-size: 11px;
+            white-space: nowrap;
+        }
+
+        .ncr-list-card {
+            padding: .92rem !important;
+            border-radius: 16px;
+        }
+
+        .ncr-meta-tile,
+        .ncr-message-box {
+            padding: 10px;
+        }
+
+        .ncr-actions {
+            width: 100%;
+            flex-direction: column;
+            align-items: stretch !important;
+        }
+
+        .ncr-actions .ncr-action-btn {
+            width: 100%;
+        }
+
+        .ncr-action-btn {
+            min-height: 35px;
+            font-size: 12px;
+        }
+
+        .ncr-review-actions {
+            width: 100%;
+            flex-direction: column;
+            align-items: stretch !important;
+        }
+
+        .ncr-review-actions > button {
+            width: 100%;
+        }
+
+        #receivedContactDetailModal {
+            padding: 10px;
+        }
+
+        .ncr-modal-panel {
+            max-height: 94vh;
+            border-radius: 16px;
+        }
+
+        #receivedContactDetailBody {
+            padding: 12px !important;
+        }
+    }
+
     @@keyframes ncrShimmer {
         100% {
             transform: translateX(100%);
@@ -498,7 +600,7 @@
                             <p class="mt-1 text-sm text-slate-700">${escapeHtml(item?.message || 'Khong co loi nhan.')}</p>
                         </div>
 
-                        <div class="mt-4 flex flex-wrap items-center justify-end gap-2">
+                        <div class="ncr-actions mt-4 flex flex-wrap items-center justify-end gap-2">
                             <button type="button"
                                     class="ncr-action-btn ncr-action-btn--primary"
                                     data-request-id="${escapeHtml(item?.id)}">
@@ -643,7 +745,7 @@
                         <p id="ncrRejectError" class="hidden text-sm font-semibold text-rose-600"></p>
                     </div>
 
-                    <div class="flex flex-wrap items-center justify-end gap-2 pt-1">
+                    <div class="ncr-review-actions flex flex-wrap items-center justify-end gap-2 pt-1">
                         <button type="button"
                                 id="ncrAcceptBtn"
                                 class="inline-flex items-center justify-center gap-1 min-h-[40px] px-4 rounded-full border border-emerald-300 bg-emerald-50 text-emerald-700 font-bold hover:bg-emerald-100">

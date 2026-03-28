@@ -3,19 +3,19 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<section class="min-h-screen bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_40%,#f8fafc_100%)] py-10">
+<section class="cr-page min-h-screen bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_40%,#f8fafc_100%)] py-10">
     <div class="max-w-6xl mx-auto px-4 sm:px-6">
         <div class="rounded-[30px] border border-orange-100 bg-white/95 shadow-[0_22px_56px_rgba(15,23,42,.08)] overflow-hidden">
             <div class="px-6 py-6 sm:px-8 border-b border-orange-100 bg-[radial-gradient(circle_at_top_right,rgba(255,237,213,.82),transparent_32%),linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-orange-500">Parent zone</p>
-                        <h1 class="mt-2 text-3xl font-bold text-slate-900">Lich su contact request</h1>
+                        <h1 class="cr-page-title mt-2 text-3xl font-bold text-slate-900">Lich su contact request</h1>
                         <p class="mt-2 text-sm leading-6 text-slate-500 max-w-2xl">
                             Theo doi cac request ban da gui den nanny, trang thai phan hoi va ly do tu choi (neu co).
                         </p>
                     </div>
-                    <div class="flex items-center gap-3">
+                    <div class="cr-header-actions flex items-center gap-3">
                         <a href="/Nanny/List"
                            class="inline-flex items-center justify-center min-h-[46px] px-5 rounded-2xl border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 transition-all">
                             Quay lai tim nanny
@@ -370,6 +370,105 @@
         opacity: 0;
     }
 
+    @@media (max-width: 767px) {
+        .cr-page {
+            padding-top: 1.4rem;
+            padding-bottom: 1.9rem;
+        }
+
+        .cr-page-title {
+            font-size: 1.68rem;
+            line-height: 1.2;
+        }
+
+        .cr-header-actions {
+            width: 100%;
+        }
+
+        .cr-header-actions > a {
+            width: 100%;
+        }
+
+        #contactRequestSummary {
+            gap: .55rem;
+        }
+
+        #contactRequestSummary .cr-stat-card {
+            padding: .78rem .82rem;
+        }
+
+        .cr-stat-icon {
+            right: 9px;
+            top: 9px;
+            font-size: 15px;
+        }
+
+        .cr-filter-shell {
+            flex-wrap: nowrap !important;
+            overflow-x: auto;
+            padding: 8px;
+            gap: 8px;
+            scrollbar-width: none;
+        }
+
+        .cr-filter-shell::-webkit-scrollbar {
+            display: none;
+        }
+
+        .cr-filter-btn {
+            flex: 0 0 auto;
+            min-height: 34px;
+            padding: 0 12px;
+            font-size: 11px;
+            white-space: nowrap;
+        }
+
+        .cr-list-card {
+            padding: .92rem !important;
+            border-radius: 16px;
+        }
+
+        .cr-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            font-size: 16px;
+        }
+
+        .cr-meta-tile,
+        .cr-message-box {
+            padding: 10px;
+        }
+
+        .cr-actions {
+            width: 100%;
+            flex-direction: column;
+            align-items: stretch !important;
+        }
+
+        .cr-actions .cr-action-btn {
+            width: 100%;
+        }
+
+        .cr-action-btn {
+            min-height: 35px;
+            font-size: 12px;
+        }
+
+        #contactRequestDetailModal {
+            padding: 10px;
+        }
+
+        .cr-modal-panel {
+            max-height: 94vh;
+            border-radius: 16px;
+        }
+
+        #contactRequestDetailBody {
+            padding: 12px !important;
+        }
+    }
+
     @@keyframes crShimmer {
         100% {
             transform: translateX(100%);
@@ -519,7 +618,7 @@
                             <p class="mt-1 text-sm text-slate-700">${escapeHtml(item?.message || 'Khong co loi nhan.')}</p>
                         </div>
 
-                        <div class="mt-4 flex flex-wrap items-center justify-end gap-2">
+                        <div class="cr-actions mt-4 flex flex-wrap items-center justify-end gap-2">
                             <a href="/Profile/ViewUser?userId=${encodeURIComponent(item?.nanny?.userId || '')}&nannyProfileId=${encodeURIComponent(item?.nanny?.profileId || '')}"
                                class="cr-action-btn cr-action-btn--outline">
                                 <span class="material-icons-round">visibility</span>

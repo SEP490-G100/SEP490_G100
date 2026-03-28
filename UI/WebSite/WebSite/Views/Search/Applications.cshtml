@@ -236,6 +236,78 @@
             }
         }
 
+        @@media (max-width: 767px) {
+            .app-page {
+                padding-top: 1.4rem;
+                padding-bottom: 1.9rem;
+            }
+
+            .app-page-title {
+                font-size: 1.7rem;
+                line-height: 1.2;
+            }
+
+            .app-header-actions {
+                width: 100%;
+            }
+
+            .app-header-actions > a {
+                width: 100%;
+            }
+
+            .app-stat-card {
+                padding: .78rem .82rem;
+                border-radius: 1rem;
+            }
+
+            .app-stat-icon {
+                right: 9px;
+                top: 9px;
+                font-size: 15px;
+            }
+
+            #applicationTotalCount,
+            #applicationPendingCount,
+            #applicationWithdrawnCount {
+                font-size: 1.65rem;
+                line-height: 1.15;
+            }
+
+            .app-item-card {
+                padding: .92rem;
+                border-radius: 1rem;
+            }
+
+            .app-status-chip {
+                font-size: .68rem;
+                padding: .28rem .58rem;
+            }
+
+            .app-time-card {
+                padding: .6rem .66rem;
+                border-radius: .78rem;
+            }
+
+            .app-time-label {
+                font-size: .6rem;
+                letter-spacing: .11em;
+            }
+
+            .app-time-value {
+                font-size: .76rem;
+            }
+
+            .app-actions {
+                width: 100%;
+                flex-direction: column;
+                align-items: stretch !important;
+            }
+
+            .app-actions .app-action-btn {
+                width: 100%;
+            }
+        }
+
         @@keyframes appShimmer {
             100% {
                 transform: translateX(100%);
@@ -244,19 +316,19 @@
     </style>
 }
 
-<section class="min-h-screen bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_45%,#fff7ed_100%)] py-10">
+<section class="app-page min-h-screen bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_45%,#fff7ed_100%)] py-10">
     <div class="max-w-6xl mx-auto px-4 sm:px-6">
         <div class="rounded-[30px] border border-orange-100 bg-white/90 shadow-[0_24px_60px_rgba(15,23,42,.08)] overflow-hidden">
             <div class="px-6 py-6 sm:px-8 border-b border-orange-100 bg-[radial-gradient(circle_at_top_right,rgba(255,237,213,.85),transparent_28%),linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <p class="text-xs font-extrabold uppercase tracking-[0.24em] text-orange-500">Nanny zone</p>
-                        <h1 class="mt-2 text-3xl font-bold text-slate-900">Lich su ung tuyen</h1>
+                        <h1 class="app-page-title mt-2 text-3xl font-bold text-slate-900">Lich su ung tuyen</h1>
                         <p class="mt-2 text-sm leading-6 text-slate-500 max-w-2xl">
                             Theo doi cac don da gui cho Parent, xem trang thai va huy don khi don dang cho duyet.
                         </p>
                     </div>
-                    <div class="flex items-center gap-3">
+                    <div class="app-header-actions flex items-center gap-3">
                         <a href="/Search"
                            class="inline-flex items-center justify-center min-h-[48px] px-5 rounded-2xl border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 transition-all">
                             Quay lai tim bai
@@ -422,7 +494,7 @@
                                 <p class="mt-1 text-sm font-semibold text-slate-500">Parent: ${escapeHtml(item.parentName || 'Chua cap nhat')}</p>
                                 <p class="mt-2 text-sm font-semibold text-orange-600">${escapeHtml(formatLocation(item))}</p>
                             </div>
-                            <div class="flex flex-wrap items-center gap-2">
+                            <div class="app-actions flex flex-wrap items-center gap-2">
                                 <span class="app-status-chip ${statusMeta.chipClass}">
                                     <span class="material-icons-round">${statusMeta.icon}</span>
                                     ${escapeHtml(item.statusLabel || 'Dang cap nhat')}
