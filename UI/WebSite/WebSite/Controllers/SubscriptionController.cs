@@ -152,7 +152,8 @@ public class SubscriptionController : Controller
             RoleLabel = getRoleLabel(role),
             Headline = getHeadline(role),
             Summary = getSummary(role),
-            FreeBenefits = getFreeBenefits(role)
+            FreeBenefits = getFreeBenefits(role),
+            FreeFeatures = getFreeFeatures(role)
         };
 
         var planResponse = await _http.GetAsync("/api/subscriptions/plans");
@@ -202,30 +203,30 @@ public class SubscriptionController : Controller
 
     private static string getRoleLabel(string role) => role switch
     {
-        "Parent" => "Phu huynh",
-        "Nanny" => "Bao mau",
-        _ => "Nguoi dung"
+        "Parent" => "Phụ huynh",
+        "Nanny" => "Bảo mẫu",
+        _ => "Người dùng"
     };
 
     private static string getHeadline(string role) => role switch
     {
-        "Parent" => "Chon goi dang tin phu hop cho gia dinh",
-        "Nanny" => "Chon goi ung tuyen phu hop cho ho so cua ban",
-        _ => "Subscription cua NannyMatch"
+        "Parent" => "Chọn gói đăng tin phù hợp cho gia đình",
+        "Nanny" => "Chọn gói ứng tuyển phù hợp cho hồ sơ của bạn",
+        _ => "Subscription của NannyMatch"
     };
 
     private static string getSummary(string role) => role switch
     {
-        "Parent" => "Plus va Pro giup phu huynh dang them bai, giu bai lau hon va tang do noi bat khi tim bao mau.",
-        "Nanny" => "Plus va Pro giup bao mau co them luot ung tuyen, ho so noi bat hon va de duoc uu tien hien thi hon.",
-        _ => "Dang nhap bang tai khoan Parent hoac Nanny de xem cac goi phu hop."
+        "Parent" => "Plus và Pro giúp phụ huynh đăng nhiều hơn, giữ bài lâu hơn và nổi bật hơn khi tìm bảo mẫu.",
+        "Nanny" => "Plus và Pro giúp bảo mẫu có thêm lượt ứng tuyển, hồ sơ nổi bật hơn và được ưu tiên hiển thị.",
+        _ => "Đăng nhập bằng tài khoản Parent hoặc Nanny để xem các gói phù hợp."
     };
 
     private static SubscriptionBenefitViewModel getFreeBenefits(string role) => role switch
     {
         "Parent" => new SubscriptionBenefitViewModel
         {
-            MonthlyJobPostLimit = 2,
+            MonthlyJobPostLimit = 3,
             MonthlyApplicationLimit = 0,
             FeaturedBadge = false,
             SearchPriority = false,
@@ -240,6 +241,25 @@ public class SubscriptionController : Controller
             ListingDurationDays = 0
         },
         _ => new SubscriptionBenefitViewModel()
+    };
+
+    private static List<string> getFreeFeatures(string role) => role switch
+    {
+        "Parent" =>
+        [
+            "Tối đa 3 bài đăng đang hoạt động",
+            "Thời gian hiển thị bài đăng 30 ngày",
+            "Không có badge nổi bật",
+            "Không ưu tiên trong kết quả tìm kiếm"
+        ],
+        "Nanny" =>
+        [
+            "Tối đa 2 lượt ứng tuyển mỗi tháng",
+            "Hồ sơ hiển thị cơ bản",
+            "Không có badge nổi bật",
+            "Không ưu tiên trong kết quả tìm kiếm"
+        ],
+        _ => []
     };
 
     private static async Task<ApiResult<T>?> readApiResult<T>(HttpResponseMessage response)

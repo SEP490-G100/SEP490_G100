@@ -24,7 +24,7 @@ public class SubscriptionService
         Code: "PLUS",
         TargetRole: "Parent",
         Name: "Plus",
-        Description: "Goi Plus cho Parent can dang them bai va lam bai dang noi bat hon.",
+        Description: "Gói Plus cho Parent cần đăng thêm bài và làm bài đăng nổi bật hơn.",
         Price: 299000m,
         DurationDays: 30,
         SortOrder: 1,
@@ -38,16 +38,16 @@ public class SubscriptionService
         },
         Features:
         [
-            "Dang toi da 3 bai moi moi thang",
-            "Bai dang co badge noi bat",
-            "Thoi gian hien thi bai dang 45 ngay"
+            "Đăng tối đa 3 bài mới mỗi tháng",
+            "Bài đăng có badge nổi bật",
+            "Thời gian hiển thị bài đăng 45 ngày"
         ]);
 
     private static readonly ManagedPlanDefinition ParentProPlan = new(
         Code: "PRO",
         TargetRole: "Parent",
         Name: "Pro",
-        Description: "Goi Pro cho Parent can uu tien hien thi va gia tang co hoi tiep can.",
+        Description: "Gói Pro cho Parent cần ưu tiên hiển thị và gia tăng cơ hội tiếp cận.",
         Price: 499000m,
         DurationDays: 30,
         SortOrder: 2,
@@ -61,17 +61,17 @@ public class SubscriptionService
         },
         Features:
         [
-            "Dang toi da 5 bai moi moi thang",
-            "Bai dang co badge noi bat",
-            "Duoc uu tien hien thi trong ket qua tim kiem",
-            "Thoi gian hien thi bai dang 60 ngay"
+            "Đăng tối đa 5 bài mới mỗi tháng",
+            "Bài đăng có badge nổi bật",
+            "Được ưu tiên hiển thị trong kết quả tìm kiếm",
+            "Thời gian hiển thị bài đăng 60 ngày"
         ]);
 
     private static readonly ManagedPlanDefinition NannyPlusPlan = new(
         Code: "NANNY_PLUS",
         TargetRole: "Nanny",
         Name: "Nanny Plus",
-        Description: "Goi Plus cho Nanny muon co them luot ung tuyen va ho so noi bat hon.",
+        Description: "Gói Plus cho Nanny muốn có thêm lượt ứng tuyển và hồ sơ nổi bật hơn.",
         Price: 199000m,
         DurationDays: 30,
         SortOrder: 3,
@@ -85,16 +85,16 @@ public class SubscriptionService
         },
         Features:
         [
-            "Ung tuyen toi da 3 cong viec moi moi thang",
-            "Ho so co badge noi bat",
-            "Ho so duoc hien thi tot hon tai khoan free"
+            "Ứng tuyển tối đa 3 công việc mới mỗi tháng",
+            "Hồ sơ có badge nổi bật",
+            "Hồ sơ được hiển thị tốt hơn tài khoản Free"
         ]);
 
     private static readonly ManagedPlanDefinition NannyProPlan = new(
         Code: "NANNY_PRO",
         TargetRole: "Nanny",
         Name: "Nanny Pro",
-        Description: "Goi Pro cho Nanny muon co them luot ung tuyen va uu tien hien thi cao hon.",
+        Description: "Gói Pro cho Nanny muốn có thêm lượt ứng tuyển và ưu tiên hiển thị cao hơn.",
         Price: 299000m,
         DurationDays: 30,
         SortOrder: 4,
@@ -108,9 +108,9 @@ public class SubscriptionService
         },
         Features:
         [
-            "Ung tuyen toi da 5 cong viec moi moi thang",
-            "Ho so co badge noi bat",
-            "Ho so duoc uu tien hien thi cao hon goi Nanny Plus"
+            "Ứng tuyển tối đa 5 công việc mới mỗi tháng",
+            "Hồ sơ có badge nổi bật",
+            "Hồ sơ được ưu tiên hiển thị cao hơn gói Nanny Plus"
         ]);
 
     private static readonly ManagedPlanDefinition[] ManagedPlans =
@@ -428,6 +428,14 @@ public class SubscriptionService
         var subscription = await _subscriptionRepo.findCurrentSubscriptionByNannyProfile(nannyProfileId, DateTime.UtcNow);
         var definition = getManagedPlanDefinition(subscription?.SubscriptionPlan?.Name);
         return definition?.Benefits ?? SubscriptionBenefitResponse.FreeNanny;
+    }
+
+    public async Task<bool> hasActiveParentSubscription(Guid parentProfileId)
+    {
+        await ensureManagedPlans();
+        var subscription = await _subscriptionRepo.findCurrentSubscriptionByParentProfile(parentProfileId, DateTime.UtcNow);
+        var definition = getManagedPlanDefinition(subscription?.SubscriptionPlan?.Name);
+        return definition != null && string.Equals(definition.TargetRole, "Parent", StringComparison.OrdinalIgnoreCase);
     }
 
     public async Task<UserSubscriptionResponse> cancelCurrentSubscription(Guid userId)

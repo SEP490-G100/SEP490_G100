@@ -189,6 +189,72 @@
     gap: 18px;
 }
 
+.sub-benefit-compare {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.sub-benefit-item {
+    border-radius: 16px;
+    border: 1px solid #e5e7eb;
+    background: #f8fafc;
+    padding: 14px 16px;
+}
+
+.sub-benefit-item.is-plus {
+    border-color: rgba(249, 115, 22, 0.24);
+    background: #fff7ed;
+}
+
+.sub-benefit-item.is-pro {
+    border-color: #cbd5e1;
+    background: linear-gradient(135deg, #1f2937, #111827);
+}
+
+.sub-benefit-plan {
+    display: inline-flex;
+    align-items: center;
+    min-height: 26px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: #fff;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.sub-benefit-item.is-plus .sub-benefit-plan {
+    color: #c2410c;
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.sub-benefit-item.is-pro .sub-benefit-plan {
+    color: #fde68a;
+    background: rgba(251, 191, 36, 0.14);
+}
+
+.sub-benefit-item h4 {
+    margin: 10px 0 6px;
+    font-size: 22px;
+    color: #0f172a;
+}
+
+.sub-benefit-item p {
+    margin: 0;
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.sub-benefit-item.is-pro h4,
+.sub-benefit-item.is-pro p {
+    color: #f8fafc;
+}
+
 .plan-card {
     position: relative;
     display: flex;
@@ -889,8 +955,18 @@
     padding: 0 22px;
 }
 
+.plan-benefit-title {
+    margin: 2px 0 10px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+
 @media (max-width: 1024px) {
     .sub-hero,
+    .sub-benefit-compare,
     .sub-grid {
         grid-template-columns: 1fr;
     }

@@ -19,7 +19,7 @@ namespace Nanny_BackEnd.Tests;
 public class SubscriptionJobTests
 {
     [Fact]
-    public async Task FreeParent_IsLimitedToTwoPostsPerMonth()
+    public async Task FreeParent_IsLimitedToThreePostsPerMonth()
     {
         await using var fixture = await TestFixture.create();
 
@@ -37,11 +37,49 @@ public class SubscriptionJobTests
 
         await fixture.JobService.createJob(fixture.FreeParentProfileId, request);
         await fixture.JobService.createJob(fixture.FreeParentProfileId, request);
+        await fixture.JobService.createJob(fixture.FreeParentProfileId, request);
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             fixture.JobService.createJob(fixture.FreeParentProfileId, request));
 
-        Assert.Contains("2 bai viet", ex.Message);
+        Assert.Contains("3 bai", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task FreeParent_CannotExceedThreeActivePosts_WithoutSubscription()
+    {
+        await using var fixture = await TestFixture.create();
+
+        var request = new CreateJobPostingRequest
+        {
+            Title = "Can bao mau gio han active",
+            Description = "Kiem tra gioi han bai dang active cua Parent free.",
+            JobType = 1,
+            NumberOfChildren = 1,
+            SalaryNegotiable = true,
+            City = "Ha Noi",
+            District = "Dong Da",
+            Status = (int)JobPostingStatus.Public
+        };
+
+        for (var i = 0; i < 3; i++)
+        {
+            await fixture.JobService.createJob(fixture.FreeParentProfileId, request);
+        }
+
+        var previousMonth = DateTime.UtcNow.AddMonths(-1);
+        var freeParentJobs = await fixture.Db.JobPostings
+            .Where(j => j.ParentProfileId == fixture.FreeParentProfileId && !j.IsDeleted)
+            .ToListAsync();
+        foreach (var job in freeParentJobs)
+            job.CreatedAt = previousMonth;
+        await fixture.Db.SaveChangesAsync();
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            fixture.JobService.createJob(fixture.FreeParentProfileId, request));
+
+        Assert.Contains("mien phi", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("3 bai dang", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
