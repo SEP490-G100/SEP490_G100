@@ -1,0 +1,873 @@
+@{
+    ViewData["Title"] = "Request contact da nhan - NannyMatch";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<section class="ncr-page min-h-screen bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_40%,#f8fafc_100%)] py-10">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+        <div class="rounded-[30px] border border-orange-100 bg-white/95 shadow-[0_22px_56px_rgba(15,23,42,.08)] overflow-hidden">
+            <div class="px-6 py-6 sm:px-8 border-b border-orange-100 bg-[radial-gradient(circle_at_top_right,rgba(255,237,213,.82),transparent_32%),linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-orange-500">Nanny zone</p>
+                        <h1 class="ncr-page-title mt-2 text-3xl font-bold text-slate-900">Request contact da nhan</h1>
+                        <p class="mt-2 text-sm leading-6 text-slate-500 max-w-2xl">
+                            Kiem tra request contact tu Parent, chap nhan hoac tu choi voi ly do ro rang.
+                        </p>
+                    </div>
+                    <div class="ncr-header-actions flex items-center gap-3">
+                        <a href="/Nanny/List"
+                           class="inline-flex items-center justify-center min-h-[46px] px-5 rounded-2xl border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 transition-all">
+                            Quay lai tim nanny
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-6 sm:px-8">
+                <div id="receivedContactSummary" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+                    <div class="ncr-stat-card ncr-stat-card--total rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                        <span class="material-icons-round ncr-stat-icon">stacked_bar_chart</span>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-400">Tong request</p>
+                        <p id="rcSummaryTotal" class="mt-2 text-2xl font-extrabold text-slate-900">0</p>
+                    </div>
+                    <div class="ncr-stat-card ncr-stat-card--pending rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
+                        <span class="material-icons-round ncr-stat-icon">hourglass_top</span>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-amber-600">Dang cho duyet</p>
+                        <p id="rcSummaryPending" class="mt-2 text-2xl font-extrabold text-amber-700">0</p>
+                    </div>
+                    <div class="ncr-stat-card ncr-stat-card--accepted rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
+                        <span class="material-icons-round ncr-stat-icon">verified</span>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-emerald-600">Da chap nhan</p>
+                        <p id="rcSummaryAccepted" class="mt-2 text-2xl font-extrabold text-emerald-700">0</p>
+                    </div>
+                    <div class="ncr-stat-card ncr-stat-card--rejected rounded-2xl border border-rose-200 bg-rose-50 px-4 py-4">
+                        <span class="material-icons-round ncr-stat-icon">do_not_disturb_on</span>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-rose-600">Da tu choi</p>
+                        <p id="rcSummaryRejected" class="mt-2 text-2xl font-extrabold text-rose-700">0</p>
+                    </div>
+                </div>
+
+                <div class="ncr-filter-shell flex flex-wrap items-center gap-2 mb-5">
+                    <button type="button" class="ncr-filter-btn active" data-status="">Tat ca</button>
+                    <button type="button" class="ncr-filter-btn" data-status="0">Dang cho duyet</button>
+                    <button type="button" class="ncr-filter-btn" data-status="1">Da chap nhan</button>
+                    <button type="button" class="ncr-filter-btn" data-status="2">Da tu choi</button>
+                </div>
+
+                <div id="receivedContactList" class="space-y-3"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div id="receivedContactDetailModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/45 backdrop-blur-sm p-4">
+    <div class="ncr-modal-panel w-full max-w-3xl max-h-[88vh] rounded-[24px] border border-slate-200 bg-white shadow-[0_22px_56px_rgba(15,23,42,.22)] overflow-hidden flex flex-col">
+        <div class="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
+            <h3 class="text-lg font-extrabold text-slate-900">Chi tiet request contact</h3>
+            <button type="button" id="closeReceivedContactDetail"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-100">
+                <span class="material-icons-round text-[20px]">close</span>
+            </button>
+        </div>
+        <div id="receivedContactDetailBody" class="ncr-modal-body overflow-y-auto px-6 py-5 space-y-4">
+            <p class="text-sm text-slate-500">Dang tai chi tiet request...</p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .ncr-stat-card {
+        position: relative;
+        overflow: hidden;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 10px 24px rgba(15,23,42,.05);
+    }
+
+    .ncr-stat-icon {
+        position: absolute;
+        right: 12px;
+        top: 12px;
+        font-size: 17px;
+        color: #94a3b8;
+        opacity: .9;
+    }
+
+    .ncr-stat-card::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        border-radius: 999px;
+        background: #94a3b8;
+    }
+
+    .ncr-stat-card--pending::after {
+        background: #f59e0b;
+    }
+
+    .ncr-stat-card--accepted::after {
+        background: #10b981;
+    }
+
+    .ncr-stat-card--rejected::after {
+        background: #f43f5e;
+    }
+
+    .ncr-filter-shell {
+        padding: 10px;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    }
+
+    .ncr-filter-btn {
+        min-height: 38px;
+        padding: 0 16px;
+        border-radius: 999px;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        color: #475569;
+        font-size: 12px;
+        font-weight: 800;
+        transition: all .2s ease;
+    }
+
+    .ncr-filter-btn:hover {
+        border-color: #fdba74;
+        color: #c2410c;
+        background: #fff7ed;
+    }
+
+    .ncr-filter-btn.active {
+        border-color: #fb923c;
+        color: #c2410c;
+        background: linear-gradient(135deg, #fff7ed, #ffffff);
+        box-shadow: 0 8px 16px rgba(249,115,22,.16);
+    }
+
+    .ncr-list-card {
+        border-radius: 22px;
+        border: 1px solid #e2e8f0;
+        background: linear-gradient(180deg, #ffffff 0%, #fffdfa 100%);
+        box-shadow: 0 10px 24px rgba(15,23,42,.06);
+        transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+
+    .ncr-list-card:hover {
+        transform: translateY(-2px);
+        border-color: #fdba74;
+        box-shadow: 0 16px 30px rgba(249,115,22,.12);
+    }
+
+    .ncr-list-card--pending {
+        border-left: 4px solid #f59e0b;
+    }
+
+    .ncr-list-card--accepted {
+        border-left: 4px solid #10b981;
+    }
+
+    .ncr-list-card--rejected {
+        border-left: 4px solid #f43f5e;
+    }
+
+    .ncr-meta-tile {
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+        padding: 12px;
+    }
+
+    .ncr-message-box {
+        border-radius: 14px;
+        border: 1px solid #fed7aa;
+        background: linear-gradient(180deg, #fff7ed 0%, #ffffff 100%);
+        padding: 12px;
+    }
+
+    .ncr-modal-body {
+        scrollbar-width: thin;
+        scrollbar-color: #fdba74 transparent;
+    }
+
+    .ncr-modal-body::-webkit-scrollbar {
+        width: 7px;
+    }
+
+    .ncr-modal-body::-webkit-scrollbar-thumb {
+        background: #fdba74;
+        border-radius: 999px;
+    }
+
+    .ncr-status-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 30px;
+        padding: 0 10px;
+        border-radius: 999px;
+        border: 1px solid transparent;
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .ncr-status-chip .material-icons-round {
+        font-size: 14px;
+    }
+
+    .ncr-status-chip--pending {
+        border-color: #fde68a;
+        color: #b45309;
+        background: #fffbeb;
+    }
+
+    .ncr-status-chip--accepted {
+        border-color: #86efac;
+        color: #047857;
+        background: #ecfdf5;
+    }
+
+    .ncr-status-chip--rejected {
+        border-color: #fda4af;
+        color: #be123c;
+        background: #fff1f2;
+    }
+
+    .ncr-action-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 38px;
+        padding: 0 14px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 800;
+        transition: all .2s ease;
+    }
+
+    .ncr-action-btn .material-icons-round {
+        font-size: 16px;
+    }
+
+    .ncr-action-btn--primary {
+        border: 1px solid #fdba74;
+        background: linear-gradient(135deg, #fff7ed, #ffffff);
+        color: #c2410c;
+    }
+
+    .ncr-action-btn--primary:hover {
+        background: #fff7ed;
+        transform: translateY(-1px);
+    }
+
+    .ncr-empty-state {
+        border-radius: 18px;
+        border: 1px dashed #cbd5e1;
+        background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+        padding: 40px 20px;
+        text-align: center;
+        color: #64748b;
+    }
+
+    .ncr-empty-state .material-icons-round {
+        font-size: 32px;
+        color: #cbd5e1;
+        margin-bottom: 8px;
+    }
+
+    .ncr-skeleton {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .ncr-skeleton::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        transform: translateX(-100%);
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,.65), transparent);
+        animation: ncrShimmer 1.4s infinite;
+    }
+
+    .ncr-skeleton-line {
+        height: 12px;
+        border-radius: 999px;
+        background: #e2e8f0;
+    }
+
+    .ncr-skeleton-circle {
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+        background: #e2e8f0;
+        flex-shrink: 0;
+    }
+
+    #receivedContactList {
+        transition: opacity .24s ease, transform .24s ease;
+    }
+
+    #receivedContactList.ncr-list-animating {
+        opacity: .55;
+        transform: translateY(5px);
+    }
+
+    #receivedContactDetailModal {
+        opacity: 0;
+        transition: opacity .22s ease;
+    }
+
+    #receivedContactDetailModal.flex {
+        opacity: 1;
+    }
+
+    .ncr-modal-panel {
+        transform: translateY(14px) scale(.98);
+        opacity: 0;
+        transition: transform .24s ease, opacity .24s ease;
+    }
+
+    #receivedContactDetailModal.flex .ncr-modal-panel {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+
+    #receivedContactDetailModal.is-closing {
+        opacity: 0;
+    }
+
+    #receivedContactDetailModal.is-closing .ncr-modal-panel {
+        transform: translateY(14px) scale(.98);
+        opacity: 0;
+    }
+
+    @@media (max-width: 767px) {
+        .ncr-page {
+            padding-top: 1.4rem;
+            padding-bottom: 1.9rem;
+        }
+
+        .ncr-page-title {
+            font-size: 1.68rem;
+            line-height: 1.2;
+        }
+
+        .ncr-header-actions {
+            width: 100%;
+        }
+
+        .ncr-header-actions > a {
+            width: 100%;
+        }
+
+        #receivedContactSummary {
+            gap: .55rem;
+        }
+
+        #receivedContactSummary .ncr-stat-card {
+            padding: .78rem .82rem;
+        }
+
+        .ncr-stat-icon {
+            right: 9px;
+            top: 9px;
+            font-size: 15px;
+        }
+
+        .ncr-filter-shell {
+            flex-wrap: nowrap !important;
+            overflow-x: auto;
+            padding: 8px;
+            gap: 8px;
+            scrollbar-width: none;
+        }
+
+        .ncr-filter-shell::-webkit-scrollbar {
+            display: none;
+        }
+
+        .ncr-filter-btn {
+            flex: 0 0 auto;
+            min-height: 34px;
+            padding: 0 12px;
+            font-size: 11px;
+            white-space: nowrap;
+        }
+
+        .ncr-list-card {
+            padding: .92rem !important;
+            border-radius: 16px;
+        }
+
+        .ncr-meta-tile,
+        .ncr-message-box {
+            padding: 10px;
+        }
+
+        .ncr-actions {
+            width: 100%;
+            flex-direction: column;
+            align-items: stretch !important;
+        }
+
+        .ncr-actions .ncr-action-btn {
+            width: 100%;
+        }
+
+        .ncr-action-btn {
+            min-height: 35px;
+            font-size: 12px;
+        }
+
+        .ncr-review-actions {
+            width: 100%;
+            flex-direction: column;
+            align-items: stretch !important;
+        }
+
+        .ncr-review-actions > button {
+            width: 100%;
+        }
+
+        #receivedContactDetailModal {
+            padding: 10px;
+        }
+
+        .ncr-modal-panel {
+            max-height: 94vh;
+            border-radius: 16px;
+        }
+
+        #receivedContactDetailBody {
+            padding: 12px !important;
+        }
+    }
+
+    @@keyframes ncrShimmer {
+        100% {
+            transform: translateX(100%);
+        }
+    }
+</style>
+
+<script>
+    (() => {
+        const listEl = document.getElementById('receivedContactList');
+        const modalEl = document.getElementById('receivedContactDetailModal');
+        const modalBodyEl = document.getElementById('receivedContactDetailBody');
+        const closeModalBtn = document.getElementById('closeReceivedContactDetail');
+        const summaryTotalEl = document.getElementById('rcSummaryTotal');
+        const summaryPendingEl = document.getElementById('rcSummaryPending');
+        const summaryAcceptedEl = document.getElementById('rcSummaryAccepted');
+        const summaryRejectedEl = document.getElementById('rcSummaryRejected');
+        const filterButtons = Array.from(document.querySelectorAll('.ncr-filter-btn'));
+
+        const state = {
+            activeStatus: '',
+            currentRequestId: null,
+            submittingReview: false
+        };
+
+        const escapeHtml = (value) => String(value ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+
+        const showToast = (message, type = 'info') => {
+            if (typeof window.showToast === 'function') {
+                window.showToast(message, { type });
+            }
+        };
+
+        const formatDateTime = (value) => {
+            if (!value) return 'Chua cap nhat';
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return 'Chua cap nhat';
+            return new Intl.DateTimeFormat('vi-VN', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            }).format(date);
+        };
+
+        const getStatusBadge = (status, statusLabel) => {
+            if (status === 1) {
+                return `<span class="ncr-status-chip ncr-status-chip--accepted"><span class="material-icons-round">check_circle</span>${escapeHtml(statusLabel || 'Da chap nhan')}</span>`;
+            }
+            if (status === 2) {
+                return `<span class="ncr-status-chip ncr-status-chip--rejected"><span class="material-icons-round">cancel</span>${escapeHtml(statusLabel || 'Da tu choi')}</span>`;
+            }
+            return `<span class="ncr-status-chip ncr-status-chip--pending"><span class="material-icons-round">schedule</span>${escapeHtml(statusLabel || 'Dang cho duyet')}</span>`;
+        };
+
+        const getParentInitial = (fullName) => {
+            const text = String(fullName || '').trim();
+            return text ? text.charAt(0).toUpperCase() : 'P';
+        };
+
+        const getCardToneClass = (status) => {
+            if (status === 1) return 'ncr-list-card--accepted';
+            if (status === 2) return 'ncr-list-card--rejected';
+            return 'ncr-list-card--pending';
+        };
+
+        const setSummary = (data) => {
+            summaryTotalEl.textContent = String(Number(data?.totalRequests ?? 0));
+            summaryPendingEl.textContent = String(Number(data?.pendingRequests ?? 0));
+            summaryAcceptedEl.textContent = String(Number(data?.acceptedRequests ?? 0));
+            summaryRejectedEl.textContent = String(Number(data?.rejectedRequests ?? 0));
+        };
+
+        const renderLoadingSkeleton = (count = 3) => {
+            listEl.innerHTML = Array.from({ length: count }, () => `
+                <article class="ncr-list-card ncr-skeleton p-5">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex items-start gap-3 min-w-0">
+                            <div class="ncr-skeleton-circle"></div>
+                            <div class="min-w-0 flex-1 space-y-2">
+                                <div class="ncr-skeleton-line w-40"></div>
+                                <div class="ncr-skeleton-line w-28"></div>
+                            </div>
+                        </div>
+                        <div class="ncr-skeleton-line w-28 h-8"></div>
+                    </div>
+                    <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="ncr-meta-tile"><div class="ncr-skeleton-line w-full"></div></div>
+                        <div class="ncr-meta-tile"><div class="ncr-skeleton-line w-full"></div></div>
+                        <div class="ncr-meta-tile"><div class="ncr-skeleton-line w-full"></div></div>
+                    </div>
+                    <div class="ncr-message-box mt-4"><div class="ncr-skeleton-line w-full"></div></div>
+                </article>
+            `).join('');
+        };
+
+        const renderList = (items) => {
+            if (!Array.isArray(items) || !items.length) {
+                listEl.innerHTML = `
+                    <div class="ncr-empty-state">
+                        <span class="material-icons-round">inbox</span>
+                        <p class="font-bold text-slate-600">Chua co request contact nao theo bo loc hien tai.</p>
+                    </div>`;
+                return;
+            }
+
+            listEl.innerHTML = items.map((item) => {
+                const parentName = item?.parent?.fullName || 'Parent';
+                const parentLocation = [item?.parent?.district, item?.parent?.city].filter(Boolean).join(', ') || 'Chua cap nhat khu vuc';
+                const parentPhone = item?.parent?.phoneNumber || 'Chua cap nhat';
+                const status = Number(item?.status ?? 0);
+
+                return `
+                    <article class="ncr-list-card ${getCardToneClass(Number(item?.status ?? 0))} p-5">
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div class="min-w-0 flex items-start gap-3">
+                                <div class="w-11 h-11 rounded-full border border-orange-200 bg-orange-50 text-orange-600 font-extrabold text-lg inline-flex items-center justify-center flex-shrink-0">
+                                    ${escapeHtml(getParentInitial(parentName))}
+                                </div>
+                                <div class="min-w-0">
+                                    <h3 class="text-lg font-extrabold text-slate-900 truncate">${escapeHtml(parentName)}</h3>
+                                    <p class="mt-1 text-sm font-semibold text-slate-500">${escapeHtml(parentLocation)}</p>
+                                </div>
+                            </div>
+                            ${getStatusBadge(status, item?.statusLabel)}
+                        </div>
+
+                        <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div class="ncr-meta-tile">
+                                <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Ngay gui</p>
+                                <p class="mt-1 text-sm font-bold text-slate-700">${escapeHtml(formatDateTime(item?.requestedAt))}</p>
+                            </div>
+                            <div class="ncr-meta-tile">
+                                <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">So dien thoai</p>
+                                <p class="mt-1 text-sm font-bold text-slate-700">${escapeHtml(parentPhone)}</p>
+                            </div>
+                            <div class="ncr-meta-tile">
+                                <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Phan hoi luc</p>
+                                <p class="mt-1 text-sm font-bold text-slate-700">${escapeHtml(formatDateTime(item?.respondedAt))}</p>
+                            </div>
+                        </div>
+
+                        <div class="ncr-message-box mt-4">
+                            <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-orange-500">Loi nhan tu parent</p>
+                            <p class="mt-1 text-sm text-slate-700">${escapeHtml(item?.message || 'Khong co loi nhan.')}</p>
+                        </div>
+
+                        <div class="ncr-actions mt-4 flex flex-wrap items-center justify-end gap-2">
+                            <button type="button"
+                                    class="ncr-action-btn ncr-action-btn--primary"
+                                    data-request-id="${escapeHtml(item?.id)}">
+                                <span class="material-icons-round">pageview</span>
+                                Xem chi tiet request
+                            </button>
+                        </div>
+                    </article>`;
+            }).join('');
+
+            listEl.querySelectorAll('button[data-request-id]').forEach((button) => {
+                button.addEventListener('click', () => openDetail(button.getAttribute('data-request-id')));
+            });
+        };
+
+        const setRejectError = (message) => {
+            const errorEl = document.getElementById('ncrRejectError');
+            if (!errorEl) return;
+
+            const hasError = !!message;
+            errorEl.textContent = hasError ? String(message) : '';
+            errorEl.classList.toggle('hidden', !hasError);
+        };
+
+        const setSubmittingState = (submitting) => {
+            state.submittingReview = submitting;
+            const acceptBtn = document.getElementById('ncrAcceptBtn');
+            const rejectBtn = document.getElementById('ncrRejectBtn');
+
+            if (acceptBtn) {
+                acceptBtn.disabled = submitting;
+                acceptBtn.classList.toggle('opacity-60', submitting);
+                acceptBtn.classList.toggle('cursor-not-allowed', submitting);
+            }
+            if (rejectBtn) {
+                rejectBtn.disabled = submitting;
+                rejectBtn.classList.toggle('opacity-60', submitting);
+                rejectBtn.classList.toggle('cursor-not-allowed', submitting);
+            }
+        };
+
+        const submitReview = async (action) => {
+            if (state.submittingReview || !state.currentRequestId) return;
+
+            const reasonEl = document.getElementById('ncrRejectReason');
+            const rejectReason = String(reasonEl?.value ?? '').trim();
+
+            if (action === 2 && !rejectReason) {
+                setRejectError('Vui long nhap ly do tu choi request.');
+                reasonEl?.focus();
+                showToast('Vui long nhap ly do khi tu choi request.', 'warning');
+                return;
+            }
+
+            setRejectError('');
+            setSubmittingState(true);
+
+            try {
+                const response = await fetch(`/Nanny/ReviewReceivedContactRequest?requestId=${encodeURIComponent(state.currentRequestId)}`, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action,
+                        responseMessage: rejectReason || null
+                    })
+                });
+
+                const json = await response.json();
+                if (!response.ok || !json?.success) {
+                    showToast(json?.message || 'Khong the xu ly request contact.', 'error');
+                    return;
+                }
+
+                showToast(json?.message || (action === 1 ? 'Da chap nhan request contact.' : 'Da tu choi request contact.'), 'success');
+                window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
+                closeDetail();
+                await loadRequests();
+            } catch {
+                showToast('Khong the xu ly request contact.', 'error');
+            } finally {
+                setSubmittingState(false);
+            }
+        };
+
+        const renderDetail = (detail) => {
+            const status = Number(detail?.status ?? 0);
+            const parent = detail?.parent || {};
+            const parentName = parent?.fullName || 'Parent';
+            const parentLocation = [parent?.district, parent?.city].filter(Boolean).join(', ') || 'Chua cap nhat';
+            const parentPhone = parent?.phoneNumber || 'Chua cap nhat';
+            const parentAddress = parent?.address || 'Chua cap nhat';
+            const requestMessage = detail?.message || 'Khong co loi nhan.';
+            const responseMessage = detail?.responseMessage || 'Chua co phan hoi.';
+            const canReview = !!detail?.canReview;
+
+            modalBodyEl.innerHTML = `
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="ncr-meta-tile">
+                        <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Parent</p>
+                        <p class="mt-1 text-base font-extrabold text-slate-900">${escapeHtml(parentName)}</p>
+                        <p class="mt-1 text-sm text-slate-500">${escapeHtml(parentLocation)}</p>
+                    </div>
+                    <div class="ncr-meta-tile">
+                        <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Trang thai</p>
+                        <div class="mt-2">${getStatusBadge(status, detail?.statusLabel)}</div>
+                        <p class="mt-2 text-xs text-slate-500">Gui luc: ${escapeHtml(formatDateTime(detail?.requestedAt))}</p>
+                        <p class="mt-1 text-xs text-slate-500">Phan hoi luc: ${escapeHtml(formatDateTime(detail?.respondedAt))}</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="ncr-meta-tile">
+                        <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">So dien thoai</p>
+                        <p class="mt-1 text-sm font-bold text-slate-700">${escapeHtml(parentPhone)}</p>
+                    </div>
+                    <div class="ncr-meta-tile">
+                        <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Dia chi</p>
+                        <p class="mt-1 text-sm font-bold text-slate-700">${escapeHtml(parentAddress)}</p>
+                    </div>
+                </div>
+
+                <div class="ncr-message-box">
+                    <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-orange-500">Loi nhan tu parent</p>
+                    <p class="mt-2 text-sm leading-6 text-slate-700">${escapeHtml(requestMessage)}</p>
+                </div>
+
+                <div class="ncr-meta-tile">
+                    <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Phan hoi cua ban</p>
+                    <p class="mt-2 text-sm leading-6 text-slate-700">${escapeHtml(responseMessage)}</p>
+                </div>
+            `;
+
+            if (canReview) {
+                modalBodyEl.insertAdjacentHTML('beforeend', `
+                    <div class="rounded-2xl border border-orange-200 bg-orange-50/40 px-4 py-4 space-y-2">
+                        <label for="ncrRejectReason" class="text-sm font-extrabold text-orange-700">Ly do tu choi (bat buoc khi Reject)</label>
+                        <textarea id="ncrRejectReason"
+                                  rows="3"
+                                  class="w-full rounded-2xl border border-orange-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-orange-400"
+                                  placeholder="Nhap ly do tu choi request..."></textarea>
+                        <p id="ncrRejectError" class="hidden text-sm font-semibold text-rose-600"></p>
+                    </div>
+
+                    <div class="ncr-review-actions flex flex-wrap items-center justify-end gap-2 pt-1">
+                        <button type="button"
+                                id="ncrAcceptBtn"
+                                class="inline-flex items-center justify-center gap-1 min-h-[40px] px-4 rounded-full border border-emerald-300 bg-emerald-50 text-emerald-700 font-bold hover:bg-emerald-100">
+                            <span class="material-icons-round text-[17px]">check_circle</span>
+                            Chap nhan
+                        </button>
+                        <button type="button"
+                                id="ncrRejectBtn"
+                                class="inline-flex items-center justify-center gap-1 min-h-[40px] px-4 rounded-full border border-rose-300 bg-rose-50 text-rose-700 font-bold hover:bg-rose-100">
+                            <span class="material-icons-round text-[17px]">cancel</span>
+                            Tu choi
+                        </button>
+                    </div>
+                `);
+
+                const rejectReasonEl = document.getElementById('ncrRejectReason');
+                rejectReasonEl?.addEventListener('input', () => setRejectError(''));
+                document.getElementById('ncrAcceptBtn')?.addEventListener('click', () => submitReview(1));
+                document.getElementById('ncrRejectBtn')?.addEventListener('click', () => submitReview(2));
+            }
+        };
+
+        const openDetail = async (requestId) => {
+            if (!requestId) return;
+
+            state.currentRequestId = requestId;
+            modalBodyEl.innerHTML = `
+                <div class="space-y-3 ncr-skeleton">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="ncr-meta-tile"><div class="ncr-skeleton-line w-full"></div></div>
+                        <div class="ncr-meta-tile"><div class="ncr-skeleton-line w-full"></div></div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="ncr-meta-tile"><div class="ncr-skeleton-line w-full"></div></div>
+                        <div class="ncr-meta-tile"><div class="ncr-skeleton-line w-full"></div></div>
+                    </div>
+                    <div class="ncr-message-box"><div class="ncr-skeleton-line w-full"></div></div>
+                    <div class="ncr-meta-tile"><div class="ncr-skeleton-line w-full"></div></div>
+                </div>`;
+            modalEl.classList.remove('hidden', 'is-closing');
+            modalEl.classList.add('flex');
+
+            try {
+                const response = await fetch(`/Nanny/ReceivedContactRequestDetailData?requestId=${encodeURIComponent(requestId)}`, {
+                    credentials: 'same-origin'
+                });
+                const json = await response.json();
+                if (!response.ok || !json?.success) {
+                    showToast(json?.message || 'Khong the tai chi tiet request.', 'error');
+                    modalBodyEl.innerHTML = '<p class="text-sm text-rose-600">Khong the tai chi tiet request.</p>';
+                    return;
+                }
+                renderDetail(json.data);
+            } catch {
+                showToast('Khong the tai chi tiet request.', 'error');
+                modalBodyEl.innerHTML = '<p class="text-sm text-rose-600">Khong the tai chi tiet request.</p>';
+            }
+        };
+
+        const closeDetail = () => {
+            if (!modalEl.classList.contains('flex')) return;
+
+            state.currentRequestId = null;
+            setSubmittingState(false);
+            setRejectError('');
+            modalEl.classList.add('is-closing');
+            window.setTimeout(() => {
+                modalEl.classList.add('hidden');
+                modalEl.classList.remove('flex', 'is-closing');
+            }, 180);
+        };
+
+        const setActiveFilter = (status) => {
+            state.activeStatus = status;
+            filterButtons.forEach((button) => {
+                button.classList.toggle('active', button.getAttribute('data-status') === state.activeStatus);
+            });
+        };
+
+        const loadRequests = async () => {
+            listEl.classList.add('ncr-list-animating');
+            renderLoadingSkeleton();
+            try {
+                const query = state.activeStatus !== '' ? `?status=${encodeURIComponent(state.activeStatus)}` : '';
+                const response = await fetch(`/Nanny/ReceivedContactRequestsData${query}`, { credentials: 'same-origin' });
+                const json = await response.json();
+                if (!response.ok || !json?.success) {
+                    listEl.innerHTML = `
+                        <div class="rounded-2xl border border-red-100 bg-red-50 px-5 py-8 text-center text-red-600">
+                            ${escapeHtml(json?.message || 'Khong tai duoc danh sach request contact.')}
+                        </div>`;
+                    return;
+                }
+
+                const data = json?.data || {};
+                setSummary(data);
+                renderList(Array.isArray(data.requests) ? data.requests : []);
+            } catch {
+                listEl.innerHTML = `
+                    <div class="rounded-2xl border border-red-100 bg-red-50 px-5 py-8 text-center text-red-600">
+                        Khong tai duoc danh sach request contact.
+                    </div>`;
+            } finally {
+                window.setTimeout(() => {
+                    listEl.classList.remove('ncr-list-animating');
+                }, 70);
+            }
+        };
+
+        filterButtons.forEach((button) => {
+            button.addEventListener('click', async () => {
+                setActiveFilter(button.getAttribute('data-status') || '');
+                await loadRequests();
+            });
+        });
+
+        closeModalBtn?.addEventListener('click', closeDetail);
+        modalEl?.addEventListener('click', (event) => {
+            if (event.target === modalEl) closeDetail();
+        });
+
+        setActiveFilter('');
+        loadRequests();
+    })();
+</script>
