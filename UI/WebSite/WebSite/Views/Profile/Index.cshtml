@@ -8,7 +8,7 @@
     var isReadOnly = Model.IsReadOnlyView;
     var canEditProfile = !isReadOnly;
     var canShowFavoriteHeart = User.IsInRole("Parent") && isNanny;
-    var canContactNanny = isReadOnly && User.IsInRole("Parent") && isNanny && Model.UserId != Guid.Empty;
+    var canContactNanny = isReadOnly && User.IsInRole("Parent") && isNanny;
 
     string EducationLabel(int? level) => level switch
     {
@@ -99,8 +99,11 @@
             }
             else if (canContactNanny)
             {
-                <button type="button" id="contactNannyBtn" data-user-id="@Model.UserId" class="profile-primary-btn">
-                    Contact
+                <button type="button"
+                        id="contactNannyBtn"
+                        data-nanny-profile-id="@(Model.ContactNannyProfileId?.ToString() ?? string.Empty)"
+                        class="profile-primary-btn">
+                    Gui request contact
                 </button>
             }
         </div>
@@ -350,30 +353,45 @@
             var contactBtn = document.getElementById('contactNannyBtn');
             if (contactBtn) {
                 contactBtn.addEventListener('click', async function () {
-                    var userId = contactBtn.getAttribute('data-user-id');
-                    if (!userId) return;
+                    var nannyProfileId = contactBtn.getAttribute('data-nanny-profile-id');
+                    if (!nannyProfileId) {
+                        if (typeof window.showToast === 'function') {
+                            window.showToast('Khong tim thay nanny profile de gui request contact.', { type: 'warning' });
+                        }
+                        return;
+                    }
 
                     contactBtn.disabled = true;
                     var oldText = contactBtn.textContent;
-                    contactBtn.textContent = 'Dang mo chat...';
+                    contactBtn.textContent = 'Dang gui request...';
 
                     try {
-                        var response = await fetch('/Communication/GetOrCreate', {
+                        var response = await fetch('/Nanny/SendContactRequest', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ otherUserId: userId })
+                            credentials: 'same-origin',
+                            body: JSON.stringify({
+                                nannyProfileId: nannyProfileId,
+                                message: 'Parent gui request contact tu trang ho so.'
+                            })
                         });
 
                         var json = await response.json();
-                        var conversationId = json?.data?.id;
-                        if (conversationId) {
-                            window.location.href = `/Communication?conversationId=${conversationId}`;
+                        if (!response.ok || !json?.success) {
+                            if (typeof window.showToast === 'function') {
+                                window.showToast(json?.message || 'Khong the gui request contact.', { type: 'error' });
+                            }
                             return;
                         }
 
-                        window.location.href = '/Communication';
+                        if (typeof window.showToast === 'function') {
+                            window.showToast(json?.message || 'Da gui request contact thanh cong.', { type: 'success' });
+                        }
+                        window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
                     } catch {
-                        window.location.href = '/Communication';
+                        if (typeof window.showToast === 'function') {
+                            window.showToast('Khong the gui request contact.', { type: 'error' });
+                        }
                     } finally {
                         contactBtn.disabled = false;
                         contactBtn.textContent = oldText;

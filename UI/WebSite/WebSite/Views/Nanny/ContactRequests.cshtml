@@ -1,0 +1,332 @@
+@{
+    ViewData["Title"] = "Lich su contact request - NannyMatch";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<section class="min-h-screen bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_40%,#f8fafc_100%)] py-10">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+        <div class="rounded-[30px] border border-orange-100 bg-white/95 shadow-[0_22px_56px_rgba(15,23,42,.08)] overflow-hidden">
+            <div class="px-6 py-6 sm:px-8 border-b border-orange-100 bg-[radial-gradient(circle_at_top_right,rgba(255,237,213,.82),transparent_32%),linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-orange-500">Parent zone</p>
+                        <h1 class="mt-2 text-3xl font-bold text-slate-900">Lich su contact request</h1>
+                        <p class="mt-2 text-sm leading-6 text-slate-500 max-w-2xl">
+                            Theo doi cac request ban da gui den nanny, trang thai phan hoi va ly do tu choi (neu co).
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <a href="/Nanny/List"
+                           class="inline-flex items-center justify-center min-h-[46px] px-5 rounded-2xl border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 transition-all">
+                            Quay lai tim nanny
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-6 sm:px-8">
+                <div id="contactRequestSummary" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-400">Tong request</p>
+                        <p id="summaryTotal" class="mt-2 text-2xl font-extrabold text-slate-900">0</p>
+                    </div>
+                    <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
+                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-amber-600">Dang cho duyet</p>
+                        <p id="summaryPending" class="mt-2 text-2xl font-extrabold text-amber-700">0</p>
+                    </div>
+                    <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
+                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-emerald-600">Chap nhan</p>
+                        <p id="summaryAccepted" class="mt-2 text-2xl font-extrabold text-emerald-700">0</p>
+                    </div>
+                    <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-4">
+                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-rose-600">Tu choi</p>
+                        <p id="summaryRejected" class="mt-2 text-2xl font-extrabold text-rose-700">0</p>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 mb-5">
+                    <button type="button" class="cr-filter-btn active" data-status="">Tat ca</button>
+                    <button type="button" class="cr-filter-btn" data-status="0">Dang cho duyet</button>
+                    <button type="button" class="cr-filter-btn" data-status="1">Da chap nhan</button>
+                    <button type="button" class="cr-filter-btn" data-status="2">Da tu choi</button>
+                </div>
+
+                <div id="contactRequestList" class="space-y-3">
+                    <div class="rounded-2xl border border-slate-200 bg-white px-5 py-8 text-center text-slate-500">
+                        Dang tai lich su contact request...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div id="contactRequestDetailModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/45 backdrop-blur-sm p-4">
+    <div class="w-full max-w-2xl rounded-[24px] border border-slate-200 bg-white shadow-[0_22px_56px_rgba(15,23,42,.22)] overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
+            <h3 class="text-lg font-extrabold text-slate-900">Chi tiet contact request</h3>
+            <button type="button" id="closeContactRequestDetail"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-100">
+                <span class="material-icons-round text-[20px]">close</span>
+            </button>
+        </div>
+        <div id="contactRequestDetailBody" class="px-6 py-5 space-y-4">
+            <p class="text-sm text-slate-500">Dang tai chi tiet request...</p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .cr-filter-btn {
+        min-height: 38px;
+        padding: 0 14px;
+        border-radius: 999px;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        color: #475569;
+        font-size: 12px;
+        font-weight: 800;
+        transition: all .2s ease;
+    }
+
+    .cr-filter-btn:hover {
+        border-color: #fdba74;
+        color: #c2410c;
+        background: #fff7ed;
+    }
+
+    .cr-filter-btn.active {
+        border-color: #fb923c;
+        color: #c2410c;
+        background: #fff7ed;
+        box-shadow: 0 8px 16px rgba(249,115,22,.16);
+    }
+</style>
+
+<script>
+    (() => {
+        const listEl = document.getElementById('contactRequestList');
+        const modalEl = document.getElementById('contactRequestDetailModal');
+        const modalBodyEl = document.getElementById('contactRequestDetailBody');
+        const closeModalBtn = document.getElementById('closeContactRequestDetail');
+        const summaryTotalEl = document.getElementById('summaryTotal');
+        const summaryPendingEl = document.getElementById('summaryPending');
+        const summaryAcceptedEl = document.getElementById('summaryAccepted');
+        const summaryRejectedEl = document.getElementById('summaryRejected');
+        const filterButtons = Array.from(document.querySelectorAll('.cr-filter-btn'));
+        let activeStatus = '';
+
+        const escapeHtml = (value) => String(value ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+
+        const showToast = (message, type = 'info') => {
+            if (typeof window.showToast === 'function') {
+                window.showToast(message, { type });
+            }
+        };
+
+        const formatDateTime = (value) => {
+            if (!value) return 'Chua cap nhat';
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return 'Chua cap nhat';
+            return new Intl.DateTimeFormat('vi-VN', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            }).format(date);
+        };
+
+        const getStatusBadge = (status, statusLabel) => {
+            if (status === 1) return `<span class="inline-flex items-center min-h-[30px] px-3 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-extrabold">${escapeHtml(statusLabel || 'Da chap nhan')}</span>`;
+            if (status === 2) return `<span class="inline-flex items-center min-h-[30px] px-3 rounded-full border border-rose-200 bg-rose-50 text-rose-700 text-xs font-extrabold">${escapeHtml(statusLabel || 'Da tu choi')}</span>`;
+            return `<span class="inline-flex items-center min-h-[30px] px-3 rounded-full border border-amber-200 bg-amber-50 text-amber-700 text-xs font-extrabold">${escapeHtml(statusLabel || 'Dang cho duyet')}</span>`;
+        };
+
+        const setSummary = (data) => {
+            summaryTotalEl.textContent = String(Number(data?.totalRequests ?? 0));
+            summaryPendingEl.textContent = String(Number(data?.pendingRequests ?? 0));
+            summaryAcceptedEl.textContent = String(Number(data?.acceptedRequests ?? 0));
+            summaryRejectedEl.textContent = String(Number(data?.rejectedRequests ?? 0));
+        };
+
+        const renderList = (items) => {
+            if (!Array.isArray(items) || !items.length) {
+                listEl.innerHTML = `
+                    <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-10 text-center text-slate-500">
+                        Khong co contact request nao theo bo loc hien tai.
+                    </div>`;
+                return;
+            }
+
+            listEl.innerHTML = items.map((item) => {
+                const nannyName = item?.nanny?.fullName || 'Nanny';
+                const nannyLocation = [item?.nanny?.district, item?.nanny?.city].filter(Boolean).join(', ') || 'Chua cap nhat khu vuc';
+                const salaryMin = Number(item?.nanny?.expectedSalaryMin ?? 0);
+                const salaryMax = Number(item?.nanny?.expectedSalaryMax ?? 0);
+                const salaryText = salaryMin > 0 || salaryMax > 0
+                    ? `${salaryMin > 0 ? new Intl.NumberFormat('vi-VN').format(salaryMin) : '0'} - ${salaryMax > 0 ? new Intl.NumberFormat('vi-VN').format(salaryMax) : '0'} VND`
+                    : 'Thuong luong';
+
+                return `
+                    <article class="rounded-[22px] border border-slate-200 bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,.05)]">
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div class="min-w-0">
+                                <h3 class="text-lg font-extrabold text-slate-900">${escapeHtml(nannyName)}</h3>
+                                <p class="mt-1 text-sm font-semibold text-slate-500">${escapeHtml(nannyLocation)}</p>
+                            </div>
+                            ${getStatusBadge(Number(item?.status ?? 0), item?.statusLabel)}
+                        </div>
+
+                        <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                                <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Ngay gui</p>
+                                <p class="mt-1 text-sm font-bold text-slate-700">${escapeHtml(formatDateTime(item?.requestedAt))}</p>
+                            </div>
+                            <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                                <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Kinh nghiem</p>
+                                <p class="mt-1 text-sm font-bold text-slate-700">${Number(item?.nanny?.yearsOfExperience ?? 0)} nam</p>
+                            </div>
+                            <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                                <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Luong mong muon</p>
+                                <p class="mt-1 text-sm font-bold text-slate-700">${escapeHtml(salaryText)}</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 rounded-xl border border-orange-100 bg-orange-50/60 px-3 py-3">
+                            <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-orange-500">Loi nhan cua ban</p>
+                            <p class="mt-1 text-sm text-slate-700">${escapeHtml(item?.message || 'Khong co loi nhan.')}</p>
+                        </div>
+
+                        <div class="mt-4 flex flex-wrap items-center justify-end gap-2">
+                            <a href="/Profile/ViewUser?userId=${encodeURIComponent(item?.nanny?.userId || '')}&nannyProfileId=${encodeURIComponent(item?.nanny?.profileId || '')}"
+                               class="inline-flex items-center justify-center min-h-[38px] px-4 rounded-full border border-slate-200 bg-white text-slate-600 text-sm font-bold hover:bg-slate-50">
+                                Xem ho so nanny
+                            </a>
+                            <button type="button"
+                                    class="inline-flex items-center justify-center min-h-[38px] px-4 rounded-full border border-orange-200 bg-orange-50 text-orange-700 text-sm font-bold hover:bg-orange-100"
+                                    data-request-id="${escapeHtml(item?.id)}">
+                                Xem chi tiet request
+                            </button>
+                        </div>
+                    </article>`;
+            }).join('');
+
+            listEl.querySelectorAll('button[data-request-id]').forEach((button) => {
+                button.addEventListener('click', () => openDetail(button.getAttribute('data-request-id')));
+            });
+        };
+
+        const renderDetail = (detail) => {
+            const status = Number(detail?.status ?? 0);
+            const statusLabel = detail?.statusLabel || 'Dang cap nhat';
+            const nannyName = detail?.nanny?.fullName || 'Nanny';
+            const parentMessage = detail?.message || 'Khong co loi nhan.';
+            const responseMessage = detail?.responseMessage || 'Chua co phan hoi tu nanny.';
+
+            modalBodyEl.innerHTML = `
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Nanny</p>
+                        <p class="mt-1 text-base font-extrabold text-slate-900">${escapeHtml(nannyName)}</p>
+                        <p class="mt-1 text-sm text-slate-500">${escapeHtml([detail?.nanny?.district, detail?.nanny?.city].filter(Boolean).join(', ') || 'Chua cap nhat')}</p>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Trang thai</p>
+                        <div class="mt-2">${getStatusBadge(status, statusLabel)}</div>
+                        <p class="mt-2 text-xs text-slate-500">Gui luc: ${escapeHtml(formatDateTime(detail?.requestedAt))}</p>
+                        <p class="mt-1 text-xs text-slate-500">Phan hoi luc: ${escapeHtml(formatDateTime(detail?.respondedAt))}</p>
+                    </div>
+                </div>
+
+                <div class="rounded-xl border border-orange-100 bg-orange-50/60 px-4 py-3">
+                    <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-orange-500">Loi nhan parent</p>
+                    <p class="mt-2 text-sm leading-6 text-slate-700">${escapeHtml(parentMessage)}</p>
+                </div>
+
+                <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Phan hoi tu nanny</p>
+                    <p class="mt-2 text-sm leading-6 text-slate-700">${escapeHtml(responseMessage)}</p>
+                </div>`;
+        };
+
+        const openDetail = async (requestId) => {
+            if (!requestId) return;
+            modalBodyEl.innerHTML = '<p class="text-sm text-slate-500">Dang tai chi tiet request...</p>';
+            modalEl.classList.remove('hidden');
+            modalEl.classList.add('flex');
+
+            try {
+                const response = await fetch(`/Nanny/ContactRequestDetailData?requestId=${encodeURIComponent(requestId)}`, {
+                    credentials: 'same-origin'
+                });
+                const json = await response.json();
+                if (!response.ok || !json?.success) {
+                    showToast(json?.message || 'Khong the tai chi tiet request.', 'error');
+                    modalBodyEl.innerHTML = '<p class="text-sm text-rose-600">Khong the tai chi tiet request.</p>';
+                    return;
+                }
+                renderDetail(json.data);
+            } catch {
+                showToast('Khong the tai chi tiet request.', 'error');
+                modalBodyEl.innerHTML = '<p class="text-sm text-rose-600">Khong the tai chi tiet request.</p>';
+            }
+        };
+
+        const closeDetail = () => {
+            modalEl.classList.add('hidden');
+            modalEl.classList.remove('flex');
+        };
+
+        const setActiveFilter = (status) => {
+            activeStatus = status;
+            filterButtons.forEach((button) => {
+                button.classList.toggle('active', button.getAttribute('data-status') === activeStatus);
+            });
+        };
+
+        const loadRequests = async () => {
+            try {
+                const query = activeStatus !== '' ? `?status=${encodeURIComponent(activeStatus)}` : '';
+                const response = await fetch(`/Nanny/SentContactRequestsData${query}`, { credentials: 'same-origin' });
+                const json = await response.json();
+                if (!response.ok || !json?.success) {
+                    listEl.innerHTML = `
+                        <div class="rounded-2xl border border-red-100 bg-red-50 px-5 py-8 text-center text-red-600">
+                            ${escapeHtml(json?.message || 'Khong tai duoc lich su contact request.')}
+                        </div>`;
+                    return;
+                }
+
+                const data = json?.data || {};
+                setSummary(data);
+                renderList(Array.isArray(data.requests) ? data.requests : []);
+            } catch {
+                listEl.innerHTML = `
+                    <div class="rounded-2xl border border-red-100 bg-red-50 px-5 py-8 text-center text-red-600">
+                        Khong tai duoc lich su contact request.
+                    </div>`;
+            }
+        };
+
+        filterButtons.forEach((button) => {
+            button.addEventListener('click', async () => {
+                setActiveFilter(button.getAttribute('data-status') || '');
+                await loadRequests();
+            });
+        });
+
+        closeModalBtn?.addEventListener('click', closeDetail);
+        modalEl?.addEventListener('click', (event) => {
+            if (event.target === modalEl) closeDetail();
+        });
+
+        setActiveFilter('');
+        loadRequests();
+    })();
+</script>
