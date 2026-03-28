@@ -1,6 +1,6 @@
 namespace Nanny_BackEnd.DTOs.Dashboard;
 
-public class DashboardStatsDto
+public class AdminDashboardStatsDto
 {
     public UserStatsDto UserStats { get; set; } = null!;
     public RevenueStatsDto RevenueStats { get; set; } = null!;

@@ -34,7 +34,7 @@ public class DashboardService
         _db = db;
     }
 
-    public async Task<DashboardStatsDto> GetDashboardStatsAsync()
+    public async Task<AdminDashboardStatsDto> GetDashboardStatsAsync()
     {
         var userStats = await GetUserStatsAsync();
         var revenueStats = await GetRevenueStatsAsync();
@@ -42,6 +42,10 @@ public class DashboardService
 
         var pendingVerifications = await _verificationRepo.GetQuery()
             .CountAsync(v => !v.IsDeleted && v.Status == (int)NannyVerificationRequestStatus.Pending);
+
+        /*
+         Job posting co 2 status: 1
+         */
         var activeJobs = await _jobRepo.GetQuery()
             .CountAsync(j => !j.IsDeleted && j.Status == 1);
         var totalContracts = await _contractRepo.GetQuery()
@@ -52,7 +56,7 @@ public class DashboardService
             .AsNoTracking()
             .CountAsync(r => !r.IsDeleted && r.HandledAt == null);
 
-        return new DashboardStatsDto
+        return new AdminDashboardStatsDto
         {
             UserStats = userStats,
             RevenueStats = revenueStats,
