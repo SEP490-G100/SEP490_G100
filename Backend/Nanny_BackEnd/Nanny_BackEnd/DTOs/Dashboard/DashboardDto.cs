@@ -11,7 +11,6 @@ public class DashboardStatsDto
     public UserGrowthStatsDto UserGrowth { get; set; } = null!;
 }
 
-// ── Platform Health Stats ───────────────────────────────────────────────────
 
 public class PlatformHealthStatsDto
 {
@@ -78,7 +77,6 @@ public class DailyUserGrowthDto
     public int NewUsers { get; set; }
 }
 
-// ── User Stats ──────────────────────────────────────────────────────────────
 
 public class UserStatsDto
 {
@@ -92,7 +90,6 @@ public class UserStatsDto
     public int BannedUsers { get; set; }
 }
 
-// ── Revenue Stats ───────────────────────────────────────────────────────────
 
 public class RevenueStatsDto
 {
@@ -130,7 +127,6 @@ public class RecentTransactionDto
     public string? UserEmail { get; set; }
 }
 
-// ── Subscription Stats ──────────────────────────────────────────────────────
 
 public class SubscriptionStatsDto
 {
