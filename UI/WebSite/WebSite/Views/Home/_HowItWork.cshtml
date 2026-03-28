@@ -1,9 +1,8 @@
-﻿<section class="py-24 bg-background-light dark:bg-background-dark relative overflow-hidden scroll-section dir-down" style="background-color:#f3f6ff">
-    <div class="absolute left-0 top-1/2 -translate-y-1/2 w-72 h-72 bg-blue-100 dark:bg-blue-900/10 rounded-full blur-3xl -ml-36">
-    </div>
-    <div class="absolute right-0 top-1/2 -translate-y-1/2 w-72 h-72 bg-orange-100 dark:bg-orange-900/10 rounded-full blur-3xl -mr-36">
-    </div>
-    <div class="max-w-3xl mx-auto px-6 relative z-10">
+<section class="py-24 bg-background-light dark:bg-background-dark relative overflow-hidden scroll-section dir-down" style="background-color:#f3f6ff">
+    <div class="absolute left-0 top-1/2 -translate-y-1/2 w-72 h-72 bg-blue-100 dark:bg-blue-900/10 rounded-full blur-3xl -ml-36"></div>
+    <div class="absolute right-0 top-1/2 -translate-y-1/2 w-72 h-72 bg-orange-100 dark:bg-orange-900/10 rounded-full blur-3xl -mr-36"></div>
+
+    <div class="max-w-7xl mx-auto px-6 relative z-10">
         <div class="text-center mb-16 sec-reveal">
             <span class="section-label">📈 Cách hoạt động</span>
             <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mt-1"
@@ -13,58 +12,59 @@
             </h2>
             <div class="section-divider"></div>
         </div>
-        <div class="mt-16 sec-reveal">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch relative">
-                <!-- Connecting dashed line background for desktop -->
-                <div class="hidden md:block absolute top-12 left-[16.66%] right-[16.66%] h-1 border-t-2 border-dashed border-gray-300 dark:border-gray-700 z-0">
-                </div>
 
-                <!-- Step 1 -->
-                <div class="relative z-10 bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 dark:border-gray-700 group text-center flex flex-col items-center">
+        <div class="mt-16 sec-reveal relative">
+            <!-- Flow connectors for desktop/tablet: 1 -> 2 -> 4 -> 3 -->
+            <div class="hidden md:block pointer-events-none absolute inset-0 z-0">
+                <span class="absolute left-1/4 right-1/4 top-1/4 border-t-2 border-dashed border-gray-300 dark:border-gray-700"></span>
+                <span class="absolute right-1/4 top-1/4 bottom-1/4 border-r-2 border-dashed border-gray-300 dark:border-gray-700"></span>
+                <span class="absolute left-1/4 right-1/4 bottom-1/4 border-t-2 border-dashed border-gray-300 dark:border-gray-700"></span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10 items-stretch relative z-10">
+                <article class="relative bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 dark:border-gray-700 group text-center flex flex-col items-center min-h-[320px]">
                     <div class="w-24 h-24 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-inner">
-                        <span class="material-icons-round text-blue-500 text-4xl">search</span>
+                        <span class="material-icons-round text-blue-500 text-4xl">post_add</span>
                     </div>
-                    <div class="absolute -top-4 -left-4 w-12 h-12 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-xl shadow-lg border-4 border-white dark:border-gray-800">
-                        1
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-3">Tìm kiếm & Màng lọc</h3>
+                    <div class="absolute -top-4 -left-4 w-12 h-12 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-xl shadow-lg border-4 border-white dark:border-gray-800">1</div>
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-3">Tạo hồ sơ hoặc đăng bài</h3>
                     <p class="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
-                        Dễ dàng lọc theo vị trí,
-                        kinh nghiệm, và dịch vụ mong muốn. Xem hồ sơ chi tiết và đánh giá từ cộng đồng.
+                        Parent đăng bài tuyển nanny, Nanny cập nhật hồ sơ và kỹ năng để hệ thống ghép đúng nhu cầu.
                     </p>
-                </div>
+                </article>
 
-                <!-- Step 2 -->
-                <div class="relative z-10 bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 dark:border-gray-700 group text-center flex flex-col items-center md:translate-y-8">
+                <article class="relative bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 dark:border-gray-700 group text-center flex flex-col items-center min-h-[320px]">
                     <div class="w-24 h-24 rounded-full bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-inner">
-                        <span class="material-icons-round text-purple-500 text-4xl">forum</span>
+                        <span class="material-icons-round text-purple-500 text-4xl">search</span>
                     </div>
-                    <div class="absolute -top-4 -left-4 w-12 h-12 rounded-full bg-purple-500 text-white flex items-center justify-center font-bold text-xl shadow-lg border-4 border-white dark:border-gray-800">
-                        2
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-3">Kết nối & Trò chuyện</h3>
+                    <div class="absolute -top-4 -left-4 w-12 h-12 rounded-full bg-purple-500 text-white flex items-center justify-center font-bold text-xl shadow-lg border-4 border-white dark:border-gray-800">2</div>
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-3">Tìm kiếm &amp; Sàng lọc</h3>
                     <p class="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
-                        Sử dụng hệ thống nhắn tin
-                        bảo mật để trò chuyện, trao đổi yêu cầu và sắp xếp một cuộc gọi ban đầu nếu cần.
+                        Lọc theo vị trí, kinh nghiệm, lịch rảnh và mức lương để tìm đúng hồ sơ hoặc bài đăng phù hợp.
                     </p>
-                </div>
+                </article>
 
-                <!-- Step 3 -->
-                <div class="relative z-10 bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 dark:border-gray-700 group text-center flex flex-col items-center">
+                <article class="relative bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 dark:border-gray-700 group text-center flex flex-col items-center min-h-[320px]">
                     <div class="w-24 h-24 rounded-full bg-pink-50 dark:bg-pink-900/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-inner">
-                        <span class="material-icons-round text-pink-500 text-4xl">handshake</span>
+                        <span class="material-icons-round text-pink-500 text-4xl">forum</span>
                     </div>
-                    <div class="absolute -top-4 -left-4 w-12 h-12 rounded-full bg-pink-500 text-white flex items-center justify-center font-bold text-xl shadow-lg border-4 border-white dark:border-gray-800">
-                        3
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-3">Gặp mặt & An tâm</h3>
+                    <div class="absolute -top-4 -left-4 w-12 h-12 rounded-full bg-pink-500 text-white flex items-center justify-center font-bold text-xl shadow-lg border-4 border-white dark:border-gray-800">3</div>
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-3">Kết nối &amp; Trò chuyện</h3>
                     <p class="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
-                        Sắp xếp cuộc gặp mặt trực
-                        tiếp. Khi đã hài lòng, bạn hoàn toàn có thể yên tâm đặt lịch ngay lập tức.
+                        Gửi request, nhắn tin trực tiếp và trao đổi yêu cầu chăm bé để xác nhận mức độ phù hợp.
                     </p>
-                </div>
-                <!-- Step 4-->
-                
+                </article>
+
+                <article class="relative bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 dark:border-gray-700 group text-center flex flex-col items-center min-h-[320px]">
+                    <div class="w-24 h-24 rounded-full bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-inner">
+                        <span class="material-icons-round text-emerald-500 text-4xl">handshake</span>
+                    </div>
+                    <div class="absolute -top-4 -left-4 w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xl shadow-lg border-4 border-white dark:border-gray-800" style="background: rgb(16 185 129/var(--tw-text-opacity,1))">4</div>
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-3">Chốt thỏa thuận &amp; bắt đầu</h3>
+                    <p class="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
+                        Hai bên thống nhất ca làm, điều khoản và bắt đầu dịch vụ, sau đó đánh giá để tăng độ uy tín.
+                    </p>
+                </article>
             </div>
 
             <div class="text-center mt-20">
