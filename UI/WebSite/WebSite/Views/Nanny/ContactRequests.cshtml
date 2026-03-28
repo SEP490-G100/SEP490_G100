@@ -62,7 +62,7 @@
 </section>
 
 <div id="contactRequestDetailModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/45 backdrop-blur-sm p-4">
-    <div class="w-full max-w-2xl max-h-[88vh] rounded-[24px] border border-slate-200 bg-white shadow-[0_22px_56px_rgba(15,23,42,.22)] overflow-hidden flex flex-col">
+    <div class="cr-modal-panel w-full max-w-2xl max-h-[88vh] rounded-[24px] border border-slate-200 bg-white shadow-[0_22px_56px_rgba(15,23,42,.22)] overflow-hidden flex flex-col">
         <div class="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
             <h3 class="text-lg font-extrabold text-slate-900">Chi tiet contact request</h3>
             <button type="button" id="closeContactRequestDetail"
@@ -332,6 +332,44 @@
         flex-shrink: 0;
     }
 
+    #contactRequestList {
+        transition: opacity .24s ease, transform .24s ease;
+    }
+
+    #contactRequestList.cr-list-animating {
+        opacity: .55;
+        transform: translateY(5px);
+    }
+
+    #contactRequestDetailModal {
+        opacity: 0;
+        transition: opacity .22s ease;
+    }
+
+    #contactRequestDetailModal.flex {
+        opacity: 1;
+    }
+
+    .cr-modal-panel {
+        transform: translateY(14px) scale(.98);
+        opacity: 0;
+        transition: transform .24s ease, opacity .24s ease;
+    }
+
+    #contactRequestDetailModal.flex .cr-modal-panel {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+
+    #contactRequestDetailModal.is-closing {
+        opacity: 0;
+    }
+
+    #contactRequestDetailModal.is-closing .cr-modal-panel {
+        transform: translateY(14px) scale(.98);
+        opacity: 0;
+    }
+
     @@keyframes crShimmer {
         100% {
             transform: translateX(100%);
@@ -546,7 +584,7 @@
                     <div class="cr-message-box"><div class="cr-skeleton-line w-full"></div></div>
                     <div class="cr-meta-tile"><div class="cr-skeleton-line w-full"></div></div>
                 </div>`;
-            modalEl.classList.remove('hidden');
+            modalEl.classList.remove('hidden', 'is-closing');
             modalEl.classList.add('flex');
 
             try {
@@ -567,8 +605,13 @@
         };
 
         const closeDetail = () => {
-            modalEl.classList.add('hidden');
-            modalEl.classList.remove('flex');
+            if (!modalEl.classList.contains('flex')) return;
+
+            modalEl.classList.add('is-closing');
+            window.setTimeout(() => {
+                modalEl.classList.add('hidden');
+                modalEl.classList.remove('flex', 'is-closing');
+            }, 180);
         };
 
         const setActiveFilter = (status) => {
@@ -579,6 +622,7 @@
         };
 
         const loadRequests = async () => {
+            listEl.classList.add('cr-list-animating');
             renderLoadingSkeleton();
             try {
                 const query = activeStatus !== '' ? `?status=${encodeURIComponent(activeStatus)}` : '';
@@ -600,6 +644,10 @@
                     <div class="rounded-2xl border border-red-100 bg-red-50 px-5 py-8 text-center text-red-600">
                         Khong tai duoc lich su contact request.
                     </div>`;
+            } finally {
+                window.setTimeout(() => {
+                    listEl.classList.remove('cr-list-animating');
+                }, 70);
             }
         };
 

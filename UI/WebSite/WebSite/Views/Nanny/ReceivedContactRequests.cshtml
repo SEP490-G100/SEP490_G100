@@ -62,7 +62,7 @@
 </section>
 
 <div id="receivedContactDetailModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/45 backdrop-blur-sm p-4">
-    <div class="w-full max-w-3xl max-h-[88vh] rounded-[24px] border border-slate-200 bg-white shadow-[0_22px_56px_rgba(15,23,42,.22)] overflow-hidden flex flex-col">
+    <div class="ncr-modal-panel w-full max-w-3xl max-h-[88vh] rounded-[24px] border border-slate-200 bg-white shadow-[0_22px_56px_rgba(15,23,42,.22)] overflow-hidden flex flex-col">
         <div class="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
             <h3 class="text-lg font-extrabold text-slate-900">Chi tiet request contact</h3>
             <button type="button" id="closeReceivedContactDetail"
@@ -305,6 +305,44 @@
         border-radius: 14px;
         background: #e2e8f0;
         flex-shrink: 0;
+    }
+
+    #receivedContactList {
+        transition: opacity .24s ease, transform .24s ease;
+    }
+
+    #receivedContactList.ncr-list-animating {
+        opacity: .55;
+        transform: translateY(5px);
+    }
+
+    #receivedContactDetailModal {
+        opacity: 0;
+        transition: opacity .22s ease;
+    }
+
+    #receivedContactDetailModal.flex {
+        opacity: 1;
+    }
+
+    .ncr-modal-panel {
+        transform: translateY(14px) scale(.98);
+        opacity: 0;
+        transition: transform .24s ease, opacity .24s ease;
+    }
+
+    #receivedContactDetailModal.flex .ncr-modal-panel {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+
+    #receivedContactDetailModal.is-closing {
+        opacity: 0;
+    }
+
+    #receivedContactDetailModal.is-closing .ncr-modal-panel {
+        transform: translateY(14px) scale(.98);
+        opacity: 0;
     }
 
     @@keyframes ncrShimmer {
@@ -645,7 +683,7 @@
                     <div class="ncr-message-box"><div class="ncr-skeleton-line w-full"></div></div>
                     <div class="ncr-meta-tile"><div class="ncr-skeleton-line w-full"></div></div>
                 </div>`;
-            modalEl.classList.remove('hidden');
+            modalEl.classList.remove('hidden', 'is-closing');
             modalEl.classList.add('flex');
 
             try {
@@ -666,11 +704,16 @@
         };
 
         const closeDetail = () => {
+            if (!modalEl.classList.contains('flex')) return;
+
             state.currentRequestId = null;
             setSubmittingState(false);
             setRejectError('');
-            modalEl.classList.add('hidden');
-            modalEl.classList.remove('flex');
+            modalEl.classList.add('is-closing');
+            window.setTimeout(() => {
+                modalEl.classList.add('hidden');
+                modalEl.classList.remove('flex', 'is-closing');
+            }, 180);
         };
 
         const setActiveFilter = (status) => {
@@ -681,6 +724,7 @@
         };
 
         const loadRequests = async () => {
+            listEl.classList.add('ncr-list-animating');
             renderLoadingSkeleton();
             try {
                 const query = state.activeStatus !== '' ? `?status=${encodeURIComponent(state.activeStatus)}` : '';
@@ -702,6 +746,10 @@
                     <div class="rounded-2xl border border-red-100 bg-red-50 px-5 py-8 text-center text-red-600">
                         Khong tai duoc danh sach request contact.
                     </div>`;
+            } finally {
+                window.setTimeout(() => {
+                    listEl.classList.remove('ncr-list-animating');
+                }, 70);
             }
         };
 
