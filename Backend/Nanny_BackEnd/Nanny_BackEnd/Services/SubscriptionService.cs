@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Nanny_BackEnd.DTOs.Subscription;
 using Nanny_BackEnd.Helpers;
@@ -87,7 +87,7 @@ public class SubscriptionService
         [
             "Ung tuyen toi da 3 cong viec moi moi thang",
             "Ho so co badge noi bat",
-            "Ho so duoc hien thi tot hon tai khoan free"
+            "Ho so duoc hien thi tot hon tai khoan Free"
         ]);
 
     private static readonly ManagedPlanDefinition NannyProPlan = new(
@@ -112,7 +112,6 @@ public class SubscriptionService
             "Ho so co badge noi bat",
             "Ho so duoc uu tien hien thi cao hon goi Nanny Plus"
         ]);
-
     private static readonly ManagedPlanDefinition[] ManagedPlans =
     [
         ParentPlusPlan,
@@ -428,6 +427,14 @@ public class SubscriptionService
         var subscription = await _subscriptionRepo.findCurrentSubscriptionByNannyProfile(nannyProfileId, DateTime.UtcNow);
         var definition = getManagedPlanDefinition(subscription?.SubscriptionPlan?.Name);
         return definition?.Benefits ?? SubscriptionBenefitResponse.FreeNanny;
+    }
+
+    public async Task<bool> hasActiveParentSubscription(Guid parentProfileId)
+    {
+        await ensureManagedPlans();
+        var subscription = await _subscriptionRepo.findCurrentSubscriptionByParentProfile(parentProfileId, DateTime.UtcNow);
+        var definition = getManagedPlanDefinition(subscription?.SubscriptionPlan?.Name);
+        return definition != null && string.Equals(definition.TargetRole, "Parent", StringComparison.OrdinalIgnoreCase);
     }
 
     public async Task<UserSubscriptionResponse> cancelCurrentSubscription(Guid userId)
@@ -891,3 +898,4 @@ public class VnPayIpnResult
     public string RspCode { get; set; } = "99";
     public string Message { get; set; } = "Unknown error";
 }
+

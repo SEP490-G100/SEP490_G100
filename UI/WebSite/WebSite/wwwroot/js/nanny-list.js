@@ -297,6 +297,66 @@ function toggleNannyFavoriteFromDetail(event) {
   toggleNannyFavorite(currentNannyDetailId, event);
 }
 
+async function sendContactRequest(nannyProfileId, message) {
+  if (!isLoggedIn()) {
+    showNannyToast('Vui long dang nhap de gui request contact.', 'warning');
+    return null;
+  }
+
+  if (!isParentRole()) {
+    showNannyToast('Chi Parent moi co quyen gui request contact.', 'warning');
+    return null;
+  }
+
+  if (!nannyProfileId) {
+    showNannyToast('Khong tim thay ho so nanny de gui request.', 'error');
+    return null;
+  }
+
+  try {
+    const response = await fetch('/Nanny/SendContactRequest', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nannyProfileId,
+        message: String(message ?? '').trim() || null
+      })
+    });
+
+    const json = await response.json();
+    if (!response.ok || !json?.success) {
+      showNannyToast(json?.message || 'Khong the gui request contact.', 'error');
+      return null;
+    }
+
+    showNannyToast(json?.message || 'Da gui request contact thanh cong.', 'success');
+    window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
+    return json;
+  } catch {
+    showNannyToast('Khong the gui request contact.', 'error');
+    return null;
+  }
+}
+
+async function sendContactRequestFromDetail(event) {
+  event?.stopPropagation?.();
+  if (!currentNannyDetailId) return;
+
+  const contactButton = document.getElementById('nd-contactBtn');
+  if (contactButton) contactButton.disabled = true;
+
+  const defaultMessage = 'Toi muon trao doi them ve cong viec va lich lam viec.';
+  const message = window.prompt('Nhap loi nhan gui den nanny (co the bo trong):', defaultMessage);
+  if (message === null) {
+    if (contactButton) contactButton.disabled = false;
+    return;
+  }
+
+  await sendContactRequest(currentNannyDetailId, message);
+  if (contactButton) contactButton.disabled = false;
+}
+
 function debounceNannySearch() {
   clearTimeout(nannySearchTimer);
   nannySearchTimer = setTimeout(doNannySearch, 320);
@@ -1166,6 +1226,12 @@ async function openNannyDetail(id) {
       if (text) text.textContent = detail.isFavorite ? 'Bo yeu thich' : 'Yeu thich';
     }
 
+    const contactButton = document.getElementById('nd-contactBtn');
+    if (contactButton) {
+      contactButton.classList.toggle('hidden', !isParentRole());
+      contactButton.disabled = false;
+    }
+
     setNannyFavoriteState(currentNannyDetailId, !!detail.isFavorite);
     document.getElementById('nd-availability').innerHTML = renderAvailability(detail.availabilitySlots || []);
     document.getElementById('nannyDetailModal')?.classList.add('show');
@@ -1182,7 +1248,9 @@ function closeNannyDetail() {
 function viewNannyProfileDetail(event) {
   event?.stopPropagation?.();
   if (!currentNannyDetailUserId) return;
-  window.location.href = `/Profile/ViewUser?userId=${encodeURIComponent(currentNannyDetailUserId)}`;
+  const params = new URLSearchParams({ userId: String(currentNannyDetailUserId) });
+  if (currentNannyDetailId) params.set('nannyProfileId', String(currentNannyDetailId));
+  window.location.href = `/Profile/ViewUser?${params.toString()}`;
 }
 
 function tryOpenNannyDetailFromQuery() {
