@@ -177,7 +177,36 @@
         .history-request-panel {
             border-radius: 1.35rem;
             border: 1px solid #e2e8f0;
-            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 55%, #fffaf5 100%);
+            box-shadow: 0 14px 30px rgba(15, 23, 42, .05);
+        }
+
+        .history-request-head {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: .8rem;
+        }
+
+        .history-request-metrics {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .5rem;
+            margin-top: .65rem;
+        }
+
+        .history-request-metric {
+            display: inline-flex;
+            align-items: center;
+            min-height: 1.75rem;
+            padding: 0 .68rem;
+            border-radius: 999px;
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            color: #475569;
+            font-size: .72rem;
+            font-weight: 800;
         }
 
         .history-request-toggle {
@@ -194,6 +223,7 @@
             font-size: .78rem;
             font-weight: 800;
             transition: all .2s ease;
+            box-shadow: 0 10px 18px rgba(249, 115, 22, .15);
         }
 
         .history-request-toggle:hover {
@@ -202,23 +232,88 @@
             transform: translateY(-1px);
         }
 
+        .history-request-toggle.is-open {
+            border-color: #f97316;
+            background: linear-gradient(135deg, #fb923c, #f97316);
+            color: #ffffff;
+            box-shadow: 0 14px 24px rgba(249, 115, 22, .28);
+        }
+
+        .history-request-list {
+            border-top: 1px dashed #fed7aa;
+            padding-top: 1rem;
+        }
+
         .history-request-item {
             border: 1px solid #e2e8f0;
             border-radius: 1rem;
-            background: #ffffff;
-            padding: .9rem;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            padding: .95rem;
+            transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+        }
+
+        .history-request-item:hover {
+            transform: translateY(-1px);
+            border-color: #fdba74;
+            box-shadow: 0 12px 22px rgba(249, 115, 22, .12);
+        }
+
+        .history-request-item__head {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: .7rem;
+        }
+
+        .history-request-user {
+            display: flex;
+            align-items: center;
+            gap: .65rem;
+        }
+
+        .history-request-avatar {
+            width: 2.45rem;
+            height: 2.45rem;
+            border-radius: 999px;
+            border: 1px solid #fed7aa;
+            background: linear-gradient(135deg, #fff7ed, #ffedd5);
+            color: #c2410c;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .88rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            overflow: hidden;
+        }
+
+        .history-request-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .history-app-badge {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            padding: .28rem .7rem;
+            gap: .32rem;
+            padding: .3rem .72rem;
             border-radius: 999px;
             border: 1px solid transparent;
             font-size: .72rem;
             font-weight: 800;
             line-height: 1.1;
+        }
+
+        .history-app-badge::before {
+            content: "";
+            width: .42rem;
+            height: .42rem;
+            border-radius: 999px;
+            background: currentColor;
+            opacity: .9;
         }
 
         .history-app-badge--pending {
@@ -243,6 +338,42 @@
             border-color: #cbd5e1;
             background: #f8fafc;
             color: #475569;
+        }
+
+        .history-request-info-grid {
+            margin-top: .75rem;
+            display: grid;
+            grid-template-columns: repeat(1, minmax(0, 1fr));
+            gap: .5rem;
+        }
+
+        @@media (min-width: 640px) {
+            .history-request-info-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+
+        .history-request-info {
+            border-radius: .8rem;
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            padding: .55rem .62rem;
+        }
+
+        .history-review-note {
+            border-radius: .95rem;
+            border: 1px solid #fdba74;
+            background: linear-gradient(180deg, rgba(255, 247, 237, .92), #ffffff);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .85);
+        }
+
+        .history-review-note textarea {
+            transition: border-color .2s ease, box-shadow .2s ease;
+        }
+
+        .history-review-note textarea:focus {
+            border-color: #fb923c;
+            box-shadow: 0 0 0 3px rgba(251, 146, 60, .18);
         }
     </style>
 }
@@ -296,17 +427,19 @@
 
 <div id="jobApplicationDetailModal" class="nmodal fixed inset-0 z-50 bg-black/50 backdrop-blur-sm items-center justify-center px-4" onclick="if(event.target===this)window.__closeJobApplicationDetailModal?.()">
     <div class="nmodal-box bg-white rounded-[28px] w-full max-w-3xl shadow-2xl relative">
+        <button type="button"
+                onclick="window.__closeJobApplicationDetailModal?.()"
+                class="absolute top-4 right-4 z-30 inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-slate-400 shadow-[0_10px_18px_rgba(15,23,42,.12)] hover:text-slate-600 hover:border-slate-300 transition-colors">
+            <span class="material-icons-round">close</span>
+        </button>
         <div class="modal-scroll">
-            <div class="px-6 py-5 border-b border-slate-100 bg-[linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
-                <div class="flex items-start justify-between gap-4">
+            <div class="sticky top-0 z-20 px-6 py-5 border-b border-slate-100 bg-[linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
+                <div class="flex items-start gap-4 pr-12">
                     <div>
                         <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-orange-500">Request ung tuyen</p>
                         <h3 id="jobAppModalTitle" class="mt-2 text-xl font-bold text-slate-900">Chi tiet request</h3>
                         <p id="jobAppModalSubTitle" class="mt-2 text-sm text-slate-500">Xem thong tin va duyet request tu Nanny.</p>
                     </div>
-                    <button type="button" onclick="window.__closeJobApplicationDetailModal?.()" class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-400 hover:text-slate-600 hover:border-slate-300 transition-colors">
-                        <span class="material-icons-round">close</span>
-                    </button>
                 </div>
             </div>
 
@@ -343,33 +476,46 @@
                     </div>
                 </div>
 
-                <div id="jobAppRejectReasonWrap" class="rounded-2xl border border-amber-200 bg-amber-50/50 p-4">
+                <div id="jobAppRejectReasonWrap" class="history-review-note p-4">
                     <label for="jobAppRejectReason" class="block text-sm font-bold text-amber-700">Ly do tu choi (bat buoc khi Reject)</label>
                     <textarea id="jobAppRejectReason"
                               rows="3"
-                              class="mt-2 w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-200"
+                              class="mt-2 w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none"
                               placeholder="Nhap ly do parent tu choi request..."></textarea>
                 </div>
             </div>
 
-            <div class="px-6 pb-6 pt-2 flex flex-wrap items-center justify-end gap-3">
-                <button type="button"
-                        onclick="window.__closeJobApplicationDetailModal?.()"
-                        class="inline-flex items-center justify-center min-h-[42px] px-5 rounded-xl border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 transition-all">
-                    Dong
-                </button>
-                <button type="button"
-                        id="jobAppApproveBtn"
-                        onclick="window.__submitJobApplicationReview?.(1)"
-                        class="inline-flex items-center justify-center min-h-[42px] px-5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 font-bold hover:bg-emerald-100 transition-all">
-                    Approve
-                </button>
-                <button type="button"
-                        id="jobAppRejectBtn"
-                        onclick="window.__submitJobApplicationReview?.(2)"
-                        class="inline-flex items-center justify-center min-h-[42px] px-5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 font-bold hover:bg-rose-100 transition-all">
-                    Reject
-                </button>
+            <div class="px-6 pb-6 pt-2 flex flex-wrap items-center justify-between gap-3">
+                <a id="jobAppViewProfileBtn"
+                   href="#"
+                   target="_blank"
+                   rel="noopener"
+                   class="hidden inline-flex items-center justify-center gap-2 min-h-[42px] px-5 rounded-xl border border-orange-200 bg-orange-50 text-orange-600 font-bold hover:bg-orange-100 transition-all">
+                    <span class="material-icons-round text-base">visibility</span>
+                    Xem chi tiet ho so Nanny
+                </a>
+
+                <div class="ml-auto flex flex-wrap items-center justify-end gap-3">
+                    <button type="button"
+                            onclick="window.__closeJobApplicationDetailModal?.()"
+                            class="inline-flex items-center justify-center min-h-[42px] px-5 rounded-xl border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 transition-all">
+                        Dong
+                    </button>
+                    <button type="button"
+                            id="jobAppApproveBtn"
+                            onclick="window.__submitJobApplicationReview?.(1)"
+                            class="inline-flex items-center justify-center gap-2 min-h-[42px] px-5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 font-bold hover:bg-emerald-100 transition-all">
+                        <span class="material-icons-round text-base">check_circle</span>
+                        Chap nhan
+                    </button>
+                    <button type="button"
+                            id="jobAppRejectBtn"
+                            onclick="window.__submitJobApplicationReview?.(2)"
+                            class="inline-flex items-center justify-center gap-2 min-h-[42px] px-5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 font-bold hover:bg-rose-100 transition-all">
+                        <span class="material-icons-round text-base">cancel</span>
+                        Tu choi
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -537,9 +683,33 @@
                 ${escapeHtml(applicationStatusLabels[status] || 'Dang cap nhat')}
             </span>`;
 
+        const getNameInitial = (fullName) => {
+            const normalized = String(fullName ?? '').trim();
+            if (!normalized) return 'N';
+            const token = normalized.split(/\s+/).find(Boolean) || 'N';
+            return token.charAt(0).toUpperCase();
+        };
+
+        const renderRequestMetrics = (jobId, applications) => {
+            const metricsEl = document.getElementById(`historyRequestMetrics-${jobId}`);
+            if (!metricsEl) return;
+
+            const total = applications.length;
+            const pending = applications.filter((item) => Number(item.status) === 0).length;
+            const approved = applications.filter((item) => Number(item.status) === 1).length;
+            const rejected = applications.filter((item) => Number(item.status) === 2).length;
+
+            metricsEl.innerHTML = `
+                <span class="history-request-metric">Tong: ${total}</span>
+                <span class="history-request-metric">Pending: ${pending}</span>
+                <span class="history-request-metric">Chap nhan: ${approved}</span>
+                <span class="history-request-metric">Tu choi: ${rejected}</span>`;
+        };
+
         const updateApplicationSummary = (jobId, applications) => {
             const summaryEl = document.getElementById(`historyRequestSummary-${jobId}`);
             if (!summaryEl) return;
+            renderRequestMetrics(jobId, applications);
 
             if (!applications.length) {
                 summaryEl.textContent = 'Chua co request ung tuyen nao.';
@@ -569,23 +739,30 @@
                 <div class="space-y-3">
                     ${applications.map((item) => `
                         <article class="history-request-item">
-                            <div class="flex flex-wrap items-start justify-between gap-3">
-                                <div>
-                                    <p class="text-sm font-extrabold text-slate-900">${escapeHtml(item?.nanny?.fullName || 'Nanny')}</p>
-                                    <p class="mt-1 text-xs text-slate-500">${escapeHtml([item?.nanny?.district, item?.nanny?.city].filter(Boolean).join(', ') || 'Chua cap nhat khu vuc')}</p>
+                            <div class="history-request-item__head">
+                                <div class="history-request-user">
+                                    <span class="history-request-avatar">
+                                        ${item?.nanny?.avatarUrl
+                                            ? `<img src="${escapeHtml(item.nanny.avatarUrl)}" alt="Nanny avatar" />`
+                                            : escapeHtml(getNameInitial(item?.nanny?.fullName))}
+                                    </span>
+                                    <div>
+                                        <p class="text-sm font-extrabold text-slate-900">${escapeHtml(item?.nanny?.fullName || 'Nanny')}</p>
+                                        <p class="mt-1 text-xs text-slate-500">${escapeHtml([item?.nanny?.district, item?.nanny?.city].filter(Boolean).join(', ') || 'Chua cap nhat khu vuc')}</p>
+                                    </div>
                                 </div>
                                 ${renderApplicationBadge(item.status)}
                             </div>
-                            <div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-slate-600">
-                                <div class="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+                            <div class="history-request-info-grid text-xs text-slate-600">
+                                <div class="history-request-info">
                                     <p class="font-bold text-slate-500">Ngay ung tuyen</p>
                                     <p class="mt-1 font-semibold text-slate-700">${escapeHtml(formatDateTime(item.appliedAt))}</p>
                                 </div>
-                                <div class="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+                                <div class="history-request-info">
                                     <p class="font-bold text-slate-500">Kinh nghiem</p>
                                     <p class="mt-1 font-semibold text-slate-700">${item?.nanny?.yearsOfExperience ? `${item.nanny.yearsOfExperience} nam` : 'Chua cap nhat'}</p>
                                 </div>
-                                <div class="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+                                <div class="history-request-info">
                                     <p class="font-bold text-slate-500">Luong mong muon</p>
                                     <p class="mt-1 font-semibold text-slate-700">${escapeHtml(formatSalaryRange(item?.nanny?.expectedSalaryMin, item?.nanny?.expectedSalaryMax))}</p>
                                 </div>
@@ -594,7 +771,7 @@
                                 <button type="button"
                                         onclick="window.__openJobApplicationDetail?.('${escapeHtml(jobId)}','${escapeHtml(item.id)}')"
                                         class="inline-flex items-center justify-center min-h-[36px] px-3 rounded-lg border border-orange-200 bg-orange-50 text-orange-600 text-xs font-bold hover:bg-orange-100 transition-all">
-                                    View detail request
+                                    Xem chi tiet request
                                 </button>
                             </div>
                         </article>`).join('')}
@@ -612,15 +789,22 @@
                 </div>`;
         };
 
-        const loadJobApplications = async (jobId, forceReload = false) => {
+        const delay = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
+
+        const loadJobApplications = async (jobId, forceReload = false, options = {}) => {
+            const shouldRenderList = options?.renderList !== false;
+            const silent = options?.silent === true;
             if (!jobId) return [];
             if (!forceReload && applicationCache.has(jobId)) {
                 const cached = applicationCache.get(jobId) || [];
-                renderApplicationList(jobId, cached);
+                if (shouldRenderList) renderApplicationList(jobId, cached);
+                else updateApplicationSummary(jobId, cached);
                 return cached;
             }
 
-            setRequestLoadingState(jobId, 'Dang tai request ung tuyen...');
+            if (shouldRenderList) {
+                setRequestLoadingState(jobId, 'Dang tai request ung tuyen...');
+            }
             try {
                 const response = await fetch(`/Search/JobApplicationsByJob?jobPostingId=${encodeURIComponent(jobId)}`, { credentials: 'same-origin' });
                 const json = await response.json();
@@ -628,13 +812,38 @@
 
                 const applications = Array.isArray(json?.data?.applications) ? json.data.applications : [];
                 applicationCache.set(jobId, applications);
-                renderApplicationList(jobId, applications);
+                if (shouldRenderList) renderApplicationList(jobId, applications);
+                else updateApplicationSummary(jobId, applications);
                 return applications;
             } catch (error) {
-                setRequestLoadingState(jobId, 'Khong tai duoc request ung tuyen.');
-                showHistoryToast(error?.message || 'Khong tai duoc request ung tuyen.', 'error');
+                if (shouldRenderList) {
+                    setRequestLoadingState(jobId, 'Khong tai duoc request ung tuyen.');
+                }
+                if (!silent) {
+                    showHistoryToast(error?.message || 'Khong tai duoc request ung tuyen.', 'error');
+                }
                 return [];
             }
+        };
+
+        const preloadApplicationSummary = async (jobId) => {
+            if (!jobId) return;
+            await loadJobApplications(jobId, false, { renderList: false, silent: true });
+
+            // Retry mot lan neu request preload dau tien bi truot.
+            if (!applicationCache.has(jobId)) {
+                await delay(320);
+                await loadJobApplications(jobId, true, { renderList: false, silent: true });
+            }
+        };
+
+        const preloadApplicationSummaries = async (jobs) => {
+            const tasks = (jobs || [])
+                .filter((job) => !!job?.id)
+                .map((job) => preloadApplicationSummary(String(job.id)));
+
+            if (!tasks.length) return;
+            await Promise.allSettled(tasks);
         };
 
         const toggleJobApplications = async (jobId, forceOpen = false) => {
@@ -645,11 +854,13 @@
             const shouldOpen = forceOpen || listEl.classList.contains('hidden');
             if (!shouldOpen) {
                 listEl.classList.add('hidden');
+                toggleBtn.classList.remove('is-open');
                 toggleBtn.innerHTML = '<span class="material-icons-round text-base">visibility</span>Xem request';
                 return;
             }
 
             listEl.classList.remove('hidden');
+            toggleBtn.classList.add('is-open');
             toggleBtn.innerHTML = '<span class="material-icons-round text-base">expand_less</span>Thu gon';
             await loadJobApplications(jobId);
         };
@@ -658,6 +869,7 @@
             const approveBtn = document.getElementById('jobAppApproveBtn');
             const rejectBtn = document.getElementById('jobAppRejectBtn');
             const reasonWrap = document.getElementById('jobAppRejectReasonWrap');
+            const reasonInput = document.getElementById('jobAppRejectReason');
             const disabled = submitting || !canReview;
 
             if (approveBtn) {
@@ -673,6 +885,7 @@
             }
 
             if (reasonWrap) reasonWrap.classList.toggle('hidden', !canReview);
+            if (reasonInput) reasonInput.disabled = !canReview || submitting;
         };
 
         const closeJobApplicationDetailModal = () => {
@@ -681,6 +894,11 @@
             document.getElementById('jobApplicationDetailModal')?.classList.remove('show');
             const reasonInput = document.getElementById('jobAppRejectReason');
             if (reasonInput) reasonInput.value = '';
+            const viewProfileBtn = document.getElementById('jobAppViewProfileBtn');
+            if (viewProfileBtn) {
+                viewProfileBtn.classList.add('hidden');
+                viewProfileBtn.removeAttribute('href');
+            }
         };
 
         const openJobApplicationDetail = async (jobId, applicationId) => {
@@ -702,7 +920,9 @@
             activeReviewContext = { jobId, applicationId };
 
             document.getElementById('jobAppModalTitle').textContent = job?.title || 'Chi tiet request';
-            document.getElementById('jobAppModalSubTitle').textContent = 'Parent co the chap nhan hoac tu choi request tu nanny.';
+            document.getElementById('jobAppModalSubTitle').textContent = canReview
+                ? 'Request dang cho duyet. Ban co the chap nhan hoac tu choi.'
+                : 'Request nay da duoc xu ly. Ban dang xem lai chi tiet.';
             document.getElementById('jobAppNannyName').textContent = application?.nanny?.fullName || 'Nanny';
             document.getElementById('jobAppNannyLocation').textContent = [application?.nanny?.district, application?.nanny?.city].filter(Boolean).join(', ') || 'Chua cap nhat khu vuc';
             document.getElementById('jobAppStatusWrap').innerHTML = renderApplicationBadge(application.status);
@@ -711,6 +931,18 @@
             document.getElementById('jobAppExperience').textContent = application?.nanny?.yearsOfExperience ? `${application.nanny.yearsOfExperience} nam` : 'Chua cap nhat';
             document.getElementById('jobAppSalary').textContent = formatSalaryRange(application?.nanny?.expectedSalaryMin, application?.nanny?.expectedSalaryMax);
             document.getElementById('jobAppRejectReasonDisplay').textContent = application?.rejectionReason || 'Chua co.';
+
+            const viewProfileBtn = document.getElementById('jobAppViewProfileBtn');
+            if (viewProfileBtn) {
+                const profileId = application?.nanny?.profileId ? String(application.nanny.profileId) : '';
+                if (profileId) {
+                    viewProfileBtn.setAttribute('href', `/Nanny/List?detailId=${encodeURIComponent(profileId)}`);
+                    viewProfileBtn.classList.remove('hidden');
+                } else {
+                    viewProfileBtn.classList.add('hidden');
+                    viewProfileBtn.removeAttribute('href');
+                }
+            }
 
             const rejectReasonInput = document.getElementById('jobAppRejectReason');
             if (rejectReasonInput) rejectReasonInput.value = application?.rejectionReason || '';
@@ -727,6 +959,11 @@
             const rejectionReason = reasonInput?.value.trim() || '';
             if (Number(action) === 2 && !rejectionReason) {
                 showHistoryToast('Vui long nhap ly do khi Reject request.', 'warning');
+                reasonInput?.focus();
+                return;
+            }
+            if (Number(action) === 2 && rejectionReason.length < 8) {
+                showHistoryToast('Ly do tu choi can toi thieu 8 ky tu.', 'warning');
                 reasonInput?.focus();
                 return;
             }
@@ -874,10 +1111,16 @@
 
                         <div class="px-6 pb-6">
                             <div class="history-request-panel p-4">
-                                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div class="history-request-head">
                                     <div>
                                         <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Request tu nanny</p>
-                                        <p id="historyRequestSummary-${escapeHtml(job.id)}" class="mt-2 text-sm text-slate-500">Nhan "Xem request" de kiem tra danh sach ung tuyen.</p>
+                                        <p id="historyRequestSummary-${escapeHtml(job.id)}" class="mt-2 text-sm text-slate-500">Dang tai so luong request ung tuyen...</p>
+                                        <div id="historyRequestMetrics-${escapeHtml(job.id)}" class="history-request-metrics">
+                                            <span class="history-request-metric">Tong: ...</span>
+                                            <span class="history-request-metric">Pending: ...</span>
+                                            <span class="history-request-metric">Chap nhan: ...</span>
+                                            <span class="history-request-metric">Tu choi: ...</span>
+                                        </div>
                                     </div>
                                     <button id="historyRequestToggle-${escapeHtml(job.id)}"
                                             type="button"
@@ -887,10 +1130,12 @@
                                         Xem request
                                     </button>
                                 </div>
-                                <div id="historyRequestList-${escapeHtml(job.id)}" class="hidden mt-4"></div>
+                                <div id="historyRequestList-${escapeHtml(job.id)}" class="history-request-list hidden mt-4"></div>
                             </div>
                         </div>
                     </article>`).join('');
+
+                await preloadApplicationSummaries(jobs);
 
                 if (focusJobId) {
                     const target = body.querySelector(`[data-job-id="${focusJobId}"]`);

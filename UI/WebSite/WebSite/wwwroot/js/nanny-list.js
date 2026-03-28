@@ -1182,6 +1182,13 @@ function viewNannyProfileDetail(event) {
   openNannyDetail(currentNannyDetailId);
 }
 
+function tryOpenNannyDetailFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+  const detailId = (params.get('detailId') || '').trim();
+  if (!detailId) return;
+  openNannyDetail(detailId);
+}
+
 function bootstrapNannyListPage() {
   ['nannyCity', 'nannyDistrict', 'nannySkillText', 'nannyVerificationText'].forEach((id) => {
     document.getElementById(id)?.setAttribute('autocomplete', 'off');
@@ -1191,6 +1198,7 @@ function bootstrapNannyListPage() {
   initNannyMap();
   loadLocationData();
   doNannySearch();
+  tryOpenNannyDetailFromQuery();
 }
 
 if (document.readyState === 'loading') {
