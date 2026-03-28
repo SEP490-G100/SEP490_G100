@@ -1,4 +1,4 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -48,7 +48,7 @@ public class SubscriptionController : Controller
         var result = await readApiResult<SubscriptionPaymentSessionViewModel>(response);
         if (result == null || !result.Success)
         {
-            var message = result?.Message ?? "Khong the mua goi luc nay.";
+            var message = result?.Message ?? "Không thể mua gói lúc này.";
             if (isAjaxRequest())
                 return Json(new { success = false, message });
 
@@ -58,7 +58,7 @@ public class SubscriptionController : Controller
 
         if (string.IsNullOrWhiteSpace(result.Data?.CheckoutUrl))
         {
-            const string message = "Khong tao duoc lien ket thanh toan.";
+            const string message = "Không tạo được liên kết thanh toán.";
             if (isAjaxRequest())
                 return Json(new { success = false, message });
 
@@ -70,7 +70,7 @@ public class SubscriptionController : Controller
             return Json(new
             {
                 success = true,
-                message = "Da tao giao dich cho thanh toan.",
+                message = "Đã tạo giao dịch cho thanh toán.",
                 data = result.Data
             });
 
@@ -91,11 +91,11 @@ public class SubscriptionController : Controller
         var result = await readApiResult<UserSubscriptionViewModel>(response);
         if (result == null || !result.Success)
         {
-            TempData["SubscriptionError"] = result?.Message ?? "Khong the huy goi hien tai.";
+            TempData["SubscriptionError"] = result?.Message ?? "Không thể hủy gói hiện tại.";
             return RedirectToAction(nameof(Index));
         }
 
-        TempData["SubscriptionSuccess"] = "Da huy goi hien tai.";
+        TempData["SubscriptionSuccess"] = "Đã hủy gói hiện tại.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -129,7 +129,7 @@ public class SubscriptionController : Controller
     {
         var token = getToken();
         if (string.IsNullOrWhiteSpace(token))
-            return Json(new { success = false, message = "Ban can dang nhap de xem trang thai thanh toan." });
+            return Json(new { success = false, message = "Bạn cần đăng nhập để xem trạng thái thanh toán." });
 
         setAuthHeader(token);
         var response = await _http.GetAsync($"/api/subscriptions/payment-status/{transactionId}");
@@ -137,7 +137,7 @@ public class SubscriptionController : Controller
         return Json(result ?? new ApiResult<SubscriptionPaymentStatusViewModel>
         {
             Success = false,
-            Message = "Khong the lay trang thai thanh toan."
+            Message = "Không thể lấy trạng thái thanh toán."
         });
     }
 
@@ -152,7 +152,8 @@ public class SubscriptionController : Controller
             RoleLabel = getRoleLabel(role),
             Headline = getHeadline(role),
             Summary = getSummary(role),
-            FreeBenefits = getFreeBenefits(role)
+            FreeBenefits = getFreeBenefits(role),
+            FreeFeatures = getFreeFeatures(role)
         };
 
         var planResponse = await _http.GetAsync("/api/subscriptions/plans");
@@ -202,30 +203,30 @@ public class SubscriptionController : Controller
 
     private static string getRoleLabel(string role) => role switch
     {
-        "Parent" => "Phu huynh",
-        "Nanny" => "Bao mau",
-        _ => "Nguoi dung"
+        "Parent" => "Phụ huynh",
+        "Nanny" => "Bảo mẫu",
+        _ => "Người dùng"
     };
 
     private static string getHeadline(string role) => role switch
     {
-        "Parent" => "Chon goi dang tin phu hop cho gia dinh",
-        "Nanny" => "Chon goi ung tuyen phu hop cho ho so cua ban",
-        _ => "Subscription cua NannyMatch"
+        "Parent" => "Chọn gói đăng tin phù hợp cho gia đình",
+        "Nanny" => "Chọn gói ứng tuyển phù hợp cho hồ sơ của bạn",
+        _ => "Subscription của NannyMatch"
     };
 
     private static string getSummary(string role) => role switch
     {
-        "Parent" => "Plus va Pro giup phu huynh dang them bai, giu bai lau hon va tang do noi bat khi tim bao mau.",
-        "Nanny" => "Plus va Pro giup bao mau co them luot ung tuyen, ho so noi bat hon va de duoc uu tien hien thi hon.",
-        _ => "Dang nhap bang tai khoan Parent hoac Nanny de xem cac goi phu hop."
+        "Parent" => "Plus và Pro giúp phụ huynh đăng nhiều hơn, giữ bài lâu hơn và nổi bật hơn khi tìm bảo mẫu.",
+        "Nanny" => "Plus và Pro giúp bảo mẫu tăng lượt ứng tuyển, hồ sơ nổi bật hơn và được ưu tiên hiển thị.",
+        _ => "Đăng nhập bằng tài khoản Parent hoặc Nanny để xem các gói phù hợp."
     };
 
     private static SubscriptionBenefitViewModel getFreeBenefits(string role) => role switch
     {
         "Parent" => new SubscriptionBenefitViewModel
         {
-            MonthlyJobPostLimit = 2,
+            MonthlyJobPostLimit = 3,
             MonthlyApplicationLimit = 0,
             FeaturedBadge = false,
             SearchPriority = false,
@@ -242,6 +243,25 @@ public class SubscriptionController : Controller
         _ => new SubscriptionBenefitViewModel()
     };
 
+    private static List<string> getFreeFeatures(string role) => role switch
+    {
+        "Parent" =>
+        [
+            "Tối đa 3 bài đăng đang hoạt động",
+            "Thời gian hiển thị bài đăng 30 ngày",
+            "Không có badge nổi bật",
+            "Không ưu tiên trong kết quả tìm kiếm"
+        ],
+        "Nanny" =>
+        [
+            "Tối đa 2 lượt ứng tuyển mỗi tháng",
+            "Hồ sơ hiển thị cơ bản",
+            "Không có badge nổi bật",
+            "Không ưu tiên trong kết quả tìm kiếm"
+        ],
+        _ => []
+    };
+
     private static async Task<ApiResult<T>?> readApiResult<T>(HttpResponseMessage response)
     {
         try
@@ -251,7 +271,7 @@ public class SubscriptionController : Controller
         }
         catch
         {
-            return new ApiResult<T> { Success = false, Message = $"Loi server (HTTP {(int)response.StatusCode})." };
+            return new ApiResult<T> { Success = false, Message = $"Lỗi server (HTTP {(int)response.StatusCode})." };
         }
     }
 

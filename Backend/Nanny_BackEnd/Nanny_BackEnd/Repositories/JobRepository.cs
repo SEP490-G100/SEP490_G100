@@ -216,6 +216,14 @@ public class JobRepository
             .CountAsync();
     }
 
+    public async Task<int> countActiveJobPostings(Guid parentProfileId) =>
+        await _db.JobPostings
+            .Where(j =>
+                j.ParentProfileId == parentProfileId &&
+                !j.IsDeleted &&
+                j.Status == (int)JobPostingStatus.Public)
+            .CountAsync();
+
     public async Task hideExpiredPostings()
     {
         var nowUtc = DateTime.UtcNow;

@@ -10,6 +10,7 @@ namespace Nanny_BackEnd.Services;
 public class VnPayService
 {
     private readonly VnPayOptions _options;
+    private static readonly TimeZoneInfo VnTimeZone = resolveVnTimeZone();
 
     public VnPayService(IOptions<VnPayOptions> options)
     {
@@ -20,14 +21,14 @@ public class VnPayService
     {
         validateOptions();
 
-        var nowUtc = DateTime.UtcNow;
+        var nowVn = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, VnTimeZone);
         var payload = new SortedDictionary<string, string>(StringComparer.Ordinal)
         {
             ["vnp_Version"] = "2.1.0",
             ["vnp_Command"] = _options.Command,
             ["vnp_TmnCode"] = _options.TmnCode,
             ["vnp_Amount"] = ((long)Math.Round(amount * 100m, MidpointRounding.AwayFromZero)).ToString(CultureInfo.InvariantCulture),
-            ["vnp_CreateDate"] = nowUtc.ToString("yyyyMMddHHmmss"),
+            ["vnp_CreateDate"] = nowVn.ToString("yyyyMMddHHmmss"),
             ["vnp_CurrCode"] = _options.CurrencyCode,
             ["vnp_IpAddr"] = normalizeIp(clientIp),
             ["vnp_Locale"] = _options.Locale,
@@ -35,7 +36,7 @@ public class VnPayService
             ["vnp_OrderType"] = _options.OrderType,
             ["vnp_ReturnUrl"] = _options.ReturnUrl,
             ["vnp_TxnRef"] = orderCode.ToString(CultureInfo.InvariantCulture),
-            ["vnp_ExpireDate"] = nowUtc.AddMinutes(15).ToString("yyyyMMddHHmmss")
+            ["vnp_ExpireDate"] = nowVn.AddMinutes(15).ToString("yyyyMMddHHmmss")
         };
 
         var hashData = buildQueryString(payload);
@@ -130,6 +131,24 @@ public class VnPayService
             return "127.0.0.1";
 
         return ip;
+    }
+
+    private static TimeZoneInfo resolveVnTimeZone()
+    {
+        // Windows host.
+        try { return TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"); }
+        catch { }
+
+        // Linux/macOS host.
+        try { return TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh"); }
+        catch { }
+
+        // Fallback UTC+7 nếu host không có timezone id ở trên.
+        return TimeZoneInfo.CreateCustomTimeZone(
+            "VN-UTC+7",
+            TimeSpan.FromHours(7),
+            "Vietnam Standard Time",
+            "Vietnam Standard Time");
     }
 
     private static string buildReturnUrl(string baseUrl, Guid transactionId, bool cancelled)

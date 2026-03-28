@@ -10,7 +10,7 @@ public class SubscriptionBenefitResponse
 
     public static SubscriptionBenefitResponse FreeParent => new()
     {
-        MonthlyJobPostLimit = 2,
+        MonthlyJobPostLimit = 3,
         MonthlyApplicationLimit = 0,
         FeaturedBadge = false,
         SearchPriority = false,

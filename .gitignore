@@ -26,3 +26,7 @@ logs/
 # ===== OS =====
 .DS_Store
 Thumbs.db
+
+# ===== Node (Tailwind build) =====
+**/node_modules/
+**/.npm-cache/
