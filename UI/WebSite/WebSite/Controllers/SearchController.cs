@@ -401,6 +401,76 @@ public class SearchController : Controller
         }
     }
 
+    [HttpGet]
+    [Authorize]
+    public async Task<IActionResult> JobApplicationsByJob(Guid jobPostingId, [FromQuery] int? status = null)
+    {
+        if (!isParentRole())
+            return StatusCode(403, new { success = false, message = "Ban khong co quyen xem request ung tuyen." });
+
+        SetAuthHeader();
+        try
+        {
+            var query = status.HasValue ? $"?status={status.Value}" : string.Empty;
+            var response = await _http.GetAsync($"/api/search/jobs/{jobPostingId}/applications{query}");
+            var json = await response.Content.ReadAsStringAsync();
+            return new ContentResult
+            {
+                Content = string.IsNullOrWhiteSpace(json) ? "{}" : json,
+                ContentType = "application/json",
+                StatusCode = (int)response.StatusCode
+            };
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpPost]
+    [Authorize]
+    public async Task<IActionResult> ReviewJobApplication(Guid applicationId, [FromBody] JsonElement body)
+    {
+        if (!isParentRole())
+            return StatusCode(403, new { success = false, message = "Ban khong co quyen duyet request ung tuyen." });
+
+        SetAuthHeader();
+        try
+        {
+            var response = await _http.PostAsJsonAsync($"/api/search/jobs/applications/{applicationId}/review", body);
+            var json = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode &&
+                tryParseReviewEventPayload(json, out var nannyUserId, out var status, out var relatedJobId))
+            {
+                if (nannyUserId != Guid.Empty)
+                {
+                    var approved = status == 1;
+                    await _notificationHub.Clients.User(nannyUserId.ToString()).SendAsync("notification:new", new
+                    {
+                        title = approved ? "Don ung tuyen duoc chap nhan" : "Don ung tuyen bi tu choi",
+                        message = approved
+                            ? "Parent da chap nhan don ung tuyen cua ban."
+                            : "Parent da tu choi don ung tuyen cua ban.",
+                        type = approved ? "job-application-approved" : "job-application-rejected",
+                        relatedId = relatedJobId == Guid.Empty ? applicationId : relatedJobId
+                    });
+                }
+            }
+
+            return new ContentResult
+            {
+                Content = string.IsNullOrWhiteSpace(json) ? "{}" : json,
+                ContentType = "application/json",
+                StatusCode = (int)response.StatusCode
+            };
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
     // ── Helper: đính kèm JWT token từ session ──────────────
     private void SetAuthHeader()
     {
@@ -594,6 +664,47 @@ public class SearchController : Controller
                 nannyUserId = parsedNannyId;
 
             return parentUserId != Guid.Empty || nannyUserId != Guid.Empty;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool tryParseReviewEventPayload(string json, out Guid nannyUserId, out int status, out Guid relatedJobId)
+    {
+        nannyUserId = Guid.Empty;
+        status = 0;
+        relatedJobId = Guid.Empty;
+        if (string.IsNullOrWhiteSpace(json))
+            return false;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            if (!root.TryGetProperty("success", out var successEl) || successEl.ValueKind != JsonValueKind.True)
+                return false;
+
+            if (!root.TryGetProperty("data", out var dataEl) || dataEl.ValueKind != JsonValueKind.Object)
+                return false;
+
+            if (dataEl.TryGetProperty("nannyUserId", out var nannyIdEl) &&
+                nannyIdEl.ValueKind == JsonValueKind.String &&
+                Guid.TryParse(nannyIdEl.GetString(), out var parsedNannyId))
+                nannyUserId = parsedNannyId;
+
+            if (dataEl.TryGetProperty("status", out var statusEl) &&
+                statusEl.ValueKind == JsonValueKind.Number &&
+                statusEl.TryGetInt32(out var parsedStatus))
+                status = parsedStatus;
+
+            if (dataEl.TryGetProperty("jobPostingId", out var jobIdEl) &&
+                jobIdEl.ValueKind == JsonValueKind.String &&
+                Guid.TryParse(jobIdEl.GetString(), out var parsedJobId))
+                relatedJobId = parsedJobId;
+
+            return nannyUserId != Guid.Empty;
         }
         catch
         {

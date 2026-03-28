@@ -190,8 +190,8 @@ public class ParentOnboardingController : Controller
             if (string.IsNullOrWhiteSpace(model.Address))
                 ModelState.AddModelError(nameof(model.Address), "Vui lòng nhập địa chỉ chi tiết.");
 
-            if (string.IsNullOrWhiteSpace(model.City) || string.IsNullOrWhiteSpace(model.District) || string.IsNullOrWhiteSpace(model.Ward))
-                ModelState.AddModelError(string.Empty, "Vui lòng chọn đầy đủ Tỉnh/Thành, Quận/Huyện, Phường/Xã.");
+            if (string.IsNullOrWhiteSpace(model.City) || string.IsNullOrWhiteSpace(model.District))
+                ModelState.AddModelError(string.Empty, "Vui lòng chọn đầy đủ Tỉnh/Thành và Phường/Xã.");
 
             if (!ModelState.IsValid)
                 return View(model);

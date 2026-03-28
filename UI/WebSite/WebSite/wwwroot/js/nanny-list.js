@@ -15,6 +15,7 @@ const nannySelectPickerSyncHandlers = [];
 let nannyScheduleFilters = [];
 let suppressNextNannyMapMove = false;
 let currentNannyDetailId = null;
+let currentNannyDetailUserId = null;
 const NANNY_DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 const NANNY_TIME_LABELS = ['Morning', 'Afternoon', 'Evening', 'Night'];
 const NANNY_FALLBACK_PROVINCES = [
@@ -1153,6 +1154,7 @@ async function openNannyDetail(id) {
       : '<span class="nanny-card__muted">Chưa có kỹ năng được khai báo.</span>';
 
     currentNannyDetailId = detail.id || id;
+    currentNannyDetailUserId = detail.userId || null;
 
     const favoriteButton = document.getElementById('nd-favoriteBtn');
     if (favoriteButton) {
@@ -1173,13 +1175,21 @@ async function openNannyDetail(id) {
 
 function closeNannyDetail() {
   currentNannyDetailId = null;
+  currentNannyDetailUserId = null;
   document.getElementById('nannyDetailModal')?.classList.remove('show');
 }
 
 function viewNannyProfileDetail(event) {
   event?.stopPropagation?.();
-  if (!currentNannyDetailId) return;
-  openNannyDetail(currentNannyDetailId);
+  if (!currentNannyDetailUserId) return;
+  window.location.href = `/Profile/ViewUser?userId=${encodeURIComponent(currentNannyDetailUserId)}`;
+}
+
+function tryOpenNannyDetailFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+  const detailId = (params.get('detailId') || '').trim();
+  if (!detailId) return;
+  openNannyDetail(detailId);
 }
 
 function bootstrapNannyListPage() {
@@ -1191,6 +1201,7 @@ function bootstrapNannyListPage() {
   initNannyMap();
   loadLocationData();
   doNannySearch();
+  tryOpenNannyDetailFromQuery();
 }
 
 if (document.readyState === 'loading') {

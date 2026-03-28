@@ -79,6 +79,16 @@ public class ProfileService
 
     public async Task<PersonalProfileDto> GetPersonalProfileAsync(Guid userId)
     {
+        return await BuildProfileDtoAsync(userId);
+    }
+
+    public async Task<PersonalProfileDto> GetPublicProfileAsync(Guid userId)
+    {
+        return await BuildProfileDtoAsync(userId);
+    }
+
+    private async Task<PersonalProfileDto> BuildProfileDtoAsync(Guid userId)
+    {
         var user = await _userRepo.FindByIdAsync(userId)
             ?? throw new InvalidOperationException("NgÆ°á»i dÃ¹ng khÃ´ng tá»“n táº¡i.");
 
@@ -295,13 +305,8 @@ public class ProfileService
         if (!string.IsNullOrWhiteSpace(request.Ward))
             user.Ward = request.Ward.Trim();
 
-        // Geocode like job posting (full location -> city/district fallback).
-        var locationForGeo = string.Join(", ",
-            new[] { user.Address, user.Ward }
-                .Where(x => !string.IsNullOrWhiteSpace(x))
-                .Select(x => x!.Trim()));
-
-        var coords = await _geo.geocode(locationForGeo, user.City, user.District);
+        // Geocoding fallback by administrative area only (district -> city).
+        var coords = await _geo.geocode(null, user.City, user.District);
         if (coords.HasValue)
         {
             user.Latitude = coords.Value.Lat;

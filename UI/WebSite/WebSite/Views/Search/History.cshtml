@@ -173,6 +173,208 @@
             font-weight: 800;
             padding: 0 .72rem;
         }
+
+        .history-request-panel {
+            border-radius: 1.35rem;
+            border: 1px solid #e2e8f0;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 55%, #fffaf5 100%);
+            box-shadow: 0 14px 30px rgba(15, 23, 42, .05);
+        }
+
+        .history-request-head {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: .8rem;
+        }
+
+        .history-request-metrics {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .5rem;
+            margin-top: .65rem;
+        }
+
+        .history-request-metric {
+            display: inline-flex;
+            align-items: center;
+            min-height: 1.75rem;
+            padding: 0 .68rem;
+            border-radius: 999px;
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            color: #475569;
+            font-size: .72rem;
+            font-weight: 800;
+        }
+
+        .history-request-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .38rem;
+            min-height: 2.4rem;
+            padding: 0 .95rem;
+            border-radius: .9rem;
+            border: 1px solid #fed7aa;
+            background: #fff7ed;
+            color: #c2410c;
+            font-size: .78rem;
+            font-weight: 800;
+            transition: all .2s ease;
+            box-shadow: 0 10px 18px rgba(249, 115, 22, .15);
+        }
+
+        .history-request-toggle:hover {
+            border-color: #fb923c;
+            background: #ffedd5;
+            transform: translateY(-1px);
+        }
+
+        .history-request-toggle.is-open {
+            border-color: #f97316;
+            background: linear-gradient(135deg, #fb923c, #f97316);
+            color: #ffffff;
+            box-shadow: 0 14px 24px rgba(249, 115, 22, .28);
+        }
+
+        .history-request-list {
+            border-top: 1px dashed #fed7aa;
+            padding-top: 1rem;
+        }
+
+        .history-request-item {
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            padding: .95rem;
+            transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+        }
+
+        .history-request-item:hover {
+            transform: translateY(-1px);
+            border-color: #fdba74;
+            box-shadow: 0 12px 22px rgba(249, 115, 22, .12);
+        }
+
+        .history-request-item__head {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: .7rem;
+        }
+
+        .history-request-user {
+            display: flex;
+            align-items: center;
+            gap: .65rem;
+        }
+
+        .history-request-avatar {
+            width: 2.45rem;
+            height: 2.45rem;
+            border-radius: 999px;
+            border: 1px solid #fed7aa;
+            background: linear-gradient(135deg, #fff7ed, #ffedd5);
+            color: #c2410c;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .88rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            overflow: hidden;
+        }
+
+        .history-request-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .history-app-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .32rem;
+            padding: .3rem .72rem;
+            border-radius: 999px;
+            border: 1px solid transparent;
+            font-size: .72rem;
+            font-weight: 800;
+            line-height: 1.1;
+        }
+
+        .history-app-badge::before {
+            content: "";
+            width: .42rem;
+            height: .42rem;
+            border-radius: 999px;
+            background: currentColor;
+            opacity: .9;
+        }
+
+        .history-app-badge--pending {
+            border-color: #fdba74;
+            background: #fff7ed;
+            color: #c2410c;
+        }
+
+        .history-app-badge--approved {
+            border-color: #86efac;
+            background: #f0fdf4;
+            color: #166534;
+        }
+
+        .history-app-badge--rejected {
+            border-color: #fca5a5;
+            background: #fef2f2;
+            color: #b91c1c;
+        }
+
+        .history-app-badge--withdrawn {
+            border-color: #cbd5e1;
+            background: #f8fafc;
+            color: #475569;
+        }
+
+        .history-request-info-grid {
+            margin-top: .75rem;
+            display: grid;
+            grid-template-columns: repeat(1, minmax(0, 1fr));
+            gap: .5rem;
+        }
+
+        @@media (min-width: 640px) {
+            .history-request-info-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+
+        .history-request-info {
+            border-radius: .8rem;
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            padding: .55rem .62rem;
+        }
+
+        .history-review-note {
+            border-radius: .95rem;
+            border: 1px solid #fdba74;
+            background: linear-gradient(180deg, rgba(255, 247, 237, .92), #ffffff);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .85);
+        }
+
+        .history-review-note textarea {
+            transition: border-color .2s ease, box-shadow .2s ease;
+        }
+
+        .history-review-note textarea:focus {
+            border-color: #fb923c;
+            box-shadow: 0 0 0 3px rgba(251, 146, 60, .18);
+        }
     </style>
 }
 
@@ -223,6 +425,102 @@
     </div>
 </section>
 
+<div id="jobApplicationDetailModal" class="nmodal fixed inset-0 z-50 bg-black/50 backdrop-blur-sm items-center justify-center px-4" onclick="if(event.target===this)window.__closeJobApplicationDetailModal?.()">
+    <div class="nmodal-box bg-white rounded-[28px] w-full max-w-3xl shadow-2xl relative">
+        <button type="button"
+                onclick="window.__closeJobApplicationDetailModal?.()"
+                class="absolute top-4 right-4 z-30 inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-slate-400 shadow-[0_10px_18px_rgba(15,23,42,.12)] hover:text-slate-600 hover:border-slate-300 transition-colors">
+            <span class="material-icons-round">close</span>
+        </button>
+        <div class="modal-scroll">
+            <div class="sticky top-0 z-20 px-6 py-5 border-b border-slate-100 bg-[linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
+                <div class="flex items-start gap-4 pr-12">
+                    <div>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-orange-500">Request ung tuyen</p>
+                        <h3 id="jobAppModalTitle" class="mt-2 text-xl font-bold text-slate-900">Chi tiet request</h3>
+                        <p id="jobAppModalSubTitle" class="mt-2 text-sm text-slate-500">Xem thong tin va duyet request tu Nanny.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-5 space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                    <div class="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+                        <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Nanny</p>
+                        <p id="jobAppNannyName" class="mt-2 text-base font-extrabold text-slate-900">-</p>
+                        <p id="jobAppNannyLocation" class="mt-1 text-sm text-slate-500">-</p>
+                    </div>
+                    <div class="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+                        <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Trang thai request</p>
+                        <div id="jobAppStatusWrap" class="mt-2"></div>
+                        <p id="jobAppAppliedAt" class="mt-2 text-sm text-slate-500">-</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                    <div class="rounded-2xl border border-slate-100 bg-white p-3">
+                        <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">So dien thoai</p>
+                        <p id="jobAppPhone" class="mt-2 font-bold text-slate-900">-</p>
+                    </div>
+                    <div class="rounded-2xl border border-slate-100 bg-white p-3">
+                        <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Kinh nghiem</p>
+                        <p id="jobAppExperience" class="mt-2 font-bold text-slate-900">-</p>
+                    </div>
+                    <div class="rounded-2xl border border-slate-100 bg-white p-3">
+                        <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Muc luong mong muon</p>
+                        <p id="jobAppSalary" class="mt-2 font-bold text-slate-900">-</p>
+                    </div>
+                    <div class="rounded-2xl border border-slate-100 bg-white p-3">
+                        <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Ly do tu choi</p>
+                        <p id="jobAppRejectReasonDisplay" class="mt-2 text-slate-600">Chua co.</p>
+                    </div>
+                </div>
+
+                <div id="jobAppRejectReasonWrap" class="history-review-note p-4">
+                    <label for="jobAppRejectReason" class="block text-sm font-bold text-amber-700">Ly do tu choi (bat buoc khi Reject)</label>
+                    <textarea id="jobAppRejectReason"
+                              rows="3"
+                              class="mt-2 w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none"
+                              placeholder="Nhap ly do parent tu choi request..."></textarea>
+                </div>
+            </div>
+
+            <div class="px-6 pb-6 pt-2 flex flex-wrap items-center justify-between gap-3">
+                <a id="jobAppViewProfileBtn"
+                   href="#"
+                   target="_blank"
+                   rel="noopener"
+                   class="hidden inline-flex items-center justify-center gap-2 min-h-[42px] px-5 rounded-xl border border-orange-200 bg-orange-50 text-orange-600 font-bold hover:bg-orange-100 transition-all">
+                    <span class="material-icons-round text-base">visibility</span>
+                    Xem chi tiet ho so Nanny
+                </a>
+
+                <div class="ml-auto flex flex-wrap items-center justify-end gap-3">
+                    <button type="button"
+                            onclick="window.__closeJobApplicationDetailModal?.()"
+                            class="inline-flex items-center justify-center min-h-[42px] px-5 rounded-xl border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 transition-all">
+                        Dong
+                    </button>
+                    <button type="button"
+                            id="jobAppApproveBtn"
+                            onclick="window.__submitJobApplicationReview?.(1)"
+                            class="inline-flex items-center justify-center gap-2 min-h-[42px] px-5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 font-bold hover:bg-emerald-100 transition-all">
+                        <span class="material-icons-round text-base">check_circle</span>
+                        Chap nhan
+                    </button>
+                    <button type="button"
+                            id="jobAppRejectBtn"
+                            onclick="window.__submitJobApplicationReview?.(2)"
+                            class="inline-flex items-center justify-center gap-2 min-h-[42px] px-5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 font-bold hover:bg-rose-100 transition-all">
+                        <span class="material-icons-round text-base">cancel</span>
+                        Tu choi
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     (() => {
         const HISTORY_TOAST_KEY = 'nm:historyToast';
@@ -258,6 +556,26 @@
 
         const rowLabels = ['Morning', 'Afternoon', 'Evening', 'Night'];
         const dayLabels = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+        const focusParams = new URLSearchParams(window.location.search);
+        const focusJobId = focusParams.get('jobId');
+        const focusApplicationId = focusParams.get('applicationId');
+        const historyJobsById = new Map();
+        const applicationCache = new Map();
+        let activeReviewContext = null;
+        let isSubmittingReview = false;
+
+        const applicationStatusLabels = {
+            0: 'Dang cho duyet',
+            1: 'Da duoc chap nhan',
+            2: 'Da bi tu choi',
+            3: 'Da huy'
+        };
+        const applicationBadgeClasses = {
+            0: 'history-app-badge history-app-badge--pending',
+            1: 'history-app-badge history-app-badge--approved',
+            2: 'history-app-badge history-app-badge--rejected',
+            3: 'history-app-badge history-app-badge--withdrawn'
+        };
 
         const escapeHtml = (value) => String(value ?? '')
             .replaceAll('&', '&amp;')
@@ -347,7 +665,341 @@
             return html;
         };
 
-        const focusJobId = new URLSearchParams(window.location.search).get('jobId');
+        const formatDateTime = (value) => {
+            if (!value) return 'Chua cap nhat';
+            const parsed = new Date(value);
+            if (Number.isNaN(parsed.getTime())) return 'Chua cap nhat';
+            return parsed.toLocaleString('vi-VN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        };
+
+        const renderApplicationBadge = (status) => `
+            <span class="${applicationBadgeClasses[Number(status)] || 'history-app-badge history-app-badge--pending'}">
+                ${escapeHtml(applicationStatusLabels[status] || 'Dang cap nhat')}
+            </span>`;
+
+        const getNameInitial = (fullName) => {
+            const normalized = String(fullName ?? '').trim();
+            if (!normalized) return 'N';
+            const token = normalized.split(/\s+/).find(Boolean) || 'N';
+            return token.charAt(0).toUpperCase();
+        };
+
+        const renderRequestMetrics = (jobId, applications) => {
+            const metricsEl = document.getElementById(`historyRequestMetrics-${jobId}`);
+            if (!metricsEl) return;
+
+            const total = applications.length;
+            const pending = applications.filter((item) => Number(item.status) === 0).length;
+            const approved = applications.filter((item) => Number(item.status) === 1).length;
+            const rejected = applications.filter((item) => Number(item.status) === 2).length;
+
+            metricsEl.innerHTML = `
+                <span class="history-request-metric">Tong: ${total}</span>
+                <span class="history-request-metric">Pending: ${pending}</span>
+                <span class="history-request-metric">Chap nhan: ${approved}</span>
+                <span class="history-request-metric">Tu choi: ${rejected}</span>`;
+        };
+
+        const updateApplicationSummary = (jobId, applications) => {
+            const summaryEl = document.getElementById(`historyRequestSummary-${jobId}`);
+            if (!summaryEl) return;
+            renderRequestMetrics(jobId, applications);
+
+            if (!applications.length) {
+                summaryEl.textContent = 'Chua co request ung tuyen nao.';
+                return;
+            }
+
+            const pendingCount = applications.filter((item) => Number(item.status) === 0).length;
+            summaryEl.textContent = pendingCount > 0
+                ? `Co ${pendingCount} request dang cho duyet trong tong so ${applications.length} request.`
+                : `Tat ca ${applications.length} request da duoc xu ly.`;
+        };
+
+        const renderApplicationList = (jobId, applications) => {
+            const listEl = document.getElementById(`historyRequestList-${jobId}`);
+            if (!listEl) return;
+
+            if (!applications.length) {
+                listEl.innerHTML = `
+                    <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
+                        Chua co request ung tuyen cho bai dang nay.
+                    </div>`;
+                updateApplicationSummary(jobId, applications);
+                return;
+            }
+
+            listEl.innerHTML = `
+                <div class="space-y-3">
+                    ${applications.map((item) => `
+                        <article class="history-request-item">
+                            <div class="history-request-item__head">
+                                <div class="history-request-user">
+                                    <span class="history-request-avatar">
+                                        ${item?.nanny?.avatarUrl
+                                            ? `<img src="${escapeHtml(item.nanny.avatarUrl)}" alt="Nanny avatar" />`
+                                            : escapeHtml(getNameInitial(item?.nanny?.fullName))}
+                                    </span>
+                                    <div>
+                                        <p class="text-sm font-extrabold text-slate-900">${escapeHtml(item?.nanny?.fullName || 'Nanny')}</p>
+                                        <p class="mt-1 text-xs text-slate-500">${escapeHtml([item?.nanny?.district, item?.nanny?.city].filter(Boolean).join(', ') || 'Chua cap nhat khu vuc')}</p>
+                                    </div>
+                                </div>
+                                ${renderApplicationBadge(item.status)}
+                            </div>
+                            <div class="history-request-info-grid text-xs text-slate-600">
+                                <div class="history-request-info">
+                                    <p class="font-bold text-slate-500">Ngay ung tuyen</p>
+                                    <p class="mt-1 font-semibold text-slate-700">${escapeHtml(formatDateTime(item.appliedAt))}</p>
+                                </div>
+                                <div class="history-request-info">
+                                    <p class="font-bold text-slate-500">Kinh nghiem</p>
+                                    <p class="mt-1 font-semibold text-slate-700">${item?.nanny?.yearsOfExperience ? `${item.nanny.yearsOfExperience} nam` : 'Chua cap nhat'}</p>
+                                </div>
+                                <div class="history-request-info">
+                                    <p class="font-bold text-slate-500">Luong mong muon</p>
+                                    <p class="mt-1 font-semibold text-slate-700">${escapeHtml(formatSalaryRange(item?.nanny?.expectedSalaryMin, item?.nanny?.expectedSalaryMax))}</p>
+                                </div>
+                            </div>
+                            <div class="mt-3 flex items-center justify-end">
+                                <button type="button"
+                                        onclick="window.__openJobApplicationDetail?.('${escapeHtml(jobId)}','${escapeHtml(item.id)}')"
+                                        class="inline-flex items-center justify-center min-h-[36px] px-3 rounded-lg border border-orange-200 bg-orange-50 text-orange-600 text-xs font-bold hover:bg-orange-100 transition-all">
+                                    Xem chi tiet request
+                                </button>
+                            </div>
+                        </article>`).join('')}
+                </div>`;
+
+            updateApplicationSummary(jobId, applications);
+        };
+
+        const setRequestLoadingState = (jobId, message) => {
+            const listEl = document.getElementById(`historyRequestList-${jobId}`);
+            if (!listEl) return;
+            listEl.innerHTML = `
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
+                    ${escapeHtml(message)}
+                </div>`;
+        };
+
+        const delay = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
+
+        const loadJobApplications = async (jobId, forceReload = false, options = {}) => {
+            const shouldRenderList = options?.renderList !== false;
+            const silent = options?.silent === true;
+            if (!jobId) return [];
+            if (!forceReload && applicationCache.has(jobId)) {
+                const cached = applicationCache.get(jobId) || [];
+                if (shouldRenderList) renderApplicationList(jobId, cached);
+                else updateApplicationSummary(jobId, cached);
+                return cached;
+            }
+
+            if (shouldRenderList) {
+                setRequestLoadingState(jobId, 'Dang tai request ung tuyen...');
+            }
+            try {
+                const response = await fetch(`/Search/JobApplicationsByJob?jobPostingId=${encodeURIComponent(jobId)}`, { credentials: 'same-origin' });
+                const json = await response.json();
+                if (!json?.success) throw new Error(json?.message || 'Khong tai duoc request.');
+
+                const applications = Array.isArray(json?.data?.applications) ? json.data.applications : [];
+                applicationCache.set(jobId, applications);
+                if (shouldRenderList) renderApplicationList(jobId, applications);
+                else updateApplicationSummary(jobId, applications);
+                return applications;
+            } catch (error) {
+                if (shouldRenderList) {
+                    setRequestLoadingState(jobId, 'Khong tai duoc request ung tuyen.');
+                }
+                if (!silent) {
+                    showHistoryToast(error?.message || 'Khong tai duoc request ung tuyen.', 'error');
+                }
+                return [];
+            }
+        };
+
+        const preloadApplicationSummary = async (jobId) => {
+            if (!jobId) return;
+            await loadJobApplications(jobId, false, { renderList: false, silent: true });
+
+            // Retry mot lan neu request preload dau tien bi truot.
+            if (!applicationCache.has(jobId)) {
+                await delay(320);
+                await loadJobApplications(jobId, true, { renderList: false, silent: true });
+            }
+        };
+
+        const preloadApplicationSummaries = async (jobs) => {
+            const tasks = (jobs || [])
+                .filter((job) => !!job?.id)
+                .map((job) => preloadApplicationSummary(String(job.id)));
+
+            if (!tasks.length) return;
+            await Promise.allSettled(tasks);
+        };
+
+        const toggleJobApplications = async (jobId, forceOpen = false) => {
+            const listEl = document.getElementById(`historyRequestList-${jobId}`);
+            const toggleBtn = document.getElementById(`historyRequestToggle-${jobId}`);
+            if (!listEl || !toggleBtn) return;
+
+            const shouldOpen = forceOpen || listEl.classList.contains('hidden');
+            if (!shouldOpen) {
+                listEl.classList.add('hidden');
+                toggleBtn.classList.remove('is-open');
+                toggleBtn.innerHTML = '<span class="material-icons-round text-base">visibility</span>Xem request';
+                return;
+            }
+
+            listEl.classList.remove('hidden');
+            toggleBtn.classList.add('is-open');
+            toggleBtn.innerHTML = '<span class="material-icons-round text-base">expand_less</span>Thu gon';
+            await loadJobApplications(jobId);
+        };
+
+        const setReviewButtonState = (canReview, submitting = false) => {
+            const approveBtn = document.getElementById('jobAppApproveBtn');
+            const rejectBtn = document.getElementById('jobAppRejectBtn');
+            const reasonWrap = document.getElementById('jobAppRejectReasonWrap');
+            const reasonInput = document.getElementById('jobAppRejectReason');
+            const disabled = submitting || !canReview;
+
+            if (approveBtn) {
+                approveBtn.disabled = disabled;
+                approveBtn.classList.toggle('opacity-60', disabled);
+                approveBtn.classList.toggle('cursor-not-allowed', disabled);
+            }
+
+            if (rejectBtn) {
+                rejectBtn.disabled = disabled;
+                rejectBtn.classList.toggle('opacity-60', disabled);
+                rejectBtn.classList.toggle('cursor-not-allowed', disabled);
+            }
+
+            if (reasonWrap) reasonWrap.classList.toggle('hidden', !canReview);
+            if (reasonInput) reasonInput.disabled = !canReview || submitting;
+        };
+
+        const closeJobApplicationDetailModal = () => {
+            activeReviewContext = null;
+            isSubmittingReview = false;
+            document.getElementById('jobApplicationDetailModal')?.classList.remove('show');
+            const reasonInput = document.getElementById('jobAppRejectReason');
+            if (reasonInput) reasonInput.value = '';
+            const viewProfileBtn = document.getElementById('jobAppViewProfileBtn');
+            if (viewProfileBtn) {
+                viewProfileBtn.classList.add('hidden');
+                viewProfileBtn.removeAttribute('href');
+            }
+        };
+
+        const openJobApplicationDetail = async (jobId, applicationId) => {
+            if (!jobId || !applicationId) return;
+
+            let applications = applicationCache.get(jobId);
+            if (!applications) {
+                applications = await loadJobApplications(jobId);
+            }
+
+            const application = (applications || []).find((item) => String(item.id).toLowerCase() === String(applicationId).toLowerCase());
+            if (!application) {
+                showHistoryToast('Khong tim thay request can xem.', 'warning');
+                return;
+            }
+
+            const job = historyJobsById.get(jobId);
+            const canReview = Number(application.status) === 0;
+            activeReviewContext = { jobId, applicationId };
+
+            document.getElementById('jobAppModalTitle').textContent = job?.title || 'Chi tiet request';
+            document.getElementById('jobAppModalSubTitle').textContent = canReview
+                ? 'Request dang cho duyet. Ban co the chap nhan hoac tu choi.'
+                : 'Request nay da duoc xu ly. Ban dang xem lai chi tiet.';
+            document.getElementById('jobAppNannyName').textContent = application?.nanny?.fullName || 'Nanny';
+            document.getElementById('jobAppNannyLocation').textContent = [application?.nanny?.district, application?.nanny?.city].filter(Boolean).join(', ') || 'Chua cap nhat khu vuc';
+            document.getElementById('jobAppStatusWrap').innerHTML = renderApplicationBadge(application.status);
+            document.getElementById('jobAppAppliedAt').textContent = `Ngay ung tuyen: ${formatDateTime(application.appliedAt)}`;
+            document.getElementById('jobAppPhone').textContent = application?.nanny?.phoneNumber || 'Chua cap nhat';
+            document.getElementById('jobAppExperience').textContent = application?.nanny?.yearsOfExperience ? `${application.nanny.yearsOfExperience} nam` : 'Chua cap nhat';
+            document.getElementById('jobAppSalary').textContent = formatSalaryRange(application?.nanny?.expectedSalaryMin, application?.nanny?.expectedSalaryMax);
+            document.getElementById('jobAppRejectReasonDisplay').textContent = application?.rejectionReason || 'Chua co.';
+
+            const viewProfileBtn = document.getElementById('jobAppViewProfileBtn');
+            if (viewProfileBtn) {
+                const profileId = application?.nanny?.profileId ? String(application.nanny.profileId) : '';
+                if (profileId) {
+                    viewProfileBtn.setAttribute('href', `/Nanny/List?detailId=${encodeURIComponent(profileId)}`);
+                    viewProfileBtn.classList.remove('hidden');
+                } else {
+                    viewProfileBtn.classList.add('hidden');
+                    viewProfileBtn.removeAttribute('href');
+                }
+            }
+
+            const rejectReasonInput = document.getElementById('jobAppRejectReason');
+            if (rejectReasonInput) rejectReasonInput.value = application?.rejectionReason || '';
+
+            setReviewButtonState(canReview, false);
+            document.getElementById('jobApplicationDetailModal')?.classList.add('show');
+        };
+
+        const submitJobApplicationReview = async (action) => {
+            if (!activeReviewContext || isSubmittingReview) return;
+            const { jobId, applicationId } = activeReviewContext;
+
+            const reasonInput = document.getElementById('jobAppRejectReason');
+            const rejectionReason = reasonInput?.value.trim() || '';
+            if (Number(action) === 2 && !rejectionReason) {
+                showHistoryToast('Vui long nhap ly do khi Reject request.', 'warning');
+                reasonInput?.focus();
+                return;
+            }
+            if (Number(action) === 2 && rejectionReason.length < 8) {
+                showHistoryToast('Ly do tu choi can toi thieu 8 ky tu.', 'warning');
+                reasonInput?.focus();
+                return;
+            }
+
+            isSubmittingReview = true;
+            setReviewButtonState(true, true);
+
+            try {
+                const response = await fetch(`/Search/ReviewJobApplication?applicationId=${encodeURIComponent(applicationId)}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        action: Number(action),
+                        rejectionReason: Number(action) === 2 ? rejectionReason : null
+                    })
+                });
+
+                const json = await response.json();
+                if (!json?.success) {
+                    showHistoryToast(json?.message || 'Khong the xu ly request ung tuyen.', 'error');
+                    setReviewButtonState(true, false);
+                    isSubmittingReview = false;
+                    return;
+                }
+
+                showHistoryToast(json?.message || 'Cap nhat request ung tuyen thanh cong.', 'success');
+                await loadJobApplications(jobId, true);
+                window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
+                closeJobApplicationDetailModal();
+            } catch {
+                showHistoryToast('Khong the xu ly request ung tuyen.', 'error');
+                setReviewButtonState(true, false);
+                isSubmittingReview = false;
+            }
+        };
 
         async function loadHistoryPage() {
             const body = document.getElementById('historyPageBody');
@@ -359,6 +1011,11 @@
                 const res = await fetch('/Search/MyJobs');
                 const json = await res.json();
                 const jobs = json.data || [];
+                historyJobsById.clear();
+                applicationCache.clear();
+                jobs.forEach((job) => {
+                    if (job?.id) historyJobsById.set(String(job.id), job);
+                });
 
                 totalEl.textContent = jobs.length;
                 pendingEl.textContent = jobs.filter((job) => Number(job.moderationStatus) === 0).length;
@@ -451,13 +1108,44 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="px-6 pb-6">
+                            <div class="history-request-panel p-4">
+                                <div class="history-request-head">
+                                    <div>
+                                        <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Request tu nanny</p>
+                                        <p id="historyRequestSummary-${escapeHtml(job.id)}" class="mt-2 text-sm text-slate-500">Dang tai so luong request ung tuyen...</p>
+                                        <div id="historyRequestMetrics-${escapeHtml(job.id)}" class="history-request-metrics">
+                                            <span class="history-request-metric">Tong: ...</span>
+                                            <span class="history-request-metric">Pending: ...</span>
+                                            <span class="history-request-metric">Chap nhan: ...</span>
+                                            <span class="history-request-metric">Tu choi: ...</span>
+                                        </div>
+                                    </div>
+                                    <button id="historyRequestToggle-${escapeHtml(job.id)}"
+                                            type="button"
+                                            class="history-request-toggle"
+                                            onclick="window.__toggleJobApplications?.('${escapeHtml(job.id)}')">
+                                        <span class="material-icons-round text-base">visibility</span>
+                                        Xem request
+                                    </button>
+                                </div>
+                                <div id="historyRequestList-${escapeHtml(job.id)}" class="history-request-list hidden mt-4"></div>
+                            </div>
+                        </div>
                     </article>`).join('');
+
+                await preloadApplicationSummaries(jobs);
 
                 if (focusJobId) {
                     const target = body.querySelector(`[data-job-id="${focusJobId}"]`);
                     if (target) {
                         target.classList.add('ring-4', 'ring-orange-200', 'border-orange-300', 'shadow-[0_18px_42px_rgba(249,115,22,.16)]');
                         target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        await toggleJobApplications(focusJobId, true);
+                        if (focusApplicationId) {
+                            await openJobApplicationDetail(focusJobId, focusApplicationId);
+                        }
                     }
                 }
             } catch {
@@ -467,6 +1155,11 @@
                     </div>`;
             }
         }
+
+        window.__toggleJobApplications = toggleJobApplications;
+        window.__openJobApplicationDetail = openJobApplicationDetail;
+        window.__closeJobApplicationDetailModal = closeJobApplicationDetailModal;
+        window.__submitJobApplicationReview = submitJobApplicationReview;
 
         loadHistoryPage();
         window.setTimeout(consumeHistoryToast, 120);
