@@ -285,6 +285,122 @@ public class NannyController : Controller
     }
 
     [HttpGet]
+    [Authorize]
+    public IActionResult ReceivedContactRequests()
+    {
+        if (!IsNannyRole())
+            return RedirectToAction(nameof(List));
+
+        return View();
+    }
+
+    [HttpGet]
+    [Authorize]
+    public async Task<IActionResult> ReceivedContactRequestsData([FromQuery] int? status = null)
+    {
+        if (!IsNannyRole())
+            return StatusCode(403, new { success = false, message = "Ban khong co quyen xem request contact da nhan." });
+
+        SetAuthHeader();
+        try
+        {
+            var query = status.HasValue ? $"?status={status.Value}" : string.Empty;
+            var response = await _http.GetAsync($"/api/nannies/contact-requests/received{query}");
+            var json = await response.Content.ReadAsStringAsync();
+            return new ContentResult
+            {
+                Content = string.IsNullOrWhiteSpace(json) ? "{}" : json,
+                ContentType = "application/json",
+                StatusCode = (int)response.StatusCode
+            };
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message, data = (object?)null });
+        }
+    }
+
+    [HttpGet]
+    [Authorize]
+    public async Task<IActionResult> ReceivedContactRequestDetailData(Guid requestId)
+    {
+        if (!IsNannyRole())
+            return StatusCode(403, new { success = false, message = "Ban khong co quyen xem chi tiet request contact." });
+
+        if (requestId == Guid.Empty)
+            return BadRequest(new { success = false, message = "Request id khong hop le." });
+
+        SetAuthHeader();
+        try
+        {
+            var response = await _http.GetAsync($"/api/nannies/contact-requests/{requestId}");
+            var json = await response.Content.ReadAsStringAsync();
+            return new ContentResult
+            {
+                Content = string.IsNullOrWhiteSpace(json) ? "{}" : json,
+                ContentType = "application/json",
+                StatusCode = (int)response.StatusCode
+            };
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message, data = (object?)null });
+        }
+    }
+
+    [HttpPost]
+    [Authorize]
+    public async Task<IActionResult> ReviewReceivedContactRequest(Guid requestId, [FromBody] ReviewContactRequestViewModel request)
+    {
+        if (!IsNannyRole())
+            return StatusCode(403, new { success = false, message = "Ban khong co quyen xu ly request contact." });
+
+        if (requestId == Guid.Empty || request == null)
+            return BadRequest(new { success = false, message = "Du lieu xu ly request contact khong hop le." });
+
+        SetAuthHeader();
+        try
+        {
+            var response = await _http.PostAsJsonAsync($"/api/nannies/contact-requests/{requestId}/review", new
+            {
+                action = request.Action,
+                responseMessage = request.ResponseMessage
+            });
+
+            var json = await response.Content.ReadAsStringAsync();
+            if (response.IsSuccessStatusCode &&
+                tryParseContactReviewEventPayload(json, out var parsedRequestId, out var parentUserId, out var status))
+            {
+                if (parentUserId != Guid.Empty)
+                {
+                    var approved = status == 1;
+                    await _notificationHub.Clients.User(parentUserId.ToString()).SendAsync("notification:new", new
+                    {
+                        title = approved ? "Request contact da duoc chap nhan" : "Request contact bi tu choi",
+                        message = approved
+                            ? "Nanny da chap nhan request contact cua ban."
+                            : "Nanny da tu choi request contact cua ban.",
+                        type = approved ? "contact-request-accepted" : "contact-request-rejected",
+                        relatedId = parsedRequestId == Guid.Empty ? requestId : parsedRequestId
+                    });
+                }
+
+            }
+
+            return new ContentResult
+            {
+                Content = string.IsNullOrWhiteSpace(json) ? "{}" : json,
+                ContentType = "application/json",
+                StatusCode = (int)response.StatusCode
+            };
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpGet]
     public IActionResult Profile() => View(new NannyProfileViewModel());
 
     [HttpPost, ValidateAntiForgeryToken]
@@ -417,6 +533,16 @@ public class NannyController : Controller
             string.Equals(c.Value, "Parent", StringComparison.OrdinalIgnoreCase));
     }
 
+    private bool IsNannyRole()
+    {
+        if (User.IsInRole("Nanny"))
+            return true;
+
+        return User.Claims.Any(c =>
+            c.Type == System.Security.Claims.ClaimTypes.Role &&
+            string.Equals(c.Value, "Nanny", StringComparison.OrdinalIgnoreCase));
+    }
+
     private static bool tryParseFavoriteEventPayload(
         string json,
         out bool isFavorite,
@@ -502,9 +628,62 @@ public class NannyController : Controller
         }
     }
 
+    private static bool tryParseContactReviewEventPayload(
+        string json,
+        out Guid requestId,
+        out Guid parentUserId,
+        out int status)
+    {
+        requestId = Guid.Empty;
+        parentUserId = Guid.Empty;
+        status = 0;
+
+        if (string.IsNullOrWhiteSpace(json))
+            return false;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            if (!root.TryGetProperty("success", out var successEl) || successEl.ValueKind != JsonValueKind.True)
+                return false;
+
+            if (!root.TryGetProperty("data", out var dataEl) || dataEl.ValueKind != JsonValueKind.Object)
+                return false;
+
+            if (dataEl.TryGetProperty("requestId", out var requestIdEl) &&
+                requestIdEl.ValueKind == JsonValueKind.String &&
+                Guid.TryParse(requestIdEl.GetString(), out var parsedRequestId))
+                requestId = parsedRequestId;
+
+            if (dataEl.TryGetProperty("parentUserId", out var parentIdEl) &&
+                parentIdEl.ValueKind == JsonValueKind.String &&
+                Guid.TryParse(parentIdEl.GetString(), out var parsedParentId))
+                parentUserId = parsedParentId;
+
+            if (dataEl.TryGetProperty("status", out var statusEl) &&
+                statusEl.ValueKind == JsonValueKind.Number &&
+                statusEl.TryGetInt32(out var parsedStatus))
+                status = parsedStatus;
+
+            return requestId != Guid.Empty || parentUserId != Guid.Empty;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public sealed class SendContactRequestViewModel
     {
         public Guid NannyProfileId { get; set; }
         public string? Message { get; set; }
+    }
+
+    public sealed class ReviewContactRequestViewModel
+    {
+        public int Action { get; set; } // 1 = Accept, 2 = Reject
+        public string? ResponseMessage { get; set; }
     }
 }

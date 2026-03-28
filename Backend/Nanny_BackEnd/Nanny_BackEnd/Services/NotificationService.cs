@@ -216,7 +216,7 @@ public class NotificationService
             NotificationTypes.JobApplicationSubmitted =>
                 "/Search/Applications",
             NotificationTypes.ContactRequestReceived =>
-                "/Nanny/ContactRequests",
+                "/Nanny/ReceivedContactRequests",
             NotificationTypes.ContactRequestAccepted =>
                 "/Nanny/ContactRequests",
             NotificationTypes.ContactRequestRejected =>
