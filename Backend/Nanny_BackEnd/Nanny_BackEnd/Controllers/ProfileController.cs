@@ -36,6 +36,20 @@ public class ProfileController : ControllerBase
         }
     }
 
+    [HttpGet("public/{userId:guid}")]
+    public async Task<IActionResult> GetPublicProfile(Guid userId)
+    {
+        try
+        {
+            var profile = await _profileService.GetPublicProfileAsync(userId);
+            return Ok(new { success = true, data = profile });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(Fail(ex.Message));
+        }
+    }
+
     /// <summary>
     /// Update personal information
     /// </summary>
@@ -68,6 +82,21 @@ public class ProfileController : ControllerBase
             var userId = GetCurrentUserId();
             var avatarUrl = await _profileService.UploadAvatarAsync(userId, file);
             return Ok(new { success = true, message = "Cập nhật ảnh đại diện thành công.", data = avatarUrl });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(Fail(ex.Message));
+        }
+    }
+
+    [NonAction]
+    public async Task<IActionResult> AddCertificate([FromBody] CreateNannyCertificateRequest request)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            await _profileService.AddNannyCertificateAsync(userId, request);
+            return Ok(new { success = true, message = "Thêm chứng chỉ thành công." });
         }
         catch (InvalidOperationException ex)
         {

@@ -190,7 +190,7 @@ public class NannyController : Controller
             return View(model);
         }
 
-        return RedirectToAction("Start", "Onboarding");
+        return RedirectToAction("Availability", "Nanny");
     }
 
     [HttpGet]
@@ -237,7 +237,7 @@ public class NannyController : Controller
             return View(model);
         }
 
-        return RedirectToAction("Start", "Onboarding");
+        return RedirectToAction("Index", "Home");
     }
 
     [HttpGet]
@@ -268,7 +268,7 @@ public class NannyController : Controller
             return View(model);
         }
 
-        return RedirectToAction("Start", "Onboarding");
+        return RedirectToAction("Index", "Home");
     }
 
     private static void AddQuery<T>(IDictionary<string, string?> query, string key, T? value)

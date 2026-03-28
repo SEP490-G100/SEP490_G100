@@ -474,6 +474,7 @@ public class JobService
         {
             Id = job.Id,
             ParentProfileId = job.ParentProfileId,
+            ParentUserId = job.ParentProfile?.UserId,
             ChildProfileId = job.ChildProfileId,
             IsOwner = currentUserId.HasValue && job.ParentProfile?.UserId == currentUserId.Value,
             IsFavorite = favoriteJobIds?.Contains(job.Id) == true,
@@ -575,7 +576,7 @@ public class JobService
 
     private static string? getBirthTypeLabel(int? birthType)
     {
-        if (!birthType.HasValue || !Enum.IsDefined(typeof(ChildAgeGroup), birthType.Value))
+        if (!birthType.HasValue || !Enum.IsDefined(typeof(ChildAgeGroup), (byte)birthType.Value))
             return null;
 
         return EnumDisplayHelper.GetDisplayName((ChildAgeGroup)birthType.Value);

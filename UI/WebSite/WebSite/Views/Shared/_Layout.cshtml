@@ -180,6 +180,14 @@
             transform: translateY(-1px);
         }
 
+        .nm-icon-btn--mini {
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, .05);
+        }
+
+
         .nm-badge-dot {
             position: absolute;
             top: 6px;
@@ -470,6 +478,7 @@
                 <div class="hidden md:flex items-center gap-1 nm-nav-links">
                     <a href="/" class="@NavCls("Home")">Trang chủ</a>
                     <a href="/Search" class="@NavCls("Search")">Tìm bảo mẫu</a>
+                    
                     <a href="/Nanny/List" class="@nannyListNavCls">Tìm nanny</a>
                     <a href="#how-it-works" class="nm-nav-link">Cách hoạt động</a>
                 </div>
@@ -479,6 +488,16 @@
 
                     @if (User.Identity != null && User.Identity.IsAuthenticated)
                     {
+                        @if (isHomePage)
+                        {
+                            <a href="/Communication"
+                               class="nm-icon-btn nm-icon-btn--mini"
+                               aria-label="Tin nhan">
+                                <span class="material-icons-round text-[18px]">chat_bubble_outline</span>
+                            </a>
+                        }
+
+
                         <div class="relative" id="notificationDropdown">
                             <button type="button"
                                     id="notificationToggle"

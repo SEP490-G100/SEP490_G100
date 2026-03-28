@@ -6,6 +6,7 @@ public class SearchJobResponse
 {
     public Guid Id { get; set; }
     public Guid? ParentProfileId { get; set; }
+    public Guid? ParentUserId { get; set; }
     public Guid? ChildProfileId { get; set; }
     public bool IsOwner { get; set; }
     public bool IsFavorite { get; set; }

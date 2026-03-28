@@ -11,11 +11,22 @@ namespace WebSite.Controllers;
 public class NannyBasicInfoController : Controller
 {
     private readonly HttpClient _http;
+    private readonly string _apiBaseUrl;
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
 
-    public NannyBasicInfoController(IHttpClientFactory httpFactory)
+    public NannyBasicInfoController(IHttpClientFactory httpFactory, IConfiguration config)
     {
         _http = httpFactory.CreateClient("BackendApi");
+        _apiBaseUrl = (config["ApiSettings:BaseUrl"] ?? "").TrimEnd('/');
+    }
+
+    private string? NormalizeAvatarUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return url;
+        if (Uri.TryCreate(url, UriKind.Absolute, out _)) return url;
+        if (url.StartsWith("/") && !string.IsNullOrWhiteSpace(_apiBaseUrl))
+            return _apiBaseUrl + url;
+        return url;
     }
 
     private string? GetToken() => HttpContext.Session.GetString("AccessToken");
@@ -123,7 +134,7 @@ public class NannyBasicInfoController : Controller
             vm.Ward = existing.Ward;
             vm.Latitude = existing.Latitude;
             vm.Longitude = existing.Longitude;
-            vm.AvatarUrl = existing.AvatarUrl;
+            vm.AvatarUrl = NormalizeAvatarUrl(existing.AvatarUrl);
         }
 
         return View(vm);
@@ -140,6 +151,15 @@ public class NannyBasicInfoController : Controller
 
             if (model.DateOfBirth == null)
                 ModelState.AddModelError(nameof(model.DateOfBirth), "Vui lòng chọn ngày sinh.");
+            else
+            {
+                var today = DateOnly.FromDateTime(DateTime.Today);
+                var dob = model.DateOfBirth.Value;
+                var age = today.Year - dob.Year;
+                if (dob > today.AddYears(-age)) age--;
+                if (age < 18)
+                    ModelState.AddModelError(nameof(model.DateOfBirth), "Nanny phải đủ 18 tuổi trở lên.");
+            }
 
             if (model.Gender == null)
                 ModelState.AddModelError(nameof(model.Gender), "Vui lòng chọn giới tính.");
@@ -147,8 +167,8 @@ public class NannyBasicInfoController : Controller
             if (string.IsNullOrWhiteSpace(model.Address))
                 ModelState.AddModelError(nameof(model.Address), "Vui lòng nhập địa chỉ chi tiết.");
 
-            if (string.IsNullOrWhiteSpace(model.City) || string.IsNullOrWhiteSpace(model.District) || string.IsNullOrWhiteSpace(model.Ward))
-                ModelState.AddModelError(string.Empty, "Vui lòng chọn đầy đủ Tỉnh/Thành, Quận/Huyện, Phường/Xã.");
+            if (string.IsNullOrWhiteSpace(model.City) || string.IsNullOrWhiteSpace(model.District))
+                ModelState.AddModelError(string.Empty, "Vui lòng chọn đầy đủ Tỉnh/Thành và Phường/Xã.");
 
             if (!ModelState.IsValid)
                 return View(model);
@@ -166,4 +186,3 @@ public class NannyBasicInfoController : Controller
         return View(model);
     }
 }
-

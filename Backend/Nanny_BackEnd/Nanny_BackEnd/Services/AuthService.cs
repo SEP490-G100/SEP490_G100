@@ -282,7 +282,6 @@ public class AuthService
                 CreatedAt = DateTime.UtcNow
             };
             _userRepo.Add(user);
-            await _userRepo.AssignRoleAsync(user.Id, AuthConstants.DefaultRole);
         }
 
         user.LastLoginAt = DateTime.UtcNow;

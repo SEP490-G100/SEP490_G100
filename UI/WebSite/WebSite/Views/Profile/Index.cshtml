@@ -1,125 +1,412 @@
-@using WebSite.Controllers
-@model PersonalProfileViewModel
-@using WebSite.Models.Profile
-
+@model WebSite.Models.Profile.PersonalProfileViewModel
 @{
-    ViewData["Title"] = "Hồ sơ cá nhân";
+    ViewData["Title"] = "Ho so ca nhan";
+    var avatar = string.IsNullOrWhiteSpace(Model.AvatarUrl) ? null : Model.AvatarUrl.Trim();
+    var isNanny = Model.IsNanny;
+    var isParent = Model.IsParent;
+    var rating = Model.AverageRating ?? 0m;
+    var isReadOnly = Model.IsReadOnlyView;
+    var canEditProfile = !isReadOnly;
+    var canShowFavoriteHeart = User.IsInRole("Parent") && isNanny;
+    var canContactNanny = isReadOnly && User.IsInRole("Parent") && isNanny && Model.UserId != Guid.Empty;
+
+    string EducationLabel(int? level) => level switch
+    {
+        0 => "Trung hoc",
+        1 => "Cao dang",
+        2 => "Dai hoc",
+        3 => "Thac si",
+        4 => "Khac",
+        _ => "Chua cap nhat"
+    };
+
+    string VerificationText(int? code) => code switch
+    {
+        1 => "Dang cho duyet xac minh",
+        2 => "Da duoc xac minh",
+        _ => "Chua xac minh"
+    };
+
+    string ChildAgeGroupLabel(byte? ageGroup) => ageGroup switch
+    {
+        0 => "0 - 1 tuoi",
+        1 => "1 - 3 tuoi",
+        2 => "3 - 5 tuoi",
+        3 => "6 - 12 tuoi",
+        _ => "Chua cap nhat"
+    };
+
+    var dayColumns = new[] { (1, "T2"), (2, "T3"), (3, "T4"), (4, "T5"), (5, "T6"), (6, "T7"), (0, "CN") };
+    var slotRows = new[] { (0, "Sang"), (1, "Chieu"), (2, "Toi"), (3, "Dem") };
+    bool IsAvailable(int day, int slot) => Model.Availabilities?.Any(a => a.DayOfWeek == day && a.TimeSlot == slot && a.IsAvailable) == true;
 }
 
-<div class="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50/30 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-4xl mx-auto">
-        <!-- Header -->
-        <div class="mb-8">
-            <span class="section-label">👤 Hồ sơ của tôi</span>
-            <h1 class="text-4xl font-bold text-gray-900 dark:text-white mt-3" style="font-family:'Quicksand',sans-serif">
-                Thông tin <span class="gradient-text">cá nhân</span>
-            </h1>
-            <div class="section-divider left mt-4"></div>
+@section Head {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="~/css/search.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/profile.css" asp-append-version="true" />
+}
+
+<section class="profile-page">
+    <div class="profile-shell">
+        <div class="profile-header">
+            <div class="profile-avatar">
+                @if (avatar != null)
+                {
+                    <img src="@avatar" alt="Avatar" />
+                }
+                else
+                {
+                    <div class="profile-avatar-placeholder">
+                        <span class="material-icons-round" style="font-size:52px;">person</span>
+                    </div>
+                }
+            </div>
+
+            <div class="flex-1 min-w-[220px]">
+                <div class="flex items-center gap-3 flex-wrap">
+                    <h1 class="text-3xl font-bold text-slate-900" style="font-family:'Quicksand',sans-serif">
+                        @Model.FirstName @Model.LastName
+                    </h1>
+                    @if (canShowFavoriteHeart)
+                    {
+                        <button type="button"
+                                id="favoriteNannyBtn"
+                                data-favorite="false"
+                                aria-pressed="false"
+                                title="Luu nanny yeu thich"
+                                class="inline-flex items-center justify-center h-10 w-10 rounded-full border border-orange-200 bg-white text-orange-500 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-orange-300 hover:bg-orange-50 hover:shadow-md">
+                            <span class="material-icons-round text-[20px]">favorite_border</span>
+                        </button>
+                    }
+                </div>
+                <div class="mt-2 flex items-center gap-2 flex-wrap text-sm text-slate-500 font-semibold">
+                    <span class="profile-role-chip">@(isNanny ? "Nanny" : "Parent")</span>
+                    <span>@(!string.IsNullOrWhiteSpace(Model.City) ? Model.City : "Viet Nam")</span>
+                    <span>@(Model.Age?.ToString() ?? "--") tuoi</span>
+                    @if (isNanny)
+                    {
+                        <span class="text-orange-600">Rating @rating.ToString("0.##") (@(Model.TotalReviews ?? 0))</span>
+                    }
+                </div>
+            </div>
+
+            @if (canEditProfile)
+            {
+                <a href="@Url.Action("Edit", "Profile")" class="profile-primary-btn">
+                    Chinh sua ho so
+                </a>
+            }
+            else if (canContactNanny)
+            {
+                <button type="button" id="contactNannyBtn" data-user-id="@Model.UserId" class="profile-primary-btn">
+                    Contact
+                </button>
+            }
         </div>
 
-        <!-- Main Card -->
-        <div class="bg-white dark:bg-gray-800/80 rounded-3xl p-8 lg:p-10 shadow-soft border border-gray-100/80 dark:border-gray-700/50 backdrop-blur-sm">
-            <!-- Profile Information Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                <!-- Email -->
-                <div class="space-y-2">
-                    <label class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">📧 Email</label>
-                    <p class="text-lg font-semibold text-gray-900 dark:text-white">@Model.Email</p>
-                </div>
-
-                <!-- Full Name -->
-                <div class="space-y-2">
-                    <label class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">👤 Họ tên</label>
-                    <p class="text-lg font-semibold text-gray-900 dark:text-white">@Model.FirstName @Model.LastName</p>
-                </div>
-
-                <!-- Phone -->
-                <div class="space-y-2">
-                    <label class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">📱 Số điện thoại</label>
-                    <p class="text-lg font-semibold text-gray-900 dark:text-white">
-                        @(Model.PhoneNumber?.ToString() ?? "Chưa được cập nhật")
+        <div class="profile-grid">
+            <div class="space-y-4">
+                <div class="profile-card">
+                    <h3>@(isNanny ? "Gioi thieu ban than" : "Mo ta gia dinh")</h3>
+                    <p class="text-sm text-slate-600 leading-7">
+                        @((isNanny ? Model.Bio : Model.FamilyDescription) ?? "Chua co thong tin cap nhat.")
                     </p>
                 </div>
 
-                <!-- Date of Birth -->
-                <div class="space-y-2">
-                    <label class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">🎂 Ngày sinh</label>
-                    <p class="text-lg font-semibold text-gray-900 dark:text-white">
-                        @(Model.DateOfBirth?.ToString("dd/MM/yyyy") ?? "Chưa được cập nhật")
-                    </p>
-                </div>
+                @if (isNanny)
+                {
+                    <div class="profile-card profile-card-soft">
+                        <h3>Thong tin nanny</h3>
+                        <div class="profile-detail-grid">
+                            <div class="profile-detail-item">
+                                <div class="label">Kinh nghiem</div>
+                                <div class="value">@((Model.YearsOfExperience?.ToString()) ?? "0") nam</div>
+                            </div>
+                            <div class="profile-detail-item">
+                                <div class="label">Hoc van</div>
+                                <div class="value">@EducationLabel(Model.EducationLevel)</div>
+                            </div>
+                            <div class="profile-detail-item">
+                                <div class="label">Luong mong muon</div>
+                                <div class="value">@((Model.ExpectedSalaryMin?.ToString("0")) ?? "0") - @((Model.ExpectedSalaryMax?.ToString("0")) ?? "0") VND</div>
+                            </div>
+                            <div class="profile-detail-item">
+                                <div class="label">Ban kinh di chuyen</div>
+                                <div class="value">@((Model.MaxTravelDistance?.ToString()) ?? "0") km</div>
+                            </div>
+                            <div class="profile-detail-item">
+                                <div class="label">Xac minh</div>
+                                <div class="value">@VerificationText(Model.VerificationStatusCode)</div>
+                            </div>
+                            <div class="profile-detail-item">
+                                <div class="label">Rating trung binh</div>
+                                <div class="value">@rating.ToString("0.##")</div>
+                            </div>
+                        </div>
+                    </div>
 
-                <!-- Gender -->
-                <div class="space-y-2">
-                    <label class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">👥 Giới tính</label>
-                    <p class="text-lg font-semibold text-gray-900 dark:text-white">
-                        @if (Model.Gender.HasValue)
+                    <div class="profile-card">
+                        <h3>Ky nang</h3>
+                        @if (Model.Skills != null && Model.Skills.Any())
                         {
-                            @(Model.Gender == 0 ? "Nam" : Model.Gender == 1 ? "Nữ" : "Khác")
+                            <div class="skill-chip-wrap">
+                                @foreach (var s in Model.Skills)
+                                {
+                                    <span class="skill-chip">@(string.IsNullOrWhiteSpace(s.SkillName) ? s.SkillId.ToString() : s.SkillName)</span>
+                                }
+                            </div>
                         }
                         else
                         {
-                            <span class="text-gray-400">Chưa được cập nhật</span>
-                        }
-                    </p>
-                </div>
-
-                <!-- Roles -->
-                <div class="space-y-2">
-                    <label class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">🏷️ Vị trí</label>
-                    <div>
-                        @if (Model.Roles.Any())
-                        {
-                            @foreach(var role in Model.Roles)
-                            {
-                                <span class="inline-block bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 px-3 py-1 rounded-full text-sm font-medium mr-2 mb-2">@role</span>
-                            }
-                        }
-                        else
-                        {
-                            <span class="text-gray-400">Chưa được gán vị trị</span>
+                            <p class="text-sm text-slate-500">Chua co ky nang nao.</p>
                         }
                     </div>
+
+                    <div class="profile-card">
+                        <h3>Lich lam viec</h3>
+                        <div class="schedule-grid schedule-grid--readonly">
+                            <div></div>
+                            @foreach (var day in dayColumns)
+                            {
+                                <div class="schedule-col-label">@day.Item2</div>
+                            }
+                            @foreach (var slot in slotRows)
+                            {
+                                <div class="schedule-row-label">@slot.Item2</div>
+                                @foreach (var day in dayColumns)
+                                {
+                                    var active = IsAvailable(day.Item1, slot.Item1);
+                                    <div class="schedule-cell @(active ? "active" : "")" aria-hidden="true">
+                                        <span class="schedule-check">@(active ? "✓" : "")</span>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+
+                    <div class="profile-card">
+                        <h3>Feedback va review</h3>
+                        <p class="text-sm text-slate-500 mb-3">Mau UI review. Chua ket noi du lieu backend.</p>
+                        <div class="feedback-list">
+                            <div class="feedback-item">
+                                <div class="feedback-meta">
+                                    <span class="feedback-name">Parent - Nguyen Minh</span>
+                                    <span class="feedback-star">★★★★★</span>
+                                </div>
+                                <p class="text-sm text-slate-600">Nanny dung gio, giao tiep nhe nhang va cham be rat can than.</p>
+                            </div>
+                            <div class="feedback-item">
+                                <div class="feedback-meta">
+                                    <span class="feedback-name">Parent - Tran Hien</span>
+                                    <span class="feedback-star">★★★★☆</span>
+                                </div>
+                                <p class="text-sm text-slate-600">Thai do tot va linh hoat lich lam viec. Gia dinh hai long.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                }
+
+                <div class="profile-card">
+                    <h3>Khu vuc hoat dong</h3>
+                    <div id="map" class="profile-map"></div>
                 </div>
             </div>
 
-            <!-- Address Section -->
-            <div class="pt-8 border-t border-gray-100 dark:border-gray-700/50">
-                <label class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-3">📍 Địa chỉ</label>
-                <p class="text-lg font-semibold text-gray-900 dark:text-white">
-                    @if (!string.IsNullOrEmpty(Model.Address))
-                    {
-                        @($"{Model.Address}, {Model.Ward}, {Model.District}, {Model.City}")
-                    }
-                    else
-                    {
-                        <span class="text-gray-400">Chưa được cập nhật</span>
-                    }
-                </p>
-            </div>
+            <div class="space-y-4">
+                <div class="profile-card">
+                    <h3>Thong tin lien he</h3>
+                    <div class="grid grid-cols-1 gap-3">
+                        <div class="profile-detail-item">
+                            <div class="label">Email</div>
+                            <div class="value break-all">@Model.Email</div>
+                        </div>
+                        <div class="profile-detail-item">
+                            <div class="label">Dien thoai</div>
+                            <div class="value">@(string.IsNullOrWhiteSpace(Model.PhoneNumber) ? "Chua cap nhat" : Model.PhoneNumber)</div>
+                        </div>
+                        <div class="profile-detail-item">
+                            <div class="label">Dia chi</div>
+                            <div class="value">@(!string.IsNullOrWhiteSpace(Model.Address) ? Model.Address : "Chua cap nhat")</div>
+                        </div>
+                        <div class="profile-detail-item">
+                            <div class="label">Khu vuc</div>
+                            <div class="value">@string.Join(", ", new[] { Model.Ward, Model.District, Model.City }.Where(v => !string.IsNullOrWhiteSpace(v)))</div>
+                        </div>
+                    </div>
+                </div>
 
-            <!-- Action Buttons -->
-            <div class="flex flex-col sm:flex-row gap-3 mt-10 pt-8 border-t border-gray-100 dark:border-gray-700/50">
-                <a href="@Url.Action("Edit", "Profile")" 
-                   class="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl">
-                    <span class="material-icons-round text-xl">edit</span>
-                    Chỉnh sửa thông tin
-                </a>
-                @if (Model.IsParent)
+                @if (isNanny)
                 {
-                    <a href="@Url.Action("Children", "Profile")" 
-                       class="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl">
-                        <span class="material-icons-round text-xl">groups</span>
-                        Quản lý con em
-                    </a>
+                    <div class="profile-card">
+                        <h3>Chung chi</h3>
+                        @if (Model.Certificates != null && Model.Certificates.Any())
+                        {
+                            <div class="space-y-2">
+                                @foreach (var cert in Model.Certificates)
+                                {
+                                    <div class="profile-detail-item">
+                                        <div class="value">@cert.Name</div>
+                                        @if (!string.IsNullOrWhiteSpace(cert.IssuingOrganization))
+                                        {
+                                            <p class="text-xs text-slate-500 mt-1">Don vi cap: @cert.IssuingOrganization</p>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(cert.CertificateUrl))
+                                        {
+                                            <a href="@cert.CertificateUrl" target="_blank" class="text-xs font-semibold text-orange-600 hover:underline mt-2 inline-block">Xem chung chi</a>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-sm text-slate-500 mb-2">Chua co chung chi.</p>
+                            @if (canEditProfile)
+                            {
+                                <a href="@Url.Action("Verify", "Profile")" class="text-sm font-semibold text-orange-600 hover:underline">Them chung chi</a>
+                            }
+                            }
+                    </div>
+                }
+
+                @if (isParent)
+                {
+                    <div class="profile-card profile-card-soft">
+                        <div class="flex items-center justify-between gap-2 mb-3">
+                            <h3 class="!mb-0">Thong tin tre</h3>
+                            @if (!isReadOnly)
+                            {
+                                <a href="@Url.Action("Children", "Profile")"
+                                   class="inline-flex items-center justify-center px-4 py-2 rounded-full border border-orange-200 bg-white text-orange-700 text-xs font-bold hover:bg-orange-50">
+                                    Edit Child Profile
+                                </a>
+                            }
+                        </div>
+                        <div class="profile-detail-grid">
+                            <div class="profile-detail-item">
+                                <div class="label">So luong tre</div>
+                                <div class="value">@(Model.NumberOfChildren?.ToString() ?? "--")</div>
+                            </div>
+                            <div class="profile-detail-item">
+                                <div class="label">Nhom tuoi</div>
+                                <div class="value">@ChildAgeGroupLabel(Model.ChildAgeGroup)</div>
+                            </div>
+                            <div class="profile-detail-item">
+                                <div class="label">Nhu cau dac biet</div>
+                                <div class="value">@(string.IsNullOrWhiteSpace(Model.SpecialNeeds) ? "Khong co" : Model.SpecialNeeds)</div>
+                            </div>
+                            <div class="profile-detail-item">
+                                <div class="label">Ghi chu</div>
+                                <div class="value">@(string.IsNullOrWhiteSpace(Model.Notes) ? "Khong co" : Model.Notes)</div>
+                            </div>
+                        </div>
+                    </div>
                 }
             </div>
         </div>
     </div>
-</div>
-    }
+</section>
 
-    .fw-bold {
-        color: #333;
-    }
-</style>
+@section Scripts {
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var favoriteBtn = document.getElementById('favoriteNannyBtn');
+            if (favoriteBtn) {
+                function renderFavoriteState(isFavorite) {
+                    favoriteBtn.dataset.favorite = isFavorite ? 'true' : 'false';
+                    favoriteBtn.setAttribute('aria-pressed', isFavorite ? 'true' : 'false');
+                    favoriteBtn.title = isFavorite ? 'Da luu nanny yeu thich' : 'Luu nanny yeu thich';
+                    favoriteBtn.classList.toggle('bg-orange-500', isFavorite);
+                    favoriteBtn.classList.toggle('text-white', isFavorite);
+                    favoriteBtn.classList.toggle('border-orange-500', isFavorite);
+                    favoriteBtn.classList.toggle('shadow-lg', isFavorite);
+                    favoriteBtn.classList.toggle('shadow-orange-200', isFavorite);
+                    favoriteBtn.classList.toggle('bg-white', !isFavorite);
+                    favoriteBtn.classList.toggle('text-orange-500', !isFavorite);
+                    favoriteBtn.classList.toggle('border-orange-200', !isFavorite);
+
+                    var icon = favoriteBtn.querySelector('.material-icons-round');
+                    if (icon) icon.textContent = isFavorite ? 'favorite' : 'favorite_border';
+                }
+
+                favoriteBtn.addEventListener('click', function () {
+                    var nextState = favoriteBtn.dataset.favorite !== 'true';
+                    renderFavoriteState(nextState);
+
+                    if (typeof window.onFavoriteNannyClick === 'function') {
+                        window.onFavoriteNannyClick({
+                            isFavorite: nextState,
+                            button: favoriteBtn
+                        });
+                    }
+                });
+
+                renderFavoriteState(false);
+            }
+
+            var contactBtn = document.getElementById('contactNannyBtn');
+            if (contactBtn) {
+                contactBtn.addEventListener('click', async function () {
+                    var userId = contactBtn.getAttribute('data-user-id');
+                    if (!userId) return;
+
+                    contactBtn.disabled = true;
+                    var oldText = contactBtn.textContent;
+                    contactBtn.textContent = 'Dang mo chat...';
+
+                    try {
+                        var response = await fetch('/Communication/GetOrCreate', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ otherUserId: userId })
+                        });
+
+                        var json = await response.json();
+                        var conversationId = json?.data?.id;
+                        if (conversationId) {
+                            window.location.href = `/Communication?conversationId=${conversationId}`;
+                            return;
+                        }
+
+                        window.location.href = '/Communication';
+                    } catch {
+                        window.location.href = '/Communication';
+                    } finally {
+                        contactBtn.disabled = false;
+                        contactBtn.textContent = oldText;
+                    }
+                });
+            }
+
+            var lat = @(Model.Latitude?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "21.0285");
+            var lng = @(Model.Longitude?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "105.8542");
+            var mapElement = document.getElementById('map');
+            if (!mapElement || typeof L === 'undefined') return;
+
+            var map = L.map('map', { zoomControl: true, scrollWheelZoom: false }).setView([lat, lng], 13);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; CartoDB',
+                maxZoom: 19
+            }).addTo(map);
+
+            var icon = L.divIcon({
+                className: '',
+                html: '<div class="job-map-marker active"><span class="job-map-marker__halo"></span><span class="job-map-marker__pin"><span class="job-map-marker__core"></span></span></div>',
+                iconSize: [26, 34],
+                iconAnchor: [13, 28]
+            });
+            L.marker([lat, lng], { icon: icon }).addTo(map);
+
+            L.circle([lat, lng], {
+                radius: 1500,
+                color: '#fdba74',
+                fillColor: '#fdba74',
+                fillOpacity: 0.1,
+                weight: 1
+            }).addTo(map);
+        });
+    </script>
+}
