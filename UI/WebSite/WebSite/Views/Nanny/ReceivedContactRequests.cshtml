@@ -27,18 +27,22 @@
             <div class="px-6 py-6 sm:px-8">
                 <div id="receivedContactSummary" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
                     <div class="ncr-stat-card ncr-stat-card--total rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                        <span class="material-icons-round ncr-stat-icon">stacked_bar_chart</span>
                         <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-400">Tong request</p>
                         <p id="rcSummaryTotal" class="mt-2 text-2xl font-extrabold text-slate-900">0</p>
                     </div>
                     <div class="ncr-stat-card ncr-stat-card--pending rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
+                        <span class="material-icons-round ncr-stat-icon">hourglass_top</span>
                         <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-amber-600">Dang cho duyet</p>
                         <p id="rcSummaryPending" class="mt-2 text-2xl font-extrabold text-amber-700">0</p>
                     </div>
                     <div class="ncr-stat-card ncr-stat-card--accepted rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
+                        <span class="material-icons-round ncr-stat-icon">verified</span>
                         <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-emerald-600">Da chap nhan</p>
                         <p id="rcSummaryAccepted" class="mt-2 text-2xl font-extrabold text-emerald-700">0</p>
                     </div>
                     <div class="ncr-stat-card ncr-stat-card--rejected rounded-2xl border border-rose-200 bg-rose-50 px-4 py-4">
+                        <span class="material-icons-round ncr-stat-icon">do_not_disturb_on</span>
                         <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-rose-600">Da tu choi</p>
                         <p id="rcSummaryRejected" class="mt-2 text-2xl font-extrabold text-rose-700">0</p>
                     </div>
@@ -51,11 +55,7 @@
                     <button type="button" class="ncr-filter-btn" data-status="2">Da tu choi</button>
                 </div>
 
-                <div id="receivedContactList" class="space-y-3">
-                    <div class="rounded-2xl border border-slate-200 bg-white px-5 py-8 text-center text-slate-500">
-                        Dang tai danh sach request contact...
-                    </div>
-                </div>
+                <div id="receivedContactList" class="space-y-3"></div>
             </div>
         </div>
     </div>
@@ -81,6 +81,15 @@
         position: relative;
         overflow: hidden;
         box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 10px 24px rgba(15,23,42,.05);
+    }
+
+    .ncr-stat-icon {
+        position: absolute;
+        right: 12px;
+        top: 12px;
+        font-size: 17px;
+        color: #94a3b8;
+        opacity: .9;
     }
 
     .ncr-stat-card::after {
@@ -152,6 +161,18 @@
         box-shadow: 0 16px 30px rgba(249,115,22,.12);
     }
 
+    .ncr-list-card--pending {
+        border-left: 4px solid #f59e0b;
+    }
+
+    .ncr-list-card--accepted {
+        border-left: 4px solid #10b981;
+    }
+
+    .ncr-list-card--rejected {
+        border-left: 4px solid #f43f5e;
+    }
+
     .ncr-meta-tile {
         border-radius: 12px;
         border: 1px solid #e2e8f0;
@@ -178,6 +199,118 @@
     .ncr-modal-body::-webkit-scrollbar-thumb {
         background: #fdba74;
         border-radius: 999px;
+    }
+
+    .ncr-status-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 30px;
+        padding: 0 10px;
+        border-radius: 999px;
+        border: 1px solid transparent;
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .ncr-status-chip .material-icons-round {
+        font-size: 14px;
+    }
+
+    .ncr-status-chip--pending {
+        border-color: #fde68a;
+        color: #b45309;
+        background: #fffbeb;
+    }
+
+    .ncr-status-chip--accepted {
+        border-color: #86efac;
+        color: #047857;
+        background: #ecfdf5;
+    }
+
+    .ncr-status-chip--rejected {
+        border-color: #fda4af;
+        color: #be123c;
+        background: #fff1f2;
+    }
+
+    .ncr-action-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 38px;
+        padding: 0 14px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 800;
+        transition: all .2s ease;
+    }
+
+    .ncr-action-btn .material-icons-round {
+        font-size: 16px;
+    }
+
+    .ncr-action-btn--primary {
+        border: 1px solid #fdba74;
+        background: linear-gradient(135deg, #fff7ed, #ffffff);
+        color: #c2410c;
+    }
+
+    .ncr-action-btn--primary:hover {
+        background: #fff7ed;
+        transform: translateY(-1px);
+    }
+
+    .ncr-empty-state {
+        border-radius: 18px;
+        border: 1px dashed #cbd5e1;
+        background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+        padding: 40px 20px;
+        text-align: center;
+        color: #64748b;
+    }
+
+    .ncr-empty-state .material-icons-round {
+        font-size: 32px;
+        color: #cbd5e1;
+        margin-bottom: 8px;
+    }
+
+    .ncr-skeleton {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .ncr-skeleton::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        transform: translateX(-100%);
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,.65), transparent);
+        animation: ncrShimmer 1.4s infinite;
+    }
+
+    .ncr-skeleton-line {
+        height: 12px;
+        border-radius: 999px;
+        background: #e2e8f0;
+    }
+
+    .ncr-skeleton-circle {
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+        background: #e2e8f0;
+        flex-shrink: 0;
+    }
+
+    @@keyframes ncrShimmer {
+        100% {
+            transform: translateX(100%);
+        }
     }
 </style>
 
@@ -227,17 +360,23 @@
 
         const getStatusBadge = (status, statusLabel) => {
             if (status === 1) {
-                return `<span class="inline-flex items-center min-h-[30px] px-3 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-extrabold">${escapeHtml(statusLabel || 'Da chap nhan')}</span>`;
+                return `<span class="ncr-status-chip ncr-status-chip--accepted"><span class="material-icons-round">check_circle</span>${escapeHtml(statusLabel || 'Da chap nhan')}</span>`;
             }
             if (status === 2) {
-                return `<span class="inline-flex items-center min-h-[30px] px-3 rounded-full border border-rose-200 bg-rose-50 text-rose-700 text-xs font-extrabold">${escapeHtml(statusLabel || 'Da tu choi')}</span>`;
+                return `<span class="ncr-status-chip ncr-status-chip--rejected"><span class="material-icons-round">cancel</span>${escapeHtml(statusLabel || 'Da tu choi')}</span>`;
             }
-            return `<span class="inline-flex items-center min-h-[30px] px-3 rounded-full border border-amber-200 bg-amber-50 text-amber-700 text-xs font-extrabold">${escapeHtml(statusLabel || 'Dang cho duyet')}</span>`;
+            return `<span class="ncr-status-chip ncr-status-chip--pending"><span class="material-icons-round">schedule</span>${escapeHtml(statusLabel || 'Dang cho duyet')}</span>`;
         };
 
         const getParentInitial = (fullName) => {
             const text = String(fullName || '').trim();
             return text ? text.charAt(0).toUpperCase() : 'P';
+        };
+
+        const getCardToneClass = (status) => {
+            if (status === 1) return 'ncr-list-card--accepted';
+            if (status === 2) return 'ncr-list-card--rejected';
+            return 'ncr-list-card--pending';
         };
 
         const setSummary = (data) => {
@@ -247,11 +386,35 @@
             summaryRejectedEl.textContent = String(Number(data?.rejectedRequests ?? 0));
         };
 
+        const renderLoadingSkeleton = (count = 3) => {
+            listEl.innerHTML = Array.from({ length: count }, () => `
+                <article class="ncr-list-card ncr-skeleton p-5">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex items-start gap-3 min-w-0">
+                            <div class="ncr-skeleton-circle"></div>
+                            <div class="min-w-0 flex-1 space-y-2">
+                                <div class="ncr-skeleton-line w-40"></div>
+                                <div class="ncr-skeleton-line w-28"></div>
+                            </div>
+                        </div>
+                        <div class="ncr-skeleton-line w-28 h-8"></div>
+                    </div>
+                    <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="ncr-meta-tile"><div class="ncr-skeleton-line w-full"></div></div>
+                        <div class="ncr-meta-tile"><div class="ncr-skeleton-line w-full"></div></div>
+                        <div class="ncr-meta-tile"><div class="ncr-skeleton-line w-full"></div></div>
+                    </div>
+                    <div class="ncr-message-box mt-4"><div class="ncr-skeleton-line w-full"></div></div>
+                </article>
+            `).join('');
+        };
+
         const renderList = (items) => {
             if (!Array.isArray(items) || !items.length) {
                 listEl.innerHTML = `
-                    <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-10 text-center text-slate-500">
-                        Chua co request contact nao theo bo loc hien tai.
+                    <div class="ncr-empty-state">
+                        <span class="material-icons-round">inbox</span>
+                        <p class="font-bold text-slate-600">Chua co request contact nao theo bo loc hien tai.</p>
                     </div>`;
                 return;
             }
@@ -263,7 +426,7 @@
                 const status = Number(item?.status ?? 0);
 
                 return `
-                    <article class="ncr-list-card p-5">
+                    <article class="ncr-list-card ${getCardToneClass(Number(item?.status ?? 0))} p-5">
                         <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                             <div class="min-w-0 flex items-start gap-3">
                                 <div class="w-11 h-11 rounded-full border border-orange-200 bg-orange-50 text-orange-600 font-extrabold text-lg inline-flex items-center justify-center flex-shrink-0">
@@ -299,8 +462,9 @@
 
                         <div class="mt-4 flex flex-wrap items-center justify-end gap-2">
                             <button type="button"
-                                    class="inline-flex items-center justify-center min-h-[38px] px-4 rounded-full border border-orange-200 bg-orange-50 text-orange-700 text-sm font-bold hover:bg-orange-100"
+                                    class="ncr-action-btn ncr-action-btn--primary"
                                     data-request-id="${escapeHtml(item?.id)}">
+                                <span class="material-icons-round">pageview</span>
                                 Xem chi tiet request
                             </button>
                         </div>
@@ -444,12 +608,14 @@
                     <div class="flex flex-wrap items-center justify-end gap-2 pt-1">
                         <button type="button"
                                 id="ncrAcceptBtn"
-                                class="inline-flex items-center justify-center min-h-[40px] px-4 rounded-full border border-emerald-300 bg-emerald-50 text-emerald-700 font-bold hover:bg-emerald-100">
+                                class="inline-flex items-center justify-center gap-1 min-h-[40px] px-4 rounded-full border border-emerald-300 bg-emerald-50 text-emerald-700 font-bold hover:bg-emerald-100">
+                            <span class="material-icons-round text-[17px]">check_circle</span>
                             Chap nhan
                         </button>
                         <button type="button"
                                 id="ncrRejectBtn"
-                                class="inline-flex items-center justify-center min-h-[40px] px-4 rounded-full border border-rose-300 bg-rose-50 text-rose-700 font-bold hover:bg-rose-100">
+                                class="inline-flex items-center justify-center gap-1 min-h-[40px] px-4 rounded-full border border-rose-300 bg-rose-50 text-rose-700 font-bold hover:bg-rose-100">
+                            <span class="material-icons-round text-[17px]">cancel</span>
                             Tu choi
                         </button>
                     </div>
@@ -466,7 +632,19 @@
             if (!requestId) return;
 
             state.currentRequestId = requestId;
-            modalBodyEl.innerHTML = '<p class="text-sm text-slate-500">Dang tai chi tiet request...</p>';
+            modalBodyEl.innerHTML = `
+                <div class="space-y-3 ncr-skeleton">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="ncr-meta-tile"><div class="ncr-skeleton-line w-full"></div></div>
+                        <div class="ncr-meta-tile"><div class="ncr-skeleton-line w-full"></div></div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="ncr-meta-tile"><div class="ncr-skeleton-line w-full"></div></div>
+                        <div class="ncr-meta-tile"><div class="ncr-skeleton-line w-full"></div></div>
+                    </div>
+                    <div class="ncr-message-box"><div class="ncr-skeleton-line w-full"></div></div>
+                    <div class="ncr-meta-tile"><div class="ncr-skeleton-line w-full"></div></div>
+                </div>`;
             modalEl.classList.remove('hidden');
             modalEl.classList.add('flex');
 
@@ -503,6 +681,7 @@
         };
 
         const loadRequests = async () => {
+            renderLoadingSkeleton();
             try {
                 const query = state.activeStatus !== '' ? `?status=${encodeURIComponent(state.activeStatus)}` : '';
                 const response = await fetch(`/Nanny/ReceivedContactRequestsData${query}`, { credentials: 'same-origin' });
