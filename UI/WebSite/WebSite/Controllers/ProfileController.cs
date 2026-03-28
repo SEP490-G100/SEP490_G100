@@ -1,4 +1,4 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Json;
@@ -69,6 +69,14 @@ public class ProfileController : Controller
         };
     }
 
+    private void ApplyRolesToEditModel(EditPersonalInfoViewModel model)
+    {
+        model.Roles = User.Claims
+            .Where(c => c.Type == ClaimTypes.Role)
+            .Select(c => c.Value)
+            .ToList();
+    }
+
     private async Task PopulateAvailableSkillsAsync(EditPersonalInfoViewModel model)
     {
         if (!model.IsNanny) return;
@@ -94,7 +102,7 @@ public class ProfileController : Controller
             var token = GetTokenFromSession();
             if (string.IsNullOrEmpty(token))
             {
-                ViewBag.Warning = "PhiÃªn Ä‘Äƒng nháº­p Ä‘Ã£ háº¿t háº¡n, Ä‘ang hiá»ƒn thá»‹ thÃ´ng tin cÆ¡ báº£n tá»« cookie.";
+                ViewBag.Warning = "PhiÃƒÂªn Ã„â€˜Ã„Æ’ng nhÃ¡ÂºÂ­p Ã„â€˜ÃƒÂ£ hÃ¡ÂºÂ¿t hÃ¡ÂºÂ¡n, Ã„â€˜ang hiÃ¡Â»Æ’n thÃ¡Â»â€¹ thÃƒÂ´ng tin cÃ†Â¡ bÃ¡ÂºÂ£n tÃ¡Â»Â« cookie.";
                 return View(BuildProfileFromClaims());
             }
 
@@ -128,6 +136,45 @@ public class ProfileController : Controller
         {
             TempData["Error"] = "Error loading profile: " + ex.Message;
             return View(BuildProfileFromClaims());
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ViewUser(Guid userId)
+    {
+        if (userId == Guid.Empty)
+            return RedirectToAction(nameof(Index));
+
+        try
+        {
+            var token = GetTokenFromSession();
+            if (string.IsNullOrEmpty(token))
+            {
+                TempData["Error"] = "Session expired. Please log in again.";
+                return RedirectToAction("Login", "Auth");
+            }
+
+            _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            var response = await _http.GetAsync($"/api/profile/public/{userId}");
+            if (!response.IsSuccessStatusCode)
+                return RedirectToAction(nameof(Index));
+
+            var content = await response.Content.ReadAsStringAsync();
+            var apiResult = JsonSerializer.Deserialize<ApiResultDto>(content, JsonOpts);
+            if (apiResult == null || !apiResult.Success)
+                return RedirectToAction(nameof(Index));
+
+            var profile = JsonSerializer.Deserialize<PersonalProfileViewModel>(
+                JsonSerializer.Serialize(apiResult.Data), JsonOpts) ?? BuildProfileFromClaims();
+
+            profile.AvatarUrl = NormalizeAvatarUrl(profile.AvatarUrl);
+            profile.IsReadOnlyView = true;
+
+            return View("Index", profile);
+        }
+        catch
+        {
+            return RedirectToAction(nameof(Index));
         }
     }
 
@@ -183,6 +230,28 @@ public class ProfileController : Controller
 [ValidateAntiForgeryToken]
 public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
 {
+    ApplyRolesToEditModel(model);
+
+    if (model.AvatarFile != null && model.AvatarFile.Length > 0)
+    {
+        var ext = Path.GetExtension(model.AvatarFile.FileName)?.ToLowerInvariant();
+        if (ext != ".jpg" && ext != ".png")
+            ModelState.AddModelError(nameof(model.AvatarFile), "Chi cho phep anh .jpg hoac .png.");
+    }
+
+    if (User.IsInRole("Nanny") && !model.DateOfBirth.HasValue)
+    {
+        ModelState.AddModelError(nameof(model.DateOfBirth), "Vui long chon ngay sinh.");
+    }
+    else if (User.IsInRole("Nanny") && model.DateOfBirth.HasValue)
+    {
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var age = today.Year - model.DateOfBirth.Value.Year;
+        if (model.DateOfBirth.Value > today.AddYears(-age)) age--;
+        if (age < 18)
+            ModelState.AddModelError(nameof(model.DateOfBirth), "Nanny phai tu 18 tuoi tro len.");
+    }
+
     if (!ModelState.IsValid)
     {
         var tokenForSkill = GetTokenFromSession();
@@ -197,73 +266,75 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
     try
     {
         var token = GetTokenFromSession();
-            if (string.IsNullOrEmpty(token))
-            {
-                TempData["Error"] = "Session expired. Please log in again.";
-                return RedirectToAction("Login", "Auth");
-            }
-            _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            // Upload Avatar if present (same behavior as onboarding step)
-            if (model.AvatarFile != null && model.AvatarFile.Length > 0)
-            {
-                using var form = new MultipartFormDataContent();
-                var streamContent = new StreamContent(model.AvatarFile.OpenReadStream());
-                streamContent.Headers.ContentType = new MediaTypeHeaderValue(model.AvatarFile.ContentType);
-                form.Add(streamContent, "file", model.AvatarFile.FileName);
-
-                var uploadRes = await _http.PostAsync("/api/profile/upload-avatar", form);
-                if (uploadRes.IsSuccessStatusCode)
-                {
-                    var uploadJson = await uploadRes.Content.ReadAsStringAsync();
-                    var uploadResult = JsonSerializer.Deserialize<ApiResultDto>(uploadJson, JsonOpts);
-                    if (uploadResult?.Success == true && uploadResult.Data != null)
-                        model.AvatarUrl = uploadResult.Data.ToString();
-                }
-            }
-
-            var updateRequest = new
-            {
-                model.FirstName,
-                model.LastName,
-                model.PhoneNumber,
-                model.AvatarUrl,
-                model.DateOfBirth,
-                model.Gender,
-                model.Address,
-                model.City,
-                model.District,
-                model.Ward,
-                model.Latitude,
-                model.Longitude,
-                model.Bio,
-                model.YearsOfExperience,
-                model.EducationLevel,
-                model.ExpectedSalaryMin,
-                model.ExpectedSalaryMax,
-                model.MaxTravelDistance,
-                SkillIds = model.SelectedSkillIds
-            };
-
-            var response = await _http.PutAsJsonAsync("/api/profile", updateRequest);
-            var content = await response.Content.ReadAsStringAsync();
-            var apiResult = JsonSerializer.Deserialize<ApiResultDto>(content, JsonOpts);
-
-            if (apiResult == null || !apiResult.Success)
-            {
-                ModelState.AddModelError("", apiResult?.Message ?? "Cáº­p nháº­t tháº¥t báº¡i.");
-                return View(model);
-            }
-
-            TempData["Success"] = "Cáº­p nháº­t thÃ´ng tin cÃ¡ nhÃ¢n thÃ nh cÃ´ng.";
-            return RedirectToAction("Index");
-        }
-        catch (Exception ex)
+        if (string.IsNullOrEmpty(token))
         {
-            TempData["Error"] = "Lá»—i khi cáº­p nháº­t: " + ex.Message;
+            TempData["Error"] = "Session expired. Please log in again.";
+            return RedirectToAction("Login", "Auth");
+        }
+
+        _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        if (model.AvatarFile != null && model.AvatarFile.Length > 0)
+        {
+            using var form = new MultipartFormDataContent();
+            var streamContent = new StreamContent(model.AvatarFile.OpenReadStream());
+            streamContent.Headers.ContentType = new MediaTypeHeaderValue(model.AvatarFile.ContentType);
+            form.Add(streamContent, "file", model.AvatarFile.FileName);
+
+            var uploadRes = await _http.PostAsync("/api/profile/upload-avatar", form);
+            if (uploadRes.IsSuccessStatusCode)
+            {
+                var uploadJson = await uploadRes.Content.ReadAsStringAsync();
+                var uploadResult = JsonSerializer.Deserialize<ApiResultDto>(uploadJson, JsonOpts);
+                if (uploadResult?.Success == true && uploadResult.Data != null)
+                    model.AvatarUrl = uploadResult.Data.ToString();
+            }
+        }
+
+        var updateRequest = new
+        {
+            model.FirstName,
+            model.LastName,
+            model.PhoneNumber,
+            model.AvatarUrl,
+            model.DateOfBirth,
+            model.Gender,
+            model.Address,
+            model.City,
+            model.District,
+            model.Ward,
+            model.Latitude,
+            model.Longitude,
+            model.Bio,
+            model.YearsOfExperience,
+            model.EducationLevel,
+            model.ExpectedSalaryMin,
+            model.ExpectedSalaryMax,
+            model.MaxTravelDistance,
+            SkillIds = model.SelectedSkillIds
+        };
+
+        var response = await _http.PutAsJsonAsync("/api/profile", updateRequest);
+        var responseContent = await response.Content.ReadAsStringAsync();
+        var apiResult = JsonSerializer.Deserialize<ApiResultDto>(responseContent, JsonOpts);
+
+        if (apiResult == null || !apiResult.Success)
+        {
+            ModelState.AddModelError("", apiResult?.Message ?? "Cap nhat that bai.");
+            await PopulateAvailableSkillsAsync(model);
             return View(model);
         }
+
+        TempData["Success"] = "Cap nhat thong tin thanh cong.";
+        return RedirectToAction("Edit");
     }
+    catch (Exception ex)
+    {
+        TempData["Error"] = "Loi khi cap nhat: " + ex.Message;
+        await PopulateAvailableSkillsAsync(model);
+        return View(model);
+    }
+}
 
     [HttpGet]
     public IActionResult Verify() => Redirect("/verification");
@@ -287,11 +358,11 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
         var apiResult = JsonSerializer.Deserialize<ApiResultDto>(content, JsonOpts);
         if (apiResult == null || !apiResult.Success)
         {
-            TempData["Error"] = apiResult?.Message ?? "Không thể thêm chứng chỉ.";
+            TempData["Error"] = apiResult?.Message ?? "KhÃ´ng thá»ƒ thÃªm chá»©ng chá»‰.";
             return RedirectToAction(nameof(Verify));
         }
 
-        TempData["Success"] = "Đã thêm chứng chỉ thành công.";
+        TempData["Success"] = "ÄÃ£ thÃªm chá»©ng chá»‰ thÃ nh cÃ´ng.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -312,7 +383,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
             var response = await _http.GetAsync("/api/profile/children");
             if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
             {
-                TempData["Error"] = "Báº¡n khÃ´ng cÃ³ quyá»n xem danh sÃ¡ch con em.";
+                TempData["Error"] = "BÃ¡ÂºÂ¡n khÃƒÂ´ng cÃƒÂ³ quyÃ¡Â»Ân xem danh sÃƒÂ¡ch con em.";
                 return RedirectToAction("Index");
             }
 
@@ -332,7 +403,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
         }
         catch (Exception ex)
         {
-            TempData["Error"] = "Lá»—i khi táº£i danh sÃ¡ch con em: " + ex.Message;
+            TempData["Error"] = "LÃ¡Â»â€”i khi tÃ¡ÂºÂ£i danh sÃƒÂ¡ch con em: " + ex.Message;
             return RedirectToAction("Index");
         }
     }
@@ -367,16 +438,16 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
 
             if (apiResult == null || !apiResult.Success)
             {
-                ModelState.AddModelError("", apiResult?.Message ?? "ThÃªm con em tháº¥t báº¡i.");
+                ModelState.AddModelError("", apiResult?.Message ?? "ThÃƒÂªm con em thÃ¡ÂºÂ¥t bÃ¡ÂºÂ¡i.");
                 return View(model);
             }
 
-            TempData["Success"] = "ThÃªm con em thÃ nh cÃ´ng.";
+            TempData["Success"] = "ThÃƒÂªm con em thÃƒÂ nh cÃƒÂ´ng.";
             return RedirectToAction("Children");
         }
         catch (Exception ex)
         {
-            TempData["Error"] = "Lá»—i khi thÃªm con em: " + ex.Message;
+            TempData["Error"] = "LÃ¡Â»â€”i khi thÃƒÂªm con em: " + ex.Message;
             return View(model);
         }
     }
@@ -422,7 +493,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
         }
         catch (Exception ex)
         {
-            TempData["Error"] = "Lá»—i khi táº£i thÃ´ng tin con em: " + ex.Message;
+            TempData["Error"] = "LÃ¡Â»â€”i khi tÃ¡ÂºÂ£i thÃƒÂ´ng tin con em: " + ex.Message;
             return RedirectToAction("Children");
         }
     }
@@ -458,16 +529,16 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
 
             if (apiResult == null || !apiResult.Success)
             {
-                ModelState.AddModelError("", apiResult?.Message ?? "Cáº­p nháº­t tháº¥t báº¡i.");
+                ModelState.AddModelError("", apiResult?.Message ?? "CÃ¡ÂºÂ­p nhÃ¡ÂºÂ­t thÃ¡ÂºÂ¥t bÃ¡ÂºÂ¡i.");
                 return View(model);
             }
 
-            TempData["Success"] = "Cáº­p nháº­t thÃ´ng tin con em thÃ nh cÃ´ng.";
+            TempData["Success"] = "CÃ¡ÂºÂ­p nhÃ¡ÂºÂ­t thÃƒÂ´ng tin con em thÃƒÂ nh cÃƒÂ´ng.";
             return RedirectToAction("Children");
         }
         catch (Exception ex)
         {
-            TempData["Error"] = "Lá»—i khi cáº­p nháº­t: " + ex.Message;
+            TempData["Error"] = "LÃ¡Â»â€”i khi cÃ¡ÂºÂ­p nhÃ¡ÂºÂ­t: " + ex.Message;
             return View(model);
         }
     }
@@ -493,16 +564,16 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
 
             if (apiResult == null || !apiResult.Success)
             {
-                TempData["Error"] = apiResult?.Message ?? "XÃ³a tháº¥t báº¡i.";
+                TempData["Error"] = apiResult?.Message ?? "XÃƒÂ³a thÃ¡ÂºÂ¥t bÃ¡ÂºÂ¡i.";
                 return RedirectToAction("Children");
             }
 
-            TempData["Success"] = "XÃ³a con em thÃ nh cÃ´ng.";
+            TempData["Success"] = "XÃƒÂ³a con em thÃƒÂ nh cÃƒÂ´ng.";
             return RedirectToAction("Children");
         }
         catch (Exception ex)
         {
-            TempData["Error"] = "Lá»—i khi xÃ³a: " + ex.Message;
+            TempData["Error"] = "LÃ¡Â»â€”i khi xÃƒÂ³a: " + ex.Message;
             return RedirectToAction("Children");
         }
     }

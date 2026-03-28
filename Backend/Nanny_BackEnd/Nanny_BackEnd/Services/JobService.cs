@@ -465,6 +465,7 @@ public class JobService
         {
             Id = job.Id,
             ParentProfileId = job.ParentProfileId,
+            ParentUserId = job.ParentProfile?.UserId,
             ChildProfileId = job.ChildProfileId,
             IsOwner = currentUserId.HasValue && job.ParentProfile?.UserId == currentUserId.Value,
             IsFavorite = favoriteJobIds?.Contains(job.Id) == true,

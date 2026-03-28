@@ -1359,7 +1359,7 @@ function openPreview(job) {
 
   const parentBtn = document.getElementById('pv-parentBtn');
   if (parentBtn) {
-    parentBtn.href = job.parentProfileId ? `/ParentProfile/Detail/${job.parentProfileId}` : '#';
+    parentBtn.href = job.parentUserId ? `/Profile/ViewUser?userId=${encodeURIComponent(job.parentUserId)}` : '#';
   }
 
   updatePreviewActionButtons(job);
