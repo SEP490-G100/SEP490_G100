@@ -68,17 +68,6 @@
                     <h1 class="text-3xl font-bold text-slate-900" style="font-family:'Quicksand',sans-serif">
                         @Model.FirstName @Model.LastName
                     </h1>
-                    @if (canShowFavoriteHeart)
-                    {
-                        <button type="button"
-                                id="favoriteNannyBtn"
-                                data-favorite="false"
-                                aria-pressed="false"
-                                title="Luu nanny yeu thich"
-                                class="inline-flex items-center justify-center h-10 w-10 rounded-full border border-orange-200 bg-white text-orange-500 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-orange-300 hover:bg-orange-50 hover:shadow-md">
-                            <span class="material-icons-round text-[20px]">favorite_border</span>
-                        </button>
-                    }
                 </div>
                 <div class="mt-2 flex items-center gap-2 flex-wrap text-sm text-slate-500 font-semibold">
                     <span class="profile-role-chip">@(isNanny ? "Nanny" : "Parent")</span>
@@ -97,14 +86,30 @@
                     Chinh sua ho so
                 </a>
             }
-            else if (canContactNanny)
+            else if (canContactNanny || canShowFavoriteHeart)
             {
-                <button type="button"
-                        id="contactNannyBtn"
-                        data-nanny-profile-id="@(Model.ContactNannyProfileId?.ToString() ?? string.Empty)"
-                        class="profile-primary-btn">
-                    Gui request contact
-                </button>
+                <div class="profile-header-actions">
+                    @if (canShowFavoriteHeart)
+                    {
+                        <button type="button"
+                                id="favoriteNannyBtn"
+                                data-favorite="false"
+                                aria-pressed="false"
+                                title="Luu nanny yeu thich"
+                                class="profile-favorite-btn inline-flex items-center justify-center h-10 w-10 rounded-full border border-orange-200 bg-white text-orange-500 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-orange-300 hover:bg-orange-50 hover:shadow-md">
+                            <span class="material-icons-round text-[20px]">favorite_border</span>
+                        </button>
+                    }
+                    @if (canContactNanny)
+                    {
+                        <button type="button"
+                                id="contactNannyBtn"
+                                data-nanny-profile-id="@(Model.ContactNannyProfileId?.ToString() ?? string.Empty)"
+                                class="profile-primary-btn">
+                            Gui request contact
+                        </button>
+                    }
+                </div>
             }
         </div>
 
