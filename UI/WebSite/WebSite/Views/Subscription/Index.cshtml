@@ -219,24 +219,36 @@
                             _ => "unknown"
                         };
 
-                        <article class="sub-trans-item">
-                            <div>
+                        <article class="sub-trans-item sub-trans-item--@statusClass">
+                            <div class="sub-trans-main">
                                 <p class="sub-trans-kicker">Transaction</p>
                                 <h3>@transaction.Id</h3>
                                 <p class="sub-trans-desc">@transaction.Description</p>
+                                <div class="sub-trans-facts">
+                                    <span class="sub-trans-fact">
+                                        <small>Tao luc</small>
+                                        @transaction.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                    </span>
+                                    @if (transaction.CompletedAt.HasValue)
+                                    {
+                                        <span class="sub-trans-fact">
+                                            <small>Hoan tat</small>
+                                            @transaction.CompletedAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                        </span>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(transaction.PaymentGatewayTransactionId))
+                                    {
+                                        <span class="sub-trans-fact sub-trans-fact-code">
+                                            <small>Gateway</small>
+                                            @transaction.PaymentGatewayTransactionId
+                                        </span>
+                                    }
+                                </div>
                             </div>
                             <div class="sub-trans-meta">
                                 <span class="sub-trans-badge @statusClass">@transaction.StatusLabel</span>
-                                <b>@transaction.Amount.ToString("N0") VND</b>
-                                <span>Tao luc: @transaction.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
-                                @if (transaction.CompletedAt.HasValue)
-                                {
-                                    <span>Hoan tat: @transaction.CompletedAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
-                                }
-                                @if (!string.IsNullOrWhiteSpace(transaction.PaymentGatewayTransactionId))
-                                {
-                                    <span>Gateway: @transaction.PaymentGatewayTransactionId</span>
-                                }
+                                <b class="sub-trans-amount">@transaction.Amount.ToString("N0") VND</b>
+                                <span class="sub-trans-role-pill">@Model.RoleLabel</span>
                             </div>
                         </article>
                     }

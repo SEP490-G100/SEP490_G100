@@ -9,83 +9,78 @@
 }
 
 <div class="sub-shell">
-    <section class="sub-hero">
-        <div class="sub-hero-copy">
+    @{
+        var isCancelled = Model.Cancelled;
+        var isSuccess = Model.PaymentStatus?.SubscriptionActivated == true;
+        var isFailed = !isCancelled && Model.PaymentStatus?.TransactionStatus == 3;
+        var state = isCancelled ? "cancelled" : isSuccess ? "success" : isFailed ? "failed" : "pending";
+        var statusLabel = Model.PaymentStatus?.TransactionStatusLabel ?? (isCancelled ? "Da huy" : "Dang cho xac nhan");
+        var planLabel = Model.PaymentStatus?.PlanName ?? "Subscription";
+        var resultTitle = isCancelled
+            ? "Ban da huy giao dich"
+            : isSuccess
+                ? "Thanh toan thanh cong"
+                : isFailed
+                    ? "Thanh toan that bai"
+                    : "Dang cho xac nhan";
+        var resultDescription = isCancelled
+            ? "Giao dich chua hoan tat. Ban co the quay lai trang subscription de tao mot giao dich moi."
+            : isSuccess
+                ? "Goi subscription cua ban da duoc kich hoat. Quyền loi moi da san sang su dung."
+                : isFailed
+                    ? "Cong thanh toan tra ve trang thai that bai. Ban co the thu lai bang mot giao dich moi."
+                    : "He thong dang doi callback tu cong thanh toan. Trang nay se tu dong cap nhat trong vai giay toi.";
+    }
+
+    <section class="sub-result-hero">
+        <article class="sub-result-overview">
             <div class="sub-role">Ket qua thanh toan</div>
-            <h1>Dang xac nhan giao dich cua ban</h1>
-            <p>He thong se cap nhat ngay khi callback thanh toan tu cong thanh toan duoc ghi nhan.</p>
-        </div>
-        <div class="sub-status-card">
+            <h1 id="paymentResultTitle">@resultTitle</h1>
+            <p id="paymentResultDescription">@resultDescription</p>
+
+            <div class="sub-result-tags">
+                <span id="paymentResultStatusBadge" class="sub-result-status-pill sub-result-status-pill--@state">
+                    <span id="paymentResultStatus">@statusLabel</span>
+                </span>
+                <span class="sub-result-plan-pill">Goi: <b id="paymentResultPlan">@planLabel</b></span>
+            </div>
+        </article>
+
+        <aside id="paymentResultMetaCard" class="sub-result-id-card sub-result-id-card--@state">
             <span class="sub-status-label">Ma giao dich</span>
             <strong>@Model.TransactionId</strong>
-            @if (Model.Cancelled)
+            @if (isCancelled)
             {
-                <p>Ban da huy giao dich tren cong thanh toan. Ban co the quay lai va thu lai bat cu luc nao.</p>
-            }
-            else if (Model.PaymentStatus != null)
-            {
-                <p id="paymentStatusText">@Model.PaymentStatus.TransactionStatusLabel - @Model.PaymentStatus.PlanName</p>
+                <p id="paymentStatusText">Da huy - @planLabel</p>
             }
             else
             {
-                <p id="paymentStatusText">Dang cho he thong xac nhan thanh toan.</p>
+                <p id="paymentStatusText">@statusLabel - @planLabel</p>
             }
-        </div>
+        </aside>
     </section>
 
-    <section class="sub-current">
-        <div class="sub-grid" style="grid-template-columns:minmax(0, 1fr);">
-            <article class="plan-card current-card">
-                <div class="plan-top">
-                    <span class="plan-tag">Thanh toan</span>
-                    <h3 id="paymentResultTitle">
-                        @if (Model.Cancelled)
-                        {
-                            @:Ban da huy giao dich
-                        }
-                        else if (Model.PaymentStatus?.SubscriptionActivated == true)
-                        {
-                            @:Thanh toan thanh cong
-                        }
-                        else if (Model.PaymentStatus?.TransactionStatus == 3)
-                        {
-                            @:Thanh toan that bai
-                        }
-                        else
-                        {
-                            @:Dang cho xac nhan
-                        }
-                    </h3>
-                    <p id="paymentResultDescription">
-                        @if (Model.Cancelled)
-                        {
-                            @:Giao dich chua duoc hoan tat. Neu ban muon tiep tuc, vui long quay lai trang subscription va tao giao dich moi.
-                        }
-                        else if (Model.PaymentStatus?.SubscriptionActivated == true)
-                        {
-                            @:Goi subscription cua ban da duoc kich hoat. Ban co the quay lai trang subscription de xem chi tiet.
-                        }
-                        else if (Model.PaymentStatus?.TransactionStatus == 3)
-                        {
-                            @:Cong thanh toan da tra ve trang thai that bai. Ban co the thu lai bang mot giao dich moi.
-                        }
-                        else
-                        {
-                            @:Trang nay se tu dong kiem tra lai ket qua trong vai giay toi.
-                        }
-                    </p>
-                </div>
+    <section class="sub-result-action-card">
+        <div class="sub-result-action-head">
+            <span class="sub-section-label">Thanh toan</span>
+            <h2>Thong tin trang thai giao dich</h2>
+            <p>Neu callback cham, trang se tiep tuc tu dong kiem tra va cap nhat ket qua cho ban.</p>
+        </div>
 
-                <div class="plan-highlight">
-                    <span>Trang thai: <b id="paymentResultStatus">@Model.PaymentStatus?.TransactionStatusLabel ?? "Dang cho xac nhan"</b></span>
-                    <span>Goi: <b id="paymentResultPlan">@Model.PaymentStatus?.PlanName ?? "Subscription"</b></span>
-                </div>
+        <div class="sub-result-facts">
+            <div class="sub-result-fact">
+                <span>Trang thai hien tai</span>
+                <b id="paymentResultStatusText">@statusLabel</b>
+            </div>
+            <div class="sub-result-fact">
+                <span>Goi subscription</span>
+                <b id="paymentResultPlanText">@planLabel</b>
+            </div>
+        </div>
 
-                <div class="flex flex-wrap gap-3 mt-6">
-                    <a href="@Url.Action("Index", "Subscription")" class="sub-primary-btn">Quay lai trang goi</a>
-                    <a href="@Url.Action("Index", "Home")" class="sub-secondary-btn">Ve trang chu</a>
-                </div>
-            </article>
+        <div class="sub-result-actions">
+            <a href="@Url.Action("Index", "Subscription")" class="sub-primary-btn sub-result-btn">Quay lai trang goi</a>
+            <a href="@Url.Action("Index", "Home")" class="sub-secondary-btn sub-result-btn">Ve trang chu</a>
         </div>
     </section>
 </div>
@@ -101,29 +96,60 @@
                 const resultDescription = document.getElementById('paymentResultDescription');
                 const resultStatus = document.getElementById('paymentResultStatus');
                 const resultPlan = document.getElementById('paymentResultPlan');
+                const resultStatusText = document.getElementById('paymentResultStatusText');
+                const resultPlanText = document.getElementById('paymentResultPlanText');
+                const resultStatusBadge = document.getElementById('paymentResultStatusBadge');
+                const resultMetaCard = document.getElementById('paymentResultMetaCard');
 
                 let attempts = 0;
                 const maxAttempts = 20;
+
+                const setVisualState = (state) => {
+                    if (resultStatusBadge) {
+                        resultStatusBadge.classList.remove(
+                            'sub-result-status-pill--pending',
+                            'sub-result-status-pill--success',
+                            'sub-result-status-pill--failed',
+                            'sub-result-status-pill--cancelled'
+                        );
+                        resultStatusBadge.classList.add(`sub-result-status-pill--${state}`);
+                    }
+
+                    if (resultMetaCard) {
+                        resultMetaCard.classList.remove(
+                            'sub-result-id-card--pending',
+                            'sub-result-id-card--success',
+                            'sub-result-id-card--failed',
+                            'sub-result-id-card--cancelled'
+                        );
+                        resultMetaCard.classList.add(`sub-result-id-card--${state}`);
+                    }
+                };
 
                 const applyStatus = (data) => {
                     if (!data) return false;
 
                     resultStatus.textContent = data.transactionStatusLabel || 'Dang cho xac nhan';
                     resultPlan.textContent = data.planName || 'Subscription';
+                    resultStatusText.textContent = data.transactionStatusLabel || 'Dang cho xac nhan';
+                    resultPlanText.textContent = data.planName || 'Subscription';
                     statusText.textContent = `${data.transactionStatusLabel || 'Dang cho xac nhan'} - ${data.planName || 'Subscription'}`;
 
                     if (data.subscriptionActivated) {
+                        setVisualState('success');
                         resultTitle.textContent = 'Thanh toan thanh cong';
                         resultDescription.textContent = 'Goi subscription cua ban da duoc kich hoat thanh cong.';
                         return true;
                     }
 
                     if (data.transactionStatus === 3) {
+                        setVisualState('failed');
                         resultTitle.textContent = 'Thanh toan that bai';
                         resultDescription.textContent = 'Cong thanh toan tra ve trang thai that bai. Ban co the thu lai bang mot giao dich moi.';
                         return true;
                     }
 
+                    setVisualState('pending');
                     resultTitle.textContent = 'Dang cho xac nhan';
                     resultDescription.textContent = 'Trang nay se tu dong kiem tra lai ket qua trong vai giay toi.';
                     return false;
