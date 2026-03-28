@@ -36,6 +36,20 @@ public class ProfileController : ControllerBase
         }
     }
 
+    [HttpGet("public/{userId:guid}")]
+    public async Task<IActionResult> GetPublicProfile(Guid userId)
+    {
+        try
+        {
+            var profile = await _profileService.GetPublicProfileAsync(userId);
+            return Ok(new { success = true, data = profile });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(Fail(ex.Message));
+        }
+    }
+
     /// <summary>
     /// Update personal information
     /// </summary>
