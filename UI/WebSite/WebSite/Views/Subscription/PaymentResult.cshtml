@@ -1,6 +1,6 @@
-@model WebSite.Models.Subscription.SubscriptionPaymentResultPageViewModel
+﻿@model WebSite.Models.Subscription.SubscriptionPaymentResultPageViewModel
 @{
-    ViewData["Title"] = "Ket qua thanh toan";
+    ViewData["Title"] = "Kết quả thanh toán";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
@@ -14,27 +14,27 @@
         var isSuccess = Model.PaymentStatus?.SubscriptionActivated == true;
         var isFailed = !isCancelled && Model.PaymentStatus?.TransactionStatus == 3;
         var state = isCancelled ? "cancelled" : isSuccess ? "success" : isFailed ? "failed" : "pending";
-        var statusLabel = Model.PaymentStatus?.TransactionStatusLabel ?? (isCancelled ? "Da huy" : "Dang cho xac nhan");
+        var statusLabel = Model.PaymentStatus?.TransactionStatusLabel ?? (isCancelled ? "Đã hủy" : "Đang chờ xác nhận");
         var planLabel = Model.PaymentStatus?.PlanName ?? "Subscription";
         var resultTitle = isCancelled
-            ? "Ban da huy giao dich"
+            ? "Bạn đã hủy giao dịch"
             : isSuccess
-                ? "Thanh toan thanh cong"
+                ? "Thanh toán thành công"
                 : isFailed
-                    ? "Thanh toan that bai"
-                    : "Dang cho xac nhan";
+                    ? "Thanh toán thất bại"
+                    : "Đang chờ xác nhận";
         var resultDescription = isCancelled
-            ? "Giao dich chua hoan tat. Ban co the quay lai trang subscription de tao mot giao dich moi."
+            ? "Giao dịch chưa hoàn tất. Bạn có thể quay lại trang subscription để tạo một giao dịch mới."
             : isSuccess
-                ? "Goi subscription cua ban da duoc kich hoat. Quyền loi moi da san sang su dung."
+                ? "Gói subscription của bạn đã được kích hoạt. Quyền lợi mới đã sẵn sàng sử dụng."
                 : isFailed
-                    ? "Cong thanh toan tra ve trang thai that bai. Ban co the thu lai bang mot giao dich moi."
-                    : "He thong dang doi callback tu cong thanh toan. Trang nay se tu dong cap nhat trong vai giay toi.";
+                    ? "Cổng thanh toán trả về trạng thái thất bại. Bạn có thể thử lại bằng một giao dịch mới."
+                    : "Hệ thống đang đợi callback từ cổng thanh toán. Trang này sẽ tự động cập nhật trong vài giây tới.";
     }
 
     <section class="sub-result-hero">
         <article class="sub-result-overview">
-            <div class="sub-role">Ket qua thanh toan</div>
+            <div class="sub-role">Kết quả thanh toán</div>
             <h1 id="paymentResultTitle">@resultTitle</h1>
             <p id="paymentResultDescription">@resultDescription</p>
 
@@ -42,16 +42,16 @@
                 <span id="paymentResultStatusBadge" class="sub-result-status-pill sub-result-status-pill--@state">
                     <span id="paymentResultStatus">@statusLabel</span>
                 </span>
-                <span class="sub-result-plan-pill">Goi: <b id="paymentResultPlan">@planLabel</b></span>
+                <span class="sub-result-plan-pill">Gói: <b id="paymentResultPlan">@planLabel</b></span>
             </div>
         </article>
 
         <aside id="paymentResultMetaCard" class="sub-result-id-card sub-result-id-card--@state">
-            <span class="sub-status-label">Ma giao dich</span>
+            <span class="sub-status-label">Mã giao dịch</span>
             <strong>@Model.TransactionId</strong>
             @if (isCancelled)
             {
-                <p id="paymentStatusText">Da huy - @planLabel</p>
+                <p id="paymentStatusText">Đã hủy - @planLabel</p>
             }
             else
             {
@@ -62,25 +62,25 @@
 
     <section class="sub-result-action-card">
         <div class="sub-result-action-head">
-            <span class="sub-section-label">Thanh toan</span>
-            <h2>Thong tin trang thai giao dich</h2>
-            <p>Neu callback cham, trang se tiep tuc tu dong kiem tra va cap nhat ket qua cho ban.</p>
+            <span class="sub-section-label">Thanh toán</span>
+            <h2>Thông tin trạng thái giao dịch</h2>
+            <p>Nếu callback chậm, trang sẽ tiếp tục tự động kiểm tra và cập nhật kết quả cho bạn.</p>
         </div>
 
         <div class="sub-result-facts">
             <div class="sub-result-fact">
-                <span>Trang thai hien tai</span>
+                <span>Trạng thái hiện tại</span>
                 <b id="paymentResultStatusText">@statusLabel</b>
             </div>
             <div class="sub-result-fact">
-                <span>Goi subscription</span>
+                <span>Gói subscription</span>
                 <b id="paymentResultPlanText">@planLabel</b>
             </div>
         </div>
 
         <div class="sub-result-actions">
-            <a href="@Url.Action("Index", "Subscription")" class="sub-primary-btn sub-result-btn">Quay lai trang goi</a>
-            <a href="@Url.Action("Index", "Home")" class="sub-secondary-btn sub-result-btn">Ve trang chu</a>
+            <a href="@Url.Action("Index", "Subscription")" class="sub-primary-btn sub-result-btn">Quay lại trang gói</a>
+            <a href="@Url.Action("Index", "Home")" class="sub-secondary-btn sub-result-btn">Về trang chủ</a>
         </div>
     </section>
 </div>
@@ -129,29 +129,29 @@
                 const applyStatus = (data) => {
                     if (!data) return false;
 
-                    resultStatus.textContent = data.transactionStatusLabel || 'Dang cho xac nhan';
+                    resultStatus.textContent = data.transactionStatusLabel || 'Đang chờ xác nhận';
                     resultPlan.textContent = data.planName || 'Subscription';
-                    resultStatusText.textContent = data.transactionStatusLabel || 'Dang cho xac nhan';
+                    resultStatusText.textContent = data.transactionStatusLabel || 'Đang chờ xác nhận';
                     resultPlanText.textContent = data.planName || 'Subscription';
-                    statusText.textContent = `${data.transactionStatusLabel || 'Dang cho xac nhan'} - ${data.planName || 'Subscription'}`;
+                    statusText.textContent = `${data.transactionStatusLabel || 'Đang chờ xác nhận'} - ${data.planName || 'Subscription'}`;
 
                     if (data.subscriptionActivated) {
                         setVisualState('success');
-                        resultTitle.textContent = 'Thanh toan thanh cong';
-                        resultDescription.textContent = 'Goi subscription cua ban da duoc kich hoat thanh cong.';
+                        resultTitle.textContent = 'Thanh toán thành công';
+                        resultDescription.textContent = 'Gói subscription của bạn đã được kích hoạt thành công.';
                         return true;
                     }
 
                     if (data.transactionStatus === 3) {
                         setVisualState('failed');
-                        resultTitle.textContent = 'Thanh toan that bai';
-                        resultDescription.textContent = 'Cong thanh toan tra ve trang thai that bai. Ban co the thu lai bang mot giao dich moi.';
+                        resultTitle.textContent = 'Thanh toán thất bại';
+                        resultDescription.textContent = 'Cổng thanh toán trả về trạng thái thất bại. Bạn có thể thử lại bằng một giao dịch mới.';
                         return true;
                     }
 
                     setVisualState('pending');
-                    resultTitle.textContent = 'Dang cho xac nhan';
-                    resultDescription.textContent = 'Trang nay se tu dong kiem tra lai ket qua trong vai giay toi.';
+                    resultTitle.textContent = 'Đang chờ xác nhận';
+                    resultDescription.textContent = 'Trang này sẽ tự động kiểm tra lại kết quả trong vài giây tới.';
                     return false;
                 };
 

@@ -1,4 +1,4 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -48,7 +48,7 @@ public class SubscriptionController : Controller
         var result = await readApiResult<SubscriptionPaymentSessionViewModel>(response);
         if (result == null || !result.Success)
         {
-            var message = result?.Message ?? "Khong the mua goi luc nay.";
+            var message = result?.Message ?? "Không thể mua gói lúc này.";
             if (isAjaxRequest())
                 return Json(new { success = false, message });
 
@@ -58,7 +58,7 @@ public class SubscriptionController : Controller
 
         if (string.IsNullOrWhiteSpace(result.Data?.CheckoutUrl))
         {
-            const string message = "Khong tao duoc lien ket thanh toan.";
+            const string message = "Không tạo được liên kết thanh toán.";
             if (isAjaxRequest())
                 return Json(new { success = false, message });
 
@@ -70,7 +70,7 @@ public class SubscriptionController : Controller
             return Json(new
             {
                 success = true,
-                message = "Da tao giao dich cho thanh toan.",
+                message = "Đã tạo giao dịch cho thanh toán.",
                 data = result.Data
             });
 
@@ -91,11 +91,11 @@ public class SubscriptionController : Controller
         var result = await readApiResult<UserSubscriptionViewModel>(response);
         if (result == null || !result.Success)
         {
-            TempData["SubscriptionError"] = result?.Message ?? "Khong the huy goi hien tai.";
+            TempData["SubscriptionError"] = result?.Message ?? "Không thể hủy gói hiện tại.";
             return RedirectToAction(nameof(Index));
         }
 
-        TempData["SubscriptionSuccess"] = "Da huy goi hien tai.";
+        TempData["SubscriptionSuccess"] = "Đã hủy gói hiện tại.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -129,7 +129,7 @@ public class SubscriptionController : Controller
     {
         var token = getToken();
         if (string.IsNullOrWhiteSpace(token))
-            return Json(new { success = false, message = "Ban can dang nhap de xem trang thai thanh toan." });
+            return Json(new { success = false, message = "Bạn cần đăng nhập để xem trạng thái thanh toán." });
 
         setAuthHeader(token);
         var response = await _http.GetAsync($"/api/subscriptions/payment-status/{transactionId}");
@@ -137,7 +137,7 @@ public class SubscriptionController : Controller
         return Json(result ?? new ApiResult<SubscriptionPaymentStatusViewModel>
         {
             Success = false,
-            Message = "Khong the lay trang thai thanh toan."
+            Message = "Không thể lấy trạng thái thanh toán."
         });
     }
 
@@ -218,7 +218,7 @@ public class SubscriptionController : Controller
     private static string getSummary(string role) => role switch
     {
         "Parent" => "Plus và Pro giúp phụ huynh đăng nhiều hơn, giữ bài lâu hơn và nổi bật hơn khi tìm bảo mẫu.",
-        "Nanny" => "Plus và Pro giúp bảo mẫu có thêm lượt ứng tuyển, hồ sơ nổi bật hơn và được ưu tiên hiển thị.",
+        "Nanny" => "Plus và Pro giúp bảo mẫu tăng lượt ứng tuyển, hồ sơ nổi bật hơn và được ưu tiên hiển thị.",
         _ => "Đăng nhập bằng tài khoản Parent hoặc Nanny để xem các gói phù hợp."
     };
 
@@ -271,7 +271,7 @@ public class SubscriptionController : Controller
         }
         catch
         {
-            return new ApiResult<T> { Success = false, Message = $"Loi server (HTTP {(int)response.StatusCode})." };
+            return new ApiResult<T> { Success = false, Message = $"Lỗi server (HTTP {(int)response.StatusCode})." };
         }
     }
 

@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Nanny_BackEnd.DTOs.Subscription;
 using Nanny_BackEnd.Helpers;
@@ -24,7 +24,7 @@ public class SubscriptionService
         Code: "PLUS",
         TargetRole: "Parent",
         Name: "Plus",
-        Description: "Gói Plus cho Parent cần đăng thêm bài và làm bài đăng nổi bật hơn.",
+        Description: "Goi Plus cho Parent can dang them bai va lam bai dang noi bat hon.",
         Price: 299000m,
         DurationDays: 30,
         SortOrder: 1,
@@ -38,16 +38,16 @@ public class SubscriptionService
         },
         Features:
         [
-            "Đăng tối đa 3 bài mới mỗi tháng",
-            "Bài đăng có badge nổi bật",
-            "Thời gian hiển thị bài đăng 45 ngày"
+            "Dang toi da 3 bai moi moi thang",
+            "Bai dang co badge noi bat",
+            "Thoi gian hien thi bai dang 45 ngay"
         ]);
 
     private static readonly ManagedPlanDefinition ParentProPlan = new(
         Code: "PRO",
         TargetRole: "Parent",
         Name: "Pro",
-        Description: "Gói Pro cho Parent cần ưu tiên hiển thị và gia tăng cơ hội tiếp cận.",
+        Description: "Goi Pro cho Parent can uu tien hien thi va gia tang co hoi tiep can.",
         Price: 499000m,
         DurationDays: 30,
         SortOrder: 2,
@@ -61,17 +61,17 @@ public class SubscriptionService
         },
         Features:
         [
-            "Đăng tối đa 5 bài mới mỗi tháng",
-            "Bài đăng có badge nổi bật",
-            "Được ưu tiên hiển thị trong kết quả tìm kiếm",
-            "Thời gian hiển thị bài đăng 60 ngày"
+            "Dang toi da 5 bai moi moi thang",
+            "Bai dang co badge noi bat",
+            "Duoc uu tien hien thi trong ket qua tim kiem",
+            "Thoi gian hien thi bai dang 60 ngay"
         ]);
 
     private static readonly ManagedPlanDefinition NannyPlusPlan = new(
         Code: "NANNY_PLUS",
         TargetRole: "Nanny",
         Name: "Nanny Plus",
-        Description: "Gói Plus cho Nanny muốn có thêm lượt ứng tuyển và hồ sơ nổi bật hơn.",
+        Description: "Goi Plus cho Nanny muon co them luot ung tuyen va ho so noi bat hon.",
         Price: 199000m,
         DurationDays: 30,
         SortOrder: 3,
@@ -85,16 +85,16 @@ public class SubscriptionService
         },
         Features:
         [
-            "Ứng tuyển tối đa 3 công việc mới mỗi tháng",
-            "Hồ sơ có badge nổi bật",
-            "Hồ sơ được hiển thị tốt hơn tài khoản Free"
+            "Ung tuyen toi da 3 cong viec moi moi thang",
+            "Ho so co badge noi bat",
+            "Ho so duoc hien thi tot hon tai khoan Free"
         ]);
 
     private static readonly ManagedPlanDefinition NannyProPlan = new(
         Code: "NANNY_PRO",
         TargetRole: "Nanny",
         Name: "Nanny Pro",
-        Description: "Gói Pro cho Nanny muốn có thêm lượt ứng tuyển và ưu tiên hiển thị cao hơn.",
+        Description: "Goi Pro cho Nanny muon co them luot ung tuyen va uu tien hien thi cao hon.",
         Price: 299000m,
         DurationDays: 30,
         SortOrder: 4,
@@ -108,11 +108,10 @@ public class SubscriptionService
         },
         Features:
         [
-            "Ứng tuyển tối đa 5 công việc mới mỗi tháng",
-            "Hồ sơ có badge nổi bật",
-            "Hồ sơ được ưu tiên hiển thị cao hơn gói Nanny Plus"
+            "Ung tuyen toi da 5 cong viec moi moi thang",
+            "Ho so co badge noi bat",
+            "Ho so duoc uu tien hien thi cao hon goi Nanny Plus"
         ]);
-
     private static readonly ManagedPlanDefinition[] ManagedPlans =
     [
         ParentPlusPlan,
@@ -899,3 +898,4 @@ public class VnPayIpnResult
     public string RspCode { get; set; } = "99";
     public string Message { get; set; } = "Unknown error";
 }
+
