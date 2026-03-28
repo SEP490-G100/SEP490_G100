@@ -26,25 +26,25 @@
 
             <div class="px-6 py-6 sm:px-8">
                 <div id="receivedContactSummary" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-                    <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                    <div class="ncr-stat-card ncr-stat-card--total rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
                         <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-400">Tong request</p>
                         <p id="rcSummaryTotal" class="mt-2 text-2xl font-extrabold text-slate-900">0</p>
                     </div>
-                    <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
+                    <div class="ncr-stat-card ncr-stat-card--pending rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
                         <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-amber-600">Dang cho duyet</p>
                         <p id="rcSummaryPending" class="mt-2 text-2xl font-extrabold text-amber-700">0</p>
                     </div>
-                    <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
+                    <div class="ncr-stat-card ncr-stat-card--accepted rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
                         <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-emerald-600">Da chap nhan</p>
                         <p id="rcSummaryAccepted" class="mt-2 text-2xl font-extrabold text-emerald-700">0</p>
                     </div>
-                    <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-4">
+                    <div class="ncr-stat-card ncr-stat-card--rejected rounded-2xl border border-rose-200 bg-rose-50 px-4 py-4">
                         <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-rose-600">Da tu choi</p>
                         <p id="rcSummaryRejected" class="mt-2 text-2xl font-extrabold text-rose-700">0</p>
                     </div>
                 </div>
 
-                <div class="flex flex-wrap items-center gap-2 mb-5">
+                <div class="ncr-filter-shell flex flex-wrap items-center gap-2 mb-5">
                     <button type="button" class="ncr-filter-btn active" data-status="">Tat ca</button>
                     <button type="button" class="ncr-filter-btn" data-status="0">Dang cho duyet</button>
                     <button type="button" class="ncr-filter-btn" data-status="1">Da chap nhan</button>
@@ -70,16 +70,52 @@
                 <span class="material-icons-round text-[20px]">close</span>
             </button>
         </div>
-        <div id="receivedContactDetailBody" class="overflow-y-auto px-6 py-5 space-y-4">
+        <div id="receivedContactDetailBody" class="ncr-modal-body overflow-y-auto px-6 py-5 space-y-4">
             <p class="text-sm text-slate-500">Dang tai chi tiet request...</p>
         </div>
     </div>
 </div>
 
 <style>
+    .ncr-stat-card {
+        position: relative;
+        overflow: hidden;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 10px 24px rgba(15,23,42,.05);
+    }
+
+    .ncr-stat-card::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        border-radius: 999px;
+        background: #94a3b8;
+    }
+
+    .ncr-stat-card--pending::after {
+        background: #f59e0b;
+    }
+
+    .ncr-stat-card--accepted::after {
+        background: #10b981;
+    }
+
+    .ncr-stat-card--rejected::after {
+        background: #f43f5e;
+    }
+
+    .ncr-filter-shell {
+        padding: 10px;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    }
+
     .ncr-filter-btn {
         min-height: 38px;
-        padding: 0 14px;
+        padding: 0 16px;
         border-radius: 999px;
         border: 1px solid #e2e8f0;
         background: #fff;
@@ -98,8 +134,50 @@
     .ncr-filter-btn.active {
         border-color: #fb923c;
         color: #c2410c;
-        background: #fff7ed;
+        background: linear-gradient(135deg, #fff7ed, #ffffff);
         box-shadow: 0 8px 16px rgba(249,115,22,.16);
+    }
+
+    .ncr-list-card {
+        border-radius: 22px;
+        border: 1px solid #e2e8f0;
+        background: linear-gradient(180deg, #ffffff 0%, #fffdfa 100%);
+        box-shadow: 0 10px 24px rgba(15,23,42,.06);
+        transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+
+    .ncr-list-card:hover {
+        transform: translateY(-2px);
+        border-color: #fdba74;
+        box-shadow: 0 16px 30px rgba(249,115,22,.12);
+    }
+
+    .ncr-meta-tile {
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+        padding: 12px;
+    }
+
+    .ncr-message-box {
+        border-radius: 14px;
+        border: 1px solid #fed7aa;
+        background: linear-gradient(180deg, #fff7ed 0%, #ffffff 100%);
+        padding: 12px;
+    }
+
+    .ncr-modal-body {
+        scrollbar-width: thin;
+        scrollbar-color: #fdba74 transparent;
+    }
+
+    .ncr-modal-body::-webkit-scrollbar {
+        width: 7px;
+    }
+
+    .ncr-modal-body::-webkit-scrollbar-thumb {
+        background: #fdba74;
+        border-radius: 999px;
     }
 </style>
 
@@ -185,7 +263,7 @@
                 const status = Number(item?.status ?? 0);
 
                 return `
-                    <article class="rounded-[22px] border border-slate-200 bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,.05)]">
+                    <article class="ncr-list-card p-5">
                         <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                             <div class="min-w-0 flex items-start gap-3">
                                 <div class="w-11 h-11 rounded-full border border-orange-200 bg-orange-50 text-orange-600 font-extrabold text-lg inline-flex items-center justify-center flex-shrink-0">
@@ -200,21 +278,21 @@
                         </div>
 
                         <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                            <div class="ncr-meta-tile">
                                 <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Ngay gui</p>
                                 <p class="mt-1 text-sm font-bold text-slate-700">${escapeHtml(formatDateTime(item?.requestedAt))}</p>
                             </div>
-                            <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                            <div class="ncr-meta-tile">
                                 <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">So dien thoai</p>
                                 <p class="mt-1 text-sm font-bold text-slate-700">${escapeHtml(parentPhone)}</p>
                             </div>
-                            <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                            <div class="ncr-meta-tile">
                                 <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Phan hoi luc</p>
                                 <p class="mt-1 text-sm font-bold text-slate-700">${escapeHtml(formatDateTime(item?.respondedAt))}</p>
                             </div>
                         </div>
 
-                        <div class="mt-4 rounded-xl border border-orange-100 bg-orange-50/60 px-3 py-3">
+                        <div class="ncr-message-box mt-4">
                             <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-orange-500">Loi nhan tu parent</p>
                             <p class="mt-1 text-sm text-slate-700">${escapeHtml(item?.message || 'Khong co loi nhan.')}</p>
                         </div>
@@ -317,12 +395,12 @@
 
             modalBodyEl.innerHTML = `
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <div class="ncr-meta-tile">
                         <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Parent</p>
                         <p class="mt-1 text-base font-extrabold text-slate-900">${escapeHtml(parentName)}</p>
                         <p class="mt-1 text-sm text-slate-500">${escapeHtml(parentLocation)}</p>
                     </div>
-                    <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <div class="ncr-meta-tile">
                         <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Trang thai</p>
                         <div class="mt-2">${getStatusBadge(status, detail?.statusLabel)}</div>
                         <p class="mt-2 text-xs text-slate-500">Gui luc: ${escapeHtml(formatDateTime(detail?.requestedAt))}</p>
@@ -331,22 +409,22 @@
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <div class="ncr-meta-tile">
                         <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">So dien thoai</p>
                         <p class="mt-1 text-sm font-bold text-slate-700">${escapeHtml(parentPhone)}</p>
                     </div>
-                    <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <div class="ncr-meta-tile">
                         <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Dia chi</p>
                         <p class="mt-1 text-sm font-bold text-slate-700">${escapeHtml(parentAddress)}</p>
                     </div>
                 </div>
 
-                <div class="rounded-xl border border-orange-100 bg-orange-50/60 px-4 py-3">
+                <div class="ncr-message-box">
                     <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-orange-500">Loi nhan tu parent</p>
                     <p class="mt-2 text-sm leading-6 text-slate-700">${escapeHtml(requestMessage)}</p>
                 </div>
 
-                <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <div class="ncr-meta-tile">
                     <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Phan hoi cua ban</p>
                     <p class="mt-2 text-sm leading-6 text-slate-700">${escapeHtml(responseMessage)}</p>
                 </div>

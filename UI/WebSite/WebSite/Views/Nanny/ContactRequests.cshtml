@@ -26,25 +26,25 @@
 
             <div class="px-6 py-6 sm:px-8">
                 <div id="contactRequestSummary" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-                    <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                    <div class="cr-stat-card cr-stat-card--total rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
                         <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-400">Tong request</p>
                         <p id="summaryTotal" class="mt-2 text-2xl font-extrabold text-slate-900">0</p>
                     </div>
-                    <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
+                    <div class="cr-stat-card cr-stat-card--pending rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
                         <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-amber-600">Dang cho duyet</p>
                         <p id="summaryPending" class="mt-2 text-2xl font-extrabold text-amber-700">0</p>
                     </div>
-                    <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
+                    <div class="cr-stat-card cr-stat-card--accepted rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
                         <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-emerald-600">Chap nhan</p>
                         <p id="summaryAccepted" class="mt-2 text-2xl font-extrabold text-emerald-700">0</p>
                     </div>
-                    <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-4">
+                    <div class="cr-stat-card cr-stat-card--rejected rounded-2xl border border-rose-200 bg-rose-50 px-4 py-4">
                         <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-rose-600">Tu choi</p>
                         <p id="summaryRejected" class="mt-2 text-2xl font-extrabold text-rose-700">0</p>
                     </div>
                 </div>
 
-                <div class="flex flex-wrap items-center gap-2 mb-5">
+                <div class="cr-filter-shell flex flex-wrap items-center gap-2 mb-5">
                     <button type="button" class="cr-filter-btn active" data-status="">Tat ca</button>
                     <button type="button" class="cr-filter-btn" data-status="0">Dang cho duyet</button>
                     <button type="button" class="cr-filter-btn" data-status="1">Da chap nhan</button>
@@ -62,24 +62,60 @@
 </section>
 
 <div id="contactRequestDetailModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/45 backdrop-blur-sm p-4">
-    <div class="w-full max-w-2xl rounded-[24px] border border-slate-200 bg-white shadow-[0_22px_56px_rgba(15,23,42,.22)] overflow-hidden">
-        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
+    <div class="w-full max-w-2xl max-h-[88vh] rounded-[24px] border border-slate-200 bg-white shadow-[0_22px_56px_rgba(15,23,42,.22)] overflow-hidden flex flex-col">
+        <div class="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
             <h3 class="text-lg font-extrabold text-slate-900">Chi tiet contact request</h3>
             <button type="button" id="closeContactRequestDetail"
                     class="inline-flex items-center justify-center w-9 h-9 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-100">
                 <span class="material-icons-round text-[20px]">close</span>
             </button>
         </div>
-        <div id="contactRequestDetailBody" class="px-6 py-5 space-y-4">
+        <div id="contactRequestDetailBody" class="cr-modal-body overflow-y-auto px-6 py-5 space-y-4">
             <p class="text-sm text-slate-500">Dang tai chi tiet request...</p>
         </div>
     </div>
 </div>
 
 <style>
+    .cr-stat-card {
+        position: relative;
+        overflow: hidden;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 10px 24px rgba(15,23,42,.05);
+    }
+
+    .cr-stat-card::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        border-radius: 999px;
+        background: #94a3b8;
+    }
+
+    .cr-stat-card--pending::after {
+        background: #f59e0b;
+    }
+
+    .cr-stat-card--accepted::after {
+        background: #10b981;
+    }
+
+    .cr-stat-card--rejected::after {
+        background: #f43f5e;
+    }
+
+    .cr-filter-shell {
+        padding: 10px;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    }
+
     .cr-filter-btn {
         min-height: 38px;
-        padding: 0 14px;
+        padding: 0 16px;
         border-radius: 999px;
         border: 1px solid #e2e8f0;
         background: #fff;
@@ -98,8 +134,65 @@
     .cr-filter-btn.active {
         border-color: #fb923c;
         color: #c2410c;
-        background: #fff7ed;
+        background: linear-gradient(135deg, #fff7ed, #ffffff);
         box-shadow: 0 8px 16px rgba(249,115,22,.16);
+    }
+
+    .cr-list-card {
+        border-radius: 22px;
+        border: 1px solid #e2e8f0;
+        background: linear-gradient(180deg, #ffffff 0%, #fffdfa 100%);
+        box-shadow: 0 10px 24px rgba(15,23,42,.06);
+        transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+
+    .cr-list-card:hover {
+        transform: translateY(-2px);
+        border-color: #fdba74;
+        box-shadow: 0 16px 30px rgba(249,115,22,.12);
+    }
+
+    .cr-meta-tile {
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+        padding: 12px;
+    }
+
+    .cr-message-box {
+        border-radius: 14px;
+        border: 1px solid #fed7aa;
+        background: linear-gradient(180deg, #fff7ed 0%, #ffffff 100%);
+        padding: 12px;
+    }
+
+    .cr-avatar {
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+        border: 1px solid #fed7aa;
+        background: linear-gradient(135deg, #fff7ed, #ffedd5);
+        color: #c2410c;
+        font-size: 18px;
+        font-weight: 900;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .cr-modal-body {
+        scrollbar-width: thin;
+        scrollbar-color: #fdba74 transparent;
+    }
+
+    .cr-modal-body::-webkit-scrollbar {
+        width: 7px;
+    }
+
+    .cr-modal-body::-webkit-scrollbar-thumb {
+        background: #fdba74;
+        border-radius: 999px;
     }
 </style>
 
@@ -148,6 +241,11 @@
             return `<span class="inline-flex items-center min-h-[30px] px-3 rounded-full border border-amber-200 bg-amber-50 text-amber-700 text-xs font-extrabold">${escapeHtml(statusLabel || 'Dang cho duyet')}</span>`;
         };
 
+        const getNannyInitial = (fullName) => {
+            const text = String(fullName || '').trim();
+            return text ? text.charAt(0).toUpperCase() : 'N';
+        };
+
         const setSummary = (data) => {
             summaryTotalEl.textContent = String(Number(data?.totalRequests ?? 0));
             summaryPendingEl.textContent = String(Number(data?.pendingRequests ?? 0));
@@ -174,31 +272,34 @@
                     : 'Thuong luong';
 
                 return `
-                    <article class="rounded-[22px] border border-slate-200 bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,.05)]">
+                    <article class="cr-list-card p-5">
                         <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                            <div class="min-w-0">
-                                <h3 class="text-lg font-extrabold text-slate-900">${escapeHtml(nannyName)}</h3>
-                                <p class="mt-1 text-sm font-semibold text-slate-500">${escapeHtml(nannyLocation)}</p>
+                            <div class="min-w-0 flex items-start gap-3">
+                                <div class="cr-avatar">${escapeHtml(getNannyInitial(nannyName))}</div>
+                                <div class="min-w-0">
+                                    <h3 class="text-lg font-extrabold text-slate-900 truncate">${escapeHtml(nannyName)}</h3>
+                                    <p class="mt-1 text-sm font-semibold text-slate-500">${escapeHtml(nannyLocation)}</p>
+                                </div>
                             </div>
                             ${getStatusBadge(Number(item?.status ?? 0), item?.statusLabel)}
                         </div>
 
                         <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                            <div class="cr-meta-tile">
                                 <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Ngay gui</p>
                                 <p class="mt-1 text-sm font-bold text-slate-700">${escapeHtml(formatDateTime(item?.requestedAt))}</p>
                             </div>
-                            <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                            <div class="cr-meta-tile">
                                 <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Kinh nghiem</p>
                                 <p class="mt-1 text-sm font-bold text-slate-700">${Number(item?.nanny?.yearsOfExperience ?? 0)} nam</p>
                             </div>
-                            <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                            <div class="cr-meta-tile">
                                 <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Luong mong muon</p>
                                 <p class="mt-1 text-sm font-bold text-slate-700">${escapeHtml(salaryText)}</p>
                             </div>
                         </div>
 
-                        <div class="mt-4 rounded-xl border border-orange-100 bg-orange-50/60 px-3 py-3">
+                        <div class="cr-message-box mt-4">
                             <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-orange-500">Loi nhan cua ban</p>
                             <p class="mt-1 text-sm text-slate-700">${escapeHtml(item?.message || 'Khong co loi nhan.')}</p>
                         </div>
@@ -231,12 +332,12 @@
 
             modalBodyEl.innerHTML = `
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <div class="cr-meta-tile">
                         <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Nanny</p>
                         <p class="mt-1 text-base font-extrabold text-slate-900">${escapeHtml(nannyName)}</p>
                         <p class="mt-1 text-sm text-slate-500">${escapeHtml([detail?.nanny?.district, detail?.nanny?.city].filter(Boolean).join(', ') || 'Chua cap nhat')}</p>
                     </div>
-                    <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <div class="cr-meta-tile">
                         <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Trang thai</p>
                         <div class="mt-2">${getStatusBadge(status, statusLabel)}</div>
                         <p class="mt-2 text-xs text-slate-500">Gui luc: ${escapeHtml(formatDateTime(detail?.requestedAt))}</p>
@@ -244,12 +345,12 @@
                     </div>
                 </div>
 
-                <div class="rounded-xl border border-orange-100 bg-orange-50/60 px-4 py-3">
+                <div class="cr-message-box">
                     <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-orange-500">Loi nhan parent</p>
                     <p class="mt-2 text-sm leading-6 text-slate-700">${escapeHtml(parentMessage)}</p>
                 </div>
 
-                <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <div class="cr-meta-tile">
                     <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Phan hoi tu nanny</p>
                     <p class="mt-2 text-sm leading-6 text-slate-700">${escapeHtml(responseMessage)}</p>
                 </div>`;
