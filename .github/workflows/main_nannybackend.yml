@@ -10,7 +10,7 @@ on:
 env:
   PROJECT_PATH: Backend/Nanny_BackEnd/Nanny_BackEnd/Nanny_BackEnd.csproj
   PUBLISH_PATH: ${{ github.workspace }}/backendapp
-  APP_NAME: nannymatch-api
+  APP_NAME: nannymatch-be-g100
 
 jobs:
   build:
