@@ -1031,15 +1031,22 @@
                     return;
                 }
 
-                body.innerHTML = jobs.map((job) => `
+                body.innerHTML = jobs.map((job) => {
+                    const moderationLabel = moderationLabels[job.moderationStatus] || 'Dang cap nhat';
+                    const postStatusLabel = postStatusLabels[job.status] || 'Dang cap nhat';
+                    const showPostStatusBadge = String(moderationLabel).trim().toLowerCase() !== String(postStatusLabel).trim().toLowerCase();
+
+                    return `
                     <article data-job-id="${escapeHtml(job.id)}" class="history-job-card ${cardToneClasses[Number(job.moderationStatus)] || 'history-job-card--pending'} rounded-[28px] border border-slate-100 bg-white shadow-[0_14px_34px_rgba(15,23,42,.06)] overflow-hidden">
                         <div class="px-6 py-5 border-b border-slate-100 bg-[linear-gradient(180deg,#ffffff_0%,#fffaf5_100%)]">
                             <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                                 <div>
                                     <div class="flex flex-wrap items-center gap-2">
                                         <h2 class="text-lg font-bold text-slate-900">${escapeHtml(job.title || 'Tin dang')}</h2>
-                                        <span class="${moderationBadgeClasses[Number(job.moderationStatus)] || 'history-badge history-badge--pending'}">${escapeHtml(moderationLabels[job.moderationStatus] || 'Dang cap nhat')}</span>
-                                        <span class="${postStatusBadgeClasses[Number(job.status)] || 'history-badge history-badge--hidden'}">${escapeHtml(postStatusLabels[job.status] || 'Dang cap nhat')}</span>
+                                        <span class="${moderationBadgeClasses[Number(job.moderationStatus)] || 'history-badge history-badge--pending'}">${escapeHtml(moderationLabel)}</span>
+                                        ${showPostStatusBadge
+                                            ? `<span class="${postStatusBadgeClasses[Number(job.status)] || 'history-badge history-badge--hidden'}">${escapeHtml(postStatusLabel)}</span>`
+                                            : ''}
                                     </div>
                                     <p class="mt-2 text-sm text-slate-500">${escapeHtml([job.location, job.district, job.city].filter(Boolean).join(', ') || 'Chua cap nhat dia diem')}</p>
                                 </div>
@@ -1085,12 +1092,13 @@
                                 <div class="mt-4 space-y-3 text-sm text-slate-600">
                                     <div class="flex items-start justify-between gap-4">
                                         <span class="font-bold text-slate-500">Trang thai</span>
-                                        <span class="${moderationBadgeClasses[Number(job.moderationStatus)] || 'history-badge history-badge--pending'}">${escapeHtml(moderationLabels[job.moderationStatus] || 'Dang cap nhat')}</span>
+                                        <span class="${moderationBadgeClasses[Number(job.moderationStatus)] || 'history-badge history-badge--pending'}">${escapeHtml(moderationLabel)}</span>
                                     </div>
-                                    <div class="flex items-start justify-between gap-4">
-                                        <span class="font-bold text-slate-500">Hien thi</span>
-                                        <span class="${postStatusBadgeClasses[Number(job.status)] || 'history-badge history-badge--hidden'}">${escapeHtml(postStatusLabels[job.status] || 'Dang cap nhat')}</span>
-                                    </div>
+                                    ${showPostStatusBadge ? `
+                                        <div class="flex items-start justify-between gap-4">
+                                            <span class="font-bold text-slate-500">Hien thi</span>
+                                            <span class="${postStatusBadgeClasses[Number(job.status)] || 'history-badge history-badge--hidden'}">${escapeHtml(postStatusLabel)}</span>
+                                        </div>` : ''}
                                     <div>
                                         <p class="font-bold text-slate-500 mb-2">Ghi chu moderator</p>
                                         <div class="history-note-box text-sm leading-6 text-slate-600">
@@ -1133,7 +1141,8 @@
                                 <div id="historyRequestList-${escapeHtml(job.id)}" class="history-request-list hidden mt-4"></div>
                             </div>
                         </div>
-                    </article>`).join('');
+                    </article>`;
+                }).join('');
 
                 await preloadApplicationSummaries(jobs);
 

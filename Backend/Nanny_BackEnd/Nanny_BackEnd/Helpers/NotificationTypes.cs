@@ -20,6 +20,9 @@ public static class NotificationTypes
     public const int VerificationRequestRejected = 16;
     public const int VerificationRequestCreated = 17;
     public const int JobApplicationSubmitted = 11;
+    public const int ContactRequestReceived = 12;
+    public const int ContactRequestAccepted = 13;
+    public const int ContactRequestRejected = 14;
 
     public static string getLabel(int type) => type switch
     {
@@ -41,6 +44,9 @@ public static class NotificationTypes
         VerificationRequestRejected => "Yeu cau xac minh bi tu choi",
         VerificationRequestCreated => "Da gui yeu cau xac minh",
         JobApplicationSubmitted => "Don ung tuyen da gui",
+        ContactRequestReceived => "Nhan request contact",
+        ContactRequestAccepted => "Request contact duoc chap nhan",
+        ContactRequestRejected => "Request contact bi tu choi",
         _ => "Thong bao he thong"
     };
 }

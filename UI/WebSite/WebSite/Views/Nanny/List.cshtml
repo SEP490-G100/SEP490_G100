@@ -29,6 +29,10 @@
                         <span class="material-icons-round text-[18px]">favorite</span>
                         Nanny yêu thích
                     </a>
+                    <a href="/Nanny/ContactRequests" class="nanny-filter-trigger">
+                        <span class="material-icons-round text-[18px]">contact_phone</span>
+                        Contact request
+                    </a>
                 }
                 <span id="nannyResultCount" class="nanny-toolbar__count">Đang tải...</span>
                 <a href="/Subscription" class="nanny-upgrade-btn">
@@ -182,6 +186,10 @@
                             <button type="button" id="nd-favoriteBtn" class="nanny-detail-favorite hidden" onclick="toggleNannyFavoriteFromDetail(event)">
                                 <span class="material-icons-round">favorite_border</span>
                                 <span id="nd-favoriteBtnText">Yêu thích</span>
+                            </button>
+                            <button type="button" id="nd-contactBtn" class="nanny-detail-view-btn hidden" onclick="sendContactRequestFromDetail(event)">
+                                <span class="material-icons-round">send</span>
+                                Gửi request contact
                             </button>
                         </div>
                     </div>

@@ -288,6 +288,12 @@ public class NotificationService
                 "/Nanny/Profile",
             NotificationTypes.JobApplicationSubmitted =>
                 "/Search/Applications",
+            NotificationTypes.ContactRequestReceived =>
+                "/Nanny/ReceivedContactRequests",
+            NotificationTypes.ContactRequestAccepted =>
+                "/Nanny/ContactRequests",
+            NotificationTypes.ContactRequestRejected =>
+                "/Nanny/ContactRequests",
             _ => null
         };
     }

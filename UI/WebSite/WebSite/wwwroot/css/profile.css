@@ -85,6 +85,18 @@
     box-shadow: 0 18px 34px rgba(249, 115, 22, .3);
 }
 
+.profile-header-actions {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.profile-favorite-btn {
+    flex-shrink: 0;
+}
+
 .profile-grid {
     display: grid;
     grid-template-columns: 1.7fr 1fr;
@@ -300,6 +312,11 @@
     .profile-header {
         border-radius: 22px;
         padding: 14px;
+    }
+
+    .profile-header-actions {
+        width: 100%;
+        justify-content: flex-start;
     }
 
     .profile-avatar {

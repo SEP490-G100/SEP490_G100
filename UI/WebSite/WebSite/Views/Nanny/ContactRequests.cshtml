@@ -1,0 +1,768 @@
+@{
+    ViewData["Title"] = "Lich su contact request - NannyMatch";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<section class="cr-page min-h-screen bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_40%,#f8fafc_100%)] py-10">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+        <div class="rounded-[30px] border border-orange-100 bg-white/95 shadow-[0_22px_56px_rgba(15,23,42,.08)] overflow-hidden">
+            <div class="px-6 py-6 sm:px-8 border-b border-orange-100 bg-[radial-gradient(circle_at_top_right,rgba(255,237,213,.82),transparent_32%),linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-orange-500">Parent zone</p>
+                        <h1 class="cr-page-title mt-2 text-3xl font-bold text-slate-900">Lich su contact request</h1>
+                        <p class="mt-2 text-sm leading-6 text-slate-500 max-w-2xl">
+                            Theo doi cac request ban da gui den nanny, trang thai phan hoi va ly do tu choi (neu co).
+                        </p>
+                    </div>
+                    <div class="cr-header-actions flex items-center gap-3">
+                        <a href="/Nanny/List"
+                           class="inline-flex items-center justify-center min-h-[46px] px-5 rounded-2xl border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 transition-all">
+                            Quay lai tim nanny
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-6 sm:px-8">
+                <div id="contactRequestSummary" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+                    <div class="cr-stat-card cr-stat-card--total rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                        <span class="material-icons-round cr-stat-icon">stacked_bar_chart</span>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-400">Tong request</p>
+                        <p id="summaryTotal" class="mt-2 text-2xl font-extrabold text-slate-900">0</p>
+                    </div>
+                    <div class="cr-stat-card cr-stat-card--pending rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
+                        <span class="material-icons-round cr-stat-icon">hourglass_top</span>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-amber-600">Dang cho duyet</p>
+                        <p id="summaryPending" class="mt-2 text-2xl font-extrabold text-amber-700">0</p>
+                    </div>
+                    <div class="cr-stat-card cr-stat-card--accepted rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
+                        <span class="material-icons-round cr-stat-icon">verified</span>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-emerald-600">Chap nhan</p>
+                        <p id="summaryAccepted" class="mt-2 text-2xl font-extrabold text-emerald-700">0</p>
+                    </div>
+                    <div class="cr-stat-card cr-stat-card--rejected rounded-2xl border border-rose-200 bg-rose-50 px-4 py-4">
+                        <span class="material-icons-round cr-stat-icon">do_not_disturb_on</span>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-rose-600">Tu choi</p>
+                        <p id="summaryRejected" class="mt-2 text-2xl font-extrabold text-rose-700">0</p>
+                    </div>
+                </div>
+
+                <div class="cr-filter-shell flex flex-wrap items-center gap-2 mb-5">
+                    <button type="button" class="cr-filter-btn active" data-status="">Tat ca</button>
+                    <button type="button" class="cr-filter-btn" data-status="0">Dang cho duyet</button>
+                    <button type="button" class="cr-filter-btn" data-status="1">Da chap nhan</button>
+                    <button type="button" class="cr-filter-btn" data-status="2">Da tu choi</button>
+                </div>
+
+                <div id="contactRequestList" class="space-y-3"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div id="contactRequestDetailModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/45 backdrop-blur-sm p-4">
+    <div class="cr-modal-panel w-full max-w-2xl max-h-[88vh] rounded-[24px] border border-slate-200 bg-white shadow-[0_22px_56px_rgba(15,23,42,.22)] overflow-hidden flex flex-col">
+        <div class="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
+            <h3 class="text-lg font-extrabold text-slate-900">Chi tiet contact request</h3>
+            <button type="button" id="closeContactRequestDetail"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-100">
+                <span class="material-icons-round text-[20px]">close</span>
+            </button>
+        </div>
+        <div id="contactRequestDetailBody" class="cr-modal-body overflow-y-auto px-6 py-5 space-y-4">
+            <p class="text-sm text-slate-500">Dang tai chi tiet request...</p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .cr-stat-card {
+        position: relative;
+        overflow: hidden;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 10px 24px rgba(15,23,42,.05);
+    }
+
+    .cr-stat-icon {
+        position: absolute;
+        right: 12px;
+        top: 12px;
+        font-size: 17px;
+        color: #94a3b8;
+        opacity: .9;
+    }
+
+    .cr-stat-card::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        border-radius: 999px;
+        background: #94a3b8;
+    }
+
+    .cr-stat-card--pending::after {
+        background: #f59e0b;
+    }
+
+    .cr-stat-card--accepted::after {
+        background: #10b981;
+    }
+
+    .cr-stat-card--rejected::after {
+        background: #f43f5e;
+    }
+
+    .cr-filter-shell {
+        padding: 10px;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    }
+
+    .cr-filter-btn {
+        min-height: 38px;
+        padding: 0 16px;
+        border-radius: 999px;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        color: #475569;
+        font-size: 12px;
+        font-weight: 800;
+        transition: all .2s ease;
+    }
+
+    .cr-filter-btn:hover {
+        border-color: #fdba74;
+        color: #c2410c;
+        background: #fff7ed;
+    }
+
+    .cr-filter-btn.active {
+        border-color: #fb923c;
+        color: #c2410c;
+        background: linear-gradient(135deg, #fff7ed, #ffffff);
+        box-shadow: 0 8px 16px rgba(249,115,22,.16);
+    }
+
+    .cr-list-card {
+        border-radius: 22px;
+        border: 1px solid #e2e8f0;
+        background: linear-gradient(180deg, #ffffff 0%, #fffdfa 100%);
+        box-shadow: 0 10px 24px rgba(15,23,42,.06);
+        transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+
+    .cr-list-card:hover {
+        transform: translateY(-2px);
+        border-color: #fdba74;
+        box-shadow: 0 16px 30px rgba(249,115,22,.12);
+    }
+
+    .cr-list-card--pending {
+        border-left: 4px solid #f59e0b;
+    }
+
+    .cr-list-card--accepted {
+        border-left: 4px solid #10b981;
+    }
+
+    .cr-list-card--rejected {
+        border-left: 4px solid #f43f5e;
+    }
+
+    .cr-meta-tile {
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+        padding: 12px;
+    }
+
+    .cr-message-box {
+        border-radius: 14px;
+        border: 1px solid #fed7aa;
+        background: linear-gradient(180deg, #fff7ed 0%, #ffffff 100%);
+        padding: 12px;
+    }
+
+    .cr-avatar {
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+        border: 1px solid #fed7aa;
+        background: linear-gradient(135deg, #fff7ed, #ffedd5);
+        color: #c2410c;
+        font-size: 18px;
+        font-weight: 900;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .cr-modal-body {
+        scrollbar-width: thin;
+        scrollbar-color: #fdba74 transparent;
+    }
+
+    .cr-modal-body::-webkit-scrollbar {
+        width: 7px;
+    }
+
+    .cr-modal-body::-webkit-scrollbar-thumb {
+        background: #fdba74;
+        border-radius: 999px;
+    }
+
+    .cr-status-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 30px;
+        padding: 0 10px;
+        border-radius: 999px;
+        border: 1px solid transparent;
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .cr-status-chip .material-icons-round {
+        font-size: 14px;
+    }
+
+    .cr-status-chip--pending {
+        border-color: #fde68a;
+        color: #b45309;
+        background: #fffbeb;
+    }
+
+    .cr-status-chip--accepted {
+        border-color: #86efac;
+        color: #047857;
+        background: #ecfdf5;
+    }
+
+    .cr-status-chip--rejected {
+        border-color: #fda4af;
+        color: #be123c;
+        background: #fff1f2;
+    }
+
+    .cr-action-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 38px;
+        padding: 0 14px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 800;
+        transition: all .2s ease;
+    }
+
+    .cr-action-btn .material-icons-round {
+        font-size: 16px;
+    }
+
+    .cr-action-btn--outline {
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        color: #475569;
+    }
+
+    .cr-action-btn--outline:hover {
+        background: #f8fafc;
+    }
+
+    .cr-action-btn--primary {
+        border: 1px solid #fdba74;
+        background: linear-gradient(135deg, #fff7ed, #ffffff);
+        color: #c2410c;
+    }
+
+    .cr-action-btn--primary:hover {
+        background: #fff7ed;
+        transform: translateY(-1px);
+    }
+
+    .cr-empty-state {
+        border-radius: 18px;
+        border: 1px dashed #cbd5e1;
+        background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+        padding: 40px 20px;
+        text-align: center;
+        color: #64748b;
+    }
+
+    .cr-empty-state .material-icons-round {
+        font-size: 32px;
+        color: #cbd5e1;
+        margin-bottom: 8px;
+    }
+
+    .cr-skeleton {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .cr-skeleton::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        transform: translateX(-100%);
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,.65), transparent);
+        animation: crShimmer 1.4s infinite;
+    }
+
+    .cr-skeleton-line {
+        height: 12px;
+        border-radius: 999px;
+        background: #e2e8f0;
+    }
+
+    .cr-skeleton-circle {
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+        background: #e2e8f0;
+        flex-shrink: 0;
+    }
+
+    #contactRequestList {
+        transition: opacity .24s ease, transform .24s ease;
+    }
+
+    #contactRequestList.cr-list-animating {
+        opacity: .55;
+        transform: translateY(5px);
+    }
+
+    #contactRequestDetailModal {
+        opacity: 0;
+        transition: opacity .22s ease;
+    }
+
+    #contactRequestDetailModal.flex {
+        opacity: 1;
+    }
+
+    .cr-modal-panel {
+        transform: translateY(14px) scale(.98);
+        opacity: 0;
+        transition: transform .24s ease, opacity .24s ease;
+    }
+
+    #contactRequestDetailModal.flex .cr-modal-panel {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+
+    #contactRequestDetailModal.is-closing {
+        opacity: 0;
+    }
+
+    #contactRequestDetailModal.is-closing .cr-modal-panel {
+        transform: translateY(14px) scale(.98);
+        opacity: 0;
+    }
+
+    @@media (max-width: 767px) {
+        .cr-page {
+            padding-top: 1.4rem;
+            padding-bottom: 1.9rem;
+        }
+
+        .cr-page-title {
+            font-size: 1.68rem;
+            line-height: 1.2;
+        }
+
+        .cr-header-actions {
+            width: 100%;
+        }
+
+        .cr-header-actions > a {
+            width: 100%;
+        }
+
+        #contactRequestSummary {
+            gap: .55rem;
+        }
+
+        #contactRequestSummary .cr-stat-card {
+            padding: .78rem .82rem;
+        }
+
+        .cr-stat-icon {
+            right: 9px;
+            top: 9px;
+            font-size: 15px;
+        }
+
+        .cr-filter-shell {
+            flex-wrap: nowrap !important;
+            overflow-x: auto;
+            padding: 8px;
+            gap: 8px;
+            scrollbar-width: none;
+        }
+
+        .cr-filter-shell::-webkit-scrollbar {
+            display: none;
+        }
+
+        .cr-filter-btn {
+            flex: 0 0 auto;
+            min-height: 34px;
+            padding: 0 12px;
+            font-size: 11px;
+            white-space: nowrap;
+        }
+
+        .cr-list-card {
+            padding: .92rem !important;
+            border-radius: 16px;
+        }
+
+        .cr-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            font-size: 16px;
+        }
+
+        .cr-meta-tile,
+        .cr-message-box {
+            padding: 10px;
+        }
+
+        .cr-actions {
+            width: 100%;
+            flex-direction: column;
+            align-items: stretch !important;
+        }
+
+        .cr-actions .cr-action-btn {
+            width: 100%;
+        }
+
+        .cr-action-btn {
+            min-height: 35px;
+            font-size: 12px;
+        }
+
+        #contactRequestDetailModal {
+            padding: 10px;
+        }
+
+        .cr-modal-panel {
+            max-height: 94vh;
+            border-radius: 16px;
+        }
+
+        #contactRequestDetailBody {
+            padding: 12px !important;
+        }
+    }
+
+    @@keyframes crShimmer {
+        100% {
+            transform: translateX(100%);
+        }
+    }
+</style>
+
+<script>
+    (() => {
+        const listEl = document.getElementById('contactRequestList');
+        const modalEl = document.getElementById('contactRequestDetailModal');
+        const modalBodyEl = document.getElementById('contactRequestDetailBody');
+        const closeModalBtn = document.getElementById('closeContactRequestDetail');
+        const summaryTotalEl = document.getElementById('summaryTotal');
+        const summaryPendingEl = document.getElementById('summaryPending');
+        const summaryAcceptedEl = document.getElementById('summaryAccepted');
+        const summaryRejectedEl = document.getElementById('summaryRejected');
+        const filterButtons = Array.from(document.querySelectorAll('.cr-filter-btn'));
+        let activeStatus = '';
+
+        const escapeHtml = (value) => String(value ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+
+        const showToast = (message, type = 'info') => {
+            if (typeof window.showToast === 'function') {
+                window.showToast(message, { type });
+            }
+        };
+
+        const formatDateTime = (value) => {
+            if (!value) return 'Chua cap nhat';
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return 'Chua cap nhat';
+            return new Intl.DateTimeFormat('vi-VN', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            }).format(date);
+        };
+
+        const getStatusBadge = (status, statusLabel) => {
+            if (status === 1) {
+                return `<span class="cr-status-chip cr-status-chip--accepted"><span class="material-icons-round">check_circle</span>${escapeHtml(statusLabel || 'Da chap nhan')}</span>`;
+            }
+            if (status === 2) {
+                return `<span class="cr-status-chip cr-status-chip--rejected"><span class="material-icons-round">cancel</span>${escapeHtml(statusLabel || 'Da tu choi')}</span>`;
+            }
+            return `<span class="cr-status-chip cr-status-chip--pending"><span class="material-icons-round">schedule</span>${escapeHtml(statusLabel || 'Dang cho duyet')}</span>`;
+        };
+
+        const getNannyInitial = (fullName) => {
+            const text = String(fullName || '').trim();
+            return text ? text.charAt(0).toUpperCase() : 'N';
+        };
+
+        const getCardToneClass = (status) => {
+            if (status === 1) return 'cr-list-card--accepted';
+            if (status === 2) return 'cr-list-card--rejected';
+            return 'cr-list-card--pending';
+        };
+
+        const setSummary = (data) => {
+            summaryTotalEl.textContent = String(Number(data?.totalRequests ?? 0));
+            summaryPendingEl.textContent = String(Number(data?.pendingRequests ?? 0));
+            summaryAcceptedEl.textContent = String(Number(data?.acceptedRequests ?? 0));
+            summaryRejectedEl.textContent = String(Number(data?.rejectedRequests ?? 0));
+        };
+
+        const renderLoadingSkeleton = (count = 3) => {
+            listEl.innerHTML = Array.from({ length: count }, () => `
+                <article class="cr-list-card cr-skeleton p-5">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex items-start gap-3 min-w-0">
+                            <div class="cr-skeleton-circle"></div>
+                            <div class="min-w-0 flex-1 space-y-2">
+                                <div class="cr-skeleton-line w-40"></div>
+                                <div class="cr-skeleton-line w-28"></div>
+                            </div>
+                        </div>
+                        <div class="cr-skeleton-line w-28 h-8"></div>
+                    </div>
+                    <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="cr-meta-tile"><div class="cr-skeleton-line w-full"></div></div>
+                        <div class="cr-meta-tile"><div class="cr-skeleton-line w-full"></div></div>
+                        <div class="cr-meta-tile"><div class="cr-skeleton-line w-full"></div></div>
+                    </div>
+                    <div class="cr-message-box mt-4"><div class="cr-skeleton-line w-full"></div></div>
+                </article>
+            `).join('');
+        };
+
+        const renderList = (items) => {
+            if (!Array.isArray(items) || !items.length) {
+                listEl.innerHTML = `
+                    <div class="cr-empty-state">
+                        <span class="material-icons-round">inbox</span>
+                        <p class="font-bold text-slate-600">Khong co contact request nao theo bo loc hien tai.</p>
+                    </div>`;
+                return;
+            }
+
+            listEl.innerHTML = items.map((item) => {
+                const nannyName = item?.nanny?.fullName || 'Nanny';
+                const nannyLocation = [item?.nanny?.district, item?.nanny?.city].filter(Boolean).join(', ') || 'Chua cap nhat khu vuc';
+                const salaryMin = Number(item?.nanny?.expectedSalaryMin ?? 0);
+                const salaryMax = Number(item?.nanny?.expectedSalaryMax ?? 0);
+                const salaryText = salaryMin > 0 || salaryMax > 0
+                    ? `${salaryMin > 0 ? new Intl.NumberFormat('vi-VN').format(salaryMin) : '0'} - ${salaryMax > 0 ? new Intl.NumberFormat('vi-VN').format(salaryMax) : '0'} VND`
+                    : 'Thuong luong';
+
+                return `
+                    <article class="cr-list-card ${getCardToneClass(Number(item?.status ?? 0))} p-5">
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div class="min-w-0 flex items-start gap-3">
+                                <div class="cr-avatar">${escapeHtml(getNannyInitial(nannyName))}</div>
+                                <div class="min-w-0">
+                                    <h3 class="text-lg font-extrabold text-slate-900 truncate">${escapeHtml(nannyName)}</h3>
+                                    <p class="mt-1 text-sm font-semibold text-slate-500">${escapeHtml(nannyLocation)}</p>
+                                </div>
+                            </div>
+                            ${getStatusBadge(Number(item?.status ?? 0), item?.statusLabel)}
+                        </div>
+
+                        <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div class="cr-meta-tile">
+                                <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Ngay gui</p>
+                                <p class="mt-1 text-sm font-bold text-slate-700">${escapeHtml(formatDateTime(item?.requestedAt))}</p>
+                            </div>
+                            <div class="cr-meta-tile">
+                                <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Kinh nghiem</p>
+                                <p class="mt-1 text-sm font-bold text-slate-700">${Number(item?.nanny?.yearsOfExperience ?? 0)} nam</p>
+                            </div>
+                            <div class="cr-meta-tile">
+                                <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Luong mong muon</p>
+                                <p class="mt-1 text-sm font-bold text-slate-700">${escapeHtml(salaryText)}</p>
+                            </div>
+                        </div>
+
+                        <div class="cr-message-box mt-4">
+                            <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-orange-500">Loi nhan cua ban</p>
+                            <p class="mt-1 text-sm text-slate-700">${escapeHtml(item?.message || 'Khong co loi nhan.')}</p>
+                        </div>
+
+                        <div class="cr-actions mt-4 flex flex-wrap items-center justify-end gap-2">
+                            <a href="/Profile/ViewUser?userId=${encodeURIComponent(item?.nanny?.userId || '')}&nannyProfileId=${encodeURIComponent(item?.nanny?.profileId || '')}"
+                               class="cr-action-btn cr-action-btn--outline">
+                                <span class="material-icons-round">visibility</span>
+                                Xem ho so nanny
+                            </a>
+                            <button type="button"
+                                    class="cr-action-btn cr-action-btn--primary"
+                                    data-request-id="${escapeHtml(item?.id)}">
+                                <span class="material-icons-round">pageview</span>
+                                Xem chi tiet request
+                            </button>
+                        </div>
+                    </article>`;
+            }).join('');
+
+            listEl.querySelectorAll('button[data-request-id]').forEach((button) => {
+                button.addEventListener('click', () => openDetail(button.getAttribute('data-request-id')));
+            });
+        };
+
+        const renderDetail = (detail) => {
+            const status = Number(detail?.status ?? 0);
+            const statusLabel = detail?.statusLabel || 'Dang cap nhat';
+            const nannyName = detail?.nanny?.fullName || 'Nanny';
+            const parentMessage = detail?.message || 'Khong co loi nhan.';
+            const responseMessage = detail?.responseMessage || 'Chua co phan hoi tu nanny.';
+
+            modalBodyEl.innerHTML = `
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="cr-meta-tile">
+                        <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Nanny</p>
+                        <p class="mt-1 text-base font-extrabold text-slate-900">${escapeHtml(nannyName)}</p>
+                        <p class="mt-1 text-sm text-slate-500">${escapeHtml([detail?.nanny?.district, detail?.nanny?.city].filter(Boolean).join(', ') || 'Chua cap nhat')}</p>
+                    </div>
+                    <div class="cr-meta-tile">
+                        <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Trang thai</p>
+                        <div class="mt-2">${getStatusBadge(status, statusLabel)}</div>
+                        <p class="mt-2 text-xs text-slate-500">Gui luc: ${escapeHtml(formatDateTime(detail?.requestedAt))}</p>
+                        <p class="mt-1 text-xs text-slate-500">Phan hoi luc: ${escapeHtml(formatDateTime(detail?.respondedAt))}</p>
+                    </div>
+                </div>
+
+                <div class="cr-message-box">
+                    <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-orange-500">Loi nhan parent</p>
+                    <p class="mt-2 text-sm leading-6 text-slate-700">${escapeHtml(parentMessage)}</p>
+                </div>
+
+                <div class="cr-meta-tile">
+                    <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Phan hoi tu nanny</p>
+                    <p class="mt-2 text-sm leading-6 text-slate-700">${escapeHtml(responseMessage)}</p>
+                </div>`;
+        };
+
+        const openDetail = async (requestId) => {
+            if (!requestId) return;
+            modalBodyEl.innerHTML = `
+                <div class="space-y-3 cr-skeleton">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="cr-meta-tile"><div class="cr-skeleton-line w-full"></div></div>
+                        <div class="cr-meta-tile"><div class="cr-skeleton-line w-full"></div></div>
+                    </div>
+                    <div class="cr-message-box"><div class="cr-skeleton-line w-full"></div></div>
+                    <div class="cr-meta-tile"><div class="cr-skeleton-line w-full"></div></div>
+                </div>`;
+            modalEl.classList.remove('hidden', 'is-closing');
+            modalEl.classList.add('flex');
+
+            try {
+                const response = await fetch(`/Nanny/ContactRequestDetailData?requestId=${encodeURIComponent(requestId)}`, {
+                    credentials: 'same-origin'
+                });
+                const json = await response.json();
+                if (!response.ok || !json?.success) {
+                    showToast(json?.message || 'Khong the tai chi tiet request.', 'error');
+                    modalBodyEl.innerHTML = '<p class="text-sm text-rose-600">Khong the tai chi tiet request.</p>';
+                    return;
+                }
+                renderDetail(json.data);
+            } catch {
+                showToast('Khong the tai chi tiet request.', 'error');
+                modalBodyEl.innerHTML = '<p class="text-sm text-rose-600">Khong the tai chi tiet request.</p>';
+            }
+        };
+
+        const closeDetail = () => {
+            if (!modalEl.classList.contains('flex')) return;
+
+            modalEl.classList.add('is-closing');
+            window.setTimeout(() => {
+                modalEl.classList.add('hidden');
+                modalEl.classList.remove('flex', 'is-closing');
+            }, 180);
+        };
+
+        const setActiveFilter = (status) => {
+            activeStatus = status;
+            filterButtons.forEach((button) => {
+                button.classList.toggle('active', button.getAttribute('data-status') === activeStatus);
+            });
+        };
+
+        const loadRequests = async () => {
+            listEl.classList.add('cr-list-animating');
+            renderLoadingSkeleton();
+            try {
+                const query = activeStatus !== '' ? `?status=${encodeURIComponent(activeStatus)}` : '';
+                const response = await fetch(`/Nanny/SentContactRequestsData${query}`, { credentials: 'same-origin' });
+                const json = await response.json();
+                if (!response.ok || !json?.success) {
+                    listEl.innerHTML = `
+                        <div class="rounded-2xl border border-red-100 bg-red-50 px-5 py-8 text-center text-red-600">
+                            ${escapeHtml(json?.message || 'Khong tai duoc lich su contact request.')}
+                        </div>`;
+                    return;
+                }
+
+                const data = json?.data || {};
+                setSummary(data);
+                renderList(Array.isArray(data.requests) ? data.requests : []);
+            } catch {
+                listEl.innerHTML = `
+                    <div class="rounded-2xl border border-red-100 bg-red-50 px-5 py-8 text-center text-red-600">
+                        Khong tai duoc lich su contact request.
+                    </div>`;
+            } finally {
+                window.setTimeout(() => {
+                    listEl.classList.remove('cr-list-animating');
+                }, 70);
+            }
+        };
+
+        filterButtons.forEach((button) => {
+            button.addEventListener('click', async () => {
+                setActiveFilter(button.getAttribute('data-status') || '');
+                await loadRequests();
+            });
+        });
+
+        closeModalBtn?.addEventListener('click', closeDetail);
+        modalEl?.addEventListener('click', (event) => {
+            if (event.target === modalEl) closeDetail();
+        });
+
+        setActiveFilter('');
+        loadRequests();
+    })();
+</script>

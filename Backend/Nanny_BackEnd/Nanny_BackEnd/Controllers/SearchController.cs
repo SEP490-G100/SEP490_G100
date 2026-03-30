@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
+using Nanny_BackEnd.DTOs.Subscription;
 using Nanny_BackEnd.DTOs.Search;
 using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Helpers;
@@ -18,12 +19,18 @@ public class SearchController : ControllerBase
     private readonly JobService _jobSvc;
     private readonly Sep490NannyDbContext _db;
     private readonly NotificationService _notificationService;
+    private readonly SubscriptionService? _subscriptionService;
 
-    public SearchController(JobService jobSvc, Sep490NannyDbContext db, NotificationService notificationService)
+    public SearchController(
+        JobService jobSvc,
+        Sep490NannyDbContext db,
+        NotificationService notificationService,
+        SubscriptionService? subscriptionService = null)
     {
         _jobSvc = jobSvc;
         _db = db;
         _notificationService = notificationService;
+        _subscriptionService = subscriptionService;
     }
 
     [AllowAnonymous]
@@ -193,6 +200,23 @@ public class SearchController : ControllerBase
                     a.NannyProfileId == nannyProfile.Id &&
                     !a.IsDeleted);
 
+            var monthlyApplicationLimit = await getMonthlyApplicationLimit(nannyProfile.Id);
+            if (monthlyApplicationLimit > 0)
+            {
+                var startOfMonth = new DateTime(nowUtc.Year, nowUtc.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+                var appliedThisMonth = await _db.JobApplications.CountAsync(a =>
+                    a.NannyProfileId == nannyProfile.Id &&
+                    !a.IsDeleted &&
+                    a.CreatedAt >= startOfMonth);
+
+                var willConsumeMonthlyQuota = existingApplication == null || existingApplication.CreatedAt < startOfMonth;
+                if (willConsumeMonthlyQuota && appliedThisMonth >= monthlyApplicationLimit)
+                {
+                    return BadRequest(Fail(
+                        $"Ban da dat gioi han {monthlyApplicationLimit} luot ung tuyen trong thang nay. Vui long nang cap goi de ung tuyen them."));
+                }
+            }
+
             JobApplication application;
             var isReapplied = false;
             if (existingApplication != null)
@@ -204,6 +228,9 @@ public class SearchController : ControllerBase
                 existingApplication.WithdrawnAt = null;
                 existingApplication.ReviewedAt = null;
                 existingApplication.RejectionReason = null;
+                // Re-apply in a new month should consume the current month quota.
+                if (existingApplication.CreatedAt.Year != nowUtc.Year || existingApplication.CreatedAt.Month != nowUtc.Month)
+                    existingApplication.CreatedAt = nowUtc;
                 existingApplication.UpdatedAt = nowUtc;
                 existingApplication.UpdatedBy = userId;
                 application = existingApplication;
@@ -641,6 +668,15 @@ public class SearchController : ControllerBase
             3 => "Da huy",
             _ => "Dang cap nhat"
         };
+    }
+
+    private async Task<int> getMonthlyApplicationLimit(Guid nannyProfileId)
+    {
+        if (_subscriptionService == null)
+            return SubscriptionBenefitResponse.FreeNanny.MonthlyApplicationLimit;
+
+        var benefits = await _subscriptionService.getBenefitsForNannyProfile(nannyProfileId);
+        return benefits.MonthlyApplicationLimit;
     }
 
     private static object Fail(string message) => new { success = false, message };

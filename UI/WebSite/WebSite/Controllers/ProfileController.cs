@@ -140,7 +140,7 @@ public class ProfileController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> ViewUser(Guid userId)
+    public async Task<IActionResult> ViewUser(Guid userId, Guid? nannyProfileId = null)
     {
         if (userId == Guid.Empty)
             return RedirectToAction(nameof(Index));
@@ -169,6 +169,8 @@ public class ProfileController : Controller
 
             profile.AvatarUrl = NormalizeAvatarUrl(profile.AvatarUrl);
             profile.IsReadOnlyView = true;
+            if (nannyProfileId.HasValue && nannyProfileId.Value != Guid.Empty)
+                profile.ContactNannyProfileId = nannyProfileId.Value;
 
             return View("Index", profile);
         }
