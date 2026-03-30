@@ -12,7 +12,7 @@ on:
 env:
   PROJECT_PATH: UI/WebSite/WebSite/WebSite.csproj
   PUBLISH_PATH: ${{ github.workspace }}/myapp
-  APP_NAME: NannyMatch
+  APP_NAME: nannymatch-ui
 
 jobs:
   build:
