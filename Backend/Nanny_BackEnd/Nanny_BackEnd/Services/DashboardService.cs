@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
 using Nanny_BackEnd.DTOs.Dashboard;
 using Nanny_BackEnd.Enums;
@@ -44,14 +44,18 @@ public class DashboardService
             .CountAsync(v => !v.IsDeleted && v.Status == (int)NannyVerificationRequestStatus.Pending);
 
         /*
-         Job posting co 2 status: 1
+         Job posting co 2 status: 1:Public, 2: Hidden, Job Posting Moderation status: 0: Pending, 1: Rejected, 2: Approved
          */
         var activeJobs = await _jobRepo.GetQuery()
             .CountAsync(j => !j.IsDeleted && j.Status == 1);
+
+        //phaỉ xem lại các status của contract, phần status , !isDeleted đúng rồi
         var totalContracts = await _contractRepo.GetQuery()
             .CountAsync(c => !c.IsDeleted);
+
         var pendingJobPostings = await _jobRepo.GetQuery()
             .CountAsync(j => !j.IsDeleted && j.ModerationStatus == (int)JobPostingModerationStatus.Pending);
+
         var pendingReports = await _db.Reports
             .AsNoTracking()
             .CountAsync(r => !r.IsDeleted && r.HandledAt == null);
