@@ -140,7 +140,7 @@ public class ProfileController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> ViewUser(Guid userId)
+    public async Task<IActionResult> ViewUser(Guid userId, Guid? jobPostingId = null, Guid? jobApplicationId = null)
     {
         if (userId == Guid.Empty)
             return RedirectToAction(nameof(Index));
@@ -169,6 +169,14 @@ public class ProfileController : Controller
 
             profile.AvatarUrl = NormalizeAvatarUrl(profile.AvatarUrl);
             profile.IsReadOnlyView = true;
+            var hasHiringContext =
+                User.IsInRole("Parent")
+                && profile.IsNanny
+                && jobPostingId.HasValue
+                && jobApplicationId.HasValue;
+            ViewBag.HasHiringContext = hasHiringContext;
+            ViewBag.HiringJobPostingId = hasHiringContext ? jobPostingId!.Value.ToString() : "";
+            ViewBag.HiringJobApplicationId = hasHiringContext ? jobApplicationId!.Value.ToString() : "";
 
             return View("Index", profile);
         }

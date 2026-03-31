@@ -9,6 +9,10 @@
     var canEditProfile = !isReadOnly;
     var canShowFavoriteHeart = User.IsInRole("Parent") && isNanny;
     var canContactNanny = isReadOnly && User.IsInRole("Parent") && isNanny && Model.UserId != Guid.Empty;
+    var hasHiringContext = (bool?)ViewBag.HasHiringContext == true;
+    var hiringJobPostingId = (ViewBag.HiringJobPostingId as string) ?? "";
+    var hiringJobApplicationId = (ViewBag.HiringJobApplicationId as string) ?? "";
+    var canHireNanny = canContactNanny && hasHiringContext && !string.IsNullOrWhiteSpace(hiringJobPostingId) && !string.IsNullOrWhiteSpace(hiringJobApplicationId);
 
     string EducationLabel(int? level) => level switch
     {
@@ -99,9 +103,18 @@
             }
             else if (canContactNanny)
             {
-                <button type="button" id="contactNannyBtn" data-user-id="@Model.UserId" class="profile-primary-btn">
-                    Contact
-                </button>
+                <div class="flex items-center gap-2">
+                    
+                    @if (canHireNanny)
+                    {
+                        <button type="button" id="contactNannyBtn" data-user-id="@Model.UserId" class="profile-primary-btn">
+                                Lien he
+                        </button>
+                        <button type="button" id="hireNannyBtn" class="profile-primary-btn">
+                            Thue
+                        </button>
+                    }
+                </div>
             }
         </div>
 
@@ -381,6 +394,17 @@
                 });
             }
 
+            const canHireNanny = @((canHireNanny) ? "true" : "false");
+            const hiringJobPostingId = '@Html.Raw(hiringJobPostingId)';
+            const hiringJobApplicationId = '@Html.Raw(hiringJobApplicationId)';
+            const hireBtn = document.getElementById('hireNannyBtn');
+            if (hireBtn && canHireNanny) {
+                hireBtn.addEventListener('click', function () {
+                    const nannyName = (`@Model.FirstName @Model.LastName`).trim();
+                    window.__openHireModal?.(hiringJobPostingId, hiringJobApplicationId, nannyName);
+                });
+            }
+
             var lat = @(Model.Latitude?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "21.0285");
             var lng = @(Model.Longitude?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "105.8542");
             var mapElement = document.getElementById('map');
@@ -409,4 +433,9 @@
             }).addTo(map);
         });
     </script>
+}
+
+@if (canHireNanny)
+{
+    <partial name="~/Views/Hiring/_HireModal.cshtml" />
 }

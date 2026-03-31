@@ -521,6 +521,8 @@
     </div>
 </div>
 
+<partial name="~/Views/Hiring/_ApplicantList.cshtml" />
+
 <script>
     (() => {
         const HISTORY_TOAST_KEY = 'nm:historyToast';
@@ -566,15 +568,17 @@
 
         const applicationStatusLabels = {
             0: 'Dang cho duyet',
-            1: 'Da duoc chap nhan',
-            2: 'Da bi tu choi',
-            3: 'Da huy'
+            1: 'Dang xem xet',
+            2: 'Da duoc chon',
+            3: 'Da bi tu choi',
+            4: 'Da huy'
         };
         const applicationBadgeClasses = {
             0: 'history-app-badge history-app-badge--pending',
             1: 'history-app-badge history-app-badge--approved',
             2: 'history-app-badge history-app-badge--rejected',
-            3: 'history-app-badge history-app-badge--withdrawn'
+            3: 'history-app-badge history-app-badge--rejected',
+            4: 'history-app-badge history-app-badge--withdrawn'
         };
 
         const escapeHtml = (value) => String(value ?? '')
@@ -696,8 +700,8 @@
 
             const total = applications.length;
             const pending = applications.filter((item) => Number(item.status) === 0).length;
-            const approved = applications.filter((item) => Number(item.status) === 1).length;
-            const rejected = applications.filter((item) => Number(item.status) === 2).length;
+            const approved = applications.filter((item) => Number(item.status) === 1 || Number(item.status) === 2).length;
+            const rejected = applications.filter((item) => Number(item.status) === 3 || Number(item.status) === 4).length;
 
             metricsEl.innerHTML = `
                 <span class="history-request-metric">Tong: ${total}</span>
@@ -767,7 +771,16 @@
                                     <p class="mt-1 font-semibold text-slate-700">${escapeHtml(formatSalaryRange(item?.nanny?.expectedSalaryMin, item?.nanny?.expectedSalaryMax))}</p>
                                 </div>
                             </div>
-                            <div class="mt-3 flex items-center justify-end">
+                            <div class="mt-3 flex items-center justify-end gap-2">
+                                ${Number(item.status) === 0 ? `
+                                <button type="button"
+                                        data-jobappid="${escapeHtml(item.id)}"
+                                        data-jobpostingid="${escapeHtml(jobId)}"
+                                        onclick="window.__approveApplicant?.(this)"
+                                        class="inline-flex items-center justify-center gap-1 min-h-[36px] px-3 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100 transition-all">
+                                    <span class="material-icons-round" style="font-size:14px">check_circle</span>
+                                    Dong y
+                                </button>` : ''}
                                 <button type="button"
                                         onclick="window.__openJobApplicationDetail?.('${escapeHtml(jobId)}','${escapeHtml(item.id)}')"
                                         class="inline-flex items-center justify-center min-h-[36px] px-3 rounded-lg border border-orange-200 bg-orange-50 text-orange-600 text-xs font-bold hover:bg-orange-100 transition-all">
@@ -806,11 +819,29 @@
                 setRequestLoadingState(jobId, 'Dang tai request ung tuyen...');
             }
             try {
-                const response = await fetch(`/Search/JobApplicationsByJob?jobPostingId=${encodeURIComponent(jobId)}`, { credentials: 'same-origin' });
+                const response = await fetch(`/Hiring/${encodeURIComponent(jobId)}/Applicants`, { credentials: 'same-origin' });
                 const json = await response.json();
                 if (!json?.success) throw new Error(json?.message || 'Khong tai duoc request.');
 
-                const applications = Array.isArray(json?.data?.applications) ? json.data.applications : [];
+                const raw = Array.isArray(json?.data) ? json.data : [];
+                const applications = raw.map((item) => ({
+                    id: item.jobApplicationId,
+                    status: item.status,
+                    appliedAt: item.appliedAt,
+                    rejectionReason: null,
+                    nanny: {
+                        userId: item.nannyUserId,
+                        profileId: item.nannyProfileId,
+                        fullName: item.nannyName,
+                        avatarUrl: item.nannyAvatar,
+                        phoneNumber: null,
+                        city: null,
+                        district: null,
+                        yearsOfExperience: item.yearsOfExperience,
+                        expectedSalaryMin: item.expectedSalaryMin,
+                        expectedSalaryMax: item.expectedSalaryMax
+                    }
+                }));
                 applicationCache.set(jobId, applications);
                 if (shouldRenderList) renderApplicationList(jobId, applications);
                 else updateApplicationSummary(jobId, applications);
@@ -934,9 +965,15 @@
 
             const viewProfileBtn = document.getElementById('jobAppViewProfileBtn');
             if (viewProfileBtn) {
-                const profileId = application?.nanny?.profileId ? String(application.nanny.profileId) : '';
-                if (profileId) {
-                    viewProfileBtn.setAttribute('href', `/Nanny/List?detailId=${encodeURIComponent(profileId)}`);
+                const userId = application?.nanny?.userId ? String(application.nanny.userId) : '';
+                if (userId) {
+                    if (Number(application.status) === 1) {
+                        viewProfileBtn.setAttribute('href', `/Profile/ViewUser?userId=${encodeURIComponent(userId)}&jobPostingId=${encodeURIComponent(jobId)}&jobApplicationId=${encodeURIComponent(application.id)}`);
+                        viewProfileBtn.innerHTML = '<span class="material-icons-round text-base">handshake</span> Xem ho so &amp; Thue Nanny';
+                    } else {
+                        viewProfileBtn.setAttribute('href', `/Profile/ViewUser?userId=${encodeURIComponent(userId)}`);
+                        viewProfileBtn.innerHTML = '<span class="material-icons-round text-base">visibility</span> Xem chi tiet ho so Nanny';
+                    }
                     viewProfileBtn.classList.remove('hidden');
                 } else {
                     viewProfileBtn.classList.add('hidden');
@@ -972,14 +1009,17 @@
             setReviewButtonState(true, true);
 
             try {
-                const response = await fetch(`/Search/ReviewJobApplication?applicationId=${encodeURIComponent(applicationId)}`, {
+                const endpoint = Number(action) === 1
+                    ? `/Hiring/${encodeURIComponent(jobId)}/Applicants/${encodeURIComponent(applicationId)}/Approve`
+                    : `/Search/ReviewJobApplication?applicationId=${encodeURIComponent(applicationId)}`;
+                const payload = Number(action) === 1
+                    ? {}
+                    : { action: Number(action), rejectionReason: Number(action) === 2 ? rejectionReason : null };
+                const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'same-origin',
-                    body: JSON.stringify({
-                        action: Number(action),
-                        rejectionReason: Number(action) === 2 ? rejectionReason : null
-                    })
+                    body: JSON.stringify(payload)
                 });
 
                 const json = await response.json();
@@ -1160,6 +1200,31 @@
         window.__openJobApplicationDetail = openJobApplicationDetail;
         window.__closeJobApplicationDetailModal = closeJobApplicationDetailModal;
         window.__submitJobApplicationReview = submitJobApplicationReview;
+        window.__approveApplicant = async (btn) => {
+            const jobAppId = btn?.dataset?.jobappid;
+            const jobPostingId = btn?.dataset?.jobpostingid;
+            if (!jobAppId || !jobPostingId) return;
+
+            btn.disabled = true;
+            const oldHtml = btn.innerHTML;
+            btn.textContent = 'Dang xu ly...';
+            try {
+                const res = await fetch(`/Hiring/${jobPostingId}/Applicants/${jobAppId}/Approve`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const json = await res.json();
+                if (!json?.success) throw new Error(json?.message || 'Co loi xay ra.');
+
+                showHistoryToast('Da dong y ung vien. Vao ho so de thue chinh thuc.', 'success');
+                applicationCache.delete(jobPostingId);
+                await loadJobApplications(jobPostingId, true);
+            } catch (err) {
+                showHistoryToast(err?.message || 'Khong the dong y ung vien.', 'error');
+                btn.disabled = false;
+                btn.innerHTML = oldHtml;
+            }
+        };
 
         loadHistoryPage();
         window.setTimeout(consumeHistoryToast, 120);
