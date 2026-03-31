@@ -846,6 +846,10 @@
     transition: transform .18s ease, box-shadow .18s ease, color .18s ease, border-color .18s ease, background .18s ease;
 }
 
+.nanny-detail-favorite.hidden {
+    display: none !important;
+}
+
 .nanny-detail-favorite .material-icons-round {
     font-size: 17px;
 }
@@ -878,6 +882,10 @@
     font-weight: 800;
     font-size: .84rem;
     transition: transform .18s ease, box-shadow .18s ease, color .18s ease, border-color .18s ease, background .18s ease;
+}
+
+.nanny-detail-view-btn.hidden {
+    display: none !important;
 }
 
 .nanny-detail-view-btn .material-icons-round {
