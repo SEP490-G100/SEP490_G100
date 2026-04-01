@@ -13,9 +13,12 @@ public static class NotificationTypes
     public const int JobPostingPending = 9;
     public const int NannyProfileFavorited = 10;
     public const int JobApplicationSubmitted = 11;
-    public const int HiringOffer = 12;
-    public const int HiringAccepted = 13;
-    public const int HiringDeclined = 14;
+    public const int ContactRequestReceived = 12;
+    public const int ContactRequestAccepted = 13;
+    public const int ContactRequestRejected = 14;
+    public const int HiringOffer = 15;
+    public const int HiringAccepted = 16;
+    public const int HiringDeclined = 17;
 
     public static string getLabel(int type) => type switch
     {
@@ -30,6 +33,9 @@ public static class NotificationTypes
         JobPostingPending => "Bai dang dang cho duyet",
         NannyProfileFavorited => "Ho so duoc yeu thich",
         JobApplicationSubmitted => "Don ung tuyen da gui",
+        ContactRequestReceived => "Nhan request contact",
+        ContactRequestAccepted => "Request contact duoc chap nhan",
+        ContactRequestRejected => "Request contact bi tu choi",
         HiringOffer => "De nghi viec lam",
         HiringAccepted => "De nghi viec lam da duoc chap nhan",
         HiringDeclined => "De nghi viec lam bi tu choi",

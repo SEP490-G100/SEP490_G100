@@ -3,6 +3,8 @@ namespace WebSite.Models.Profile
     public class PersonalProfileViewModel
     {
         public Guid UserId { get; set; }
+        public Guid? NannyProfileId { get; set; }
+        public Guid? ContactNannyProfileId { get; set; }
         public bool IsReadOnlyView { get; set; }
         public string Email { get; set; } = null!;
         public string FirstName { get; set; } = null!;

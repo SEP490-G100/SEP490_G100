@@ -140,7 +140,11 @@ public class ProfileController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> ViewUser(Guid userId, Guid? jobPostingId = null, Guid? jobApplicationId = null)
+    public async Task<IActionResult> ViewUser(
+        Guid userId,
+        Guid? jobPostingId = null,
+        Guid? jobApplicationId = null,
+        Guid? nannyProfileId = null)
     {
         if (userId == Guid.Empty)
             return RedirectToAction(nameof(Index));
@@ -174,7 +178,24 @@ public class ProfileController : Controller
                 && profile.IsNanny
                 && jobPostingId.HasValue
                 && jobApplicationId.HasValue;
+            var resolvedNannyProfileId = nannyProfileId.HasValue && nannyProfileId.Value != Guid.Empty
+                ? nannyProfileId.Value
+                : (profile.NannyProfileId ?? Guid.Empty);
+            if (resolvedNannyProfileId != Guid.Empty)
+                profile.ContactNannyProfileId = resolvedNannyProfileId;
+
+            var isContactAccepted = false;
+            if (User.IsInRole("Parent")
+                && profile.IsNanny
+                && !hasHiringContext
+                && profile.ContactNannyProfileId.HasValue
+                && profile.ContactNannyProfileId.Value != Guid.Empty)
+            {
+                isContactAccepted = await IsContactAcceptedAsync(profile.ContactNannyProfileId.Value);
+            }
+
             ViewBag.HasHiringContext = hasHiringContext;
+            ViewBag.IsContactAccepted = isContactAccepted;
             ViewBag.HiringJobPostingId = hasHiringContext ? jobPostingId!.Value.ToString() : "";
             ViewBag.HiringJobApplicationId = hasHiringContext ? jobApplicationId!.Value.ToString() : "";
 
@@ -184,6 +205,47 @@ public class ProfileController : Controller
         {
             return RedirectToAction(nameof(Index));
         }
+    }
+
+    private async Task<bool> IsContactAcceptedAsync(Guid nannyProfileId)
+    {
+        var response = await _http.GetAsync("/api/nannies/contact-requests/sent");
+        if (!response.IsSuccessStatusCode)
+            return false;
+
+        var json = await response.Content.ReadAsStringAsync();
+        if (string.IsNullOrWhiteSpace(json))
+            return false;
+
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+        if (!root.TryGetProperty("success", out var successEl) || successEl.ValueKind != JsonValueKind.True)
+            return false;
+        if (!root.TryGetProperty("data", out var dataEl) || dataEl.ValueKind != JsonValueKind.Object)
+            return false;
+        if (!dataEl.TryGetProperty("requests", out var requestsEl) || requestsEl.ValueKind != JsonValueKind.Array)
+            return false;
+
+        foreach (var requestEl in requestsEl.EnumerateArray())
+        {
+            if (!requestEl.TryGetProperty("nanny", out var nannyEl) || nannyEl.ValueKind != JsonValueKind.Object)
+                continue;
+            if (!nannyEl.TryGetProperty("profileId", out var profileIdEl) || profileIdEl.ValueKind != JsonValueKind.String)
+                continue;
+
+            var profileIdStr = profileIdEl.GetString();
+            if (!Guid.TryParse(profileIdStr, out var parsedProfileId))
+                continue;
+            if (parsedProfileId != nannyProfileId)
+                continue;
+
+            if (!requestEl.TryGetProperty("status", out var statusEl) || statusEl.ValueKind != JsonValueKind.Number)
+                return false;
+
+            return statusEl.TryGetInt32(out var status) && status == 1;
+        }
+
+        return false;
     }
 
     // Edit personal information
