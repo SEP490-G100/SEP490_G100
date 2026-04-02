@@ -12,7 +12,7 @@
         <h1 class="page-title mt-2">
             Edit <span class="gradient-text">Blog</span>
         </h1>
-        <p class="page-subtitle">Update blog article details and settings.</p>
+        <p class="page-subtitle">Update blog article details and content images.</p>
     </div>
     <a href="/Moderator/ManageBlog" class="btn-outline flex-shrink-0 flex items-center gap-1">
         <span class="material-icons-round text-base">arrow_back</span>
@@ -25,14 +25,6 @@
     <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 fade-in-up">
         <span class="material-icons-round text-base">error_outline</span>
         @TempData["Error"]
-    </div>
-}
-
-@if (TempData["Success"] != null)
-{
-    <div class="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 fade-in-up">
-        <span class="material-icons-round text-base">check_circle_outline</span>
-        @TempData["Success"]
     </div>
 }
 
@@ -75,13 +67,68 @@
             </div>
 
             <div class="content-card p-6 fade-in-up" style="animation-delay:.05s;">
-                <h2 class="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                    <span class="material-icons-round text-indigo-400 text-base">edit_note</span>
-                    Content <span class="text-red-500">*</span>
-                </h2>
-                <textarea id="contentInput" name="Content" rows="18"
-                          class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 transition resize-y">@Model.Content</textarea>
-                <p id="contentError" class="text-red-500 text-xs mt-1 hidden">Content cannot be empty.</p>
+                <div class="flex items-center justify-between gap-3 mb-4">
+                    <h2 class="text-sm font-bold text-gray-700 flex items-center gap-2">
+                        <span class="material-icons-round text-indigo-400 text-base">edit_note</span>
+                        Content <span class="text-red-500">*</span>
+                    </h2>
+                    <span class="text-xs text-gray-400">Supports HTML image tags</span>
+                </div>
+
+                <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] gap-5">
+                    <div>
+                        <textarea id="contentInput" name="Content" rows="18"
+                                  class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 transition resize-y">@Model.Content</textarea>
+                        <p id="contentError" class="text-red-500 text-xs mt-1 hidden">Content cannot be empty.</p>
+
+                        <div class="mt-4 rounded-2xl border border-gray-200 bg-white overflow-hidden">
+                            <div class="flex items-center justify-between gap-2 border-b border-gray-100 px-4 py-3 bg-gray-50">
+                                <h3 class="text-sm font-bold text-gray-700 flex items-center gap-2">
+                                    <span class="material-icons-round text-indigo-400 text-base">preview</span>
+                                    Live Preview
+                                </h3>
+                                <span class="text-xs text-gray-400">Renders HTML content and images</span>
+                            </div>
+                            <div id="contentPreview" class="p-4 min-h-[220px] max-h-[560px] overflow-y-auto text-sm leading-7 text-gray-700 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-2xl [&_img]:my-4 [&_p]:mb-3 [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-3 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:mb-3 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"></div>
+                        </div>
+                    </div>
+
+                    <div class="rounded-2xl border border-gray-100 bg-gray-50/80 p-4 space-y-4">
+                        <div>
+                            <h3 class="text-sm font-bold text-gray-700 flex items-center gap-2">
+                                <span class="material-icons-round text-indigo-400 text-base">image</span>
+                                Content Images
+                            </h3>
+                            <p class="text-xs text-gray-400 mt-1">Upload new images from your computer, insert an image URL, or paste an image directly into the editor.</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-2">
+                            <button type="button" onclick="document.getElementById('blogImageInput').click()" class="btn-outline w-full justify-center">
+                                <span class="material-icons-round text-base">upload</span>
+                                Upload Local Images
+                            </button>
+                            <button type="button" onclick="insertImageUrlPrompt()" class="btn-outline w-full justify-center">
+                                <span class="material-icons-round text-base">link</span>
+                                Insert Image URL
+                            </button>
+                        </div>
+
+                        <input id="blogImageInput" type="file" accept="image/*" multiple class="hidden" />
+
+                        <div id="imageUploadHint" class="rounded-xl border border-dashed border-gray-200 bg-white px-3 py-3 text-xs text-gray-400">
+                            Tip: after upload, each image is inserted into the content and also listed here for reuse.
+                        </div>
+
+                        <div id="uploadingState" class="hidden rounded-xl bg-blue-50 border border-blue-100 px-3 py-2 text-xs text-blue-700">
+                            Uploading image...
+                        </div>
+
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Inserted Images</p>
+                            <div id="insertedImageList" class="space-y-2 max-h-[420px] overflow-y-auto pr-1"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -189,5 +236,167 @@ function submitForm() {
     if (!title || !slug || !content) return;
     document.getElementById('editBlogForm').submit();
 }
+
+function getCsrfToken() {
+    return document.querySelector('#editBlogForm input[name="__RequestVerificationToken"]').value;
+}
+
+function getContentInput() {
+    return document.getElementById('contentInput');
+}
+
+function getContentPreview() {
+    return document.getElementById('contentPreview');
+}
+
+function renderContentPreview() {
+    var content = getContentInput().value.trim();
+    var preview = getContentPreview();
+
+    if (!content) {
+        preview.innerHTML = '<p class="text-sm text-gray-400 italic">Content preview will appear here, including any uploaded or linked images.</p>';
+        return;
+    }
+
+    preview.innerHTML = content;
+}
+
+function insertAtCursor(text) {
+    var textarea = getContentInput();
+    var start = textarea.selectionStart ?? textarea.value.length;
+    var end = textarea.selectionEnd ?? textarea.value.length;
+    var before = textarea.value.substring(0, start);
+    var after = textarea.value.substring(end);
+    textarea.value = before + text + after;
+    var nextPosition = start + text.length;
+    textarea.focus();
+    textarea.selectionStart = nextPosition;
+    textarea.selectionEnd = nextPosition;
+    renderContentPreview();
+}
+
+function createImageMarkup(url) {
+    return '\n<p><img src="' + url + '" alt="Blog image" /></p>\n';
+}
+
+function appendInsertedImage(url) {
+    var list = document.getElementById('insertedImageList');
+    var safeUrl = encodeURIComponent(url);
+    var item = document.createElement('div');
+    item.className = 'rounded-2xl border border-gray-200 bg-white p-2.5 space-y-2';
+    item.innerHTML =
+        '<div class="aspect-[4/3] overflow-hidden rounded-xl bg-gray-100">' +
+            '<img src="' + url + '" alt="Inserted blog image" class="h-full w-full object-cover" />' +
+        '</div>' +
+        '<div class="flex items-center gap-2">' +
+            '<button type="button" class="btn-outline flex-1 justify-center !px-3 !py-2 text-xs" onclick="reinsertImage(\'' + safeUrl + '\')">Insert Again</button>' +
+            '<a href="' + url + '" target="_blank" rel="noopener noreferrer" class="btn-outline flex-1 justify-center !px-3 !py-2 text-xs">Open</a>' +
+        '</div>';
+    list.prepend(item);
+}
+
+function reinsertImage(encodedUrl) {
+    var url = decodeURIComponent(encodedUrl);
+    insertAtCursor(createImageMarkup(url));
+}
+
+function parseExistingImages() {
+    var matches = getContentInput().value.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/gi) || [];
+    var urls = [];
+    matches.forEach(function(match) {
+        var srcMatch = match.match(/src=["']([^"']+)["']/i);
+        if (srcMatch && srcMatch[1] && !urls.includes(srcMatch[1])) {
+            urls.push(srcMatch[1]);
+        }
+    });
+
+    var list = document.getElementById('insertedImageList');
+    list.innerHTML = '';
+    urls.forEach(appendInsertedImage);
+}
+
+function setUploadingState(isUploading) {
+    document.getElementById('uploadingState').classList.toggle('hidden', !isUploading);
+}
+
+async function uploadBlogImages(files) {
+    if (!files || !files.length) return;
+
+    var formData = new FormData();
+    Array.from(files).forEach(function(file) {
+        formData.append('files', file);
+    });
+    formData.append('__RequestVerificationToken', getCsrfToken());
+
+    setUploadingState(true);
+
+    try {
+        var response = await fetch('/Moderator/UploadBlogContentImages', {
+            method: 'POST',
+            body: formData
+        });
+
+        var result = await response.json();
+        if (!result.success || !result.data || !Array.isArray(result.data.urls)) {
+            throw new Error(result.message || 'Cannot upload blog images.');
+        }
+
+        result.data.urls.forEach(function(url) {
+            insertAtCursor(createImageMarkup(url));
+            appendInsertedImage(url);
+        });
+
+        if (typeof window.showToast === 'function') {
+            window.showToast(result.message || 'Upload anh thanh cong.', { type: 'success' });
+        }
+    } catch (error) {
+        if (typeof window.showToast === 'function') {
+            window.showToast(error.message || 'Khong the upload anh blog.', { type: 'error' });
+        }
+    } finally {
+        setUploadingState(false);
+        document.getElementById('blogImageInput').value = '';
+    }
+}
+
+function insertImageUrlPrompt() {
+    var url = window.prompt('Paste the image URL you want to insert into the blog content:');
+    if (!url) return;
+
+    var trimmedUrl = url.trim();
+    if (!/^https?:\/\//i.test(trimmedUrl)) {
+        if (typeof window.showToast === 'function') {
+            window.showToast('Image URL must start with http:// or https://', { type: 'warning' });
+        }
+        return;
+    }
+
+    insertAtCursor(createImageMarkup(trimmedUrl));
+    appendInsertedImage(trimmedUrl);
+}
+
+document.getElementById('blogImageInput').addEventListener('change', function() {
+    uploadBlogImages(this.files);
+});
+
+getContentInput().addEventListener('input', function() {
+    renderContentPreview();
+});
+
+getContentInput().addEventListener('paste', function(event) {
+    var items = Array.from(event.clipboardData?.items || []);
+    var imageFiles = items
+        .filter(function(item) { return item.type && item.type.startsWith('image/'); })
+        .map(function(item) { return item.getAsFile(); })
+        .filter(Boolean);
+
+    if (!imageFiles.length) return;
+
+    event.preventDefault();
+    uploadBlogImages(imageFiles);
+});
+
+parseExistingImages();
+renderContentPreview();
 </script>
 }

@@ -9,7 +9,9 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 builder.Services.Configure<AzureBlobStorageOptions>(
     builder.Configuration.GetSection(AzureBlobStorageOptions.SectionName));
-builder.Services.AddScoped<IVerificationDocumentStorageService, AzureBlobVerificationDocumentStorageService>();
+builder.Services.AddScoped<AzureBlobStorageService>();
+builder.Services.AddScoped<IVerificationDocumentStorageService>(static provider => provider.GetRequiredService<AzureBlobStorageService>());
+builder.Services.AddScoped<IBlogImageStorageService>(static provider => provider.GetRequiredService<AzureBlobStorageService>());
 builder.Services.AddSignalR();
 
 // Session

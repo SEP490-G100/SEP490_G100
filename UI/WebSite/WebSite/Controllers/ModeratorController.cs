@@ -13,6 +13,7 @@ using WebSite.Models.BlogCategory;
 using WebSite.Models.Blog;
 using WebSite.Models.Moderator;
 using WebSite.Models.Search;
+using WebSite.Services;
 using System.Text.Json.Serialization;
 
 
@@ -23,12 +24,17 @@ public class ModeratorController : Controller
 {
     private readonly HttpClient _http;
     private readonly IHubContext<NotificationHub> _notificationHub;
+    private readonly IBlogImageStorageService _blogImageStorageService;
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
 
-    public ModeratorController(IHttpClientFactory httpFactory, IHubContext<NotificationHub> notificationHub)
+    public ModeratorController(
+        IHttpClientFactory httpFactory,
+        IHubContext<NotificationHub> notificationHub,
+        IBlogImageStorageService blogImageStorageService)
     {
         _http = httpFactory.CreateClient("BackendApi");
         _notificationHub = notificationHub;
+        _blogImageStorageService = blogImageStorageService;
     }
 
     // ──────────────────────────────────────────────
@@ -743,6 +749,39 @@ public class ModeratorController : Controller
     // ════════════════════════════════════════════════
     // BLOG MANAGEMENT
     // ════════════════════════════════════════════════
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UploadBlogContentImages(List<IFormFile>? files, CancellationToken cancellationToken)
+    {
+        if (files == null || files.Count == 0)
+        {
+            return Json(new { success = false, message = "Vui long chon it nhat mot anh." });
+        }
+
+        try
+        {
+            var uploadedUrls = await _blogImageStorageService.UploadAsync(files, cancellationToken);
+            if (uploadedUrls.Count == 0)
+            {
+                return Json(new { success = false, message = "Khong co anh hop le de upload." });
+            }
+
+            return Json(new
+            {
+                success = true,
+                message = uploadedUrls.Count == 1 ? "Upload anh thanh cong." : "Upload cac anh thanh cong.",
+                data = new
+                {
+                    urls = uploadedUrls
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"Khong the upload anh blog: {ex.Message}" });
+        }
+    }
 
     // GET /Moderator/ManageBlog
     public async Task<IActionResult> ManageBlog(
