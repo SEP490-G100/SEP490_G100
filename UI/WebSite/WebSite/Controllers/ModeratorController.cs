@@ -783,6 +783,39 @@ public class ModeratorController : Controller
         }
     }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UploadBlogContentVideos(List<IFormFile>? files, CancellationToken cancellationToken)
+    {
+        if (files == null || files.Count == 0)
+        {
+            return Json(new { success = false, message = "Vui long chon it nhat mot video." });
+        }
+
+        try
+        {
+            var uploadedUrls = await _blogImageStorageService.UploadVideosAsync(files, cancellationToken);
+            if (uploadedUrls.Count == 0)
+            {
+                return Json(new { success = false, message = "Khong co video hop le de upload." });
+            }
+
+            return Json(new
+            {
+                success = true,
+                message = uploadedUrls.Count == 1 ? "Upload video thanh cong." : "Upload cac video thanh cong.",
+                data = new
+                {
+                    urls = uploadedUrls
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"Khong the upload video blog: {ex.Message}" });
+        }
+    }
+
     // GET /Moderator/ManageBlog
     public async Task<IActionResult> ManageBlog(
         string? search = null, int page = 1, int? status = null, bool? isDeleted = null, Guid? categoryId = null)

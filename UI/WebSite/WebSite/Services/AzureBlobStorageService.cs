@@ -14,10 +14,12 @@ public interface IVerificationDocumentStorageService
 public interface IBlogImageStorageService
 {
     Task<IReadOnlyList<string>> UploadAsync(IEnumerable<IFormFile> files, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<string>> UploadVideosAsync(IEnumerable<IFormFile> files, CancellationToken cancellationToken = default);
 }
 
 public class AzureBlobStorageService : IVerificationDocumentStorageService, IBlogImageStorageService
 {
+    private const string BlogMediaFolder = "blog-media";
     private readonly AzureBlobStorageOptions _options;
 
     public AzureBlobStorageService(IOptions<AzureBlobStorageOptions> options)
@@ -40,10 +42,10 @@ public class AzureBlobStorageService : IVerificationDocumentStorageService, IBlo
     public async Task<IReadOnlyList<string>> UploadAsync(IEnumerable<IFormFile> files, CancellationToken cancellationToken = default)
     {
         ValidateConnectionString();
-        ValidateContainerName(_options.BlogImageContainerName, "BlogImageContainerName");
+        ValidateContainerName(_options.BlogMediaContainerName, "BlogMediaContainerName");
 
         var uploadedUrls = new List<string>();
-        var containerClient = await GetContainerClientAsync(_options.BlogImageContainerName, cancellationToken);
+        var containerClient = await GetContainerClientAsync(_options.BlogMediaContainerName, cancellationToken);
 
         foreach (var file in files.Where(static f => f.Length > 0))
         {
@@ -53,8 +55,33 @@ public class AzureBlobStorageService : IVerificationDocumentStorageService, IBlo
                 throw new InvalidOperationException($"File '{file.FileName}' khong phai dinh dang anh hop le.");
             }
 
-            var blobName = $"{DateTime.UtcNow:yyyy/MM}/{Guid.NewGuid()}{fileExtension}";
+            var blobName = $"{BlogMediaFolder}/image/{DateTime.UtcNow:yyyy/MM}/{Guid.NewGuid()}{fileExtension}";
             var contentType = GetBlogImageContentType(file.ContentType, fileExtension);
+            var uploadedUrl = await UploadBlobAsync(containerClient, file, blobName, contentType, cancellationToken);
+            uploadedUrls.Add(uploadedUrl);
+        }
+
+        return uploadedUrls;
+    }
+
+    public async Task<IReadOnlyList<string>> UploadVideosAsync(IEnumerable<IFormFile> files, CancellationToken cancellationToken = default)
+    {
+        ValidateConnectionString();
+        ValidateContainerName(_options.BlogMediaContainerName, "BlogMediaContainerName");
+
+        var uploadedUrls = new List<string>();
+        var containerClient = await GetContainerClientAsync(_options.BlogMediaContainerName, cancellationToken);
+
+        foreach (var file in files.Where(static f => f.Length > 0))
+        {
+            var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (!IsSupportedVideo(file.ContentType, fileExtension))
+            {
+                throw new InvalidOperationException($"File '{file.FileName}' khong phai dinh dang video hop le.");
+            }
+
+            var blobName = $"{BlogMediaFolder}/video/{DateTime.UtcNow:yyyy/MM}/{Guid.NewGuid()}{fileExtension}";
+            var contentType = GetBlogVideoContentType(file.ContentType, fileExtension);
             var uploadedUrl = await UploadBlobAsync(containerClient, file, blobName, contentType, cancellationToken);
             uploadedUrls.Add(uploadedUrl);
         }
@@ -159,6 +186,35 @@ public class AzureBlobStorageService : IVerificationDocumentStorageService, IBlo
             ".png" => "image/png",
             ".webp" => "image/webp",
             ".gif" => "image/gif",
+            _ => "application/octet-stream"
+        };
+    }
+
+    private static bool IsSupportedVideo(string? contentType, string fileExtension)
+    {
+        if (!string.IsNullOrWhiteSpace(contentType) &&
+            contentType.StartsWith("video/", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return fileExtension is ".mp4" or ".webm" or ".ogg" or ".mov";
+    }
+
+    private static string GetBlogVideoContentType(string? contentType, string fileExtension)
+    {
+        if (!string.IsNullOrWhiteSpace(contentType) &&
+            contentType.StartsWith("video/", StringComparison.OrdinalIgnoreCase))
+        {
+            return contentType;
+        }
+
+        return fileExtension switch
+        {
+            ".mp4" => "video/mp4",
+            ".webm" => "video/webm",
+            ".ogg" => "video/ogg",
+            ".mov" => "video/quicktime",
             _ => "application/octet-stream"
         };
     }

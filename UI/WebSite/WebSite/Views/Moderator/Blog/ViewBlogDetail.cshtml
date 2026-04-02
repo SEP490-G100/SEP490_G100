@@ -81,6 +81,37 @@
                                   class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 transition resize-y">@Model.Content</textarea>
                         <p id="contentError" class="text-red-500 text-xs mt-1 hidden">Content cannot be empty.</p>
 
+                        <div class="mt-4 rounded-2xl border border-gray-100 bg-gray-50/80 p-4 space-y-4">
+                            <div>
+                                <h3 class="text-sm font-bold text-gray-700 flex items-center gap-2">
+                                    <span class="material-icons-round text-indigo-400 text-base">perm_media</span>
+                                    Content Media
+                                </h3>
+                                <p class="text-xs text-gray-400 mt-1">Add local images/videos, paste an image directly, or insert a media URL into the content editor.</p>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <button type="button" onclick="document.getElementById('blogMediaInput').click()" class="btn-outline w-full justify-center">
+                                    <span class="material-icons-round text-base">upload</span>
+                                    Add Local Media
+                                </button>
+                                <button type="button" onclick="insertMediaUrlPrompt()" class="btn-outline w-full justify-center">
+                                    <span class="material-icons-round text-base">link</span>
+                                    Insert Media URL
+                                </button>
+                            </div>
+
+                            <input id="blogMediaInput" type="file" accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime,.mp4,.webm,.ogg,.mov" multiple class="hidden" />
+
+                            <div id="imageUploadHint" class="rounded-xl border border-dashed border-gray-200 bg-white px-3 py-3 text-xs text-gray-400">
+                                Tip: local media is uploaded to Azure Blob, while URL media is inserted directly into the content.
+                            </div>
+
+                            <div id="uploadingState" class="hidden rounded-xl bg-blue-50 border border-blue-100 px-3 py-2 text-xs text-blue-700">
+                                Uploading media...
+                            </div>
+                        </div>
+
                         <div class="mt-4 rounded-2xl border border-gray-200 bg-white overflow-hidden">
                             <div class="flex items-center justify-between gap-2 border-b border-gray-100 px-4 py-3 bg-gray-50">
                                 <h3 class="text-sm font-bold text-gray-700 flex items-center gap-2">
@@ -89,40 +120,11 @@
                                 </h3>
                                 <span class="text-xs text-gray-400">Renders HTML content and images</span>
                             </div>
-                            <div id="contentPreview" class="p-4 min-h-[220px] max-h-[560px] overflow-y-auto text-sm leading-7 text-gray-700 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-2xl [&_img]:my-4 [&_p]:mb-3 [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-3 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:mb-3 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"></div>
+                            <div id="contentPreview" class="p-4 min-h-[220px] max-h-[560px] overflow-y-auto text-sm leading-7 text-gray-700 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-2xl [&_img]:my-4 [&_video]:max-w-full [&_video]:rounded-2xl [&_video]:my-4 [&_video]:bg-black [&_p]:mb-3 [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-3 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:mb-3 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"></div>
                         </div>
                     </div>
 
                     <div class="rounded-2xl border border-gray-100 bg-gray-50/80 p-4 space-y-4">
-                        <div>
-                            <h3 class="text-sm font-bold text-gray-700 flex items-center gap-2">
-                                <span class="material-icons-round text-indigo-400 text-base">image</span>
-                                Content Images
-                            </h3>
-                            <p class="text-xs text-gray-400 mt-1">Upload new images from your computer, insert an image URL, or paste an image directly into the editor.</p>
-                        </div>
-
-                        <div class="grid grid-cols-1 gap-2">
-                            <button type="button" onclick="document.getElementById('blogImageInput').click()" class="btn-outline w-full justify-center">
-                                <span class="material-icons-round text-base">upload</span>
-                                Upload Local Images
-                            </button>
-                            <button type="button" onclick="insertImageUrlPrompt()" class="btn-outline w-full justify-center">
-                                <span class="material-icons-round text-base">link</span>
-                                Insert Image URL
-                            </button>
-                        </div>
-
-                        <input id="blogImageInput" type="file" accept="image/*" multiple class="hidden" />
-
-                        <div id="imageUploadHint" class="rounded-xl border border-dashed border-gray-200 bg-white px-3 py-3 text-xs text-gray-400">
-                            Tip: after upload, each image is inserted into the content and also listed here for reuse.
-                        </div>
-
-                        <div id="uploadingState" class="hidden rounded-xl bg-blue-50 border border-blue-100 px-3 py-2 text-xs text-blue-700">
-                            Uploading image...
-                        </div>
-
                         <div>
                             <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Inserted Images</p>
                             <div id="insertedImageList" class="space-y-2 max-h-[420px] overflow-y-auto pr-1"></div>
@@ -279,6 +281,10 @@ function createImageMarkup(url) {
     return '\n<p><img src="' + url + '" alt="Blog image" /></p>\n';
 }
 
+function createVideoMarkup(url) {
+    return '\n<p><video controls preload="metadata" src="' + url + '"></video></p>\n';
+}
+
 function appendInsertedImage(url) {
     var list = document.getElementById('insertedImageList');
     var safeUrl = encodeURIComponent(url);
@@ -293,6 +299,25 @@ function appendInsertedImage(url) {
             '<a href="' + url + '" target="_blank" rel="noopener noreferrer" class="btn-outline flex-1 justify-center !px-3 !py-2 text-xs">Open</a>' +
         '</div>';
     list.prepend(item);
+}
+
+function isImageFile(file) {
+    var type = (file.type || '').toLowerCase();
+    var name = (file.name || '').toLowerCase();
+    return type.startsWith('image/') || /\.(jpg|jpeg|png|webp|gif)$/i.test(name);
+}
+
+function isVideoFile(file) {
+    var type = (file.type || '').toLowerCase();
+    var name = (file.name || '').toLowerCase();
+    return type.startsWith('video/') || /\.(mp4|webm|ogg|mov)$/i.test(name);
+}
+
+function inferMediaTypeFromUrl(url) {
+    var normalized = String(url || '').toLowerCase().split('?')[0].split('#')[0];
+    if (/\.(jpg|jpeg|png|webp|gif)$/.test(normalized)) return 'image';
+    if (/\.(mp4|webm|ogg|mov)$/.test(normalized)) return 'video';
+    return null;
 }
 
 function reinsertImage(encodedUrl) {
@@ -359,24 +384,98 @@ async function uploadBlogImages(files) {
     }
 }
 
-function insertImageUrlPrompt() {
-    var url = window.prompt('Paste the image URL you want to insert into the blog content:');
+async function uploadBlogVideos(files) {
+    if (!files || !files.length) return;
+
+    var formData = new FormData();
+    Array.from(files).forEach(function(file) {
+        formData.append('files', file);
+    });
+    formData.append('__RequestVerificationToken', getCsrfToken());
+
+    setUploadingState(true);
+
+    try {
+        var response = await fetch('/Moderator/UploadBlogContentVideos', {
+            method: 'POST',
+            body: formData
+        });
+
+        var result = await response.json();
+        if (!result.success || !result.data || !Array.isArray(result.data.urls)) {
+            throw new Error(result.message || 'Cannot upload blog videos.');
+        }
+
+        result.data.urls.forEach(function(url) {
+            insertAtCursor(createVideoMarkup(url));
+        });
+
+        if (typeof window.showToast === 'function') {
+            window.showToast(result.message || 'Upload video thanh cong.', { type: 'success' });
+        }
+    } catch (error) {
+        if (typeof window.showToast === 'function') {
+            window.showToast(error.message || 'Khong the upload video blog.', { type: 'error' });
+        }
+    } finally {
+        setUploadingState(false);
+        document.getElementById('blogVideoInput').value = '';
+    }
+}
+
+async function uploadLocalMedia(files) {
+    if (!files || !files.length) return;
+
+    var imageFiles = Array.from(files).filter(isImageFile);
+    var videoFiles = Array.from(files).filter(isVideoFile);
+    var unsupportedFiles = Array.from(files).filter(function(file) { return !isImageFile(file) && !isVideoFile(file); });
+
+    if (unsupportedFiles.length && typeof window.showToast === 'function') {
+        window.showToast('Some selected files are not supported and were skipped.', { type: 'warning' });
+    }
+
+    if (imageFiles.length) {
+        await uploadBlogImages(imageFiles);
+    }
+
+    if (videoFiles.length) {
+        await uploadBlogVideos(videoFiles);
+    }
+}
+
+function insertMediaUrlPrompt() {
+    var url = window.prompt('Paste the image or video URL you want to insert into the blog content:');
     if (!url) return;
 
     var trimmedUrl = url.trim();
     if (!/^https?:\/\//i.test(trimmedUrl)) {
         if (typeof window.showToast === 'function') {
-            window.showToast('Image URL must start with http:// or https://', { type: 'warning' });
+            window.showToast('Media URL must start with http:// or https://', { type: 'warning' });
         }
         return;
     }
 
-    insertAtCursor(createImageMarkup(trimmedUrl));
-    appendInsertedImage(trimmedUrl);
+    var mediaType = inferMediaTypeFromUrl(trimmedUrl);
+    if (mediaType === 'image') {
+        insertAtCursor(createImageMarkup(trimmedUrl));
+        appendInsertedImage(trimmedUrl);
+        return;
+    }
+
+    if (mediaType === 'video') {
+        insertAtCursor(createVideoMarkup(trimmedUrl));
+        return;
+    }
+
+    if (typeof window.showToast === 'function') {
+        window.showToast('The media URL must end with a supported image or video extension.', { type: 'warning' });
+    }
 }
 
-document.getElementById('blogImageInput').addEventListener('change', function() {
-    uploadBlogImages(this.files);
+document.getElementById('blogMediaInput').addEventListener('change', function() {
+    uploadLocalMedia(this.files).finally(() => {
+        this.value = '';
+    });
 });
 
 getContentInput().addEventListener('input', function() {
