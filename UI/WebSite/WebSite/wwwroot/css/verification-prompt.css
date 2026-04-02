@@ -12,7 +12,8 @@
         radial-gradient(circle at bottom right, rgba(244, 114, 182, 0.10), transparent 24%);
     opacity: 0;
     visibility: hidden;
-    transition: opacity .28s ease, visibility .28s ease;
+    transition: opacity .42s ease, visibility .42s ease;
+    pointer-events: none;
 }
 
 .nm-verify-overlay.is-mounted {
@@ -22,6 +23,7 @@
 .nm-verify-overlay.is-visible {
     opacity: 1;
     visibility: visible;
+    pointer-events: auto;
 }
 
 .nm-verify-card {
@@ -34,9 +36,10 @@
         radial-gradient(circle at top left, rgba(255, 237, 213, 0.65), transparent 34%),
         linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,250,245,.98));
     box-shadow: 0 28px 60px rgba(15, 23, 42, 0.22);
-    transform: translateY(40px) scale(.98);
-    transition: transform .34s cubic-bezier(.2,.8,.2,1), opacity .28s ease;
+    transform: translateY(88px) scale(.965);
+    transition: transform .52s cubic-bezier(.16,1,.3,1), opacity .42s ease;
     opacity: 0;
+    will-change: transform, opacity;
 }
 
 .nm-verify-overlay.is-visible .nm-verify-card {
@@ -91,8 +94,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 150px;
-    height: 150px;
+    width: 200px;
+    height: 200px;
     border-radius: 40px;
     background:
         radial-gradient(circle at top left, rgba(255,255,255,.7), transparent 38%),

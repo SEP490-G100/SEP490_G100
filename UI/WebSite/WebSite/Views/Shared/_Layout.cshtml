@@ -293,6 +293,10 @@
             box-shadow: 0 8px 16px rgba(249,115,22,.26);
         }
 
+        .nm-badge-dot.hidden {
+            display: none !important;
+        }
+
         .nm-panel {
             position: absolute;
             right: 0;
@@ -652,7 +656,7 @@
                                     class="nm-icon-btn"
                                     aria-label="Thong bao">
                                 <span class="material-icons-round text-[20px]">notifications</span>
-                                <span id="notificationBadge" class="nm-badge-dot hidden">0</span>
+                                <span id="notificationBadge" class="nm-badge-dot hidden"></span>
                             </button>
 
                             <div id="notificationMenu" class="nm-panel hidden">
@@ -825,6 +829,7 @@
 
                                 const updateBadge = (count) => {
                                     if (!count || count <= 0) {
+                                        notificationBadge.textContent = '';
                                         notificationBadge.classList.add('hidden');
                                         return;
                                     }
@@ -1094,15 +1099,10 @@
                     </p>
 
                     <div class="nm-verify-hero" aria-hidden="true">
-                        <span class="material-icons-round">badge</span>
+                        <span class="material-icons-round"> </span>
                         <span class="nm-verify-hero-badge">
-                            <span class="material-icons-round text-[28px]">verified_user</span>
+                            <span class="material-icons-round style=" color: #fff">badge">verified_user</span>
                         </span>
-                    </div>
-
-                    <div class="nm-verify-status @nannyVerifyPromptStatusClass">
-                        <span class="material-icons-round text-[18px]">info</span>
-                        <span>@nannyVerifyPromptStatusText</span>
                     </div>
                 </div>
 
@@ -1112,7 +1112,6 @@
                             <span class="material-icons-round text-[20px]">arrow_upward</span>
                             <span>@nannyVerifyPromptButton</span>
                         </a>
-                        <button type="button" class="nm-verify-secondary" id="nmVerifyPromptSkip">De sau</button>
                     </div>
                 </div>
             </div>
@@ -1289,13 +1288,11 @@
 
                 const show = () => {
                     overlay.classList.add('is-mounted');
-                    requestAnimationFrame(() => {
-                        requestAnimationFrame(() => {
-                            overlay.classList.add('is-visible');
-                            overlay.setAttribute('aria-hidden', 'false');
-                            document.body.classList.add('overflow-hidden');
-                        });
-                    });
+                    window.setTimeout(() => {
+                        overlay.classList.add('is-visible');
+                        overlay.setAttribute('aria-hidden', 'false');
+                        document.body.classList.add('overflow-hidden');
+                    }, 48);
                 };
 
                 closeBtn?.addEventListener('click', dismiss);
