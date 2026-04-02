@@ -1,6 +1,8 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nanny_BackEnd.DTOs.Account;
+using Nanny_BackEnd.DTOs.Subscription;
 using Nanny_BackEnd.Services;
 
 namespace Nanny_BackEnd.Controllers;
@@ -109,5 +111,118 @@ public class AdminController : ControllerBase
             return StatusCode(result.StatusCode, new { success = false, message = result.Message });
 
         return Ok(new { success = true, message = result.Message });
+    }
+
+    [HttpGet("subscription-plans")]
+    public async Task<IActionResult> GetSubscriptionPlans(
+        [FromServices] SubscriptionService subscriptionService,
+        [FromQuery] string? search = null,
+        [FromQuery] string? targetRole = null,
+        [FromQuery] bool? isActive = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 3)
+    {
+        var result = await subscriptionService.getAdminPlans(search, targetRole, isActive, page, pageSize);
+        return Ok(new { success = true, data = result });
+    }
+
+    [HttpGet("subscription-plans/{id:guid}")]
+    public async Task<IActionResult> GetSubscriptionPlanDetail(
+        Guid id,
+        [FromServices] SubscriptionService subscriptionService)
+    {
+        var plan = await subscriptionService.getAdminPlanDetail(id);
+        return plan == null
+            ? NotFound(new { success = false, message = "Khong tim thay goi subscription." })
+            : Ok(new { success = true, data = plan });
+    }
+
+    [HttpPost("subscription-plans")]
+    public async Task<IActionResult> CreateSubscriptionPlan(
+        [FromBody] AdminSubscriptionPlanUpsertRequest request,
+        [FromServices] SubscriptionService subscriptionService)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(new { success = false, message = "Du lieu khong hop le.", errors = ModelState });
+
+        var adminUserId = getCurrentUserId();
+        if (!adminUserId.HasValue)
+            return Unauthorized(new { success = false, message = "Khong xac dinh duoc admin hien tai." });
+
+        try
+        {
+            var plan = await subscriptionService.createAdminPlan(adminUserId.Value, request);
+            return Ok(new { success = true, message = "Tao goi subscription thanh cong.", data = plan });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpPatch("subscription-plans/{id:guid}")]
+    public async Task<IActionResult> UpdateSubscriptionPlan(
+        Guid id,
+        [FromBody] AdminSubscriptionPlanUpsertRequest request,
+        [FromServices] SubscriptionService subscriptionService)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(new { success = false, message = "Du lieu khong hop le.", errors = ModelState });
+
+        var adminUserId = getCurrentUserId();
+        if (!adminUserId.HasValue)
+            return Unauthorized(new { success = false, message = "Khong xac dinh duoc admin hien tai." });
+
+        try
+        {
+            var plan = await subscriptionService.updateAdminPlan(id, adminUserId.Value, request);
+            return Ok(new { success = true, message = "Cap nhat goi subscription thanh cong.", data = plan });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { success = false, message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpPatch("subscription-plans/{id:guid}/status")]
+    public async Task<IActionResult> ToggleSubscriptionPlanStatus(
+        Guid id,
+        [FromBody] AdminSubscriptionPlanStatusRequest? request,
+        [FromQuery] bool? isActive,
+        [FromServices] SubscriptionService subscriptionService)
+    {
+        var adminUserId = getCurrentUserId();
+        if (!adminUserId.HasValue)
+            return Unauthorized(new { success = false, message = "Khong xac dinh duoc admin hien tai." });
+
+        var targetIsActive = isActive ?? request?.IsActive;
+        if (!targetIsActive.HasValue)
+            return BadRequest(new { success = false, message = "Thieu trang thai kich hoat cua goi subscription." });
+
+        try
+        {
+            await subscriptionService.toggleAdminPlanStatus(id, adminUserId.Value, targetIsActive.Value);
+            return Ok(new
+            {
+                success = true,
+                message = targetIsActive.Value
+                    ? "Da kich hoat goi subscription."
+                    : "Da vo hieu hoa goi subscription."
+            });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { success = false, message = ex.Message });
+        }
+    }
+
+    private Guid? getCurrentUserId()
+    {
+        var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+        return Guid.TryParse(sub, out var userId) ? userId : null;
     }
 }

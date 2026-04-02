@@ -198,6 +198,173 @@ public class AdminController : Controller
         return RedirectToAction(nameof(ManageModerators));
     }
 
+    public async Task<IActionResult> ManageSubscriptionPlan(string? search = null, string? targetRole = null, bool? isActive = null, int page = 1)
+    {
+        ViewBag.Search = search ?? "";
+        ViewBag.TargetRole = targetRole ?? "";
+        ViewBag.IsActive = isActive;
+
+        var qs = new List<string> { $"page={page}", "pageSize=3" };
+        if (!string.IsNullOrWhiteSpace(search)) qs.Add($"search={Uri.EscapeDataString(search)}");
+        if (!string.IsNullOrWhiteSpace(targetRole)) qs.Add($"targetRole={Uri.EscapeDataString(targetRole)}");
+        if (isActive.HasValue) qs.Add($"isActive={isActive.Value.ToString().ToLowerInvariant()}");
+
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/admin/subscription-plans?{string.Join("&", qs)}");
+        AttachToken(request);
+        try
+        {
+            var response = await _http.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult<AdminSubscriptionPlanListResponse>>(json, JsonOpts);
+            return View("~/Views/Admin/SubscriptionPlan/ManageSubscriptionPlan.cshtml", result?.Data ?? new AdminSubscriptionPlanListResponse());
+        }
+        catch
+        {
+            TempData["Error"] = "Không thể tải danh sách subscription plan.";
+            return View("~/Views/Admin/SubscriptionPlan/ManageSubscriptionPlan.cshtml", new AdminSubscriptionPlanListResponse());
+        }
+    }
+
+    [HttpGet]
+    public IActionResult CreateSubscriptionPlan() =>
+        View("~/Views/Admin/SubscriptionPlan/CreateSubscriptionPlan.cshtml", new AdminSubscriptionPlanFormViewModel());
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateSubscriptionPlan(AdminSubscriptionPlanFormViewModel model)
+    {
+        validateSubscriptionPlanForm(model);
+        if (!ModelState.IsValid)
+            return View("~/Views/Admin/SubscriptionPlan/CreateSubscriptionPlan.cshtml", model);
+
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/admin/subscription-plans")
+        {
+            Content = new StringContent(JsonSerializer.Serialize(buildSubscriptionPlanPayload(model)), Encoding.UTF8, "application/json")
+        };
+        AttachToken(request);
+
+        try
+        {
+            var response = await _http.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult<AdminSubscriptionPlanDetailViewModel>>(json, JsonOpts);
+
+            if (result?.Success == true && result.Data != null)
+            {
+                TempData["Success"] = "Tạo gói subscription thành công.";
+                return RedirectToAction(nameof(ManageSubscriptionPlan));
+            }
+
+            ModelState.AddModelError(string.Empty, result?.Message ?? "Không thể tạo subscription plan.");
+            return View("~/Views/Admin/SubscriptionPlan/CreateSubscriptionPlan.cshtml", model);
+        }
+        catch (Exception ex)
+        {
+            ModelState.AddModelError(string.Empty, $"Lỗi kết nối: {ex.Message}");
+            return View("~/Views/Admin/SubscriptionPlan/CreateSubscriptionPlan.cshtml", model);
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ViewSubscriptionPlanDetail(Guid id)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/admin/subscription-plans/{id}");
+        AttachToken(request);
+        try
+        {
+            var response = await _http.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult<AdminSubscriptionPlanDetailViewModel>>(json, JsonOpts);
+            if (result?.Success != true || result.Data == null)
+            {
+                TempData["Error"] = result?.Message ?? "Không tìm thấy subscription plan.";
+                return RedirectToAction(nameof(ManageSubscriptionPlan));
+            }
+
+            return View("~/Views/Admin/SubscriptionPlan/ViewSubscriptionPlanDetail.cshtml", AdminSubscriptionPlanFormViewModel.FromDetail(result.Data));
+        }
+        catch
+        {
+            TempData["Error"] = "Lỗi kết nối đến API.";
+            return RedirectToAction(nameof(ManageSubscriptionPlan));
+        }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateSubscriptionPlan(Guid id, AdminSubscriptionPlanFormViewModel model)
+    {
+        validateSubscriptionPlanForm(model);
+        if (!ModelState.IsValid)
+        {
+            model.Id = id;
+            return View("~/Views/Admin/SubscriptionPlan/ViewSubscriptionPlanDetail.cshtml", model);
+        }
+
+        var request = new HttpRequestMessage(HttpMethod.Patch, $"/api/admin/subscription-plans/{id}")
+        {
+            Content = new StringContent(JsonSerializer.Serialize(buildSubscriptionPlanPayload(model)), Encoding.UTF8, "application/json")
+        };
+        AttachToken(request);
+
+        try
+        {
+            var response = await _http.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult<AdminSubscriptionPlanDetailViewModel>>(json, JsonOpts);
+
+            if (result?.Success == true)
+            {
+                TempData["Success"] = "Cập nhật gói subscription thành công.";
+                return RedirectToAction(nameof(ManageSubscriptionPlan));
+            }
+
+            ModelState.AddModelError(string.Empty, result?.Message ?? "Không thể cập nhật subscription plan.");
+            model.Id = id;
+            return View("~/Views/Admin/SubscriptionPlan/ViewSubscriptionPlanDetail.cshtml", model);
+        }
+        catch (Exception ex)
+        {
+            ModelState.AddModelError(string.Empty, $"Lỗi kết nối: {ex.Message}");
+            model.Id = id;
+            return View("~/Views/Admin/SubscriptionPlan/ViewSubscriptionPlanDetail.cshtml", model);
+        }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ToggleSubscriptionPlanStatus([FromForm] Guid id, [FromForm] bool isActive, [FromForm] string? returnUrl = null)
+    {
+        var request = new HttpRequestMessage(
+            HttpMethod.Patch,
+            $"/api/admin/subscription-plans/{id}/status?isActive={isActive.ToString().ToLowerInvariant()}")
+        {
+            Content = new StringContent(JsonSerializer.Serialize(new { isActive }), Encoding.UTF8, "application/json")
+        };
+        AttachToken(request);
+        try
+        {
+            var response = await _http.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
+
+            if (result?.Success == true)
+            {
+                TempData["Success"] = result.Message;
+                return redirectToReturnUrlOrList(returnUrl);
+            }
+
+            TempData["Error"] = result?.Message ?? "Không thể cập nhật trạng thái subscription plan.";
+            return redirectToReturnUrlOrList(returnUrl);
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = $"Lỗi kết nối: {ex.Message}";
+            return redirectToReturnUrlOrList(returnUrl);
+        }
+    }
+
+
     // ── Export System Data ─────────────────────────────
     [HttpGet]
     public async Task<IActionResult> ExportData()
@@ -234,5 +401,38 @@ public class AdminController : Controller
         var token = HttpContext.Session.GetString("AccessToken");
         if (!string.IsNullOrEmpty(token))
             req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+    }
+
+    private void validateSubscriptionPlanForm(AdminSubscriptionPlanFormViewModel model)
+    {
+        if (model.GetFeatures().Count == 0)
+            ModelState.AddModelError(nameof(model.FeatureLines), "Please enter at least one feature.");
+    }
+
+    private static object buildSubscriptionPlanPayload(AdminSubscriptionPlanFormViewModel model) => new
+    {
+        name = model.Name.Trim(),
+        description = string.IsNullOrWhiteSpace(model.Description) ? null : model.Description.Trim(),
+        targetRole = model.TargetRole,
+        price = model.Price,
+        durationDays = model.DurationDays,
+        sortOrder = model.SortOrder,
+        features = model.GetFeatures(),
+        benefits = new
+        {
+            monthlyJobPostLimit = model.MonthlyJobPostLimit,
+            monthlyApplicationLimit = model.MonthlyApplicationLimit,
+            featuredBadge = model.FeaturedBadge,
+            searchPriority = model.SearchPriority,
+            listingDurationDays = model.ListingDurationDays
+        }
+    };
+
+    private IActionResult redirectToReturnUrlOrList(string? returnUrl)
+    {
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            return Redirect(returnUrl);
+
+        return RedirectToAction(nameof(ManageSubscriptionPlan));
     }
 }

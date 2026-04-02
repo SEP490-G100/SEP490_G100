@@ -1,0 +1,184 @@
+@model WebSite.Models.Admin.AdminSubscriptionPlanFormViewModel
+@{
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+    ViewData["Title"] = "Subscription Plan Detail";
+}
+
+<div class="flex flex-col gap-6 fade-in-up">
+    <div class="content-card p-6">
+        <span class="section-label">Subscription Plan</span>
+
+        <div class="mt-2 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+            <div class="min-w-0 lg:flex-1">
+                <h1 class="page-title">@Model.Name</h1>
+                <p class="page-subtitle">Review plan details, update plan configuration, or change its availability.</p>
+                <div class="flex flex-wrap items-center gap-2 mt-4">
+                    <span class="badge @(Model.IsActive ? "badge-active" : "badge-inactive")">@(Model.IsActive ? "Active" : "Inactive")</span>
+                    <span class="badge @(Model.TargetRole == "Parent" ? "badge-parent" : "badge-nanny")">@Model.TargetRole</span>
+                    <span class="badge badge-mod">@Model.Code</span>
+                    <span class="badge badge-pending">@Model.GetFeatures().Count feature(s)</span>
+                    <span class="badge badge-pending">@Model.ActiveSubscriberCount active subscriber(s)</span>
+                </div>
+            </div>
+
+            <div class="lg:ml-8 lg:min-w-[460px] lg:self-end">
+                <div class="flex flex-wrap lg:flex-nowrap items-center justify-start lg:justify-end gap-3">
+                    <a href="/Admin/ManageSubscriptionPlan" class="btn-outline whitespace-nowrap">
+                        <span class="material-icons-round text-base">arrow_back</span>
+                        Back to List
+                    </a>
+                    <form method="post" action="/Admin/ToggleSubscriptionPlanStatus" class="inline" onsubmit="return confirm('@(Model.IsActive ? "Deactivate" : "Activate") this subscription plan?');">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <input type="hidden" name="isActive" value="@(!Model.IsActive ? "true" : "false")" />
+                        <input type="hidden" name="returnUrl" value="/Admin/ViewSubscriptionPlanDetail/@Model.Id" />
+                        <button type="submit" class="btn-outline whitespace-nowrap">
+                            <span class="material-icons-round text-base">@(Model.IsActive ? "block" : "check_circle_outline")</span>
+                            @(Model.IsActive ? "Deactivate" : "Activate")
+                        </button>
+                    </form>
+                    <button type="submit" form="updateSubscriptionPlanForm" class="btn-primary whitespace-nowrap">
+                        <span class="material-icons-round text-base">save</span>
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5">
+            <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100 min-w-[150px]">
+                <p class="text-xs text-gray-400 font-bold uppercase tracking-wide mb-1">Price</p>
+                <p class="font-bold text-gray-800">@Model.Price.ToString("N0")</p>
+            </div>
+            <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100 min-w-[150px]">
+                <p class="text-xs text-gray-400 font-bold uppercase tracking-wide mb-1">Duration</p>
+                <p class="font-bold text-gray-800">@Model.DurationDays day(s)</p>
+            </div>
+            <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100 min-w-[150px]">
+                <p class="text-xs text-gray-400 font-bold uppercase tracking-wide mb-1">Created</p>
+                <p class="font-bold text-gray-800">@Model.CreatedAt.ToString("MMM dd, yyyy")</p>
+            </div>
+        </div>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2">
+            <span class="material-icons-round text-base">error_outline</span>
+            @TempData["Error"]
+        </div>
+    }
+    @if (TempData["Success"] != null)
+    {
+        <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2">
+            <span class="material-icons-round text-base">check_circle_outline</span>
+            @TempData["Success"]
+        </div>
+    }
+
+    <form id="updateSubscriptionPlanForm" method="post" action="/Admin/UpdateSubscriptionPlan/@Model.Id" class="space-y-6">
+        @Html.AntiForgeryToken()
+        <div class="content-card p-6">
+            <div asp-validation-summary="All" class="mb-4 text-sm text-red-600"></div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div class="field-group">
+                    <label asp-for="Name" class="field-label"></label>
+                    <input asp-for="Name" class="search-input !pl-4" maxlength="100" required />
+                    <span asp-validation-for="Name" class="text-xs text-red-500"></span>
+                </div>
+                <div class="field-group">
+                    <label asp-for="TargetRole" class="field-label">Target Role</label>
+                    <select asp-for="TargetRole" class="search-input !pl-4" required>
+                        <option value="Parent">Parent</option>
+                        <option value="Nanny">Nanny</option>
+                    </select>
+                    <span asp-validation-for="TargetRole" class="text-xs text-red-500"></span>
+                </div>
+                <div class="field-group lg:col-span-2">
+                    <label asp-for="Description" class="field-label"></label>
+                    <textarea asp-for="Description" class="search-input !pl-4 !h-28 py-3" maxlength="500"></textarea>
+                    <span asp-validation-for="Description" class="text-xs text-red-500"></span>
+                </div>
+                <div class="field-group">
+                    <label asp-for="Price" class="field-label"></label>
+                    <input asp-for="Price" type="number" min="1000" step="1000" class="search-input !pl-4" required />
+                    <span asp-validation-for="Price" class="text-xs text-red-500"></span>
+                </div>
+                <div class="field-group">
+                    <label asp-for="DurationDays" class="field-label">Duration (Days)</label>
+                    <input asp-for="DurationDays" type="number" min="1" max="3650" class="search-input !pl-4" required />
+                    <span asp-validation-for="DurationDays" class="text-xs text-red-500"></span>
+                </div>
+                <div class="field-group">
+                    <label asp-for="SortOrder" class="field-label">Sort Order</label>
+                    <input asp-for="SortOrder" type="number" min="1" max="999" class="search-input !pl-4 bg-gray-50 text-gray-500 cursor-not-allowed" readonly />
+                    <span asp-validation-for="SortOrder" class="text-xs text-red-500"></span>
+                </div>
+                <div class="field-group lg:col-span-2">
+                    <label asp-for="FeatureLines" class="field-label">Features</label>
+                    <textarea asp-for="FeatureLines" class="search-input !pl-4 !h-40 py-3" required></textarea>
+                    <span asp-validation-for="FeatureLines" class="text-xs text-red-500"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-card p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-bold text-gray-900">Benefits</h2>
+                <span class="text-xs text-gray-400">Update the commercial behavior of this plan.</span>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div class="field-group">
+                    <label asp-for="MonthlyJobPostLimit" class="field-label">Monthly Job Post Limit</label>
+                    <input asp-for="MonthlyJobPostLimit" type="number" min="0" class="search-input !pl-4" required />
+                    <span asp-validation-for="MonthlyJobPostLimit" class="text-xs text-red-500"></span>
+                </div>
+                <div class="field-group">
+                    <label asp-for="MonthlyApplicationLimit" class="field-label">Monthly Application Limit</label>
+                    <input asp-for="MonthlyApplicationLimit" type="number" min="0" class="search-input !pl-4" required />
+                    <span asp-validation-for="MonthlyApplicationLimit" class="text-xs text-red-500"></span>
+                </div>
+                <div class="field-group">
+                    <label asp-for="ListingDurationDays" class="field-label">Listing Duration Days</label>
+                    <input asp-for="ListingDurationDays" type="number" min="0" max="3650" class="search-input !pl-4" required />
+                    <span asp-validation-for="ListingDurationDays" class="text-xs text-red-500"></span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <label class="field-readonly !justify-between cursor-pointer">
+                        <span>Featured Badge</span>
+                        <input asp-for="FeaturedBadge" type="checkbox" class="w-4 h-4 accent-orange-500" />
+                    </label>
+                    <label class="field-readonly !justify-between cursor-pointer">
+                        <span>Search Priority</span>
+                        <input asp-for="SearchPriority" type="checkbox" class="w-4 h-4 accent-orange-500" />
+                    </label>
+                </div>
+            </div>
+        </div>
+    </form>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const form = document.getElementById('updateSubscriptionPlanForm');
+            const featureInput = document.getElementById('FeatureLines');
+            if (!form || !featureInput) return;
+
+            const validateFeatures = () => {
+                const hasFeature = featureInput.value
+                    .split(/\r?\n/)
+                    .map(item => item.trim())
+                    .some(item => item.length > 0);
+
+                featureInput.setCustomValidity(hasFeature ? '' : 'Please enter at least one feature.');
+            };
+
+            featureInput.addEventListener('input', validateFeatures);
+            form.addEventListener('submit', () => validateFeatures());
+        })();
+    </script>
+}

@@ -455,6 +455,166 @@ public class SubscriptionService
         return mapSubscription(subscription);
     }
 
+    public async Task<AdminSubscriptionPlanListResponse> getAdminPlans(string? search, string? targetRole, bool? isActive, int page, int pageSize)
+    {
+        await ensureAdminManagedPlans();
+        var plans = await _subscriptionRepo.getAdminPlansIncludingDeleted();
+
+        var filtered = plans
+            .Select(plan => new
+            {
+                Plan = plan,
+                Metadata = resolveAdminPlanMetadata(plan)
+            })
+            .Where(item =>
+                string.IsNullOrWhiteSpace(search) ||
+                item.Plan.Name.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                item.Metadata.Code.Contains(search, StringComparison.OrdinalIgnoreCase))
+            .Where(item =>
+                string.IsNullOrWhiteSpace(targetRole) ||
+                string.Equals(item.Metadata.TargetRole, SubscriptionPlanMetadataHelper.NormalizeTargetRole(targetRole), StringComparison.OrdinalIgnoreCase))
+            .Where(item => !isActive.HasValue || item.Plan.IsActive == isActive.Value)
+            .OrderBy(item => item.Plan.SortOrder)
+            .ThenBy(item => item.Plan.Price)
+            .ThenBy(item => item.Plan.Name)
+            .ToList();
+
+        page = Math.Max(1, page);
+        pageSize = Math.Max(1, pageSize);
+        var totalCount = filtered.Count;
+        var items = new List<AdminSubscriptionPlanListItemResponse>();
+
+        foreach (var item in filtered.Skip((page - 1) * pageSize).Take(pageSize))
+        {
+            items.Add(new AdminSubscriptionPlanListItemResponse
+            {
+                Id = item.Plan.Id,
+                Code = item.Metadata.Code,
+                TargetRole = item.Metadata.TargetRole,
+                Name = item.Plan.Name,
+                Price = item.Plan.Price,
+                DurationDays = item.Plan.DurationDays,
+                SortOrder = item.Plan.SortOrder,
+                IsActive = item.Plan.IsActive,
+                FeatureCount = item.Metadata.Features.Count,
+                ActiveSubscriberCount = await _subscriptionRepo.countActiveSubscriptionsByPlan(item.Plan.Id, DateTime.UtcNow),
+                CreatedAt = item.Plan.CreatedAt
+            });
+        }
+
+        return new AdminSubscriptionPlanListResponse
+        {
+            Items = items,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+            TotalPages = totalCount == 0 ? 1 : (int)Math.Ceiling(totalCount / (double)pageSize)
+        };
+    }
+
+    public async Task<AdminSubscriptionPlanDetailResponse?> getAdminPlanDetail(Guid id)
+    {
+        await ensureAdminManagedPlans();
+        var plan = await _subscriptionRepo.findAdminPlanByIdIncludingDeleted(id);
+        if (plan == null)
+            return null;
+
+        var metadata = resolveAdminPlanMetadata(plan);
+        return new AdminSubscriptionPlanDetailResponse
+        {
+            Id = plan.Id,
+            Code = metadata.Code,
+            TargetRole = metadata.TargetRole,
+            Name = plan.Name,
+            Description = plan.Description,
+            Price = plan.Price,
+            DurationDays = plan.DurationDays,
+            Features = metadata.Features,
+            SortOrder = plan.SortOrder,
+            Benefits = metadata.Benefits,
+            IsActive = plan.IsActive,
+            ActiveSubscriberCount = await _subscriptionRepo.countActiveSubscriptionsByPlan(plan.Id, DateTime.UtcNow),
+            CreatedAt = plan.CreatedAt,
+            UpdatedAt = plan.UpdatedAt
+        };
+    }
+
+    public async Task<AdminSubscriptionPlanDetailResponse> createAdminPlan(Guid adminUserId, AdminSubscriptionPlanUpsertRequest request)
+    {
+        validateAdminPlanRequest(request);
+
+        var normalizedName = request.Name.Trim();
+        if (await _subscriptionRepo.existsPlanNameIncludingDeleted(normalizedName))
+            throw new InvalidOperationException("Ten goi subscription da ton tai.");
+
+        var metadata = buildAdminPlanMetadata(request, normalizedName);
+        var nowUtc = DateTime.UtcNow;
+        var nextSortOrder = await _subscriptionRepo.getNextSubscriptionPlanSortOrder();
+        var plan = new SubscriptionPlan
+        {
+            Id = Guid.NewGuid(),
+            Name = normalizedName,
+            Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
+            Price = request.Price,
+            DurationDays = request.DurationDays,
+            Features = SubscriptionPlanMetadataHelper.Serialize(metadata),
+            IsActive = true,
+            SortOrder = nextSortOrder,
+            CreatedAt = nowUtc,
+            CreatedBy = adminUserId,
+            IsDeleted = false
+        };
+
+        _subscriptionRepo.addPlan(plan);
+        await _subscriptionRepo.saveChanges();
+
+        return await getAdminPlanDetail(plan.Id)
+            ?? throw new InvalidOperationException("Khong the tao goi subscription.");
+    }
+
+    public async Task<AdminSubscriptionPlanDetailResponse> updateAdminPlan(Guid id, Guid adminUserId, AdminSubscriptionPlanUpsertRequest request)
+    {
+        validateAdminPlanRequest(request);
+
+        var plan = await _subscriptionRepo.findAdminPlanByIdIncludingDeleted(id)
+            ?? throw new KeyNotFoundException("Khong tim thay goi subscription.");
+
+        var normalizedName = request.Name.Trim();
+        if (await _subscriptionRepo.existsPlanNameIncludingDeleted(normalizedName, id))
+            throw new InvalidOperationException("Ten goi subscription da ton tai.");
+
+        var metadata = buildAdminPlanMetadata(request, normalizedName);
+        plan.Name = normalizedName;
+        plan.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
+        plan.Price = request.Price;
+        plan.DurationDays = request.DurationDays;
+        plan.SortOrder = request.SortOrder;
+        plan.Features = SubscriptionPlanMetadataHelper.Serialize(metadata);
+        plan.UpdatedAt = DateTime.UtcNow;
+        plan.UpdatedBy = adminUserId;
+
+        await _subscriptionRepo.saveChanges();
+
+        return await getAdminPlanDetail(plan.Id)
+            ?? throw new InvalidOperationException("Khong the cap nhat goi subscription.");
+    }
+
+    public async Task toggleAdminPlanStatus(Guid id, Guid adminUserId, bool isActive)
+    {
+        var plan = await _subscriptionRepo.findAdminPlanByIdIncludingDeleted(id)
+            ?? throw new KeyNotFoundException("Khong tim thay goi subscription.");
+
+        var targetIsDeleted = !isActive;
+        if (plan.IsActive == isActive && plan.IsDeleted == targetIsDeleted)
+            return;
+
+        plan.IsActive = isActive;
+        plan.IsDeleted = targetIsDeleted;
+        plan.UpdatedAt = DateTime.UtcNow;
+        plan.UpdatedBy = adminUserId;
+        await _subscriptionRepo.saveChanges();
+    }
+
     private async Task<VnPayProcessInternalResult> processVnPayCallback(IQueryCollection query)
     {
         var callback = _vnPayService.validateCallback(query);
@@ -605,6 +765,46 @@ public class SubscriptionService
         return true;
     }
 
+    private async Task ensureAdminManagedPlans()
+    {
+        var existingPlans = await _subscriptionRepo.getPlansByNamesIncludingDeleted(ManagedPlans.Select(p => p.Name));
+        var existingNames = existingPlans
+            .Select(p => p.Name)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var needsSave = false;
+        foreach (var definition in ManagedPlans)
+        {
+            if (existingNames.Contains(definition.Name))
+                continue;
+
+            _subscriptionRepo.addPlan(new SubscriptionPlan
+            {
+                Id = Guid.NewGuid(),
+                Name = definition.Name,
+                Description = definition.Description,
+                Price = definition.Price,
+                DurationDays = definition.DurationDays,
+                Features = SubscriptionPlanMetadataHelper.Serialize(new SubscriptionPlanMetadata
+                {
+                    Code = definition.Code,
+                    TargetRole = definition.TargetRole,
+                    Features = definition.Features,
+                    Benefits = definition.Benefits
+                }),
+                IsActive = true,
+                SortOrder = definition.SortOrder,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = null,
+                IsDeleted = false
+            });
+            needsSave = true;
+        }
+
+        if (needsSave)
+            await _subscriptionRepo.saveChanges();
+    }
+
     private static void markTransactionFailed(Transaction transaction, DateTime nowUtc)
     {
         transaction.Status = 3;
@@ -631,7 +831,7 @@ public class SubscriptionService
 
     private async Task<List<SubscriptionPlan>> ensureManagedPlans()
     {
-        var existingPlans = await _subscriptionRepo.getPlansByNames(ManagedPlans.Select(p => p.Name));
+        var existingPlans = await _subscriptionRepo.getPlansByNamesIncludingDeleted(ManagedPlans.Select(p => p.Name));
         var planMap = existingPlans.ToDictionary(p => p.Name, StringComparer.OrdinalIgnoreCase);
         var needsSave = false;
 
@@ -704,18 +904,6 @@ public class SubscriptionService
         if (plan.Features != features)
         {
             plan.Features = features;
-            changed = true;
-        }
-
-        if (!plan.IsActive)
-        {
-            plan.IsActive = true;
-            changed = true;
-        }
-
-        if (plan.IsDeleted)
-        {
-            plan.IsDeleted = false;
             changed = true;
         }
 
@@ -844,6 +1032,68 @@ public class SubscriptionService
     private static ManagedPlanDefinition? getManagedPlanDefinition(string? planName) =>
         ManagedPlans.FirstOrDefault(p => string.Equals(p.Name, planName, StringComparison.OrdinalIgnoreCase));
 
+    private static SubscriptionPlanMetadata resolveAdminPlanMetadata(SubscriptionPlan plan)
+    {
+        var metadata = SubscriptionPlanMetadataHelper.TryParse(plan.Features);
+        var definition = getManagedPlanDefinition(plan.Name);
+        var targetRole = metadata?.TargetRole;
+        if (string.IsNullOrWhiteSpace(targetRole))
+            targetRole = definition?.TargetRole ?? "Parent";
+
+        var features = metadata?.Features.Count > 0
+            ? metadata.Features
+            : definition?.Features ?? splitFeatures(plan.Features);
+
+        var benefits = metadata?.Benefits;
+        if (benefits == null || (
+            benefits.MonthlyJobPostLimit == 0 &&
+            benefits.MonthlyApplicationLimit == 0 &&
+            !benefits.FeaturedBadge &&
+            !benefits.SearchPriority &&
+            benefits.ListingDurationDays == 0))
+        {
+            benefits = definition?.Benefits
+                ?? (string.Equals(targetRole, "Nanny", StringComparison.OrdinalIgnoreCase)
+                    ? SubscriptionBenefitResponse.FreeNanny
+                    : SubscriptionBenefitResponse.FreeParent);
+        }
+
+        return new SubscriptionPlanMetadata
+        {
+            Code = SubscriptionPlanMetadataHelper.NormalizeCode(metadata?.Code, targetRole, plan.Name),
+            TargetRole = SubscriptionPlanMetadataHelper.NormalizeTargetRole(targetRole),
+            Features = SubscriptionPlanMetadataHelper.NormalizeFeatures(features),
+            Benefits = benefits
+        };
+    }
+
+    private static SubscriptionPlanMetadata buildAdminPlanMetadata(AdminSubscriptionPlanUpsertRequest request, string normalizedName)
+    {
+        var targetRole = SubscriptionPlanMetadataHelper.NormalizeTargetRole(request.TargetRole);
+        return new SubscriptionPlanMetadata
+        {
+            Code = SubscriptionPlanMetadataHelper.NormalizeCode(null, targetRole, normalizedName),
+            TargetRole = targetRole,
+            Features = SubscriptionPlanMetadataHelper.NormalizeFeatures(request.Features),
+            Benefits = new SubscriptionBenefitResponse
+            {
+                MonthlyJobPostLimit = request.Benefits.MonthlyJobPostLimit,
+                MonthlyApplicationLimit = request.Benefits.MonthlyApplicationLimit,
+                FeaturedBadge = request.Benefits.FeaturedBadge,
+                SearchPriority = request.Benefits.SearchPriority,
+                ListingDurationDays = request.Benefits.ListingDurationDays
+            }
+        };
+    }
+
+    private static void validateAdminPlanRequest(AdminSubscriptionPlanUpsertRequest request)
+    {
+        request.Features = SubscriptionPlanMetadataHelper.NormalizeFeatures(request.Features);
+
+        if (request.Features.Count == 0)
+            throw new InvalidOperationException("Phai co it nhat 1 feature cho goi subscription.");
+    }
+
     private static List<string>? tryParseJsonFeatures(string features)
     {
         try
@@ -898,4 +1148,3 @@ public class VnPayIpnResult
     public string RspCode { get; set; } = "99";
     public string Message { get; set; } = "Unknown error";
 }
-

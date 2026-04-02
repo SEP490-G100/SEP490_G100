@@ -7,7 +7,7 @@
     <link href="~/css/tailwind.generated.css" rel="stylesheet" asp-append-version="true" />
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
-    <link href="~/css/admin.css" rel="stylesheet" />
+    <link href="~/css/admin.css" rel="stylesheet" asp-append-version="true" />
 </head>
 <body class="font-display bg-gray-50 text-gray-800" style="font-family:'Quicksand',sans-serif;">
 
@@ -43,6 +43,12 @@
                    class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() is "ManageModerators" or "EditModerator" or "CreateModerator" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-slate-300 hover:bg-white/5 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">manage_accounts</span>
                     <span class="sidebar-text">Manage Moderators</span>
+                </a>
+
+                <a href="/Admin/ManageSubscriptionPlan"
+                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() is "ManageSubscriptionPlan" or "ViewSubscriptionPlanDetail" or "CreateSubscriptionPlan" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-slate-300 hover:bg-white/5 hover:text-white")">
+                    <span class="material-icons-round text-xl flex-shrink-0">workspace_premium</span>
+                    <span class="sidebar-text">Subscription Plans</span>
                 </a>
 
             </nav>
@@ -140,4 +146,3 @@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
-

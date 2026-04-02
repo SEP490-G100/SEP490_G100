@@ -1,0 +1,130 @@
+@model WebSite.Models.Admin.AdminSubscriptionPlanFormViewModel
+@{
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+    ViewData["Title"] = "Create Subscription Plan";
+}
+
+<div class="flex items-center justify-between gap-4 mb-7 fade-in-up">
+    <div>
+        <span class="section-label">Subscription Management</span>
+        <h1 class="page-title mt-2">Create <span class="gradient-text">Subscription Plan</span></h1>
+        <p class="page-subtitle">Add a new subscription plan with pricing, duration, benefits, and features.</p>
+    </div>
+    <a href="/Admin/ManageSubscriptionPlan" class="btn-outline">
+        <span class="material-icons-round text-base">arrow_back</span>
+        Back to List
+    </a>
+</div>
+
+<form method="post" action="/Admin/CreateSubscriptionPlan" class="space-y-6">
+    @Html.AntiForgeryToken()
+    <div class="content-card p-6 fade-in-up">
+        <div asp-validation-summary="All" class="mb-4 text-sm text-red-600"></div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div class="field-group">
+                <label asp-for="Name" class="field-label"></label>
+                <input asp-for="Name" class="search-input !pl-4" maxlength="100" required />
+                <span asp-validation-for="Name" class="text-xs text-red-500"></span>
+            </div>
+            <div class="field-group">
+                <label asp-for="TargetRole" class="field-label">Target Role</label>
+                <select asp-for="TargetRole" class="search-input !pl-4" required>
+                    <option value="Parent">Parent</option>
+                    <option value="Nanny">Nanny</option>
+                </select>
+                <span asp-validation-for="TargetRole" class="text-xs text-red-500"></span>
+            </div>
+            <div class="field-group lg:col-span-2">
+                <label asp-for="Description" class="field-label"></label>
+                <textarea asp-for="Description" class="search-input !pl-4 !h-28 py-3" maxlength="500"></textarea>
+                <span asp-validation-for="Description" class="text-xs text-red-500"></span>
+            </div>
+            <div class="field-group">
+                <label asp-for="Price" class="field-label"></label>
+                <input asp-for="Price" type="number" min="1000" step="1000" class="search-input !pl-4" required />
+                <span asp-validation-for="Price" class="text-xs text-red-500"></span>
+            </div>
+            <div class="field-group">
+                <label asp-for="DurationDays" class="field-label">Duration (Days)</label>
+                <input asp-for="DurationDays" type="number" min="1" max="3650" class="search-input !pl-4" required />
+                <span asp-validation-for="DurationDays" class="text-xs text-red-500"></span>
+            </div>
+            <input asp-for="SortOrder" type="hidden" />
+            <div class="field-group lg:col-span-2">
+                <label asp-for="FeatureLines" class="field-label">Features</label>
+                <textarea asp-for="FeatureLines" class="search-input !pl-4 !h-40 py-3" placeholder="One feature per line" required></textarea>
+                <span asp-validation-for="FeatureLines" class="text-xs text-red-500"></span>
+            </div>
+        </div>
+
+        <div class="mt-4 rounded-2xl border border-orange-100 bg-orange-50/70 px-4 py-3 text-sm text-orange-700">
+            Sort order is generated automatically when a new subscription plan is created.
+        </div>
+    </div>
+
+    <div class="content-card p-6 fade-in-up">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-gray-900">Benefits</h2>
+            <span class="text-xs text-gray-400">All fields accept zero or greater values.</span>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div class="field-group">
+                <label asp-for="MonthlyJobPostLimit" class="field-label">Monthly Job Post Limit</label>
+                <input asp-for="MonthlyJobPostLimit" type="number" min="0" class="search-input !pl-4" required />
+                <span asp-validation-for="MonthlyJobPostLimit" class="text-xs text-red-500"></span>
+            </div>
+            <div class="field-group">
+                <label asp-for="MonthlyApplicationLimit" class="field-label">Monthly Application Limit</label>
+                <input asp-for="MonthlyApplicationLimit" type="number" min="0" class="search-input !pl-4" required />
+                <span asp-validation-for="MonthlyApplicationLimit" class="text-xs text-red-500"></span>
+            </div>
+            <div class="field-group">
+                <label asp-for="ListingDurationDays" class="field-label">Listing Duration Days</label>
+                <input asp-for="ListingDurationDays" type="number" min="0" max="3650" class="search-input !pl-4" required />
+                <span asp-validation-for="ListingDurationDays" class="text-xs text-red-500"></span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <label class="field-readonly !justify-between cursor-pointer">
+                    <span>Featured Badge</span>
+                    <input asp-for="FeaturedBadge" type="checkbox" class="w-4 h-4 accent-orange-500" />
+                </label>
+                <label class="field-readonly !justify-between cursor-pointer">
+                    <span>Search Priority</span>
+                    <input asp-for="SearchPriority" type="checkbox" class="w-4 h-4 accent-orange-500" />
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex justify-end gap-3 fade-in-up">
+        <a href="/Admin/ManageSubscriptionPlan" class="btn-outline">Cancel</a>
+        <button type="submit" class="btn-primary">
+            <span class="material-icons-round text-base">save</span>
+            Create Subscription Plan
+        </button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const form = document.querySelector('form[action="/Admin/CreateSubscriptionPlan"]');
+            const featureInput = document.getElementById('FeatureLines');
+            if (!form || !featureInput) return;
+
+            const validateFeatures = () => {
+                const hasFeature = featureInput.value
+                    .split(/\r?\n/)
+                    .map(item => item.trim())
+                    .some(item => item.length > 0);
+
+                featureInput.setCustomValidity(hasFeature ? '' : 'Please enter at least one feature.');
+            };
+
+            featureInput.addEventListener('input', validateFeatures);
+            form.addEventListener('submit', () => validateFeatures());
+        })();
+    </script>
+}
