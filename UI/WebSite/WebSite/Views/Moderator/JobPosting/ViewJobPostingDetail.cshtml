@@ -10,6 +10,13 @@
     var hasSchedule = Model.ScheduleSlots.Any();
     var dayLabels = new[] { "Mo", "Tu", "We", "Th", "Fr", "Sa", "Su" };
     var rowLabels = new[] { "Morning", "Afternoon", "Evening", "Night" };
+    var moderationBadgeClass = Model.ModerationStatus switch
+    {
+        0 => "badge badge-pending px-3 py-1.5 text-sm",
+        1 => "badge badge-inactive px-3 py-1.5 text-sm",
+        2 => "badge badge-active px-3 py-1.5 text-sm",
+        _ => "badge badge-pending px-3 py-1.5 text-sm"
+    };
 }
 
 <div class="flex items-center gap-2 text-sm text-gray-400 mb-6 fade-in-up">
@@ -19,7 +26,7 @@
 </div>
 
 <div class="content-card p-6 sm:p-7 mb-6 fade-in-up overflow-hidden" style="background:linear-gradient(135deg,#EFF6FF 0%,#F8FAFC 45%,#FFFFFF 100%); border:1px solid #BFDBFE;">
-    <div class="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-6">
+    <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
         <div class="min-w-0">
             <p class="text-xs font-semibold uppercase tracking-[0.25em] text-blue-500">Parent Job Posting</p>
             <h1 class="text-2xl sm:text-3xl font-black text-gray-900 mt-2 break-words">@Model.Title</h1>
@@ -27,7 +34,7 @@
 
             <div class="flex flex-wrap gap-2 mt-4">
                 <span class="badge @Model.StatusClass px-3 py-1.5 text-sm">@Model.StatusLabel</span>
-                <span class="badge @Model.ModerationStatusClass px-3 py-1.5 text-sm">@Model.ModerationStatusLabel</span>
+                <span class="@moderationBadgeClass">@Model.ModerationStatusLabel</span>
                 @if (Model.FeaturedBadge)
                 {
                     <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200 px-3 py-1.5 text-xs font-semibold">
@@ -45,7 +52,7 @@
             </div>
         </div>
 
-        <div class="flex flex-col sm:flex-row gap-3 xl:justify-end">
+        <div class="flex flex-col sm:flex-row gap-3 lg:justify-end lg:self-start">
             <div class="rounded-2xl bg-white/90 border border-blue-100 px-4 py-3 min-w-[180px]">
                 <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Created</p>
                 <p class="font-bold text-gray-800 mt-1">@Model.CreatedAt.ToString("MMM dd, yyyy HH:mm")</p>
@@ -222,31 +229,35 @@
                 <h2 class="font-bold text-gray-900">Moderator Decision</h2>
             </div>
 
-            <form asp-action="ReviewJobPosting" method="post">
+            <form asp-action="ReviewJobPosting" method="post" onsubmit="return validateJobPostingReviewForm()">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" value="@Model.Id" />
+                <input type="hidden" id="jobPostingAction" name="action" value="" />
                 <input type="hidden" name="parentUserId" value="@Model.ParentUserId" />
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
-                    <label class="decision-card group">
-                        <input type="radio" name="action" value="2" required class="hidden" />
-                        <div class="inner border-2 border-gray-100 rounded-2xl p-4 flex flex-col items-center gap-2 transition-all">
-                            <span class="material-icons-round text-emerald-500 text-3xl">check_circle</span>
-                            <span class="text-xs font-bold text-gray-700">Approve</span>
-                        </div>
-                    </label>
-                    <label class="decision-card group">
-                        <input type="radio" name="action" value="1" required class="hidden" />
-                        <div class="inner border-2 border-gray-100 rounded-2xl p-4 flex flex-col items-center gap-2 transition-all">
-                            <span class="material-icons-round text-red-500 text-3xl">cancel</span>
-                            <span class="text-xs font-bold text-gray-700">Reject</span>
-                        </div>
-                    </label>
+                    <button type="button"
+                            id="jobPostingApproveBtn"
+                            onclick="selectJobPostingAction(2)"
+                            class="w-full flex items-center justify-center gap-2 px-5 py-4 rounded-2xl font-bold text-white text-sm transition-all hover:scale-[1.01] active:scale-[0.99]"
+                            style="background:linear-gradient(135deg,#10B981,#059669); box-shadow:0 4px 14px rgba(16,185,129,0.35);">
+                        <span class="material-icons-round text-lg">check_circle</span>
+                        <span class="job-posting-action-label">Approve Application</span>
+                    </button>
+
+                    <button type="button"
+                            id="jobPostingRejectBtn"
+                            onclick="selectJobPostingAction(1)"
+                            class="w-full flex items-center justify-center gap-2 px-5 py-4 rounded-2xl font-bold text-sm text-white transition-all hover:scale-[1.01] active:scale-[0.99]"
+                            style="background:linear-gradient(135deg,#EF4444,#DC2626); box-shadow:0 4px 14px rgba(239,68,68,0.35);">
+                        <span class="material-icons-round text-lg">cancel</span>
+                        <span class="job-posting-action-label">Reject Application</span>
+                    </button>
                 </div>
 
                 <div class="mb-6">
                     <label class="block text-xs font-bold text-gray-400 uppercase mb-2 tracking-wider">Internal Note / Feedback</label>
-                    <textarea name="note" rows="4" placeholder="Enter moderation feedback for the parent..."
+                    <textarea id="jobPostingNote" name="note" rows="4" placeholder="Enter moderation feedback for the parent..."
                               class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none resize-none transition-all">@Model.ModerationNote</textarea>
                 </div>
 
@@ -260,16 +271,6 @@
 </div>
 
 <style>
-    .decision-card input:checked + .inner {
-        border-color: #60A5FA;
-        background-color: #EFF6FF;
-    }
-
-    .decision-card:last-child input:checked + .inner {
-        border-color: #F87171;
-        background-color: #FEF2F2;
-    }
-
     .schedule-grid-card {
         border: 1px solid #fed7aa;
         border-radius: 28px;
@@ -356,3 +357,64 @@
         }
     }
 </style>
+
+@section Scripts {
+<script>
+    function selectJobPostingAction(action) {
+        document.getElementById('jobPostingAction').value = action;
+
+        var approveBtn = document.getElementById('jobPostingApproveBtn');
+        var rejectBtn = document.getElementById('jobPostingRejectBtn');
+
+        approveBtn.classList.remove('ring-4', 'ring-emerald-200', 'scale-[1.02]');
+        rejectBtn.classList.remove('ring-4', 'ring-red-200', 'scale-[1.02]');
+
+        approveBtn.style.opacity = '0.72';
+        approveBtn.style.filter = 'saturate(0.9)';
+        approveBtn.style.boxShadow = '0 4px 14px rgba(16,185,129,0.18)';
+        approveBtn.querySelector('.job-posting-action-label').style.fontWeight = '700';
+
+        rejectBtn.style.opacity = '0.72';
+        rejectBtn.style.filter = 'saturate(0.9)';
+        rejectBtn.style.boxShadow = '0 4px 14px rgba(239,68,68,0.18)';
+        rejectBtn.querySelector('.job-posting-action-label').style.fontWeight = '700';
+
+        if (action === 2) {
+            approveBtn.classList.add('ring-4', 'ring-emerald-200', 'scale-[1.02]');
+            approveBtn.style.opacity = '1';
+            approveBtn.style.filter = 'none';
+            approveBtn.style.boxShadow = '0 10px 28px rgba(16,185,129,0.38)';
+            approveBtn.querySelector('.job-posting-action-label').style.fontWeight = '900';
+        } else if (action === 1) {
+            rejectBtn.classList.add('ring-4', 'ring-red-200', 'scale-[1.02]');
+            rejectBtn.style.opacity = '1';
+            rejectBtn.style.filter = 'none';
+            rejectBtn.style.boxShadow = '0 10px 28px rgba(239,68,68,0.38)';
+            rejectBtn.querySelector('.job-posting-action-label').style.fontWeight = '900';
+        }
+    }
+
+    function validateJobPostingReviewForm() {
+        var action = document.getElementById('jobPostingAction').value;
+        var note = document.getElementById('jobPostingNote').value.trim();
+
+        if (!action) {
+            if (typeof window.showToast === 'function') {
+                window.showToast('Please choose Approve or Reject before submitting.', { type: 'warning' });
+            }
+            return false;
+        }
+
+        if (action === '1' && !note) {
+            if (typeof window.showToast === 'function') {
+                window.showToast('Please provide a rejection reason before submitting.', { type: 'warning' });
+            }
+            return false;
+        }
+
+        return confirm(action === '2'
+            ? 'Approve this job posting?'
+            : 'Reject this job posting with the provided reason?');
+    }
+</script>
+}

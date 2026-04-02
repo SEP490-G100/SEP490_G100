@@ -2,7 +2,9 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nanny_BackEnd.DTOs.Account;
+using Nanny_BackEnd.DTOs.Notification;
 using Nanny_BackEnd.DTOs.Subscription;
+using Nanny_BackEnd.Repositories;
 using Nanny_BackEnd.Services;
 
 namespace Nanny_BackEnd.Controllers;
@@ -212,6 +214,117 @@ public class AdminController : ControllerBase
                 message = targetIsActive.Value
                     ? "Da kich hoat goi subscription."
                     : "Da vo hieu hoa goi subscription."
+            });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpGet("notifications")]
+    public async Task<IActionResult> GetAdminNotifications(
+        [FromQuery] string? search = null,
+        [FromQuery] bool? isDeleted = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 3,
+        [FromServices] NotificationService notificationService = null!)
+    {
+        var result = await notificationService.getAdminNotifications(search, isDeleted, page, pageSize);
+        return Ok(new { success = true, data = result });
+    }
+
+    [HttpGet("notification-roles")]
+    public async Task<IActionResult> GetAdminNotificationRoles([FromServices] UserRepository userRepository)
+    {
+        var roles = await userRepository.GetNotificationAssignableRolesAsync();
+        return Ok(new { success = true, data = roles });
+    }
+
+    [HttpGet("notifications/{id:guid}")]
+    public async Task<IActionResult> GetAdminNotificationDetail(
+        Guid id,
+        [FromServices] NotificationService notificationService)
+    {
+        var result = await notificationService.getAdminNotificationDetail(id);
+        return result == null
+            ? NotFound(new { success = false, message = "Khong tim thay thong bao admin." })
+            : Ok(new { success = true, data = result });
+    }
+
+    [HttpPost("notifications")]
+    public async Task<IActionResult> CreateAdminNotification(
+        [FromBody] AdminNotificationUpsertRequest request,
+        [FromServices] NotificationService notificationService)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(new { success = false, message = "Du lieu khong hop le.", errors = ModelState });
+
+        var adminUserId = getCurrentUserId();
+        if (!adminUserId.HasValue)
+            return Unauthorized(new { success = false, message = "Khong xac dinh duoc admin hien tai." });
+
+        try
+        {
+            var result = await notificationService.createAdminNotification(adminUserId.Value, request);
+            return Ok(new { success = true, message = "Tao thong bao admin thanh cong.", data = result });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpPatch("notifications/{id:guid}")]
+    public async Task<IActionResult> UpdateAdminNotification(
+        Guid id,
+        [FromBody] AdminNotificationUpsertRequest request,
+        [FromServices] NotificationService notificationService)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(new { success = false, message = "Du lieu khong hop le.", errors = ModelState });
+
+        var adminUserId = getCurrentUserId();
+        if (!adminUserId.HasValue)
+            return Unauthorized(new { success = false, message = "Khong xac dinh duoc admin hien tai." });
+
+        try
+        {
+            var result = await notificationService.updateAdminNotification(id, adminUserId.Value, request);
+            return Ok(new { success = true, message = "Cap nhat thong bao admin thanh cong.", data = result });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { success = false, message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpPatch("notifications/{id:guid}/status")]
+    public async Task<IActionResult> ToggleAdminNotificationStatus(
+        Guid id,
+        [FromQuery] bool? isDeleted,
+        [FromServices] NotificationService notificationService)
+    {
+        var adminUserId = getCurrentUserId();
+        if (!adminUserId.HasValue)
+            return Unauthorized(new { success = false, message = "Khong xac dinh duoc admin hien tai." });
+
+        if (!isDeleted.HasValue)
+            return BadRequest(new { success = false, message = "Thieu trang thai kich hoat cua thong bao." });
+
+        try
+        {
+            await notificationService.toggleAdminNotificationStatus(id, adminUserId.Value, isDeleted.Value);
+            return Ok(new
+            {
+                success = true,
+                message = isDeleted.Value
+                    ? "Da vo hieu hoa thong bao admin."
+                    : "Da kich hoat thong bao admin."
             });
         }
         catch (KeyNotFoundException ex)

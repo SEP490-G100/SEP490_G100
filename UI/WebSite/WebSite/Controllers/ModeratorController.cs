@@ -18,7 +18,7 @@ using System.Text.Json.Serialization;
 
 namespace WebSite.Controllers;
 
-//[Authorize(Roles = "Moderator")]
+[Authorize(Roles = "Moderator")]
 public class ModeratorController : Controller
 {
     private readonly HttpClient _http;
@@ -129,9 +129,9 @@ public class ModeratorController : Controller
     }
 
     // ──────────────────────────────────────────────
-    // GET /Moderator/EditAccount/{id}
+    // GET /Moderator/ViewAccountDetail/{id}
     // ──────────────────────────────────────────────
-    public async Task<IActionResult> EditAccount(Guid id)
+    public async Task<IActionResult> ViewAccountDetail(Guid id)
     {
         var token = HttpContext.Session.GetString("AccessToken");
         var request = new HttpRequestMessage(HttpMethod.Get, $"/api/Moderator/accounts/{id}");
@@ -148,7 +148,7 @@ public class ModeratorController : Controller
                 TempData["Error"] = "Không tìm thấy tài khoản.";
                 return RedirectToAction(nameof(ManageAccount));
             }
-            return View("~/Views/Moderator/Account/EditAccount.cshtml", result.Data);
+            return View("~/Views/Moderator/Account/ViewAccountDetail.cshtml", result.Data);
         }
         catch
         {
@@ -158,14 +158,14 @@ public class ModeratorController : Controller
     }
 
     // ──────────────────────────────────────────────
-    // POST /Moderator/EditAccount/{id}
+    // POST /Moderator/ViewAccountDetail/{id}
     // ──────────────────────────────────────────────
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> EditAccount(Guid id, EditAccountRequest model)
+    public async Task<IActionResult> ViewAccountDetail(Guid id, ViewAccountDetailRequest model)
     {
-        var body = JsonSerializer.Serialize(new { status = model.Status, phoneNumber = model.PhoneNumber });
-        var request = new HttpRequestMessage(HttpMethod.Patch, $"/api/Moderator/accounts/{id}")
+        var body = JsonSerializer.Serialize(new { status = model.Status });
+        var request = new HttpRequestMessage(HttpMethod.Patch, $"/api/Moderator/accounts/{id}/status")
         {
             Content = new StringContent(body, Encoding.UTF8, "application/json")
         };
@@ -179,16 +179,23 @@ public class ModeratorController : Controller
             var json = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
             if (result?.Success == true)
-                TempData["Success"] = result.Message ?? "Cập nhật thành công.";
-            else
-                TempData["Error"] = result?.Message ?? "Cập nhật thất bại.";
+            {
+                return RedirectToAction(nameof(ManageAccount), new
+                {
+                    toastType = model.Status == 1 ? "success" : "error",
+                    toastMessage = model.Status == 1
+                        ? "Đã activate account thành công"
+                        : "Đã deactivate account thành công"
+                });
+            }
+            TempData["Error"] = result?.Message ?? "Cập nhật thất bại.";
+            return RedirectToAction(nameof(ManageAccount));
         }
         catch (Exception ex)
         {
             TempData["Error"] = $"Lỗi kết nối: {ex.Message}";
+            return RedirectToAction(nameof(ManageAccount));
         }
-
-        return RedirectToAction(nameof(ManageAccount));
     }
 
     // ──────────────────────────────────────────────
@@ -661,8 +668,11 @@ public class ModeratorController : Controller
 
             if (result?.Success == true)
             {
-                TempData["Success"] = result.Message ?? "Cập nhật danh mục thành công.";
-                return RedirectToAction(nameof(ManageBlogCategory));   // ← redirect to list
+                return RedirectToAction(nameof(ManageBlogCategory), new
+                {
+                    toastType = "success",
+                    toastMessage = "Cập nhật danh mục thành công."
+                });
             }
             TempData["Error"] = result?.Message ?? "Cập nhật danh mục thất bại.";
         }
@@ -689,7 +699,18 @@ public class ModeratorController : Controller
             var response = await _http.SendAsync(request);
             var json     = await response.Content.ReadAsStringAsync();
             var result   = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
-            TempData[result?.Success == true ? "Success" : "Error"] = result?.Message ?? "Thao tác thất bại.";
+            if (result?.Success == true)
+            {
+                return RedirectToAction(nameof(ManageBlogCategory), new
+                {
+                    toastType = activate ? "success" : "warning",
+                    toastMessage = activate
+                        ? "Blog category activated successfully."
+                        : "Blog category deactivated successfully."
+                });
+            }
+
+            TempData["Error"] = result?.Message ?? "Thao tác thất bại.";
         }
         catch (Exception ex)
         {
@@ -1052,7 +1073,6 @@ public class ModeratorController : Controller
 
         if (response.IsSuccessStatusCode)
         {
-            TempData["Success"] = "Job posting reviewed successfully.";
             if (parentUserId.HasValue && parentUserId.Value != Guid.Empty)
             {
                 await _notificationHub.Clients.Group($"user:{parentUserId.Value}").SendAsync("notification:new", new
@@ -1065,15 +1085,20 @@ public class ModeratorController : Controller
                     toastType = action == 2 ? "success" : "warning"
                 });
             }
+
+            return RedirectToAction(nameof(ManageJobPosting), new
+            {
+                toastType = action == 2 ? "success" : "warning",
+                toastMessage = action == 2
+                    ? "Job posting approved successfully."
+                    : "Job posting rejected successfully."
+            });
         }
         else
         {
             var errorJson = await response.Content.ReadAsStringAsync();
             TempData["Error"] = "Review failed: " + errorJson;
         }
-
-        if (returnToDetail)
-            return RedirectToAction(nameof(ViewJobPostingDetail), new { id });
 
         return RedirectToAction(nameof(ManageJobPosting));
     }

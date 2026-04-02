@@ -250,15 +250,6 @@ public class VerificationRequestService
             "VerificationRequest",
             userId);
 
-        await _notificationService.createNotification(
-            userId,
-            "Ban vua gui yeu cau xac minh thanh cong",
-            "Yeu cau xac minh cua ban da duoc gui thanh cong va dang cho moderator xem xet.",
-            NotificationTypes.VerificationRequestCreated,
-            verificationRequest.Id,
-            "VerificationRequest",
-            userId);
-
         return (true, "Gui yeu cau xac minh thanh cong.");
     }
 

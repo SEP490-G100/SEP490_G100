@@ -49,7 +49,7 @@ public class ModeratorController : ControllerBase
         [FromQuery] int? status = null,
         [FromQuery] string? search = null,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+        [FromQuery] int pageSize = 3)
     {
         var response = await _userService.GetAccountsAsync(role, status, search, page, pageSize);
         return Ok(new { success = true, data = response });

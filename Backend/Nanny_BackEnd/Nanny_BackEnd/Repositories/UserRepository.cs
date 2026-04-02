@@ -124,9 +124,36 @@ public class UserRepository
             .Select(u => u.Id)
             .ToListAsync();
 
+    public async Task<List<Guid>> GetActiveUserIdsByRolesAsync(IEnumerable<string> roleNames)
+    {
+        var normalizedRoles = roleNames
+            .Where(role => !string.IsNullOrWhiteSpace(role))
+            .Select(role => role.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (normalizedRoles.Count == 0)
+            return [];
+
+        return await _db.Users
+            .Where(u => !u.IsDeleted
+                && u.Status == 1
+                && u.UserRoles.Any(ur => !ur.IsDeleted && normalizedRoles.Contains(ur.Role.Name)))
+            .Select(u => u.Id)
+            .Distinct()
+            .ToListAsync();
+    }
+
     // ── Admin moderator management ─────────────────────────────────────────
 
     /// <summary>Paginated list of users who have a specific role.</summary>
+    public async Task<List<string>> GetNotificationAssignableRolesAsync() =>
+        await _db.Roles
+            .Where(r => !r.IsDeleted && r.Name != "Admin")
+            .OrderBy(r => r.Name)
+            .Select(r => r.Name)
+            .ToListAsync();
+
     public async Task<(List<User> Users, int TotalCount)> GetPagedUsersByRoleAsync(
         string roleName, string? search, int? status, int page, int pageSize)
     {

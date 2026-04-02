@@ -1,3 +1,4 @@
+@using System.Text.Json
 @model WebSite.Models.Account.AccountListResponse
 @{
     Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
@@ -20,24 +21,16 @@
         <h1 class="page-title mt-2">
             Manage <span class="gradient-text">Accounts</span>
         </h1>
-        <p class="page-subtitle">View, update and deactivate user accounts in the system.</p>
+        <p class="page-subtitle">View account information and manage user account availability in the system.</p>
     </div>
     
 </div>
 
-<!-- Alert messages -->
 @if (TempData["Error"] != null)
 {
     <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 fade-in-up">
         <span class="material-icons-round text-base">error_outline</span>
         @TempData["Error"]
-    </div>
-}
-@if (TempData["Success"] != null)
-{
-    <div class="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 fade-in-up">
-        <span class="material-icons-round text-base">check_circle_outline</span>
-        @TempData["Success"]
     </div>
 }
 
@@ -188,10 +181,10 @@
                         </td>
                         <td>
                             <div class="flex items-center justify-center gap-1.5">
-                                <!-- View / Edit -->
-                                <a href="/Moderator/EditAccount/@acc.Id" title="View & Edit"
+                                <!-- View / Manage -->
+                                <a href="/Moderator/ViewAccountDetail/@acc.Id" title="View Detail"
                                    class="w-8 h-8 rounded-xl hover:bg-blue-50 hover:text-blue-600 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-blue-200">
-                                    <span class="material-icons-round text-base">edit</span>
+                                    <span class="material-icons-round text-base">visibility</span>
                                 </a>
                                 <!-- Toggle Status -->
                                 @if (acc.Status == 1)
@@ -444,14 +437,16 @@
                         toggleBtn.querySelector('span').textContent = 'check_circle_outline';
                     }
                 }
-                showToast('success', data.message);
+                triggerToast(newStatus === 1 ? 'success' : 'error', newStatus === 1
+                    ? 'Đã activate account ' + name + ' thành công'
+                    : 'Đã deactivate account ' + name + ' thành công');
             } else {
-                showToast('error', data.message);
+                triggerToast('error', data.message);
             }
         })
         .catch(function(err) {
             closeModal('toggleModal');
-            showToast('error', 'Connection error: ' + err.message);
+            triggerToast('error', 'Connection error: ' + err.message);
         });
     }
 
@@ -459,7 +454,7 @@
         document.getElementById(id).classList.add('hidden');
     }
 
-    function showToast(type, msg) {
+    function triggerToast(type, msg) {
         var normalizedType = String(type || 'info').toLowerCase();
         var mappedType = normalizedType === 'success'
             ? 'success'
@@ -469,7 +464,7 @@
             window.showToast(msg || '', { type: mappedType });
         }
     }
- 
+
 </script>
 
 @* Hidden CSRF form for AJAX calls *@

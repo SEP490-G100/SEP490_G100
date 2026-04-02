@@ -3,6 +3,8 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using WebSite.Hubs;
 using WebSite.Models;
 using WebSite.Models.Account;
 using WebSite.Models.Admin;
@@ -13,11 +15,13 @@ namespace WebSite.Controllers;
 public class AdminController : Controller
 {
     private readonly HttpClient _http;
+    private readonly IHubContext<NotificationHub> _notificationHub;
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
 
-    public AdminController(IHttpClientFactory httpFactory)
+    public AdminController(IHttpClientFactory httpFactory, IHubContext<NotificationHub> notificationHub)
     {
         _http = httpFactory.CreateClient("BackendApi");
+        _notificationHub = notificationHub;
     }
 
     public async Task<IActionResult> Dashboard()
@@ -364,6 +368,181 @@ public class AdminController : Controller
         }
     }
 
+    public async Task<IActionResult> ManageAdminNotification(string? search = null, bool? isDeleted = null, int page = 1)
+    {
+        ViewBag.Search = search ?? "";
+        ViewBag.IsDeleted = isDeleted;
+
+        var qs = new List<string> { $"page={page}", "pageSize=3" };
+        if (!string.IsNullOrWhiteSpace(search)) qs.Add($"search={Uri.EscapeDataString(search)}");
+        if (isDeleted.HasValue) qs.Add($"isDeleted={isDeleted.Value.ToString().ToLowerInvariant()}");
+
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/admin/notifications?{string.Join("&", qs)}");
+        AttachToken(request);
+        try
+        {
+            var response = await _http.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult<AdminNotificationListResponse>>(json, JsonOpts);
+            return View("~/Views/Admin/AdminNotification/ManageAdminNotification.cshtml", result?.Data ?? new AdminNotificationListResponse());
+        }
+        catch
+        {
+            TempData["Error"] = "Không thể tải danh sách thông báo admin.";
+            return View("~/Views/Admin/AdminNotification/ManageAdminNotification.cshtml", new AdminNotificationListResponse());
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> CreateAdminNotification()
+    {
+        await populateAdminNotificationRolesAsync();
+        return View("~/Views/Admin/AdminNotification/CreateAdminNotification.cshtml", new AdminNotificationFormViewModel
+        {
+            TargetRole = "All"
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateAdminNotification(AdminNotificationFormViewModel model)
+    {
+        validateAdminNotificationForm(model);
+        await populateAdminNotificationRolesAsync();
+        if (!ModelState.IsValid)
+            return View("~/Views/Admin/AdminNotification/CreateAdminNotification.cshtml", model);
+
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/admin/notifications")
+        {
+            Content = new StringContent(JsonSerializer.Serialize(new
+            {
+                title = model.Title.Trim(),
+                content = model.Content.Trim(),
+                targetType = string.Equals(model.TargetRole, "All", StringComparison.OrdinalIgnoreCase) ? "All" : "Role",
+                targetRole = string.Equals(model.TargetRole, "All", StringComparison.OrdinalIgnoreCase) ? null : model.TargetRole?.Trim()
+            }), Encoding.UTF8, "application/json")
+        };
+        AttachToken(request);
+
+        try
+        {
+            var response = await _http.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult<AdminNotificationDetailViewModel>>(json, JsonOpts);
+
+            if (result?.Success == true && result.Data != null)
+            {
+                await pushAdminNotificationRealtime(result.Data);
+                TempData["Success"] = "Tạo thông báo admin thành công.";
+                return RedirectToAction(nameof(ManageAdminNotification));
+            }
+
+            ModelState.AddModelError(string.Empty, result?.Message ?? "Không thể tạo thông báo admin.");
+            return View("~/Views/Admin/AdminNotification/CreateAdminNotification.cshtml", model);
+        }
+        catch (Exception ex)
+        {
+            ModelState.AddModelError(string.Empty, $"Lỗi kết nối: {ex.Message}");
+            return View("~/Views/Admin/AdminNotification/CreateAdminNotification.cshtml", model);
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ViewAdminNotificationDetail(Guid id)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/admin/notifications/{id}");
+        AttachToken(request);
+        try
+        {
+            var response = await _http.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult<AdminNotificationDetailViewModel>>(json, JsonOpts);
+            if (result?.Success != true || result.Data == null)
+            {
+                TempData["Error"] = result?.Message ?? "Không tìm thấy thông báo admin.";
+                return RedirectToAction(nameof(ManageAdminNotification));
+            }
+
+            return View("~/Views/Admin/AdminNotification/ViewAdminNotificationDetail.cshtml", AdminNotificationFormViewModel.FromDetail(result.Data));
+        }
+        catch
+        {
+            TempData["Error"] = "Lỗi kết nối đến API.";
+            return RedirectToAction(nameof(ManageAdminNotification));
+        }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateAdminNotification(Guid id, AdminNotificationFormViewModel model)
+    {
+        validateAdminNotificationForm(model);
+        if (!ModelState.IsValid)
+        {
+            model.Id = id;
+            return View("~/Views/Admin/AdminNotification/ViewAdminNotificationDetail.cshtml", model);
+        }
+
+        var request = new HttpRequestMessage(HttpMethod.Patch, $"/api/admin/notifications/{id}")
+        {
+            Content = new StringContent(JsonSerializer.Serialize(new
+            {
+                title = model.Title.Trim(),
+                content = model.Content.Trim(),
+                targetType = model.TargetType,
+                targetRole = model.TargetType == "Role" ? model.TargetRole?.Trim() : null
+            }), Encoding.UTF8, "application/json")
+        };
+        AttachToken(request);
+
+        try
+        {
+            var response = await _http.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult<AdminNotificationDetailViewModel>>(json, JsonOpts);
+
+            if (result?.Success == true)
+            {
+                TempData["Success"] = "Cập nhật thông báo admin thành công.";
+                return RedirectToAction(nameof(ManageAdminNotification));
+            }
+
+            ModelState.AddModelError(string.Empty, result?.Message ?? "Không thể cập nhật thông báo admin.");
+            model.Id = id;
+            return View("~/Views/Admin/AdminNotification/ViewAdminNotificationDetail.cshtml", model);
+        }
+        catch (Exception ex)
+        {
+            ModelState.AddModelError(string.Empty, $"Lỗi kết nối: {ex.Message}");
+            model.Id = id;
+            return View("~/Views/Admin/AdminNotification/ViewAdminNotificationDetail.cshtml", model);
+        }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ToggleAdminNotificationStatus([FromForm] Guid id, [FromForm] bool isDeleted, [FromForm] string? returnUrl = null)
+    {
+        var request = new HttpRequestMessage(
+            HttpMethod.Patch,
+            $"/api/admin/notifications/{id}/status?isDeleted={isDeleted.ToString().ToLowerInvariant()}");
+        AttachToken(request);
+        try
+        {
+            var response = await _http.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
+            TempData[result?.Success == true ? "Success" : "Error"] =
+                result?.Message ?? "Không thể cập nhật trạng thái thông báo admin.";
+            return redirectToAdminNotificationReturnUrlOrList(returnUrl);
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = $"Lỗi kết nối: {ex.Message}";
+            return redirectToAdminNotificationReturnUrlOrList(returnUrl);
+        }
+    }
+
 
     // ── Export System Data ─────────────────────────────
     [HttpGet]
@@ -434,5 +613,69 @@ public class AdminController : Controller
             return Redirect(returnUrl);
 
         return RedirectToAction(nameof(ManageSubscriptionPlan));
+    }
+
+    private void validateAdminNotificationForm(AdminNotificationFormViewModel model)
+    {
+        if (string.IsNullOrWhiteSpace(model.Title))
+            ModelState.AddModelError(nameof(model.Title), "Title is required.");
+
+        if (string.IsNullOrWhiteSpace(model.Content))
+            ModelState.AddModelError(nameof(model.Content), "Content is required.");
+
+        if (string.IsNullOrWhiteSpace(model.TargetRole))
+            ModelState.AddModelError(nameof(model.TargetRole), "Role recipient is required.");
+
+        if (string.Equals(model.TargetRole, "Admin", StringComparison.OrdinalIgnoreCase))
+            ModelState.AddModelError(nameof(model.TargetRole), "Admin cannot receive admin broadcast notifications.");
+    }
+
+    private IActionResult redirectToAdminNotificationReturnUrlOrList(string? returnUrl)
+    {
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            return Redirect(returnUrl);
+
+        return RedirectToAction(nameof(ManageAdminNotification));
+    }
+
+    private async Task pushAdminNotificationRealtime(AdminNotificationDetailViewModel notification)
+    {
+        var payload = new
+        {
+            title = notification.Title,
+            content = notification.Content,
+            type = "admin-broadcast",
+            actionUrl = (string?)null
+        };
+
+        if (string.Equals(notification.TargetType, "Role", StringComparison.OrdinalIgnoreCase)
+            && !string.IsNullOrWhiteSpace(notification.TargetRole))
+        {
+            await _notificationHub.Clients.Group($"role:{notification.TargetRole}").SendAsync("notification:new", payload);
+            return;
+        }
+
+        foreach (var role in new[] { "Parent", "Nanny", "Moderator" })
+        {
+            await _notificationHub.Clients.Group($"role:{role}").SendAsync("notification:new", payload);
+        }
+    }
+
+    private async Task populateAdminNotificationRolesAsync()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/admin/notification-roles");
+        AttachToken(request);
+
+        try
+        {
+            var response = await _http.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult<List<string>>>(json, JsonOpts);
+            ViewBag.AdminNotificationRoles = result?.Data ?? new List<string>();
+        }
+        catch
+        {
+            ViewBag.AdminNotificationRoles = new List<string>();
+        }
     }
 }

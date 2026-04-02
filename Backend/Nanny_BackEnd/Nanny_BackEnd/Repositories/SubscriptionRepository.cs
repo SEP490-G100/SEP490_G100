@@ -177,6 +177,40 @@ public class SubscriptionRepository
             .OrderByDescending(n => n.CreatedAt)
             .ToListAsync();
 
+    public async Task<List<Notification>> getAdminNotificationRows(string? search = null, bool? isDeleted = null)
+    {
+        var query = _db.Notifications
+            .Where(n => n.Type == Helpers.NotificationTypes.AdminBroadcast
+                && n.RelatedEntityId.HasValue
+                && n.RelatedEntityType != null
+                && n.RelatedEntityType.StartsWith("AdminNotification"))
+            .AsQueryable();
+
+        if (isDeleted.HasValue)
+            query = query.Where(n => n.IsDeleted == isDeleted.Value);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var keyword = search.Trim().ToLower();
+            query = query.Where(n =>
+                n.Title.ToLower().Contains(keyword) ||
+                n.Content.ToLower().Contains(keyword));
+        }
+
+        return await query
+            .OrderByDescending(n => n.CreatedAt)
+            .ToListAsync();
+    }
+
+    public async Task<List<Notification>> getAdminNotificationRowsByBroadcastId(Guid broadcastId) =>
+        await _db.Notifications
+            .Where(n => n.Type == Helpers.NotificationTypes.AdminBroadcast
+                && n.RelatedEntityId == broadcastId
+                && n.RelatedEntityType != null
+                && n.RelatedEntityType.StartsWith("AdminNotification"))
+            .OrderByDescending(n => n.CreatedAt)
+            .ToListAsync();
+
     public async Task<List<User>> getUsersByIds(IEnumerable<Guid> userIds)
     {
         var ids = userIds.Distinct().ToList();
