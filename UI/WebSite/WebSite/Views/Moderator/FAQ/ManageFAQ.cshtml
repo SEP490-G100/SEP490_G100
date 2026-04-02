@@ -362,14 +362,14 @@ function confirmToggle(id, sortOrder, wasActive) {
                     toggleBtn.querySelector('span').textContent = 'check_circle_outline';
                 }
             }
-            showToast('success', data.message);
+            triggerToast(nowActive ? 'success' : 'warning', data.message);
         } else {
-            showToast('error', data.message || 'Cannot change status.');
+            triggerToast('error', data.message || 'Cannot change status.');
         }
     })
     .catch(function(err) {
         closeModal('toggleModal');
-        showToast('error', 'Connection error: ' + err.message);
+        triggerToast('error', 'Connection error: ' + err.message);
     });
 }
 
@@ -377,7 +377,7 @@ function confirmToggle(id, sortOrder, wasActive) {
 
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
-function showToast(type, msg) {
+function triggerToast(type, msg) {
     var normalizedType = String(type || 'info').toLowerCase();
     var mappedType = normalizedType === 'success'
         ? 'success'

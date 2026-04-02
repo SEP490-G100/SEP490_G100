@@ -482,8 +482,11 @@ public class ModeratorController : Controller
             var result = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
             if (result?.Success == true)
             {
-                TempData["Success"] = result.Message ?? "Cập nhật FAQ thành công.";
-                return RedirectToAction(nameof(ManageFAQ));
+                return RedirectToAction(nameof(ManageFAQ), new
+                {
+                    toastType = "success",
+                    toastMessage = "Cập nhật FAQ thành công."
+                });
             }
             TempData["Error"] = result?.Message ?? "Cập nhật FAQ thất bại.";
         }
@@ -493,30 +496,6 @@ public class ModeratorController : Controller
         }
 
         return RedirectToAction(nameof(ViewFAQDetail), new { id });
-    }
-
-    // ──────────────────────────────────────────────
-    // POST /Moderator/DeleteFAQ
-    // ──────────────────────────────────────────────
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteFAQ(Guid id)
-    {
-        var token   = HttpContext.Session.GetString("AccessToken");
-        var request = new HttpRequestMessage(HttpMethod.Delete, $"/api/Faq/{id}");
-        if (!string.IsNullOrEmpty(token))
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        try
-        {
-            var response = await _http.SendAsync(request);
-            var json     = await response.Content.ReadAsStringAsync();
-            var result   = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
-            TempData[result?.Success == true ? "Success" : "Error"] = result?.Message ?? "Đã xóa FAQ.";
-        }
-        catch (Exception ex) { TempData["Error"] = $"Lỗi: {ex.Message}"; }
-
-        return RedirectToAction(nameof(ManageFAQ));
     }
 
 
@@ -606,8 +585,11 @@ public class ModeratorController : Controller
 
             if (result?.Success == true)
             {
-                TempData["Success"] = result.Message ?? "Tạo danh mục thành công.";
-                return RedirectToAction(nameof(ManageBlogCategory));
+                return RedirectToAction(nameof(ManageBlogCategory), new
+                {
+                    toastType = "success",
+                    toastMessage = "Tạo danh mục thành công."
+                });
             }
             TempData["Error"] = result?.Message ?? "Tạo danh mục thất bại.";
         }
@@ -766,7 +748,7 @@ public class ModeratorController : Controller
     public async Task<IActionResult> ManageBlog(
         string? search = null, int page = 1, int? status = null, bool? isDeleted = null, Guid? categoryId = null)
     {
-        const int pageSize = 5;
+        const int pageSize = 3;
         var token = HttpContext.Session.GetString("AccessToken");
 
         var qs = $"?search={Uri.EscapeDataString(search ?? "")}&page={page}&pageSize={pageSize}";
@@ -957,11 +939,16 @@ public class ModeratorController : Controller
             var json     = await response.Content.ReadAsStringAsync();
             var result   = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
 
-            TempData[result?.Success == true ? "Success" : "Error"] =
-                result?.Message ?? (result?.Success == true ? "Cập nhật thành công." : "Cập nhật thất bại.");
-
             if (result?.Success == true)
-                return RedirectToAction(nameof(ManageBlog));
+            {
+                return RedirectToAction(nameof(ManageBlog), new
+                {
+                    toastType = "success",
+                    toastMessage = "Cập nhật bài viết thành công."
+                });
+            }
+
+            TempData["Error"] = result?.Message ?? "Cập nhật thất bại.";
         }
         catch (Exception ex)
         {
@@ -988,7 +975,18 @@ public class ModeratorController : Controller
             var response = await _http.SendAsync(request);
             var json     = await response.Content.ReadAsStringAsync();
             var result   = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
-            TempData[result?.Success == true ? "Success" : "Error"] = result?.Message ?? "Thao tác thất bại.";
+            if (result?.Success == true)
+            {
+                return RedirectToAction(nameof(ManageBlog), new
+                {
+                    toastType = activate ? "success" : "warning",
+                    toastMessage = activate
+                        ? "Blog activated successfully."
+                        : "Blog deactivated successfully."
+                });
+            }
+
+            TempData["Error"] = result?.Message ?? "Thao tác thất bại.";
         }
         catch (Exception ex)
         {

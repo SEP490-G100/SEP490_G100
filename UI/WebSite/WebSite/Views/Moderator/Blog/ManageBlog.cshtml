@@ -150,7 +150,7 @@
                         </td>
                     </tr>
                 }
-                @{ int rowNum = ((currentPage - 1) * 5) + 1; }
+                @{ int rowNum = ((currentPage - 1) * 3) + 1; }
                 @foreach (var blog in blogs)
                 {
                     var shortTitle = blog.Title.Length > 50 ? blog.Title.Substring(0, 50) + "…" : blog.Title;
