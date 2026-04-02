@@ -146,13 +146,13 @@ public class NannyVerificationRequestController : Controller
             "Ban phai upload anh cho muc can cuoc cong dan.",
             isRequired: true);
         ValidateUploadSection(
-            model.CertificateFiles,
-            nameof(model.CertificateFiles),
-            "Ban phai upload anh cho muc bang cap va chung chi.",
-            isRequired: true);
-        ValidateUploadSection(
             model.HealthCertificateFiles,
             nameof(model.HealthCertificateFiles),
+            "Ban phai upload anh cho muc giay kham suc khoe.",
+            isRequired: true);
+        ValidateUploadSection(
+            model.CertificateFiles,
+            nameof(model.CertificateFiles),
             requiredMessage: null,
             isRequired: false);
 
@@ -167,8 +167,8 @@ public class NannyVerificationRequestController : Controller
         try
         {
             await AddDocumentsAsync(model.IdentityCardFiles, VerificationDocumentType.IdentityCard, documents);
-            await AddDocumentsAsync(model.CertificateFiles, VerificationDocumentType.DegreeCertificate, documents);
             await AddDocumentsAsync(model.HealthCertificateFiles, VerificationDocumentType.HealthCertificate, documents);
+            await AddDocumentsAsync(model.CertificateFiles, VerificationDocumentType.DegreeCertificate, documents);
         }
         catch (InvalidOperationException ex)
         {
@@ -222,18 +222,6 @@ public class NannyVerificationRequestController : Controller
             message = "Mot nanny vua gui yeu cau xac minh moi.",
             toastType = "info"
         });
-
-        var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        if (!string.IsNullOrWhiteSpace(currentUserId))
-        {
-            await _notificationHub.Clients.Group($"user:{currentUserId}").SendAsync("notification:new", new
-            {
-                type = "verification-request-created",
-                title = "Ban vua gui yeu cau xac minh thanh cong",
-                message = "Ban vua gui yeu cau xac minh thanh cong.",
-                toastType = "success"
-            });
-        }
 
         return RedirectToAction(nameof(Index), new
         {
