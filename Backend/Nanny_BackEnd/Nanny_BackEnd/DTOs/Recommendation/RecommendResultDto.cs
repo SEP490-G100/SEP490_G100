@@ -14,7 +14,12 @@ public class NannyRecommendResultDto
     public double? DistanceKm { get; set; }
     public List<NannySkillDto> Skills { get; set; } = new();
 
-    public float CosineScore { get; set; }
+    // Hybrid Score breakdown
+    public double SemanticScore { get; set; }
+    public double SkillScore { get; set; }
+    public double SalaryScore { get; set; }
+    public double DistanceScore { get; set; }
+    public double HybridScore { get; set; }
     public double BusinessBoost { get; set; }
     public double FinalScore { get; set; }
     public bool EmbeddingWasNull { get; set; }
@@ -34,7 +39,12 @@ public class JobRecommendResultDto
     public double? DistanceKm { get; set; }
     public List<JobRequiredSkillDto> RequiredSkills { get; set; } = new();
 
-    public float CosineScore { get; set; }
+    // Hybrid Score breakdown
+    public double SemanticScore { get; set; }
+    public double SkillScore { get; set; }
+    public double SalaryScore { get; set; }
+    public double DistanceScore { get; set; }
+    public double HybridScore { get; set; }
     public double BusinessBoost { get; set; }
     public double FinalScore { get; set; }
     public bool EmbeddingWasNull { get; set; }

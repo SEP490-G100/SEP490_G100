@@ -25,12 +25,3 @@ body {
   margin-bottom: 60px;
 }
 
-/* Password field giả lập — không trigger native eye button của browser */
-.pwd-field {
-  -webkit-text-security: disc;
-  text-security: disc;
-}
-.pwd-field.show {
-  -webkit-text-security: none;
-  text-security: none;
-}

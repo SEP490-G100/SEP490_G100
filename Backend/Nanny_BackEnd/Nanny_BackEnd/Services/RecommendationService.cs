@@ -8,7 +8,7 @@ public class RecommendationService
     private readonly RecommendationRepository _repo;
     private readonly ILogger<RecommendationService> _logger;
 
-    private const float ColdStartScore = 0.75f;
+    private const double ColdStartScore = 0.75;
 
     public RecommendationService(
         RecommendationRepository repo,
@@ -25,52 +25,54 @@ public class RecommendationService
     public async Task<List<NannyRecommendResultDto>> GetTopNanniesForJobAsync(
         Guid jobId,
         int topK = 5,
-        double? jobLat = null,
-        double? jobLng = null)
+        double? overrideLat = null,
+        double? overrideLng = null)
     {
         var candidates = await _repo.GetNannyCandidatesAsync(jobId);
         if (candidates.Count == 0) return new List<NannyRecommendResultDto>();
 
-        // Lấy embedding của job
         var jobModel = await _repo.GetJobReadModelAsync(jobId);
         var jobVector = EmbeddingService.DeserializeEmbedding(jobModel?.Embedding);
 
-        // Dùng toạ độ job (từ param hoặc từ DB)
-        var jLat = jobLat ?? (double?)jobModel?.Latitude;
-        var jLng = jobLng ?? (double?)jobModel?.Longitude;
+        // Dùng tọa độ từ client nếu có, fallback về tọa độ job trong DB
+        var jLat = overrideLat ?? (double?)jobModel?.Latitude;
+        var jLng = overrideLng ?? (double?)jobModel?.Longitude;
+        var jobRequiredSkillIds = jobModel?.RequiredSkillIds ?? new List<Guid>();
 
         var results = new List<NannyRecommendResultDto>();
 
         foreach (var c in candidates)
         {
-            // 1. Distance filter (Haversine in-memory)
+            // 1. Semantic score (cosine)
+            var nannyVector = EmbeddingService.DeserializeEmbedding(c.Embedding);
+            bool embeddingWasNull = nannyVector == null || jobVector == null;
+            double semanticScore = embeddingWasNull
+                ? ColdStartScore
+                : CosineSimilarity(nannyVector!, jobVector!);
+
+            // 2. Salary score — range overlap
+            double salaryScore = CalcSalaryScore(
+                c.ExpectedSalaryMin, c.ExpectedSalaryMax,
+                jobModel?.SalaryMin, jobModel?.SalaryMax,
+                jobModel?.SalaryNegotiable ?? false);
+
+            // 3. Distance score — soft (no hard cutoff)
             double? distKm = null;
             if (jLat.HasValue && jLng.HasValue && c.Latitude.HasValue && c.Longitude.HasValue)
-            {
                 distKm = HaversineKm(
                     (double)c.Latitude.Value, (double)c.Longitude.Value,
                     jLat.Value, jLng.Value);
 
-                if (c.MaxTravelDistance.HasValue && distKm > c.MaxTravelDistance.Value)
-                    continue; // nanny không đi xa tới đó
-            }
-            else if (c.MaxTravelDistance.HasValue)
-            {
-                // Không có toạ độ → không thể tính khoảng cách → giữ lại (conservative)
-                distKm = null;
-            }
+            double distanceScore = CalcDistanceScore(distKm, c.MaxTravelDistance);
 
-            // 2. Cosine similarity
-            var nannyVector = EmbeddingService.DeserializeEmbedding(c.Embedding);
-            bool embeddingWasNull = nannyVector == null || jobVector == null;
-            float cosine = embeddingWasNull
-                ? ColdStartScore
-                : CosineSimilarity(nannyVector!, jobVector!);
+            // 4. Hybrid score (80/12/8)
+            double hybridScore = 0.80 * semanticScore
+                               + 0.12 * salaryScore
+                               + 0.08 * distanceScore;
 
-            // 3. Business boost
-            double boost = ComputeBoost(c.AverageRating, distKm, c.MaxTravelDistance);
-
-            double finalScore = cosine * boost;
+            // 5. Business boost (rating only)
+            double boost = CalcBoost(c.AverageRating);
+            double finalScore = hybridScore * boost;
 
             results.Add(new NannyRecommendResultDto
             {
@@ -84,7 +86,11 @@ public class RecommendationService
                 TotalReviews = c.TotalReviews,
                 DistanceKm = distKm.HasValue ? Math.Round(distKm.Value, 2) : null,
                 Skills = c.Skills,
-                CosineScore = cosine,
+                SemanticScore = Math.Round(semanticScore, 4),
+                SkillScore = 0,
+                SalaryScore = Math.Round(salaryScore, 4),
+                DistanceScore = Math.Round(distanceScore, 4),
+                HybridScore = Math.Round(hybridScore, 4),
                 BusinessBoost = Math.Round(boost, 4),
                 FinalScore = Math.Round(finalScore, 4),
                 EmbeddingWasNull = embeddingWasNull
@@ -108,7 +114,6 @@ public class RecommendationService
         var candidates = await _repo.GetJobCandidatesAsync(nannyProfileId);
         if (candidates.Count == 0) return new List<JobRecommendResultDto>();
 
-        // Lấy embedding + toạ độ của nanny
         var nannyModel = await _repo.GetNannyReadModelAsync(nannyProfileId);
         var nannyVector = EmbeddingService.DeserializeEmbedding(nannyModel?.Embedding);
         var nLat = (double?)nannyModel?.Latitude;
@@ -119,29 +124,36 @@ public class RecommendationService
 
         foreach (var j in candidates)
         {
-            // 1. Distance filter (Haversine in-memory)
+            // 1. Semantic score (cosine)
+            var jobVector = EmbeddingService.DeserializeEmbedding(j.Embedding);
+            bool embeddingWasNull = nannyVector == null || jobVector == null;
+            double semanticScore = embeddingWasNull
+                ? ColdStartScore
+                : CosineSimilarity(nannyVector!, jobVector!);
+
+            // 2. Salary score — range overlap
+            double salaryScore = CalcSalaryScore(
+                nannyModel?.ExpectedSalaryMin, nannyModel?.ExpectedSalaryMax,
+                j.SalaryMin, j.SalaryMax,
+                j.SalaryNegotiable);
+
+            // 3. Distance score — soft (no hard cutoff)
             double? distKm = null;
             if (nLat.HasValue && nLng.HasValue && j.Latitude.HasValue && j.Longitude.HasValue)
-            {
                 distKm = HaversineKm(
                     nLat.Value, nLng.Value,
                     (double)j.Latitude.Value, (double)j.Longitude.Value);
 
-                if (maxDist.HasValue && distKm > maxDist.Value)
-                    continue; // ngoài giới hạn đi lại
-            }
+            double distanceScore = CalcDistanceScore(distKm, maxDist);
 
-            // 2. Cosine similarity
-            var jobVector = EmbeddingService.DeserializeEmbedding(j.Embedding);
-            bool embeddingWasNull = nannyVector == null || jobVector == null;
-            float cosine = embeddingWasNull
-                ? ColdStartScore
-                : CosineSimilarity(nannyVector!, jobVector!);
+            // 4. Hybrid score (80/12/8)
+            double hybridScore = 0.80 * semanticScore
+                               + 0.12 * salaryScore
+                               + 0.08 * distanceScore;
 
-            // 3. Business boost (không có rating của job → chỉ distance penalty)
-            double boost = ComputeBoost(rating: null, distKm, maxDist);
-
-            double finalScore = cosine * boost;
+            // 5. Business boost (rating only — job không có rating)
+            double boost = CalcBoost(rating: null);
+            double finalScore = hybridScore * boost;
 
             results.Add(new JobRecommendResultDto
             {
@@ -155,7 +167,11 @@ public class RecommendationService
                 SalaryNegotiable = j.SalaryNegotiable,
                 DistanceKm = distKm.HasValue ? Math.Round(distKm.Value, 2) : null,
                 RequiredSkills = j.RequiredSkills,
-                CosineScore = cosine,
+                SemanticScore = Math.Round(semanticScore, 4),
+                SkillScore = 0,
+                SalaryScore = Math.Round(salaryScore, 4),
+                DistanceScore = Math.Round(distanceScore, 4),
+                HybridScore = Math.Round(hybridScore, 4),
                 BusinessBoost = Math.Round(boost, 4),
                 FinalScore = Math.Round(finalScore, 4),
                 EmbeddingWasNull = embeddingWasNull
@@ -169,41 +185,76 @@ public class RecommendationService
     }
 
     // ──────────────────────────────────────────────────────────────
-    // Business Boost
+    // Score components
     // ──────────────────────────────────────────────────────────────
 
+    /// <summary>Salary score: range overlap ratio. Soft floor khi không overlap.</summary>
+    private static double CalcSalaryScore(
+        decimal? nannyMin, decimal? nannyMax,
+        decimal? jobMin,   decimal? jobMax,
+        bool salaryNegotiable)
+    {
+        if ((!nannyMin.HasValue && !nannyMax.HasValue) ||
+            (!jobMin.HasValue  && !jobMax.HasValue))
+            return 0.8;
+
+        var nMin = (double)(nannyMin ?? nannyMax!.Value * 0.8m);
+        var nMax = (double)(nannyMax ?? nannyMin!.Value * 1.2m);
+        var jMin = (double)(jobMin   ?? jobMax!.Value  * 0.8m);
+        var jMax = (double)(jobMax   ?? jobMin!.Value  * 1.2m);
+
+        double overlapStart = Math.Max(nMin, jMin);
+        double overlapEnd   = Math.Min(nMax, jMax);
+        double overlap      = Math.Max(0, overlapEnd - overlapStart);
+
+        double jobRange = Math.Max(1, jMax - jMin);
+        double score    = Math.Min(1.0, overlap / jobRange);
+
+        if (overlap == 0)
+        {
+            double gap = nMin > jMax
+                ? (nMin - jMax) / jMax
+                : (jMin - nMax) / Math.Max(1, jMax);
+            score = Math.Max(0.05, 0.4 - gap * 0.5);
+        }
+
+        if (salaryNegotiable)
+            score = Math.Min(1.0, score * 1.2);
+
+        return score;
+    }
+
     /// <summary>
-    /// boost ∈ [0.85, 1.15]
-    /// + Rating bonus:   quadratic scale, max +15% khi rating = 5.0
-    /// - Distance penalty: ratio-based, max -15% khi dist = maxDist
+    /// Distance score: soft — không hard cutoff.
+    /// Trong MaxTravelDistance: 1.0 → 0.5. Vượt qua: giảm dần, floor 0.1.
     /// </summary>
-    private static double ComputeBoost(
-        decimal? rating,
-        double? distKm,
-        int? maxDist)
+    private static double CalcDistanceScore(double? distKm, int? maxDist)
+    {
+        if (!distKm.HasValue || !maxDist.HasValue || maxDist.Value == 0)
+            return 0.8;
+
+        double ratio = distKm.Value / maxDist.Value;
+
+        if (ratio <= 1.0)
+            return 1.0 - ratio * 0.5;
+
+        return Math.Max(0.1, 0.5 - (ratio - 1.0) * 0.4);
+    }
+
+    /// <summary>
+    /// Business boost: chỉ rating bonus (max +15%).
+    /// boost ∈ [1.0, 1.15]
+    /// </summary>
+    private static double CalcBoost(decimal? rating)
     {
         double boost = 1.0;
 
-        // Rating bonus (max +15%)
         if (rating.HasValue && rating.Value >= 3.5m)
         {
-            double normalized = ((double)rating.Value - 3.5) / 1.5; // 0→1
+            double normalized = ((double)rating.Value - 3.5) / 1.5;
             boost += 0.15 * normalized * normalized;
         }
 
-        // Distance penalty (max -15%)
-        if (distKm.HasValue && maxDist.HasValue && maxDist.Value > 0)
-        {
-            double ratio = distKm.Value / maxDist.Value; // 0→1
-            if (ratio > 0.5)
-            {
-                double over = ratio - 0.5; // 0→0.5
-                boost -= 0.30 * over;      // max -15% khi ratio=1
-            }
-        }
-
-        // Floor
-        boost = Math.Max(0.85, boost);
         return boost;
     }
 
@@ -211,20 +262,20 @@ public class RecommendationService
     // Math utilities
     // ──────────────────────────────────────────────────────────────
 
-    private static float CosineSimilarity(float[] a, float[] b)
+    private static double CosineSimilarity(float[] a, float[] b)
     {
-        if (a.Length != b.Length) return 0f;
+        if (a.Length != b.Length) return 0;
 
         double dot = 0, magA = 0, magB = 0;
         for (int i = 0; i < a.Length; i++)
         {
-            dot += a[i] * b[i];
+            dot  += a[i] * b[i];
             magA += a[i] * a[i];
             magB += b[i] * b[i];
         }
 
-        if (magA == 0 || magB == 0) return 0f;
-        return (float)(dot / (Math.Sqrt(magA) * Math.Sqrt(magB)));
+        if (magA == 0 || magB == 0) return 0;
+        return dot / (Math.Sqrt(magA) * Math.Sqrt(magB));
     }
 
     private static double HaversineKm(

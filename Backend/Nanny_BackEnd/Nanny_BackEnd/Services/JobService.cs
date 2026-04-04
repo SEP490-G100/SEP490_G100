@@ -1,3 +1,5 @@
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Nanny_BackEnd.DTOs.JobPosting;
 using Nanny_BackEnd.DTOs.Search;
 using Nanny_BackEnd.DTOs.Subscription;
@@ -15,19 +17,25 @@ public class JobService
     private readonly GeocodingService _geo;
     private readonly SubscriptionService _subscriptionService;
     private readonly NotificationService _notificationService;
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ILogger<JobService> _logger;
 
     public JobService(
         JobRepository jobRepo,
         FavoriteRepository favoriteRepo,
         GeocodingService geo,
         SubscriptionService subscriptionService,
-        NotificationService notificationService)
+        NotificationService notificationService,
+        IServiceScopeFactory scopeFactory,
+        ILogger<JobService> logger)
     {
         _jobRepo = jobRepo;
         _favoriteRepo = favoriteRepo;
         _geo = geo;
         _subscriptionService = subscriptionService;
         _notificationService = notificationService;
+        _scopeFactory = scopeFactory;
+        _logger = logger;
     }
 
     public async Task<List<SearchJobResponse>> findJobs(
@@ -190,6 +198,10 @@ public class JobService
             job.Id,
             "JobPosting",
             null);
+
+        // Fire-and-forget: tạo embedding cho job mới
+        _ = EmbedJobInBackgroundAsync(job.Id);
+
         return job.Id;
     }
 
@@ -263,6 +275,9 @@ public class JobService
         await syncRequirements(job, req.Skills, parentProfile.UserId);
         await syncScheduleRequirements(job, req.ScheduleSlots, parentProfile.UserId);
         await _jobRepo.updateJobPosting(job);
+
+        // Fire-and-forget: cập nhật embedding sau khi sửa job
+        _ = EmbedJobInBackgroundAsync(job.Id);
     }
 
     public async Task moderateJob(Guid jobId, Guid moderatorUserId, bool approved, string? note)
@@ -697,6 +712,21 @@ public class JobService
                 job.Id,
                 "JobPosting",
                 moderatorUserId);
+        }
+    }
+
+    // Background embedding helper
+    private async Task EmbedJobInBackgroundAsync(Guid jobId)
+    {
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var embedService = scope.ServiceProvider.GetRequiredService<EmbeddingService>();
+            await embedService.EmbedJobAsync(jobId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Background re-embed thất bại cho JobId={JobId}", jobId);
         }
     }
 }

@@ -13,6 +13,7 @@ public class NannyReadModelDto
     public List<string> SkillNames { get; set; } = new();
 
     // Cho pipeline
+    public List<Guid> SkillIds { get; set; } = new();
     public decimal? ExpectedSalaryMin { get; set; }
     public decimal? ExpectedSalaryMax { get; set; }
     public int? MaxTravelDistance { get; set; }

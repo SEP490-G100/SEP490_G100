@@ -105,20 +105,36 @@ public class RecommendationController : ControllerBase
     /// Batch embed tất cả nanny + job có Embedding = NULL.
     /// </summary>
     [Authorize(Roles = "Admin,Moderator")]
+    /// <summary>
+    /// Batch embed.
+    /// ?force=false (mặc định): chỉ embed record có Embedding IS NULL.
+    /// ?force=true: re-embed TẤT CẢ (dùng sau khi đổi template).
+    /// </summary>
     [HttpPost("reembed/batch")]
-    public async Task<IActionResult> ReembedBatch()
+    public async Task<IActionResult> ReembedBatch([FromQuery] bool force = false)
     {
         try
         {
-            var nannyCount = await _embedSvc.EmbedAllPendingNanniesAsync();
-            var jobCount = await _embedSvc.EmbedAllPendingJobsAsync();
+            int nannyCount, jobCount;
+
+            if (force)
+            {
+                nannyCount = await _embedSvc.EmbedAllNanniesForceAsync();
+                jobCount   = await _embedSvc.EmbedAllJobsForceAsync();
+            }
+            else
+            {
+                nannyCount = await _embedSvc.EmbedAllPendingNanniesAsync();
+                jobCount   = await _embedSvc.EmbedAllPendingJobsAsync();
+            }
 
             return Ok(new
             {
                 success = true,
-                message = $"Đã embed {nannyCount} nanny và {jobCount} job.",
+                message = $"Đã embed {nannyCount} nanny và {jobCount} job." + (force ? " (force)" : ""),
                 nanniesEmbedded = nannyCount,
-                jobsEmbedded = jobCount
+                jobsEmbedded = jobCount,
+                forced = force
             });
         }
         catch (Exception ex)
@@ -139,7 +155,7 @@ public class RecommendationController : ControllerBase
     [HttpGet("nannies-for-job/{jobId:guid}")]
     public async Task<IActionResult> GetNanniesForJob(
         Guid jobId,
-        [FromQuery] int topK = 5,
+        [FromQuery] int topK = 10,
         [FromQuery] double? lat = null,
         [FromQuery] double? lng = null)
     {
@@ -162,6 +178,7 @@ public class RecommendationController : ControllerBase
         }
 
         var results = await _recSvc.GetTopNanniesForJobAsync(jobId, topK, lat, lng);
+        // lat/lng từ client override tọa độ job trong DB để tính khoảng cách chính xác hơn
         return Ok(Success(results, results.Count));
     }
 
@@ -171,7 +188,7 @@ public class RecommendationController : ControllerBase
     /// </summary>
     [Authorize(Roles = "Nanny")]
     [HttpGet("jobs-for-nanny")]
-    public async Task<IActionResult> GetJobsForNanny([FromQuery] int topK = 5)
+    public async Task<IActionResult> GetJobsForNanny([FromQuery] int topK = 10)
     {
         topK = Math.Clamp(topK, 1, 50);
 

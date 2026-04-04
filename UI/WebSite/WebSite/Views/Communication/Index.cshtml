@@ -974,12 +974,7 @@ function applyMessageDeleted(messageId, conversationId) {
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 async function initSignalR() {
     if (!apiBaseUrl || typeof signalR === 'undefined') return;
-    let token = '';
-    try {
-        token = await fetch('/Auth/GetToken').then(r => r.text());
-    } catch {
-        return;
-    }
+    const token = '@ViewBag.AccessToken';
     if (!token) return;
 
     hubConnection = new signalR.HubConnectionBuilder()

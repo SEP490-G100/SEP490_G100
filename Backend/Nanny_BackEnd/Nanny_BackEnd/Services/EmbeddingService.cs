@@ -40,9 +40,7 @@ public class EmbeddingService
             new Azure.AzureKeyCredential(_options.ApiKey));
     }
 
-    // ──────────────────────────────────────────────────────────────
     // Public API
-    // ──────────────────────────────────────────────────────────────
 
     public async Task EmbedNannyAsync(Guid nannyProfileId)
     {
@@ -77,10 +75,23 @@ public class EmbeddingService
     }
 
     public async Task<int> EmbedAllPendingNanniesAsync()
+        => await EmbedNanniesAsync(await _repo.GetPendingEmbedNanniesAsync());
+
+    public async Task<int> EmbedAllPendingJobsAsync()
+        => await EmbedJobsAsync(await _repo.GetPendingEmbedJobsAsync());
+
+    /// <summary>Force re-embed tất cả nanny, bất kể đã có embedding hay chưa.</summary>
+    public async Task<int> EmbedAllNanniesForceAsync()
+        => await EmbedNanniesAsync(await _repo.GetAllNannyReadModelsAsync());
+
+    /// <summary>Force re-embed tất cả job, bất kể đã có embedding hay chưa.</summary>
+    public async Task<int> EmbedAllJobsForceAsync()
+        => await EmbedJobsAsync(await _repo.GetAllJobReadModelsAsync());
+
+    private async Task<int> EmbedNanniesAsync(IEnumerable<NannyReadModelDto> list)
     {
-        var pending = await _repo.GetPendingEmbedNanniesAsync();
         int count = 0;
-        foreach (var m in pending)
+        foreach (var m in list)
         {
             try
             {
@@ -98,11 +109,10 @@ public class EmbeddingService
         return count;
     }
 
-    public async Task<int> EmbedAllPendingJobsAsync()
+    private async Task<int> EmbedJobsAsync(IEnumerable<JobReadModelDto> list)
     {
-        var pending = await _repo.GetPendingEmbedJobsAsync();
         int count = 0;
-        foreach (var m in pending)
+        foreach (var m in list)
         {
             try
             {
@@ -120,9 +130,7 @@ public class EmbeddingService
         return count;
     }
 
-    // ──────────────────────────────────────────────────────────────
     // Template builders
-    // ──────────────────────────────────────────────────────────────
 
     /// <summary>
     /// Nanny template:
@@ -145,20 +153,21 @@ public class EmbeddingService
             : $"Nanny {years} năm kinh nghiệm.";
         sb.AppendLine(line1);
 
-        // Dòng 2: Bio (nếu có)
-        if (!string.IsNullOrWhiteSpace(m.Bio))
-            sb.AppendLine(m.Bio.Trim() + ".");
-
-        // Dòng 3: Skills (nếu có)
+        // Dòng 2: Skills (nếu có)
         if (m.SkillNames.Count > 0)
             sb.AppendLine("Kỹ năng: " + string.Join(", ", m.SkillNames) + ".");
+
+        // Dòng 3: Bio (nếu có)
+        if (!string.IsNullOrWhiteSpace(m.Bio))
+            sb.AppendLine(m.Bio.Trim() + ".");
 
         return sb.ToString().Trim();
     }
 
     /// <summary>
-    /// Job template (mô tả nanny phù hợp):
-    /// "Cần nanny có kinh nghiệm chăm sóc {ChildAgeGroup}.
+    /// Job template:
+    /// "{Title}.
+    ///  [Cần nanny có kinh nghiệm chăm sóc {ChildAgeGroup}.] ← chỉ khi có
     ///  {Description}.
     ///  [{Characteristic}.] ← chỉ khi có
     ///  [{SpecialNeeds}.] ← chỉ khi có
@@ -168,37 +177,43 @@ public class EmbeddingService
     {
         var sb = new StringBuilder();
 
-        // Dòng 1: ChildAgeGroup (nếu có)
-        if (m.ChildAgeGroup.HasValue && ChildAgeGroupLabels.TryGetValue(m.ChildAgeGroup.Value, out var ageLabel))
-            sb.AppendLine($"Cần nanny có kinh nghiệm chăm sóc {ageLabel}.");
+        // Dòng 1: Title — tóm tắt ngắn gọn nhất của job
+        if (!string.IsNullOrWhiteSpace(m.Title))
+            sb.AppendLine(m.Title.Trim() + ".");
 
-        // Dòng 2: Description
+        // Dòng 2: ChildAgeGroup [+ NumberOfChildren] (nếu có)
+        if (m.ChildAgeGroup.HasValue && ChildAgeGroupLabels.TryGetValue(m.ChildAgeGroup.Value, out var ageLabel))
+        {
+            var ageLine = m.NumberOfChildren.HasValue
+                ? $"Chăm {ageLabel}, {m.NumberOfChildren} bé."
+                : $"Chăm {ageLabel}.";
+            sb.AppendLine(ageLine);
+        }
+
+        // Dòng 3: Skills (nếu có) — trước description để nhấn mạnh yêu cầu kỹ năng
+        if (m.RequiredSkillNames.Count > 0)
+            sb.AppendLine("Yêu cầu kỹ năng: " + string.Join(", ", m.RequiredSkillNames) + ".");
+
+        // Dòng 4: Description
         if (!string.IsNullOrWhiteSpace(m.Description))
             sb.AppendLine(m.Description.Trim() + ".");
 
-        // Dòng 3: Characteristic (nếu có)
+        // Dòng 5: Characteristic (nếu có)
         if (!string.IsNullOrWhiteSpace(m.Characteristic))
         {
-            // Characteristic có thể là JSON array hoặc plain text — join bằng dấu phẩy
             var chars = ParseCharacteristic(m.Characteristic);
             if (chars.Count > 0)
                 sb.AppendLine(string.Join(", ", chars) + ".");
         }
 
-        // Dòng 4: SpecialNeeds (chỉ khi có giá trị)
+        // Dòng 6: SpecialNeeds (nếu có)
         if (!string.IsNullOrWhiteSpace(m.SpecialNeeds))
             sb.AppendLine(m.SpecialNeeds.Trim() + ".");
-
-        // Dòng 5: Skills (nếu có)
-        if (m.RequiredSkillNames.Count > 0)
-            sb.AppendLine("Kỹ năng cần: " + string.Join(", ", m.RequiredSkillNames) + ".");
 
         return sb.ToString().Trim();
     }
 
-    // ──────────────────────────────────────────────────────────────
     // Azure OpenAI call
-    // ──────────────────────────────────────────────────────────────
 
     private async Task<float[]> GetEmbeddingVectorAsync(string text)
     {
@@ -207,9 +222,7 @@ public class EmbeddingService
         return result.Value.ToFloats().ToArray();
     }
 
-    // ──────────────────────────────────────────────────────────────
     // Helpers
-    // ──────────────────────────────────────────────────────────────
 
     /// <summary>
     /// Parse Characteristic field — hỗ trợ cả JSON array ["A","B"] và plain text "A, B".

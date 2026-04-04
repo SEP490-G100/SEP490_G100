@@ -213,15 +213,9 @@ app.UseCors("RestApi");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHealthChecks("/health");
 
 // SignalR hub endpoint — dùng SignalR CORS policy
 app.MapHub<ChatHub>("/hubs/chat").RequireCors("SignalR");
-
-app.UseCors("UiPolicy");
-app.UseCors();
-app.UseAuthentication();
-app.UseAuthorization();
-app.MapControllers();
-app.MapHealthChecks("/health");
 
 app.Run();

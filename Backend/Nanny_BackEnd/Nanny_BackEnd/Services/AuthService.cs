@@ -35,13 +35,16 @@ public class AuthService
         _config = config;
     }
 
-    public async Task<LoginResponse> RegisterAsync(RegisterRequest request)
+    public async Task RegisterAsync(RegisterRequest request)
     {
         var existing = await _userRepo.FindByEmailAsync(request.Email);
         if (existing != null)
         {
             if (existing.Status == (int)UserStatus.Pending && existing.AuthProvider == (int)AuthProvider.Email)
-                return await ReRegisterPendingUserAsync(existing, request);
+            {
+                await ReRegisterPendingUserAsync(existing);
+                return;
+            }
 
             var msg = existing.AuthProvider == (int)AuthProvider.Google
                 ? "Email này đã đăng ký bằng Google. Vui lòng đăng nhập bằng Google."
@@ -66,17 +69,11 @@ public class AuthService
 
         _userRepo.Add(user);
 
-        // Chỉ gán role nếu user chỉ định role khi đăng ký
-        // Nếu role = null/empty, user sẽ phải chọn role ở bước ChooseRole
         if (!string.IsNullOrWhiteSpace(request.Role))
-        {
             await _userRepo.AssignRoleAsync(user.Id, request.Role.Trim());
-        }
 
         await _userRepo.SaveChangesAsync();
-
         await TrySendOtpEmailAsync(user.Email, user.Id, OtpPurpose.VerifyEmail);
-        return await BuildLoginResponseAsync(user);
     }
 
     public async Task<(LoginResponse? Response, bool IsPending)> LoginAsync(LoginRequest request)
@@ -103,19 +100,25 @@ public class AuthService
         user.LastLoginAt = DateTime.UtcNow;
         await _userRepo.SaveChangesAsync();
 
-        return (await BuildLoginResponseAsync(user), false);
+        return (await BuildLoginResponseAsync(user, revokeExisting: true), false);
     }
 
     public async Task<LoginResponse> RefreshTokenAsync(RefreshTokenRequest request)
     {
-        var userId = _jwt.GetUserIdFromToken(request.AccessToken)
-            ?? throw new UnauthorizedAccessException("Token không hợp lệ.");
+        var (userId, jwtId) = _jwt.GetTokenClaims(request.AccessToken);
+        if (userId == null || jwtId == null)
+            throw new UnauthorizedAccessException("Token không hợp lệ.");
 
         var stored = await _tokenRepo.FindByTokenAsync(request.RefreshToken);
-        if (stored == null || stored.UserId != userId || stored.IsRevoked || stored.IsUsed || stored.ExpiresAt < DateTime.UtcNow)
+        if (stored == null
+            || stored.UserId != userId
+            || stored.JwtId  != jwtId
+            || stored.IsRevoked
+            || stored.IsUsed
+            || stored.ExpiresAt < DateTime.UtcNow)
             throw new UnauthorizedAccessException("Refresh token không hợp lệ hoặc đã hết hạn.");
 
-        var user = await _userRepo.FindByIdAsync(userId)
+        var user = await _userRepo.FindByIdAsync(userId.Value)
             ?? throw new UnauthorizedAccessException("Người dùng không tồn tại.");
 
         if (user.Status == (int)UserStatus.Banned)
@@ -165,7 +168,7 @@ public class AuthService
             return (true, "Nếu email tồn tại, mã OTP đã được gửi.");
 
         if (user.AuthProvider == (int)AuthProvider.Google)
-            return (false, "Tài khoản này sử dụng Google để đăng nhập. Không thể đặt lại mật khẩu.");
+            return (true, "Nếu email tồn tại, mã OTP đã được gửi.");
 
         try
         {
@@ -173,9 +176,9 @@ public class AuthService
             await _email.SendOtpEmailAsync(email, code, "ForgotPassword");
             return (true, "Mã OTP đã được gửi đến email của bạn.");
         }
-        catch (Exception ex)
+        catch
         {
-            return (false, $"Không thể gửi email: {ex.Message}");
+            return (false, "Không thể gửi email lúc này. Vui lòng thử lại sau.");
         }
     }
 
@@ -245,18 +248,11 @@ public class AuthService
         return await BuildLoginResponseAsync(user);
     }
 
-    private async Task<LoginResponse> ReRegisterPendingUserAsync(User existing, RegisterRequest request)
+    private async Task ReRegisterPendingUserAsync(User existing)
     {
-        ValidatePasswordOrThrow(request.Password);
-        existing.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
-        existing.FirstName    = request.FirstName;
-        existing.LastName     = request.LastName;
-        existing.PhoneNumber  = request.PhoneNumber;
-        existing.UpdatedAt    = DateTime.UtcNow;
-        await _userRepo.SaveChangesAsync();
-
+        // Không overwrite bất kỳ dữ liệu nào — chỉ gửi lại OTP xác thực.
+        // Việc thay đổi thông tin chỉ được phép sau khi email đã được xác thực.
         await TrySendOtpEmailAsync(existing.Email, existing.Id, OtpPurpose.VerifyEmail);
-        return await BuildLoginResponseAsync(existing);
     }
 
     private async Task<LoginResponse> ProcessGoogleLoginAsync(GoogleJsonWebSignature.Payload payload)
@@ -287,11 +283,14 @@ public class AuthService
         user.LastLoginAt = DateTime.UtcNow;
         await _userRepo.SaveChangesAsync();
 
-        return await BuildLoginResponseAsync(user);
+        return await BuildLoginResponseAsync(user, revokeExisting: true);
     }
 
-    private async Task<LoginResponse> BuildLoginResponseAsync(User user)
+    private async Task<LoginResponse> BuildLoginResponseAsync(User user, bool revokeExisting = false)
     {
+        if (revokeExisting)
+            await _tokenRepo.RevokeAllForUserAsync(user.Id);
+
         var roles = await _userRepo.GetRolesAsync(user.Id);
         var (accessToken, expiresAt, jwtId) = _jwt.GenerateAccessToken(user, roles);
         var refreshToken = _jwt.GenerateRefreshToken();
