@@ -21,18 +21,20 @@ public class JwtService
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         var expiresAt = DateTime.UtcNow.AddMinutes(_config.GetValue<int>("Jwt:AccessTokenMinutes", 30));
         var authProvider = user.AuthProvider == (int)AuthProvider.Google ? "google" : "email";
+        var firstName = user.FirstName ?? string.Empty;
+        var lastName = user.LastName ?? string.Empty;
 
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Email, user.Email),
             new(JwtRegisteredClaimNames.Jti, jwtId),
-            new("firstName", user.FirstName),
-            new("lastName", user.LastName),
+            new("firstName", firstName),
+            new("lastName", lastName),
             new("authProvider", authProvider),
         };
 
-        foreach (var role in roles)
+        foreach (var role in roles.Where(static r => !string.IsNullOrWhiteSpace(r)))
             claims.Add(new Claim(ClaimTypes.Role, role));
 
         var token = new JwtSecurityToken(

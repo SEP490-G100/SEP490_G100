@@ -1,4 +1,14 @@
-﻿<section class="py-28 relative overflow-hidden scroll-section dir-up">
+﻿@model WebSite.Models.Home.HomePageViewModel
+@using System.Globalization
+@{
+    var averageRating = Math.Clamp(Model?.AverageRating ?? 0m, 0m, 5m);
+    var totalReviews = Math.Max(Model?.TotalReviews ?? 0, 0);
+    var viVn = CultureInfo.GetCultureInfo("vi-VN");
+    var fullStars = (int)Math.Floor(averageRating);
+    var hasHalfStar = (averageRating - fullStars) >= 0.5m;
+    var emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+}
+<section class="py-28 relative overflow-hidden scroll-section dir-up">
     <!-- decorative blobs -->
     <div class="absolute top-0 right-0 w-80 h-80 bg-orange-200/40 rounded-full -mr-20 -mt-20 blur-3xl pointer-events-none">
     </div>
@@ -17,15 +27,22 @@
         <!-- Stars + count -->
         <div class="flex flex-col items-center gap-1.5 mb-14 sec-reveal">
             <div class="flex items-center gap-0.5">
-                <span class="material-icons-round text-amber-400 text-2xl">star</span>
-                <span class="material-icons-round text-amber-400 text-2xl">star</span>
-                <span class="material-icons-round text-amber-400 text-2xl">star</span>
-                <span class="material-icons-round text-amber-400 text-2xl">star</span>
-                <span class="material-icons-round text-amber-400 text-2xl">star_half</span>
-                <span class="ml-2 text-2xl font-bold text-gray-800">4.8 / 5</span>
+                @for (var i = 0; i < fullStars; i++)
+                {
+                    <span class="material-icons-round text-amber-400 text-2xl">star</span>
+                }
+                @if (hasHalfStar)
+                {
+                    <span class="material-icons-round text-amber-400 text-2xl">star_half</span>
+                }
+                @for (var i = 0; i < emptyStars; i++)
+                {
+                    <span class="material-icons-round text-amber-400 text-2xl">star_border</span>
+                }
+                <span class="ml-2 text-2xl font-bold text-gray-800">@averageRating.ToString("0.0", CultureInfo.InvariantCulture) / 5</span>
             </div>
             <p class="text-gray-500 text-sm font-medium">
-                Dựa trên <strong class="text-gray-700">7.200+</strong> đánh
+                Dựa trên <strong class="text-gray-700">@totalReviews.ToString("N0", viVn)</strong> đánh
                 giá từ phụ huynh và bảo mẫu
             </p>
         </div>
@@ -150,7 +167,8 @@
 
         <!-- CTA -->
         <div class="text-center mt-14 sec-reveal">
-            <a href="#"
+            <a asp-controller="Auth"
+               asp-action="Register"
                class="inline-flex items-center gap-2 bg-primary hover:bg-primaryDark text-white px-9 py-3.5 rounded-xl font-bold shadow-glow hover:scale-105 transition-all duration-200">
                 <span class="material-icons-round text-sm">how_to_reg</span>
                 Đăng ký miễn phí ngay

@@ -11,8 +11,13 @@ namespace Nanny_BackEnd.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly AuthService _auth;
+    private readonly ILogger<AuthController> _logger;
 
-    public AuthController(AuthService auth) => _auth = auth;
+    public AuthController(AuthService auth, ILogger<AuthController> logger)
+    {
+        _auth = auth;
+        _logger = logger;
+    }
 
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
@@ -38,6 +43,12 @@ public class AuthController : ControllerBase
             return Ok(new { success = true, data = response });
         }
         catch (UnauthorizedAccessException ex) { return Unauthorized(Fail(ex.Message)); }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected login error for email {Email}", request.Email);
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                Fail("Dang nhap that bai do loi may chu. Vui long thu lai sau."));
+        }
     }
 
     [HttpPost("refresh")]

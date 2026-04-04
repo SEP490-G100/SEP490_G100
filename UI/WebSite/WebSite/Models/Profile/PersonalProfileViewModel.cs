@@ -3,6 +3,8 @@ namespace WebSite.Models.Profile
     public class PersonalProfileViewModel
     {
         public Guid UserId { get; set; }
+        public Guid? ContactNannyProfileId { get; set; }
+        public bool IsReadOnlyView { get; set; }
         public string Email { get; set; } = null!;
         public string FirstName { get; set; } = null!;
         public string LastName { get; set; } = null!;
@@ -20,7 +22,6 @@ namespace WebSite.Models.Profile
 
         public bool IsParent => Roles.Any(r => r.Equals("Parent", StringComparison.OrdinalIgnoreCase));
         public bool IsNanny => Roles.Any(r => r.Equals("Nanny", StringComparison.OrdinalIgnoreCase));
-
         // Parent
         public string? FamilyDescription { get; set; }
         public int? NumberOfChildren { get; set; }

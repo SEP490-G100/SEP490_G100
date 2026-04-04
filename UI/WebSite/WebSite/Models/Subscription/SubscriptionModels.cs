@@ -178,6 +178,7 @@ public class SubscriptionPageViewModel
     public string Headline { get; set; } = "";
     public string Summary { get; set; } = "";
     public SubscriptionBenefitViewModel FreeBenefits { get; set; } = new();
+    public List<string> FreeFeatures { get; set; } = [];
     public List<SubscriptionPlanViewModel> Plans { get; set; } = [];
     public List<SubscriptionTransactionViewModel> Transactions { get; set; } = [];
     public UserSubscriptionViewModel? CurrentSubscription { get; set; }

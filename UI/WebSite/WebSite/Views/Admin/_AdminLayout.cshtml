@@ -1,27 +1,13 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>@ViewData["Title"] - Admin | NannyMatch</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="~/css/tailwind.generated.css" rel="stylesheet" asp-append-version="true" />
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
     <link href="~/css/admin.css" rel="stylesheet" />
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { display: ['Quicksand', 'sans-serif'] },
-                    colors: { primary: '#F97316', primaryDark: '#EA580C' },
-                    boxShadow: {
-                        'card': '0 4px 24px rgba(0,0,0,0.07)',
-                        'soft': '0 8px 32px rgba(0,0,0,0.08)',
-                    }
-                }
-            }
-        }
-    </script>
 </head>
 <body class="font-display bg-gray-50 text-gray-800" style="font-family:'Quicksand',sans-serif;">
 
@@ -91,7 +77,7 @@
             <!-- Top Header Bar -->
             <header class="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-gray-100 flex flex-col"
                     style="box-shadow:0 2px 20px rgba(249,115,22,0.07);">
-                <!-- Shimmer accent line — orange -->
+                <!-- Shimmer accent line â€” orange -->
                 <div class="admin-topbar-accent"></div>
                 <!-- Header row -->
                 <div class="flex items-center justify-between px-6" style="height:60px;">
@@ -154,3 +140,4 @@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
+

@@ -372,8 +372,7 @@
 .nanny-card__meta,
 .nanny-card__skills,
 .nanny-detail-chips,
-.nanny-detail-skill-list,
-.nanny-detail-availability {
+.nanny-detail-skill-list {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
@@ -407,6 +406,38 @@
     color: #94a3b8;
     font-size: .82rem;
     font-weight: 700;
+}
+
+.nanny-card__quick-actions {
+    margin-top: 12px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.nanny-card-view-btn {
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid #fed7aa;
+    background: #fffaf5;
+    color: #c2410c;
+    font-size: .78rem;
+    font-weight: 800;
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
+}
+
+.nanny-card-view-btn .material-icons-round {
+    font-size: 16px;
+}
+
+.nanny-card-view-btn:hover {
+    transform: translateY(-1px);
+    border-color: #fb923c;
+    background: #fff7ed;
+    box-shadow: 0 10px 20px rgba(249,115,22,.18);
 }
 
 .nanny-map-panel::before {
@@ -510,6 +541,11 @@
 .nanny-detail-box,
 .nanny-filter-modal {
     max-height: 90vh;
+}
+
+.nanny-detail-box {
+    border-radius: 32px !important;
+    overflow: hidden;
 }
 
 .nanny-filter-modal {
@@ -736,7 +772,7 @@
     width: 124px;
     height: 124px;
     object-fit: cover;
-    border-radius: 32px;
+    border-radius: 36px;
     border: 5px solid rgba(255,255,255,.96);
     box-shadow: 0 18px 38px rgba(15,23,42,.14);
 }
@@ -770,6 +806,10 @@
 
 .nanny-detail-actions {
     margin-top: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
 .nanny-detail-favorite {
@@ -806,6 +846,33 @@
     box-shadow: 0 12px 24px rgba(225,29,72,.24);
 }
 
+.nanny-detail-view-btn {
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid #fed7aa;
+    background: #fffaf5;
+    color: #c2410c;
+    font-weight: 800;
+    font-size: .84rem;
+    transition: transform .18s ease, box-shadow .18s ease, color .18s ease, border-color .18s ease, background .18s ease;
+}
+
+.nanny-detail-view-btn .material-icons-round {
+    font-size: 17px;
+}
+
+.nanny-detail-view-btn:hover {
+    transform: translateY(-1px);
+    border-color: #fb923c;
+    color: #ea580c;
+    background: #fff7ed;
+    box-shadow: 0 10px 22px rgba(249,115,22,.2);
+}
+
 .nanny-detail-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -813,9 +880,15 @@
     padding: 22px 26px 28px;
 }
 
+.nanny-detail-bottom-action {
+    padding: 0 26px 28px;
+    display: flex;
+    justify-content: flex-end;
+}
+
 .nanny-detail-card {
     border: 1px solid #e8eef5;
-    border-radius: 24px;
+    border-radius: 28px;
     background: linear-gradient(180deg, #fff, #f8fafc);
     padding: 18px;
     box-shadow: 0 16px 30px rgba(15,23,42,.04);
@@ -877,6 +950,37 @@
     font-size: .7rem;
     font-weight: 800;
     color: #9a3412;
+}
+
+.nanny-detail-availability {
+    display: block;
+}
+
+.nanny-detail-availability-grid {
+    display: grid;
+    grid-template-columns: 120px repeat(7, minmax(42px, 1fr));
+    gap: 10px;
+    padding: 14px;
+    border: 1px solid rgba(251,146,60,.2);
+    border-radius: 20px;
+    background: linear-gradient(180deg, #ffffff, #fff9f3);
+}
+
+.nanny-detail-availability-grid .nanny-schedule-cell {
+    cursor: default;
+    pointer-events: none;
+}
+
+.nanny-detail-availability-grid .nanny-schedule-cell:hover {
+    border-color: #cbd5e1;
+    transform: none;
+    box-shadow: none;
+}
+
+.nanny-detail-availability-grid .nanny-schedule-cell.active:hover {
+    border-color: #f97316;
+    background: linear-gradient(135deg, #fb923c, #f97316);
+    box-shadow: 0 10px 22px rgba(249,115,22,.26);
 }
 
 .nmodal {
@@ -973,6 +1077,11 @@
         grid-column: span 1;
     }
 
+    .nanny-detail-bottom-action {
+        padding: 0 18px 22px;
+        justify-content: center;
+    }
+
     .nanny-filter-modal__footer {
         flex-direction: column;
     }
@@ -994,5 +1103,11 @@
     .nanny-schedule-cell {
         width: 38px;
         height: 38px;
+    }
+
+    .nanny-detail-availability-grid {
+        grid-template-columns: 84px repeat(7, 42px);
+        overflow-x: auto;
+        padding: 12px;
     }
 }

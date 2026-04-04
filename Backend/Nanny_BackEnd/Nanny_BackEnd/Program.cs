@@ -35,6 +35,7 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
         options.JsonSerializerOptions.Converters.Add(new DateOnlyJsonConverter());
     });
+builder.Services.AddMemoryCache();
 
 // SignalR (built-in, không cần package)
 builder.Services.AddSignalR(options =>
@@ -174,6 +175,7 @@ builder.Services.AddSingleton<PasswordValidator>();
 // Search feature (SD1B)
 builder.Services.AddScoped<JobService>();
 builder.Services.AddScoped<GeocodingService>();
+builder.Services.AddScoped<LocationService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<VerificationRequestService>();
 builder.Services.AddScoped<DashboardService>();

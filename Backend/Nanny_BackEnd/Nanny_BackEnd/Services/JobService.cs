@@ -130,12 +130,21 @@ public class JobService
 
     public async Task<Guid> createJob(Guid parentProfileId, CreateJobPostingRequest req)
     {
+        const int freeParentActivePostingLimit = 3;
         var benefits = await _subscriptionService.getBenefitsForParentProfile(parentProfileId);
         var parentProfile = await _jobRepo.getParentProfileSnapshot(parentProfileId)
             ?? throw new KeyNotFoundException("Khong tim thay ho so phu huynh.");
 
         validateAgeRange(req.MinNannyAge, req.MaxNannyAge);
         var selectedChild = resolveSelectedChild(parentProfile, req.ChildProfileId);
+
+        var hasActiveParentSubscription = await _subscriptionService.hasActiveParentSubscription(parentProfileId);
+        if (!hasActiveParentSubscription)
+        {
+            var activePostingCount = await _jobRepo.countActiveJobPostings(parentProfileId);
+            if (activePostingCount >= freeParentActivePostingLimit)
+                throw new InvalidOperationException($"Tai khoan Parent mien phi chi duoc dang toi da {freeParentActivePostingLimit} bai dang. Vui long mua goi de dang them.");
+        }
 
         var countThisMonth = await _jobRepo.countJobPostingsInCurrentMonth(parentProfileId);
         if (countThisMonth >= benefits.MonthlyJobPostLimit)
@@ -480,6 +489,7 @@ public class JobService
         {
             Id = job.Id,
             ParentProfileId = job.ParentProfileId,
+            ParentUserId = job.ParentProfile?.UserId,
             ChildProfileId = job.ChildProfileId,
             IsOwner = currentUserId.HasValue && job.ParentProfile?.UserId == currentUserId.Value,
             IsFavorite = favoriteJobIds?.Contains(job.Id) == true,

@@ -1,5 +1,5 @@
 ﻿
-
+@model WebSite.Models.Home.HomePageViewModel
 
 <section class="bg-white dark:bg-card-dark py-24 relative scroll-section dir-up">
     <div class="max-w-7xl mx-auto px-6 lg:px-10">
@@ -52,7 +52,8 @@
                                 tất cả thành viên. Phụ huynh nhận thêm quyền lợi với gói Premium.
                             </p>
                             <a class="text-primary hover:underline text-sm font-semibold mt-2 inline-block"
-                               href="#">Tìm hiểu thêm</a>
+                               asp-controller="Subscription"
+                               asp-action="Index">Tìm hiểu thêm</a>
                         </div>
                     </div>
                 </div>
@@ -61,8 +62,8 @@
     </div>
 </section>
 <partial name="_Security" />
-<partial name="_NanniesSection"/>
+<partial name="_NanniesSection" model="Model" />
 <partial name="_HowItWork"/>
-<partial name="_SayAboutUs"/>
+<partial name="_SayAboutUs" model="Model" />
 <partial name="_FAQ" />
 <partial name="_Testimonials" />

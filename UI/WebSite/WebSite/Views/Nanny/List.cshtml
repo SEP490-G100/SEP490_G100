@@ -43,6 +43,10 @@
                         <span class="material-icons-round text-[18px]">favorite</span>
                         Nanny yêu thích
                     </a>
+                    <a href="/Nanny/ContactRequests" class="nanny-filter-trigger">
+                        <span class="material-icons-round text-[18px]">contact_phone</span>
+                        Contact request
+                    </a>
                 }
                 <span id="nannyResultCount" class="nanny-toolbar__count">Đang tải...</span>
                 <a href="/Subscription" class="nanny-upgrade-btn">
@@ -196,7 +200,7 @@
 </div>
 
 <div id="nannyDetailModal" class="nmodal fixed inset-0 z-50 bg-black/50 backdrop-blur-sm items-center justify-center px-4" onclick="if(event.target===this)closeNannyDetail()">
-    <div class="nmodal-box nanny-detail-box bg-white rounded-2xl w-full max-w-4xl shadow-2xl relative">
+    <div class="nmodal-box nanny-detail-box bg-white rounded-[32px] w-full max-w-4xl shadow-2xl relative">
         <div class="modal-scroll">
             <div class="nanny-detail-header">
                 <button onclick="closeNannyDetail()" class="nanny-detail-close material-icons-round">close</button>
@@ -216,6 +220,10 @@
                             <button type="button" id="nd-favoriteBtn" class="nanny-detail-favorite hidden" onclick="toggleNannyFavoriteFromDetail(event)">
                                 <span class="material-icons-round">favorite_border</span>
                                 <span id="nd-favoriteBtnText">Yêu thích</span>
+                            </button>
+                            <button type="button" id="nd-contactBtn" class="nanny-detail-view-btn hidden" onclick="sendContactRequestFromDetail(event)">
+                                <span class="material-icons-round">send</span>
+                                Gửi request contact
                             </button>
                         </div>
                     </div>
@@ -247,6 +255,13 @@
                     <h3>Lịch rảnh</h3>
                     <div id="nd-availability" class="nanny-detail-availability"></div>
                 </section>
+            </div>
+
+            <div class="nanny-detail-bottom-action">
+                <button type="button" id="nd-viewProfileBtn" class="nanny-detail-view-btn" onclick="viewNannyProfileDetail(event)">
+                    <span class="material-icons-round">visibility</span>
+                    Xem chi tiet ho so Nanny
+                </button>
             </div>
         </div>
     </div>
