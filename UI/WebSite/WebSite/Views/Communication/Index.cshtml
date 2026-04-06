@@ -100,6 +100,25 @@
     }
 
     .conv-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+    .conv-actions { display: flex; align-items: center; gap: 6px; margin-left: 2px; }
+    .conv-menu-wrap { position: relative; }
+    .conv-more-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        border: none;
+        background: transparent;
+        color: #94a3b8;
+        cursor: pointer;
+        transition: all .16s ease;
+    }
+    .conv-more-btn:hover {
+        background: #f1f5f9;
+        color: #475569;
+    }
 
     .conv-time { font-size: 11px; color: #9ca3af; }
 
@@ -164,6 +183,52 @@
     .chat-header-status { font-size: 12px; color: #9ca3af; }
 
     .chat-header-actions { display: flex; gap: 8px; }
+    .chat-menu-wrap { position: relative; }
+    .chat-menu-panel {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 8px);
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        box-shadow: 0 14px 30px rgba(15,23,42,.14);
+        min-width: 160px;
+        padding: 6px;
+        z-index: 120;
+        display: none;
+    }
+    .chat-menu-panel.open { display: block; }
+    .chat-menu-panel.conv-menu-panel { top: calc(100% + 4px); right: -2px; }
+    .chat-menu-item {
+        width: 100%;
+        border: none;
+        background: transparent;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 10px;
+        border-radius: 10px;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 700;
+        color: #374151;
+        cursor: pointer;
+        transition: background .15s ease;
+    }
+    .chat-menu-item:hover { background: #f9fafb; }
+    .chat-menu-item.danger { color: #dc2626; }
+    .chat-menu-item.danger:hover { background: #fef2f2; }
+
+    .nmodal {
+        display: none;
+    }
+    .nmodal.show {
+        display: flex;
+    }
+    .nmodal-box {
+        max-height: calc(100vh - 40px);
+        overflow: auto;
+    }
 
     .chat-action-btn {
         display: flex; align-items: center; justify-content: center;
@@ -256,11 +321,55 @@
     }
 
     .msg-row.mine .msg-time { text-align: left; }
+    .msg-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        position: relative;
+    }
+    .msg-bubble-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .msg-row.mine .msg-bubble-row {
+        flex-direction: row-reverse;
+    }
+    .msg-hover-actions {
+        position: relative;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity .16s ease, visibility .16s ease;
+    }
+    .msg-row:hover .msg-hover-actions,
+    .msg-hover-actions.open {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+    }
+    .msg-more-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        border: none;
+        background: transparent;
+        color: #94a3b8;
+        cursor: pointer;
+        transition: all .16s ease;
+    }
+    .msg-more-btn:hover {
+        background: #f1f5f9;
+        color: #475569;
+    }
 
     /* Context menu */
     .msg-ctx-menu {
         position: absolute;
-        top: 100%; right: 0; margin-top: 4px;
+        top: calc(100% + 6px); right: 0;
         background: #fff;
         border: 1px solid #e5e7eb;
         border-radius: 14px;
@@ -271,12 +380,13 @@
         display: none;
     }
 
-    .msg-row.mine .msg-ctx-menu { right: 0; }
-    .msg-row:not(.mine) .msg-ctx-menu { left: 0; right: auto; }
-
     .msg-ctx-menu.open { display: block; }
 
     .ctx-item {
+        width: 100%;
+        border: none;
+        background: transparent;
+        text-align: left;
         display: flex; align-items: center; gap: 8px;
         padding: 8px 10px; border-radius: 10px;
         font-size: 13px; font-weight: 600; cursor: pointer;
@@ -400,6 +510,35 @@
 
     .btn-primary:hover { transform: translateY(-1px); }
 
+    .modal-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 10px 16px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 700;
+        transition: all .18s ease;
+    }
+    .modal-btn-secondary {
+        border: 1.5px solid #e5e7eb;
+        background: #fff;
+        color: #6b7280;
+    }
+    .modal-btn-secondary:hover {
+        background: #f9fafb;
+    }
+    .modal-btn-primary {
+        border: none;
+        background: linear-gradient(135deg,#f97316,#ea580c);
+        color: #fff;
+        box-shadow: 0 6px 16px rgba(249,115,22,.24);
+    }
+    .modal-btn-primary:hover {
+        transform: translateY(-1px);
+    }
+
     @@media (max-width: 767px) {
         .chat-sidebar { width: 100%; display: none; }
         .chat-sidebar.mobile-open { display: flex; position: fixed; inset: 72px 0 0; z-index: 50; }
@@ -476,17 +615,63 @@
     </div>
 </div>
 
-<!-- ═══ MODAL: Report ═════════════════════════════════════════════════ -->
-<div id="reportModal" class="modal-backdrop" style="display:none;">
-    <div class="modal-card">
-        <div class="modal-title">Báo cáo tin nhắn</div>
-        <div class="modal-sub">Vui lòng cho chúng tôi biết lý do bạn báo cáo tin nhắn này.</div>
-        <textarea class="modal-input" id="reportReason" placeholder="Lý do báo cáo..." rows="3" style="resize:none;"></textarea>
-        <textarea class="modal-input" id="reportEvidence" placeholder="Bằng chứng / mô tả thêm (tùy chọn)..." rows="2" style="resize:none;"></textarea>
-        <div class="modal-actions">
-            <button class="btn-cancel" onclick="closeReportModal()">Huỷ</button>
-            <button class="btn-danger" onclick="submitReport()">Gửi báo cáo</button>
+<!-- ═══ MODAL: Conversation Report ═════════════════════════════════════ -->
+<div id="conversationReportModal" class="nmodal fixed inset-0 z-50 bg-black/50 backdrop-blur-sm items-center justify-center px-4" onclick="if(event.target===this)closeConversationReportModal()">
+    <div class="nmodal-box bg-white rounded-2xl w-full max-w-xl shadow-2xl relative">
+        <div class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
+            <div>
+                <h2 class="text-lg font-bold text-gray-900">Gửi phản nàn cuộc trò chuyện</h2>
+                <p id="conversationReportTarget" class="text-xs text-gray-400 font-semibold mt-0.5">Cuộc trò chuyện</p>
+            </div>
+            <button type="button" onclick="closeConversationReportModal()" class="text-gray-300 hover:text-gray-700 material-icons-round text-2xl transition-colors">close</button>
         </div>
+        <form id="conversationReportForm" method="post" asp-controller="Report" asp-action="ReportConversation" class="px-6 py-5 space-y-4">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="conversationReportConversationId" name="ConversationId" />
+            <input type="hidden" id="conversationReportReturnUrl" name="ReturnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Lý do phản nàn <span class="text-red-500">*</span></label>
+                <textarea id="conversationReportReason" name="Reason" rows="4" class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400" placeholder="Nhập lý do phản nàn..."></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Bằng chứng (không bắt buộc)</label>
+                <textarea id="conversationReportEvidence" name="Evidence" rows="3" class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400" placeholder="Mô tả, hình ảnh, video liên quan..."></textarea>
+            </div>
+            <div class="flex gap-2">
+                <button type="button" onclick="closeConversationReportModal()" class="modal-btn modal-btn-secondary w-full">Huỷ</button>
+                <button id="conversationReportSubmitBtn" type="submit" class="modal-btn modal-btn-primary w-full">Gửi phản nàn</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ═══ MODAL: Report Message ══════════════════════════════════════════ -->
+<div id="reportModal" class="nmodal fixed inset-0 z-50 bg-black/50 backdrop-blur-sm items-center justify-center px-4" onclick="if(event.target===this)closeReportModal()">
+    <div class="nmodal-box bg-white rounded-2xl w-full max-w-xl shadow-2xl relative">
+        <div class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
+            <div>
+                <h2 class="text-lg font-bold text-gray-900">Báo cáo tin nhắn</h2>
+                <p id="messageReportTarget" class="text-xs text-gray-400 font-semibold mt-0.5">Tin nhắn trong cuộc trò chuyện</p>
+            </div>
+            <button type="button" onclick="closeReportModal()" class="text-gray-300 hover:text-gray-700 material-icons-round text-2xl transition-colors">close</button>
+        </div>
+        <form id="messageReportForm" method="post" asp-controller="Report" asp-action="ReportMessage" class="px-6 py-5 space-y-4">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="messageReportMessageId" name="MessageId" />
+            <input type="hidden" id="messageReportReturnUrl" name="ReturnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Lý do báo cáo <span class="text-red-500">*</span></label>
+                <textarea id="reportReason" name="Reason" rows="4" class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400" placeholder="Nhập lý do báo cáo..."></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Bằng chứng (không bắt buộc)</label>
+                <textarea id="reportEvidence" name="Evidence" rows="3" class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400" placeholder="Mô tả, hình ảnh, video liên quan..."></textarea>
+            </div>
+            <div class="flex gap-2">
+                <button type="button" onclick="closeReportModal()" class="modal-btn modal-btn-secondary w-full">Huỷ</button>
+                <button id="messageReportSubmitBtn" type="submit" class="modal-btn modal-btn-primary w-full">Gửi báo cáo</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -503,6 +688,7 @@
 </div>
 
 @section Scripts {
+<script src="~/lib/tinymce/tinymce.min.js" asp-append-version="true"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
 <script>
 // ════════════════════════════════════════════════════════════════════
@@ -514,6 +700,10 @@ let activeConvId = null;
 let activeConvData = null; // { isBlocked, isHidden, blockedByUserId, otherUserId, otherUserName }
 let pendingDeleteMsgId = null;
 let pendingReportMsgId = null;
+let isSubmittingMessageReport = false;
+let isSubmittingConversationReport = false;
+let messageReportEditorsReady = false;
+let conversationReportEditorsReady = false;
 let allConversations = [];
 let hubConnection = null;
 let joinedConvId = null;
@@ -549,10 +739,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('sendBtn').addEventListener('click', sendMessage);
     document.getElementById('btnBlockConv').addEventListener('click', toggleBlock);
+    document.getElementById('conversationReportForm')?.addEventListener('submit', handleConversationReportSubmit);
+    document.getElementById('messageReportForm')?.addEventListener('submit', handleMessageReportSubmit);
 
-    // Close context menus on outside click
+    // Close context menus / conversation menus on outside click
     document.addEventListener('click', () => {
-        document.querySelectorAll('.msg-ctx-menu.open').forEach(m => m.classList.remove('open'));
+        closeMessageMenus();
+        closeConversationMenus();
     });
 });
 
@@ -577,6 +770,7 @@ function renderConversations(list) {
         return;
     }
     el.innerHTML = list.map(c => {
+        const conversationId = String(c.id || '');
         const initial = (c.otherUserName || 'U').charAt(0).toUpperCase();
         const avatarHtml = c.otherUserAvatar
             ? `<img src="${esc(c.otherUserAvatar)}" alt="${esc(c.otherUserName)}">`
@@ -584,7 +778,7 @@ function renderConversations(list) {
         const isActive = c.id === activeConvId;
         const time = c.lastMessageAt ? fmtTime(c.lastMessageAt) : '';
         const badge = c.unreadCount > 0 ? `<span class="conv-badge">${c.unreadCount > 99 ? '99+' : c.unreadCount}</span>` : '';
-        return `<div class="conv-item ${isActive ? 'active' : ''}" onclick="openConversation('${c.id}')" data-id="${c.id}" data-name="${esc(c.otherUserName)}" id="conv-${c.id}">
+        return `<div class="conv-item ${isActive ? 'active' : ''}" onclick="openConversation('${conversationId}')" data-id="${conversationId}" data-name="${esc(c.otherUserName)}" id="conv-${conversationId}">
             <div class="conv-avatar">${avatarHtml}</div>
             <div class="conv-info">
                 <div class="conv-name">${esc(c.otherUserName || 'Người dùng')}</div>
@@ -593,6 +787,19 @@ function renderConversations(list) {
             <div class="conv-meta">
                 <span class="conv-time">${time}</span>
                 ${badge}
+            </div>
+            <div class="conv-actions">
+                <div class="conv-menu-wrap">
+                    <button type="button" class="conv-more-btn" title="Tùy chọn" onclick="toggleConversationMenu(event,'${conversationId}')">
+                        <span class="material-icons-round" style="font-size:18px;">more_horiz</span>
+                    </button>
+                    <div class="chat-menu-panel conv-menu-panel" id="convMenu-${conversationId}">
+                        <button class="chat-menu-item danger" type="button" onclick="openConversationReportFor(event,'${conversationId}')">
+                            <span class="material-icons-round" style="font-size:16px;">flag</span>
+                            <span>Báo cáo</span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>`;
     }).join('');
@@ -610,6 +817,11 @@ async function openConversation(id) {
     if (activeConvId === id) return;
     const previousId = activeConvId;
     activeConvId = id;
+    const reportConversationIdInput = document.getElementById('conversationReportConversationId');
+    if (reportConversationIdInput) reportConversationIdInput.value = String(id);
+    const reportReturnUrlInput = document.getElementById('conversationReportReturnUrl');
+    if (reportReturnUrlInput) reportReturnUrlInput.value = `/Communication?conversationId=${encodeURIComponent(id)}`;
+    closeConversationMenus();
 
     // Highlight sidebar item
     document.querySelectorAll('.conv-item').forEach(el => el.classList.remove('active'));
@@ -681,23 +893,28 @@ function renderMessages(messages) {
             ? `<img src="${esc(m.senderAvatar)}" alt="${esc(m.senderName)}">`
             : initial;
 
-        const ctx = isMine
-            ? `<div class="msg-ctx-menu" id="ctx-${m.id}">
-                <div class="ctx-item danger" onclick="openDeleteModal('${m.id}')"><span class="material-icons-round" style="font-size:16px;">delete</span>Xoá</div>
-               </div>`
-            : `<div class="msg-ctx-menu" id="ctx-${m.id}">
-                <div class="ctx-item danger" onclick="openReportModal('${m.id}')"><span class="material-icons-round" style="font-size:16px;">flag</span>Báo cáo</div>
-               </div>`;
+        const ctxItem = isMine
+            ? `<button type="button" class="ctx-item danger" onclick="openDeleteModal('${m.id}')"><span class="material-icons-round" style="font-size:16px;">delete</span>Xoá</button>`
+            : `<button type="button" class="ctx-item danger" onclick="openReportModal('${m.id}')"><span class="material-icons-round" style="font-size:16px;">flag</span>Báo cáo</button>`;
 
         return `${dateSep}
         <div class="msg-row ${isMine ? 'mine' : ''}" id="msg-${m.id}">
             ${!isMine ? `<div class="msg-avatar">${avatarHtml}</div>` : ''}
-            <div style="display:flex;flex-direction:column;gap:3px;position:relative;">
-                <div class="msg-bubble ${m.isDeleted ? 'deleted' : ''}"
-                     oncontextmenu="openCtxMenu(event,'${m.id}')"
-                     ondblclick="openCtxMenu(event,'${m.id}')">
-                    ${esc(m.content)}
-                    ${ctx}
+            <div class="msg-wrap">
+                <div class="msg-bubble-row">
+                    <div class="msg-bubble ${m.isDeleted ? 'deleted' : ''}"
+                         oncontextmenu="openCtxMenu(event,'${m.id}')"
+                         ondblclick="openCtxMenu(event,'${m.id}')">
+                        ${esc(m.content)}
+                    </div>
+                    <div class="msg-hover-actions" id="msgActions-${m.id}">
+                        <button type="button" class="msg-more-btn" title="Tùy chọn" onclick="toggleMessageMenu(event,'${m.id}')">
+                            <span class="material-icons-round" style="font-size:18px;">more_vert</span>
+                        </button>
+                        <div class="msg-ctx-menu" id="ctx-${m.id}">
+                            ${ctxItem}
+                        </div>
+                    </div>
                 </div>
                 <div class="msg-time">${fmtMsgTime(m.createdAt)}${m.readAt ? ' ✓✓' : ''}</div>
             </div>
@@ -717,17 +934,27 @@ function appendMessage(m) {
 
     const isMine = resolveMessageIsMine(m);
     const initial = (m.senderName || 'U').charAt(0).toUpperCase();
-    const ctx = isMine
-        ? `<div class="msg-ctx-menu" id="ctx-${m.id}"><div class="ctx-item danger" onclick="openDeleteModal('${m.id}')"><span class="material-icons-round" style="font-size:16px;">delete</span>Xoá</div></div>`
-        : `<div class="msg-ctx-menu" id="ctx-${m.id}"><div class="ctx-item danger" onclick="openReportModal('${m.id}')"><span class="material-icons-round" style="font-size:16px;">flag</span>Báo cáo</div></div>`;
+    const ctxItem = isMine
+        ? `<button type="button" class="ctx-item danger" onclick="openDeleteModal('${m.id}')"><span class="material-icons-round" style="font-size:16px;">delete</span>Xoá</button>`
+        : `<button type="button" class="ctx-item danger" onclick="openReportModal('${m.id}')"><span class="material-icons-round" style="font-size:16px;">flag</span>Báo cáo</button>`;
 
     const row = document.createElement('div');
     row.className = `msg-row ${isMine ? 'mine' : ''}`;
     row.id = `msg-${m.id}`;
     row.innerHTML = `
         ${!isMine ? `<div class="msg-avatar">${initial}</div>` : ''}
-        <div style="display:flex;flex-direction:column;gap:3px;position:relative;">
-            <div class="msg-bubble" oncontextmenu="openCtxMenu(event,'${m.id}')" ondblclick="openCtxMenu(event,'${m.id}')">${esc(m.content)}${ctx}</div>
+        <div class="msg-wrap">
+            <div class="msg-bubble-row">
+                <div class="msg-bubble" oncontextmenu="openCtxMenu(event,'${m.id}')" ondblclick="openCtxMenu(event,'${m.id}')">${esc(m.content)}</div>
+                <div class="msg-hover-actions" id="msgActions-${m.id}">
+                    <button type="button" class="msg-more-btn" title="Tùy chọn" onclick="toggleMessageMenu(event,'${m.id}')">
+                        <span class="material-icons-round" style="font-size:18px;">more_vert</span>
+                    </button>
+                    <div class="msg-ctx-menu" id="ctx-${m.id}">
+                        ${ctxItem}
+                    </div>
+                </div>
+            </div>
             <div class="msg-time">${fmtMsgTime(m.createdAt)}</div>
         </div>
         ${isMine ? `<div class="msg-avatar">${initial}</div>` : ''}`;
@@ -852,17 +1079,39 @@ function updateBlockUI(isBlocked) {
 // ════════════════════════════════════════════════════════════════════
 //  CONTEXT MENU
 // ════════════════════════════════════════════════════════════════════
+function closeMessageMenus() {
+    document.querySelectorAll('.msg-ctx-menu.open').forEach(m => m.classList.remove('open'));
+    document.querySelectorAll('.msg-hover-actions.open').forEach(m => m.classList.remove('open'));
+}
+
+function toggleMessageMenu(event, msgId) {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+
+    const menu = document.getElementById(`ctx-${msgId}`);
+    const holder = document.getElementById(`msgActions-${msgId}`);
+    if (!menu || !holder) return;
+
+    const willOpen = !menu.classList.contains('open');
+    closeMessageMenus();
+    if (willOpen) {
+        menu.classList.add('open');
+        holder.classList.add('open');
+    }
+}
+
 function openCtxMenu(e, msgId) {
     e.preventDefault();
     e.stopPropagation();
-    document.querySelectorAll('.msg-ctx-menu.open').forEach(m => m.classList.remove('open'));
-    document.getElementById(`ctx-${msgId}`)?.classList.add('open');
+    toggleMessageMenu(e, msgId);
+    closeConversationMenus();
 }
 
 // ════════════════════════════════════════════════════════════════════
 //  DELETE
 // ════════════════════════════════════════════════════════════════════
 function openDeleteModal(msgId) {
+    closeMessageMenus();
     pendingDeleteMsgId = msgId;
     document.getElementById('deleteModal').style.display = 'flex';
 }
@@ -890,30 +1139,413 @@ async function confirmDelete() {
 // ════════════════════════════════════════════════════════════════════
 //  REPORT
 // ════════════════════════════════════════════════════════════════════
+function toggleConversationMenu(event, conversationId) {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+    const panel = document.getElementById(`convMenu-${conversationId}`);
+    if (!panel) return;
+    const willOpen = !panel.classList.contains('open');
+    closeConversationMenus();
+    if (willOpen) panel.classList.add('open');
+}
+
+function closeConversationMenus() {
+    document.querySelectorAll('.conv-menu-panel.open').forEach(m => m.classList.remove('open'));
+}
+
+function openConversationReportFor(event, conversationId) {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+    const convEl = document.getElementById(`conv-${conversationId}`);
+    const conversationName = String(convEl?.dataset?.name || '').trim();
+    openConversationReportModal(conversationId, conversationName);
+}
+
+function notifyChat(message, type = 'info') {
+    if (typeof window.showToast === 'function') {
+        window.showToast(message, { type });
+    } else {
+        alert(message);
+    }
+}
+
+function extractConversationReportPlainText(html) {
+    const div = document.createElement('div');
+    div.innerHTML = String(html || '');
+    return (div.textContent || div.innerText || '').replace(/\s+/g, ' ').trim();
+}
+
+function getConversationReportEditorContent(editorId) {
+    if (typeof tinymce !== 'undefined') {
+        const editor = tinymce.get(editorId);
+        if (editor) return editor.getContent();
+    }
+    const input = document.getElementById(editorId);
+    return input ? (input.value || '') : '';
+}
+
+function setConversationReportEditorContent(editorId, value) {
+    if (typeof tinymce !== 'undefined') {
+        const editor = tinymce.get(editorId);
+        if (editor) {
+            editor.setContent(value || '');
+            return;
+        }
+    }
+    const input = document.getElementById(editorId);
+    if (input) input.value = value || '';
+}
+
+async function uploadConversationReportMediaFiles(files, endpoint, emptyMessage) {
+    if (!files || !files.length) throw new Error(emptyMessage);
+
+    const formData = new FormData();
+    Array.from(files).forEach(file => formData.append('files', file));
+
+    const response = await fetch(endpoint, {
+        method: 'POST',
+        credentials: 'same-origin',
+        body: formData
+    });
+
+    const raw = await response.text();
+    let result = null;
+    if (raw) {
+        try {
+            result = JSON.parse(raw);
+        } catch {
+            if (response.redirected && response.url && response.url.includes('/Auth/Login')) {
+                throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+            }
+            throw new Error('Server trả về dữ liệu không hợp lệ khi upload media.');
+        }
+    }
+
+    if (!response.ok) {
+        throw new Error((result && result.message) || (`Upload media thất bại (HTTP ${response.status}).`));
+    }
+
+    if (!result || !result.success || !result.data || !Array.isArray(result.data.urls) || result.data.urls.length === 0) {
+        throw new Error((result && result.message) || 'Upload media thất bại.');
+    }
+
+    return result.data.urls;
+}
+
+function pickConversationReportFile(accept, multiple = false) {
+    return new Promise((resolve) => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = accept;
+        input.multiple = !!multiple;
+        input.onchange = () => {
+            const files = input.files ? Array.from(input.files) : [];
+            resolve(multiple ? files : (files[0] || null));
+        };
+        input.click();
+    });
+}
+
+function uploadSingleConversationReportImageForTiny(blobInfo) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const urls = await uploadConversationReportMediaFiles(
+                [blobInfo.blob()],
+                '/Report/UploadReportMedia?mediaType=image',
+                'Vui lòng chọn ít nhất một ảnh.');
+            resolve(urls[0]);
+        } catch (error) {
+            reject({ message: (error && error.message) || 'Không thể upload ảnh.' });
+        }
+    });
+}
+
+function handleConversationReportTinyFilePicker(callback, meta) {
+    const isImage = meta.filetype === 'image';
+    const accept = isImage
+        ? 'image/*'
+        : 'video/mp4,video/webm,video/ogg,video/quicktime,.mp4,.webm,.ogg,.mov';
+    const endpoint = isImage
+        ? '/Report/UploadReportMedia?mediaType=image'
+        : '/Report/UploadReportMedia?mediaType=video';
+
+    pickConversationReportFile(accept, false).then(async (file) => {
+        if (!file) return;
+        try {
+            const urls = await uploadConversationReportMediaFiles([file], endpoint, 'Vui lòng chọn file để upload.');
+            const url = urls[0];
+            if (isImage) callback(url, { alt: file.name || 'image' });
+            else callback(url, { source2: '', poster: '' });
+        } catch (error) {
+            notifyChat((error && error.message) || 'Không thể upload media.', 'error');
+        }
+    });
+}
+
+function ensureConversationReportEditorsInitialized() {
+    if (conversationReportEditorsReady) return;
+    if (typeof tinymce === 'undefined') return;
+
+    tinymce.init({
+        selector: '#conversationReportReason',
+        license_key: 'gpl',
+        menubar: false,
+        branding: false,
+        plugins: 'lists code',
+        toolbar: 'undo redo | bold italic underline | bullist numlist | removeformat | code',
+        height: 160,
+        statusbar: false,
+        content_style: 'body{font-family:Segoe UI,Arial,sans-serif;font-size:14px;line-height:1.6;}'
+    });
+
+    tinymce.init({
+        selector: '#conversationReportEvidence',
+        license_key: 'gpl',
+        menubar: false,
+        branding: false,
+        plugins: 'link lists code image media',
+        toolbar: 'undo redo | bold italic underline | bullist numlist | link image media | removeformat | code',
+        height: 220,
+        automatic_uploads: true,
+        images_upload_handler: function (blobInfo) {
+            return uploadSingleConversationReportImageForTiny(blobInfo);
+        },
+        file_picker_types: 'image media',
+        file_picker_callback: function (callback, _value, meta) {
+            handleConversationReportTinyFilePicker(callback, meta);
+        },
+        statusbar: false,
+        content_style: 'body{font-family:Segoe UI,Arial,sans-serif;font-size:14px;line-height:1.6;} img,video{max-width:100%;height:auto;border-radius:8px;}'
+    });
+
+    conversationReportEditorsReady = true;
+}
+
+function openConversationReportModal(targetConversationId, targetConversationName) {
+    const conversationId = String(targetConversationId || activeConvId || '').trim();
+    const conversationName = String(
+        targetConversationName
+        || document.getElementById(`conv-${conversationId}`)?.dataset?.name
+        || document.getElementById('headerName')?.textContent
+        || ''
+    ).trim();
+
+    if (!conversationId) {
+        notifyChat('Vui lòng chọn cuộc trò chuyện cần báo cáo.', 'warning');
+        closeConversationMenus();
+        return;
+    }
+
+    ensureConversationReportEditorsInitialized();
+
+    const modal = document.getElementById('conversationReportModal');
+    const target = document.getElementById('conversationReportTarget');
+    const conversationIdInput = document.getElementById('conversationReportConversationId');
+    const returnUrlInput = document.getElementById('conversationReportReturnUrl');
+    const submitBtn = document.getElementById('conversationReportSubmitBtn');
+
+    if (target) target.textContent = conversationName ? `Cuộc trò chuyện: ${conversationName}` : 'Cuộc trò chuyện';
+    if (conversationIdInput) conversationIdInput.value = conversationId;
+    if (returnUrlInput) returnUrlInput.value = `/Communication?conversationId=${encodeURIComponent(conversationId)}`;
+    setConversationReportEditorContent('conversationReportReason', '');
+    setConversationReportEditorContent('conversationReportEvidence', '');
+
+    isSubmittingConversationReport = false;
+    if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Gửi phản nàn';
+    }
+
+    if (modal) modal.style.display = 'flex';
+    closeConversationMenus();
+}
+
+function closeConversationReportModal() {
+    const modal = document.getElementById('conversationReportModal');
+    if (modal) modal.style.display = 'none';
+    isSubmittingConversationReport = false;
+    const submitBtn = document.getElementById('conversationReportSubmitBtn');
+    if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Gửi phản nàn';
+    }
+}
+
+function ensureMessageReportEditorsInitialized() {
+    if (messageReportEditorsReady) return;
+    if (typeof tinymce === 'undefined') return;
+
+    tinymce.init({
+        selector: '#reportReason',
+        license_key: 'gpl',
+        menubar: false,
+        branding: false,
+        plugins: 'lists code',
+        toolbar: 'undo redo | bold italic underline | bullist numlist | removeformat | code',
+        height: 160,
+        statusbar: false,
+        content_style: 'body{font-family:Segoe UI,Arial,sans-serif;font-size:14px;line-height:1.6;}'
+    });
+
+    tinymce.init({
+        selector: '#reportEvidence',
+        license_key: 'gpl',
+        menubar: false,
+        branding: false,
+        plugins: 'link lists code image media',
+        toolbar: 'undo redo | bold italic underline | bullist numlist | link image media | removeformat | code',
+        height: 220,
+        automatic_uploads: true,
+        images_upload_handler: function (blobInfo) {
+            return uploadSingleConversationReportImageForTiny(blobInfo);
+        },
+        file_picker_types: 'image media',
+        file_picker_callback: function (callback, _value, meta) {
+            handleConversationReportTinyFilePicker(callback, meta);
+        },
+        statusbar: false,
+        content_style: 'body{font-family:Segoe UI,Arial,sans-serif;font-size:14px;line-height:1.6;} img,video{max-width:100%;height:auto;border-radius:8px;}'
+    });
+
+    messageReportEditorsReady = true;
+}
+
+function handleConversationReportSubmit(event) {
+    const conversationId = String(document.getElementById('conversationReportConversationId')?.value || '').trim();
+    const submitBtn = document.getElementById('conversationReportSubmitBtn');
+
+    if (!conversationId) {
+        event.preventDefault();
+        notifyChat('Không tìm thấy cuộc trò chuyện cần báo cáo.', 'error');
+        return;
+    }
+
+    if (typeof tinymce !== 'undefined') tinymce.triggerSave();
+
+    const reasonHtml = getConversationReportEditorContent('conversationReportReason');
+    const evidenceHtml = getConversationReportEditorContent('conversationReportEvidence');
+    const reason = extractConversationReportPlainText(reasonHtml);
+    const evidence = String(evidenceHtml || '').trim();
+
+    if (reason.length < 5 || reason.length > 500) {
+        event.preventDefault();
+        notifyChat('Lý do báo cáo phải từ 5 đến 500 ký tự.', 'warning');
+        if (typeof tinymce !== 'undefined' && tinymce.get('conversationReportReason')) {
+            tinymce.get('conversationReportReason').focus();
+        } else {
+            document.getElementById('conversationReportReason')?.focus();
+        }
+        return;
+    }
+
+    if (evidence.length > 2000) {
+        event.preventDefault();
+        notifyChat('Bằng chứng không được vượt quá 2000 ký tự.', 'warning');
+        if (typeof tinymce !== 'undefined' && tinymce.get('conversationReportEvidence')) {
+            tinymce.get('conversationReportEvidence').focus();
+        } else {
+            document.getElementById('conversationReportEvidence')?.focus();
+        }
+        return;
+    }
+
+    if (isSubmittingConversationReport) {
+        event.preventDefault();
+        return;
+    }
+
+    isSubmittingConversationReport = true;
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Đang gửi...';
+    }
+}
+
 function openReportModal(msgId) {
+    closeMessageMenus();
     pendingReportMsgId = msgId;
-    document.getElementById('reportModal').style.display = 'flex';
-    document.getElementById('reportReason').value = '';
-    document.getElementById('reportEvidence').value = '';
+    ensureMessageReportEditorsInitialized();
+    const modal = document.getElementById('reportModal');
+    const submitBtn = document.getElementById('messageReportSubmitBtn');
+    const target = document.getElementById('messageReportTarget');
+    const messageIdInput = document.getElementById('messageReportMessageId');
+    const returnUrlInput = document.getElementById('messageReportReturnUrl');
+
+    if (target) target.textContent = 'Tin nhắn trong cuộc trò chuyện';
+    if (messageIdInput) messageIdInput.value = String(msgId || '');
+    if (returnUrlInput) returnUrlInput.value = `/Communication?conversationId=${encodeURIComponent(activeConvId || '')}`;
+    setConversationReportEditorContent('reportReason', '');
+    setConversationReportEditorContent('reportEvidence', '');
+    isSubmittingMessageReport = false;
+
+    if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Gửi báo cáo';
+    }
+    modal?.classList.add('show');
 }
 
 function closeReportModal() {
-    document.getElementById('reportModal').style.display = 'none';
+    document.getElementById('reportModal')?.classList.remove('show');
     pendingReportMsgId = null;
+    const messageIdInput = document.getElementById('messageReportMessageId');
+    if (messageIdInput) messageIdInput.value = '';
+    isSubmittingMessageReport = false;
+    const submitBtn = document.getElementById('messageReportSubmitBtn');
+    if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Gửi báo cáo';
+    }
 }
 
-async function submitReport() {
-    const reason = document.getElementById('reportReason').value.trim();
-    if (!reason) { alert('Vui lòng nhập lý do báo cáo.'); return; }
-    try {
-        await fetch(`/Communication/ReportMessage/${pendingReportMsgId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getAntiForgery() },
-            body: JSON.stringify({ reason, evidence: document.getElementById('reportEvidence').value.trim() })
-        });
-        alert('✅ Báo cáo đã được gửi. Cảm ơn bạn đã giúp giữ gìn cộng đồng!');
-    } catch {}
-    closeReportModal();
+function handleMessageReportSubmit(event) {
+    const messageId = String(document.getElementById('messageReportMessageId')?.value || '').trim();
+    if (typeof tinymce !== 'undefined') tinymce.triggerSave();
+
+    const reasonHtml = getConversationReportEditorContent('reportReason');
+    const evidenceHtml = getConversationReportEditorContent('reportEvidence');
+    const reason = extractConversationReportPlainText(reasonHtml);
+    const evidence = String(evidenceHtml || '').trim();
+    const submitBtn = document.getElementById('messageReportSubmitBtn');
+
+    if (!messageId) {
+        event.preventDefault();
+        notifyChat('Không tìm thấy tin nhắn cần báo cáo.', 'error');
+        return;
+    }
+
+    if (reason.length < 5 || reason.length > 500) {
+        event.preventDefault();
+        notifyChat('Lý do báo cáo phải từ 5 đến 500 ký tự.', 'warning');
+        if (typeof tinymce !== 'undefined' && tinymce.get('reportReason')) {
+            tinymce.get('reportReason').focus();
+        } else {
+            document.getElementById('reportReason')?.focus();
+        }
+        return;
+    }
+
+    if (evidence.length > 2000) {
+        event.preventDefault();
+        notifyChat('Bằng chứng không được vượt quá 2000 ký tự.', 'warning');
+        if (typeof tinymce !== 'undefined' && tinymce.get('reportEvidence')) {
+            tinymce.get('reportEvidence').focus();
+        } else {
+            document.getElementById('reportEvidence')?.focus();
+        }
+        return;
+    }
+
+    if (isSubmittingMessageReport) {
+        event.preventDefault();
+        return;
+    }
+
+    isSubmittingMessageReport = true;
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Đang gửi...';
+    }
 }
 
 // ════════════════════════════════════════════════════════════════════

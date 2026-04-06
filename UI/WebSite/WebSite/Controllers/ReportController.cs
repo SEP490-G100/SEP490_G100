@@ -1,10 +1,12 @@
 using System.Net;
 using System.Net.Http.Headers;
+using System.Security.Claims;
 using System.Text.RegularExpressions;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.WebUtilities;
 using WebSite.Hubs;
 using WebSite.Models.Search;
 using WebSite.Services;
@@ -106,6 +108,253 @@ public class ReportController : Controller
                 toastType = "error",
                 toastMessage = "Khong the gui phan nan bai dang."
             });
+        }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ReportProfile(ProfileReportFormModel model, CancellationToken cancellationToken)
+    {
+        if (model.ReportedUserId == Guid.Empty)
+        {
+            return RedirectToProfileReportReturn(
+                model.ReturnUrl,
+                model.ReportedUserId,
+                "error",
+                "Khong tim thay ho so can phan nan.");
+        }
+
+        var currentUserIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (Guid.TryParse(currentUserIdValue, out var currentUserId) && currentUserId == model.ReportedUserId)
+        {
+            return RedirectToProfileReportReturn(
+                model.ReturnUrl,
+                model.ReportedUserId,
+                "warning",
+                "Ban khong the phan nan chinh ho so cua minh.");
+        }
+
+        var reason = ExtractPlainText(model.Reason);
+        if (reason.Length < 5 || reason.Length > 500)
+        {
+            return RedirectToProfileReportReturn(
+                model.ReturnUrl,
+                model.ReportedUserId,
+                "warning",
+                "Ly do phan nan phai tu 5 den 500 ky tu.");
+        }
+
+        var evidence = NormalizeEvidence(model.Evidence);
+        if (!string.IsNullOrEmpty(evidence) && evidence.Length > 2000)
+        {
+            return RedirectToProfileReportReturn(
+                model.ReturnUrl,
+                model.ReportedUserId,
+                "warning",
+                "Bang chung khong duoc vuot qua 2000 ky tu.");
+        }
+
+        SetAuthHeader();
+        try
+        {
+            var response = await _http.PostAsJsonAsync(
+                $"/api/reports/profiles/{model.ReportedUserId}",
+                new
+                {
+                    reason,
+                    evidence
+                },
+                cancellationToken);
+
+            var json = await response.Content.ReadAsStringAsync(cancellationToken);
+            var message = TryExtractMessage(json);
+
+            if (response.IsSuccessStatusCode)
+            {
+                await _notificationHub.Clients.Group("role:Moderator").SendAsync("notification:new", new
+                {
+                    type = "report-submitted",
+                    title = "Co bao cao ho so moi",
+                    message = "Mot bao cao profile moi vua duoc gui va can moderator xu ly.",
+                    toastType = "warning"
+                }, cancellationToken);
+
+                return RedirectToProfileReportReturn(
+                    model.ReturnUrl,
+                    model.ReportedUserId,
+                    "success",
+                    message ?? "Gui phan nan ho so thanh cong.");
+            }
+
+            return RedirectToProfileReportReturn(
+                model.ReturnUrl,
+                model.ReportedUserId,
+                "error",
+                message ?? "Khong the gui phan nan ho so.");
+        }
+        catch (Exception)
+        {
+            return RedirectToProfileReportReturn(
+                model.ReturnUrl,
+                model.ReportedUserId,
+                "error",
+                "Khong the gui phan nan ho so.");
+        }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ReportConversation(ConversationReportFormModel model, CancellationToken cancellationToken)
+    {
+        if (model.ConversationId == Guid.Empty)
+        {
+            return RedirectToConversationReportReturn(
+                model.ReturnUrl,
+                model.ConversationId,
+                "error",
+                "Khong tim thay cuoc tro chuyen can phan nan.");
+        }
+
+        var reason = ExtractPlainText(model.Reason);
+        if (reason.Length < 5 || reason.Length > 500)
+        {
+            return RedirectToConversationReportReturn(
+                model.ReturnUrl,
+                model.ConversationId,
+                "warning",
+                "Ly do phan nan phai tu 5 den 500 ky tu.");
+        }
+
+        var evidence = NormalizeEvidence(model.Evidence);
+        if (!string.IsNullOrEmpty(evidence) && evidence.Length > 2000)
+        {
+            return RedirectToConversationReportReturn(
+                model.ReturnUrl,
+                model.ConversationId,
+                "warning",
+                "Bang chung khong duoc vuot qua 2000 ky tu.");
+        }
+
+        SetAuthHeader();
+        try
+        {
+            var response = await _http.PostAsJsonAsync(
+                $"/api/reports/conversations/{model.ConversationId}",
+                new
+                {
+                    reason,
+                    evidence
+                },
+                cancellationToken);
+
+            var json = await response.Content.ReadAsStringAsync(cancellationToken);
+            var message = TryExtractMessage(json);
+
+            if (response.IsSuccessStatusCode)
+            {
+                await _notificationHub.Clients.Group("role:Moderator").SendAsync("notification:new", new
+                {
+                    type = "report-submitted",
+                    title = "Co bao cao cuoc tro chuyen moi",
+                    message = "Mot bao cao conversation moi vua duoc gui va can moderator xu ly.",
+                    toastType = "warning"
+                }, cancellationToken);
+
+                return RedirectToConversationReportReturn(
+                    model.ReturnUrl,
+                    model.ConversationId,
+                    "success",
+                    message ?? "Gui phan nan cuoc tro chuyen thanh cong.");
+            }
+
+            return RedirectToConversationReportReturn(
+                model.ReturnUrl,
+                model.ConversationId,
+                "error",
+                message ?? "Khong the gui phan nan cuoc tro chuyen.");
+        }
+        catch (Exception)
+        {
+            return RedirectToConversationReportReturn(
+                model.ReturnUrl,
+                model.ConversationId,
+                "error",
+                "Khong the gui phan nan cuoc tro chuyen.");
+        }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ReportMessage(MessageReportFormModel model, CancellationToken cancellationToken)
+    {
+        if (model.MessageId == Guid.Empty)
+        {
+            return RedirectToMessageReportReturn(
+                model.ReturnUrl,
+                "error",
+                "Khong tim thay tin nhan can phan nan.");
+        }
+
+        var reason = ExtractPlainText(model.Reason);
+        if (reason.Length < 5 || reason.Length > 500)
+        {
+            return RedirectToMessageReportReturn(
+                model.ReturnUrl,
+                "warning",
+                "Ly do phan nan phai tu 5 den 500 ky tu.");
+        }
+
+        var evidence = NormalizeEvidence(model.Evidence);
+        if (!string.IsNullOrEmpty(evidence) && evidence.Length > 2000)
+        {
+            return RedirectToMessageReportReturn(
+                model.ReturnUrl,
+                "warning",
+                "Bang chung khong duoc vuot qua 2000 ky tu.");
+        }
+
+        SetAuthHeader();
+        try
+        {
+            var response = await _http.PostAsJsonAsync(
+                $"/api/reports/messages/{model.MessageId}",
+                new
+                {
+                    reason,
+                    evidence
+                },
+                cancellationToken);
+
+            var json = await response.Content.ReadAsStringAsync(cancellationToken);
+            var message = TryExtractMessage(json);
+
+            if (response.IsSuccessStatusCode)
+            {
+                await _notificationHub.Clients.Group("role:Moderator").SendAsync("notification:new", new
+                {
+                    type = "report-submitted",
+                    title = "Co bao cao tin nhan moi",
+                    message = "Mot bao cao message moi vua duoc gui va can moderator xu ly.",
+                    toastType = "warning"
+                }, cancellationToken);
+
+                return RedirectToMessageReportReturn(
+                    model.ReturnUrl,
+                    "success",
+                    message ?? "Gui phan nan tin nhan thanh cong.");
+            }
+
+            return RedirectToMessageReportReturn(
+                model.ReturnUrl,
+                "error",
+                message ?? "Khong the gui phan nan tin nhan.");
+        }
+        catch (Exception)
+        {
+            return RedirectToMessageReportReturn(
+                model.ReturnUrl,
+                "error",
+                "Khong the gui phan nan tin nhan.");
         }
     }
 
@@ -231,5 +480,81 @@ public class ReportController : Controller
         }
 
         return null;
+    }
+
+    private IActionResult RedirectToProfileReportReturn(
+        string? returnUrl,
+        Guid reportedUserId,
+        string toastType,
+        string toastMessage)
+    {
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            var redirectUrl = QueryHelpers.AddQueryString(
+                returnUrl,
+                new Dictionary<string, string?>
+                {
+                    ["toastType"] = toastType,
+                    ["toastMessage"] = toastMessage
+                });
+            return LocalRedirect(redirectUrl);
+        }
+
+        return RedirectToAction("ViewUser", "Profile", new
+        {
+            userId = reportedUserId,
+            toastType,
+            toastMessage
+        });
+    }
+
+    private IActionResult RedirectToConversationReportReturn(
+        string? returnUrl,
+        Guid conversationId,
+        string toastType,
+        string toastMessage)
+    {
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            var redirectUrl = QueryHelpers.AddQueryString(
+                returnUrl,
+                new Dictionary<string, string?>
+                {
+                    ["toastType"] = toastType,
+                    ["toastMessage"] = toastMessage
+                });
+            return LocalRedirect(redirectUrl);
+        }
+
+        return RedirectToAction("Index", "Communication", new
+        {
+            conversationId = conversationId == Guid.Empty ? (Guid?)null : conversationId,
+            toastType,
+            toastMessage
+        });
+    }
+
+    private IActionResult RedirectToMessageReportReturn(
+        string? returnUrl,
+        string toastType,
+        string toastMessage)
+    {
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            var redirectUrl = QueryHelpers.AddQueryString(
+                returnUrl,
+                new Dictionary<string, string?>
+                {
+                    ["toastType"] = toastType,
+                    ["toastMessage"] = toastMessage
+                });
+            return LocalRedirect(redirectUrl);
+        }
+
+        return RedirectToAction("Index", "Communication", new
+        {
+            toastType,
+            toastMessage
+        });
     }
 }
