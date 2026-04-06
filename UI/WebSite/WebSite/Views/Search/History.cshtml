@@ -968,10 +968,10 @@
                 const userId = application?.nanny?.userId ? String(application.nanny.userId) : '';
                 if (userId) {
                     if (Number(application.status) === 1) {
-                        viewProfileBtn.setAttribute('href', `/Profile/ViewUser?userId=${encodeURIComponent(userId)}&jobPostingId=${encodeURIComponent(jobId)}&jobApplicationId=${encodeURIComponent(application.id)}`);
+                        viewProfileBtn.setAttribute('href', `/Profile/ViewUser?userId=${encodeURIComponent(userId)}&jobPostingId=${encodeURIComponent(jobId)}&jobApplicationId=${encodeURIComponent(application.id)}&source=history`);
                         viewProfileBtn.innerHTML = '<span class="material-icons-round text-base">handshake</span> Xem ho so &amp; Thue Nanny';
                     } else {
-                        viewProfileBtn.setAttribute('href', `/Profile/ViewUser?userId=${encodeURIComponent(userId)}`);
+                        viewProfileBtn.setAttribute('href', `/Profile/ViewUser?userId=${encodeURIComponent(userId)}&source=history`);
                         viewProfileBtn.innerHTML = '<span class="material-icons-round text-base">visibility</span> Xem chi tiet ho so Nanny';
                     }
                     viewProfileBtn.classList.remove('hidden');

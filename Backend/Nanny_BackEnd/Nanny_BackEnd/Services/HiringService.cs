@@ -76,6 +76,8 @@ public class HiringService
     public async Task<HiringConfirmedDto> ConfirmHiringAsync(
         Guid jobPostingId, Guid jobAppId, Guid parentUserId, ConfirmHiringDto dto)
     {
+        ValidateContractDates(dto);
+
         var app = await GetVerifiedApplicationAsync(jobPostingId, jobAppId, parentUserId);
         if (app.Status != 1)
             throw new InvalidOperationException("Ung vien nay chua duoc dong y truoc khi thue.");
@@ -118,7 +120,7 @@ public class HiringService
             Id = Guid.NewGuid(),
             HiringRecordId = hiringRecord.Id,
             ContractTemplateId = template.Id,
-            ContractContent = RenderTemplate(template.Content, parentProfile, nannyProfile, dto),
+            ContractContent = RenderTemplate(template.Content, parentProfile, nannyProfile, dto, app),
             SignedByParent = true,
             SignedByNanny = false,
             Status = 0,
@@ -232,6 +234,177 @@ public class HiringService
             ContractId = contract.Id,
             ConversationId = conversation.Id,
             BatchRejectedCount = others.Count
+        };
+    }
+
+    public async Task<HiringConfirmedDto> ConfirmHiringByContactRequestAsync(
+        Guid contactRequestId, Guid parentUserId, ConfirmHiringDto dto)
+    {
+        ValidateContractDates(dto);
+
+        var request = await _repo.GetAcceptedContactRequestAsync(contactRequestId)
+            ?? throw new KeyNotFoundException("Khong tim thay request contact da duoc chap nhan.");
+
+        if (request.ParentProfile?.UserId != parentUserId)
+            throw new UnauthorizedAccessException("Ban khong co quyen tao hiring record tu request nay.");
+
+        var parentProfile = request.ParentProfile
+            ?? throw new InvalidOperationException("Khong tim thay ho so phu huynh.");
+        var nannyProfile = request.NannyProfile
+            ?? throw new InvalidOperationException("Khong tim thay ho so nanny.");
+
+        var template = await _repo.GetTemplateByIdAsync(dto.ContractTemplateId)
+            ?? throw new KeyNotFoundException("Mau hop dong khong ton tai hoac khong hoat dong.");
+
+        var now = DateTime.UtcNow;
+
+        var directJobPosting = new JobPosting
+        {
+            Id = Guid.NewGuid(),
+            ParentProfileId = parentProfile.Id,
+            Title = "Thue nanny truc tiep",
+            Description = string.IsNullOrWhiteSpace(request.Message) ? "Hiring tao tu luong contact request da duoc chap nhan." : request.Message.Trim(),
+            JobType = 0,
+            SalaryMin = nannyProfile.ExpectedSalaryMin,
+            SalaryMax = nannyProfile.ExpectedSalaryMax,
+            SalaryType = nannyProfile.SalaryType > 0 ? nannyProfile.SalaryType : 2,
+            SalaryNegotiable = true,
+            NumberOfChildren = null,
+            Location = null,
+            City = parentProfile.User?.City,
+            District = parentProfile.User?.District,
+            Latitude = parentProfile.User?.Latitude,
+            Longitude = parentProfile.User?.Longitude,
+            Status = 2,
+            ModerationStatus = 1,
+            PublishedAt = now,
+            ClosedAt = now,
+            CreatedAt = now,
+            CreatedBy = parentUserId,
+            IsDeleted = false
+        };
+        _repo.AddJobPosting(directJobPosting);
+
+        var directJobApplication = new JobApplication
+        {
+            Id = Guid.NewGuid(),
+            JobPostingId = directJobPosting.Id,
+            NannyProfileId = nannyProfile.Id,
+            Status = 2,
+            ReviewedAt = now,
+            CreatedAt = now,
+            CreatedBy = nannyProfile.UserId,
+            UpdatedAt = now,
+            UpdatedBy = parentUserId,
+            IsDeleted = false
+        };
+        _repo.AddJobApplication(directJobApplication);
+
+        var hiringRecord = new HiringRecord
+        {
+            Id = Guid.NewGuid(),
+            JobApplicationId = directJobApplication.Id,
+            ParentProfileId = parentProfile.Id,
+            NannyProfileId = nannyProfile.Id,
+            ContractTemplateId = template.Id,
+            StartDate = dto.StartDate,
+            EndDate = dto.EndDate,
+            ContractDuration = dto.ContractDuration,
+            Status = 0,
+            ParentConfirmedAt = now,
+            CreatedAt = now,
+            CreatedBy = parentUserId,
+            IsDeleted = false
+        };
+        _repo.AddHiringRecord(hiringRecord);
+
+        var contract = new Contract
+        {
+            Id = Guid.NewGuid(),
+            HiringRecordId = hiringRecord.Id,
+            ContractTemplateId = template.Id,
+            ContractContent = RenderTemplate(template.Content, parentProfile, nannyProfile, dto, directJobApplication),
+            SignedByParent = true,
+            SignedByNanny = false,
+            Status = 0,
+            CreatedAt = now,
+            CreatedBy = parentUserId,
+            IsDeleted = false
+        };
+        _repo.AddContract(contract);
+
+        var nannyUserId = nannyProfile.UserId;
+        var conversation = await _repo.FindOneToOneConversationAsync(parentUserId, nannyUserId);
+        if (conversation == null)
+        {
+            conversation = new Conversation
+            {
+                Id = Guid.NewGuid(),
+                Type = 1,
+                CreatedAt = now,
+                CreatedBy = parentUserId,
+                IsDeleted = false
+            };
+            _repo.AddConversation(conversation);
+
+            _repo.AddConversationParticipant(new ConversationParticipant
+            {
+                Id = Guid.NewGuid(),
+                ConversationId = conversation.Id,
+                UserId = parentUserId,
+                JoinedAt = now,
+                CreatedAt = now,
+                CreatedBy = parentUserId,
+                IsDeleted = false
+            });
+            _repo.AddConversationParticipant(new ConversationParticipant
+            {
+                Id = Guid.NewGuid(),
+                ConversationId = conversation.Id,
+                UserId = nannyUserId,
+                JoinedAt = now,
+                CreatedAt = now,
+                CreatedBy = parentUserId,
+                IsDeleted = false
+            });
+        }
+
+        _repo.AddMessage(new Message
+        {
+            Id = Guid.NewGuid(),
+            ConversationId = conversation.Id,
+            SenderUserId = parentUserId,
+            Content = "De nghi viec lam moi",
+            MessageType = 4,
+            AttachmentUrl = hiringRecord.Id.ToString(),
+            CreatedAt = now,
+            IsDeleted = false
+        });
+        conversation.LastMessageAt = now;
+
+        _repo.AddNotification(new Notification
+        {
+            Id = Guid.NewGuid(),
+            UserId = nannyUserId,
+            Title = "Ban nhan duoc de nghi viec lam!",
+            Content = $"{GetDisplayName(parentProfile.User)} muon thue ban lam bao mau.",
+            Type = NotificationTypes.HiringOffer,
+            IsRead = false,
+            RelatedEntityId = hiringRecord.Id,
+            RelatedEntityType = "HiringRecord",
+            CreatedAt = now,
+            CreatedBy = parentUserId,
+            IsDeleted = false
+        });
+
+        await _repo.SaveChangesAsync();
+
+        return new HiringConfirmedDto
+        {
+            HiringRecordId = hiringRecord.Id,
+            ContractId = contract.Id,
+            ConversationId = conversation.Id,
+            BatchRejectedCount = 0
         };
     }
 
@@ -403,8 +576,26 @@ public class HiringService
         return app;
     }
 
-    private static string RenderTemplate(string template, ParentProfile parent, NannyProfile nanny, ConfirmHiringDto dto) =>
-        template
+    private static void ValidateContractDates(ConfirmHiringDto dto)
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
+        if (dto.StartDate < today)
+            throw new ArgumentException("Ngay bat dau khong duoc truoc ngay tao hop dong.");
+
+        if (dto.EndDate.HasValue && dto.EndDate.Value <= dto.StartDate)
+            throw new ArgumentException("Ngay ket thuc phai lon hon ngay bat dau.");
+    }
+
+    private static string RenderTemplate(
+        string template,
+        ParentProfile parent,
+        NannyProfile nanny,
+        ConfirmHiringDto dto,
+        JobApplication? app = null)
+    {
+        var posting = app?.JobPosting;
+
+        return template
             .Replace("{{ParentName}}", GetDisplayName(parent.User))
             .Replace("{{NannyName}}", GetDisplayName(nanny.User))
             .Replace("{{ParentPhone}}", parent.User?.PhoneNumber ?? string.Empty)
@@ -412,7 +603,31 @@ public class HiringService
             .Replace("{{ParentAddress}}", parent.User?.Address ?? string.Empty)
             .Replace("{{StartDate}}", dto.StartDate.ToString("dd/MM/yyyy"))
             .Replace("{{EndDate}}", dto.EndDate?.ToString("dd/MM/yyyy") ?? "Khong xac dinh")
-            .Replace("{{ContractDuration}}", dto.ContractDuration?.ToString() ?? string.Empty);
+            .Replace("{{ContractDuration}}", dto.ContractDuration?.ToString() ?? string.Empty)
+            .Replace("{{JobTitle}}", posting?.Title ?? string.Empty)
+            .Replace("{{SalaryMin}}", FormatMoney(posting?.SalaryMin))
+            .Replace("{{SalaryMax}}", FormatMoney(posting?.SalaryMax))
+            .Replace("{{SalaryType}}", MapSalaryType(posting?.SalaryType))
+            .Replace("{{NumberOfChildren}}", posting?.NumberOfChildren?.ToString() ?? string.Empty)
+            .Replace("{{NannyAddress}}", nanny.User?.Address ?? string.Empty)
+            .Replace("{{NannyEmail}}", nanny.User?.Email ?? string.Empty)
+            .Replace("{{ParentEmail}}", parent.User?.Email ?? string.Empty)
+            .Replace("{{CreatedDate}}", DateTime.UtcNow.ToString("dd/MM/yyyy"));
+    }
+
+    private static string MapSalaryType(int? salaryType) =>
+        salaryType switch
+        {
+            1 => "Theo gio",
+            2 => "Theo thang",
+            _ => string.Empty
+        };
+
+    private static string FormatMoney(decimal? amount)
+    {
+        if (!amount.HasValue) return string.Empty;
+        return $"{amount.Value:0,0} VND";
+    }
 
     private static string GetDisplayName(User? user)
     {

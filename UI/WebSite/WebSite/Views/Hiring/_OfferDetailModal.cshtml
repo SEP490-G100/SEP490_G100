@@ -1,5 +1,9 @@
+@{
+    var canRespondOffer = User.IsInRole("Nanny");
+}
+
 <div id="offerDetailModal"
-     class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/50 backdrop-blur-sm px-4"
+     class="fixed inset-0 z-[12000] hidden items-center justify-center bg-black/50 backdrop-blur-sm px-4"
      onclick="if(event.target===this)window.__closeOfferDetail?.()">
     <div class="bg-white rounded-[28px] w-full max-w-2xl shadow-2xl relative overflow-hidden max-h-[90vh] flex flex-col">
         <div class="px-6 py-5 border-b border-slate-100 bg-gradient-to-b from-white to-slate-50 flex-shrink-0">
@@ -30,7 +34,7 @@
             <button type="button" id="offerAcceptBtn" onclick="window.__respondOffer?.('accept')"
                     class="inline-flex items-center justify-center gap-2 min-h-[42px] px-6 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-400 text-white font-bold hover:from-emerald-600 hover:to-emerald-500 transition-all shadow-lg shadow-emerald-200">
                 <span class="material-icons-round text-base">check_circle</span>
-                Chap nhan
+                Chấp nhận
             </button>
         </div>
     </div>
@@ -96,7 +100,8 @@
                     <pre class="text-xs text-slate-600 whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto">${d.contractContent}</pre>
                 </div>` : ''}`;
 
-            if (d.status === 0) footer.classList.remove('hidden');
+            const canRespondOffer = @((canRespondOffer) ? "true" : "false");
+            if (Number(d.status) === 0 && canRespondOffer) footer.classList.remove('hidden');
         } catch (err) {
             body.innerHTML = `<p class="text-rose-600 text-sm font-semibold text-center py-6">Khong tai duoc thong tin: ${err.message || 'Unknown error'}</p>`;
         }
@@ -124,6 +129,13 @@
             if (!json.success) {
                 alert(json.message || 'Co loi xay ra.');
                 return;
+            }
+            if (action === 'accept') {
+                if (typeof window.showToast === 'function') {
+                    window.showToast('Chuc mung! Ban da tim duoc cong viec phu hop.', { type: 'success' });
+                } else {
+                    alert('Chuc mung! Ban da tim duoc cong viec phu hop.');
+                }
             }
             hide();
         } catch {

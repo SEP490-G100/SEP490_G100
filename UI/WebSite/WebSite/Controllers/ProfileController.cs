@@ -144,7 +144,9 @@ public class ProfileController : Controller
         Guid userId,
         Guid? jobPostingId = null,
         Guid? jobApplicationId = null,
-        Guid? nannyProfileId = null)
+        Guid? nannyProfileId = null,
+        Guid? contactRequestId = null,
+        string? source = null)
     {
         if (userId == Guid.Empty)
             return RedirectToAction(nameof(Index));
@@ -178,6 +180,8 @@ public class ProfileController : Controller
                 && profile.IsNanny
                 && jobPostingId.HasValue
                 && jobApplicationId.HasValue;
+            var sourceKey = (source ?? string.Empty).Trim().ToLowerInvariant();
+            var suppressEngagementActions = sourceKey is "history" or "contact_request" or "contactrequest";
             var resolvedNannyProfileId = nannyProfileId.HasValue && nannyProfileId.Value != Guid.Empty
                 ? nannyProfileId.Value
                 : (profile.NannyProfileId ?? Guid.Empty);
@@ -198,6 +202,8 @@ public class ProfileController : Controller
             ViewBag.IsContactAccepted = isContactAccepted;
             ViewBag.HiringJobPostingId = hasHiringContext ? jobPostingId!.Value.ToString() : "";
             ViewBag.HiringJobApplicationId = hasHiringContext ? jobApplicationId!.Value.ToString() : "";
+            ViewBag.ContactRequestId = contactRequestId?.ToString() ?? "";
+            ViewBag.SuppressEngagementActions = suppressEngagementActions;
 
             return View("Index", profile);
         }

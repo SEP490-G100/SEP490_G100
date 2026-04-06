@@ -82,6 +82,24 @@ public class HiringController : ControllerBase
         catch (Exception ex) { return StatusCode(500, Fail(ex.Message)); }
     }
 
+    [HttpPost("contact-requests/{contactRequestId:guid}/hire")]
+    public async Task<IActionResult> HireByContactRequest(Guid contactRequestId, [FromBody] ConfirmHiringDto dto)
+    {
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue) return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+
+        try
+        {
+            var result = await _service.ConfirmHiringByContactRequestAsync(contactRequestId, userId.Value, dto);
+            return Ok(OkResult(result));
+        }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
+        catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
+        catch (ArgumentException ex) { return BadRequest(Fail(ex.Message)); }
+        catch (Exception ex) { return StatusCode(500, Fail(ex.Message)); }
+    }
+
     [HttpGet("records/{hiringRecordId:guid}")]
     public async Task<IActionResult> GetHiringOfferDetail(Guid hiringRecordId)
     {

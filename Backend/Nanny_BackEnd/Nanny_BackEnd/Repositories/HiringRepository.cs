@@ -37,6 +37,15 @@ public class HiringRepository
                 .ThenInclude(n => n.User)
             .FirstOrDefaultAsync();
 
+    public async Task<ContactRequest?> GetAcceptedContactRequestAsync(Guid contactRequestId) =>
+        await _db.ContactRequests
+            .Where(r => r.Id == contactRequestId && !r.IsDeleted && r.Status == 1)
+            .Include(r => r.ParentProfile)
+                .ThenInclude(p => p.User)
+            .Include(r => r.NannyProfile)
+                .ThenInclude(n => n.User)
+            .FirstOrDefaultAsync();
+
     public async Task<List<JobApplication>> GetOtherActiveApplicantsAsync(Guid jobPostingId, Guid excludedJobAppId) =>
         await _db.JobApplications
             .Where(a =>
@@ -66,6 +75,8 @@ public class HiringRepository
             .FirstOrDefaultAsync();
 
     public void AddHiringRecord(HiringRecord hiringRecord) => _db.HiringRecords.Add(hiringRecord);
+    public void AddJobPosting(JobPosting jobPosting) => _db.JobPostings.Add(jobPosting);
+    public void AddJobApplication(JobApplication jobApplication) => _db.JobApplications.Add(jobApplication);
 
     public async Task<Contract?> GetContractByHiringRecordIdAsync(Guid hiringRecordId) =>
         await _db.Contracts

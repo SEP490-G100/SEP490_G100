@@ -7,14 +7,16 @@
     var rating = Model.AverageRating ?? 0m;
     var isReadOnly = Model.IsReadOnlyView;
     var canEditProfile = !isReadOnly;
-    var canShowFavoriteHeart = User.IsInRole("Parent") && isNanny;
+    var suppressEngagementActions = (bool?)ViewBag.SuppressEngagementActions == true;
+    var canShowFavoriteHeart = User.IsInRole("Parent") && isNanny && !suppressEngagementActions;
     var canContactNanny = isReadOnly && User.IsInRole("Parent") && isNanny && Model.UserId != Guid.Empty;
     var isContactAccepted = (bool?)ViewBag.IsContactAccepted == true;
     var hasHiringContext = (bool?)ViewBag.HasHiringContext == true;
     var hiringJobPostingId = (ViewBag.HiringJobPostingId as string) ?? "";
     var hiringJobApplicationId = (ViewBag.HiringJobApplicationId as string) ?? "";
+    var contactRequestId = (ViewBag.ContactRequestId as string) ?? "";
     var canHireInHiringFlow = canContactNanny && hasHiringContext && !string.IsNullOrWhiteSpace(hiringJobPostingId) && !string.IsNullOrWhiteSpace(hiringJobApplicationId);
-    var canSendContactRequest = canContactNanny && !hasHiringContext && Model.ContactNannyProfileId.HasValue && Model.ContactNannyProfileId.Value != Guid.Empty && !isContactAccepted;
+    var canSendContactRequest = !suppressEngagementActions && canContactNanny && !hasHiringContext && Model.ContactNannyProfileId.HasValue && Model.ContactNannyProfileId.Value != Guid.Empty && !isContactAccepted;
     var canMessageInContactFlow = canContactNanny && !hasHiringContext && isContactAccepted;
     var canHireInContactFlow = canMessageInContactFlow;
     var canMessageInHiringFlow = canContactNanny && hasHiringContext;
@@ -469,18 +471,27 @@
             const hasHiringContext = @((hasHiringContext) ? "true" : "false");
             const hiringJobPostingId = '@Html.Raw(hiringJobPostingId)';
             const hiringJobApplicationId = '@Html.Raw(hiringJobApplicationId)';
+            const contactRequestId = '@Html.Raw(contactRequestId)';
+            const isContactAccepted = @((isContactAccepted) ? "true" : "false");
             const hireBtn = document.getElementById('hireNannyBtn');
             if (hireBtn) {
                 hireBtn.addEventListener('click', function () {
-                    if (!hasHiringContext) {
-                        if (typeof window.showToast === 'function') {
-                            window.showToast('Ban can vao luong tuyen dung de thuc hien thue nanny.', { type: 'info' });
-                        }
-                        window.location.href = '/Search/History';
+                    if (hasHiringContext) {
+                        const nannyName = (`@Model.FirstName @Model.LastName`).trim();
+                        window.__openHireModal?.(hiringJobPostingId, hiringJobApplicationId, nannyName);
                         return;
                     }
-                    const nannyName = (`@Model.FirstName @Model.LastName`).trim();
-                    window.__openHireModal?.(hiringJobPostingId, hiringJobApplicationId, nannyName);
+                    if (contactRequestId && isContactAccepted) {
+                        const nannyName = (`@Model.FirstName @Model.LastName`).trim();
+                        window.__openHireModal?.(null, null, nannyName, contactRequestId);
+                        return;
+                    }
+                    if (!hasHiringContext) {
+                        if (typeof window.showToast === 'function') {
+                            window.showToast('Can co ngu canh hop le de tao hiring record.', { type: 'info' });
+                        }
+                        window.location.href = '/Search/History';
+                    }
                 });
             }
 

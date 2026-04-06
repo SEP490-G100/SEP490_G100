@@ -49,6 +49,16 @@ public class HiringController : Controller
             JsonContent(body)));
     }
 
+    [HttpPost("ContactRequests/{contactRequestId:guid}/Hire")]
+    public async Task<IActionResult> HireFromContactRequest(Guid contactRequestId)
+    {
+        SetBearerToken();
+        var body = await ReadBodyAsync();
+        return await Proxy(() => _http.PostAsync(
+            $"/api/hiring/contact-requests/{contactRequestId}/hire",
+            JsonContent(body)));
+    }
+
     [HttpGet("Record")]
     public async Task<IActionResult> Record([FromQuery] Guid hiringRecordId)
     {

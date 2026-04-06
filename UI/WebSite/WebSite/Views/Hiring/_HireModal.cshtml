@@ -1,5 +1,5 @@
 <div id="hireNannyModal"
-     class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/50 backdrop-blur-sm px-4"
+     class="fixed inset-0 z-[12000] hidden items-center justify-center bg-black/50 backdrop-blur-sm px-4"
      onclick="if(event.target===this)window.__closeHireModal?.()">
     <div class="bg-white rounded-[28px] w-full max-w-lg shadow-2xl relative overflow-hidden">
         <div class="px-6 py-5 border-b border-orange-100 bg-gradient-to-b from-white to-orange-50/60">
@@ -57,7 +57,7 @@
 
 <script>
 (() => {
-    let context = { jobPostingId: null, jobAppId: null };
+    let context = { jobPostingId: null, jobAppId: null, contactRequestId: null };
     let templatesLoaded = false;
 
     const modal = document.getElementById('hireNannyModal');
@@ -89,11 +89,14 @@
         }
     };
 
-    window.__openHireModal = async (jobPostingId, jobAppId, nannyName) => {
-        context = { jobPostingId, jobAppId };
+    window.__openHireModal = async (jobPostingId, jobAppId, nannyName, contactRequestId = null) => {
+        context = { jobPostingId, jobAppId, contactRequestId };
         document.getElementById('hireModalNannyName').textContent = nannyName ? `Nanny: ${nannyName}` : '';
-        document.getElementById('hireStartDate').value = '';
+        const today = new Date().toISOString().slice(0, 10);
+        document.getElementById('hireStartDate').value = today;
+        document.getElementById('hireStartDate').setAttribute('min', today);
         document.getElementById('hireEndDate').value = '';
+        document.getElementById('hireEndDate').setAttribute('min', today);
         setError('');
         show();
         await loadTemplates();
@@ -108,13 +111,24 @@
 
         if (!startDate) { setError('Vui long chon ngay bat dau.'); return; }
         if (!contractTemplateId) { setError('Vui long chon mau hop dong.'); return; }
+        const today = new Date().toISOString().slice(0, 10);
+        if (startDate < today) { setError('Ngay bat dau khong duoc truoc ngay tao hop dong.'); return; }
+        if (endDate) {
+            if (endDate <= startDate) {
+                setError('Ngay ket thuc phai lon hon ngay bat dau.');
+                return;
+            }
+        }
 
         confirmBtn.disabled = true;
         confirmBtn.textContent = 'Dang xu ly...';
         setError('');
 
         try {
-            const res = await fetch(`/Hiring/${context.jobPostingId}/Applicants/${context.jobAppId}/Hire`, {
+            const endpoint = (context.jobPostingId && context.jobAppId)
+                ? `/Hiring/${context.jobPostingId}/Applicants/${context.jobAppId}/Hire`
+                : `/Hiring/ContactRequests/${context.contactRequestId}/Hire`;
+            const res = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

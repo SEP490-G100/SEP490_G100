@@ -183,6 +183,7 @@ builder.Services.AddScoped<VietQrService>();
 builder.Services.AddScoped<CommunicationService>();
 builder.Services.AddScoped<VnPayService>();
 builder.Services.AddScoped<HiringService>();
+builder.Services.AddScoped<ContractService>();
 builder.Services.AddScoped<FaqService>();
 builder.Services.AddScoped<BlogCategoryService>();
 builder.Services.AddScoped<BlogService>();
