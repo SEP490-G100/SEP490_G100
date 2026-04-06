@@ -18,7 +18,7 @@ namespace WebSite.Controllers;
 public class NannyVerificationRequestController : Controller
 {
     private readonly HttpClient _http;
-    private readonly IVerificationDocumentStorageService _storageService;
+    private readonly IAzureBlobStorageService _storageService;
     private readonly IHubContext<NotificationHub> _notificationHub;
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
     private static readonly HashSet<string> AllowedDocumentExtensions = new(StringComparer.OrdinalIgnoreCase)
@@ -33,7 +33,7 @@ public class NannyVerificationRequestController : Controller
 
     public NannyVerificationRequestController(
         IHttpClientFactory httpFactory,
-        IVerificationDocumentStorageService storageService,
+        IAzureBlobStorageService storageService,
         IHubContext<NotificationHub> notificationHub)
     {
         _http = httpFactory.CreateClient("BackendApi");
@@ -319,7 +319,7 @@ public class NannyVerificationRequestController : Controller
 
         foreach (var file in files)
         {
-            var documentUrl = await _storageService.UploadAsync(file, documentType);
+            var documentUrl = await _storageService.UploadVerificationDocumentAsync(file, documentType);
 
             documents.Add(new
             {

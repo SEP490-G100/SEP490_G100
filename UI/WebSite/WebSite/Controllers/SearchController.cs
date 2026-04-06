@@ -23,7 +23,9 @@ public class SearchController : Controller
     private readonly IHubContext<NotificationHub> _notificationHub;
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
 
-    public SearchController(IHttpClientFactory httpFactory, IHubContext<NotificationHub> notificationHub)
+    public SearchController(
+        IHttpClientFactory httpFactory,
+        IHubContext<NotificationHub> notificationHub)
     {
         _http = httpFactory.CreateClient("BackendApi");
         _notificationHub = notificationHub;

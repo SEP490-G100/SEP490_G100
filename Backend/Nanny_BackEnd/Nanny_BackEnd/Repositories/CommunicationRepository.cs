@@ -81,7 +81,6 @@ public class CommunicationRepository
 
     // ─── Report ───────────────────────────────────────────────────────────────
 
-    public void AddReport(Report report) => _db.Reports.Add(report);
 
     // ─── Persist ──────────────────────────────────────────────────────────────
 

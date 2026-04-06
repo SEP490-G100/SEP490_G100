@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Nanny_BackEnd.DTOs.Communication;
+using Nanny_BackEnd.DTOs.Report;
 using Nanny_BackEnd.Hubs;
 using Nanny_BackEnd.Services;
 
@@ -14,11 +15,13 @@ namespace Nanny_BackEnd.Controllers;
 public class CommunicationController : ControllerBase
 {
     private readonly CommunicationService _service;
+    private readonly ReportService _reportService;
     private readonly IHubContext<ChatHub> _hubContext;
 
-    public CommunicationController(CommunicationService service, IHubContext<ChatHub> hubContext)
+    public CommunicationController(CommunicationService service, ReportService reportService, IHubContext<ChatHub> hubContext)
     {
         _service = service;
+        _reportService = reportService;
         _hubContext = hubContext;
     }
 
@@ -111,14 +114,16 @@ public class CommunicationController : ControllerBase
 
     // POST /api/communication/messages/{id}/report
     [HttpPost("messages/{id:guid}/report")]
-    public async Task<IActionResult> ReportMessage(Guid id, [FromBody] ReportMessageDto dto)
+    public async Task<IActionResult> ReportMessage(Guid id, [FromBody] CreateReportRequest dto)
     {
+        if (!ModelState.IsValid) return BadRequest(fail("Du lieu bao cao khong hop le."));
+
         var userId = getCurrentUserId();
         if (!userId.HasValue) return Unauthorized(fail("Khong xac dinh duoc nguoi dung."));
 
         try
         {
-            await _service.ReportMessageAsync(id, userId.Value, dto);
+            await _reportService.ReportMessageAsync(id, userId.Value, dto);
             return Ok(new { success = true, message = "Bao cao da duoc gui. Chung toi se kiem tra trong thoi gian som nhat." });
         }
         catch (KeyNotFoundException ex) { return NotFound(fail(ex.Message)); }

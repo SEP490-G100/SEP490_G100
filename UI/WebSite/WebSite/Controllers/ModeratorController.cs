@@ -24,17 +24,17 @@ public class ModeratorController : Controller
 {
     private readonly HttpClient _http;
     private readonly IHubContext<NotificationHub> _notificationHub;
-    private readonly IBlogImageStorageService _blogImageStorageService;
+    private readonly IAzureBlobStorageService _blobStorageService;
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
 
     public ModeratorController(
         IHttpClientFactory httpFactory,
         IHubContext<NotificationHub> notificationHub,
-        IBlogImageStorageService blogImageStorageService)
+        IAzureBlobStorageService blobStorageService)
     {
         _http = httpFactory.CreateClient("BackendApi");
         _notificationHub = notificationHub;
-        _blogImageStorageService = blogImageStorageService;
+        _blobStorageService = blobStorageService;
     }
 
     // ──────────────────────────────────────────────
@@ -418,8 +418,11 @@ public class ModeratorController : Controller
             var result   = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
             if (result?.Success == true)
             {
-                TempData["Success"] = "Tạo FAQ thành công!";
-                return RedirectToAction(nameof(ManageFAQ));
+                return RedirectToAction(nameof(ManageFAQ), new
+                {
+                    toastType = "success",
+                    toastMessage = "Đã tạo FAQ thành công"
+                });
             }
             TempData["Error"] = result?.Message ?? "Tạo FAQ thất bại.";
                 return View("~/Views/Moderator/FAQ/CreateFAQ.cshtml", model);
@@ -491,7 +494,7 @@ public class ModeratorController : Controller
                 return RedirectToAction(nameof(ManageFAQ), new
                 {
                     toastType = "success",
-                    toastMessage = "Cập nhật FAQ thành công."
+                    toastMessage = "Đã chỉnh sửa FAQ thành công"
                 });
             }
             TempData["Error"] = result?.Message ?? "Cập nhật FAQ thất bại.";
@@ -594,7 +597,7 @@ public class ModeratorController : Controller
                 return RedirectToAction(nameof(ManageBlogCategory), new
                 {
                     toastType = "success",
-                    toastMessage = "Tạo danh mục thành công."
+                    toastMessage = "Tạo mới Blog category thành công"
                 });
             }
             TempData["Error"] = result?.Message ?? "Tạo danh mục thất bại.";
@@ -659,7 +662,7 @@ public class ModeratorController : Controller
                 return RedirectToAction(nameof(ManageBlogCategory), new
                 {
                     toastType = "success",
-                    toastMessage = "Cập nhật danh mục thành công."
+                    toastMessage = "Cập nhật Blog ccategory thành công"
                 });
             }
             TempData["Error"] = result?.Message ?? "Cập nhật danh mục thất bại.";
@@ -693,8 +696,8 @@ public class ModeratorController : Controller
                 {
                     toastType = activate ? "success" : "warning",
                     toastMessage = activate
-                        ? "Blog category activated successfully."
-                        : "Blog category deactivated successfully."
+                        ? "Activate blog category thành công"
+                        : "Deactivate blog category thành công"
                 });
             }
 
@@ -753,57 +756,51 @@ public class ModeratorController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UploadBlogContentImages(List<IFormFile>? files, CancellationToken cancellationToken)
-    {
-        if (files == null || files.Count == 0)
-        {
-            return Json(new { success = false, message = "Vui long chon it nhat mot anh." });
-        }
-
-        try
-        {
-            var uploadedUrls = await _blogImageStorageService.UploadAsync(files, cancellationToken);
-            if (uploadedUrls.Count == 0)
-            {
-                return Json(new { success = false, message = "Khong co anh hop le de upload." });
-            }
-
-            return Json(new
-            {
-                success = true,
-                message = uploadedUrls.Count == 1 ? "Upload anh thanh cong." : "Upload cac anh thanh cong.",
-                data = new
-                {
-                    urls = uploadedUrls
-                }
-            });
-        }
-        catch (Exception ex)
-        {
-            return Json(new { success = false, message = $"Khong the upload anh blog: {ex.Message}" });
-        }
-    }
+        => await UploadBlogContentMediaCore(files, BlobMediaType.Image, cancellationToken);
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UploadBlogContentVideos(List<IFormFile>? files, CancellationToken cancellationToken)
+        => await UploadBlogContentMediaCore(files, BlobMediaType.Video, cancellationToken);
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UploadBlogContentMedia(List<IFormFile>? files, [FromQuery] string? mediaType, CancellationToken cancellationToken)
     {
+        var normalized = mediaType?.Trim().ToLowerInvariant();
+        if (normalized is not ("image" or "video"))
+        {
+            return Json(new { success = false, message = "Loai media khong hop le. Chi ho tro image/video." });
+        }
+
+        var type = normalized == "video" ? BlobMediaType.Video : BlobMediaType.Image;
+        return await UploadBlogContentMediaCore(files, type, cancellationToken);
+    }
+
+    private async Task<IActionResult> UploadBlogContentMediaCore(List<IFormFile>? files, BlobMediaType mediaType, CancellationToken cancellationToken)
+    {
+        var mediaLabel = mediaType == BlobMediaType.Video ? "video" : "anh";
         if (files == null || files.Count == 0)
         {
-            return Json(new { success = false, message = "Vui long chon it nhat mot video." });
+            return Json(new { success = false, message = $"Vui long chon it nhat mot {mediaLabel}." });
         }
 
         try
         {
-            var uploadedUrls = await _blogImageStorageService.UploadVideosAsync(files, cancellationToken);
+            var uploadedUrls = await _blobStorageService.UploadMediaAsync(
+                files,
+                BlobStorageContainerKind.BlogMedia,
+                mediaType,
+                cancellationToken);
             if (uploadedUrls.Count == 0)
             {
-                return Json(new { success = false, message = "Khong co video hop le de upload." });
+                return Json(new { success = false, message = $"Khong co {mediaLabel} hop le de upload." });
             }
 
             return Json(new
             {
                 success = true,
-                message = uploadedUrls.Count == 1 ? "Upload video thanh cong." : "Upload cac video thanh cong.",
+                message = uploadedUrls.Count == 1 ? $"Upload {mediaLabel} thanh cong." : $"Upload cac {mediaLabel} thanh cong.",
                 data = new
                 {
                     urls = uploadedUrls
@@ -812,7 +809,7 @@ public class ModeratorController : Controller
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = $"Khong the upload video blog: {ex.Message}" });
+            return Json(new { success = false, message = $"Khong the upload {mediaLabel} blog: {ex.Message}" });
         }
     }
 
@@ -919,8 +916,11 @@ public class ModeratorController : Controller
 
             if (result?.Success == true)
             {
-                TempData["Success"] = "Tạo bài viết thành công.";
-                return RedirectToAction(nameof(ManageBlog));
+                return RedirectToAction(nameof(ManageBlog), new
+                {
+                    toastType = "success",
+                    toastMessage = "Đã tạo blog thành công"
+                });
             }
             TempData["Error"] = result?.Message ?? "Tạo bài viết thất bại.";
         }
@@ -1016,7 +1016,7 @@ public class ModeratorController : Controller
                 return RedirectToAction(nameof(ManageBlog), new
                 {
                     toastType = "success",
-                    toastMessage = "Cập nhật bài viết thành công."
+                    toastMessage = "Đã chỉnh sửa blog thành công"
                 });
             }
 

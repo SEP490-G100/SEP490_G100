@@ -10,15 +10,18 @@ public class CommunicationService
     private readonly CommunicationRepository _repo;
     private readonly NotificationService _notificationService;
     private readonly UserRepository _userRepo;
+    private readonly ReportService _reportService;
 
     public CommunicationService(
         CommunicationRepository repo,
         NotificationService notificationService,
-        UserRepository userRepo)
+        UserRepository userRepo,
+        ReportService reportService)
     {
         _repo = repo;
         _notificationService = notificationService;
         _userRepo = userRepo;
+        _reportService = reportService;
     }
 
     // ─── Lấy danh sách hội thoại ─────────────────────────────────────────────
@@ -203,37 +206,11 @@ public class CommunicationService
 
     public async Task ReportMessageAsync(Guid messageId, Guid reporterUserId, ReportMessageDto dto)
     {
-        var message = await _repo.GetMessageByIdAsync(messageId)
-            ?? throw new KeyNotFoundException("Khong tim thay tin nhan.");
-
-        if (message.SenderUserId == reporterUserId)
-            throw new InvalidOperationException("Ban khong the bao cao tin nhan cua chinh minh.");
-
-        var report = new Report
+        await _reportService.ReportMessageAsync(messageId, reporterUserId, new Nanny_BackEnd.DTOs.Report.CreateReportRequest
         {
-            Id = Guid.NewGuid(),
-            ReporterUserId = reporterUserId,
-            ReportedEntityId = messageId,
-            ReportedEntityType = "Message",
             Reason = dto.Reason,
-            Evidence = dto.Evidence,
-            Status = 0, // Pending
-            CreatedAt = DateTime.UtcNow,
-            CreatedBy = reporterUserId,
-            IsDeleted = false
-        };
-        _repo.AddReport(report);
-
-        await _repo.SaveChangesAsync();
-
-        var reporter = await _userRepo.FindByIdAsync(reporterUserId);
-        await _notificationService.createNotificationForModerators(
-            "Co bao cao moi can xu ly",
-            $"{getDisplayName(reporter)} vua gui mot bao cao moi trong he thong.",
-            NotificationTypes.ReportSubmitted,
-            report.Id,
-            "Report",
-            reporterUserId);
+            Evidence = dto.Evidence
+        });
     }
 
     // ─── Cập nhật trạng thái hội thoại (Block/Hide) ──────────────────────────

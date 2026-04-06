@@ -440,6 +440,12 @@
                     <span class="material-icons-round text-base">edit</span>
                     <span>Chinh sua bai dang</span>
                 </a>
+                <button id="pv-reportBtn"
+                        type="button"
+                        class="hidden w-full py-3 rounded-xl border border-rose-200 text-rose-600 bg-rose-50 hover:bg-rose-100 font-bold text-sm transition-all inline-flex items-center justify-center gap-2">
+                    <span class="material-icons-round text-base">flag</span>
+                    <span>Phan nan bai dang</span>
+                </button>
                 <a id="pv-parentBtn" href="#" target="_blank" class="w-full py-3 rounded-xl border border-orange-200 text-orange-600 bg-orange-50 hover:bg-orange-100 font-bold text-sm transition-all inline-flex items-center justify-center gap-2">
                     <span class="material-icons-round text-base">person</span>
                     <span id="pv-parentBtnText">Xem chi tiet ho so nguoi dang</span>
@@ -447,6 +453,34 @@
             </div>
         </div>
         </div>
+    </div>
+</div>
+
+<div id="jobReportModal" class="nmodal fixed inset-0 z-50 bg-black/50 backdrop-blur-sm items-center justify-center px-4" onclick="if(event.target===this)closeJobReportModal()">
+    <div class="nmodal-box bg-white rounded-2xl w-full max-w-xl shadow-2xl relative">
+        <div class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
+            <div>
+                <h2 class="text-lg font-bold text-gray-900">Gui phan nan job posting</h2>
+                <p id="jobReportTarget" class="text-xs text-gray-400 font-semibold mt-0.5">Bai dang</p>
+            </div>
+            <button onclick="closeJobReportModal()" class="text-gray-300 hover:text-gray-700 material-icons-round text-2xl transition-colors">close</button>
+        </div>
+        <form id="jobReportForm" method="post" asp-controller="Report" asp-action="ReportJobPosting" class="px-6 py-5 space-y-4">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="jobReportJobPostingId" name="JobPostingId" />
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Ly do phan nan <span class="text-red-500">*</span></label>
+                <textarea id="jobReportReason" name="Reason" rows="4" class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400" placeholder="Nhap ly do phan nan..."></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Bang chung (khong bat buoc)</label>
+                <textarea id="jobReportEvidence" name="Evidence" rows="3" class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400" placeholder="Link, mo ta bo sung, thong tin lien quan..."></textarea>
+            </div>
+            <div class="flex gap-2">
+                <button type="button" onclick="closeJobReportModal()" class="modal-btn modal-btn-secondary w-full">Huy</button>
+                <button id="jobReportSubmitBtn" type="submit" class="modal-btn modal-btn-primary w-full">Gui phan nan</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -467,6 +501,7 @@
 
 @section Scripts {
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="~/lib/tinymce/tinymce.min.js" asp-append-version="true"></script>
 <script>
 const API_URL = '/Search/Jobs';
 const IS_AUTH = @(isAuthenticated ? "true" : "false");
@@ -477,4 +512,3 @@ const CURRENT_USER_NAME = '@userName';
 </script>
 <script src="~/js/search.js" asp-append-version="true"></script>
 }
-

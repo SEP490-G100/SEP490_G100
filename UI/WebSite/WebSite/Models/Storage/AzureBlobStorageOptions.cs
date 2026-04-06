@@ -7,4 +7,5 @@ public class AzureBlobStorageOptions
     public string ConnectionString { get; set; } = string.Empty;
     public string VerificationContainerName { get; set; } = "verification-documents";
     public string BlogMediaContainerName { get; set; } = "blog-media";
+    public string ReportMediaContainerName { get; set; } = "report-media";
 }
