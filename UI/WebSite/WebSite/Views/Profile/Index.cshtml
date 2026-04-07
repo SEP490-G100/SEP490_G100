@@ -449,6 +449,7 @@
                         var response = await fetch('/Communication/GetOrCreate', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
+                            credentials: 'same-origin',
                             body: JSON.stringify({ otherUserId: userId })
                         });
 
@@ -525,7 +526,7 @@
     </script>
 }
 
-@if (canHireInHiringFlow)
+@if (canHireInHiringFlow || canHireInContactFlow)
 {
     <partial name="~/Views/Hiring/_HireModal.cshtml" />
 }
