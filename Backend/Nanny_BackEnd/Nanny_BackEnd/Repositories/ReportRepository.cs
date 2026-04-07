@@ -39,6 +39,37 @@ public class ReportRepository
             r.ReportedEntityType == reportedEntityType &&
             r.Status == 0);
 
+    public async Task<int> CountReportsSinceAsync(Guid reporterUserId, DateTime sinceUtc) =>
+        await _db.Reports.CountAsync(r =>
+            !r.IsDeleted &&
+            r.ReporterUserId == reporterUserId &&
+            r.CreatedAt >= sinceUtc);
+
+    public async Task<DateTime?> GetOldestReportCreatedAtSinceAsync(Guid reporterUserId, DateTime sinceUtc) =>
+        await _db.Reports
+            .Where(r =>
+                !r.IsDeleted &&
+                r.ReporterUserId == reporterUserId &&
+                r.CreatedAt >= sinceUtc)
+            .OrderBy(r => r.CreatedAt)
+            .Select(r => (DateTime?)r.CreatedAt)
+            .FirstOrDefaultAsync();
+
+    public async Task<DateTime?> GetLatestCompletedReportMomentAsync(
+        Guid reporterUserId,
+        Guid reportedEntityId,
+        string reportedEntityType) =>
+        await _db.Reports
+            .Where(r =>
+                !r.IsDeleted &&
+                r.ReporterUserId == reporterUserId &&
+                r.ReportedEntityId == reportedEntityId &&
+                r.ReportedEntityType == reportedEntityType &&
+                r.Status == 1)
+            .Select(r => (DateTime?)(r.HandledAt ?? r.UpdatedAt ?? r.CreatedAt))
+            .OrderByDescending(x => x)
+            .FirstOrDefaultAsync();
+
     public async Task<(List<Report> Items, int TotalCount)> GetPagedReportsAsync(
         int? status,
         string? entityType,

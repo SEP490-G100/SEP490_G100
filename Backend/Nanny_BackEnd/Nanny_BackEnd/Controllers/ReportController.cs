@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nanny_BackEnd.DTOs.Report;
+using Nanny_BackEnd.Exceptions;
 using Nanny_BackEnd.Services;
 
 namespace Nanny_BackEnd.Controllers;
@@ -39,6 +40,7 @@ public class ReportController : ControllerBase
             });
         }
         catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
+        catch (RateLimitExceededException ex) { return RateLimit(ex); }
         catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
     }
 
@@ -58,6 +60,7 @@ public class ReportController : ControllerBase
             return Ok(new { success = true, message = "Bao cao da duoc gui. Chung toi se kiem tra trong thoi gian som nhat." });
         }
         catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
+        catch (RateLimitExceededException ex) { return RateLimit(ex); }
         catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
     }
 
@@ -82,6 +85,7 @@ public class ReportController : ControllerBase
             });
         }
         catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
+        catch (RateLimitExceededException ex) { return RateLimit(ex); }
         catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
     }
 
@@ -107,6 +111,7 @@ public class ReportController : ControllerBase
         }
         catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
         catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (RateLimitExceededException ex) { return RateLimit(ex); }
         catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
     }
 
@@ -128,5 +133,18 @@ public class ReportController : ControllerBase
                 kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray());
 
         return new { success = false, message = "Du lieu khong hop le.", errors };
+    }
+
+    private IActionResult RateLimit(RateLimitExceededException ex)
+    {
+        Response.Headers.RetryAfter = ex.RetryAfterSeconds.ToString();
+        return StatusCode(429, new
+        {
+            success = false,
+            code = ex.Code,
+            message = ex.Message,
+            retryAfterSeconds = ex.RetryAfterSeconds,
+            cooldownUntilUtc = ex.CooldownUntilUtc
+        });
     }
 }

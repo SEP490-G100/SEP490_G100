@@ -1041,7 +1041,9 @@ function openJobReportModal(job, event) {
   ensureReportEditorsInitialized();
 
   const targetEl = document.getElementById('jobReportTarget');
+  const jobPostingIdInput = document.getElementById('jobReportJobPostingId');
   if (targetEl) targetEl.textContent = job?.title ? `Bai dang: ${job.title}` : 'Bai dang';
+  if (jobPostingIdInput) jobPostingIdInput.value = job?.id || '';
 
   setReportEditorContent('jobReportReason', '');
   setReportEditorContent('jobReportEvidence', '');
@@ -1057,6 +1059,8 @@ function openJobReportModal(job, event) {
 
 function closeJobReportModal() {
   document.getElementById('jobReportModal')?.classList.remove('show');
+  const jobPostingIdInput = document.getElementById('jobReportJobPostingId');
+  if (jobPostingIdInput) jobPostingIdInput.value = '';
   pendingReportJob = null;
   isSubmittingJobReport = false;
 }

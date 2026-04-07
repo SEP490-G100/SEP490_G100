@@ -1,4 +1,5 @@
 using Nanny_BackEnd.DTOs.Report;
+using Nanny_BackEnd.Exceptions;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
@@ -7,6 +8,12 @@ namespace Nanny_BackEnd.Services;
 
 public class ReportService
 {
+    private static readonly TimeSpan HourlyWindow = TimeSpan.FromHours(1);
+    private static readonly TimeSpan DailyWindow = TimeSpan.FromDays(1);
+    private static readonly TimeSpan TargetCompletedCooldown = TimeSpan.FromHours(10);
+    private const int MaxReportsPerHour = 3;
+    private const int MaxReportsPerDay = 10;
+
     private readonly ReportRepository _reportRepo;
     private readonly UserRepository _userRepo;
     private readonly NotificationService _notificationService;
@@ -208,6 +215,11 @@ public class ReportService
         if (hasPending)
             throw new InvalidOperationException("Ban da gui bao cao nay va dang cho xu ly.");
 
+        var nowUtc = DateTime.UtcNow;
+
+        await ensureTargetCooldownAsync(reporterUserId, reportedEntityId, reportedEntityType, nowUtc);
+        await ensureGlobalRateLimitsAsync(reporterUserId, nowUtc);
+
         var report = new Report
         {
             Id = Guid.NewGuid(),
@@ -217,7 +229,7 @@ public class ReportService
             Reason = reason,
             Evidence = string.IsNullOrWhiteSpace(request.Evidence) ? null : request.Evidence.Trim(),
             Status = 0,
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = nowUtc,
             CreatedBy = reporterUserId,
             IsDeleted = false
         };
@@ -225,6 +237,59 @@ public class ReportService
         _reportRepo.AddReport(report);
         await _reportRepo.SaveChangesAsync();
         return report;
+    }
+
+    private async Task ensureTargetCooldownAsync(
+        Guid reporterUserId,
+        Guid reportedEntityId,
+        string reportedEntityType,
+        DateTime nowUtc)
+    {
+        var latestCompletedAt = await _reportRepo.GetLatestCompletedReportMomentAsync(
+            reporterUserId,
+            reportedEntityId,
+            reportedEntityType);
+
+        if (!latestCompletedAt.HasValue)
+            return;
+
+        var cooldownUntil = latestCompletedAt.Value.Add(TargetCompletedCooldown);
+        if (cooldownUntil <= nowUtc)
+            return;
+
+        throw new RateLimitExceededException(
+            "REPORT_TARGET_COOLDOWN",
+            "Ban vua bao cao doi tuong nay. Vui long thu lai sau 10 gio.",
+            cooldownUntil);
+    }
+
+    private async Task ensureGlobalRateLimitsAsync(Guid reporterUserId, DateTime nowUtc)
+    {
+        var hourWindowStart = nowUtc.Subtract(HourlyWindow);
+        var hourlyCount = await _reportRepo.CountReportsSinceAsync(reporterUserId, hourWindowStart);
+        if (hourlyCount >= MaxReportsPerHour)
+        {
+            var oldestInHour = await _reportRepo.GetOldestReportCreatedAtSinceAsync(reporterUserId, hourWindowStart);
+            var cooldownUntil = (oldestInHour ?? nowUtc).Add(HourlyWindow);
+
+            throw new RateLimitExceededException(
+                "REPORT_RATE_LIMIT_HOURLY",
+                "Ban da vuot qua gioi han 3 bao cao trong 1 gio. Vui long thu lai sau.",
+                cooldownUntil);
+        }
+
+        var dayWindowStart = nowUtc.Subtract(DailyWindow);
+        var dailyCount = await _reportRepo.CountReportsSinceAsync(reporterUserId, dayWindowStart);
+        if (dailyCount >= MaxReportsPerDay)
+        {
+            var oldestInDay = await _reportRepo.GetOldestReportCreatedAtSinceAsync(reporterUserId, dayWindowStart);
+            var cooldownUntil = (oldestInDay ?? nowUtc).Add(DailyWindow);
+
+            throw new RateLimitExceededException(
+                "REPORT_RATE_LIMIT_DAILY",
+                "Ban da vuot qua gioi han 10 bao cao trong 24 gio. Vui long thu lai sau.",
+                cooldownUntil);
+        }
     }
 
     private static string getDisplayName(User? user)

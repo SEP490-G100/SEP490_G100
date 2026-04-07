@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
 using Nanny_BackEnd.DTOs.JobPosting;
 using Nanny_BackEnd.DTOs.Report;
+using Nanny_BackEnd.Exceptions;
 using Nanny_BackEnd.Services;
 
 namespace Nanny_BackEnd.Controllers;
@@ -92,6 +93,18 @@ public class JobPostingController : ControllerBase
             });
         }
         catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
+        catch (RateLimitExceededException ex)
+        {
+            Response.Headers.RetryAfter = ex.RetryAfterSeconds.ToString();
+            return StatusCode(429, new
+            {
+                success = false,
+                code = ex.Code,
+                message = ex.Message,
+                retryAfterSeconds = ex.RetryAfterSeconds,
+                cooldownUntilUtc = ex.CooldownUntilUtc
+            });
+        }
         catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
     }
 

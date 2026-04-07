@@ -77,8 +77,9 @@ public class ReportController : Controller
 
             var json = await response.Content.ReadAsStringAsync(cancellationToken);
             var message = TryExtractMessage(json);
+            var isBusinessSuccess = TryExtractSuccessFlag(json);
 
-            if (response.IsSuccessStatusCode)
+            if (response.IsSuccessStatusCode && isBusinessSuccess != false)
             {
                 await _notificationHub.Clients.Group("role:Moderator").SendAsync("notification:new", new
                 {
@@ -168,8 +169,9 @@ public class ReportController : Controller
 
             var json = await response.Content.ReadAsStringAsync(cancellationToken);
             var message = TryExtractMessage(json);
+            var isBusinessSuccess = TryExtractSuccessFlag(json);
 
-            if (response.IsSuccessStatusCode)
+            if (response.IsSuccessStatusCode && isBusinessSuccess != false)
             {
                 await _notificationHub.Clients.Group("role:Moderator").SendAsync("notification:new", new
                 {
@@ -249,8 +251,9 @@ public class ReportController : Controller
 
             var json = await response.Content.ReadAsStringAsync(cancellationToken);
             var message = TryExtractMessage(json);
+            var isBusinessSuccess = TryExtractSuccessFlag(json);
 
-            if (response.IsSuccessStatusCode)
+            if (response.IsSuccessStatusCode && isBusinessSuccess != false)
             {
                 await _notificationHub.Clients.Group("role:Moderator").SendAsync("notification:new", new
                 {
@@ -327,8 +330,9 @@ public class ReportController : Controller
 
             var json = await response.Content.ReadAsStringAsync(cancellationToken);
             var message = TryExtractMessage(json);
+            var isBusinessSuccess = TryExtractSuccessFlag(json);
 
-            if (response.IsSuccessStatusCode)
+            if (response.IsSuccessStatusCode && isBusinessSuccess != false)
             {
                 await _notificationHub.Clients.Group("role:Moderator").SendAsync("notification:new", new
                 {
@@ -482,6 +486,30 @@ public class ReportController : Controller
         return null;
     }
 
+    private static bool? TryExtractSuccessFlag(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+            return null;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            if (root.ValueKind == JsonValueKind.Object &&
+                root.TryGetProperty("success", out var successElement) &&
+                (successElement.ValueKind == JsonValueKind.True || successElement.ValueKind == JsonValueKind.False))
+            {
+                return successElement.GetBoolean();
+            }
+        }
+        catch
+        {
+            return null;
+        }
+
+        return null;
+    }
+
     private IActionResult RedirectToProfileReportReturn(
         string? returnUrl,
         Guid reportedUserId,
@@ -490,13 +518,7 @@ public class ReportController : Controller
     {
         if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
         {
-            var redirectUrl = QueryHelpers.AddQueryString(
-                returnUrl,
-                new Dictionary<string, string?>
-                {
-                    ["toastType"] = toastType,
-                    ["toastMessage"] = toastMessage
-                });
+            var redirectUrl = BuildToastRedirectUrl(returnUrl, toastType, toastMessage);
             return LocalRedirect(redirectUrl);
         }
 
@@ -516,13 +538,7 @@ public class ReportController : Controller
     {
         if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
         {
-            var redirectUrl = QueryHelpers.AddQueryString(
-                returnUrl,
-                new Dictionary<string, string?>
-                {
-                    ["toastType"] = toastType,
-                    ["toastMessage"] = toastMessage
-                });
+            var redirectUrl = BuildToastRedirectUrl(returnUrl, toastType, toastMessage);
             return LocalRedirect(redirectUrl);
         }
 
@@ -541,13 +557,7 @@ public class ReportController : Controller
     {
         if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
         {
-            var redirectUrl = QueryHelpers.AddQueryString(
-                returnUrl,
-                new Dictionary<string, string?>
-                {
-                    ["toastType"] = toastType,
-                    ["toastMessage"] = toastMessage
-                });
+            var redirectUrl = BuildToastRedirectUrl(returnUrl, toastType, toastMessage);
             return LocalRedirect(redirectUrl);
         }
 
@@ -556,5 +566,56 @@ public class ReportController : Controller
             toastType,
             toastMessage
         });
+    }
+
+    private static string BuildToastRedirectUrl(string returnUrl, string toastType, string toastMessage)
+    {
+        var sanitizedUrl = returnUrl.Trim();
+        var hashIndex = sanitizedUrl.IndexOf('#');
+        var hash = string.Empty;
+        if (hashIndex >= 0)
+        {
+            hash = sanitizedUrl[hashIndex..];
+            sanitizedUrl = sanitizedUrl[..hashIndex];
+        }
+
+        var path = sanitizedUrl;
+        var query = string.Empty;
+        var queryIndex = sanitizedUrl.IndexOf('?');
+        if (queryIndex >= 0)
+        {
+            path = sanitizedUrl[..queryIndex];
+            query = sanitizedUrl[(queryIndex + 1)..];
+        }
+
+        var preserved = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+        if (!string.IsNullOrWhiteSpace(query))
+        {
+            var existing = QueryHelpers.ParseQuery(query);
+            foreach (var item in existing)
+            {
+                if (item.Key.Equals("toastType", StringComparison.OrdinalIgnoreCase) ||
+                    item.Key.Equals("toastMessage", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                preserved[item.Key] = item.Value.ToString();
+            }
+        }
+
+        var resultUrl = preserved.Count > 0
+            ? QueryHelpers.AddQueryString(path, preserved)
+            : path;
+
+        resultUrl = QueryHelpers.AddQueryString(
+            resultUrl,
+            new Dictionary<string, string?>
+            {
+                ["toastType"] = toastType,
+                ["toastMessage"] = toastMessage
+            });
+
+        return string.IsNullOrEmpty(hash) ? resultUrl : $"{resultUrl}{hash}";
     }
 }
