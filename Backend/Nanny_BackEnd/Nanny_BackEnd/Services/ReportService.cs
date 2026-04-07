@@ -110,6 +110,90 @@ public class ReportService
         return report.Id;
     }
 
+    public async Task<ReportListResponse> GetModeratorReportsAsync(
+        int? status,
+        string? entityType,
+        string? search,
+        int page,
+        int pageSize)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1 || pageSize > 100) pageSize = 10;
+
+        var (items, totalCount) = await _reportRepo.GetPagedReportsAsync(
+            status, entityType, search, page, pageSize);
+
+        return new ReportListResponse
+        {
+            Items = items.Select(MapListItem).ToList(),
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize
+        };
+    }
+
+    public async Task<(bool Success, ReportDetailDto? Data, string? Message)> GetModeratorReportDetailAsync(Guid id)
+    {
+        var report = await _reportRepo.GetReportByIdAsync(id, includeDeleted: true);
+        if (report == null)
+            return (false, null, "Report not found.");
+
+        return (true, MapDetail(report), null);
+    }
+
+    public async Task<(bool Success, int StatusCode, string Message)> ResolveReportAsync(
+        Guid id,
+        Guid moderatorUserId,
+        ResolveReportRequest request)
+    {
+        var report = await _reportRepo.GetReportByIdAsync(id, includeDeleted: true);
+        if (report == null)
+            return (false, 404, "Report not found.");
+
+        if (report.IsDeleted)
+            return (false, 400, "Cannot resolve a deactivated report.");
+
+        var resolution = request.Resolution?.Trim();
+        var actionTaken = request.ActionTaken?.Trim();
+
+        if (string.IsNullOrWhiteSpace(resolution))
+            return (false, 400, "Resolution is required.");
+        if (string.IsNullOrWhiteSpace(actionTaken))
+            return (false, 400, "ActionTaken is required.");
+
+        report.Resolution = resolution;
+        report.ActionTaken = actionTaken;
+        report.Status = 1;
+        report.HandledBy = moderatorUserId;
+        report.HandledAt = DateTime.UtcNow;
+        report.UpdatedAt = DateTime.UtcNow;
+        report.UpdatedBy = moderatorUserId;
+
+        await _reportRepo.SaveChangesAsync();
+
+        return (true, 200, "Report resolved successfully.");
+    }
+
+    public async Task<(bool Success, int StatusCode, string Message)> ToggleReportStatusAsync(
+        Guid id,
+        Guid moderatorUserId,
+        bool isActive)
+    {
+        var report = await _reportRepo.GetReportByIdAsync(id, includeDeleted: true);
+        if (report == null)
+            return (false, 404, "Report not found.");
+
+        report.IsDeleted = !isActive;
+        report.UpdatedAt = DateTime.UtcNow;
+        report.UpdatedBy = moderatorUserId;
+
+        await _reportRepo.SaveChangesAsync();
+
+        return (true, 200, isActive
+            ? "Report activated successfully."
+            : "Report deactivated successfully.");
+    }
+
     private async Task<Report> createReportAsync(
         Guid reporterUserId,
         Guid reportedEntityId,
@@ -149,5 +233,51 @@ public class ReportService
         var fullName = $"{user.FirstName} {user.LastName}".Trim();
         return string.IsNullOrWhiteSpace(fullName) ? user.Email : fullName;
     }
-}
 
+    private static ReportListItemDto MapListItem(Report report)
+    {
+        return new ReportListItemDto
+        {
+            Id = report.Id,
+            ReporterUserId = report.ReporterUserId,
+            ReporterName = getDisplayName(report.ReporterUser),
+            ReporterEmail = report.ReporterUser?.Email ?? string.Empty,
+            ReportedEntityId = report.ReportedEntityId,
+            ReportedEntityType = report.ReportedEntityType,
+            Reason = report.Reason,
+            Evidence = report.Evidence,
+            Status = report.Status,
+            HandledBy = report.HandledBy,
+            HandledByName = getDisplayName(report.HandledByNavigation),
+            HandledAt = report.HandledAt,
+            Resolution = report.Resolution,
+            ActionTaken = report.ActionTaken,
+            CreatedAt = report.CreatedAt,
+            IsDeleted = report.IsDeleted
+        };
+    }
+
+    private static ReportDetailDto MapDetail(Report report)
+    {
+        return new ReportDetailDto
+        {
+            Id = report.Id,
+            ReporterUserId = report.ReporterUserId,
+            ReporterName = getDisplayName(report.ReporterUser),
+            ReporterEmail = report.ReporterUser?.Email ?? string.Empty,
+            ReportedEntityId = report.ReportedEntityId,
+            ReportedEntityType = report.ReportedEntityType,
+            Reason = report.Reason,
+            Evidence = report.Evidence,
+            Status = report.Status,
+            HandledBy = report.HandledBy,
+            HandledByName = getDisplayName(report.HandledByNavigation),
+            HandledAt = report.HandledAt,
+            Resolution = report.Resolution,
+            ActionTaken = report.ActionTaken,
+            CreatedAt = report.CreatedAt,
+            UpdatedAt = report.UpdatedAt,
+            IsDeleted = report.IsDeleted
+        };
+    }
+}

@@ -39,8 +39,64 @@ public class ReportRepository
             r.ReportedEntityType == reportedEntityType &&
             r.Status == 0);
 
+    public async Task<(List<Report> Items, int TotalCount)> GetPagedReportsAsync(
+        int? status,
+        string? entityType,
+        string? search,
+        int page,
+        int pageSize)
+    {
+        var query = _db.Reports
+            .Where(r => !r.IsDeleted)
+            .Include(r => r.ReporterUser)
+            .Include(r => r.HandledByNavigation)
+            .AsQueryable();
+
+        if (status.HasValue)
+            query = query.Where(r => r.Status == status.Value);
+
+        if (!string.IsNullOrWhiteSpace(entityType))
+        {
+            var type = entityType.Trim();
+            query = query.Where(r => r.ReportedEntityType == type);
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var s = search.Trim().ToLower();
+            query = query.Where(r =>
+                r.Reason.ToLower().Contains(s) ||
+                r.ReportedEntityType.ToLower().Contains(s) ||
+                r.ReporterUser.Email.ToLower().Contains(s) ||
+                r.ReporterUser.FirstName.ToLower().Contains(s) ||
+                r.ReporterUser.LastName.ToLower().Contains(s));
+        }
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
+            .OrderByDescending(r => r.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items, totalCount);
+    }
+
+    public async Task<Report?> GetReportByIdAsync(Guid id, bool includeDeleted = false)
+    {
+        var query = _db.Reports
+            .Include(r => r.ReporterUser)
+            .Include(r => r.HandledByNavigation)
+            .AsQueryable();
+
+        if (!includeDeleted)
+            query = query.Where(r => !r.IsDeleted);
+
+        return await query.FirstOrDefaultAsync(r => r.Id == id);
+    }
+
     public void AddReport(Report report) => _db.Reports.Add(report);
 
     public async Task SaveChangesAsync() => await _db.SaveChangesAsync();
 }
-

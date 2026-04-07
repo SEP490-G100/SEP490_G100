@@ -1,0 +1,249 @@
+@model WebSite.Models.Moderator.ModeratorReportListResponse
+@{
+    Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
+    ViewData["Title"] = "Manage Reports";
+
+    var currentSearch = ViewBag.Search as string ?? "";
+    var currentStatus = ViewBag.Status as string ?? "";
+    var currentEntityType = ViewBag.EntityType as string ?? "";
+    var currentPage = Model?.Page ?? 1;
+    var totalPages = Model?.TotalPages ?? 1;
+    var reports = Model?.Items ?? new List<WebSite.Models.Moderator.ModeratorReportListItemDto>();
+}
+
+<div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
+    <div>
+        <span class="section-label">Moderation</span>
+        <h1 class="page-title mt-2">
+            Manage <span class="gradient-text">Reports</span>
+        </h1>
+        <p class="page-subtitle">Review complaints and track handling status.</p>
+    </div>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 fade-in-up">
+        <span class="material-icons-round text-base">error_outline</span>
+        @TempData["Error"]
+    </div>
+}
+
+<form method="get" action="/Moderator/ManageReport" id="filterForm">
+    <div class="content-card p-4 mb-5 fade-in-up" style="animation-delay:.05s;">
+        <div class="flex flex-col md:flex-row gap-3">
+            <div class="relative flex-1">
+                <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">search</span>
+                <input name="search" type="text" value="@currentSearch"
+                       placeholder="Search by reporter, reason, or entity type..."
+                       class="search-input pl-9 w-full border border-gray-200 rounded-xl px-4 py-2 font-medium"
+                       onkeydown="if(event.key==='Enter'){this.form.submit();}" />
+            </div>
+
+            <div class="relative">
+                <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">assignment_turned_in</span>
+                <select name="status" onchange="this.form.submit()"
+                        class="search-input md:w-44 !pl-9 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
+                    <option value="">All Statuses</option>
+                    <option value="0" selected="@(currentStatus == "0" ? "selected" : null)">Pending</option>
+                    <option value="1" selected="@(currentStatus == "1" ? "selected" : null)">Completed</option>
+                </select>
+            </div>
+
+            <div class="relative">
+                <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">category</span>
+                <select name="entityType" onchange="this.form.submit()"
+                        class="search-input md:w-48 !pl-9 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
+                    <option value="">All Types</option>
+                    <option value="Profile" selected="@(currentEntityType == "Profile" ? "selected" : null)">Profile</option>
+                    <option value="JobPosting" selected="@(currentEntityType == "JobPosting" ? "selected" : null)">Job Posting</option>
+                    <option value="Conversation" selected="@(currentEntityType == "Conversation" ? "selected" : null)">Conversation</option>
+                    <option value="Message" selected="@(currentEntityType == "Message" ? "selected" : null)">Message</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn-primary flex-shrink-0 flex items-center gap-1">
+                <span class="material-icons-round text-base">search</span>
+                Search
+            </button>
+        </div>
+    </div>
+</form>
+
+<div class="content-card overflow-hidden fade-in-up" style="animation-delay:.1s;">
+    <div class="card-header">
+        <span class="text-sm text-gray-500">
+            Showing <span class="font-bold text-gray-800">@reports.Count</span>
+            of <span class="font-bold text-gray-800">@(Model?.TotalCount ?? 0)</span> reports
+        </span>
+        <div class="flex items-center gap-4 text-xs text-gray-400">
+            <div class="flex items-center gap-1.5">
+                <div class="w-2.5 h-2.5 rounded-full bg-amber-400 ring-2 ring-amber-100"></div>Pending
+            </div>
+            <div class="flex items-center gap-1.5">
+                <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-emerald-100"></div>Completed
+            </div>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full mod-table">
+            <thead>
+                <tr>
+                    <th class="text-left">#</th>
+                    <th class="text-left">Reporter</th>
+                    <th class="text-left">Type</th>
+                    <th class="text-left">Reason</th>
+                    <th class="text-left">Created</th>
+                    <th class="text-left">Status</th>
+                    <th class="text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!reports.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="text-center py-16 text-gray-400">
+                            <span class="material-icons-round text-5xl mb-3 block text-gray-200">flag</span>
+                            <p class="font-semibold text-gray-400">No reports found.</p>
+                            <p class="text-xs text-gray-300 mt-1">Try adjusting the filters above.</p>
+                        </td>
+                    </tr>
+                }
+                @{ int rowNum = ((currentPage - 1) * 10) + 1; }
+                @foreach (var item in reports)
+                {
+                    <tr id="row-@item.Id">
+                        <td class="text-gray-300 text-xs font-mono">@rowNum</td>
+                        <td>
+                            <div class="flex flex-col">
+                                <span class="font-bold text-gray-800">@item.ReporterDisplay</span>
+                                <span class="text-xs text-gray-400">@item.ReporterEmail</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge badge-parent">@item.EntityTypeLabel</span>
+                        </td>
+                        <td class="text-sm text-gray-600 max-w-[340px] truncate" title="@item.Reason">@item.Reason</td>
+                        <td class="text-gray-500 text-xs">@item.CreatedAt.ToString("MMM dd, yyyy HH:mm")</td>
+                        <td>
+                            <span class="badge @item.StatusClass">@item.StatusLabel</span>
+                        </td>
+                        <td>
+                            <div class="flex items-center justify-center gap-1.5">
+                                <a href="/Moderator/ViewReportDetail/@item.Id" title="View Detail"
+                                   class="w-8 h-8 rounded-xl hover:bg-blue-50 hover:text-blue-600 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-blue-200">
+                                    <span class="material-icons-round text-base">visibility</span>
+                                </a>
+
+                                @if (item.IsActive)
+                                {
+                                    <button id="toggle-btn-@item.Id"
+                                            onclick="toggleReportStatus('@item.Id', false)"
+                                            title="Deactivate"
+                                            class="w-8 h-8 rounded-xl hover:bg-red-50 hover:text-red-500 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-red-200">
+                                        <span class="material-icons-round text-base">block</span>
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button id="toggle-btn-@item.Id"
+                                            onclick="toggleReportStatus('@item.Id', true)"
+                                            title="Activate"
+                                            class="w-8 h-8 rounded-xl hover:bg-emerald-50 hover:text-emerald-600 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-emerald-200">
+                                        <span class="material-icons-round text-base">check_circle_outline</span>
+                                    </button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                    rowNum++;
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="flex items-center justify-between px-6 py-4 border-t border-gray-50">
+        <span class="text-sm text-gray-400">
+            Page <span class="font-bold text-gray-600">@currentPage</span> of <span class="font-bold text-gray-600">@totalPages</span>
+        </span>
+        <div class="flex gap-1.5">
+            @if (currentPage > 1)
+            {
+                <a href="?search=@currentSearch&status=@currentStatus&entityType=@currentEntityType&page=@(currentPage - 1)" class="page-btn">
+                    <span class="material-icons-round text-sm">chevron_left</span>
+                </a>
+            }
+            else
+            {
+                <button class="page-btn opacity-30 cursor-not-allowed" disabled>
+                    <span class="material-icons-round text-sm">chevron_left</span>
+                </button>
+            }
+            @for (int p = Math.Max(1, currentPage - 2); p <= Math.Min(totalPages, currentPage + 2); p++)
+            {
+                <a href="?search=@currentSearch&status=@currentStatus&entityType=@currentEntityType&page=@p"
+                   class="page-btn @(p == currentPage ? "active" : "")">@p</a>
+            }
+            @if (currentPage < totalPages)
+            {
+                <a href="?search=@currentSearch&status=@currentStatus&entityType=@currentEntityType&page=@(currentPage + 1)" class="page-btn">
+                    <span class="material-icons-round text-sm">chevron_right</span>
+                </a>
+            }
+            else
+            {
+                <button class="page-btn opacity-30 cursor-not-allowed" disabled>
+                    <span class="material-icons-round text-sm">chevron_right</span>
+                </button>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function toggleReportStatus(id, isActive) {
+        const actionLabel = isActive ? 'activate' : 'deactivate';
+        if (!confirm(`Are you sure you want to ${actionLabel} this report?`)) {
+            return;
+        }
+
+        const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+        const token = tokenInput ? tokenInput.value : '';
+
+        fetch('/Moderator/ToggleReportStatus', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'RequestVerificationToken': token
+            },
+            body: `id=${encodeURIComponent(id)}&isActive=${isActive}&__RequestVerificationToken=${encodeURIComponent(token)}`
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                if (typeof window.showToast === 'function') {
+                    window.showToast(data.message || (isActive ? 'Report activated successfully.' : 'Report deactivated successfully.'), {
+                        type: isActive ? 'success' : 'warning'
+                    });
+                }
+                setTimeout(() => window.location.reload(), 400);
+            } else {
+                if (typeof window.showToast === 'function') {
+                    window.showToast(data.message || 'Operation failed.', { type: 'error' });
+                }
+            }
+        })
+        .catch(err => {
+            if (typeof window.showToast === 'function') {
+                window.showToast('Connection error: ' + err.message, { type: 'error' });
+            }
+        });
+    }
+</script>
+
+<form id="csrfForm" style="display:none;">
+    @Html.AntiForgeryToken()
+</form>
+}

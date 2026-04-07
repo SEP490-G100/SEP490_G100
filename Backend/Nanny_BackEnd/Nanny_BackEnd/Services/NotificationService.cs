@@ -479,8 +479,10 @@ public class NotificationService
                 $"/NannyVerificationRequest/NannyViewVerificationDetail/{notification.RelatedEntityId.Value}",
             NotificationTypes.VerificationRequestCreated when notification.RelatedEntityId.HasValue =>
                 $"/NannyVerificationRequest/NannyViewVerificationDetail/{notification.RelatedEntityId.Value}",
+            NotificationTypes.ReportSubmitted when notification.RelatedEntityId.HasValue =>
+                $"/Moderator/ViewReportDetail/{notification.RelatedEntityId.Value}",
             NotificationTypes.ReportSubmitted =>
-                "/Moderator/ViewReports",
+                "/Moderator/ManageReport",
             NotificationTypes.MessageToModerator when notification.RelatedEntityId.HasValue =>
                 $"/Communication?conversationId={notification.RelatedEntityId.Value}",
             NotificationTypes.JobPostingReviewRequired when notification.RelatedEntityId.HasValue =>

@@ -324,7 +324,174 @@ public class ModeratorController : Controller
         }
     }
 
-    public IActionResult ViewReports()         => View();
+    // ──────────────────────────────────────────────
+    // GET /Moderator/ManageReport
+    // ──────────────────────────────────────────────
+    public async Task<IActionResult> ManageReport(
+        string? search = null,
+        int? status = null,
+        string? entityType = null,
+        int page = 1)
+    {
+        ViewBag.Search = search;
+        ViewBag.Status = status?.ToString() ?? "";
+        ViewBag.EntityType = entityType ?? "";
+
+        var qs = new List<string> { $"page={page}", "pageSize=10" };
+        if (status.HasValue) qs.Add($"status={status.Value}");
+        if (!string.IsNullOrWhiteSpace(entityType)) qs.Add($"entityType={Uri.EscapeDataString(entityType)}");
+        if (!string.IsNullOrWhiteSpace(search)) qs.Add($"search={Uri.EscapeDataString(search)}");
+
+        var token = HttpContext.Session.GetString("AccessToken");
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/Moderator/reports?{string.Join("&", qs)}");
+        if (!string.IsNullOrEmpty(token))
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        try
+        {
+            var response = await _http.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult<ModeratorReportListResponse>>(json, JsonOpts);
+            return View("~/Views/Moderator/Report/ManageReport.cshtml", result?.Data ?? new ModeratorReportListResponse());
+        }
+        catch
+        {
+            TempData["Error"] = "Cannot load report list.";
+            return View("~/Views/Moderator/Report/ManageReport.cshtml", new ModeratorReportListResponse());
+        }
+    }
+
+    // ──────────────────────────────────────────────
+    // GET /Moderator/ViewReportDetail/{id}
+    // ──────────────────────────────────────────────
+    public async Task<IActionResult> ViewReportDetail(Guid id)
+    {
+        var detail = await FetchReportDetailAsync(id);
+        if (detail == null)
+        {
+            TempData["Error"] = "Report not found.";
+            return RedirectToAction(nameof(ManageReport));
+        }
+
+        var pageModel = new ModeratorReportDetailPageModel
+        {
+            Detail = detail,
+            Form = new ModeratorResolveReportRequest
+            {
+                Resolution = detail.Resolution ?? string.Empty,
+                ActionTaken = detail.ActionTaken ?? string.Empty
+            }
+        };
+        return View("~/Views/Moderator/Report/ViewReportDetail.cshtml", pageModel);
+    }
+
+    // ──────────────────────────────────────────────
+    // POST /Moderator/ViewReportDetail/{id}
+    // ──────────────────────────────────────────────
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ViewReportDetail(Guid id, [Bind(Prefix = "Form")] ModeratorResolveReportRequest form)
+    {
+        var detail = await FetchReportDetailAsync(id);
+        if (detail == null)
+        {
+            TempData["Error"] = "Report not found.";
+            return RedirectToAction(nameof(ManageReport));
+        }
+
+        if (!ModelState.IsValid)
+        {
+            var invalidModel = new ModeratorReportDetailPageModel
+            {
+                Detail = detail,
+                Form = form
+            };
+            return View("~/Views/Moderator/Report/ViewReportDetail.cshtml", invalidModel);
+        }
+
+        var token = HttpContext.Session.GetString("AccessToken");
+        var body = JsonSerializer.Serialize(new
+        {
+            resolution = form.Resolution?.Trim(),
+            actionTaken = form.ActionTaken?.Trim()
+        });
+
+        var request = new HttpRequestMessage(HttpMethod.Patch, $"/api/Moderator/reports/{id}/resolve")
+        {
+            Content = new StringContent(body, Encoding.UTF8, "application/json")
+        };
+        if (!string.IsNullOrEmpty(token))
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        try
+        {
+            var response = await _http.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
+
+            if (result?.Success == true)
+            {
+                return RedirectToAction(nameof(ManageReport), new
+                {
+                    toastType = "success",
+                    toastMessage = "Report resolved successfully."
+                });
+            }
+
+            TempData["Error"] = result?.Message ?? "Failed to resolve report.";
+            var failedModel = new ModeratorReportDetailPageModel
+            {
+                Detail = detail,
+                Form = form
+            };
+            return View("~/Views/Moderator/Report/ViewReportDetail.cshtml", failedModel);
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = $"Connection error: {ex.Message}";
+            var failedModel = new ModeratorReportDetailPageModel
+            {
+                Detail = detail,
+                Form = form
+            };
+            return View("~/Views/Moderator/Report/ViewReportDetail.cshtml", failedModel);
+        }
+    }
+
+    // ──────────────────────────────────────────────
+    // POST /Moderator/ToggleReportStatus
+    // ──────────────────────────────────────────────
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ToggleReportStatus(Guid id, bool isActive)
+    {
+        var token = HttpContext.Session.GetString("AccessToken");
+        var body = JsonSerializer.Serialize(new { isActive });
+        var request = new HttpRequestMessage(HttpMethod.Patch, $"/api/Moderator/reports/{id}/status")
+        {
+            Content = new StringContent(body, Encoding.UTF8, "application/json")
+        };
+
+        if (!string.IsNullOrEmpty(token))
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        try
+        {
+            var response = await _http.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
+            return Json(new
+            {
+                success = result?.Success ?? false,
+                message = result?.Message ?? "Operation failed."
+            });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"Connection error: {ex.Message}" });
+        }
+    }
+
     public IActionResult ManageBlogs()         => View();
     public IActionResult ModerateJobPostings() => View();
 
@@ -742,6 +909,26 @@ public class ModeratorController : Controller
             var response = await _http.SendAsync(request);
             var json = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<ApiResult<AccountListResponse>>(json, JsonOpts);
+            return result?.Success == true ? result.Data : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private async Task<ModeratorReportDetailDto?> FetchReportDetailAsync(Guid id)
+    {
+        var token = HttpContext.Session.GetString("AccessToken");
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/Moderator/reports/{id}");
+        if (!string.IsNullOrEmpty(token))
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        try
+        {
+            var response = await _http.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult<ModeratorReportDetailDto>>(json, JsonOpts);
             return result?.Success == true ? result.Data : null;
         }
         catch
