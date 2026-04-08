@@ -6,15 +6,16 @@ namespace Nanny_BackEnd.Services;
 public class RecommendationService
 {
     private readonly RecommendationRepository _repo;
+    private readonly RecommendationConfigRepository _configRepo;
     private readonly ILogger<RecommendationService> _logger;
-
-    private const double ColdStartScore = 0.75;
 
     public RecommendationService(
         RecommendationRepository repo,
+        RecommendationConfigRepository configRepo,
         ILogger<RecommendationService> logger)
     {
         _repo = repo;
+        _configRepo = configRepo;
         _logger = logger;
     }
 
@@ -31,6 +32,7 @@ public class RecommendationService
         var candidates = await _repo.GetNannyCandidatesAsync(jobId);
         if (candidates.Count == 0) return new List<NannyRecommendResultDto>();
 
+        var w = await _configRepo.GetWeightsAsync();
         var jobModel = await _repo.GetJobReadModelAsync(jobId);
         var jobVector = EmbeddingService.DeserializeEmbedding(jobModel?.Embedding);
 
@@ -47,7 +49,7 @@ public class RecommendationService
             var nannyVector = EmbeddingService.DeserializeEmbedding(c.Embedding);
             bool embeddingWasNull = nannyVector == null || jobVector == null;
             double semanticScore = embeddingWasNull
-                ? ColdStartScore
+                ? w.ColdStart
                 : CosineSimilarity(nannyVector!, jobVector!);
 
             // 2. Salary score — range overlap
@@ -65,10 +67,10 @@ public class RecommendationService
 
             double distanceScore = CalcDistanceScore(distKm, c.MaxTravelDistance);
 
-            // 4. Hybrid score (80/12/8)
-            double hybridScore = 0.80 * semanticScore
-                               + 0.12 * salaryScore
-                               + 0.08 * distanceScore;
+            // 4. Hybrid score — weights from DB config
+            double hybridScore = w.Semantic  * semanticScore
+                               + w.Salary    * salaryScore
+                               + w.Distance  * distanceScore;
 
             // 5. Business boost (rating only)
             double boost = CalcBoost(c.AverageRating);
@@ -85,6 +87,8 @@ public class RecommendationService
                 AverageRating = c.AverageRating,
                 TotalReviews = c.TotalReviews,
                 DistanceKm = distKm.HasValue ? Math.Round(distKm.Value, 2) : null,
+                Latitude = c.Latitude.HasValue ? (double?)c.Latitude.Value : null,
+                Longitude = c.Longitude.HasValue ? (double?)c.Longitude.Value : null,
                 Skills = c.Skills,
                 SemanticScore = Math.Round(semanticScore, 4),
                 SkillScore = 0,
@@ -114,6 +118,7 @@ public class RecommendationService
         var candidates = await _repo.GetJobCandidatesAsync(nannyProfileId);
         if (candidates.Count == 0) return new List<JobRecommendResultDto>();
 
+        var w = await _configRepo.GetWeightsAsync();
         var nannyModel = await _repo.GetNannyReadModelAsync(nannyProfileId);
         var nannyVector = EmbeddingService.DeserializeEmbedding(nannyModel?.Embedding);
         var nLat = (double?)nannyModel?.Latitude;
@@ -128,7 +133,7 @@ public class RecommendationService
             var jobVector = EmbeddingService.DeserializeEmbedding(j.Embedding);
             bool embeddingWasNull = nannyVector == null || jobVector == null;
             double semanticScore = embeddingWasNull
-                ? ColdStartScore
+                ? w.ColdStart
                 : CosineSimilarity(nannyVector!, jobVector!);
 
             // 2. Salary score — range overlap
@@ -146,10 +151,10 @@ public class RecommendationService
 
             double distanceScore = CalcDistanceScore(distKm, maxDist);
 
-            // 4. Hybrid score (80/12/8)
-            double hybridScore = 0.80 * semanticScore
-                               + 0.12 * salaryScore
-                               + 0.08 * distanceScore;
+            // 4. Hybrid score — weights from DB config
+            double hybridScore = w.Semantic  * semanticScore
+                               + w.Salary    * salaryScore
+                               + w.Distance  * distanceScore;
 
             // 5. Business boost (rating only — job không có rating)
             double boost = CalcBoost(rating: null);
@@ -166,6 +171,8 @@ public class RecommendationService
                 SalaryMax = j.SalaryMax,
                 SalaryNegotiable = j.SalaryNegotiable,
                 DistanceKm = distKm.HasValue ? Math.Round(distKm.Value, 2) : null,
+                Latitude = j.Latitude.HasValue ? (double?)j.Latitude.Value : null,
+                Longitude = j.Longitude.HasValue ? (double?)j.Longitude.Value : null,
                 RequiredSkills = j.RequiredSkills,
                 SemanticScore = Math.Round(semanticScore, 4),
                 SkillScore = 0,

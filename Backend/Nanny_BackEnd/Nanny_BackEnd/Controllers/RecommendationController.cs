@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
+using Nanny_BackEnd.DTOs.Recommendation;
 using Nanny_BackEnd.Repositories;
 using Nanny_BackEnd.Services;
 
@@ -15,17 +16,20 @@ public class RecommendationController : ControllerBase
     private readonly RecommendationService _recSvc;
     private readonly EmbeddingService _embedSvc;
     private readonly RecommendationRepository _repo;
+    private readonly RecommendationConfigRepository _configRepo;
     private readonly Sep490NannyDbContext _db;
 
     public RecommendationController(
         RecommendationService recSvc,
         EmbeddingService embedSvc,
         RecommendationRepository repo,
+        RecommendationConfigRepository configRepo,
         Sep490NannyDbContext db)
     {
         _recSvc = recSvc;
         _embedSvc = embedSvc;
         _repo = repo;
+        _configRepo = configRepo;
         _db = db;
     }
 
@@ -201,6 +205,49 @@ public class RecommendationController : ControllerBase
 
         var results = await _recSvc.GetTopJobsForNannyAsync(nanny.Id, topK);
         return Ok(Success(results, results.Count));
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // 4. Scoring Config (Admin only)
+    // ──────────────────────────────────────────────────────────────
+
+    [Authorize(Roles = "Admin")]
+    [HttpGet("config/weights")]
+    public async Task<IActionResult> GetWeights()
+    {
+        var w = await _configRepo.GetWeightsAsync();
+        return Ok(Success(new
+        {
+            semantic_weight  = w.Semantic,
+            salary_weight    = w.Salary,
+            distance_weight  = w.Distance,
+            cold_start_score = w.ColdStart
+        }));
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpPut("config/weights")]
+    public async Task<IActionResult> UpdateWeight([FromBody] UpdateWeightRequest request)
+    {
+        var allowed = new[] { "rec:semantic_weight", "rec:salary_weight", "rec:distance_weight", "rec:cold_start_score" };
+        if (!allowed.Contains(request.Key))
+            return BadRequest(Fail($"Key không hợp lệ. Cho phép: {string.Join(", ", allowed)}"));
+
+        if (request.Value < 0 || request.Value > 1)
+            return BadRequest(Fail("Value phải trong khoảng [0, 1]."));
+
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
+
+        try
+        {
+            await _configRepo.UpdateWeightAsync(request.Key, request.Value, userId.Value);
+            return Ok(new { success = true, message = $"Đã cập nhật {request.Key} = {request.Value}." });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return NotFound(Fail(ex.Message));
+        }
     }
 
     // ──────────────────────────────────────────────────────────────

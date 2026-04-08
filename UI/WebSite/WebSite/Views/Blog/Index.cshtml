@@ -1,0 +1,211 @@
+@model WebSite.Models.Blog.BlogListResponse
+@using WebSite.Models.Blog
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Blog - NannyMatch";
+    var categories  = ViewBag.Categories as List<BlogCategoryOption> ?? new();
+    var search      = ViewBag.Search as string ?? "";
+    var categoryId  = ViewBag.CategoryId as Guid?;
+    var sort        = ViewBag.Sort as string ?? "newest";
+    var blogs       = Model?.Items ?? new List<BlogDto>();
+    var totalPages  = Model?.TotalPages ?? 1;
+    var currentPage = Model?.Page ?? 1;
+    var totalCount  = Model?.TotalCount ?? 0;
+
+    // Helper: build URL giữ nguyên các param hiện tại, chỉ thay param chỉ định
+    string BuildUrl(int? pg = null, Guid? cat = null, bool clearCat = false, string? sortVal = null)
+    {
+        var p   = pg      ?? currentPage;
+        var c   = clearCat ? (Guid?)null : (cat ?? categoryId);
+        var s   = sortVal ?? sort;
+        var url = $"/Blog?page={p}&sort={s}";
+        if (c.HasValue)                     url += $"&categoryId={c.Value}";
+        if (!string.IsNullOrEmpty(search))  url += $"&search={Uri.EscapeDataString(search)}";
+        return url;
+    }
+}
+
+<div class="min-h-screen bg-gray-50">
+
+    <!-- Hero / Search -->
+    <section class="bg-gradient-to-br from-orange-50 to-white border-b border-orange-100 py-12 px-4">
+        <div class="max-w-3xl mx-auto text-center">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-100 text-orange-600 text-xs font-bold mb-4">
+                <span class="material-icons-round text-sm">article</span> Blog NannyMatch
+            </span>
+            <h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-3">Kiến thức chăm sóc trẻ</h1>
+            <p class="text-gray-500 text-base mb-8">Những bài viết hữu ích về nuôi dạy con, tìm bảo mẫu và chăm sóc gia đình.</p>
+
+            <form method="get" action="/Blog" class="flex gap-2 max-w-xl mx-auto">
+                @if (categoryId.HasValue) { <input type="hidden" name="categoryId" value="@categoryId.Value" /> }
+                <input type="hidden" name="sort" value="@sort" />
+                <div class="flex-1 relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 material-icons-round text-gray-400 text-xl">search</span>
+                    <input type="text" name="search" value="@search" placeholder="Tìm bài viết..."
+                           class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-white shadow-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none text-sm" />
+                </div>
+                <button type="submit" class="px-5 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm transition-all shadow-md shadow-orange-200">
+                    Tìm
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Main content: sidebar trái + grid phải -->
+    <div class="max-w-6xl mx-auto px-4 py-10">
+        <div class="flex flex-col lg:flex-row gap-8">
+
+            <!-- ── SIDEBAR TRÁI ── -->
+            <aside class="w-full lg:w-64 flex-shrink-0">
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 lg:sticky lg:top-24">
+
+                    <h3 class="text-xs font-extrabold text-gray-400 uppercase tracking-widest mb-4">Danh mục</h3>
+
+                    <nav class="flex flex-col gap-1">
+                        <a href="@BuildUrl(pg: 1, clearCat: true)"
+                           class="flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-all @(categoryId == null ? "bg-orange-500 text-white" : "text-gray-600 hover:bg-gray-50 hover:text-orange-500")">
+                            <span>Tất cả bài viết</span>
+                            <span class="text-xs @(categoryId == null ? "text-orange-100" : "text-gray-400")">@totalCount</span>
+                        </a>
+                        @foreach (var cat in categories)
+                        {
+                            var isActive = categoryId == cat.Id;
+                            <a href="@BuildUrl(pg: 1, cat: cat.Id)"
+                               class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-all @(isActive ? "bg-orange-500 text-white" : "text-gray-600 hover:bg-gray-50 hover:text-orange-500")">
+                                <span class="material-icons-round text-base @(isActive ? "text-white" : "text-orange-400")">folder_open</span>
+                                <span class="flex-1 truncate">@cat.Name</span>
+                            </a>
+                        }
+                    </nav>
+
+                </div>
+            </aside>
+
+            <!-- ── NỘI DUNG PHẢI ── -->
+            <div class="flex-1 min-w-0">
+
+                <!-- Sort + Info bar -->
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+                    <p class="text-sm text-gray-500">
+                        @if (!string.IsNullOrEmpty(search))
+                        {
+                            <span>Kết quả cho "<strong class="text-gray-800">@search</strong>" — </span>
+                        }
+                        <span class="font-semibold text-gray-700">@totalCount bài viết</span>
+                    </p>
+
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm text-gray-500 hidden sm:inline">Sắp xếp:</span>
+                        <div class="flex rounded-xl border border-gray-200 bg-white overflow-hidden shadow-sm text-sm font-semibold">
+                            <a href="@BuildUrl(pg: 1, sortVal: "newest")"
+                               class="px-3 py-2 transition-all @(sort == "newest" ? "bg-orange-500 text-white" : "text-gray-600 hover:bg-gray-50")">
+                                Mới nhất
+                            </a>
+                            <a href="@BuildUrl(pg: 1, sortVal: "popular")"
+                               class="px-3 py-2 border-l border-gray-200 transition-all @(sort == "popular" ? "bg-orange-500 text-white" : "text-gray-600 hover:bg-gray-50")">
+                                Xem nhiều nhất
+                            </a>
+                            <a href="@BuildUrl(pg: 1, sortVal: "oldest")"
+                               class="px-3 py-2 border-l border-gray-200 transition-all @(sort == "oldest" ? "bg-orange-500 text-white" : "text-gray-600 hover:bg-gray-50")">
+                                Cũ nhất
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                @if (!blogs.Any())
+                {
+                    <div class="text-center py-24 text-gray-400">
+                        <span class="material-icons-round text-5xl mb-3 block">article</span>
+                        <p class="text-lg font-semibold">Chưa có bài viết nào</p>
+                        @if (!string.IsNullOrEmpty(search))
+                        {
+                            <p class="text-sm mt-1">Không tìm thấy kết quả cho "<strong>@search</strong>"</p>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <!-- Blog Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                        @foreach (var blog in blogs)
+                        {
+                            <a href="/Blog/@blog.Slug" class="group bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-200 flex flex-col">
+                                <div class="aspect-video bg-gradient-to-br from-orange-100 to-orange-50 overflow-hidden relative">
+                                    @if (!string.IsNullOrEmpty(blog.ThumbnailUrl))
+                                    {
+                                        <img src="@blog.ThumbnailUrl" alt="@blog.Title"
+                                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                    }
+                                    else
+                                    {
+                                        <div class="w-full h-full flex items-center justify-center">
+                                            <span class="material-icons-round text-orange-300 text-5xl">article</span>
+                                        </div>
+                                    }
+                                    @if (!string.IsNullOrEmpty(blog.CategoryName))
+                                    {
+                                        <span class="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-orange-500 text-white text-xs font-bold shadow">
+                                            @blog.CategoryName
+                                        </span>
+                                    }
+                                </div>
+                                <div class="p-5 flex flex-col flex-1">
+                                    <h2 class="font-bold text-gray-900 text-base leading-snug mb-2 line-clamp-2 group-hover:text-orange-600 transition-colors">
+                                        @blog.Title
+                                    </h2>
+                                    @if (!string.IsNullOrEmpty(blog.Summary))
+                                    {
+                                        <p class="text-gray-500 text-sm leading-relaxed line-clamp-2 mb-4">@blog.Summary</p>
+                                    }
+                                    <div class="mt-auto flex items-center justify-between text-xs text-gray-400">
+                                        <span class="flex items-center gap-1">
+                                            <span class="material-icons-round text-sm">person_outline</span>
+                                            @(blog.AuthorName ?? "NannyMatch")
+                                        </span>
+                                        <span class="flex items-center gap-3">
+                                            <span class="flex items-center gap-1">
+                                                <span class="material-icons-round text-sm">visibility</span>
+                                                @blog.ViewCount
+                                            </span>
+                                            <span>@(blog.PublishedAt?.ToString("dd/MM/yyyy") ?? blog.CreatedAt.ToString("dd/MM/yyyy"))</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </a>
+                        }
+                    </div>
+
+                    <!-- Pagination -->
+                    @if (totalPages > 1)
+                    {
+                        <div class="flex justify-center gap-2 mt-10">
+                            @if (currentPage > 1)
+                            {
+                                <a href="@BuildUrl(pg: currentPage - 1)"
+                                   class="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-gray-200 text-gray-600 hover:border-orange-300 hover:text-orange-500 transition-all">
+                                    <span class="material-icons-round text-base">chevron_left</span>
+                                </a>
+                            }
+                            @for (int p = Math.Max(1, currentPage - 2); p <= Math.Min(totalPages, currentPage + 2); p++)
+                            {
+                                <a href="@BuildUrl(pg: p)"
+                                   class="w-10 h-10 flex items-center justify-center rounded-xl text-sm font-bold transition-all @(p == currentPage ? "bg-orange-500 text-white shadow-md shadow-orange-200" : "bg-white border border-gray-200 text-gray-600 hover:border-orange-300 hover:text-orange-500")">
+                                    @p
+                                </a>
+                            }
+                            @if (currentPage < totalPages)
+                            {
+                                <a href="@BuildUrl(pg: currentPage + 1)"
+                                   class="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-gray-200 text-gray-600 hover:border-orange-300 hover:text-orange-500 transition-all">
+                                    <span class="material-icons-round text-base">chevron_right</span>
+                                </a>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+
+        </div>
+    </div>
+</div>

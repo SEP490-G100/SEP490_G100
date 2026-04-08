@@ -228,6 +228,52 @@ public class AdminController : Controller
         }
     }
 
+    // ── Recommendation Config ───────────────────────────
+
+    public async Task<IActionResult> RecommendationConfig()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/recommendation/config/weights");
+        AttachToken(request);
+        try
+        {
+            var response = await _http.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult<ScoringWeightsDto>>(json, JsonOpts);
+            return View(result?.Data ?? new ScoringWeightsDto());
+        }
+        catch
+        {
+            TempData["Error"] = "Không thể tải cấu hình recommendation.";
+            return View(new ScoringWeightsDto());
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> UpdateWeight([FromBody] UpdateWeightDto body)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Put, "/api/recommendation/config/weights")
+        {
+            Content = new StringContent(
+                JsonSerializer.Serialize(new { key = body.Key, value = body.Value }),
+                Encoding.UTF8, "application/json")
+        };
+        AttachToken(request);
+        var response = await _http.SendAsync(request);
+        var json = await response.Content.ReadAsStringAsync();
+        return Content(json, "application/json");
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> ReembedBatch([FromQuery] bool force = false)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post,
+            $"/api/recommendation/reembed/batch?force={force.ToString().ToLower()}");
+        AttachToken(request);
+        var response = await _http.SendAsync(request);
+        var json = await response.Content.ReadAsStringAsync();
+        return Content(json, "application/json");
+    }
+
     // ── Helper ─────────────────────────────────────────
     private void AttachToken(HttpRequestMessage req)
     {
@@ -235,4 +281,19 @@ public class AdminController : Controller
         if (!string.IsNullOrEmpty(token))
             req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
     }
+}
+
+// ── Internal DTOs ───────────────────────────────────────
+public class ScoringWeightsDto
+{
+    public double SemanticWeight  { get; set; } = 0.80;
+    public double SalaryWeight    { get; set; } = 0.12;
+    public double DistanceWeight  { get; set; } = 0.08;
+    public double ColdStartScore  { get; set; } = 0.75;
+}
+
+public class UpdateWeightDto
+{
+    public string Key   { get; set; } = string.Empty;
+    public double Value { get; set; }
 }

@@ -285,7 +285,10 @@
         return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
-    function renderRecNannyCard(n, rank) {
+    // Lưu dữ liệu rec để dùng cho map
+    window.recNannies = [];
+
+    function renderRecNannyCard(n, idx) {
         const pct = Math.round((n.finalScore ?? 0) * 100);
         const color = pct >= 80 ? '#16a34a' : pct >= 60 ? '#f97316' : '#6b7280';
         const exp  = n.yearsOfExperience != null ? `<span class="rec-chip rec-chip--distance">${n.yearsOfExperience} năm KN</span>` : '';
@@ -297,10 +300,11 @@
             : '';
         const badgeCls = `rec-badge rec-badge--${n.matchTier || 'ok'}`;
         const skills = (n.skills || []).slice(0, 4).map(s =>
-            `<span class="rec-chip rec-chip--skill">${escNRec(s)}</span>`).join('');
+            `<span class="rec-chip rec-chip--skill">${escNRec(s.skillName ?? s)}</span>`).join('');
 
         return `
-        <div class="rec-card rec-card--clickable" onclick="openNannyDetail('${escNRec(n.nannyProfileId)}')">
+        <div class="rec-card rec-card--clickable" data-rec-idx="${idx}"
+             onclick="openNannyDetail('${escNRec(n.nannyProfileId)}')">
             <div class="rec-card-header">
                 <div class="rec-score-ring" style="--score-color:${color}">
                     <span class="rec-score-value" style="color:${color}">${pct}%</span>
@@ -321,10 +325,53 @@
         </div>`;
     }
 
+    function plotRecNannyMarkers(nannies) {
+        if (typeof clearNannyMarkers === 'function') clearNannyMarkers();
+        if (!window.nannyMap || !window.L) return;
+        nannies.forEach((n, idx) => {
+            if (!n.latitude || !n.longitude) return;
+            const pct = Math.round((n.finalScore ?? 0) * 100);
+            const color = pct >= 80 ? '#16a34a' : pct >= 60 ? '#f97316' : '#6b7280';
+            const el = document.createElement('div');
+            el.className = 'nanny-marker';
+            el.innerHTML = `<span style="font-size:11px;font-weight:800;color:${color}">${pct}%</span>`;
+            el.style.cssText = `background:#fff;border:2px solid ${color};border-radius:999px;padding:2px 7px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.15);cursor:pointer`;
+            const marker = window.L.marker([n.latitude, n.longitude], {
+                icon: window.L.divIcon({ html: el, className: '', iconAnchor: [20, 12] })
+            }).addTo(window.nannyMap);
+            marker.bindPopup(`<div style="font-size:.82rem;font-weight:700">${n.fullName}</div><div style="font-size:.75rem;color:#64748b">${pct}% phù hợp</div>`);
+            const circle = window.L.circle([n.latitude, n.longitude], {
+                radius: 600, color: '#fdba74', fillColor: '#fdba74',
+                fillOpacity: 0.1, weight: 1
+            }).addTo(window.nannyMap);
+            window.nannyMarkers.push({ marker, circle, point: { lat: n.latitude, lng: n.longitude, zoom: 14 }, element: el });
+        });
+        // Fit map to rec markers
+        const valid = nannies.filter(n => n.latitude && n.longitude);
+        if (valid.length && window.nannyMap) {
+            const bounds = window.L.latLngBounds(valid.map(n => [n.latitude, n.longitude]));
+            window.suppressNextNannyMapMove = true;
+            window.nannyMap.fitBounds(bounds, { padding: [32, 32], maxZoom: 14 });
+        }
+    }
+
+    function bindRecNannyHover() {
+        document.querySelectorAll('.rec-card[data-rec-idx]').forEach(card => {
+            const idx = Number(card.dataset.recIdx);
+            card.addEventListener('mouseenter', () => {
+                if (typeof setNannyMarkerHover === 'function') setNannyMarkerHover(idx, true, true);
+            });
+            card.addEventListener('mouseleave', () => {
+                if (typeof setNannyMarkerHover === 'function') setNannyMarkerHover(idx, false, false);
+            });
+        });
+    }
+
     function loadRecNannies(jobId) {
         const content = document.getElementById('recNannyContent');
         if (!content) return;
         if (!jobId) {
+            if (typeof clearNannyMarkers === 'function') clearNannyMarkers();
             content.innerHTML = `<div class="rec-panel__loading" style="padding:20px">
                 <span class="material-icons-round" style="font-size:20px;opacity:.4">arrow_upward</span>Chọn bài đăng để xem gợi ý
             </div>`;
@@ -333,16 +380,20 @@
         content.innerHTML = `<div class="rec-panel__loading">
             <span class="material-icons-round" style="font-size:22px;opacity:.4">hourglass_top</span>Đang tải...
         </div>`;
-        fetch(`/Recommendation/NanniesData?jobId=${jobId}&topK=5`)
+        fetch(`/Recommendation/NanniesData?jobId=${jobId}&topK=10`)
             .then(r => r.json())
             .then(res => {
                 if (!res.success || !res.data || res.data.length === 0) {
+                    if (typeof clearNannyMarkers === 'function') clearNannyMarkers();
                     content.innerHTML = `<div class="rec-panel__empty">
                         <span class="material-icons-round">person_search</span>
                         <p>Chưa tìm được nanny phù hợp cho bài đăng này.</p>
                     </div>`;
                 } else {
-                    content.innerHTML = `<div class="rec-card-list">${res.data.map((n,i) => renderRecNannyCard(n, i+1)).join('')}</div>`;
+                    window.recNannies = res.data;
+                    content.innerHTML = `<div class="rec-card-list">${res.data.map((n,i) => renderRecNannyCard(n, i)).join('')}</div>`;
+                    plotRecNannyMarkers(res.data);
+                    bindRecNannyHover();
                 }
             })
             .catch(() => {
@@ -365,6 +416,11 @@
             nannyList.style.display = 'none';
             if (cnt) cnt.style.display = 'none';
             recPanel.classList.add('active');
+            // Re-plot markers nếu đã có data
+            if (window.recNannies.length) {
+                plotRecNannyMarkers(window.recNannies);
+                bindRecNannyHover();
+            }
             // Populate job dropdown lần đầu
             const sel = document.getElementById('recJobSelect');
             if (sel && sel.options.length <= 1) {
@@ -387,6 +443,9 @@
             nannyList.style.display = '';
             if (cnt) cnt.style.display = '';
             if (recPanel) recPanel.classList.remove('active');
+            // Xoá rec markers, trigger lại search thường
+            if (typeof clearNannyMarkers === 'function') clearNannyMarkers();
+            if (typeof doNannySearch === 'function') doNannySearch();
         }
     }
     </script>

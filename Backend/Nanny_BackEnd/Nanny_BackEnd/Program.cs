@@ -158,6 +158,7 @@ builder.Services.AddScoped<CommunicationRepository>();
 builder.Services.AddScoped<FaqRepository>();
 builder.Services.AddScoped<BlogCategoryRepository>();
 builder.Services.AddScoped<BlogRepository>();
+builder.Services.AddScoped<ReviewRepository>();
 
 // DI — Services
 builder.Services.AddScoped<JwtService>();
@@ -188,10 +189,12 @@ builder.Services.AddScoped<VnPayService>();
 builder.Services.AddScoped<FaqService>();
 builder.Services.AddScoped<BlogCategoryService>();
 builder.Services.AddScoped<BlogService>();
+builder.Services.AddScoped<ReviewService>();
 
 // Recommendation feature
 builder.Services.Configure<AzureOpenAIOptions>(builder.Configuration.GetSection("AzureOpenAI"));
 builder.Services.AddScoped<RecommendationRepository>();
+builder.Services.AddScoped<RecommendationConfigRepository>();
 builder.Services.AddScoped<EmbeddingService>();
 builder.Services.AddScoped<RecommendationService>();
 

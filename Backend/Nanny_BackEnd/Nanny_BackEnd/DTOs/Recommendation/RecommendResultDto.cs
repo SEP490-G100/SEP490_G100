@@ -12,6 +12,8 @@ public class NannyRecommendResultDto
     public decimal? AverageRating { get; set; }
     public int TotalReviews { get; set; }
     public double? DistanceKm { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
     public List<NannySkillDto> Skills { get; set; } = new();
 
     // Hybrid Score breakdown
@@ -37,6 +39,8 @@ public class JobRecommendResultDto
     public decimal? SalaryMax { get; set; }
     public bool SalaryNegotiable { get; set; }
     public double? DistanceKm { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
     public List<JobRequiredSkillDto> RequiredSkills { get; set; } = new();
 
     // Hybrid Score breakdown

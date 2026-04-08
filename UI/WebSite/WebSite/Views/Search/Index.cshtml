@@ -533,11 +533,11 @@ function renderRecJobCard(j, idx) {
         ? `<span class="rec-chip rec-chip--salary"><span class="material-icons-round" style="font-size:11px">payments</span>${escRecHtml(salary)}</span>`
         : '';
     const skills = (j.requiredSkills || []).slice(0, 4)
-        .map(s => `<span class="rec-chip rec-chip--skill">${escRecHtml(s)}</span>`).join('');
+        .map(s => `<span class="rec-chip rec-chip--skill">${escRecHtml(s.skillName ?? s)}</span>`).join('');
     const badgeCls = `rec-badge rec-badge--${j.matchTier || 'ok'}`;
 
     return `
-    <div class="rec-card rec-card--clickable" onclick="openRecPreview(${idx})">
+    <div class="rec-card rec-card--clickable" data-rec-idx="${idx}" onclick="openRecPreview(${idx})">
         <div class="rec-card-header">
             <div class="rec-score-ring" style="--score-color:${color}">
                 <span class="rec-score-value" style="color:${color}">${pct}%</span>
@@ -583,12 +583,55 @@ function openRecPreview(idx) {
         specialNeeds:     null,
         minNannyAge:      null,
         maxNannyAge:      null,
-        latitude:         null,
-        longitude:        null,
-        description:      null,
+        latitude:         j.latitude ?? null,
+        longitude:        j.longitude ?? null,
+        description:      j.description ?? null,
         moderationStatus: null,
         moderationNote:   null,
         parentProfileId:  null
+    });
+    // Fly to job marker on map
+    if (typeof highlightOnMap === 'function') highlightOnMap(idx);
+}
+
+function plotRecJobMarkers(jobs) {
+    if (typeof clearMapMarkers === 'function') clearMapMarkers();
+    if (!window.map || !window.L) return;
+    jobs.forEach((j, idx) => {
+        if (!j.latitude || !j.longitude) return;
+        const pct = Math.round((j.finalScore ?? 0) * 100);
+        const color = recScoreColor(pct);
+        const el = document.createElement('div');
+        el.innerHTML = `<span style="font-size:11px;font-weight:800;color:${color}">${pct}%</span>`;
+        el.style.cssText = `background:#fff;border:2px solid ${color};border-radius:999px;padding:2px 7px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.15);cursor:pointer`;
+        const marker = window.L.marker([j.latitude, j.longitude], {
+            icon: window.L.divIcon({ html: el, className: '', iconAnchor: [20, 12] })
+        }).addTo(window.map);
+        marker.bindPopup(`<div style="font-size:.82rem;font-weight:700">${escRecHtml(j.title)}</div><div style="font-size:.75rem;color:#64748b">${pct}% phù hợp</div>`);
+        const circle = window.L.circle([j.latitude, j.longitude], {
+            radius: 600, color: '#fdba74', fillColor: '#fdba74',
+            fillOpacity: 0.1, weight: 1
+        }).addTo(window.map);
+        window.markers.push({ marker, circle, point: { lat: j.latitude, lng: j.longitude, zoom: 14 }, element: el });
+    });
+    // Fit map to rec markers
+    const valid = jobs.filter(j => j.latitude && j.longitude);
+    if (valid.length && window.map) {
+        const bounds = window.L.latLngBounds(valid.map(j => [j.latitude, j.longitude]));
+        window.suppressNextMapSearch = true;
+        window.map.fitBounds(bounds, { padding: [32, 32], maxZoom: 14 });
+    }
+}
+
+function bindRecJobHover() {
+    document.querySelectorAll('.rec-card[data-rec-idx]').forEach(card => {
+        const idx = Number(card.dataset.recIdx);
+        card.addEventListener('mouseenter', () => {
+            if (typeof setMarkerHover === 'function') setMarkerHover(idx, true, true);
+        });
+        card.addEventListener('mouseleave', () => {
+            if (typeof setMarkerHover === 'function') setMarkerHover(idx, false, false);
+        });
     });
 }
 
@@ -597,10 +640,11 @@ function loadRecJobs() {
     const content = document.getElementById('recJobContent');
     if (!content) return;
 
-    fetch('/Recommendation/JobsData?topK=5')
+    fetch('/Recommendation/JobsData?topK=10')
         .then(r => r.json())
         .then(res => {
             if (!res.success || !res.data || res.data.length === 0) {
+                if (typeof clearMapMarkers === 'function') clearMapMarkers();
                 content.innerHTML = `<div class="rec-panel__empty">
                     <span class="material-icons-round">work_off</span>
                     <p>Chưa có việc phù hợp ngay lúc này.</p>
@@ -609,6 +653,8 @@ function loadRecJobs() {
             } else {
                 window.recJobs = res.data;
                 content.innerHTML = `<div class="rec-card-list">${res.data.map((j, i) => renderRecJobCard(j, i)).join('')}</div>`;
+                plotRecJobMarkers(res.data);
+                bindRecJobHover();
             }
             recJobsLoaded = true;
         })
@@ -634,8 +680,13 @@ function switchSearchTab(tab) {
         if (resultCount) resultCount.style.display = 'none';
         if (searchBar)   searchBar.style.display = 'none';
         recPanel.classList.add('active');
-        if (typeof clearMapMarkers === 'function') clearMapMarkers();
-        loadRecJobs();
+        // Re-plot nếu đã có data, load lần đầu nếu chưa
+        if (recJobsLoaded && window.recJobs.length) {
+            plotRecJobMarkers(window.recJobs);
+            bindRecJobHover();
+        } else {
+            loadRecJobs();
+        }
     } else {
         tabRec.classList.remove('active');
         tabAll.classList.add('active');
@@ -643,6 +694,9 @@ function switchSearchTab(tab) {
         if (resultCount) resultCount.style.display = '';
         if (searchBar)   searchBar.style.display = '';
         recPanel.classList.remove('active');
+        // Xoá rec markers, hiện lại job markers thường
+        if (typeof clearMapMarkers === 'function') clearMapMarkers();
+        if (typeof fetchJobs === 'function') fetchJobs();
     }
 }
 </script>
