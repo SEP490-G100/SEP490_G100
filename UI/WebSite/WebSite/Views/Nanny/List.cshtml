@@ -297,9 +297,8 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="~/js/nanny-list.js" asp-append-version="true"></script>
 
-    @if (User.IsInRole("Parent") && (User.Identity?.IsAuthenticated ?? false))
-    {
     <script>
+    if (IS_PARENT && IS_AUTH) {
     // ── Recommendation tab (Parent — Nannies for Job) ───────────────
     const EDU_LABELS = ['Trung học','Cao đẳng','Đại học','Thạc sĩ','Khác'];
 
@@ -470,6 +469,7 @@
             if (typeof doNannySearch === 'function') doNannySearch();
         }
     }
+    } // end if (IS_PARENT && IS_AUTH)
     </script>
     @if (hasHiringContext)
     {
