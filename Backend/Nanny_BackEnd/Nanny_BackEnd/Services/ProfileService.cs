@@ -106,6 +106,7 @@ public class ProfileService
         decimal? expectedSalaryMax = null;
         int? maxTravelDistance = null;
         int? verificationStatusCode = null;
+        Guid? nannyProfileId = null;
         List<NannySkillItemDto>? skills = null;
         List<NannyAvailabilityItemDto>? availabilities = null;
         List<NannyCertificateItemDto>? certificates = null;
@@ -115,6 +116,7 @@ public class ProfileService
             var nannyProfile = await _nannyProfileRepo.FindByUserIdAsync(userId);
             if (nannyProfile != null)
             {
+                nannyProfileId = nannyProfile.Id;
                 bio = nannyProfile.Bio;
                 yearsOfExperience = nannyProfile.YearsOfExperience;
                 educationLevel = nannyProfile.EducationLevel.HasValue ? (int)nannyProfile.EducationLevel.Value : null;
@@ -217,6 +219,7 @@ public class ProfileService
         return new PersonalProfileDto
         {
             UserId = user.Id,
+            NannyProfileId = nannyProfileId,
             Email = user.Email,
             FirstName = user.FirstName,
             LastName = user.LastName,

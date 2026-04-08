@@ -3,6 +3,7 @@ namespace Nanny_BackEnd.DTOs.Profile;
 public class PersonalProfileDto
 {
     public Guid UserId { get; set; }
+    public Guid? NannyProfileId { get; set; }
     public string Email { get; set; } = null!;
     public string FirstName { get; set; } = null!;
     public string LastName { get; set; } = null!;

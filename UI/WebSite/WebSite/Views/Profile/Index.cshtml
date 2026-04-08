@@ -14,6 +14,20 @@
         : Guid.Empty;
     var canReportProfile = isReadOnly && Model.UserId != Guid.Empty && Model.UserId != currentUserId;
     var currentProfileUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
+    var suppressEngagementActions = (bool?)ViewBag.SuppressEngagementActions == true;
+    var canShowFavoriteHeart = User.IsInRole("Parent") && isNanny && !suppressEngagementActions;
+    var canContactNanny = isReadOnly && User.IsInRole("Parent") && isNanny && Model.UserId != Guid.Empty;
+    var isContactAccepted = (bool?)ViewBag.IsContactAccepted == true;
+    var hasHiringContext = (bool?)ViewBag.HasHiringContext == true;
+    var hiringJobPostingId = (ViewBag.HiringJobPostingId as string) ?? "";
+    var hiringJobApplicationId = (ViewBag.HiringJobApplicationId as string) ?? "";
+    var contactRequestId = (ViewBag.ContactRequestId as string) ?? "";
+    var canHireInHiringFlow = canContactNanny && hasHiringContext && !string.IsNullOrWhiteSpace(hiringJobPostingId) && !string.IsNullOrWhiteSpace(hiringJobApplicationId);
+    var canSendContactRequest = !suppressEngagementActions && canContactNanny && !hasHiringContext && Model.ContactNannyProfileId.HasValue && Model.ContactNannyProfileId.Value != Guid.Empty && !isContactAccepted;
+    var canMessageInContactFlow = canContactNanny && !hasHiringContext && isContactAccepted;
+    var canHireInContactFlow = canMessageInContactFlow;
+    var canMessageInHiringFlow = canContactNanny && hasHiringContext;
+    var canShowAnyAction = canContactNanny || canShowFavoriteHeart;
 
     string EducationLabel(int? level) => level switch
     {
@@ -92,8 +106,9 @@
                 </a>
             }
             else if (canContactNanny || canShowFavoriteHeart || canReportProfile)
+            else if (canShowAnyAction)
             {
-                <div class="profile-header-actions">
+                <div class="profile-header-actions flex items-center gap-2">
                     @if (canShowFavoriteHeart)
                     {
                         <button type="button"
@@ -105,10 +120,11 @@
                             <span class="material-icons-round text-[20px]">favorite_border</span>
                         </button>
                     }
-                    @if (canContactNanny)
+
+                    @if (canSendContactRequest)
                     {
                         <button type="button"
-                                id="contactNannyBtn"
+                                id="contactRequestBtn"
                                 data-nanny-profile-id="@(Model.ContactNannyProfileId?.ToString() ?? string.Empty)"
                                 class="profile-primary-btn">
                             Gui request contact
@@ -122,6 +138,21 @@
                                 title="Phan nan ho so"
                                 aria-label="Phan nan ho so">
                             <span class="material-icons-round text-[20px]">flag</span>
+
+                    @if (canMessageInContactFlow || canMessageInHiringFlow)
+                    {
+                        <button type="button"
+                                id="messageNannyBtn"
+                                data-user-id="@Model.UserId"
+                                class="profile-primary-btn">
+                            Nhan tin
+                        </button>
+                    }
+
+                    @if (canHireInHiringFlow || canHireInContactFlow)
+                    {
+                        <button type="button" id="hireNannyBtn" class="profile-primary-btn">
+                            Thue
                         </button>
                     }
                 </div>
@@ -406,10 +437,10 @@
                 renderFavoriteState(false);
             }
 
-            var contactBtn = document.getElementById('contactNannyBtn');
-            if (contactBtn) {
-                contactBtn.addEventListener('click', async function () {
-                    var nannyProfileId = contactBtn.getAttribute('data-nanny-profile-id');
+            var requestBtn = document.getElementById('contactRequestBtn');
+            if (requestBtn) {
+                requestBtn.addEventListener('click', async function () {
+                    var nannyProfileId = requestBtn.getAttribute('data-nanny-profile-id');
                     if (!nannyProfileId) {
                         if (typeof window.showToast === 'function') {
                             window.showToast('Khong tim thay nanny profile de gui request contact.', { type: 'warning' });
@@ -417,9 +448,9 @@
                         return;
                     }
 
-                    contactBtn.disabled = true;
-                    var oldText = contactBtn.textContent;
-                    contactBtn.textContent = 'Dang gui request...';
+                    requestBtn.disabled = true;
+                    var oldText = requestBtn.textContent;
+                    requestBtn.textContent = 'Dang gui request...';
 
                     try {
                         var response = await fetch('/Nanny/SendContactRequest', {
@@ -444,13 +475,75 @@
                             window.showToast(json?.message || 'Da gui request contact thanh cong.', { type: 'success' });
                         }
                         window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
+                        setTimeout(function () { window.location.reload(); }, 700);
                     } catch {
                         if (typeof window.showToast === 'function') {
                             window.showToast('Khong the gui request contact.', { type: 'error' });
                         }
                     } finally {
-                        contactBtn.disabled = false;
-                        contactBtn.textContent = oldText;
+                        requestBtn.disabled = false;
+                        requestBtn.textContent = oldText;
+                    }
+                });
+            }
+
+            var messageBtn = document.getElementById('messageNannyBtn');
+            if (messageBtn) {
+                messageBtn.addEventListener('click', async function () {
+                    var userId = messageBtn.getAttribute('data-user-id');
+                    if (!userId) return;
+
+                    messageBtn.disabled = true;
+                    var oldText = messageBtn.textContent;
+                    messageBtn.textContent = 'Dang mo chat...';
+
+                    try {
+                        var response = await fetch('/Communication/GetOrCreate', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'same-origin',
+                            body: JSON.stringify({ otherUserId: userId })
+                        });
+
+                        var json = await response.json();
+                        var conversationId = json?.data?.id;
+                        if (conversationId) {
+                            window.location.href = `/Communication?conversationId=${conversationId}`;
+                            return;
+                        }
+                        window.location.href = '/Communication';
+                    } catch {
+                        window.location.href = '/Communication';
+                    } finally {
+                        messageBtn.disabled = false;
+                        messageBtn.textContent = oldText;
+                    }
+                });
+            }
+
+            const hasHiringContext = @((hasHiringContext) ? "true" : "false");
+            const hiringJobPostingId = '@Html.Raw(hiringJobPostingId)';
+            const hiringJobApplicationId = '@Html.Raw(hiringJobApplicationId)';
+            const contactRequestId = '@Html.Raw(contactRequestId)';
+            const isContactAccepted = @((isContactAccepted) ? "true" : "false");
+            const hireBtn = document.getElementById('hireNannyBtn');
+            if (hireBtn) {
+                hireBtn.addEventListener('click', function () {
+                    if (hasHiringContext) {
+                        const nannyName = (`@Model.FirstName @Model.LastName`).trim();
+                        window.__openHireModal?.(hiringJobPostingId, hiringJobApplicationId, nannyName);
+                        return;
+                    }
+                    if (contactRequestId && isContactAccepted) {
+                        const nannyName = (`@Model.FirstName @Model.LastName`).trim();
+                        window.__openHireModal?.(null, null, nannyName, contactRequestId);
+                        return;
+                    }
+                    if (!hasHiringContext) {
+                        if (typeof window.showToast === 'function') {
+                            window.showToast('Can co ngu canh hop le de tao hiring record.', { type: 'info' });
+                        }
+                        window.location.href = '/Search/History';
                     }
                 });
             }
@@ -727,4 +820,9 @@
             }).addTo(map);
         });
     </script>
+}
+
+@if (canHireInHiringFlow || canHireInContactFlow)
+{
+    <partial name="~/Views/Hiring/_HireModal.cshtml" />
 }
