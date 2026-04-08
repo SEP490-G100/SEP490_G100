@@ -4,6 +4,9 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
     var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
     var isParent = User.IsInRole("Parent");
+    var hiringJobPostingId = Context.Request.Query["jobPostingId"].ToString();
+    var hiringJobAppId = Context.Request.Query["jobApplicationId"].ToString();
+    var hasHiringContext = isParent && !string.IsNullOrWhiteSpace(hiringJobPostingId) && !string.IsNullOrWhiteSpace(hiringJobAppId);
 }
 
 @section Head {
@@ -258,6 +261,17 @@
             </div>
 
             <div class="nanny-detail-bottom-action">
+                @if (hasHiringContext)
+                {
+                    <button type="button" id="nd-contactBtn" class="nanny-detail-view-btn" onclick="nannyHiringContact()">
+                        <span class="material-icons-round">chat</span>
+                        Lien he Nanny
+                    </button>
+                    <button type="button" id="nd-hireBtn" class="nanny-detail-view-btn" onclick="nannyHiringHire()">
+                        <span class="material-icons-round">handshake</span>
+                        Thue Nanny
+                    </button>
+                }
                 <button type="button" id="nd-viewProfileBtn" class="nanny-detail-view-btn" onclick="viewNannyProfileDetail(event)">
                     <span class="material-icons-round">visibility</span>
                     Xem chi tiet ho so Nanny
@@ -267,10 +281,18 @@
     </div>
 </div>
 
+@if (hasHiringContext)
+{
+    <partial name="~/Views/Hiring/_HireModal.cshtml" />
+}
+
 @section Scripts {
     <script>
         const IS_AUTH = @(isAuthenticated ? "true" : "false");
         const IS_PARENT = @(isParent ? "true" : "false");
+        const HIRING_JOB_POSTING_ID = '@Html.Raw(hiringJobPostingId)';
+        const HIRING_JOB_APP_ID = '@Html.Raw(hiringJobAppId)';
+        const HAS_HIRING_CONTEXT = @(hasHiringContext ? "true" : "false");
     </script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="~/js/nanny-list.js" asp-append-version="true"></script>
@@ -449,5 +471,30 @@
         }
     }
     </script>
+    @if (hasHiringContext)
+    {
+        <script>
+            async function nannyHiringContact() {
+                if (!window.currentNannyDetailUserId) return;
+                try {
+                    const res = await fetch('/Communication/GetOrCreate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ otherUserId: window.currentNannyDetailUserId })
+                    });
+                    const json = await res.json();
+                    if (json?.data?.id) {
+                        window.location.href = `/Communication?conversationId=${json.data.id}`;
+                        return;
+                    }
+                } catch {}
+                window.location.href = '/Communication';
+            }
+
+            function nannyHiringHire() {
+                const nannyName = document.getElementById('nd-name')?.textContent || '';
+                window.__openHireModal?.(HIRING_JOB_POSTING_ID, HIRING_JOB_APP_ID, nannyName);
+            }
+        </script>
     }
 }

@@ -541,6 +541,10 @@
                     <a href="/Search" class="@NavCls("Search")">Tìm bảo mẫu</a>
                     <a href="/Nanny/List" class="@nannyListNavCls">Tìm nanny</a>
                     <a href="/Blog" class="@NavCls("Blog")">Blog</a>
+                    @if (User.Identity != null && User.Identity.IsAuthenticated && (User.IsInRole("Parent") || User.IsInRole("Nanny")))
+                    {
+                        <a href="/Contract" class="@NavCls("Contract")">Hợp đồng của tôi</a>
+                    }
                     <a href="#how-it-works" class="nm-nav-link">Cách hoạt động</a>
                 </div>
 
@@ -549,14 +553,11 @@
 
                     @if (User.Identity != null && User.Identity.IsAuthenticated)
                     {
-                        @if (isHomePage)
-                        {
-                            <a href="/Communication"
-                               class="nm-icon-btn nm-icon-btn--mini"
-                               aria-label="Tin nhan">
-                                <span class="material-icons-round text-[18px]">chat_bubble_outline</span>
-                            </a>
-                        }
+                        <a href="/Communication"
+                           class="nm-icon-btn nm-icon-btn--mini"
+                           aria-label="Tin nhan">
+                            <span class="material-icons-round text-[18px]">chat_bubble_outline</span>
+                        </a>
 
 
                         <div class="relative" id="notificationDropdown">
@@ -624,6 +625,14 @@
                                     <span class="material-icons-round text-base">history</span>
                                     Lich su bai dang
                                 </a>
+
+                                @if (User.IsInRole("Parent") || User.IsInRole("Nanny"))
+                                {
+                                    <a href="/Contract" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        <span class="material-icons-round text-base">description</span>
+                                        Hop dong cua toi
+                                    </a>
+                                }
 
                                 @if (User.IsInRole("Parent"))
                                 {

@@ -16,6 +16,7 @@ let nannyScheduleFilters = [];
 let suppressNextNannyMapMove = false;
 let currentNannyDetailId = null;
 let currentNannyDetailUserId = null;
+window.currentNannyDetailUserId = null;
 const NANNY_DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 const NANNY_TIME_LABELS = ['Morning', 'Afternoon', 'Evening', 'Night'];
 const NANNY_FALLBACK_PROVINCES = [
@@ -1215,6 +1216,7 @@ async function openNannyDetail(id) {
 
     currentNannyDetailId = detail.id || id;
     currentNannyDetailUserId = detail.userId || null;
+    window.currentNannyDetailUserId = currentNannyDetailUserId;
 
     const favoriteButton = document.getElementById('nd-favoriteBtn');
     if (favoriteButton) {
@@ -1242,6 +1244,7 @@ async function openNannyDetail(id) {
 function closeNannyDetail() {
   currentNannyDetailId = null;
   currentNannyDetailUserId = null;
+  window.currentNannyDetailUserId = null;
   document.getElementById('nannyDetailModal')?.classList.remove('show');
 }
 

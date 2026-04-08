@@ -405,6 +405,49 @@
         .chat-sidebar.mobile-open { display: flex; position: fixed; inset: 72px 0 0; z-index: 50; }
         .chat-main { width: 100%; }
     }
+
+    .hiring-offer-card {
+        cursor: pointer;
+        border-radius: 18px;
+        overflow: hidden;
+        border: 1.5px solid #fed7aa;
+        background: #fff;
+        max-width: 280px;
+        box-shadow: 0 4px 16px rgba(249,115,22,.14);
+        transition: transform .18s ease, box-shadow .18s ease;
+    }
+
+    .hiring-offer-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 24px rgba(249,115,22,.22);
+    }
+
+    .hiring-offer-card__header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        background: linear-gradient(135deg,#f97316,#ea580c);
+        color: #fff;
+        font-size: 14px;
+        font-weight: 800;
+    }
+
+    .hiring-offer-card__body { padding: 10px 14px 6px; }
+    .hiring-offer-card__label { font-size: 13px; font-weight: 700; color: #111827; }
+    .hiring-offer-card__hint { font-size: 11px; color: #9ca3af; margin-top: 3px; }
+
+    .hiring-offer-card__footer {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 7px 14px;
+        border-top: 1px solid #fed7aa;
+        background: #fff7ed;
+        font-size: 12px;
+        font-weight: 700;
+        color: #c2410c;
+    }
 </style>
 }
 
@@ -696,7 +739,7 @@ function renderMessages(messages) {
                 <div class="msg-bubble ${m.isDeleted ? 'deleted' : ''}"
                      oncontextmenu="openCtxMenu(event,'${m.id}')"
                      ondblclick="openCtxMenu(event,'${m.id}')">
-                    ${esc(m.content)}
+                    ${Number(m.messageType) === 4 ? renderHiringOfferCard(m, isMine) : esc(m.content)}
                     ${ctx}
                 </div>
                 <div class="msg-time">${fmtMsgTime(m.createdAt)}${m.readAt ? ' ✓✓' : ''}</div>
@@ -727,7 +770,7 @@ function appendMessage(m) {
     row.innerHTML = `
         ${!isMine ? `<div class="msg-avatar">${initial}</div>` : ''}
         <div style="display:flex;flex-direction:column;gap:3px;position:relative;">
-            <div class="msg-bubble" oncontextmenu="openCtxMenu(event,'${m.id}')" ondblclick="openCtxMenu(event,'${m.id}')">${esc(m.content)}${ctx}</div>
+            <div class="msg-bubble" oncontextmenu="openCtxMenu(event,'${m.id}')" ondblclick="openCtxMenu(event,'${m.id}')">${Number(m.messageType) === 4 ? renderHiringOfferCard(m, isMine) : esc(m.content)}${ctx}</div>
             <div class="msg-time">${fmtMsgTime(m.createdAt)}</div>
         </div>
         ${isMine ? `<div class="msg-avatar">${initial}</div>` : ''}`;
@@ -969,6 +1012,27 @@ function applyMessageDeleted(messageId, conversationId) {
     }
 }
 
+function renderHiringOfferCard(message, isMine) {
+    const hiringRecordId = message.attachmentUrl || '';
+    return `
+    <div class="hiring-offer-card" onclick="window.__openOfferDetail?.('${esc(hiringRecordId)}')" title="Bam de xem chi tiet de nghi viec lam">
+        <div class="hiring-offer-card__header">
+            <span class="material-icons-round" style="font-size:20px;">handshake</span>
+            <span>De nghi viec lam</span>
+        </div>
+        <div class="hiring-offer-card__body">
+            <p class="hiring-offer-card__label">
+                ${isMine ? 'Ban da gui de nghi thue nanny.' : 'Ban nhan duoc de nghi viec lam!'}
+            </p>
+            <p class="hiring-offer-card__hint">${isMine ? 'Bam de xem chi tiet hop dong.' : 'Bam de xem hop dong va phan hoi.'}</p>
+        </div>
+        <div class="hiring-offer-card__footer">
+            <span class="material-icons-round" style="font-size:16px;opacity:.8;">open_in_new</span>
+            Xem chi tiet hop dong
+        </div>
+    </div>`;
+}
+
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  SIGNALR
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -1065,3 +1129,6 @@ function resetUnreadCount(convId) {
 </script>
 @Html.AntiForgeryToken()
 }
+
+<partial name="~/Views/Hiring/_OfferCard.cshtml" />
+<partial name="~/Views/Hiring/_OfferDetailModal.cshtml" />
