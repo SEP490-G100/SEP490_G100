@@ -159,8 +159,9 @@
         function togglePassword(inputId, btn) {
             var input = document.getElementById(inputId);
             var icon = btn.querySelector('.material-icons-round');
-            var isShowing = input.classList.toggle('show');
-            icon.textContent = isShowing ? 'visibility' : 'visibility_off';
+            var isShowing = input.type === 'text';
+            input.type = isShowing ? 'password' : 'text';
+            icon.textContent = isShowing ? 'visibility_off' : 'visibility';
         }
     </script>
 }

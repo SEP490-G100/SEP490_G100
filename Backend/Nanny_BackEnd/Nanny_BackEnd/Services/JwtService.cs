@@ -55,7 +55,10 @@ public class JwtService
         return Convert.ToBase64String(bytes);
     }
 
-    public Guid? GetUserIdFromToken(string token)
+    /// <summary>
+    /// Trích xuất UserId và JwtId từ token (không check lifetime — dùng cho refresh flow).
+    /// </summary>
+    public (Guid? UserId, string? JwtId) GetTokenClaims(string token)
     {
         var handler = new JwtSecurityTokenHandler();
         var key = Encoding.UTF8.GetBytes(_config["Jwt:Key"]!);
@@ -73,12 +76,15 @@ public class JwtService
                 ValidateLifetime = false
             }, out _);
 
-            var userId = principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-            return userId != null ? Guid.Parse(userId) : null;
+            var userIdStr = principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+            var jwtId     = principal.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+
+            var userId = userIdStr != null ? Guid.Parse(userIdStr) : (Guid?)null;
+            return (userId, jwtId);
         }
         catch
         {
-            return null;
+            return (null, null);
         }
     }
 }

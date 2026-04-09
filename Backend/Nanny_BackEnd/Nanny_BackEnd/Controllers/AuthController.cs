@@ -24,8 +24,8 @@ public class AuthController : ControllerBase
     {
         try
         {
-            var result = await _auth.RegisterAsync(request);
-            return Ok(new { success = true, message = "Đăng ký thành công. Vui lòng xác thực email.", data = result });
+            await _auth.RegisterAsync(request);
+            return Ok(new { success = true, message = "Đăng ký thành công. Vui lòng xác thực email." });
         }
         catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
     }
@@ -71,7 +71,7 @@ public class AuthController : ControllerBase
             return Ok(new { success = true, data = result });
         }
         catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
-        catch (Exception ex)                 { return Unauthorized(Fail(ex.Message)); }
+        catch (Exception)                    { return Unauthorized(Fail("Đăng nhập bằng Google thất bại. Vui lòng thử lại.")); }
     }
 
     [Authorize]
