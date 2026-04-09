@@ -171,8 +171,10 @@
 <div id="nannyDetailModal" class="nmodal fixed inset-0 z-50 bg-black/50 backdrop-blur-sm items-center justify-center px-4" onclick="if(event.target===this)closeNannyDetail()">
     <div class="nmodal-box nanny-detail-box bg-white rounded-[32px] w-full max-w-4xl shadow-2xl relative">
         <div class="modal-scroll">
-            <div class="nanny-detail-header">
+            <div class="nanny-detail-close-wrap">
                 <button onclick="closeNannyDetail()" class="nanny-detail-close material-icons-round">close</button>
+            </div>
+            <div class="nanny-detail-header">
                 <div class="nanny-detail-hero">
                     <img id="nd-avatar" src="/img/nanny-logo.jpg" alt="Avatar nanny" class="nanny-detail-avatar" />
                     <div class="nanny-detail-hero__content">
@@ -190,10 +192,6 @@
                                 <span class="material-icons-round">favorite_border</span>
                                 <span id="nd-favoriteBtnText">Yêu thích</span>
                             </button>
-                            <button type="button" id="nd-contactBtn" class="nanny-detail-view-btn hidden" onclick="sendContactRequestFromDetail(event)">
-                                <span class="material-icons-round">send</span>
-                                Gửi request contact
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -208,8 +206,8 @@
                 <section class="nanny-detail-card">
                     <h3>Thông tin liên hệ</h3>
                     <div class="nanny-meta-list">
-                        <div><span>Số điện thoại</span><strong id="nd-phone">Chưa cập nhật</strong></div>
-                        <div><span>Địa chỉ</span><strong id="nd-address">Chưa cập nhật</strong></div>
+                        <div><span>Liên hệ</span><strong id="nd-phone">Gửi request contact để kết nối trực tiếp</strong></div>
+                        <div><span>Khu vực</span><strong id="nd-address">Chưa cập nhật</strong></div>
                         <div><span>Bán kính di chuyển</span><strong id="nd-travel">Chưa cập nhật</strong></div>
                         <div><span>Độ hoàn thiện hồ sơ</span><strong id="nd-completeness">0%</strong></div>
                     </div>
