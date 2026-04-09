@@ -1,110 +1,132 @@
 @model WebSite.Models.Auth.RegisterViewModel
 @{
-    ViewData["Title"] = "Đăng ký";
+    ViewData["Title"] = "Dang ky";
 }
 
-<div class="min-h-[60vh] flex items-center justify-center py-16 px-4">
-    <div class="w-full max-w-md">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
-            <div class="text-center mb-8">
-                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Tạo tài khoản</h1>
-                <p class="text-gray-500 dark:text-gray-400 mt-2">Tham gia NannyMatch miễn phí</p>
-            </div>
-
-            @if (TempData["Error"] != null)
-            {
-                <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 text-sm">
-                    @TempData["Error"]
+<div class="nm-flow-shell">
+    <div class="nm-flow-container max-w-5xl">
+        <div class="nm-flow-card">
+            <div class="nm-flow-card__inner">
+                <div class="nm-flow-header">
+                    <div class="nm-flow-header__content">
+                        <span class="nm-flow-badge">Tai khoan moi</span>
+                        <h1 class="nm-flow-title">Tao tai khoan NannyMatch</h1>
+                        <p class="nm-flow-subtitle">
+                            Hoan tat tai khoan trong mot man hinh gon gon. Sau buoc nay he thong se dua ban vao luong nhap thong tin theo vai tro.
+                        </p>
+                    </div>
+                    <div class="nm-flow-progress" aria-hidden="true">
+                        <span class="nm-progress-step is-active">1</span>
+                        <span class="nm-progress-line"></span>
+                        <span class="nm-progress-step">2</span>
+                        <span class="nm-progress-line"></span>
+                        <span class="nm-progress-step">3</span>
+                    </div>
                 </div>
-            }
 
-            @if (!ViewData.ModelState.IsValid)
-            {
-                <div asp-validation-summary="ModelOnly" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 text-sm"></div>
-            }
+                @if (TempData["Error"] != null)
+                {
+                    <div class="nm-alert">@TempData["Error"]</div>
+                }
 
-            <form asp-action="Register" method="post">
-                @Html.AntiForgeryToken()
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div asp-validation-summary="ModelOnly" class="nm-alert"></div>
+                }
 
-                <div class="space-y-4">
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Họ</label>
-                            <input asp-for="FirstName" placeholder="Nguyễn"
-                                   class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition-all" />
-                            <span asp-validation-for="FirstName" class="text-red-500 text-xs mt-1"></span>
+                <form asp-action="Register" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <div class="nm-form-grid">
+                        <div class="nm-col-12">
+                            <div class="nm-section-card">
+                                <div class="nm-section-title">Thong tin tai khoan</div>
+                                <div class="nm-section-note">Nhap thong tin co ban de tao tai khoan. So dien thoai co the bo sung sau.</div>
+
+                                <div class="nm-form-grid">
+                                    <div class="nm-col-6">
+                                        <div class="nm-field">
+                                            <label asp-for="FirstName" class="nm-label">Ho <span class="required">*</span></label>
+                                            <input asp-for="FirstName" class="nm-input" placeholder="Nguyen" />
+                                            <span asp-validation-for="FirstName" class="nm-error"></span>
+                                        </div>
+                                    </div>
+
+                                    <div class="nm-col-6">
+                                        <div class="nm-field">
+                                            <label asp-for="LastName" class="nm-label">Ten <span class="required">*</span></label>
+                                            <input asp-for="LastName" class="nm-input" placeholder="An" />
+                                            <span asp-validation-for="LastName" class="nm-error"></span>
+                                        </div>
+                                    </div>
+
+                                    <div class="nm-col-12">
+                                        <div class="nm-field">
+                                            <label asp-for="Email" class="nm-label">Email <span class="required">*</span></label>
+                                            <input asp-for="Email" type="email" class="nm-input" placeholder="email@example.com" />
+                                            <span asp-validation-for="Email" class="nm-error"></span>
+                                        </div>
+                                    </div>
+
+                                    <div class="nm-col-12">
+                                        <div class="nm-field">
+                                            <label asp-for="PhoneNumber" class="nm-label">So dien thoai</label>
+                                            <input asp-for="PhoneNumber" type="tel" class="nm-input" placeholder="0901234567" />
+                                            <div class="nm-field-hint">Truong nay khong bat buoc, ban co the cap nhat sau trong ho so.</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="nm-col-6">
+                                        <div class="nm-field">
+                                            <label asp-for="Password" class="nm-label">Mat khau <span class="required">*</span></label>
+                                            <div class="nm-password-wrap">
+                                                <input asp-for="Password" type="text" id="regPassword" class="nm-input pwd-field" placeholder="Toi thieu 8 ky tu" />
+                                                <button type="button" onclick="togglePassword('regPassword', this)" class="nm-password-toggle" aria-label="Hien thi mat khau">
+                                                    <span class="material-icons-round text-xl">visibility_off</span>
+                                                </button>
+                                            </div>
+                                            <span asp-validation-for="Password" class="nm-error"></span>
+                                        </div>
+                                    </div>
+
+                                    <div class="nm-col-6">
+                                        <div class="nm-field">
+                                            <label asp-for="ConfirmPassword" class="nm-label">Xac nhan mat khau <span class="required">*</span></label>
+                                            <input asp-for="ConfirmPassword" type="password" class="nm-input" placeholder="Nhap lai mat khau" />
+                                            <span asp-validation-for="ConfirmPassword" class="nm-error"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Tên</label>
-                            <input asp-for="LastName" placeholder="An"
-                                   class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition-all" />
-                            <span asp-validation-for="LastName" class="text-red-500 text-xs mt-1"></span>
-                        </div>
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Email</label>
-                        <input asp-for="Email" type="email" placeholder="email@example.com"
-                               class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition-all" />
-                        <span asp-validation-for="Email" class="text-red-500 text-xs mt-1"></span>
+                    <div class="nm-flow-actions">
+                        <a asp-action="Login" class="nm-btn nm-btn--ghost">Da co tai khoan</a>
+                        <button type="submit" class="nm-btn nm-btn--primary">Dang ky</button>
                     </div>
+                </form>
 
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Số điện thoại (tuỳ chọn)</label>
-                        <input asp-for="PhoneNumber" type="tel" placeholder="0901234567"
-                               class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition-all" />
-                    </div>
+                <div class="nm-divider"><span>Hoac</span></div>
 
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Mật khẩu</label>
-                        <div class="relative">
-                            <input asp-for="Password" type="password" placeholder="Tối thiểu 8 ký tự" id="regPassword"
-                                   class="w-full px-4 py-3 pr-12 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition-all" />
-                            <button type="button" onclick="togglePassword('regPassword', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                                <span class="material-icons-round text-xl">visibility_off</span>
-                            </button>
-                        </div>
-                        <span asp-validation-for="Password" class="text-red-500 text-xs mt-1"></span>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Xác nhận mật khẩu</label>
-                        <div class="relative">
-                            <input asp-for="ConfirmPassword" type="password" placeholder="Nhập lại mật khẩu" id="regConfirmPassword"
-                                   class="w-full px-4 py-3 pr-12 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition-all" />
-                            <button type="button" onclick="togglePassword('regConfirmPassword', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                                <span class="material-icons-round text-xl">visibility_off</span>
-                            </button>
-                        </div>
-                        <span asp-validation-for="ConfirmPassword" class="text-red-500 text-xs mt-1"></span>
-                    </div>
-
-
-
-                    <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-orange-500/30 transition-all hover:scale-[1.02] active:scale-95">
-                        Đăng ký
-                    </button>
+                <div id="g_id_onload"
+                     data-client_id="@ViewBag.GoogleClientId"
+                     data-context="signup"
+                     data-ux_mode="popup"
+                     data-callback="onGoogleSignIn"
+                     data-auto_prompt="false">
                 </div>
-            </form>
 
-            <div class="relative my-6">
-                <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200 dark:border-gray-600"></div></div>
-                <div class="relative flex justify-center text-sm"><span class="px-4 bg-white dark:bg-gray-800 text-gray-500">hoặc</span></div>
+                <div class="nm-google-wrap">
+                    <div class="g_id_signin"
+                         data-type="standard"
+                         data-size="large"
+                         data-theme="outline"
+                         data-text="signup_with"
+                         data-shape="pill"
+                         data-width="360"></div>
+                </div>
             </div>
-
-            <div id="g_id_onload"
-                 data-client_id="@ViewBag.GoogleClientId"
-                 data-context="signup"
-                 data-ux_mode="popup"
-                 data-callback="onGoogleSignIn"
-                 data-auto_prompt="false">
-            </div>
-            <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="signup_with" data-shape="pill" data-width="400"></div>
-
-            <p class="text-center text-sm text-gray-500 dark:text-gray-400 mt-6">
-                Đã có tài khoản?
-                <a asp-action="Login" class="font-semibold text-orange-500 hover:text-orange-600">Đăng nhập</a>
-            </p>
         </div>
     </div>
 </div>
@@ -116,13 +138,22 @@
             var form = document.createElement('form');
             form.method = 'POST';
             form.action = '@Url.Action("GoogleLogin")';
+
             var token = document.createElement('input');
-            token.type = 'hidden'; token.name = 'idToken'; token.value = response.credential;
+            token.type = 'hidden';
+            token.name = 'idToken';
+            token.value = response.credential;
+
             var antiForgery = document.querySelector('input[name="__RequestVerificationToken"]');
             var af = document.createElement('input');
-            af.type = 'hidden'; af.name = '__RequestVerificationToken'; af.value = antiForgery.value;
-            form.appendChild(token); form.appendChild(af);
-            document.body.appendChild(form); form.submit();
+            af.type = 'hidden';
+            af.name = '__RequestVerificationToken';
+            af.value = antiForgery.value;
+
+            form.appendChild(token);
+            form.appendChild(af);
+            document.body.appendChild(form);
+            form.submit();
         }
 
         function togglePassword(inputId, btn) {

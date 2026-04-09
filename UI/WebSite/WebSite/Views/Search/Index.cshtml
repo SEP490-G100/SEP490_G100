@@ -412,72 +412,88 @@
 </div>
 
 <div id="previewModal" class="nmodal fixed inset-0 z-50 bg-black/50 backdrop-blur-sm items-center justify-center px-4" onclick="if(event.target===this)closePreview()">
-    <div class="nmodal-box bg-white rounded-2xl w-full max-w-3xl shadow-2xl relative">
+    <div class="nmodal-box search-detail-box bg-white rounded-[32px] w-full max-w-4xl shadow-2xl relative">
         <div class="modal-scroll">
-        <div class="p-6">
-            <button onclick="closePreview()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-800 transition-colors material-icons-round text-2xl">close</button>
-            <div class="pr-10">
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold mb-3">
-                    <span class="material-icons-round text-sm">article</span>Chi tiết tin đăng
+            <div class="search-detail-close-wrap">
+                <button onclick="closePreview()" class="search-detail-close material-icons-round">close</button>
+            </div>
+            <div class="search-detail-header">
+                <div class="search-detail-hero">
+                    <div class="search-detail-hero__content">
+                        <div class="search-detail-badge">
+                            <span class="material-icons-round text-[16px]">article</span>
+                            Chi tiet tin dang
+                        </div>
+                        <h2 id="pv-title" class="search-detail-title">Ten bai viet</h2>
+                        <p id="pv-parentName" class="search-detail-subtitle">Dang boi phu huynh</p>
+                        <div class="search-detail-chips">
+                            <span id="pv-type" class="search-detail-chip">Loai viec</span>
+                            <span id="pv-sal" class="search-detail-chip search-detail-chip--strong">Luong</span>
+                            <span id="pv-status" class="search-detail-chip search-detail-chip--muted">Trang thai</span>
+                        </div>
+                    </div>
                 </div>
-                <h2 id="pv-title" class="text-2xl font-bold text-gray-900 mb-2">Tên bài viết</h2>
-                <p id="pv-parentName" class="text-sm font-semibold text-gray-500 mb-4">Đăng bởi phụ huynh</p>
             </div>
-            <div class="flex flex-wrap gap-2 mb-5">
-                <span id="pv-type" class="px-2.5 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold">Loại việc</span>
-                <span id="pv-sal" class="px-2.5 py-1 rounded-full bg-green-50 text-green-700 text-xs font-bold">Lương</span>
-                <span id="pv-status" class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">Trạng thái</span>
+            <div class="search-detail-grid">
+                <section class="search-detail-card">
+                    <h3>Mo ta cong viec</h3>
+                    <p id="pv-desc" class="search-detail-text"></p>
+                </section>
+                <section class="search-detail-card">
+                    <h3>Thong tin chinh</h3>
+                    <div class="search-detail-meta-list">
+                        <div><span>Dia diem</span><strong id="pv-loc"></strong></div>
+                        <div><span>So tre can cham</span><strong id="pv-kids"></strong></div>
+                        <div><span>Toa do ban do</span><strong id="pv-coords"></strong></div>
+                        <div><span>Khoang cach</span><strong id="pv-distance"></strong></div>
+                    </div>
+                </section>
+                <section class="search-detail-card search-detail-card--wide">
+                    <h3>Thong tin tu profile Parent</h3>
+                    <div class="search-detail-info-grid">
+                        <div class="search-detail-info-box"><p>Dac diem</p><strong id="pv-characteristic"></strong></div>
+                        <div class="search-detail-info-box"><p>Nhom tuoi cua be</p><strong id="pv-birthType"></strong></div>
+                        <div class="search-detail-info-box"><p>Nhu cau dac biet</p><strong id="pv-specialNeeds"></strong></div>
+                        <div class="search-detail-info-box"><p>Do tuoi bao mau</p><strong id="pv-ageRange"></strong></div>
+                    </div>
+                </section>
+                <section class="search-detail-card search-detail-card--wide">
+                    <h3>Ky nang yeu cau</h3>
+                    <div id="pv-skills" class="search-detail-skill-list"></div>
+                </section>
+                <section class="search-detail-card search-detail-card--wide">
+                    <h3>Lich ngay muon tuyen</h3>
+                    <div id="pv-schedule"></div>
+                </section>
+                <section class="search-detail-card search-detail-card--wide">
+                    <h3>Trang thai duyet</h3>
+                    <div class="search-detail-moderation-box">
+                        <strong id="pv-moderation"></strong>
+                        <p id="pv-note" class="search-detail-note hidden"></p>
+                    </div>
+                </section>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
-                <div class="rounded-xl border border-gray-100 bg-gray-50 p-4"><p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Địa điểm</p><p id="pv-loc" class="text-sm font-semibold text-gray-800"></p></div>
-                <div class="rounded-xl border border-gray-100 bg-gray-50 p-4"><p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Số trẻ cần chăm</p><p id="pv-kids" class="text-sm font-semibold text-gray-800"></p></div>
-                <div class="rounded-xl border border-gray-100 bg-gray-50 p-4"><p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Đặc điểm</p><p id="pv-characteristic" class="text-sm text-gray-700 whitespace-pre-line"></p></div>
-                <div class="rounded-xl border border-gray-100 bg-gray-50 p-4"><p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Nhóm tuổi của bé</p><p id="pv-birthType" class="text-sm text-gray-700"></p></div>
-                <div class="rounded-xl border border-gray-100 bg-gray-50 p-4"><p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Nhu cầu đặc biệt</p><p id="pv-specialNeeds" class="text-sm text-gray-700 whitespace-pre-line"></p></div>
-                <div class="rounded-xl border border-gray-100 bg-gray-50 p-4"><p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Độ tuổi bảo mẫu</p><p id="pv-ageRange" class="text-sm text-gray-700"></p></div>
-                <div class="rounded-xl border border-gray-100 bg-gray-50 p-4"><p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Tọa độ bản đồ</p><p id="pv-coords" class="text-sm font-semibold text-gray-800"></p></div>
-                <div class="rounded-xl border border-gray-100 bg-gray-50 p-4"><p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Khoảng cách</p><p id="pv-distance" class="text-sm font-semibold text-gray-800"></p></div>
-            </div>
-            <div class="bg-gray-50 rounded-xl p-4 mb-5 border border-gray-100">
-                <p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Kỹ năng yêu cầu</p>
-                <div id="pv-skills" class="flex flex-wrap gap-2"></div>
-            </div>
-            <div class="bg-gray-50 rounded-xl p-4 mb-5 border border-gray-100">
-                <p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Lịch ngày muốn tuyển</p>
-                <div id="pv-schedule"></div>
-            </div>
-            <div class="bg-gray-50 rounded-xl p-4 mb-5 border border-gray-100">
-                <p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Trạng thái duyệt</p>
-                <p id="pv-moderation" class="text-sm font-semibold text-gray-800"></p>
-                <p id="pv-note" class="text-sm text-gray-600 whitespace-pre-line mt-2 hidden"></p>
-            </div>
-            <div class="bg-gray-50 rounded-xl p-4 mb-5 border border-gray-100">
-                <p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Mô tả công việc</p>
-                <p id="pv-desc" class="text-sm text-gray-700 whitespace-pre-line leading-relaxed"></p>
-            </div>
-            <div id="pv-actionGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div id="pv-actionGrid" class="search-detail-bottom-action">
                 <button id="pv-applyBtn"
                         type="button"
-                        class="hidden w-full py-3 rounded-xl border border-orange-200 text-orange-600 bg-orange-50 hover:bg-orange-100 font-bold text-sm transition-all inline-flex items-center justify-center gap-2">
+                        class="hidden search-detail-action-btn search-detail-action-btn--primary">
                     <span class="material-icons-round text-base">send</span>
                     <span id="pv-applyBtnText">Ung tuyen ngay</span>
                 </button>
                 <a id="pv-editBtn"
                    href="#"
-                   class="hidden w-full py-3 rounded-xl border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 font-bold text-sm transition-all inline-flex items-center justify-center gap-2">
+                   class="hidden search-detail-action-btn search-detail-action-btn--secondary">
                     <span class="material-icons-round text-base">edit</span>
                     <span>Chinh sua bai dang</span>
                 </a>
-                <a id="pv-parentBtn" href="#" target="_blank" class="w-full py-3 rounded-xl border border-orange-200 text-orange-600 bg-orange-50 hover:bg-orange-100 font-bold text-sm transition-all inline-flex items-center justify-center gap-2">
+                <a id="pv-parentBtn" href="#" target="_blank" class="search-detail-action-btn search-detail-action-btn--ghost">
                     <span class="material-icons-round text-base">person</span>
                     <span id="pv-parentBtnText">Xem chi tiet ho so nguoi dang</span>
                 </a>
             </div>
         </div>
-        </div>
     </div>
 </div>
-
 <div id="historyModal" class="nmodal fixed inset-0 z-50 bg-black/50 backdrop-blur-sm items-center justify-center px-4" onclick="if(event.target===this)closeHistory()">
     <div class="nmodal-box bg-white rounded-2xl w-full max-w-3xl shadow-2xl relative">
         <div class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
