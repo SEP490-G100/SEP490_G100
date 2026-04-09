@@ -1,4 +1,90 @@
+@using System.Net.Http.Headers
+@using System.Text.Json
+@using WebSite.Models
+@using WebSite.Models.Profile
+@inject IHttpClientFactory HttpFactory
+@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var verifyPromptCurrentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+    var isVerifyPromptHomePage =
+        string.Equals(currentController, "Home", StringComparison.OrdinalIgnoreCase) &&
+        string.Equals(verifyPromptCurrentAction, "Index", StringComparison.OrdinalIgnoreCase);
+    var verifyPromptSkipControllers = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        "Auth", "Onboarding", "ParentOnboarding", "NannyBasicInfo", "NannyVerificationRequest"
+    };
 
+    var canCheckNannyVerifyPrompt =
+        isVerifyPromptHomePage &&
+        User.Identity?.IsAuthenticated == true &&
+        User.IsInRole("Nanny") &&
+        string.Equals(Context.Session.GetString("ShowNannyVerifyPrompt"), "1", StringComparison.Ordinal) &&
+        !verifyPromptSkipControllers.Contains(currentController);
+
+    PersonalProfileViewModel? nannyVerifyPromptProfile = null;
+    var showNannyVerifyPrompt = false;
+    var nannyVerifyPromptUrl = "/NannyVerificationRequest/Submit";
+    var nannyVerifyPromptButton = "Xac minh ID ngay";
+    var nannyVerifyPromptStatusClass = "is-not-submitted";
+    var nannyVerifyPromptStatusText = "Chua gui xac minh";
+
+    if (canCheckNannyVerifyPrompt)
+    {
+        try
+        {
+            var token = Context.Session.GetString("AccessToken");
+            if (!string.IsNullOrWhiteSpace(token))
+            {
+                var http = HttpFactory.CreateClient("BackendApi");
+                http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+                var response = await http.GetAsync("/api/profile");
+                if (response.IsSuccessStatusCode)
+                {
+                    var json = await response.Content.ReadAsStringAsync();
+                    var result = JsonSerializer.Deserialize<ApiResult<PersonalProfileViewModel>>(json, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (result?.Success == true && result.Data?.IsNanny == true)
+                    {
+                        nannyVerifyPromptProfile = result.Data;
+                        var verificationCode = result.Data.VerificationStatusCode ?? 0;
+
+                        if (verificationCode == 2)
+                        {
+                            Context.Session.Remove("ShowNannyVerifyPrompt");
+                        }
+                        else
+                        {
+                            showNannyVerifyPrompt = true;
+                            Context.Session.Remove("ShowNannyVerifyPrompt");
+
+                            if (verificationCode == 1)
+                            {
+                                nannyVerifyPromptUrl = "/NannyVerificationRequest";
+                                nannyVerifyPromptButton = "Xem yeu cau xac minh";
+                                nannyVerifyPromptStatusClass = "is-pending";
+                                nannyVerifyPromptStatusText = "Dang cho duyet";
+                            }
+                            else if (verificationCode == 3)
+                            {
+                                nannyVerifyPromptUrl = "/NannyVerificationRequest";
+                                nannyVerifyPromptButton = "Xem va gui lai ho so";
+                                nannyVerifyPromptStatusClass = "is-rejected";
+                                nannyVerifyPromptStatusText = "Da bi tu choi";
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch
+        {
+        }
+    }
+}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -11,6 +97,8 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>NannyMatch - Dịch vụ chăm sóc trẻ đáng tin cậy</title>
     <link href="~/css/tailwind.generated.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/onboarding.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/verification-prompt.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/homepage.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&amp;display=swap"
           rel="stylesheet" />
@@ -46,7 +134,6 @@
             }
 
         .nm-nav-shell {
-            max-width: 1320px;
             margin: 0 auto;
             padding: 0 20px;
         }
@@ -204,6 +291,10 @@
             align-items: center;
             justify-content: center;
             box-shadow: 0 8px 16px rgba(249,115,22,.26);
+        }
+
+        .nm-badge-dot.hidden {
+            display: none !important;
         }
 
         .nm-panel {
@@ -566,7 +657,7 @@
                                     class="nm-icon-btn"
                                     aria-label="Thong bao">
                                 <span class="material-icons-round text-[20px]">notifications</span>
-                                <span id="notificationBadge" class="nm-badge-dot hidden">0</span>
+                                <span id="notificationBadge" class="nm-badge-dot hidden"></span>
                             </button>
 
                             <div id="notificationMenu" class="nm-panel hidden">
@@ -747,6 +838,7 @@
 
                                 const updateBadge = (count) => {
                                     if (!count || count <= 0) {
+                                        notificationBadge.textContent = '';
                                         notificationBadge.classList.add('hidden');
                                         return;
                                     }
@@ -1000,6 +1092,41 @@
         </main>
     </div>
 
+    @if (showNannyVerifyPrompt)
+    {
+        <div id="nmVerifyPromptOverlay" class="nm-verify-overlay" aria-hidden="true">
+            <div class="nm-verify-card" role="dialog" aria-modal="true" aria-labelledby="nmVerifyPromptTitle">
+                <button type="button" class="nm-verify-close" id="nmVerifyPromptClose" aria-label="Dong">
+                    <span class="material-icons-round">close</span>
+                </button>
+
+                <div class="nm-verify-body">
+                    <h2 id="nmVerifyPromptTitle" class="nm-verify-title">Xac minh ID de mo khoa ket noi</h2>
+                    <p class="nm-verify-subtitle">
+                        Ho so nanny cua @(string.IsNullOrWhiteSpace(nannyVerifyPromptProfile?.FirstName) ? "ban" : nannyVerifyPromptProfile!.FirstName)
+                        chua hoan tat xac minh giay to. Khi xac minh xong, phu huynh se tin tuong hon khi xem ho so va gui contact request.
+                    </p>
+
+                    <div class="nm-verify-hero" aria-hidden="true">
+                        <span class="material-icons-round"> </span>
+                        <span class="nm-verify-hero-badge">
+                            <span class="material-icons-round style=" color: #fff">badge">verified_user</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="nm-verify-footer">
+                    <div class="nm-verify-actions">
+                        <a href="@nannyVerifyPromptUrl" class="nm-verify-primary">
+                            <span class="material-icons-round text-[20px]">arrow_upward</span>
+                            <span>@nannyVerifyPromptButton</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
     <!--=============FOOTER================-->
 
     <footer class="bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 pt-20 pb-10 border-t border-gray-200/60 dark:border-gray-800/60 mt-0">
@@ -1148,6 +1275,48 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @if (showNannyVerifyPrompt)
+    {
+        <script>
+            (() => {
+                const overlay = document.getElementById('nmVerifyPromptOverlay');
+                const closeBtn = document.getElementById('nmVerifyPromptClose');
+                const skipBtn = document.getElementById('nmVerifyPromptSkip');
+                const dismiss = () => {
+                    if (!overlay) return;
+                    overlay.classList.remove('is-visible');
+                    overlay.setAttribute('aria-hidden', 'true');
+                    document.body.classList.remove('overflow-hidden');
+                    window.setTimeout(() => {
+                        overlay.classList.remove('is-mounted');
+                    }, 320);
+                };
+
+                if (!overlay) return;
+
+                const show = () => {
+                    overlay.classList.add('is-mounted');
+                    window.setTimeout(() => {
+                        overlay.classList.add('is-visible');
+                        overlay.setAttribute('aria-hidden', 'false');
+                        document.body.classList.add('overflow-hidden');
+                    }, 48);
+                };
+
+                closeBtn?.addEventListener('click', dismiss);
+                skipBtn?.addEventListener('click', dismiss);
+                overlay.addEventListener('click', (event) => {
+                    if (event.target === overlay) dismiss();
+                });
+                document.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape') dismiss();
+                });
+
+                show();
+            })();
+        </script>
+    }
 
     <script>
         /* Auto-scroll & Drag/Swipe Marquee */

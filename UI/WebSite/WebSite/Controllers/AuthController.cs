@@ -398,6 +398,10 @@ public class AuthController : Controller
         HttpContext.Session.SetString("AccessToken", data.AccessToken);
         HttpContext.Session.SetString("RefreshToken", data.RefreshToken);
         HttpContext.Session.SetString("TokenExpiresAt", data.ExpiresAt.ToString("O"));
+        if (data.User.Roles.Any(r => r.Equals("Nanny", StringComparison.OrdinalIgnoreCase)))
+            HttpContext.Session.SetString("ShowNannyVerifyPrompt", "1");
+        else
+            HttpContext.Session.Remove("ShowNannyVerifyPrompt");
 
         var claims = new List<Claim>
         {
