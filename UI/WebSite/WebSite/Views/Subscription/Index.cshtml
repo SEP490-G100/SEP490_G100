@@ -6,6 +6,7 @@
 
 @section Head {
     <link rel="stylesheet" href="~/css/subscription.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 }
 
 <div class="sub-shell">
@@ -298,7 +299,8 @@
 
         <div class="sub-pay-main">
             <div class="sub-pay-qr-wrap">
-                <img id="subPayQrImage" class="sub-pay-qr" alt="QR payment" />
+                <div id="subPayQrCanvas" class="sub-pay-qr"></div>
+                <img id="subPayQrImage" class="sub-pay-qr" alt="QR payment" style="display:none;" />
             </div>
 
             <div class="sub-pay-info">
@@ -331,6 +333,7 @@
             const modal = document.getElementById('purchaseQrModal');
             const closeBtn = document.getElementById('subPayCloseBtn');
             const backdrop = modal?.querySelector('[data-close-pay-modal="true"]');
+            const qrCanvas = document.getElementById('subPayQrCanvas');
             const qrImage = document.getElementById('subPayQrImage');
             const planText = document.getElementById('subPayPlan');
             const amountText = document.getElementById('subPayAmount');
@@ -346,6 +349,7 @@
 
             let currentTransactionId = null;
             let pollingTimer = null;
+            let currentQrCode = null;
 
             const notify = (message, type = 'error') => {
                 if (typeof window.showToast === 'function') {
@@ -364,6 +368,33 @@
                 clearPolling();
                 currentTransactionId = null;
                 modal?.setAttribute('aria-hidden', 'true');
+            };
+
+            const renderQr = (payload, imageUrl) => {
+                if (qrCanvas) {
+                    qrCanvas.innerHTML = '';
+                }
+
+                if (payload && typeof window.QRCode === 'function' && qrCanvas) {
+                    qrImage.style.display = 'none';
+                    qrCanvas.style.display = 'block';
+                    currentQrCode = new window.QRCode(qrCanvas, {
+                        text: payload,
+                        width: 320,
+                        height: 320,
+                        correctLevel: window.QRCode.CorrectLevel.M
+                    });
+                    return;
+                }
+
+                currentQrCode = null;
+                if (qrImage) {
+                    qrImage.src = imageUrl || '';
+                    qrImage.style.display = 'block';
+                }
+                if (qrCanvas) {
+                    qrCanvas.style.display = 'none';
+                }
             };
 
             const openModal = () => {
@@ -385,7 +416,7 @@
 
             const applySession = (data) => {
                 currentTransactionId = data.transactionId;
-                if (qrImage) qrImage.src = data.qrCodeUrl || data.checkoutUrl || '';
+                renderQr(data.qrPayload, data.qrCodeUrl || data.checkoutUrl || '');
                 if (planText) planText.textContent = data.planName || '-';
                 if (amountText) amountText.textContent = formatMoney(data.amount);
                 if (bankText) bankText.textContent = data.bankId || '-';

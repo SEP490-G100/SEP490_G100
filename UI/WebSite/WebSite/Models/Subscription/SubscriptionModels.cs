@@ -145,6 +145,9 @@ public class SubscriptionPaymentSessionViewModel
     [JsonPropertyName("qrCodeUrl")]
     public string QrCodeUrl { get; set; } = "";
 
+    [JsonPropertyName("qrPayload")]
+    public string QrPayload { get; set; } = "";
+
     [JsonPropertyName("bankId")]
     public string BankId { get; set; } = "";
 

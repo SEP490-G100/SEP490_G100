@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.Options;
 using Nanny_BackEnd.DTOs.Subscription;
 
@@ -13,6 +14,12 @@ public class PayOsService
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
+    };
+
+    private static readonly JsonSerializerOptions RequestJsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
     private readonly HttpClient _http;
@@ -69,14 +76,21 @@ public class PayOsService
         request.Headers.Add("x-client-id", _options.ClientId);
         request.Headers.Add("x-api-key", _options.ApiKey);
         request.Content = new StringContent(
-            JsonSerializer.Serialize(payload),
+            JsonSerializer.Serialize(payload, RequestJsonOptions),
             Encoding.UTF8,
             "application/json");
 
         using var response = await _http.SendAsync(request);
         var result = await deserializeResponse<PayOsPaymentResponse>(response);
         if (!response.IsSuccessStatusCode || result?.Data == null || !string.Equals(result.Code, "00", StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException(result?.Desc ?? "Khong tao duoc link thanh toan PayOS.");
+        {
+            var reason = string.IsNullOrWhiteSpace(result?.Desc)
+                ? $"HTTP {(int)response.StatusCode}"
+                : result.Desc;
+
+            throw new InvalidOperationException(
+                $"PayOS rejected create-payment. desc={reason}; orderCode={payload.OrderCode}; amount={payload.Amount}; description={payload.Description}");
+        }
 
         return mapInstruction(result.Data, DateTimeOffset.FromUnixTimeSeconds(expiredAt).UtcDateTime);
     }
@@ -109,7 +123,10 @@ public class PayOsService
             OrderCode = data.OrderCode,
             Amount = data.Amount,
             TransferContent = buildTransferDescription(data.OrderCode),
-            QrCodeUrl = buildCheckoutQrUrl(checkoutUrl),
+            QrPayload = data.QrCode ?? "",
+            QrCodeUrl = !string.IsNullOrWhiteSpace(data.QrCode)
+                ? buildRawQrUrl(data.QrCode)
+                : buildCheckoutQrUrl(checkoutUrl),
             CheckoutUrl = checkoutUrl,
             BankId = "",
             AccountNumber = "",
@@ -187,6 +204,14 @@ public class PayOsService
         return $"https://api.qrserver.com/v1/create-qr-code/?size=320x320&data={Uri.EscapeDataString(checkoutUrl)}";
     }
 
+    public string buildRawQrUrl(string? qrPayload)
+    {
+        if (string.IsNullOrWhiteSpace(qrPayload))
+            return "";
+
+        return $"https://api.qrserver.com/v1/create-qr-code/?size=320x320&data={Uri.EscapeDataString(qrPayload)}";
+    }
+
     private string signCreatePaymentPayload(PayOsCreatePaymentRequest payload)
     {
         var data = string.Join("&",
@@ -219,13 +244,16 @@ public class PayOsService
 
     private PayOsPaymentInstruction mapInstruction(PayOsPaymentResponseData data, DateTime expiresAtUtc)
     {
-        var qrCodeUrl = buildCheckoutQrUrl(data.CheckoutUrl);
+        var qrCodeUrl = !string.IsNullOrWhiteSpace(data.QrCode)
+            ? buildRawQrUrl(data.QrCode)
+            : buildCheckoutQrUrl(data.CheckoutUrl);
 
         return new PayOsPaymentInstruction
         {
             OrderCode = data.OrderCode,
             Amount = data.Amount,
             TransferContent = data.Description ?? "",
+            QrPayload = data.QrCode ?? "",
             QrCodeUrl = qrCodeUrl,
             CheckoutUrl = data.CheckoutUrl ?? "",
             BankId = data.Bin ?? "",
@@ -324,6 +352,7 @@ public class PayOsService
         public string? Status { get; set; }
         public DateTime? CreatedAt { get; set; }
         public string? CheckoutUrl { get; set; }
+        public string? QrCode { get; set; }
     }
 }
 
@@ -332,6 +361,7 @@ public class PayOsPaymentInstruction
     public int OrderCode { get; set; }
     public decimal Amount { get; set; }
     public string TransferContent { get; set; } = "";
+    public string QrPayload { get; set; } = "";
     public string QrCodeUrl { get; set; } = "";
     public string CheckoutUrl { get; set; } = "";
     public string BankId { get; set; } = "";

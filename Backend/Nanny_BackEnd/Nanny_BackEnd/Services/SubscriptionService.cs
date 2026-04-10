@@ -473,6 +473,13 @@ public class SubscriptionService
                 continue;
             }
 
+            if (!hasPayOsDisplayMetadata(transaction))
+            {
+                markTransactionFailed(transaction, nowUtc);
+                hasChanges = true;
+                continue;
+            }
+
             if (reusable == null &&
                 string.Equals(tryExtractPlanCode(transaction.Description), planCode, StringComparison.OrdinalIgnoreCase))
             {
@@ -503,6 +510,7 @@ public class SubscriptionService
             OrderCode = payOsInstruction.OrderCode,
             PaymentContent = payOsInstruction.TransferContent,
             CheckoutUrl = payOsInstruction.CheckoutUrl,
+            QrPayload = payOsInstruction.QrPayload,
             QrCodeUrl = payOsInstruction.QrCodeUrl,
             BankId = payOsInstruction.BankId,
             AccountNumber = payOsInstruction.AccountNumber,
@@ -550,9 +558,12 @@ public class SubscriptionService
 
         var existingInstruction = await _payOsService.getPaymentInstruction(orderCode);
         if (existingInstruction != null)
-            return existingInstruction;
+            return hydratePayOsInstruction(existingInstruction, transaction);
 
-        return await _payOsService.createPaymentInstruction(transaction.Id, orderCode, transaction.Amount, plan.Name);
+        var createdInstruction = await _payOsService.createPaymentInstruction(transaction.Id, orderCode, transaction.Amount, plan.Name);
+        persistPayOsInstructionMetadata(transaction, createdInstruction);
+        await _subscriptionRepo.saveChanges();
+        return createdInstruction;
     }
 
     private async Task reconcilePendingTransaction(Transaction transaction)
@@ -776,6 +787,62 @@ public class SubscriptionService
 
         return string.Join(" | ", segments);
     }
+
+    private static PayOsPaymentInstruction hydratePayOsInstruction(PayOsPaymentInstruction instruction, Transaction transaction)
+    {
+        instruction.BankId = firstNonEmpty(instruction.BankId, extractMetadataValue(transaction.Description, "PAYOS_BANK"));
+        instruction.AccountNumber = firstNonEmpty(instruction.AccountNumber, extractMetadataValue(transaction.Description, "PAYOS_ACC"));
+        instruction.AccountName = firstNonEmpty(instruction.AccountName, extractMetadataValue(transaction.Description, "PAYOS_NAME"));
+        return instruction;
+    }
+
+    private static bool hasPayOsDisplayMetadata(Transaction transaction) =>
+        !string.IsNullOrWhiteSpace(extractMetadataValue(transaction.Description, "PAYOS_BANK")) &&
+        !string.IsNullOrWhiteSpace(extractMetadataValue(transaction.Description, "PAYOS_ACC")) &&
+        !string.IsNullOrWhiteSpace(extractMetadataValue(transaction.Description, "PAYOS_NAME"));
+
+    private static void persistPayOsInstructionMetadata(Transaction transaction, PayOsPaymentInstruction instruction)
+    {
+        transaction.Description = appendMetadataValue(transaction.Description, "PAYOS_BANK", instruction.BankId);
+        transaction.Description = appendMetadataValue(transaction.Description, "PAYOS_ACC", instruction.AccountNumber);
+        transaction.Description = appendMetadataValue(transaction.Description, "PAYOS_NAME", instruction.AccountName);
+    }
+
+    private static string appendMetadataValue(string? description, string key, string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return description?.Trim() ?? "";
+
+        var baseDescription = description?.Trim() ?? "";
+        if (baseDescription.Contains($"{key}:", StringComparison.OrdinalIgnoreCase))
+            return baseDescription;
+
+        return string.IsNullOrWhiteSpace(baseDescription)
+            ? $"{key}:{value.Trim()}"
+            : $"{baseDescription} | {key}:{value.Trim()}";
+    }
+
+    private static string? extractMetadataValue(string? description, string key)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+            return null;
+
+        var segments = description.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        foreach (var segment in segments)
+        {
+            if (!segment.StartsWith($"{key}:", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            var parts = segment.Split(':', 2, StringSplitOptions.TrimEntries);
+            if (parts.Length == 2 && !string.IsNullOrWhiteSpace(parts[1]))
+                return parts[1];
+        }
+
+        return null;
+    }
+
+    private static string firstNonEmpty(string? preferred, string? fallback) =>
+        !string.IsNullOrWhiteSpace(preferred) ? preferred : fallback ?? "";
 
     private async Task expireOldSubscriptions(Guid userId)
     {
