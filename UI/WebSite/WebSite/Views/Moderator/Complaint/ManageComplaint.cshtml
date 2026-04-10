@@ -1,21 +1,21 @@
-@model WebSite.Models.Moderator.ModeratorReportListResponse
+@model WebSite.Models.Moderator.ModeratorComplaintListResponse
 @{
     Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
-    ViewData["Title"] = "Manage Reports";
+    ViewData["Title"] = "Manage Complaints";
 
     var currentSearch = ViewBag.Search as string ?? "";
     var currentStatus = ViewBag.Status as string ?? "";
     var currentEntityType = ViewBag.EntityType as string ?? "";
     var currentPage = Model?.Page ?? 1;
     var totalPages = Model?.TotalPages ?? 1;
-    var reports = Model?.Items ?? new List<WebSite.Models.Moderator.ModeratorReportListItemDto>();
+    var complaints = Model?.Items ?? new List<WebSite.Models.Moderator.ModeratorComplaintListItemDto>();
 }
 
 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
     <div>
         <span class="section-label">Moderation</span>
         <h1 class="page-title mt-2">
-            Manage <span class="gradient-text">Reports</span>
+            Manage <span class="gradient-text">Complaints</span>
         </h1>
         <p class="page-subtitle">Review complaints and track handling status.</p>
     </div>
@@ -29,13 +29,13 @@
     </div>
 }
 
-<form method="get" action="/Moderator/ManageReport" id="filterForm">
+<form method="get" action="/Moderator/ManageComplaint" id="filterForm">
     <div class="content-card p-4 mb-5 fade-in-up" style="animation-delay:.05s;">
         <div class="flex flex-col md:flex-row gap-3">
             <div class="relative flex-1">
                 <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">search</span>
                 <input name="search" type="text" value="@currentSearch"
-                       placeholder="Search by reporter, reason, or entity type..."
+                       placeholder="Search by complainer, reason, or entity type..."
                        class="search-input pl-9 w-full border border-gray-200 rounded-xl px-4 py-2 font-medium"
                        onkeydown="if(event.key==='Enter'){this.form.submit();}" />
             </div>
@@ -73,8 +73,8 @@
 <div class="content-card overflow-hidden fade-in-up" style="animation-delay:.1s;">
     <div class="card-header">
         <span class="text-sm text-gray-500">
-            Showing <span class="font-bold text-gray-800">@reports.Count</span>
-            of <span class="font-bold text-gray-800">@(Model?.TotalCount ?? 0)</span> reports
+            Showing <span class="font-bold text-gray-800">@complaints.Count</span>
+            of <span class="font-bold text-gray-800">@(Model?.TotalCount ?? 0)</span> complaints
         </span>
         <div class="flex items-center gap-4 text-xs text-gray-400">
             <div class="flex items-center gap-1.5">
@@ -91,7 +91,7 @@
             <thead>
                 <tr>
                     <th class="text-left">#</th>
-                    <th class="text-left">Reporter</th>
+                    <th class="text-left">Complainer</th>
                     <th class="text-left">Type</th>
                     <th class="text-left">Reason</th>
                     <th class="text-left">Created</th>
@@ -100,18 +100,18 @@
                 </tr>
             </thead>
             <tbody>
-                @if (!reports.Any())
+                @if (!complaints.Any())
                 {
                     <tr>
                         <td colspan="7" class="text-center py-16 text-gray-400">
                             <span class="material-icons-round text-5xl mb-3 block text-gray-200">flag</span>
-                            <p class="font-semibold text-gray-400">No reports found.</p>
+                            <p class="font-semibold text-gray-400">No complaints found.</p>
                             <p class="text-xs text-gray-300 mt-1">Try adjusting the filters above.</p>
                         </td>
                     </tr>
                 }
                 @{ int rowNum = ((currentPage - 1) * 10) + 1; }
-                @foreach (var item in reports)
+                @foreach (var item in complaints)
                 {
                     <tr id="row-@item.Id">
                         <td class="text-gray-300 text-xs font-mono">@rowNum</td>
@@ -131,7 +131,7 @@
                         </td>
                         <td>
                             <div class="flex items-center justify-center gap-1.5">
-                                <a href="/Moderator/ViewReportDetail/@item.Id" title="View Detail"
+                                <a href="/Moderator/ViewComplaintDetail/@item.Id" title="View Detail"
                                    class="w-8 h-8 rounded-xl hover:bg-blue-50 hover:text-blue-600 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-blue-200">
                                     <span class="material-icons-round text-base">visibility</span>
                                 </a>
@@ -139,7 +139,7 @@
                                 @if (item.IsActive)
                                 {
                                     <button id="toggle-btn-@item.Id"
-                                            onclick="toggleReportStatus('@item.Id', false)"
+                                            onclick="toggleComplaintStatus('@item.Id', false)"
                                             title="Deactivate"
                                             class="w-8 h-8 rounded-xl hover:bg-red-50 hover:text-red-500 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-red-200">
                                         <span class="material-icons-round text-base">block</span>
@@ -148,7 +148,7 @@
                                 else
                                 {
                                     <button id="toggle-btn-@item.Id"
-                                            onclick="toggleReportStatus('@item.Id', true)"
+                                            onclick="toggleComplaintStatus('@item.Id', true)"
                                             title="Activate"
                                             class="w-8 h-8 rounded-xl hover:bg-emerald-50 hover:text-emerald-600 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-emerald-200">
                                         <span class="material-icons-round text-base">check_circle_outline</span>
@@ -203,16 +203,16 @@
 
 @section Scripts {
 <script>
-    function toggleReportStatus(id, isActive) {
+    function toggleComplaintStatus(id, isActive) {
         const actionLabel = isActive ? 'activate' : 'deactivate';
-        if (!confirm(`Are you sure you want to ${actionLabel} this report?`)) {
+        if (!confirm(`Are you sure you want to ${actionLabel} this complaint?`)) {
             return;
         }
 
         const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
         const token = tokenInput ? tokenInput.value : '';
 
-        fetch('/Moderator/ToggleReportStatus', {
+        fetch('/Moderator/ToggleComplaintStatus', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -224,7 +224,7 @@
         .then(data => {
             if (data.success) {
                 if (typeof window.showToast === 'function') {
-                    window.showToast(data.message || (isActive ? 'Report activated successfully.' : 'Report deactivated successfully.'), {
+                    window.showToast(data.message || (isActive ? 'Complaint activated successfully.' : 'Complaint deactivated successfully.'), {
                         type: isActive ? 'success' : 'warning'
                     });
                 }

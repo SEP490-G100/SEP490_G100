@@ -122,7 +122,9 @@ public class ReportService
         if (report == null)
             return (false, null, "Report not found.");
 
-        return (true, MapDetail(report), null);
+        var detail = MapDetail(report);
+        await EnrichReportDetailAsync(report, detail);
+        return (true, detail, null);
     }
 
     public async Task<(bool Success, int StatusCode, string Message)> ResolveReportAsync(
@@ -334,10 +336,54 @@ public class ReportService
             HandledAt = report.HandledAt,
             Resolution = report.Resolution,
             ActionTaken = report.ActionTaken,
+            OffenderUserId = null,
+            OffenderName = null,
+            OffenderEmail = null,
+            ConversationId = null,
+            ReportedMessageContent = null,
+            JobPostingTitle = null,
             CreatedAt = report.CreatedAt,
             UpdatedAt = report.UpdatedAt,
             IsDeleted = report.IsDeleted
         };
+    }
+
+    private async Task EnrichReportDetailAsync(Report report, ReportDetailDto detail)
+    {
+        if (report.ReportedEntityType.Equals("Message", StringComparison.OrdinalIgnoreCase))
+        {
+            var message = await _reportRepo.GetMessageDetailForModeratorAsync(report.ReportedEntityId);
+            if (message == null)
+                return;
+
+            detail.OffenderUserId = message.SenderUserId;
+            detail.OffenderName = getDisplayName(message.SenderUser);
+            detail.OffenderEmail = message.SenderUser?.Email;
+            detail.ConversationId = message.ConversationId;
+            detail.ReportedMessageContent = message.Content;
+            return;
+        }
+
+        if (report.ReportedEntityType.Equals("JobPosting", StringComparison.OrdinalIgnoreCase))
+        {
+            var jobPosting = await _reportRepo.GetJobPostingDetailForModeratorAsync(report.ReportedEntityId);
+            if (jobPosting == null)
+                return;
+
+            detail.JobPostingTitle = jobPosting.Title;
+            detail.OffenderUserId = jobPosting.ParentProfile?.UserId;
+            detail.OffenderName = getDisplayName(jobPosting.ParentProfile?.User);
+            detail.OffenderEmail = jobPosting.ParentProfile?.User?.Email;
+            return;
+        }
+
+        if (report.ReportedEntityType.Equals("Profile", StringComparison.OrdinalIgnoreCase))
+        {
+            var user = await _reportRepo.GetUserDetailForModeratorAsync(report.ReportedEntityId);
+            detail.OffenderUserId = report.ReportedEntityId;
+            detail.OffenderName = getDisplayName(user);
+            detail.OffenderEmail = user?.Email;
+        }
     }
 
     private async Task<Guid?> ResolveOffenderUserIdAsync(Report report)

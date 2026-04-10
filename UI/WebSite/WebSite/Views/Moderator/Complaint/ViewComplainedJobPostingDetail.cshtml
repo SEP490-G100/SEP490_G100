@@ -1,0 +1,156 @@
+@model WebSite.Models.Moderator.ModeratorComplainedJobPostingDetailPageModel
+@{
+    Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
+    ViewData["Title"] = "Complained Job Posting Detail";
+
+    var job = Model.JobPosting;
+    var locationLabel = string.Join(", ", new[] { job.Location, job.District, job.City }.Where(x => !string.IsNullOrWhiteSpace(x)));
+    var dayLabels = new[] { "Mo", "Tu", "We", "Th", "Fr", "Sa", "Su" };
+    var rowLabels = new[] { "Morning", "Afternoon", "Evening", "Night" };
+    var selectedSet = new HashSet<string>((job.ScheduleSlots ?? new()).Select(s => $"{s.DayOfWeek}-{s.TimeSlot}"));
+
+    string JobTypeLabel(int type) => type switch
+    {
+        1 => "Full-time",
+        2 => "Part-time",
+        3 => "Overnight",
+        _ => "Other"
+    };
+
+    string SalaryLabel()
+    {
+        if (job.SalaryNegotiable) return "Negotiable";
+        if (job.SalaryMin.HasValue && job.SalaryMax.HasValue)
+            return $"{job.SalaryMin.Value:N0} - {job.SalaryMax.Value:N0} VND";
+        if (job.SalaryMin.HasValue) return $"From {job.SalaryMin.Value:N0} VND";
+        if (job.SalaryMax.HasValue) return $"Up to {job.SalaryMax.Value:N0} VND";
+        return "-";
+    }
+}
+
+<div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
+    <div>
+        <span class="section-label">Complaint Moderation</span>
+        <h1 class="page-title mt-2">Complained Job Posting <span class="gradient-text">Detail</span></h1>
+        <p class="page-subtitle">Review full posting information and deactivate if needed.</p>
+    </div>
+    <div class="flex gap-2">
+        @if (Model.ComplaintId.HasValue && Model.ComplaintId.Value != Guid.Empty)
+        {
+            <a href="@Url.Action("ViewComplaintDetail", "Moderator", new { id = Model.ComplaintId })" class="btn-outline">
+                <span class="material-icons-round text-base">arrow_back</span>
+                Back to Complaint
+            </a>
+        }
+        <a href="@Url.Action("ManageComplaint", "Moderator")" class="btn-outline">
+            <span class="material-icons-round text-base">list</span>
+            Back to List
+        </a>
+    </div>
+</div>
+
+<div class="content-card p-6 fade-in-up">
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold mb-4">
+        <span class="material-icons-round text-sm">article</span>
+        Chi tiết tin đăng bị phàn nàn
+    </div>
+
+    <h2 class="text-2xl font-bold text-gray-900 mb-2">@job.Title</h2>
+    <p class="text-sm font-semibold text-gray-500 mb-4">Đăng bởi phụ huynh</p>
+
+    <div class="flex flex-wrap gap-2 mb-5">
+        <span class="px-2.5 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold">@JobTypeLabel(job.JobType)</span>
+        <span class="px-2.5 py-1 rounded-full bg-green-50 text-green-700 text-xs font-bold">@SalaryLabel()</span>
+        <span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">@job.StatusLabel</span>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
+        <div class="rounded-xl border border-gray-100 bg-gray-50 p-4">
+            <p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Địa điểm</p>
+            <p class="text-sm font-semibold text-gray-800">@(string.IsNullOrWhiteSpace(locationLabel) ? "-" : locationLabel)</p>
+        </div>
+        <div class="rounded-xl border border-gray-100 bg-gray-50 p-4">
+            <p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Số trẻ cần chăm</p>
+            <p class="text-sm font-semibold text-gray-800">@(job.NumberOfChildren?.ToString() ?? "-")</p>
+        </div>
+        <div class="rounded-xl border border-gray-100 bg-gray-50 p-4">
+            <p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Đặc điểm</p>
+            <p class="text-sm text-gray-700 whitespace-pre-line">@(job.Characteristic ?? "-")</p>
+        </div>
+        <div class="rounded-xl border border-gray-100 bg-gray-50 p-4">
+            <p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Nhóm tuổi của bé</p>
+            <p class="text-sm text-gray-700">@(job.BirthTypeLabel ?? "-")</p>
+        </div>
+        <div class="rounded-xl border border-gray-100 bg-gray-50 p-4">
+            <p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Nhu cầu đặc biệt</p>
+            <p class="text-sm text-gray-700 whitespace-pre-line">@(job.SpecialNeeds ?? "-")</p>
+        </div>
+        <div class="rounded-xl border border-gray-100 bg-gray-50 p-4">
+            <p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Độ tuổi bảo mẫu</p>
+            <p class="text-sm text-gray-700">@(job.AgeRangeLabel)</p>
+        </div>
+    </div>
+
+    <div class="bg-gray-50 rounded-xl p-4 mb-5 border border-gray-100">
+        <p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Kỹ năng yêu cầu</p>
+        @if (job.Skills.Any())
+        {
+            <div class="flex flex-wrap gap-2">
+                @foreach (var skill in job.Skills)
+                {
+                    <span class="px-3 py-1 rounded-full bg-white text-orange-700 text-xs font-bold border border-orange-100">@skill</span>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="text-sm text-gray-500">-</p>
+        }
+    </div>
+
+    <div class="bg-gray-50 rounded-xl p-4 mb-5 border border-gray-100">
+        <p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Lịch ngày muốn tuyển</p>
+        <div class="schedule-grid schedule-grid--readonly">
+            <div></div>
+            @foreach (var dayLabel in dayLabels)
+            {
+                <div class="schedule-col-label">@dayLabel</div>
+            }
+            @for (var timeSlot = 0; timeSlot < rowLabels.Length; timeSlot++)
+            {
+                <div class="schedule-row-label">@rowLabels[timeSlot]</div>
+                @for (var dayOfWeek = 0; dayOfWeek < dayLabels.Length; dayOfWeek++)
+                {
+                    var active = selectedSet.Contains($"{dayOfWeek}-{timeSlot}");
+                    <div class="schedule-cell @(active ? "active" : "")" aria-hidden="true">
+                        <span class="schedule-check">@(active ? "✓" : "")</span>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <div class="bg-gray-50 rounded-xl p-4 mb-5 border border-gray-100">
+        <p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Mô tả công việc</p>
+        <p class="text-sm text-gray-700 whitespace-pre-line leading-relaxed">@job.Description</p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <a href="/Profile/ViewUser?userId=@job.ParentUserId"
+           class="w-full py-3 rounded-xl border border-orange-200 text-orange-600 bg-orange-50 hover:bg-orange-100 font-bold text-sm transition-all inline-flex items-center justify-center gap-2">
+            <span class="material-icons-round text-base">person</span>
+            <span>Xem chi tiết hồ sơ người đăng</span>
+        </a>
+
+        <form method="post" action="/Moderator/DeactivateComplainedJobPosting" onsubmit="return confirm('Bạn có chắc muốn vô hiệu hóa bài đăng này không?');">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="jobPostingId" value="@job.Id" />
+            <input type="hidden" name="complaintId" value="@(Model.ComplaintId?.ToString() ?? string.Empty)" />
+            <button type="submit"
+                    class="w-full py-3 rounded-xl border border-rose-200 text-rose-600 bg-rose-50 hover:bg-rose-100 font-bold text-sm transition-all inline-flex items-center justify-center gap-2">
+                <span class="material-icons-round text-base">block</span>
+                <span>Deactivate bài đăng</span>
+            </button>
+        </form>
+    </div>
+</div>

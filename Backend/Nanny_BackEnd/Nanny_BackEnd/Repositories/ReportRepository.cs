@@ -34,6 +34,27 @@ public class ReportRepository
             .Select(m => (Guid?)m.SenderUserId)
             .FirstOrDefaultAsync();
 
+    public async Task<Message?> GetMessageDetailForModeratorAsync(Guid messageId) =>
+        await _db.Messages
+            .Where(m => m.Id == messageId)
+            .Include(m => m.SenderUser)
+            .Include(m => m.Conversation)
+                .ThenInclude(c => c.ConversationParticipants)
+                .ThenInclude(p => p.User)
+            .FirstOrDefaultAsync();
+
+    public async Task<JobPosting?> GetJobPostingDetailForModeratorAsync(Guid jobPostingId) =>
+        await _db.JobPostings
+            .Where(j => j.Id == jobPostingId)
+            .Include(j => j.ParentProfile)
+                .ThenInclude(p => p.User)
+            .FirstOrDefaultAsync();
+
+    public async Task<User?> GetUserDetailForModeratorAsync(Guid userId) =>
+        await _db.Users
+            .Where(u => u.Id == userId)
+            .FirstOrDefaultAsync();
+
     public async Task<bool> HasPendingReportAsync(Guid reporterUserId, Guid reportedEntityId, string reportedEntityType) =>
         await _db.Reports.AnyAsync(r =>
             !r.IsDeleted &&

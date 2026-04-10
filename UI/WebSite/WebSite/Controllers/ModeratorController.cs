@@ -12,6 +12,7 @@ using WebSite.Models.FAQ;
 using WebSite.Models.BlogCategory;
 using WebSite.Models.Blog;
 using WebSite.Models.Moderator;
+using WebSite.Models.Profile;
 using WebSite.Models.Search;
 using WebSite.Services;
 using System.Text.Json.Serialization;
@@ -325,9 +326,9 @@ public class ModeratorController : Controller
     }
 
     // ──────────────────────────────────────────────
-    // GET /Moderator/ManageReport
+    // GET /Moderator/ManageComplaint
     // ──────────────────────────────────────────────
-    public async Task<IActionResult> ManageReport(
+    public async Task<IActionResult> ManageComplaint(
         string? search = null,
         int? status = null,
         string? entityType = null,
@@ -351,63 +352,63 @@ public class ModeratorController : Controller
         {
             var response = await _http.SendAsync(request);
             var json = await response.Content.ReadAsStringAsync();
-            var result = JsonSerializer.Deserialize<ApiResult<ModeratorReportListResponse>>(json, JsonOpts);
-            return View("~/Views/Moderator/Report/ManageReport.cshtml", result?.Data ?? new ModeratorReportListResponse());
+            var result = JsonSerializer.Deserialize<ApiResult<ModeratorComplaintListResponse>>(json, JsonOpts);
+            return View("~/Views/Moderator/Complaint/ManageComplaint.cshtml", result?.Data ?? new ModeratorComplaintListResponse());
         }
         catch
         {
-            TempData["Error"] = "Cannot load report list.";
-            return View("~/Views/Moderator/Report/ManageReport.cshtml", new ModeratorReportListResponse());
+            TempData["Error"] = "Cannot load complaint list.";
+            return View("~/Views/Moderator/Complaint/ManageComplaint.cshtml", new ModeratorComplaintListResponse());
         }
     }
 
     // ──────────────────────────────────────────────
-    // GET /Moderator/ViewReportDetail/{id}
+    // GET /Moderator/ViewComplaintDetail/{id}
     // ──────────────────────────────────────────────
-    public async Task<IActionResult> ViewReportDetail(Guid id)
+    public async Task<IActionResult> ViewComplaintDetail(Guid id)
     {
-        var detail = await FetchReportDetailAsync(id);
+        var detail = await FetchComplaintDetailAsync(id);
         if (detail == null)
         {
-            TempData["Error"] = "Report not found.";
-            return RedirectToAction(nameof(ManageReport));
+            TempData["Error"] = "Complaint not found.";
+            return RedirectToAction(nameof(ManageComplaint));
         }
 
-        var pageModel = new ModeratorReportDetailPageModel
+        var pageModel = new ModeratorComplaintDetailPageModel
         {
             Detail = detail,
-            Form = new ModeratorResolveReportRequest
+            Form = new ModeratorResolveComplaintRequest
             {
                 Resolution = detail.Resolution ?? string.Empty,
                 ActionTaken = detail.ActionTaken ?? string.Empty,
                 OffenderNotificationMessage = string.Empty
             }
         };
-        return View("~/Views/Moderator/Report/ViewReportDetail.cshtml", pageModel);
+        return View("~/Views/Moderator/Complaint/ViewComplaintDetail.cshtml", pageModel);
     }
 
     // ──────────────────────────────────────────────
-    // POST /Moderator/ViewReportDetail/{id}
+    // POST /Moderator/ViewComplaintDetail/{id}
     // ──────────────────────────────────────────────
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ViewReportDetail(Guid id, [Bind(Prefix = "Form")] ModeratorResolveReportRequest form)
+    public async Task<IActionResult> ViewComplaintDetail(Guid id, [Bind(Prefix = "Form")] ModeratorResolveComplaintRequest form)
     {
-        var detail = await FetchReportDetailAsync(id);
+        var detail = await FetchComplaintDetailAsync(id);
         if (detail == null)
         {
-            TempData["Error"] = "Report not found.";
-            return RedirectToAction(nameof(ManageReport));
+            TempData["Error"] = "Complaint not found.";
+            return RedirectToAction(nameof(ManageComplaint));
         }
 
         if (!ModelState.IsValid)
         {
-            var invalidModel = new ModeratorReportDetailPageModel
+            var invalidModel = new ModeratorComplaintDetailPageModel
             {
                 Detail = detail,
                 Form = form
             };
-            return View("~/Views/Moderator/Report/ViewReportDetail.cshtml", invalidModel);
+            return View("~/Views/Moderator/Complaint/ViewComplaintDetail.cshtml", invalidModel);
         }
 
         var token = HttpContext.Session.GetString("AccessToken");
@@ -435,39 +436,199 @@ public class ModeratorController : Controller
 
             if (result?.Success == true)
             {
-                return RedirectToAction(nameof(ManageReport), new
+                return RedirectToAction(nameof(ManageComplaint), new
                 {
                     toastType = "success",
-                    toastMessage = "Report resolved successfully."
+                    toastMessage = "Complaint resolved successfully."
                 });
             }
 
-            TempData["Error"] = result?.Message ?? "Failed to resolve report.";
-            var failedModel = new ModeratorReportDetailPageModel
+            TempData["Error"] = result?.Message ?? "Failed to resolve complaint.";
+            var failedModel = new ModeratorComplaintDetailPageModel
             {
                 Detail = detail,
                 Form = form
             };
-            return View("~/Views/Moderator/Report/ViewReportDetail.cshtml", failedModel);
+            return View("~/Views/Moderator/Complaint/ViewComplaintDetail.cshtml", failedModel);
         }
         catch (Exception ex)
         {
             TempData["Error"] = $"Connection error: {ex.Message}";
-            var failedModel = new ModeratorReportDetailPageModel
+            var failedModel = new ModeratorComplaintDetailPageModel
             {
                 Detail = detail,
                 Form = form
             };
-            return View("~/Views/Moderator/Report/ViewReportDetail.cshtml", failedModel);
+            return View("~/Views/Moderator/Complaint/ViewComplaintDetail.cshtml", failedModel);
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ViewComplainedJobPostingDetail(Guid jobPostingId, Guid? complaintId = null)
+    {
+        if (jobPostingId == Guid.Empty)
+            return RedirectToAction(nameof(ManageComplaint), new { toastType = "error", toastMessage = "Khong tim thay bai dang." });
+
+        var token = HttpContext.Session.GetString("AccessToken");
+        _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        try
+        {
+            var response = await _http.GetAsync($"/api/Moderator/job-postings/{jobPostingId}");
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult<JobPostingDetailResponse>>(json, JsonOpts);
+
+            if (result?.Success != true || result.Data == null)
+            {
+                return RedirectToAction(nameof(ManageComplaint), new
+                {
+                    toastType = "error",
+                    toastMessage = result?.Message ?? "Khong the tai chi tiet bai dang bi phan nan."
+                });
+            }
+
+            var model = new ModeratorComplainedJobPostingDetailPageModel
+            {
+                ComplaintId = complaintId,
+                JobPosting = result.Data
+            };
+
+            return View("~/Views/Moderator/Complaint/ViewComplainedJobPostingDetail.cshtml", model);
+        }
+        catch
+        {
+            return RedirectToAction(nameof(ManageComplaint), new
+            {
+                toastType = "error",
+                toastMessage = "Khong the tai chi tiet bai dang bi phan nan."
+            });
+        }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeactivateComplainedJobPosting(Guid jobPostingId, Guid? complaintId = null)
+    {
+        if (jobPostingId == Guid.Empty)
+            return RedirectToAction(nameof(ManageComplaint), new { toastType = "error", toastMessage = "Khong tim thay bai dang." });
+
+        var token = HttpContext.Session.GetString("AccessToken");
+        _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        try
+        {
+            var response = await _http.PatchAsJsonAsync($"/api/Moderator/job-postings/{jobPostingId}/deactivate", new { });
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
+
+            if (result?.Success == true)
+            {
+                TempData["Success"] = "Da vo hieu hoa bai dang";
+
+                if (complaintId.HasValue && complaintId.Value != Guid.Empty)
+                {
+                    return RedirectToAction(nameof(ViewComplaintDetail), new
+                    {
+                        id = complaintId.Value,
+                        toastType = "success",
+                        toastMessage = "Da vo hieu hoa bai dang"
+                    });
+                }
+
+                return RedirectToAction(nameof(ManageComplaint), new
+                {
+                    toastType = "success",
+                    toastMessage = "Da vo hieu hoa bai dang"
+                });
+            }
+
+            return RedirectToAction(nameof(ViewComplainedJobPostingDetail), new
+            {
+                jobPostingId,
+                complaintId,
+                toastType = "error",
+                toastMessage = result?.Message ?? "Khong the vo hieu hoa bai dang."
+            });
+        }
+        catch
+        {
+            return RedirectToAction(nameof(ViewComplainedJobPostingDetail), new
+            {
+                jobPostingId,
+                complaintId,
+                toastType = "error",
+                toastMessage = "Khong the vo hieu hoa bai dang."
+            });
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ViewComplainedProfileDetail(Guid userId, Guid? complaintId = null)
+    {
+        if (userId == Guid.Empty)
+            return RedirectToAction(nameof(ManageComplaint), new { toastType = "error", toastMessage = "Khong tim thay profile." });
+
+        try
+        {
+            var token = HttpContext.Session.GetString("AccessToken");
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                return RedirectToAction("Login", "Auth", new
+                {
+                    toastType = "warning",
+                    toastMessage = "Phien dang nhap da het han."
+                });
+            }
+
+            _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            var response = await _http.GetAsync($"/api/profile/public/{userId}");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return RedirectToAction(nameof(ManageComplaint), new
+                {
+                    toastType = "error",
+                    toastMessage = "Khong the tai profile bi phan nan."
+                });
+            }
+
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult<PersonalProfileViewModel>>(json, JsonOpts);
+            if (result?.Success != true || result.Data == null)
+            {
+                return RedirectToAction(nameof(ManageComplaint), new
+                {
+                    toastType = "error",
+                    toastMessage = result?.Message ?? "Khong the tai profile bi phan nan."
+                });
+            }
+
+            result.Data.IsReadOnlyView = true;
+
+            var model = new ModeratorComplainedProfileDetailPageModel
+            {
+                ComplaintId = complaintId,
+                Profile = result.Data
+            };
+
+            return View("~/Views/Moderator/Complaint/ViewComplainedProfileDetail.cshtml", model);
+        }
+        catch
+        {
+            return RedirectToAction(nameof(ManageComplaint), new
+            {
+                toastType = "error",
+                toastMessage = "Khong the tai profile bi phan nan."
+            });
         }
     }
 
     // ──────────────────────────────────────────────
-    // POST /Moderator/ToggleReportStatus
+    // POST /Moderator/ToggleComplaintStatus
     // ──────────────────────────────────────────────
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ToggleReportStatus(Guid id, bool isActive)
+    public async Task<IActionResult> ToggleComplaintStatus(Guid id, bool isActive)
     {
         var token = HttpContext.Session.GetString("AccessToken");
         var body = JsonSerializer.Serialize(new { isActive });
@@ -921,7 +1082,7 @@ public class ModeratorController : Controller
         }
     }
 
-    private async Task<ModeratorReportDetailDto?> FetchReportDetailAsync(Guid id)
+    private async Task<ModeratorComplaintDetailDto?> FetchComplaintDetailAsync(Guid id)
     {
         var token = HttpContext.Session.GetString("AccessToken");
         var request = new HttpRequestMessage(HttpMethod.Get, $"/api/Moderator/reports/{id}");
@@ -932,7 +1093,7 @@ public class ModeratorController : Controller
         {
             var response = await _http.SendAsync(request);
             var json = await response.Content.ReadAsStringAsync();
-            var result = JsonSerializer.Deserialize<ApiResult<ModeratorReportDetailDto>>(json, JsonOpts);
+            var result = JsonSerializer.Deserialize<ApiResult<ModeratorComplaintDetailDto>>(json, JsonOpts);
             return result?.Success == true ? result.Data : null;
         }
         catch

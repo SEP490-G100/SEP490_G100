@@ -188,6 +188,22 @@ public class ModeratorController : ControllerBase
         catch (Exception ex) { return BadRequest(new { success = false, message = ex.Message }); }
     }
 
+    /// PATCH /api/Moderator/job-postings/{id}/deactivate
+    [HttpPatch("job-postings/{id:guid}/deactivate")]
+    public async Task<IActionResult> DeactivateJobPosting(Guid id)
+    {
+        var moderatorId = getCurrentUserId();
+        if (!moderatorId.HasValue) return Unauthorized(new { success = false, message = "Cannot identify moderator." });
+
+        try
+        {
+            await _jobService.DeactivateJobAsync(id, moderatorId.Value);
+            return Ok(new { success = true, message = "Job posting deactivated successfully." });
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { success = false, message = ex.Message }); }
+        catch (Exception ex) { return BadRequest(new { success = false, message = ex.Message }); }
+    }
+
     // ─────────────────────────────────────────────────────
     // REPORT MODERATION
     // ─────────────────────────────────────────────────────

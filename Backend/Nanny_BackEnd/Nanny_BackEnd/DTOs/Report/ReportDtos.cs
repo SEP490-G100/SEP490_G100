@@ -61,6 +61,12 @@ public class ReportDetailDto
     public DateTime? HandledAt { get; set; }
     public string? Resolution { get; set; }
     public string? ActionTaken { get; set; }
+    public Guid? OffenderUserId { get; set; }
+    public string? OffenderName { get; set; }
+    public string? OffenderEmail { get; set; }
+    public Guid? ConversationId { get; set; }
+    public string? ReportedMessageContent { get; set; }
+    public string? JobPostingTitle { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public bool IsDeleted { get; set; }

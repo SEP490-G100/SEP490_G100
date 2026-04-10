@@ -727,4 +727,34 @@ public class JobService
         }
     }
 
+    public async Task DeactivateJobAsync(Guid jobId, Guid moderatorUserId)
+    {
+        var job = await _jobRepo.viewDetailPosting(jobId)
+            ?? throw new KeyNotFoundException("Khong tim thay tin dang hoac tin da bi xoa.");
+
+        if (job.IsDeleted)
+            return;
+
+        var nowUtc = DateTime.UtcNow;
+        job.IsDeleted = true;
+        job.Status = (int)JobPostingStatus.Hidden;
+        job.ClosedAt = nowUtc;
+        job.UpdatedAt = nowUtc;
+        job.UpdatedBy = moderatorUserId;
+
+        await _jobRepo.saveChanges();
+
+        if (job.ParentProfile != null)
+        {
+            await _notificationService.createNotification(
+                job.ParentProfile.UserId,
+                "Bai dang da bi vo hieu hoa",
+                $"Bai dang \"{job.Title}\" da bi moderator vo hieu hoa.",
+                NotificationTypes.JobPostingRejected,
+                job.Id,
+                "JobPosting",
+                moderatorUserId);
+        }
+    }
+
 }

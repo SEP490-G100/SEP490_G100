@@ -1,8 +1,10 @@
 using System.ComponentModel.DataAnnotations;
+using WebSite.Models.Profile;
+using WebSite.Models.Search;
 
 namespace WebSite.Models.Moderator;
 
-public class ModeratorReportListItemDto
+public class ModeratorComplaintListItemDto
 {
     public Guid Id { get; set; }
     public Guid ReporterUserId { get; set; }
@@ -35,16 +37,16 @@ public class ModeratorReportListItemDto
     public string ReporterDisplay => string.IsNullOrWhiteSpace(ReporterName) ? ReporterEmail : ReporterName;
 }
 
-public class ModeratorReportListResponse
+public class ModeratorComplaintListResponse
 {
-    public List<ModeratorReportListItemDto> Items { get; set; } = new();
+    public List<ModeratorComplaintListItemDto> Items { get; set; } = new();
     public int TotalCount { get; set; }
     public int Page { get; set; }
     public int PageSize { get; set; }
     public int TotalPages => PageSize > 0 ? (int)Math.Ceiling((double)TotalCount / PageSize) : 0;
 }
 
-public class ModeratorReportDetailDto
+public class ModeratorComplaintDetailDto
 {
     public Guid Id { get; set; }
     public Guid ReporterUserId { get; set; }
@@ -60,6 +62,12 @@ public class ModeratorReportDetailDto
     public DateTime? HandledAt { get; set; }
     public string? Resolution { get; set; }
     public string? ActionTaken { get; set; }
+    public Guid? OffenderUserId { get; set; }
+    public string? OffenderName { get; set; }
+    public string? OffenderEmail { get; set; }
+    public Guid? ConversationId { get; set; }
+    public string? ReportedMessageContent { get; set; }
+    public string? JobPostingTitle { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public bool IsDeleted { get; set; }
@@ -77,7 +85,7 @@ public class ModeratorReportDetailDto
     public string ReporterDisplay => string.IsNullOrWhiteSpace(ReporterName) ? ReporterEmail : ReporterName;
 }
 
-public class ModeratorResolveReportRequest
+public class ModeratorResolveComplaintRequest
 {
     [Required(ErrorMessage = "Resolution is required.")]
     [StringLength(1000, ErrorMessage = "Resolution must not exceed 1000 characters.")]
@@ -91,8 +99,20 @@ public class ModeratorResolveReportRequest
     public string? OffenderNotificationMessage { get; set; }
 }
 
-public class ModeratorReportDetailPageModel
+public class ModeratorComplaintDetailPageModel
 {
-    public ModeratorReportDetailDto Detail { get; set; } = new();
-    public ModeratorResolveReportRequest Form { get; set; } = new();
+    public ModeratorComplaintDetailDto Detail { get; set; } = new();
+    public ModeratorResolveComplaintRequest Form { get; set; } = new();
+}
+
+public class ModeratorComplainedJobPostingDetailPageModel
+{
+    public Guid? ComplaintId { get; set; }
+    public JobPostingDetailResponse JobPosting { get; set; } = new();
+}
+
+public class ModeratorComplainedProfileDetailPageModel
+{
+    public Guid? ComplaintId { get; set; }
+    public PersonalProfileViewModel Profile { get; set; } = new();
 }
