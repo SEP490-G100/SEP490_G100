@@ -109,7 +109,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // CORS
 // CORS — frontend origin cần AllowCredentials để SignalR WebSocket hoạt động
 var frontendOrigins = builder.Configuration.GetSection("FrontendOrigins").Get<string[]>()
-    ?? ["http://localhost:5001", "https://localhost:5001"];
+    ?? ["http://localhost:5200", "https://localhost:7183", "http://localhost:5001", "https://localhost:5001"];
 
 builder.Services.AddCors(options =>
 {
@@ -124,10 +124,6 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials());
-    options.AddPolicy("UiPolicy", policy =>
-        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
-    options.AddDefaultPolicy(policy =>
-        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 });
 
 builder.Services.AddHttpClient();
@@ -155,6 +151,7 @@ builder.Services.AddScoped<TransactionRepository>();
 builder.Services.AddScoped<UserSubscriptionRepository>();
 builder.Services.AddScoped<SubscriptionRepository>();
 builder.Services.AddScoped<ContractRepository>();
+builder.Services.AddScoped<HiringRepository>();
 builder.Services.AddScoped<CommunicationRepository>();
 builder.Services.AddScoped<FaqRepository>();
 builder.Services.AddScoped<BlogCategoryRepository>();
@@ -186,6 +183,8 @@ builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<VietQrService>();
 builder.Services.AddScoped<CommunicationService>();
 builder.Services.AddScoped<VnPayService>();
+builder.Services.AddScoped<HiringService>();
+builder.Services.AddScoped<ContractService>();
 builder.Services.AddScoped<FaqService>();
 builder.Services.AddScoped<BlogCategoryService>();
 builder.Services.AddScoped<BlogService>();
@@ -204,8 +203,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseStaticFiles();
 app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseRouting();
 app.UseCors("RestApi");
 app.UseAuthentication();
 app.UseAuthorization();
@@ -214,11 +214,6 @@ app.MapControllers();
 // SignalR hub endpoint — dùng SignalR CORS policy
 app.MapHub<ChatHub>("/hubs/chat").RequireCors("SignalR");
 
-app.UseCors("UiPolicy");
-app.UseCors();
-app.UseAuthentication();
-app.UseAuthorization();
-app.MapControllers();
 app.MapHealthChecks("/health");
 
 app.Run();

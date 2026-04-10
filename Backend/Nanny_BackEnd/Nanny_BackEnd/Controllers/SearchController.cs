@@ -585,21 +585,16 @@ public class SearchController : ControllerBase
             await _db.SaveChangesAsync();
 
             var nannyUserId = application.NannyProfile?.UserId ?? Guid.Empty;
-            if (nannyUserId != Guid.Empty)
+            if (nannyUserId != Guid.Empty && !isApproved)
             {
-                var title = isApproved
-                    ? "Don ung tuyen duoc chap nhan"
-                    : "Don ung tuyen bi tu choi";
-
-                var content = isApproved
-                    ? $"Parent da chap nhan don ung tuyen cua ban cho bai dang \"{application.JobPosting.Title}\"."
-                    : $"Parent da tu choi don ung tuyen cua ban cho bai dang \"{application.JobPosting.Title}\". Ly do: {application.RejectionReason}";
+                var title = "Don ung tuyen bi tu choi";
+                var content = $"Parent da tu choi don ung tuyen cua ban cho bai dang \"{application.JobPosting.Title}\". Ly do: {application.RejectionReason}";
 
                 await _notificationService.createNotification(
                     nannyUserId,
                     title,
                     content,
-                    isApproved ? NotificationTypes.JobApplicationApproved : NotificationTypes.JobApplicationRejected,
+                    NotificationTypes.JobApplicationRejected,
                     application.Id,
                     "JobApplication",
                     userId);

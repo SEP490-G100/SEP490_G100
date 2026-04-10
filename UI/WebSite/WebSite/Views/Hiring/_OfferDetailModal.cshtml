@@ -1,0 +1,148 @@
+@{
+    var canRespondOffer = User.IsInRole("Nanny");
+}
+
+<div id="offerDetailModal"
+     class="fixed inset-0 z-[12000] hidden items-center justify-center bg-black/50 backdrop-blur-sm px-4"
+     onclick="if(event.target===this)window.__closeOfferDetail?.()">
+    <div class="bg-white rounded-[28px] w-full max-w-2xl shadow-2xl relative overflow-hidden max-h-[90vh] flex flex-col">
+        <div class="px-6 py-5 border-b border-slate-100 bg-gradient-to-b from-white to-slate-50 flex-shrink-0">
+            <button type="button" onclick="window.__closeOfferDetail?.()"
+                    class="absolute top-4 right-4 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 hover:text-slate-600 transition-colors">
+                <span class="material-icons-round text-base">close</span>
+            </button>
+            <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-orange-500">De nghi viec lam</p>
+            <h2 class="mt-1 text-xl font-bold text-slate-900">Chi tiet hop dong</h2>
+            <p id="offerDetailStatus" class="mt-1 text-sm text-slate-500"></p>
+        </div>
+
+        <div class="overflow-y-auto flex-1 px-6 py-5 space-y-4" id="offerDetailBody">
+            <div class="text-center text-slate-400 py-8">Dang tai...</div>
+        </div>
+
+        <div id="offerDetailFooter"
+             class="hidden px-6 pb-6 pt-3 border-t border-slate-100 flex items-center justify-end gap-3 flex-shrink-0">
+            <button type="button" onclick="window.__closeOfferDetail?.()"
+                    class="inline-flex items-center justify-center min-h-[42px] px-5 rounded-xl border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 transition-all">
+                Dong
+            </button>
+            <button type="button" id="offerDeclineBtn" onclick="window.__respondOffer?.('decline')"
+                    class="inline-flex items-center justify-center gap-2 min-h-[42px] px-5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 font-bold hover:bg-rose-100 transition-all">
+                <span class="material-icons-round text-base">cancel</span>
+                Tu choi
+            </button>
+            <button type="button" id="offerAcceptBtn" onclick="window.__respondOffer?.('accept')"
+                    class="inline-flex items-center justify-center gap-2 min-h-[42px] px-6 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-400 text-white font-bold hover:from-emerald-600 hover:to-emerald-500 transition-all shadow-lg shadow-emerald-200">
+                <span class="material-icons-round text-base">check_circle</span>
+                Chấp nhận
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+(() => {
+    let hiringRecordId = null;
+    const modal = document.getElementById('offerDetailModal');
+    const body = document.getElementById('offerDetailBody');
+    const footer = document.getElementById('offerDetailFooter');
+    const statusEl = document.getElementById('offerDetailStatus');
+
+    const show = () => { modal.classList.remove('hidden'); modal.classList.add('flex'); };
+    const hide = () => { modal.classList.add('hidden'); modal.classList.remove('flex'); };
+    const statusLabels = {
+        0: 'Dang cho phan hoi',
+        1: 'Da chap nhan',
+        2: 'Da tu choi',
+        3: 'Dang hoat dong',
+        4: 'Hoan thanh',
+        5: 'Da huy'
+    };
+
+    const fmtDate = (value) => value ? new Date(value + 'T00:00:00').toLocaleDateString('vi-VN') : 'Chua xac dinh';
+
+    window.__openOfferDetail = async (id) => {
+        hiringRecordId = id;
+        body.innerHTML = '<div class="text-center text-slate-400 py-8">Dang tai...</div>';
+        footer.classList.add('hidden');
+        statusEl.textContent = '';
+        show();
+
+        try {
+            const res = await fetch(`/Hiring/Record?hiringRecordId=${encodeURIComponent(id)}`);
+            const json = await res.json();
+            if (!json.success) throw new Error(json.message || 'Khong tai duoc du lieu.');
+
+            const d = json.data;
+            statusEl.textContent = statusLabels[d.status] || '';
+            body.innerHTML = `
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+                        <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Phu huynh</p>
+                        <p class="mt-1 font-extrabold text-slate-800">${d.parentName || '-'}</p>
+                    </div>
+                    <div class="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+                        <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Bao mau</p>
+                        <p class="mt-1 font-extrabold text-slate-800">${d.nannyName || '-'}</p>
+                    </div>
+                    <div class="rounded-2xl border border-slate-100 bg-white p-3">
+                        <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Ngay bat dau</p>
+                        <p class="mt-1 font-semibold text-slate-700">${fmtDate(d.startDate)}</p>
+                    </div>
+                    <div class="rounded-2xl border border-slate-100 bg-white p-3">
+                        <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Ngay ket thuc</p>
+                        <p class="mt-1 font-semibold text-slate-700">${d.endDate ? fmtDate(d.endDate) : 'Chua xac dinh'}</p>
+                    </div>
+                </div>
+                ${d.contractContent ? `
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Noi dung hop dong</p>
+                    <pre class="text-xs text-slate-600 whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto">${d.contractContent}</pre>
+                </div>` : ''}`;
+
+            const canRespondOffer = @((canRespondOffer) ? "true" : "false");
+            if (Number(d.status) === 0 && canRespondOffer) footer.classList.remove('hidden');
+        } catch (err) {
+            body.innerHTML = `<p class="text-rose-600 text-sm font-semibold text-center py-6">Khong tai duoc thong tin: ${err.message || 'Unknown error'}</p>`;
+        }
+    };
+
+    window.__closeOfferDetail = () => hide();
+
+    window.__respondOffer = async (action) => {
+        if (!hiringRecordId) return;
+        const btn = action === 'accept'
+            ? document.getElementById('offerAcceptBtn')
+            : document.getElementById('offerDeclineBtn');
+        btn.disabled = true;
+
+        try {
+            const payload = action === 'decline'
+                ? { action, declineReason: 'Nanny tu choi de nghi.' }
+                : { action };
+            const res = await fetch(`/Hiring/Records/${hiringRecordId}/Respond`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const json = await res.json();
+            if (!json.success) {
+                alert(json.message || 'Co loi xay ra.');
+                return;
+            }
+            if (action === 'accept') {
+                if (typeof window.showToast === 'function') {
+                    window.showToast('Chuc mung! Ban da tim duoc cong viec phu hop.', { type: 'success' });
+                } else {
+                    alert('Chuc mung! Ban da tim duoc cong viec phu hop.');
+                }
+            }
+            hide();
+        } catch {
+            alert('Loi ket noi. Vui long thu lai.');
+        } finally {
+            btn.disabled = false;
+        }
+    };
+})();
+</script>
