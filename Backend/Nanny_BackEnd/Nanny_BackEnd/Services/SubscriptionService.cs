@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
 using Nanny_BackEnd.DTOs.Subscription;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
@@ -123,17 +124,20 @@ public class SubscriptionService
     private readonly SubscriptionRepository _subscriptionRepo;
     private readonly NotificationService _notificationService;
     private readonly VietQrService _vietQrService;
+    private readonly VietQrOptions _vietQrOptions;
     private readonly VnPayService _vnPayService;
 
     public SubscriptionService(
         SubscriptionRepository subscriptionRepo,
         NotificationService notificationService,
         VietQrService vietQrService,
+        IOptions<VietQrOptions> vietQrOptions,
         VnPayService vnPayService)
     {
         _subscriptionRepo = subscriptionRepo;
         _notificationService = notificationService;
         _vietQrService = vietQrService;
+        _vietQrOptions = vietQrOptions.Value;
         _vnPayService = vnPayService;
     }
 
@@ -169,6 +173,7 @@ public class SubscriptionService
 
     public async Task<List<SubscriptionTransactionResponse>> getTransactionHistory(Guid userId)
     {
+        await expirePendingTransactions(userId);
         var transactions = await _subscriptionRepo.getUserSubscriptionTransactions(userId);
         return transactions.Select(mapTransaction).ToList();
     }
@@ -230,6 +235,7 @@ public class SubscriptionService
     public async Task<SubscriptionPaymentSessionResponse> createPayment(Guid userId, CreateSubscriptionPaymentRequest request)
     {
         await expireOldSubscriptions(userId);
+        await expirePendingTransactions(userId);
         await ensureManagedPlans();
 
         var plan = await _subscriptionRepo.findPlanById(request.SubscriptionPlanId)
@@ -243,6 +249,10 @@ public class SubscriptionService
         var currentSubscription = await _subscriptionRepo.findCurrentSubscription(userId, DateTime.UtcNow);
         if (currentSubscription != null)
             throw new InvalidOperationException("Ban dang co goi subscription con hieu luc. Vui long huy hoac cho goi hien tai het han.");
+
+        var existingPendingTransaction = await findReusablePendingTransaction(userId, definition.Code);
+        if (existingPendingTransaction != null)
+            return buildPaymentSessionResponse(plan, existingPendingTransaction);
 
         var nowUtc = DateTime.UtcNow;
         var orderCode = await generateUniqueOrderCode();
@@ -265,28 +275,7 @@ public class SubscriptionService
 
         try
         {
-            var paymentInstruction = _vietQrService.createPaymentInstruction(
-                orderCode,
-                plan.Price,
-                paymentContent);
-
-            return new SubscriptionPaymentSessionResponse
-            {
-                TransactionId = transaction.Id,
-                PaymentMethod = "BANK_QR",
-                PlanName = plan.Name,
-                Amount = plan.Price,
-                OrderCode = orderCode,
-                PaymentContent = paymentContent,
-                CheckoutUrl = paymentInstruction.CheckoutUrl,
-                QrCodeUrl = paymentInstruction.QrCodeUrl,
-                BankId = paymentInstruction.BankId,
-                AccountNumber = paymentInstruction.AccountNumber,
-                AccountName = paymentInstruction.AccountName,
-                ProviderPaymentId = orderCode.ToString(),
-                Status = "PENDING",
-                ExpiresAt = paymentInstruction.ExpiresAt
-            };
+            return buildPaymentSessionResponse(plan, transaction);
         }
         catch
         {
@@ -302,6 +291,12 @@ public class SubscriptionService
     {
         var transaction = await _subscriptionRepo.findTransactionById(transactionId, userId)
             ?? throw new KeyNotFoundException("Khong tim thay giao dich thanh toan.");
+
+        if (transaction.Status == 1 && isPendingTransactionExpired(transaction, DateTime.UtcNow))
+        {
+            markTransactionFailed(transaction, DateTime.UtcNow);
+            await _subscriptionRepo.saveChanges();
+        }
 
         var planCode = tryExtractPlanCode(transaction.Description);
         var planName = planCode == null
@@ -446,6 +441,95 @@ public class SubscriptionService
         await _subscriptionRepo.saveChanges();
         return mapSubscription(subscription);
     }
+
+    private async Task<Transaction?> findReusablePendingTransaction(Guid userId, string planCode)
+    {
+        var nowUtc = DateTime.UtcNow;
+        var pendingTransactions = await _subscriptionRepo.getPendingSubscriptionTransactions(userId);
+        if (pendingTransactions.Count == 0)
+            return null;
+
+        Transaction? reusable = null;
+        var hasChanges = false;
+
+        foreach (var transaction in pendingTransactions)
+        {
+            if (isPendingTransactionExpired(transaction, nowUtc))
+            {
+                markTransactionFailed(transaction, nowUtc);
+                hasChanges = true;
+                continue;
+            }
+
+            if (reusable == null &&
+                string.Equals(tryExtractPlanCode(transaction.Description), planCode, StringComparison.OrdinalIgnoreCase))
+            {
+                reusable = transaction;
+            }
+        }
+
+        if (hasChanges)
+            await _subscriptionRepo.saveChanges();
+
+        return reusable;
+    }
+
+    private SubscriptionPaymentSessionResponse buildPaymentSessionResponse(SubscriptionPlan plan, Transaction transaction)
+    {
+        var orderCode = int.TryParse(transaction.PaymentGatewayTransactionId, out var parsedOrderCode)
+            ? parsedOrderCode
+            : 0;
+
+        var paymentInstruction = _vietQrService.createPaymentInstruction(
+            orderCode,
+            transaction.Amount,
+            transaction.Description ?? buildPaymentContent(getManagedPlanDefinition(plan.Name)?.Code ?? plan.Name, orderCode));
+
+        return new SubscriptionPaymentSessionResponse
+        {
+            TransactionId = transaction.Id,
+            PaymentMethod = "BANK_QR",
+            PlanName = plan.Name,
+            Amount = transaction.Amount,
+            OrderCode = paymentInstruction.OrderCode,
+            PaymentContent = paymentInstruction.TransferContent,
+            CheckoutUrl = paymentInstruction.CheckoutUrl,
+            QrCodeUrl = paymentInstruction.QrCodeUrl,
+            BankId = paymentInstruction.BankId,
+            AccountNumber = paymentInstruction.AccountNumber,
+            AccountName = paymentInstruction.AccountName,
+            ProviderPaymentId = transaction.PaymentGatewayTransactionId ?? "",
+            Status = "PENDING",
+            ExpiresAt = getPendingTransactionExpiresAt(transaction.CreatedAt)
+        };
+    }
+
+    private async Task expirePendingTransactions(Guid userId)
+    {
+        var nowUtc = DateTime.UtcNow;
+        var pendingTransactions = await _subscriptionRepo.getPendingSubscriptionTransactions(userId);
+        if (pendingTransactions.Count == 0)
+            return;
+
+        var hasChanges = false;
+        foreach (var transaction in pendingTransactions)
+        {
+            if (!isPendingTransactionExpired(transaction, nowUtc))
+                continue;
+
+            markTransactionFailed(transaction, nowUtc);
+            hasChanges = true;
+        }
+
+        if (hasChanges)
+            await _subscriptionRepo.saveChanges();
+    }
+
+    private bool isPendingTransactionExpired(Transaction transaction, DateTime nowUtc) =>
+        transaction.Status == 1 && getPendingTransactionExpiresAt(transaction.CreatedAt) <= nowUtc;
+
+    private DateTime getPendingTransactionExpiresAt(DateTime createdAtUtc) =>
+        createdAtUtc.AddMinutes(Math.Max(1, _vietQrOptions.ExpiresAfterMinutes));
 
     private async Task<TransferConfirmationResult> confirmTransfer(
         string gatewayCode,
