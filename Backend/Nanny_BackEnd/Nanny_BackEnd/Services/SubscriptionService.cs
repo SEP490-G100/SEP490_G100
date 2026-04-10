@@ -122,15 +122,18 @@ public class SubscriptionService
 
     private readonly SubscriptionRepository _subscriptionRepo;
     private readonly NotificationService _notificationService;
+    private readonly VietQrService _vietQrService;
     private readonly VnPayService _vnPayService;
 
     public SubscriptionService(
         SubscriptionRepository subscriptionRepo,
         NotificationService notificationService,
+        VietQrService vietQrService,
         VnPayService vnPayService)
     {
         _subscriptionRepo = subscriptionRepo;
         _notificationService = notificationService;
+        _vietQrService = vietQrService;
         _vnPayService = vnPayService;
     }
 
@@ -262,22 +265,27 @@ public class SubscriptionService
 
         try
         {
-            var checkoutUrl = _vnPayService.createPaymentUrl(
+            var paymentInstruction = _vietQrService.createPaymentInstruction(
                 orderCode,
                 plan.Price,
-                paymentContent,
-                request.ClientIp);
+                paymentContent);
 
             return new SubscriptionPaymentSessionResponse
             {
                 TransactionId = transaction.Id,
+                PaymentMethod = "BANK_QR",
                 PlanName = plan.Name,
                 Amount = plan.Price,
                 OrderCode = orderCode,
                 PaymentContent = paymentContent,
-                CheckoutUrl = checkoutUrl,
+                CheckoutUrl = paymentInstruction.CheckoutUrl,
+                QrCodeUrl = paymentInstruction.QrCodeUrl,
+                BankId = paymentInstruction.BankId,
+                AccountNumber = paymentInstruction.AccountNumber,
+                AccountName = paymentInstruction.AccountName,
                 ProviderPaymentId = orderCode.ToString(),
-                Status = "PENDING"
+                Status = "PENDING",
+                ExpiresAt = paymentInstruction.ExpiresAt
             };
         }
         catch
@@ -307,6 +315,25 @@ public class SubscriptionService
             TransactionStatusLabel = getTransactionStatusLabel(transaction.Status),
             PlanName = planName,
             SubscriptionActivated = await _subscriptionRepo.hasAnySubscriptionLinkedToTransaction(transaction.Id)
+        };
+    }
+
+    public async Task<SubscriptionQrCallbackResponse> handleQrCallback(SubscriptionQrCallbackRequest request)
+    {
+        var result = await confirmTransfer(
+            request.OrderCode.ToString(),
+            request.Amount,
+            request.IsSuccess,
+            request.ProviderTransactionId,
+            request.TransferContent);
+
+        return new SubscriptionQrCallbackResponse
+        {
+            Processed = result.IsSuccess,
+            SubscriptionActivated = result.SubscriptionActivated,
+            TransactionId = result.TransactionId,
+            Status = result.Status,
+            Message = result.Message
         };
     }
 
@@ -364,52 +391,17 @@ public class SubscriptionService
             if (item.OrderCode <= 0)
                 continue;
 
-            var transaction = await _subscriptionRepo.findTransactionByGatewayCode(item.OrderCode.ToString());
-            if (transaction == null)
-                continue;
+            var result = await confirmTransfer(
+                item.OrderCode.ToString(),
+                item.Amount,
+                string.Equals(item.Code, "00", StringComparison.OrdinalIgnoreCase),
+                item.Reference ?? item.PaymentLinkId,
+                item.Description);
 
-            try
-            {
-                if (transaction.Status == 2 || transaction.Status == 3 ||
-                    await _subscriptionRepo.hasAnySubscriptionLinkedToTransaction(transaction.Id))
-                    continue;
-
-                var nowUtc = DateTime.UtcNow;
-                if (!string.Equals(item.Code, "00", StringComparison.OrdinalIgnoreCase))
-                {
-                    markTransactionFailed(transaction, nowUtc);
-                    continue;
-                }
-
-                var expectedAmount = decimal.Round(transaction.Amount, 0, MidpointRounding.AwayFromZero);
-                var callbackAmount = decimal.Round(item.Amount, 0, MidpointRounding.AwayFromZero);
-                if (callbackAmount <= 0 || callbackAmount != expectedAmount)
-                {
-                    markTransactionFailed(transaction, nowUtc);
-                    continue;
-                }
-
-                transaction.Status = 2;
-                transaction.CompletedAt = nowUtc;
-                transaction.UpdatedAt = nowUtc;
-                transaction.UpdatedBy = transaction.UserId;
-
-                var activated = await activateSubscriptionFromTransaction(transaction, nowUtc);
-                if (!activated)
-                {
-                    markTransactionFailed(transaction, nowUtc);
-                    continue;
-                }
-
+            if (result.IsSuccess)
                 processed++;
-            }
-            catch
-            {
-                markTransactionFailed(transaction, DateTime.UtcNow);
-            }
         }
 
-        await _subscriptionRepo.saveChanges();
         return processed;
     }
 
@@ -453,6 +445,93 @@ public class SubscriptionService
 
         await _subscriptionRepo.saveChanges();
         return mapSubscription(subscription);
+    }
+
+    private async Task<TransferConfirmationResult> confirmTransfer(
+        string gatewayCode,
+        decimal amount,
+        bool isSuccess,
+        string? providerTransactionId = null,
+        string? transferContent = null)
+    {
+        var transaction = await _subscriptionRepo.findTransactionByGatewayCode(gatewayCode);
+        if (transaction == null)
+        {
+            return new TransferConfirmationResult
+            {
+                Status = "NOT_FOUND",
+                Message = "Khong tim thay giao dich thanh toan."
+            };
+        }
+
+        var result = new TransferConfirmationResult
+        {
+            TransactionId = transaction.Id
+        };
+
+        if (await _subscriptionRepo.hasAnySubscriptionLinkedToTransaction(transaction.Id) || transaction.Status == 2)
+        {
+            result.IsSuccess = true;
+            result.SubscriptionActivated = true;
+            result.Status = "ALREADY_PROCESSED";
+            result.Message = "Giao dich da duoc xu ly truoc do.";
+            return result;
+        }
+
+        if (transaction.Status == 3)
+        {
+            result.Status = "FAILED";
+            result.Message = "Giao dich da o trang thai that bai.";
+            return result;
+        }
+
+        var nowUtc = DateTime.UtcNow;
+        if (!isSuccess)
+        {
+            markTransactionFailed(transaction, nowUtc);
+            await _subscriptionRepo.saveChanges();
+
+            result.Status = "FAILED";
+            result.Message = "Callback noi bo tra ve trang thai that bai.";
+            return result;
+        }
+
+        var expectedAmount = decimal.Round(transaction.Amount, 0, MidpointRounding.AwayFromZero);
+        var callbackAmount = decimal.Round(amount, 0, MidpointRounding.AwayFromZero);
+        if (callbackAmount <= 0 || callbackAmount != expectedAmount)
+        {
+            markTransactionFailed(transaction, nowUtc);
+            await _subscriptionRepo.saveChanges();
+
+            result.Status = "AMOUNT_MISMATCH";
+            result.Message = "So tien callback khong khop voi giao dich dang cho.";
+            return result;
+        }
+
+        transaction.Status = 2;
+        transaction.CompletedAt = nowUtc;
+        transaction.UpdatedAt = nowUtc;
+        transaction.UpdatedBy = transaction.UserId;
+        transaction.Description = appendCallbackMetadata(transaction.Description, transferContent, providerTransactionId);
+
+        var activated = await activateSubscriptionFromTransaction(transaction, nowUtc);
+        if (!activated)
+        {
+            markTransactionFailed(transaction, nowUtc);
+            await _subscriptionRepo.saveChanges();
+
+            result.Status = "ACTIVATION_FAILED";
+            result.Message = "Khong kich hoat duoc goi subscription tu callback noi bo.";
+            return result;
+        }
+
+        await _subscriptionRepo.saveChanges();
+
+        result.IsSuccess = true;
+        result.SubscriptionActivated = true;
+        result.Status = "SUCCESS";
+        result.Message = "Da kich hoat subscription tu callback noi bo.";
+        return result;
     }
 
     private async Task<VnPayProcessInternalResult> processVnPayCallback(IQueryCollection query)
@@ -610,6 +689,29 @@ public class SubscriptionService
         transaction.Status = 3;
         transaction.UpdatedAt = nowUtc;
         transaction.UpdatedBy = transaction.UserId;
+    }
+
+    private static string appendCallbackMetadata(
+        string? description,
+        string? transferContent,
+        string? providerTransactionId)
+    {
+        var baseDescription = description?.Trim() ?? "";
+        var segments = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(baseDescription))
+            segments.Add(baseDescription);
+
+        if (!string.IsNullOrWhiteSpace(transferContent) &&
+            !string.Equals(transferContent.Trim(), baseDescription, StringComparison.OrdinalIgnoreCase))
+        {
+            segments.Add($"TRANSFER:{transferContent.Trim()}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(providerTransactionId))
+            segments.Add($"REF:{providerTransactionId.Trim()}");
+
+        return string.Join(" | ", segments);
     }
 
     private async Task expireOldSubscriptions(Guid userId)
@@ -883,6 +985,15 @@ public class SubscriptionService
         public Guid? TransactionId { get; set; }
         public string Message { get; set; } = "";
     }
+
+    private sealed class TransferConfirmationResult
+    {
+        public bool IsSuccess { get; set; }
+        public bool SubscriptionActivated { get; set; }
+        public Guid? TransactionId { get; set; }
+        public string Status { get; set; } = "";
+        public string Message { get; set; } = "";
+    }
 }
 
 public class VnPayReturnResult
@@ -898,4 +1009,3 @@ public class VnPayIpnResult
     public string RspCode { get; set; } = "99";
     public string Message { get; set; } = "Unknown error";
 }
-

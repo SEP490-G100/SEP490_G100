@@ -131,6 +131,7 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddHttpClient();
+builder.Services.Configure<VietQrOptions>(builder.Configuration.GetSection("VietQr"));
 builder.Services.Configure<VnPayOptions>(builder.Configuration.GetSection("VnPay"));
 // Nominatim (OpenStreetMap geocoding) — User-Agent bắt buộc theo ToS
 builder.Services.AddHttpClient("Nominatim", c =>

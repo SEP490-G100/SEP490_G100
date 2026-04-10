@@ -56,9 +56,9 @@ public class SubscriptionController : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        if (string.IsNullOrWhiteSpace(result.Data?.CheckoutUrl))
+        if (string.IsNullOrWhiteSpace(result.Data?.QrCodeUrl))
         {
-            const string message = "Không tạo được liên kết thanh toán.";
+            const string message = "Không tạo được mã QR thanh toán.";
             if (isAjaxRequest())
                 return Json(new { success = false, message });
 
@@ -70,11 +70,11 @@ public class SubscriptionController : Controller
             return Json(new
             {
                 success = true,
-                message = "Đã tạo giao dịch cho thanh toán.",
+                message = "Đã tạo giao dịch QR chuyển khoản.",
                 data = result.Data
             });
 
-        return Redirect(result.Data.CheckoutUrl);
+        return RedirectToAction(nameof(PaymentResult), new { transactionId = result.Data.TransactionId });
     }
 
     [HttpPost]
