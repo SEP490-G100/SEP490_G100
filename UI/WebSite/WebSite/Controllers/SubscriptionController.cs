@@ -56,9 +56,23 @@ public class SubscriptionController : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        if (string.IsNullOrWhiteSpace(result.Data?.QrCodeUrl))
+        if (string.Equals(result.Data?.Status, "WAITING_REVIEW", StringComparison.OrdinalIgnoreCase))
         {
-            const string message = "Không tạo được mã QR thanh toán.";
+            if (isAjaxRequest())
+                return Json(new
+                {
+                    success = true,
+                    message = "Giao dich dang cho xet duyet.",
+                    data = result.Data
+                });
+
+            return RedirectToAction(nameof(PaymentResult), new { transactionId = result.Data!.TransactionId });
+        }
+
+        if (string.IsNullOrWhiteSpace(result.Data?.QrCodeUrl) &&
+            string.IsNullOrWhiteSpace(result.Data?.CheckoutUrl))
+        {
+            const string message = "Không tạo được phiên thanh toán PayOS.";
             if (isAjaxRequest())
                 return Json(new { success = false, message });
 
@@ -70,7 +84,7 @@ public class SubscriptionController : Controller
             return Json(new
             {
                 success = true,
-                message = "Đã tạo giao dịch QR chuyển khoản.",
+                message = "Đã tạo giao dịch thanh toán PayOS.",
                 data = result.Data
             });
 
@@ -138,6 +152,24 @@ public class SubscriptionController : Controller
         {
             Success = false,
             Message = "Không thể lấy trạng thái thanh toán."
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> MarkTransferred(Guid transactionId)
+    {
+        var token = getToken();
+        if (string.IsNullOrWhiteSpace(token))
+            return Json(new { success = false, message = "Bạn cần đăng nhập để xác nhận thanh toán." });
+
+        setAuthHeader(token);
+        var response = await _http.PostAsync($"/api/subscriptions/mark-transferred/{transactionId}", content: null);
+        var result = await readApiResult<MarkSubscriptionTransferredViewModel>(response);
+        return Json(result ?? new ApiResult<MarkSubscriptionTransferredViewModel>
+        {
+            Success = false,
+            Message = "Không thể ghi nhận xác nhận chuyển khoản."
         });
     }
 

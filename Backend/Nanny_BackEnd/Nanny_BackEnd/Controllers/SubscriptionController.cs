@@ -11,12 +11,17 @@ namespace Nanny_BackEnd.Controllers;
 public class SubscriptionController : ControllerBase
 {
     private readonly SubscriptionService _subscriptionService;
-    private readonly VietQrService _vietQrService;
+    private readonly CassoService _cassoService;
+    private readonly PayOsService _payOsService;
 
-    public SubscriptionController(SubscriptionService subscriptionService, VietQrService vietQrService)
+    public SubscriptionController(
+        SubscriptionService subscriptionService,
+        CassoService cassoService,
+        PayOsService payOsService)
     {
         _subscriptionService = subscriptionService;
-        _vietQrService = vietQrService;
+        _cassoService = cassoService;
+        _payOsService = payOsService;
     }
 
     [AllowAnonymous]
@@ -117,7 +122,7 @@ public class SubscriptionController : ControllerBase
             return Ok(new
             {
                 success = true,
-                message = "Da tao QR chuyen khoan thanh cong.",
+                message = "Da tao phien thanh toan subscription thanh cong.",
                 data = session
             });
         }
@@ -141,57 +146,44 @@ public class SubscriptionController : ControllerBase
         catch (KeyNotFoundException ex) { return NotFound(fail(ex.Message)); }
     }
 
-    [AllowAnonymous]
-    [HttpPost("qr/callback")]
-    public async Task<IActionResult> QrCallback([FromBody] SubscriptionQrCallbackRequest request)
+    [Authorize]
+    [HttpPost("mark-transferred/{transactionId:guid}")]
+    public async Task<IActionResult> MarkTransferred(Guid transactionId)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(failValidation(ModelState));
+        var userId = getCurrentUserId();
+        if (!userId.HasValue)
+            return Unauthorized(fail("Khong xac dinh duoc nguoi dung hien tai."));
 
-        if (!isWebhookAuthorized())
-            return Unauthorized(fail("Webhook token khong hop le."));
-
-        var result = await _subscriptionService.handleQrCallback(request);
-        return Ok(new
+        try
         {
-            success = result.Processed,
-            message = result.Message,
-            data = result
-        });
+            var result = await _subscriptionService.markTransferred(userId.Value, transactionId);
+            return Ok(new { success = true, message = result.Message, data = result });
+        }
+        catch (KeyNotFoundException ex) { return NotFound(fail(ex.Message)); }
+        catch (InvalidOperationException ex) { return BadRequest(fail(ex.Message)); }
     }
 
     [AllowAnonymous]
-    [HttpPost("vietqr/webhook")]
-    public async Task<IActionResult> VietQrWebhook([FromBody] VietQrWebhookRequest request)
+    [HttpPost("payos/webhook")]
+    public async Task<IActionResult> PayOsWebhook([FromBody] PayOsWebhookRequest request)
     {
-        if (!isWebhookAuthorized())
-            return Unauthorized(fail("Webhook token khong hop le."));
+        if (!_payOsService.isWebhookValid(request))
+            return Unauthorized(fail("PayOS signature khong hop le."));
 
-        var processed = await _subscriptionService.handleVietQrWebhook(request);
-        return Ok(new
-        {
-            success = true,
-            processed
-        });
+        var processed = await _subscriptionService.handlePayOsWebhook(request);
+        return Ok(new { success = true, processed });
     }
 
     [AllowAnonymous]
-    [HttpGet("vnpay/return")]
-    public async Task<IActionResult> VnPayReturn()
+    [HttpPost("casso/webhook")]
+    public async Task<IActionResult> CassoWebhook([FromBody] CassoWebhookRequest request)
     {
-        var result = await _subscriptionService.handleVnPayReturn(Request.Query);
-        if (!string.IsNullOrWhiteSpace(result.RedirectUrl))
-            return Redirect(result.RedirectUrl);
+        var secureToken = Request.Headers["secure-token"].FirstOrDefault();
+        if (!_cassoService.isWebhookAuthorized(secureToken))
+            return Unauthorized(fail("Casso secure token khong hop le."));
 
-        return BadRequest(fail(result.Message));
-    }
-
-    [AllowAnonymous]
-    [HttpGet("vnpay/ipn")]
-    public async Task<IActionResult> VnPayIpn()
-    {
-        var result = await _subscriptionService.handleVnPayIpn(Request.Query);
-        return Ok(result);
+        var processed = await _subscriptionService.handleCassoWebhook(request);
+        return Ok(new { success = true, processed });
     }
 
     [Authorize]
@@ -221,15 +213,6 @@ public class SubscriptionController : ControllerBase
                ?? User.FindFirst("sub")?.Value;
 
         return Guid.TryParse(sub, out var userId) ? userId : null;
-    }
-
-    private bool isWebhookAuthorized()
-    {
-        var token = Request.Headers["X-Webhook-Token"].FirstOrDefault();
-        if (string.IsNullOrWhiteSpace(token))
-            token = Request.Query["token"].ToString();
-
-        return _vietQrService.isWebhookAuthorized(token);
     }
 
     private static object success(object? data, int? total = null) =>

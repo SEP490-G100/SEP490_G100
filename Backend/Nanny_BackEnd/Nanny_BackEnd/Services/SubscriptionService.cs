@@ -1,5 +1,4 @@
 ﻿using System.Text.Json;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Nanny_BackEnd.DTOs.Subscription;
 using Nanny_BackEnd.Helpers;
@@ -123,22 +122,22 @@ public class SubscriptionService
 
     private readonly SubscriptionRepository _subscriptionRepo;
     private readonly NotificationService _notificationService;
-    private readonly VietQrService _vietQrService;
-    private readonly VietQrOptions _vietQrOptions;
-    private readonly VnPayService _vnPayService;
+    private readonly CassoService _cassoService;
+    private readonly PayOsService _payOsService;
+    private readonly PayOsOptions _payOsOptions;
 
     public SubscriptionService(
         SubscriptionRepository subscriptionRepo,
         NotificationService notificationService,
-        VietQrService vietQrService,
-        IOptions<VietQrOptions> vietQrOptions,
-        VnPayService vnPayService)
+        CassoService cassoService,
+        PayOsService payOsService,
+        IOptions<PayOsOptions> payOsOptions)
     {
         _subscriptionRepo = subscriptionRepo;
         _notificationService = notificationService;
-        _vietQrService = vietQrService;
-        _vietQrOptions = vietQrOptions.Value;
-        _vnPayService = vnPayService;
+        _cassoService = cassoService;
+        _payOsService = payOsService;
+        _payOsOptions = payOsOptions.Value;
     }
 
     public async Task<List<SubscriptionPlanResponse>> getPlans()
@@ -252,7 +251,7 @@ public class SubscriptionService
 
         var existingPendingTransaction = await findReusablePendingTransaction(userId, definition.Code);
         if (existingPendingTransaction != null)
-            return buildPaymentSessionResponse(plan, existingPendingTransaction);
+            return await buildPaymentSessionResponse(plan, existingPendingTransaction);
 
         var nowUtc = DateTime.UtcNow;
         var orderCode = await generateUniqueOrderCode();
@@ -275,7 +274,7 @@ public class SubscriptionService
 
         try
         {
-            return buildPaymentSessionResponse(plan, transaction);
+            return await buildPaymentSessionResponse(plan, transaction);
         }
         catch
         {
@@ -291,6 +290,8 @@ public class SubscriptionService
     {
         var transaction = await _subscriptionRepo.findTransactionById(transactionId, userId)
             ?? throw new KeyNotFoundException("Khong tim thay giao dich thanh toan.");
+
+        await reconcilePendingTransaction(transaction);
 
         if (transaction.Status == 1 && isPendingTransactionExpired(transaction, DateTime.UtcNow))
         {
@@ -313,84 +314,80 @@ public class SubscriptionService
         };
     }
 
-    public async Task<SubscriptionQrCallbackResponse> handleQrCallback(SubscriptionQrCallbackRequest request)
+    public async Task<MarkSubscriptionTransferredResponse> markTransferred(Guid userId, Guid transactionId)
     {
-        var result = await confirmTransfer(
-            request.OrderCode.ToString(),
-            request.Amount,
-            request.IsSuccess,
-            request.ProviderTransactionId,
-            request.TransferContent);
+        var transaction = await _subscriptionRepo.findTransactionById(transactionId, userId)
+            ?? throw new KeyNotFoundException("Khong tim thay giao dich thanh toan.");
 
-        return new SubscriptionQrCallbackResponse
+        if (transaction.Type != 1)
+            throw new InvalidOperationException("Chi ho tro xac nhan giao dich subscription.");
+
+        if (await _subscriptionRepo.hasAnySubscriptionLinkedToTransaction(transaction.Id) || transaction.Status == 2)
         {
-            Processed = result.IsSuccess,
-            SubscriptionActivated = result.SubscriptionActivated,
-            TransactionId = result.TransactionId,
-            Status = result.Status,
-            Message = result.Message
-        };
-    }
+            return new MarkSubscriptionTransferredResponse
+            {
+                TransactionId = transaction.Id,
+                TransactionStatus = 2,
+                TransactionStatusLabel = getTransactionStatusLabel(2),
+                Message = "Giao dich da thanh cong truoc do."
+            };
+        }
 
-    public async Task<VnPayReturnResult> handleVnPayReturn(IQueryCollection query)
-    {
-        var process = await processVnPayCallback(query);
-        var transactionId = process.TransactionId ?? Guid.Empty;
-        var redirectUrl = process.IsSuccess
-            ? _vnPayService.buildSuccessUrl(transactionId)
-            : _vnPayService.buildCancelUrl(transactionId);
+        if (transaction.Status == 3)
+            throw new InvalidOperationException("Giao dich da that bai hoac het han. Vui long tao giao dich moi.");
 
-        return new VnPayReturnResult
+        if (transaction.Status == 1 && isPendingTransactionExpired(transaction, DateTime.UtcNow))
         {
-            TransactionId = process.TransactionId,
-            IsSuccess = process.IsSuccess,
-            Message = process.Message,
-            RedirectUrl = redirectUrl
-        };
-    }
+            markTransactionFailed(transaction, DateTime.UtcNow);
+            await _subscriptionRepo.saveChanges();
+            throw new InvalidOperationException("Giao dich da het han. Vui long tao QR moi.");
+        }
 
-    public async Task<VnPayIpnResult> handleVnPayIpn(IQueryCollection query)
-    {
+        var nowUtc = DateTime.UtcNow;
+        transaction.Status = 5;
+        transaction.UpdatedAt = nowUtc;
+        transaction.UpdatedBy = userId;
+        await _subscriptionRepo.saveChanges();
+
         try
         {
-            var process = await processVnPayCallback(query);
-            if (!process.IsValidSignature)
-                return new VnPayIpnResult { RspCode = "97", Message = "Invalid signature" };
-
-            if (!process.TransactionFound)
-                return new VnPayIpnResult { RspCode = "01", Message = "Order not found" };
-
-            if (process.AmountMismatch)
-                return new VnPayIpnResult { RspCode = "04", Message = "Invalid amount" };
-
-            if (process.IsAlreadyProcessed)
-                return new VnPayIpnResult { RspCode = "02", Message = "Order already confirmed" };
-
-            return new VnPayIpnResult { RspCode = "00", Message = "Confirm success" };
+            await reconcilePendingTransaction(transaction);
+            if (transaction.Status is not 2 and not 3)
+                await _cassoService.syncTransactions();
         }
         catch
         {
-            return new VnPayIpnResult { RspCode = "99", Message = "Unknown error" };
+            // Keep the transaction in waiting-review state; webhook may still arrive later.
         }
+
+        return new MarkSubscriptionTransferredResponse
+        {
+            TransactionId = transaction.Id,
+            TransactionStatus = transaction.Status,
+            TransactionStatusLabel = getTransactionStatusLabel(transaction.Status),
+            Message = transaction.Status == 2
+                ? "He thong da doi soat va kich hoat goi subscription."
+                : "Da ghi nhan ban xac nhan chuyen khoan va dang doi doi soat."
+        };
     }
 
-    // Backward compatibility for existing tests and legacy webhook flow.
-    public async Task<int> handleVietQrWebhook(VietQrWebhookRequest request)
+    public async Task<int> handleCassoWebhook(CassoWebhookRequest request)
     {
-        if (request.Data.Count == 0)
+        if (request.Error != 0 || request.Data.Count == 0)
             return 0;
 
         var processed = 0;
         foreach (var item in request.Data)
         {
-            if (item.OrderCode <= 0)
+            var orderCode = tryExtractOrderCode(item.Description);
+            if (orderCode == null)
                 continue;
 
             var result = await confirmTransfer(
-                item.OrderCode.ToString(),
+                orderCode.Value.ToString(),
                 item.Amount,
-                string.Equals(item.Code, "00", StringComparison.OrdinalIgnoreCase),
-                item.Reference ?? item.PaymentLinkId,
+                true,
+                item.Tid ?? item.Reference,
                 item.Description);
 
             if (result.IsSuccess)
@@ -398,6 +395,21 @@ public class SubscriptionService
         }
 
         return processed;
+    }
+
+    public async Task<int> handlePayOsWebhook(PayOsWebhookRequest request)
+    {
+        if (!request.Success || request.Data.OrderCode <= 0)
+            return 0;
+
+        var result = await confirmTransfer(
+            request.Data.OrderCode.ToString(),
+            request.Data.Amount,
+            string.Equals(request.Data.Code, "00", StringComparison.OrdinalIgnoreCase),
+            request.Data.PaymentLinkId,
+            request.Data.Description);
+
+        return result.IsSuccess ? 1 : 0;
     }
 
     public async Task<SubscriptionBenefitResponse> getBenefitsForParentProfile(Guid parentProfileId)
@@ -474,33 +486,30 @@ public class SubscriptionService
         return reusable;
     }
 
-    private SubscriptionPaymentSessionResponse buildPaymentSessionResponse(SubscriptionPlan plan, Transaction transaction)
+    private async Task<SubscriptionPaymentSessionResponse> buildPaymentSessionResponse(SubscriptionPlan plan, Transaction transaction)
     {
         var orderCode = int.TryParse(transaction.PaymentGatewayTransactionId, out var parsedOrderCode)
             ? parsedOrderCode
             : 0;
 
-        var paymentInstruction = _vietQrService.createPaymentInstruction(
-            orderCode,
-            transaction.Amount,
-            transaction.Description ?? buildPaymentContent(getManagedPlanDefinition(plan.Name)?.Code ?? plan.Name, orderCode));
+        var payOsInstruction = await getOrCreatePayOsInstruction(plan, transaction, orderCode);
 
         return new SubscriptionPaymentSessionResponse
         {
             TransactionId = transaction.Id,
-            PaymentMethod = "BANK_QR",
+            PaymentMethod = "PAYOS",
             PlanName = plan.Name,
             Amount = transaction.Amount,
-            OrderCode = paymentInstruction.OrderCode,
-            PaymentContent = paymentInstruction.TransferContent,
-            CheckoutUrl = paymentInstruction.CheckoutUrl,
-            QrCodeUrl = paymentInstruction.QrCodeUrl,
-            BankId = paymentInstruction.BankId,
-            AccountNumber = paymentInstruction.AccountNumber,
-            AccountName = paymentInstruction.AccountName,
-            ProviderPaymentId = transaction.PaymentGatewayTransactionId ?? "",
-            Status = "PENDING",
-            ExpiresAt = getPendingTransactionExpiresAt(transaction.CreatedAt)
+            OrderCode = payOsInstruction.OrderCode,
+            PaymentContent = payOsInstruction.TransferContent,
+            CheckoutUrl = payOsInstruction.CheckoutUrl,
+            QrCodeUrl = payOsInstruction.QrCodeUrl,
+            BankId = payOsInstruction.BankId,
+            AccountNumber = payOsInstruction.AccountNumber,
+            AccountName = payOsInstruction.AccountName,
+            ProviderPaymentId = payOsInstruction.PaymentLinkId,
+            Status = resolveSessionStatus(transaction.Status, payOsInstruction.Status),
+            ExpiresAt = payOsInstruction.ExpiresAt
         };
     }
 
@@ -529,7 +538,79 @@ public class SubscriptionService
         transaction.Status == 1 && getPendingTransactionExpiresAt(transaction.CreatedAt) <= nowUtc;
 
     private DateTime getPendingTransactionExpiresAt(DateTime createdAtUtc) =>
-        createdAtUtc.AddMinutes(Math.Max(1, _vietQrOptions.ExpiresAfterMinutes));
+        createdAtUtc.AddMinutes(Math.Max(1, _payOsOptions.ExpiresAfterMinutes));
+
+    private async Task<PayOsPaymentInstruction> getOrCreatePayOsInstruction(
+        SubscriptionPlan plan,
+        Transaction transaction,
+        int orderCode)
+    {
+        if (orderCode <= 0)
+            throw new InvalidOperationException("Ma giao dich PayOS khong hop le.");
+
+        var existingInstruction = await _payOsService.getPaymentInstruction(orderCode);
+        if (existingInstruction != null)
+            return existingInstruction;
+
+        return await _payOsService.createPaymentInstruction(transaction.Id, orderCode, transaction.Amount, plan.Name);
+    }
+
+    private async Task reconcilePendingTransaction(Transaction transaction)
+    {
+        if (transaction.Status is 2 or 3)
+            return;
+
+        if (!int.TryParse(transaction.PaymentGatewayTransactionId, out var orderCode) || orderCode <= 0)
+            return;
+
+        try
+        {
+            var paymentStatus = await _payOsService.getPaymentStatus(orderCode);
+            if (paymentStatus == null)
+                return;
+
+            if (paymentStatus.IsPaid)
+            {
+                await confirmTransfer(
+                    orderCode.ToString(),
+                    paymentStatus.Amount,
+                    true,
+                    paymentStatus.PaymentLinkId,
+                    null);
+                return;
+            }
+
+            if (paymentStatus.IsCancelled)
+            {
+                markTransactionFailed(transaction, DateTime.UtcNow);
+                await _subscriptionRepo.saveChanges();
+            }
+        }
+        catch
+        {
+            // Keep polling-based flow working even when PayOS status lookup is temporarily unavailable.
+        }
+    }
+
+    private static string resolveSessionStatus(int transactionStatus, string? providerStatus)
+    {
+        if (transactionStatus == 2)
+            return "SUCCESS";
+
+        if (transactionStatus == 3)
+            return "FAILED";
+
+        if (transactionStatus == 5)
+            return "WAITING_REVIEW";
+
+        if (string.Equals(providerStatus, "PAID", StringComparison.OrdinalIgnoreCase))
+            return "SUCCESS";
+
+        if (string.Equals(providerStatus, "CANCELLED", StringComparison.OrdinalIgnoreCase))
+            return "FAILED";
+
+        return "PENDING";
+    }
 
     private async Task<TransferConfirmationResult> confirmTransfer(
         string gatewayCode,
@@ -615,108 +696,6 @@ public class SubscriptionService
         result.SubscriptionActivated = true;
         result.Status = "SUCCESS";
         result.Message = "Da kich hoat subscription tu callback noi bo.";
-        return result;
-    }
-
-    private async Task<VnPayProcessInternalResult> processVnPayCallback(IQueryCollection query)
-    {
-        var callback = _vnPayService.validateCallback(query);
-        if (!callback.IsValidSignature)
-        {
-            return new VnPayProcessInternalResult
-            {
-                IsValidSignature = false,
-                Message = callback.Message
-            };
-        }
-
-        if (string.IsNullOrWhiteSpace(callback.OrderCode))
-        {
-            return new VnPayProcessInternalResult
-            {
-                IsValidSignature = true,
-                Message = "Khong tim thay ma don hang VNPay."
-            };
-        }
-
-        var transaction = await _subscriptionRepo.findTransactionByGatewayCode(callback.OrderCode);
-        if (transaction == null)
-        {
-            return new VnPayProcessInternalResult
-            {
-                IsValidSignature = true,
-                TransactionFound = false,
-                Message = "Khong tim thay giao dich thanh toan."
-            };
-        }
-
-        var result = new VnPayProcessInternalResult
-        {
-            IsValidSignature = true,
-            TransactionFound = true,
-            TransactionId = transaction.Id
-        };
-
-        var linkedSubscription = await _subscriptionRepo.hasAnySubscriptionLinkedToTransaction(transaction.Id);
-        if (linkedSubscription || transaction.Status == 2)
-        {
-            result.IsAlreadyProcessed = true;
-            result.IsSuccess = true;
-            result.Message = "Giao dich da duoc xu ly truoc do.";
-            return result;
-        }
-
-        if (transaction.Status == 3)
-        {
-            result.IsAlreadyProcessed = true;
-            result.IsSuccess = false;
-            result.Message = "Giao dich da o trang thai that bai.";
-            return result;
-        }
-
-        var expectedAmount = decimal.Round(transaction.Amount, 0, MidpointRounding.AwayFromZero);
-        var callbackAmount = decimal.Round(callback.Amount, 0, MidpointRounding.AwayFromZero);
-        if (callbackAmount <= 0 || callbackAmount != expectedAmount)
-        {
-            markTransactionFailed(transaction, DateTime.UtcNow);
-            await _subscriptionRepo.saveChanges();
-
-            result.AmountMismatch = true;
-            result.IsSuccess = false;
-            result.Message = "So tien giao dich khong khop.";
-            return result;
-        }
-
-        if (!callback.IsSuccess)
-        {
-            markTransactionFailed(transaction, DateTime.UtcNow);
-            await _subscriptionRepo.saveChanges();
-
-            result.IsSuccess = false;
-            result.Message = "VNPay tra ve trang thai thanh toan that bai.";
-            return result;
-        }
-
-        var nowUtc = DateTime.UtcNow;
-        transaction.Status = 2;
-        transaction.CompletedAt = nowUtc;
-        transaction.UpdatedAt = nowUtc;
-        transaction.UpdatedBy = transaction.UserId;
-
-        var activated = await activateSubscriptionFromTransaction(transaction, nowUtc);
-        if (!activated)
-        {
-            markTransactionFailed(transaction, nowUtc);
-            await _subscriptionRepo.saveChanges();
-
-            result.IsSuccess = false;
-            result.Message = "Khong kich hoat duoc goi subscription tu giao dich thanh toan.";
-            return result;
-        }
-
-        await _subscriptionRepo.saveChanges();
-        result.IsSuccess = true;
-        result.Message = "Da xu ly callback VNPay thanh cong.";
         return result;
     }
 
@@ -979,6 +958,7 @@ public class SubscriptionService
     private static string getTransactionStatusLabel(int status) => status switch
     {
         1 => "Cho thanh toan",
+        5 => "Dang cho xet duyet",
         2 => "Thanh cong",
         3 => "That bai",
         4 => "Da hoan tien",
@@ -1027,6 +1007,18 @@ public class SubscriptionService
             : null;
     }
 
+    private static int? tryExtractOrderCode(string? description)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+            return null;
+
+        var parts = description.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length < 3 || !string.Equals(parts[0], "NM", StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        return int.TryParse(parts[2], out var orderCode) ? orderCode : null;
+    }
+
     private static ManagedPlanDefinition? getManagedPlanDefinition(string? planName) =>
         ManagedPlans.FirstOrDefault(p => string.Equals(p.Name, planName, StringComparison.OrdinalIgnoreCase));
 
@@ -1059,17 +1051,6 @@ public class SubscriptionService
         }
     }
 
-    private sealed class VnPayProcessInternalResult
-    {
-        public bool IsValidSignature { get; set; }
-        public bool TransactionFound { get; set; }
-        public bool IsAlreadyProcessed { get; set; }
-        public bool AmountMismatch { get; set; }
-        public bool IsSuccess { get; set; }
-        public Guid? TransactionId { get; set; }
-        public string Message { get; set; } = "";
-    }
-
     private sealed class TransferConfirmationResult
     {
         public bool IsSuccess { get; set; }
@@ -1078,18 +1059,4 @@ public class SubscriptionService
         public string Status { get; set; } = "";
         public string Message { get; set; } = "";
     }
-}
-
-public class VnPayReturnResult
-{
-    public Guid? TransactionId { get; set; }
-    public bool IsSuccess { get; set; }
-    public string Message { get; set; } = "";
-    public string RedirectUrl { get; set; } = "";
-}
-
-public class VnPayIpnResult
-{
-    public string RspCode { get; set; } = "99";
-    public string Message { get; set; } = "Unknown error";
 }
