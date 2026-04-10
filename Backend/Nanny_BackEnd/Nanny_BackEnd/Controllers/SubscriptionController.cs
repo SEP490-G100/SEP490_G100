@@ -11,10 +11,12 @@ namespace Nanny_BackEnd.Controllers;
 public class SubscriptionController : ControllerBase
 {
     private readonly SubscriptionService _subscriptionService;
+    private readonly VietQrService _vietQrService;
 
-    public SubscriptionController(SubscriptionService subscriptionService)
+    public SubscriptionController(SubscriptionService subscriptionService, VietQrService vietQrService)
     {
         _subscriptionService = subscriptionService;
+        _vietQrService = vietQrService;
     }
 
     [AllowAnonymous]
@@ -115,7 +117,7 @@ public class SubscriptionController : ControllerBase
             return Ok(new
             {
                 success = true,
-                message = "Da tao lien ket thanh toan thanh cong.",
+                message = "Da tao QR chuyen khoan thanh cong.",
                 data = session
             });
         }
@@ -137,6 +139,40 @@ public class SubscriptionController : ControllerBase
             return Ok(success(status));
         }
         catch (KeyNotFoundException ex) { return NotFound(fail(ex.Message)); }
+    }
+
+    [AllowAnonymous]
+    [HttpPost("qr/callback")]
+    public async Task<IActionResult> QrCallback([FromBody] SubscriptionQrCallbackRequest request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(failValidation(ModelState));
+
+        if (!isWebhookAuthorized())
+            return Unauthorized(fail("Webhook token khong hop le."));
+
+        var result = await _subscriptionService.handleQrCallback(request);
+        return Ok(new
+        {
+            success = result.Processed,
+            message = result.Message,
+            data = result
+        });
+    }
+
+    [AllowAnonymous]
+    [HttpPost("vietqr/webhook")]
+    public async Task<IActionResult> VietQrWebhook([FromBody] VietQrWebhookRequest request)
+    {
+        if (!isWebhookAuthorized())
+            return Unauthorized(fail("Webhook token khong hop le."));
+
+        var processed = await _subscriptionService.handleVietQrWebhook(request);
+        return Ok(new
+        {
+            success = true,
+            processed
+        });
     }
 
     [AllowAnonymous]
@@ -185,6 +221,15 @@ public class SubscriptionController : ControllerBase
                ?? User.FindFirst("sub")?.Value;
 
         return Guid.TryParse(sub, out var userId) ? userId : null;
+    }
+
+    private bool isWebhookAuthorized()
+    {
+        var token = Request.Headers["X-Webhook-Token"].FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(token))
+            token = Request.Query["token"].ToString();
+
+        return _vietQrService.isWebhookAuthorized(token);
     }
 
     private static object success(object? data, int? total = null) =>
