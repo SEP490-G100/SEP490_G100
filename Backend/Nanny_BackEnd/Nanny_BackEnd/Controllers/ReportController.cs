@@ -89,32 +89,6 @@ public class ReportController : ControllerBase
         catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
     }
 
-    [HttpPost("conversations/{id:guid}")]
-    public async Task<IActionResult> ReportConversation(Guid id, [FromBody] CreateReportRequest request)
-    {
-        if (!ModelState.IsValid)
-            return BadRequest(FailValidation(ModelState));
-
-        var userId = getCurrentUserId();
-        if (!userId.HasValue)
-            return Unauthorized(Fail("Khong xac dinh duoc nguoi dung hien tai."));
-
-        try
-        {
-            var reportId = await _reportService.ReportConversationAsync(id, userId.Value, request);
-            return Ok(new
-            {
-                success = true,
-                message = "Bao cao cuoc hoi thoai da duoc gui thanh cong.",
-                data = new { reportId, conversationId = id }
-            });
-        }
-        catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
-        catch (UnauthorizedAccessException) { return Forbid(); }
-        catch (RateLimitExceededException ex) { return RateLimit(ex); }
-        catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
-    }
-
     private Guid? getCurrentUserId()
     {
         var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value

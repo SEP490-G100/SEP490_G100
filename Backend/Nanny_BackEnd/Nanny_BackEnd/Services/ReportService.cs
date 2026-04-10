@@ -94,29 +94,6 @@ public class ReportService
         return report.Id;
     }
 
-    public async Task<Guid> ReportConversationAsync(Guid conversationId, Guid reporterUserId, CreateReportRequest request)
-    {
-        var conversation = await _reportRepo.GetConversationForReportAsync(conversationId)
-            ?? throw new KeyNotFoundException("Khong tim thay cuoc hoi thoai.");
-
-        var isParticipant = await _reportRepo.IsConversationParticipantAsync(conversation.Id, reporterUserId);
-        if (!isParticipant)
-            throw new UnauthorizedAccessException("Ban khong phai thanh vien cua cuoc hoi thoai nay.");
-
-        var report = await createReportAsync(reporterUserId, conversation.Id, "Conversation", request);
-
-        var reporter = await _userRepo.FindByIdAsync(reporterUserId);
-        await _notificationService.createNotificationForModerators(
-            "Co bao cao cuoc hoi thoai moi",
-            $"{getDisplayName(reporter)} vua gui bao cao cho mot cuoc hoi thoai.",
-            NotificationTypes.ReportSubmitted,
-            report.Id,
-            "Report",
-            reporterUserId);
-
-        return report.Id;
-    }
-
     public async Task<ReportListResponse> GetModeratorReportsAsync(
         int? status,
         string? entityType,

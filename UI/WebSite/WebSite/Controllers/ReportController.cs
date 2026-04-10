@@ -206,88 +206,6 @@ public class ReportController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ReportConversation(ConversationReportFormModel model, CancellationToken cancellationToken)
-    {
-        if (model.ConversationId == Guid.Empty)
-        {
-            return RedirectToConversationReportReturn(
-                model.ReturnUrl,
-                model.ConversationId,
-                "error",
-                "Khong tim thay cuoc tro chuyen can phan nan.");
-        }
-
-        var reason = ExtractPlainText(model.Reason);
-        if (reason.Length < 5 || reason.Length > 500)
-        {
-            return RedirectToConversationReportReturn(
-                model.ReturnUrl,
-                model.ConversationId,
-                "warning",
-                "Ly do phan nan phai tu 5 den 500 ky tu.");
-        }
-
-        var evidence = NormalizeEvidence(model.Evidence);
-        if (!string.IsNullOrEmpty(evidence) && evidence.Length > 2000)
-        {
-            return RedirectToConversationReportReturn(
-                model.ReturnUrl,
-                model.ConversationId,
-                "warning",
-                "Bang chung khong duoc vuot qua 2000 ky tu.");
-        }
-
-        SetAuthHeader();
-        try
-        {
-            var response = await _http.PostAsJsonAsync(
-                $"/api/reports/conversations/{model.ConversationId}",
-                new
-                {
-                    reason,
-                    evidence
-                },
-                cancellationToken);
-
-            var json = await response.Content.ReadAsStringAsync(cancellationToken);
-            var message = TryExtractMessage(json);
-            var isBusinessSuccess = TryExtractSuccessFlag(json);
-
-            if (response.IsSuccessStatusCode && isBusinessSuccess != false)
-            {
-                await _notificationHub.Clients.Group("role:Moderator").SendAsync("notification:new", new
-                {
-                    type = "report-submitted",
-                    title = "Co bao cao cuoc tro chuyen moi",
-                    message = "Mot bao cao conversation moi vua duoc gui va can moderator xu ly.",
-                    toastType = "warning"
-                }, cancellationToken);
-
-                return RedirectToConversationReportReturn(
-                    model.ReturnUrl,
-                    model.ConversationId,
-                    "success",
-                    message ?? "Gui phan nan cuoc tro chuyen thanh cong.");
-            }
-
-            return RedirectToConversationReportReturn(
-                model.ReturnUrl,
-                model.ConversationId,
-                "error",
-                message ?? "Khong the gui phan nan cuoc tro chuyen.");
-        }
-        catch (Exception)
-        {
-            return RedirectToConversationReportReturn(
-                model.ReturnUrl,
-                model.ConversationId,
-                "error",
-                "Khong the gui phan nan cuoc tro chuyen.");
-        }
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
     public async Task<IActionResult> ReportMessage(MessageReportFormModel model, CancellationToken cancellationToken)
     {
         if (model.MessageId == Guid.Empty)
@@ -525,26 +443,6 @@ public class ReportController : Controller
         return RedirectToAction("ViewUser", "Profile", new
         {
             userId = reportedUserId,
-            toastType,
-            toastMessage
-        });
-    }
-
-    private IActionResult RedirectToConversationReportReturn(
-        string? returnUrl,
-        Guid conversationId,
-        string toastType,
-        string toastMessage)
-    {
-        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
-        {
-            var redirectUrl = BuildToastRedirectUrl(returnUrl, toastType, toastMessage);
-            return LocalRedirect(redirectUrl);
-        }
-
-        return RedirectToAction("Index", "Communication", new
-        {
-            conversationId = conversationId == Guid.Empty ? (Guid?)null : conversationId,
             toastType,
             toastMessage
         });

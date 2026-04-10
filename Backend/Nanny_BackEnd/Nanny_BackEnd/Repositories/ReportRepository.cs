@@ -22,15 +22,6 @@ public class ReportRepository
     public async Task<User?> GetUserForProfileReportAsync(Guid userId) =>
         await _db.Users.FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted);
 
-    public async Task<Conversation?> GetConversationForReportAsync(Guid conversationId) =>
-        await _db.Conversations.FirstOrDefaultAsync(c => c.Id == conversationId && !c.IsDeleted);
-
-    public async Task<bool> IsConversationParticipantAsync(Guid conversationId, Guid userId) =>
-        await _db.ConversationParticipants.AnyAsync(p =>
-            !p.IsDeleted &&
-            p.ConversationId == conversationId &&
-            p.UserId == userId);
-
     public async Task<bool> HasPendingReportAsync(Guid reporterUserId, Guid reportedEntityId, string reportedEntityType) =>
         await _db.Reports.AnyAsync(r =>
             !r.IsDeleted &&

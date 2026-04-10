@@ -16,14 +16,6 @@ public class ProfileReportFormModel
     public string? ReturnUrl { get; set; }
 }
 
-public class ConversationReportFormModel
-{
-    public Guid ConversationId { get; set; }
-    public string Reason { get; set; } = string.Empty;
-    public string? Evidence { get; set; }
-    public string? ReturnUrl { get; set; }
-}
-
 public class MessageReportFormModel
 {
     public Guid MessageId { get; set; }

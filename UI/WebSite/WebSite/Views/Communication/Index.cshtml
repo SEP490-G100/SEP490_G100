@@ -658,36 +658,6 @@
     </div>
 </div>
 
-<!-- ═══ MODAL: Conversation Report ═════════════════════════════════════ -->
-<div id="conversationReportModal" class="nmodal fixed inset-0 z-50 bg-black/50 backdrop-blur-sm items-center justify-center px-4" onclick="if(event.target===this)closeConversationReportModal()">
-    <div class="nmodal-box bg-white rounded-2xl w-full max-w-xl shadow-2xl relative">
-        <div class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
-            <div>
-                <h2 class="text-lg font-bold text-gray-900">Gửi phản nàn cuộc trò chuyện</h2>
-                <p id="conversationReportTarget" class="text-xs text-gray-400 font-semibold mt-0.5">Cuộc trò chuyện</p>
-            </div>
-            <button type="button" onclick="closeConversationReportModal()" class="text-gray-300 hover:text-gray-700 material-icons-round text-2xl transition-colors">close</button>
-        </div>
-        <form id="conversationReportForm" method="post" asp-controller="Report" asp-action="ReportConversation" class="px-6 py-5 space-y-4">
-            @Html.AntiForgeryToken()
-            <input type="hidden" id="conversationReportConversationId" name="ConversationId" />
-            <input type="hidden" id="conversationReportReturnUrl" name="ReturnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
-            <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">Lý do phản nàn <span class="text-red-500">*</span></label>
-                <textarea id="conversationReportReason" name="Reason" rows="4" class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400" placeholder="Nhập lý do phản nàn..."></textarea>
-            </div>
-            <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">Bằng chứng (không bắt buộc)</label>
-                <textarea id="conversationReportEvidence" name="Evidence" rows="3" class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400" placeholder="Mô tả, hình ảnh, video liên quan..."></textarea>
-            </div>
-            <div class="flex gap-2">
-                <button type="button" onclick="closeConversationReportModal()" class="modal-btn modal-btn-secondary w-full">Huỷ</button>
-                <button id="conversationReportSubmitBtn" type="submit" class="modal-btn modal-btn-primary w-full">Gửi phản nàn</button>
-            </div>
-        </form>
-    </div>
-</div>
-
 <!-- ═══ MODAL: Report Message ══════════════════════════════════════════ -->
 <div id="reportModal" class="nmodal fixed inset-0 z-50 bg-black/50 backdrop-blur-sm items-center justify-center px-4" onclick="if(event.target===this)closeReportModal()">
     <div class="nmodal-box bg-white rounded-2xl w-full max-w-xl shadow-2xl relative">
@@ -744,9 +714,7 @@ let activeConvData = null; // { isBlocked, isHidden, blockedByUserId, otherUserI
 let pendingDeleteMsgId = null;
 let pendingReportMsgId = null;
 let isSubmittingMessageReport = false;
-let isSubmittingConversationReport = false;
 let messageReportEditorsReady = false;
-let conversationReportEditorsReady = false;
 let allConversations = [];
 let hubConnection = null;
 let joinedConvId = null;
@@ -782,13 +750,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('sendBtn').addEventListener('click', sendMessage);
     document.getElementById('btnBlockConv').addEventListener('click', toggleBlock);
-    document.getElementById('conversationReportForm')?.addEventListener('submit', handleConversationReportSubmit);
     document.getElementById('messageReportForm')?.addEventListener('submit', handleMessageReportSubmit);
 
-    // Close context menus / conversation menus on outside click
+    // Close context menus on outside click
     document.addEventListener('click', () => {
         closeMessageMenus();
-        closeConversationMenus();
     });
 });
 
@@ -831,19 +797,6 @@ function renderConversations(list) {
                 <span class="conv-time">${time}</span>
                 ${badge}
             </div>
-            <div class="conv-actions">
-                <div class="conv-menu-wrap">
-                    <button type="button" class="conv-more-btn" title="Tùy chọn" onclick="toggleConversationMenu(event,'${conversationId}')">
-                        <span class="material-icons-round" style="font-size:18px;">more_horiz</span>
-                    </button>
-                    <div class="chat-menu-panel conv-menu-panel" id="convMenu-${conversationId}">
-                        <button class="chat-menu-item danger" type="button" onclick="openConversationReportFor(event,'${conversationId}')">
-                            <span class="material-icons-round" style="font-size:16px;">flag</span>
-                            <span>Báo cáo</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
         </div>`;
     }).join('');
 }
@@ -860,11 +813,6 @@ async function openConversation(id) {
     if (activeConvId === id) return;
     const previousId = activeConvId;
     activeConvId = id;
-    const reportConversationIdInput = document.getElementById('conversationReportConversationId');
-    if (reportConversationIdInput) reportConversationIdInput.value = String(id);
-    const reportReturnUrlInput = document.getElementById('conversationReportReturnUrl');
-    if (reportReturnUrlInput) reportReturnUrlInput.value = `/Communication?conversationId=${encodeURIComponent(id)}`;
-    closeConversationMenus();
 
     // Highlight sidebar item
     document.querySelectorAll('.conv-item').forEach(el => el.classList.remove('active'));
@@ -1155,7 +1103,6 @@ function openCtxMenu(e, msgId) {
     e.preventDefault();
     e.stopPropagation();
     toggleMessageMenu(e, msgId);
-    closeConversationMenus();
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -1190,28 +1137,6 @@ async function confirmDelete() {
 // ════════════════════════════════════════════════════════════════════
 //  REPORT
 // ════════════════════════════════════════════════════════════════════
-function toggleConversationMenu(event, conversationId) {
-    event?.preventDefault?.();
-    event?.stopPropagation?.();
-    const panel = document.getElementById(`convMenu-${conversationId}`);
-    if (!panel) return;
-    const willOpen = !panel.classList.contains('open');
-    closeConversationMenus();
-    if (willOpen) panel.classList.add('open');
-}
-
-function closeConversationMenus() {
-    document.querySelectorAll('.conv-menu-panel.open').forEach(m => m.classList.remove('open'));
-}
-
-function openConversationReportFor(event, conversationId) {
-    event?.preventDefault?.();
-    event?.stopPropagation?.();
-    const convEl = document.getElementById(`conv-${conversationId}`);
-    const conversationName = String(convEl?.dataset?.name || '').trim();
-    openConversationReportModal(conversationId, conversationName);
-}
-
 function notifyChat(message, type = 'info') {
     if (typeof window.showToast === 'function') {
         window.showToast(message, { type });
@@ -1333,95 +1258,6 @@ function handleConversationReportTinyFilePicker(callback, meta) {
     });
 }
 
-function ensureConversationReportEditorsInitialized() {
-    if (conversationReportEditorsReady) return;
-    if (typeof tinymce === 'undefined') return;
-
-    tinymce.init({
-        selector: '#conversationReportReason',
-        license_key: 'gpl',
-        menubar: false,
-        branding: false,
-        plugins: 'lists code',
-        toolbar: 'undo redo | bold italic underline | bullist numlist | removeformat | code',
-        height: 160,
-        statusbar: false,
-        content_style: 'body{font-family:Segoe UI,Arial,sans-serif;font-size:14px;line-height:1.6;}'
-    });
-
-    tinymce.init({
-        selector: '#conversationReportEvidence',
-        license_key: 'gpl',
-        menubar: false,
-        branding: false,
-        plugins: 'link lists code image media',
-        toolbar: 'undo redo | bold italic underline | bullist numlist | link image media | removeformat | code',
-        height: 220,
-        automatic_uploads: true,
-        images_upload_handler: function (blobInfo) {
-            return uploadSingleConversationReportImageForTiny(blobInfo);
-        },
-        file_picker_types: 'image media',
-        file_picker_callback: function (callback, _value, meta) {
-            handleConversationReportTinyFilePicker(callback, meta);
-        },
-        statusbar: false,
-        content_style: 'body{font-family:Segoe UI,Arial,sans-serif;font-size:14px;line-height:1.6;} img,video{max-width:100%;height:auto;border-radius:8px;}'
-    });
-
-    conversationReportEditorsReady = true;
-}
-
-function openConversationReportModal(targetConversationId, targetConversationName) {
-    const conversationId = String(targetConversationId || activeConvId || '').trim();
-    const conversationName = String(
-        targetConversationName
-        || document.getElementById(`conv-${conversationId}`)?.dataset?.name
-        || document.getElementById('headerName')?.textContent
-        || ''
-    ).trim();
-
-    if (!conversationId) {
-        notifyChat('Vui lòng chọn cuộc trò chuyện cần báo cáo.', 'warning');
-        closeConversationMenus();
-        return;
-    }
-
-    ensureConversationReportEditorsInitialized();
-
-    const modal = document.getElementById('conversationReportModal');
-    const target = document.getElementById('conversationReportTarget');
-    const conversationIdInput = document.getElementById('conversationReportConversationId');
-    const returnUrlInput = document.getElementById('conversationReportReturnUrl');
-    const submitBtn = document.getElementById('conversationReportSubmitBtn');
-
-    if (target) target.textContent = conversationName ? `Cuộc trò chuyện: ${conversationName}` : 'Cuộc trò chuyện';
-    if (conversationIdInput) conversationIdInput.value = conversationId;
-    if (returnUrlInput) returnUrlInput.value = `/Communication?conversationId=${encodeURIComponent(conversationId)}`;
-    setConversationReportEditorContent('conversationReportReason', '');
-    setConversationReportEditorContent('conversationReportEvidence', '');
-
-    isSubmittingConversationReport = false;
-    if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Gửi phản nàn';
-    }
-
-    if (modal) modal.style.display = 'flex';
-    closeConversationMenus();
-}
-
-function closeConversationReportModal() {
-    const modal = document.getElementById('conversationReportModal');
-    if (modal) modal.style.display = 'none';
-    isSubmittingConversationReport = false;
-    const submitBtn = document.getElementById('conversationReportSubmitBtn');
-    if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Gửi phản nàn';
-    }
-}
-
 function ensureMessageReportEditorsInitialized() {
     if (messageReportEditorsReady) return;
     if (typeof tinymce === 'undefined') return;
@@ -1459,57 +1295,6 @@ function ensureMessageReportEditorsInitialized() {
     });
 
     messageReportEditorsReady = true;
-}
-
-function handleConversationReportSubmit(event) {
-    const conversationId = String(document.getElementById('conversationReportConversationId')?.value || '').trim();
-    const submitBtn = document.getElementById('conversationReportSubmitBtn');
-
-    if (!conversationId) {
-        event.preventDefault();
-        notifyChat('Không tìm thấy cuộc trò chuyện cần báo cáo.', 'error');
-        return;
-    }
-
-    if (typeof tinymce !== 'undefined') tinymce.triggerSave();
-
-    const reasonHtml = getConversationReportEditorContent('conversationReportReason');
-    const evidenceHtml = getConversationReportEditorContent('conversationReportEvidence');
-    const reason = extractConversationReportPlainText(reasonHtml);
-    const evidence = String(evidenceHtml || '').trim();
-
-    if (reason.length < 5 || reason.length > 500) {
-        event.preventDefault();
-        notifyChat('Lý do báo cáo phải từ 5 đến 500 ký tự.', 'warning');
-        if (typeof tinymce !== 'undefined' && tinymce.get('conversationReportReason')) {
-            tinymce.get('conversationReportReason').focus();
-        } else {
-            document.getElementById('conversationReportReason')?.focus();
-        }
-        return;
-    }
-
-    if (evidence.length > 2000) {
-        event.preventDefault();
-        notifyChat('Bằng chứng không được vượt quá 2000 ký tự.', 'warning');
-        if (typeof tinymce !== 'undefined' && tinymce.get('conversationReportEvidence')) {
-            tinymce.get('conversationReportEvidence').focus();
-        } else {
-            document.getElementById('conversationReportEvidence')?.focus();
-        }
-        return;
-    }
-
-    if (isSubmittingConversationReport) {
-        event.preventDefault();
-        return;
-    }
-
-    isSubmittingConversationReport = true;
-    if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Đang gửi...';
-    }
 }
 
 function openReportModal(msgId) {
