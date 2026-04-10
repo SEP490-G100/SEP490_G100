@@ -401,6 +401,22 @@ public class ModeratorController : Controller
             return RedirectToAction(nameof(ManageComplaint));
         }
 
+        if (detail.Status == 1)
+        {
+            TempData["Error"] = "Complaint already completed. Resolution cannot be edited.";
+            var lockedModel = new ModeratorComplaintDetailPageModel
+            {
+                Detail = detail,
+                Form = new ModeratorResolveComplaintRequest
+                {
+                    Resolution = detail.Resolution ?? string.Empty,
+                    ActionTaken = detail.ActionTaken ?? string.Empty,
+                    OffenderNotificationMessage = string.Empty
+                }
+            };
+            return View("~/Views/Moderator/Complaint/ViewComplaintDetail.cshtml", lockedModel);
+        }
+
         if (!ModelState.IsValid)
         {
             var invalidModel = new ModeratorComplaintDetailPageModel
@@ -436,6 +452,27 @@ public class ModeratorController : Controller
 
             if (result?.Success == true)
             {
+                await _notificationHub.Clients.Group($"user:{detail.ReporterUserId}").SendAsync("notification:new", new
+                {
+                    type = "complaint-resolved",
+                    title = "Thong bao tu Moderator",
+                    message = "Chúng tôi đã xử lí yêu cầu phàn nàn của bạn",
+                    toastType = "success"
+                });
+
+                if (!string.IsNullOrWhiteSpace(form.OffenderNotificationMessage)
+                    && detail.OffenderUserId.HasValue
+                    && detail.OffenderUserId.Value != Guid.Empty)
+                {
+                    await _notificationHub.Clients.Group($"user:{detail.OffenderUserId.Value}").SendAsync("notification:new", new
+                    {
+                        type = "complaint-reviewed",
+                        title = "Thong bao tu Moderator",
+                        message = form.OffenderNotificationMessage.Trim(),
+                        toastType = "info"
+                    });
+                }
+
                 return RedirectToAction(nameof(ManageComplaint), new
                 {
                     toastType = "success",

@@ -9,6 +9,7 @@
     var isMessageComplaint = string.Equals(detail.ReportedEntityType, "Message", StringComparison.OrdinalIgnoreCase);
     var isJobPostingComplaint = string.Equals(detail.ReportedEntityType, "JobPosting", StringComparison.OrdinalIgnoreCase);
     var isProfileComplaint = string.Equals(detail.ReportedEntityType, "Profile", StringComparison.OrdinalIgnoreCase);
+    var isCompletedComplaint = detail.Status == 1;
     var offenderName = string.IsNullOrWhiteSpace(detail.OffenderName) ? "Nguoi dung" : detail.OffenderName;
     var messageContent = string.IsNullOrWhiteSpace(detail.ReportedMessageContent) ? "-" : detail.ReportedMessageContent;
     var evidenceRaw = detail.Evidence ?? string.Empty;
@@ -220,10 +221,17 @@
                     </div>
                 </div>
                 <div class="p-5 grid grid-cols-1 gap-4">
+                    @if (isCompletedComplaint)
+                    {
+                        <div class="rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 px-4 py-3 text-sm font-semibold">
+                            Complaint is completed. Editing is locked.
+                        </div>
+                    }
                     <div>
                         <label class="field-label">Resolution</label>
                         <textarea asp-for="Form.Resolution"
                                   rows="5"
+                                  readonly="@(isCompletedComplaint ? "readonly" : null)"
                                   class="search-input w-full border border-gray-200 rounded-xl px-4 py-3 font-medium"
                                   placeholder="Enter resolution..."></textarea>
                         <span asp-validation-for="Form.Resolution" class="text-red-500 text-xs"></span>
@@ -232,6 +240,7 @@
                     <div>
                         <label class="field-label">Action Taken</label>
                         <input asp-for="Form.ActionTaken"
+                               readonly="@(isCompletedComplaint ? "readonly" : null)"
                                class="search-input w-full border border-gray-200 rounded-xl px-4 py-2 font-medium"
                                placeholder="Enter action taken..." />
                         <span asp-validation-for="Form.ActionTaken" class="text-red-500 text-xs"></span>
@@ -241,6 +250,7 @@
                         <label class="field-label">Nhập thông báo đến người bị phàn nàn (optional)</label>
                         <textarea asp-for="Form.OffenderNotificationMessage"
                                   rows="4"
+                                  readonly="@(isCompletedComplaint ? "readonly" : null)"
                                   class="search-input w-full border border-gray-200 rounded-xl px-4 py-3 font-medium"
                                   placeholder="Nhập nội dung thông báo gửi đến người bị phàn nàn (có thể để trống)..."></textarea>
                         <span asp-validation-for="Form.OffenderNotificationMessage" class="text-red-500 text-xs"></span>
@@ -281,14 +291,17 @@
             </div>
 
             <div class="content-card p-4 space-y-2.5">
-                <button type="submit" class="btn-primary w-full justify-center">
-                    <span class="material-icons-round text-base">save</span>
-                    Save Resolution
-                </button>
-                <a href="/Moderator/ManageComplaint" class="btn-outline w-full justify-center">
-                    <span class="material-icons-round text-base">close</span>
-                    Cancel
-                </a>
+                @if (!isCompletedComplaint)
+                {
+                    <button type="submit" class="btn-primary w-full justify-center">
+                        <span class="material-icons-round text-base">save</span>
+                        Save Resolution
+                    </button>
+                    <a href="/Moderator/ManageComplaint" class="btn-outline w-full justify-center">
+                        <span class="material-icons-round text-base">close</span>
+                        Cancel
+                    </a>
+                }
             </div>
         </div>
     </div>

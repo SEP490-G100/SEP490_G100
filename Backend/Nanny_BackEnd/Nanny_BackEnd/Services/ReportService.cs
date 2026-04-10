@@ -138,6 +138,8 @@ public class ReportService
 
         if (report.IsDeleted)
             return (false, 400, "Cannot resolve a deactivated report.");
+        if (report.Status == 1)
+            return (false, 400, "Complaint already completed. Resolution cannot be edited.");
 
         var resolution = request.Resolution?.Trim();
         var actionTaken = request.ActionTaken?.Trim();
@@ -158,6 +160,15 @@ public class ReportService
 
         await _reportRepo.SaveChangesAsync();
 
+        await _notificationService.createNotification(
+            report.ReporterUserId,
+            "Thong bao tu Moderator",
+            "Chúng tôi đã xử lí yêu cầu phàn nàn của bạn",
+            NotificationTypes.ModeratorBroadcast,
+            report.Id,
+            "Report",
+            moderatorUserId);
+
         if (!string.IsNullOrWhiteSpace(offenderNotificationMessage))
         {
             var offenderUserId = await ResolveOffenderUserIdAsync(report);
@@ -165,9 +176,9 @@ public class ReportService
             {
                 await _notificationService.createNotification(
                     offenderUserId.Value,
-                    "Thong bao xu ly phan nan",
+                    "Thong bao tu Moderator",
                     offenderNotificationMessage,
-                    NotificationTypes.AdminBroadcast,
+                    NotificationTypes.ModeratorBroadcast,
                     report.Id,
                     "Report",
                     moderatorUserId);
