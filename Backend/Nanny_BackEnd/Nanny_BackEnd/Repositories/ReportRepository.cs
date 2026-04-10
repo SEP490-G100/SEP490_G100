@@ -22,6 +22,18 @@ public class ReportRepository
     public async Task<User?> GetUserForProfileReportAsync(Guid userId) =>
         await _db.Users.FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted);
 
+    public async Task<Guid?> GetJobPostingOwnerUserIdAsync(Guid jobPostingId) =>
+        await _db.JobPostings
+            .Where(j => j.Id == jobPostingId)
+            .Select(j => (Guid?)j.ParentProfile!.UserId)
+            .FirstOrDefaultAsync();
+
+    public async Task<Guid?> GetMessageSenderUserIdAsync(Guid messageId) =>
+        await _db.Messages
+            .Where(m => m.Id == messageId)
+            .Select(m => (Guid?)m.SenderUserId)
+            .FirstOrDefaultAsync();
+
     public async Task<bool> HasPendingReportAsync(Guid reporterUserId, Guid reportedEntityId, string reportedEntityType) =>
         await _db.Reports.AnyAsync(r =>
             !r.IsDeleted &&

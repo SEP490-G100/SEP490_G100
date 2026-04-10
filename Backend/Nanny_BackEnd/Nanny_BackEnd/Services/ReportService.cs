@@ -139,6 +139,7 @@ public class ReportService
 
         var resolution = request.Resolution?.Trim();
         var actionTaken = request.ActionTaken?.Trim();
+        var offenderNotificationMessage = request.OffenderNotificationMessage?.Trim();
 
         if (string.IsNullOrWhiteSpace(resolution))
             return (false, 400, "Resolution is required.");
@@ -154,6 +155,22 @@ public class ReportService
         report.UpdatedBy = moderatorUserId;
 
         await _reportRepo.SaveChangesAsync();
+
+        if (!string.IsNullOrWhiteSpace(offenderNotificationMessage))
+        {
+            var offenderUserId = await ResolveOffenderUserIdAsync(report);
+            if (offenderUserId.HasValue)
+            {
+                await _notificationService.createNotification(
+                    offenderUserId.Value,
+                    "Thong bao xu ly phan nan",
+                    offenderNotificationMessage,
+                    NotificationTypes.AdminBroadcast,
+                    report.Id,
+                    "Report",
+                    moderatorUserId);
+            }
+        }
 
         return (true, 200, "Report resolved successfully.");
     }
@@ -321,5 +338,19 @@ public class ReportService
             UpdatedAt = report.UpdatedAt,
             IsDeleted = report.IsDeleted
         };
+    }
+
+    private async Task<Guid?> ResolveOffenderUserIdAsync(Report report)
+    {
+        if (report.ReportedEntityType.Equals("Profile", StringComparison.OrdinalIgnoreCase))
+            return report.ReportedEntityId;
+
+        if (report.ReportedEntityType.Equals("Message", StringComparison.OrdinalIgnoreCase))
+            return await _reportRepo.GetMessageSenderUserIdAsync(report.ReportedEntityId);
+
+        if (report.ReportedEntityType.Equals("JobPosting", StringComparison.OrdinalIgnoreCase))
+            return await _reportRepo.GetJobPostingOwnerUserIdAsync(report.ReportedEntityId);
+
+        return null;
     }
 }

@@ -379,7 +379,8 @@ public class ModeratorController : Controller
             Form = new ModeratorResolveReportRequest
             {
                 Resolution = detail.Resolution ?? string.Empty,
-                ActionTaken = detail.ActionTaken ?? string.Empty
+                ActionTaken = detail.ActionTaken ?? string.Empty,
+                OffenderNotificationMessage = string.Empty
             }
         };
         return View("~/Views/Moderator/Report/ViewReportDetail.cshtml", pageModel);
@@ -413,7 +414,10 @@ public class ModeratorController : Controller
         var body = JsonSerializer.Serialize(new
         {
             resolution = form.Resolution?.Trim(),
-            actionTaken = form.ActionTaken?.Trim()
+            actionTaken = form.ActionTaken?.Trim(),
+            offenderNotificationMessage = string.IsNullOrWhiteSpace(form.OffenderNotificationMessage)
+                ? null
+                : form.OffenderNotificationMessage.Trim()
         });
 
         var request = new HttpRequestMessage(HttpMethod.Patch, $"/api/Moderator/reports/{id}/resolve")

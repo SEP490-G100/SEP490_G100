@@ -75,6 +75,9 @@ public class ResolveReportRequest
     [Required(ErrorMessage = "ActionTaken is required.")]
     [StringLength(200, MinimumLength = 1, ErrorMessage = "ActionTaken must be between 1 and 200 characters.")]
     public string ActionTaken { get; set; } = null!;
+
+    [StringLength(1000, ErrorMessage = "OffenderNotificationMessage must not exceed 1000 characters.")]
+    public string? OffenderNotificationMessage { get; set; }
 }
 
 public class ToggleReportStatusRequest

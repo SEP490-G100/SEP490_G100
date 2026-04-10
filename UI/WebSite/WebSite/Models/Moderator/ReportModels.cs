@@ -86,6 +86,9 @@ public class ModeratorResolveReportRequest
     [Required(ErrorMessage = "Action Taken is required.")]
     [StringLength(200, ErrorMessage = "Action Taken must not exceed 200 characters.")]
     public string ActionTaken { get; set; } = "";
+
+    [StringLength(1000, ErrorMessage = "Offender notification message must not exceed 1000 characters.")]
+    public string? OffenderNotificationMessage { get; set; }
 }
 
 public class ModeratorReportDetailPageModel
