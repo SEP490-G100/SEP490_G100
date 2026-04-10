@@ -51,6 +51,19 @@
                             <div class="relative mb-4">
                                 <img alt="Nanny Profile" class="w-full aspect-square object-cover rounded-xl"
                                      src="@(string.IsNullOrWhiteSpace(nanny.AvatarUrl) ? "/img/nanny-logo.jpg" : nanny.AvatarUrl)" />
+                                @if (nanny.FeaturedBadge || nanny.SearchPriority)
+                                {
+                                    <div class="absolute top-2 left-2 flex flex-wrap gap-2">
+                                        @if (nanny.SearchPriority)
+                                        {
+                                            <span class="rounded-full bg-slate-900/85 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.14em] text-white">Nanny Pro</span>
+                                        }
+                                        else if (nanny.FeaturedBadge)
+                                        {
+                                            <span class="rounded-full bg-orange-500/90 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.14em] text-white">Nanny Plus</span>
+                                        }
+                                    </div>
+                                }
                                 <div class="absolute top-2 right-2 bg-white dark:bg-gray-900 px-2 py-1 rounded-lg text-xs font-bold text-gray-900 dark:text-gray-200 shadow-sm">
                                     @FormatSalary(nanny.ExpectedSalaryMin, nanny.ExpectedSalaryMax)
                                 </div>
