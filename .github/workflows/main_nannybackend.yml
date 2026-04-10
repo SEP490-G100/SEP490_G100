@@ -70,3 +70,19 @@ jobs:
           app-name: ${{ env.APP_NAME }}
           slot-name: Production
           package: ${{ env.PUBLISH_PATH }}
+
+      - name: Verify backend health endpoint
+        shell: pwsh
+        run: |
+          $healthUrl = "https://${{ env.APP_NAME }}.azurewebsites.net/health"
+          Write-Host "Checking $healthUrl"
+          try {
+            $response = Invoke-WebRequest -Uri $healthUrl -UseBasicParsing -TimeoutSec 60
+            Write-Host "Health status code: $($response.StatusCode)"
+            if ($response.StatusCode -ne 200) {
+              throw "Health check failed with status code $($response.StatusCode)"
+            }
+          } catch {
+            Write-Error "Backend health check failed: $($_.Exception.Message)"
+            throw
+          }

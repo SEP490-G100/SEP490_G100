@@ -1,107 +1,110 @@
 @model WebSite.Models.Profile.ParentOnboardingWizardViewModel
 @{
-    ViewData["Title"] = "Parent - Thông tin cơ bản";
+    ViewData["Title"] = "Parent - Thong tin co ban";
 }
 
-<div class="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50/30 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-2xl mx-auto">
-        <div class="mb-8">
-            <span class="section-label">👨‍👩‍👧 Parent Onboarding</span>
-            <h1 class="text-3xl font-bold text-gray-900 dark:text-white mt-3">
-                Bước 1: Thông tin cá nhân
-            </h1>
-            <div class="section-divider left mt-4"></div>
-        </div>
-
-        <div class="bg-white dark:bg-gray-800/80 rounded-3xl p-8 shadow-soft border border-gray-100/80 dark:border-gray-700/50 backdrop-blur-sm">
-            <div asp-validation-summary="ModelOnly" class="text-red-500 text-sm mb-4"></div>
-
-            <form asp-action="Step1BasicInfo" method="post" enctype="multipart/form-data">
-                @Html.AntiForgeryToken()
-
-                <input type="hidden" asp-for="Latitude" id="Latitude" />
-                <input type="hidden" asp-for="Longitude" id="Longitude" />
-                <input type="hidden" asp-for="AvatarUrl" />
-
-                <div class="space-y-6">
-                    <div>
-                        <label asp-for="FullName" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                            Họ và tên <span class="text-red-500">*</span>
-                        </label>
-                        <input asp-for="FullName"
-                               class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                               placeholder="VD: Trần Văn B" />
-                        <span asp-validation-for="FullName" class="text-red-500 text-sm mt-1"></span>
+<div class="nm-flow-shell">
+    <div class="nm-flow-container">
+        <div class="nm-flow-card">
+            <div class="nm-flow-card__inner">
+                <div class="nm-flow-header">
+                    <div class="nm-flow-header__content">
+                        <span class="nm-flow-badge">Parent onboarding</span>
+                        <h1 class="nm-flow-title">Hoan thien thong tin co ban</h1>
+                        <p class="nm-flow-subtitle">
+                            Day la thong tin nen de he thong goi y nanny phu hop va hien thi khu vuc cua ban chinh xac hon trong cac luong tim kiem.
+                        </p>
                     </div>
-
-                    <div>
-                        <label asp-for="AvatarFile" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                            Ảnh đại diện (.jpg, .png)
-                        </label>
-                        <input type="file" asp-for="AvatarFile" accept=".jpg,.jpeg,.png,image/jpeg,image/png"
-                               class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 transition-all" />
-                        <div id="avatarUploadError" class="hidden mt-2 text-sm text-red-600"></div>
-                        <div class="mt-3">
-                            <img id="avatarPreview"
-                                 class="hidden w-24 h-24 rounded-2xl object-cover border border-gray-200 dark:border-gray-600"
-                                 alt="Avatar preview" />
-                        </div>
-                        <span asp-validation-for="AvatarFile" class="text-red-500 text-sm mt-1"></span>
+                    <div class="nm-flow-progress" aria-hidden="true">
+                        <span class="nm-progress-step is-active">1</span>
+                        <span class="nm-progress-line"></span>
+                        <span class="nm-progress-step">2</span>
                     </div>
-
-                    <div>
-                        <label asp-for="Address" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                            Địa chỉ chi tiết <span class="text-red-500">*</span>
-                        </label>
-                        <input asp-for="Address" id="Address"
-                               class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                               placeholder="Số nhà, tên đường, ..." />
-                        <span asp-validation-for="Address" class="text-red-500 text-sm mt-1"></span>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label asp-for="City" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                                Tỉnh/Thành phố <span class="text-red-500">*</span>
-                            </label>
-                            <select asp-for="City" id="City"
-                                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all">
-                                <option value="">-- Chọn Tỉnh/Thành --</option>
-                            </select>
-                            <span asp-validation-for="City" class="text-red-500 text-sm mt-1"></span>
-                        </div>
-                        <div>
-                            <label asp-for="District" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                                Phường/Xã <span class="text-red-500">*</span>
-                            </label>
-                            <select asp-for="District" id="District"
-                                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all">
-                                <option value="">-- Chọn Phường/Xã --</option>
-                            </select>
-                            <span asp-validation-for="District" class="text-red-500 text-sm mt-1"></span>
-                        </div>
-                    </div>
-                    <div id="addressLoadError" class="hidden text-sm text-red-600"></div>
                 </div>
 
-                <div class="flex justify-between mt-8">
-                    <a href="@Url.Action("Index", "Home")"
-                       class="px-6 py-2 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm font-semibold">
-                        Bỏ qua
-                    </a>
-                    <button type="submit" name="direction" value="next"
-                            class="px-6 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold text-sm shadow-md">
-                        Tiếp tục
-                    </button>
-                </div>
-            </form>
+                <div asp-validation-summary="ModelOnly" class="nm-alert"></div>
+
+                <form asp-action="Step1BasicInfo" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+
+                    <input type="hidden" asp-for="Latitude" id="Latitude" />
+                    <input type="hidden" asp-for="Longitude" id="Longitude" />
+                    <input type="hidden" asp-for="AvatarUrl" />
+
+                    <div class="nm-form-grid">
+                        <div class="nm-col-12">
+                            <div class="nm-section-card">
+                                <div class="nm-section-title">Thong tin ca nhan</div>
+                                <div class="nm-section-note">Anh dai dien, ho ten va dia chi co ban se duoc dung cho ho so parent sau khi onboarding hoan tat.</div>
+
+                                <div class="nm-form-grid">
+                                    <div class="nm-col-12">
+                                        <div class="nm-field">
+                                            <label asp-for="FullName" class="nm-label">Ho va ten <span class="required">*</span></label>
+                                            <input asp-for="FullName" class="nm-input" placeholder="Tran Van B" />
+                                            <span asp-validation-for="FullName" class="nm-error"></span>
+                                        </div>
+                                    </div>
+
+                                    <div class="nm-col-12">
+                                        <div class="nm-field">
+                                            <label asp-for="AvatarFile" class="nm-label">Anh dai dien</label>
+                                            <input type="file" asp-for="AvatarFile" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="nm-file" />
+                                            <div class="nm-field-hint">Chap nhan dinh dang .jpg, .jpeg, .png. Ban co the bo qua va cap nhat sau.</div>
+                                            <div id="avatarUploadError" class="nm-error hidden"></div>
+                                            <div class="mt-3">
+                                                <img id="avatarPreview" class="nm-avatar-preview hidden" alt="Avatar preview" />
+                                            </div>
+                                            <span asp-validation-for="AvatarFile" class="nm-error"></span>
+                                        </div>
+                                    </div>
+
+                                    <div class="nm-col-12">
+                                        <div class="nm-field">
+                                            <label asp-for="Address" class="nm-label">Dia chi chi tiet <span class="required">*</span></label>
+                                            <input asp-for="Address" id="Address" class="nm-input" placeholder="So nha, ten duong..." />
+                                            <span asp-validation-for="Address" class="nm-error"></span>
+                                        </div>
+                                    </div>
+
+                                    <div class="nm-col-6">
+                                        <div class="nm-field">
+                                            <label asp-for="City" class="nm-label">Tinh / Thanh pho <span class="required">*</span></label>
+                                            <select asp-for="City" id="City" class="nm-select">
+                                                <option value="">Chon tinh / thanh</option>
+                                            </select>
+                                            <span asp-validation-for="City" class="nm-error"></span>
+                                        </div>
+                                    </div>
+
+                                    <div class="nm-col-6">
+                                        <div class="nm-field">
+                                            <label asp-for="District" class="nm-label">Quan / Huyen / Phuong <span class="required">*</span></label>
+                                            <select asp-for="District" id="District" class="nm-select">
+                                                <option value="">Chon khu vuc</option>
+                                            </select>
+                                            <span asp-validation-for="District" class="nm-error"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="addressLoadError" class="nm-error hidden mt-3"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="nm-flow-actions">
+                        <a href="@Url.Action("Index", "Home")" class="nm-btn nm-btn--ghost">Bo qua</a>
+                        <button type="submit" name="direction" value="next" class="nm-btn nm-btn--primary">Tiep tuc</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
 (function () {
-    // Avatar upload: only png/jpg/jpeg + instant preview
     var avatarInput = document.getElementById('AvatarFile');
     var avatarErr = document.getElementById('avatarUploadError');
     var avatarPreview = document.getElementById('avatarPreview');
@@ -133,7 +136,6 @@
         var name = (file.name || '').toLowerCase();
         var extOk = name.endsWith('.png') || name.endsWith('.jpg') || name.endsWith('.jpeg');
         var typeOk = (file.type === 'image/png' || file.type === 'image/jpeg' || file.type === 'image/jpg');
-        // Some browsers may provide empty type; accept based on extension in that case
         return extOk && (typeOk || !file.type);
     }
 
@@ -154,7 +156,7 @@
 
             if (!isAllowedImage(file)) {
                 avatarInput.value = '';
-                showAvatarError('Chỉ cho phép upload ảnh định dạng .png, .jpg, .jpeg.');
+                showAvatarError('Chi cho phep upload anh .png, .jpg, .jpeg.');
                 if (currentAvatarUrl) setPreview(currentAvatarUrl);
                 return;
             }
@@ -170,8 +172,8 @@
     var latEl = document.getElementById('Latitude');
     var lngEl = document.getElementById('Longitude');
     var addressLoadError = document.getElementById('addressLoadError');
-
     var provinces = [];
+
     setAddressSelectState(true);
 
     fetch('/Address/LocationTree')
@@ -196,7 +198,7 @@
         .catch(function () {
             provinces = [];
             setAddressSelectState(true);
-            showAddressLoadError('Khong tai duoc danh sach tinh/thanh. Vui long thu lai sau.');
+            showAddressLoadError('Khong tai duoc danh sach tinh thanh. Vui long thu lai sau.');
         });
 
     function setAddressSelectState(disabled) {
@@ -245,7 +247,7 @@
     }
 
     function onCityChange(callback) {
-        districtSelect.innerHTML = '<option value="">-- Chọn Phường/Xã --</option>';
+        districtSelect.innerHTML = '<option value="">Chon khu vuc</option>';
 
         var selectedCity = normalizeText(citySelect.value);
         var selected = provinces.find(function (p) { return normalizeText(p.name) === selectedCity; });
@@ -276,13 +278,8 @@
         autoGeocode();
     }
 
-    citySelect.addEventListener('change', function () {
-        onCityChange();
-    });
-
-    districtSelect.addEventListener('change', function () {
-        onDistrictChange();
-    });
+    citySelect.addEventListener('change', function () { onCityChange(); });
+    districtSelect.addEventListener('change', function () { onDistrictChange(); });
 
     var debounceTimer;
     addressInput.addEventListener('blur', function () {
@@ -293,7 +290,6 @@
     function autoGeocode() {
         var city = (citySelect.value || '').trim();
         var dist = (districtSelect.value || '').trim();
-
         if (!city) return;
 
         var parts = [];
@@ -306,10 +302,8 @@
             .then(function (items) {
                 if (!items || !items.length) return;
                 var item = items[0];
-
                 var lat = item.latitude != null ? item.latitude : item.Latitude;
                 var lng = item.longitude != null ? item.longitude : item.Longitude;
-
                 if (latEl && lat != null) latEl.value = lat;
                 if (lngEl && lng != null) lngEl.value = lng;
             })

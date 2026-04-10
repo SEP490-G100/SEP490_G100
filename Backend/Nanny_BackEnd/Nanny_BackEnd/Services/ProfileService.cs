@@ -1,4 +1,6 @@
-﻿using Nanny_BackEnd.DTOs.Profile;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Nanny_BackEnd.DTOs.Profile;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
 
@@ -15,6 +17,8 @@ public class ProfileService
     private readonly NannyAvailabilityRepository _nannyAvailabilityRepo;
     private readonly IWebHostEnvironment _env;
     private readonly GeocodingService _geo;
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ILogger<ProfileService> _logger;
 
     public ProfileService(
         UserRepository userRepo,
@@ -25,7 +29,9 @@ public class ProfileService
         NannyCertificateRepository nannyCertificateRepo,
         NannyAvailabilityRepository nannyAvailabilityRepo,
         IWebHostEnvironment env,
-        GeocodingService geo)
+        GeocodingService geo,
+        IServiceScopeFactory scopeFactory,
+        ILogger<ProfileService> logger)
     {
         _userRepo = userRepo;
         _parentRepo = parentRepo;
@@ -36,6 +42,8 @@ public class ProfileService
         _nannyAvailabilityRepo = nannyAvailabilityRepo;
         _env = env;
         _geo = geo;
+        _scopeFactory = scopeFactory;
+        _logger = logger;
     }
 
     public async Task<string> UploadAvatarAsync(Guid userId, IFormFile file)
@@ -106,6 +114,7 @@ public class ProfileService
         decimal? expectedSalaryMax = null;
         int? maxTravelDistance = null;
         int? verificationStatusCode = null;
+        Guid? nannyProfileId = null;
         List<NannySkillItemDto>? skills = null;
         List<NannyAvailabilityItemDto>? availabilities = null;
         List<NannyCertificateItemDto>? certificates = null;
@@ -115,6 +124,7 @@ public class ProfileService
             var nannyProfile = await _nannyProfileRepo.FindByUserIdAsync(userId);
             if (nannyProfile != null)
             {
+                nannyProfileId = nannyProfile.Id;
                 bio = nannyProfile.Bio;
                 yearsOfExperience = nannyProfile.YearsOfExperience;
                 educationLevel = nannyProfile.EducationLevel.HasValue ? (int)nannyProfile.EducationLevel.Value : null;
@@ -217,6 +227,7 @@ public class ProfileService
         return new PersonalProfileDto
         {
             UserId = user.Id,
+            NannyProfileId = nannyProfileId,
             Email = user.Email,
             FirstName = user.FirstName,
             LastName = user.LastName,
@@ -387,6 +398,15 @@ public class ProfileService
         }
 
         await _userRepo.SaveChangesAsync();
+
+        // Fire-and-forget: cập nhật embedding sau khi nanny sửa profile
+        if (isNanny)
+        {
+            var nannyId = (await _nannyProfileRepo.FindByUserIdAsync(userId))?.Id;
+            if (nannyId.HasValue)
+                _ = EmbedNannyInBackgroundAsync(nannyId.Value);
+        }
+
         return await GetPersonalProfileAsync(userId);
     }
 
@@ -533,4 +553,19 @@ public class ProfileService
         ChildAgeGroup = (byte?)c.ChildAgeGroup,
         CreatedAt = c.CreatedAt
     };
+    
+    // Background embedding helper
+    private async Task EmbedNannyInBackgroundAsync(Guid nannyProfileId)
+    {
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var embedService = scope.ServiceProvider.GetRequiredService<EmbeddingService>();
+            await embedService.EmbedNannyAsync(nannyProfileId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Background re-embed thất bại cho NannyProfileId={NannyProfileId}", nannyProfileId);
+        }
+    }
 }

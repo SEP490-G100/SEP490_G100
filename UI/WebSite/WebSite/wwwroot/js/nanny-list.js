@@ -16,6 +16,7 @@ let nannyScheduleFilters = [];
 let suppressNextNannyMapMove = false;
 let currentNannyDetailId = null;
 let currentNannyDetailUserId = null;
+window.currentNannyDetailUserId = null;
 const NANNY_DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 const NANNY_TIME_LABELS = ['Morning', 'Afternoon', 'Evening', 'Night'];
 const NANNY_FALLBACK_PROVINCES = [
@@ -1181,6 +1182,10 @@ function renderAvailability(slots) {
   return html;
 }
 
+function formatPublicLocation(detail) {
+  return [detail?.ward, detail?.district, detail?.city].filter(Boolean).join(', ');
+}
+
 async function openNannyDetail(id) {
   if (!id) return;
 
@@ -1192,11 +1197,12 @@ async function openNannyDetail(id) {
 
     document.getElementById('nd-avatar').src = detail.avatarUrl || '/img/nanny-logo.jpg';
     document.getElementById('nd-name').textContent = detail.fullName || 'Bảo mẫu';
-    document.getElementById('nd-location').textContent = [detail.address, detail.ward, detail.district, detail.city].filter(Boolean).join(', ') || 'Chưa cập nhật địa chỉ';
+    const publicLocation = formatPublicLocation(detail);
+    document.getElementById('nd-location').textContent = publicLocation || 'Chua cap nhat khu vuc';
     document.getElementById('nd-verify').textContent = detail.verificationStatusLabel || 'Đang cập nhật';
     document.getElementById('nd-bio').textContent = detail.bio || 'Hồ sơ chưa có mô tả.';
-    document.getElementById('nd-phone').textContent = detail.phoneNumber || 'Chưa cập nhật';
-    document.getElementById('nd-address').textContent = [detail.address, detail.ward, detail.district, detail.city].filter(Boolean).join(', ') || 'Chưa cập nhật';
+    document.getElementById('nd-phone').textContent = isParentRole() ? 'Gui request contact de trao doi truc tiep voi nanny' : 'Thong tin lien he chi hien sau khi da ket noi';
+    document.getElementById('nd-address').textContent = publicLocation || 'Chua cap nhat';
     document.getElementById('nd-travel').textContent = detail.maxTravelDistance ? `${detail.maxTravelDistance} km` : 'Chưa cập nhật';
     document.getElementById('nd-completeness').textContent = `${detail.profileCompleteness || 0}%`;
     document.getElementById('nd-age').textContent = detail.age ? `${detail.age} tuổi` : 'Chưa rõ tuổi';
@@ -1215,6 +1221,7 @@ async function openNannyDetail(id) {
 
     currentNannyDetailId = detail.id || id;
     currentNannyDetailUserId = detail.userId || null;
+    window.currentNannyDetailUserId = currentNannyDetailUserId;
 
     const favoriteButton = document.getElementById('nd-favoriteBtn');
     if (favoriteButton) {
@@ -1242,6 +1249,7 @@ async function openNannyDetail(id) {
 function closeNannyDetail() {
   currentNannyDetailId = null;
   currentNannyDetailUserId = null;
+  window.currentNannyDetailUserId = null;
   document.getElementById('nannyDetailModal')?.classList.remove('show');
 }
 

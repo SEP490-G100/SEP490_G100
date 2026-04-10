@@ -24,6 +24,7 @@ public class CommunicationController : Controller
     {
         ViewBag.ApiBaseUrl = _apiBaseUrl;
         ViewBag.InitialConversationId = conversationId;
+        ViewBag.AccessToken = HttpContext.Session.GetString("AccessToken") ?? "";
         return View();
     }
 

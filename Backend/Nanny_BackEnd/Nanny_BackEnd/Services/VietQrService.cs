@@ -1,68 +1,37 @@
-using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json;
+using System.Globalization;
 using Microsoft.Extensions.Options;
 
 namespace Nanny_BackEnd.Services;
 
 public class VietQrService
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNameCaseInsensitive = true
-    };
-
-    private readonly HttpClient _http;
     private readonly VietQrOptions _options;
 
-    public VietQrService(IHttpClientFactory httpFactory, IOptions<VietQrOptions> options)
+    public VietQrService(IOptions<VietQrOptions> options)
     {
-        _http = httpFactory.CreateClient("VietQr");
         _options = options.Value;
     }
 
-    public async Task<VietQrCreatePaymentResponse> createPayment(
-        int orderCode,
-        decimal amount,
-        string description,
-        string buyerName,
-        string buyerEmail,
-        string successUrl,
-        string cancelUrl)
+    public VietQrPaymentInstruction createPaymentInstruction(int orderCode, decimal amount, string transferContent)
     {
         validateOptions();
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, "paymentRequests");
-        request.Headers.Add("x-client-id", _options.ClientId);
-        request.Headers.Add("x-api-key", _options.ApiKey);
-        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        var roundedAmount = decimal.Round(amount, 0, MidpointRounding.AwayFromZero);
+        var expiresAt = DateTime.UtcNow.AddMinutes(Math.Max(1, _options.ExpiresAfterMinutes));
+        var qrCodeUrl = buildQrCodeUrl(roundedAmount, transferContent);
 
-        var payload = new VietQrCreatePaymentRequest
+        return new VietQrPaymentInstruction
         {
             OrderCode = orderCode,
-            Amount = (int)Math.Round(amount, MidpointRounding.AwayFromZero),
-            Description = description,
-            BuyerName = buyerName,
-            BuyerEmail = buyerEmail,
-            Template = _options.Template,
-            CancelUrl = cancelUrl,
-            SuccessUrl = successUrl
+            Amount = roundedAmount,
+            TransferContent = transferContent,
+            QrCodeUrl = qrCodeUrl,
+            CheckoutUrl = qrCodeUrl,
+            BankId = _options.BankId,
+            AccountNumber = _options.AccountNumber,
+            AccountName = _options.AccountName,
+            ExpiresAt = expiresAt
         };
-
-        request.Content = new StringContent(
-            JsonSerializer.Serialize(payload),
-            Encoding.UTF8,
-            "application/json");
-
-        using var response = await _http.SendAsync(request);
-        var json = await response.Content.ReadAsStringAsync();
-        var result = JsonSerializer.Deserialize<VietQrCreatePaymentResponse>(json, JsonOptions)
-            ?? throw new InvalidOperationException("Khong doc duoc phan hoi tu VietQR.");
-
-        if (!response.IsSuccessStatusCode || !string.Equals(result.Code, "00", StringComparison.OrdinalIgnoreCase) || result.Data == null)
-            throw new InvalidOperationException(result.Desc ?? "Khong the tao lien ket thanh toan VietQR.");
-
-        return result;
     }
 
     public bool isWebhookAuthorized(string? secureToken)
@@ -79,17 +48,32 @@ public class VietQrService
 
     private void validateOptions()
     {
-        if (string.IsNullOrWhiteSpace(_options.ClientId) ||
-            string.IsNullOrWhiteSpace(_options.ApiKey) ||
-            string.IsNullOrWhiteSpace(_options.SuccessUrl) ||
-            string.IsNullOrWhiteSpace(_options.CancelUrl))
+        if (string.IsNullOrWhiteSpace(_options.BankId) ||
+            string.IsNullOrWhiteSpace(_options.AccountNumber) ||
+            string.IsNullOrWhiteSpace(_options.AccountName))
         {
-            throw new InvalidOperationException("Vui long cau hinh day du VietQR: ClientId, ApiKey, SuccessUrl, CancelUrl.");
+            throw new InvalidOperationException(
+                "Vui long cau hinh day du VietQR: BankId, AccountNumber, AccountName.");
         }
+    }
+
+    private string buildQrCodeUrl(decimal amount, string transferContent)
+    {
+        var normalizedBaseUrl = _options.ImageBaseUrl.TrimEnd('/');
+        var template = string.IsNullOrWhiteSpace(_options.Template) ? "compact2" : _options.Template.Trim();
+        var encodedAmount = Uri.EscapeDataString(amount.ToString("0", CultureInfo.InvariantCulture));
+        var encodedContent = Uri.EscapeDataString(transferContent);
+        var encodedAccountName = Uri.EscapeDataString(_options.AccountName);
+
+        return
+            $"{normalizedBaseUrl}/{_options.BankId}-{_options.AccountNumber}-{template}.png?amount={encodedAmount}&addInfo={encodedContent}&accountName={encodedAccountName}";
     }
 
     private static string buildReturnUrl(string baseUrl, Guid transactionId, bool cancelled)
     {
+        if (string.IsNullOrWhiteSpace(baseUrl))
+            return "";
+
         if (baseUrl.Contains("{transactionId}", StringComparison.OrdinalIgnoreCase))
             return baseUrl.Replace("{transactionId}", transactionId.ToString(), StringComparison.OrdinalIgnoreCase);
 
@@ -100,33 +84,17 @@ public class VietQrService
 
         return url;
     }
-
-    private sealed class VietQrCreatePaymentRequest
-    {
-        public int OrderCode { get; set; }
-        public int Amount { get; set; }
-        public string Description { get; set; } = "";
-        public string BuyerName { get; set; } = "";
-        public string BuyerEmail { get; set; } = "";
-        public string Template { get; set; } = "";
-        public string CancelUrl { get; set; } = "";
-        public string SuccessUrl { get; set; } = "";
-    }
 }
 
-public class VietQrCreatePaymentResponse
+public class VietQrPaymentInstruction
 {
-    public string? Code { get; set; }
-    public string? Desc { get; set; }
-    public VietQrCreatePaymentData? Data { get; set; }
-}
-
-public class VietQrCreatePaymentData
-{
-    public string Id { get; set; } = "";
-    public decimal Amount { get; set; }
-    public string Description { get; set; } = "";
     public int OrderCode { get; set; }
-    public string Status { get; set; } = "";
+    public decimal Amount { get; set; }
+    public string TransferContent { get; set; } = "";
+    public string QrCodeUrl { get; set; } = "";
     public string CheckoutUrl { get; set; } = "";
+    public string BankId { get; set; } = "";
+    public string AccountNumber { get; set; } = "";
+    public string AccountName { get; set; } = "";
+    public DateTime ExpiresAt { get; set; }
 }

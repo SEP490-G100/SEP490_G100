@@ -136,6 +136,12 @@ public class SubscriptionRepository
         await _db.Transactions
             .FirstOrDefaultAsync(t => t.Id == transactionId && t.UserId == userId && !t.IsDeleted);
 
+    public async Task<List<Transaction>> getPendingSubscriptionTransactions(Guid userId) =>
+        await _db.Transactions
+            .Where(t => t.UserId == userId && !t.IsDeleted && t.Type == 1 && t.Status == 1)
+            .OrderByDescending(t => t.CreatedAt)
+            .ToListAsync();
+
     public async Task<Transaction?> findTransactionByGatewayCode(string gatewayCode) =>
         await _db.Transactions
             .FirstOrDefaultAsync(t => t.PaymentGatewayTransactionId == gatewayCode && !t.IsDeleted);
