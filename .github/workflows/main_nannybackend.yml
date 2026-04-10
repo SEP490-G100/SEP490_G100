@@ -11,6 +11,7 @@ env:
   PROJECT_PATH: Backend/Nanny_BackEnd/Nanny_BackEnd/Nanny_BackEnd.csproj
   PUBLISH_PATH: ${{ github.workspace }}/backendapp
   APP_NAME: nannymatch-be-g100
+  APP_URL: https://nannymatch-be-g100-e6bpfjb4aza0fpfa.southeastasia-01.azurewebsites.net
 
 jobs:
   build:
@@ -74,7 +75,7 @@ jobs:
       - name: Verify backend health endpoint
         shell: pwsh
         run: |
-          $healthUrl = "https://${{ env.APP_NAME }}.azurewebsites.net/health"
+          $healthUrl = "${{ env.APP_URL }}/health"
           Write-Host "Checking $healthUrl"
           try {
             $response = Invoke-WebRequest -Uri $healthUrl -UseBasicParsing -TimeoutSec 60
