@@ -950,6 +950,10 @@
     gap: 12px;
 }
 
+.sub-result-inline-form {
+    margin: 0;
+}
+
 .sub-result-btn {
     width: auto;
     min-width: 220px;

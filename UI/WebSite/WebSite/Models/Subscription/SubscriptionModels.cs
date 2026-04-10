@@ -189,6 +189,21 @@ public class SubscriptionPaymentResultPageViewModel
     public SubscriptionPaymentStatusViewModel? PaymentStatus { get; set; }
 }
 
+public class MarkSubscriptionTransferredViewModel
+{
+    [JsonPropertyName("transactionId")]
+    public Guid TransactionId { get; set; }
+
+    [JsonPropertyName("transactionStatus")]
+    public int TransactionStatus { get; set; }
+
+    [JsonPropertyName("transactionStatusLabel")]
+    public string TransactionStatusLabel { get; set; } = "";
+
+    [JsonPropertyName("message")]
+    public string Message { get; set; } = "";
+}
+
 public class SubscriptionPageViewModel
 {
     public string CurrentRole { get; set; } = "Guest";

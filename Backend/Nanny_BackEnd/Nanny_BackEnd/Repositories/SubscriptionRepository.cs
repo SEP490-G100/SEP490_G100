@@ -138,7 +138,7 @@ public class SubscriptionRepository
 
     public async Task<List<Transaction>> getPendingSubscriptionTransactions(Guid userId) =>
         await _db.Transactions
-            .Where(t => t.UserId == userId && !t.IsDeleted && t.Type == 1 && t.Status == 1)
+            .Where(t => t.UserId == userId && !t.IsDeleted && t.Type == 1 && (t.Status == 1 || t.Status == 5))
             .OrderByDescending(t => t.CreatedAt)
             .ToListAsync();
 

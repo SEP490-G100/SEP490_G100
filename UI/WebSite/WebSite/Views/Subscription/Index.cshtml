@@ -243,6 +243,7 @@
                         var statusClass = transaction.Status switch
                         {
                             1 => "pending",
+                            5 => "pending",
                             2 => "success",
                             3 => "failed",
                             _ => "unknown"
@@ -292,8 +293,8 @@
     <section class="sub-pay-panel" role="dialog" aria-modal="true" aria-labelledby="subPayTitle">
         <button type="button" class="sub-pay-close" id="subPayCloseBtn" aria-label="Dong">&times;</button>
         <p class="sub-pay-kicker">Thanh toan subscription</p>
-        <h3 id="subPayTitle" class="sub-pay-title">Quet QR de thanh toan</h3>
-        <p class="sub-pay-desc">Sau khi quet QR va chuyen khoan, backend se doi soat callback noi bo va tu dong kich hoat goi khi giao dich hop le.</p>
+        <h3 id="subPayTitle" class="sub-pay-title">Thanh toan qua PayOS</h3>
+        <p class="sub-pay-desc">Quet QR hoac mo trang thanh toan PayOS. Giao dich hop le se duoc callback ve he thong va tu dong kich hoat goi.</p>
 
         <div class="sub-pay-main">
             <div class="sub-pay-qr-wrap">
@@ -314,7 +315,7 @@
         </div>
 
         <div class="sub-pay-actions">
-            <a id="subPayCheckoutLink" href="#" target="_blank" rel="noopener" class="sub-secondary-btn">Mo QR o tab moi</a>
+            <a id="subPayCheckoutLink" href="#" target="_blank" rel="noopener" class="sub-secondary-btn">Mo trang thanh toan PayOS</a>
             <a id="subPayResultLink" href="#" class="sub-primary-btn">Xem ket qua</a>
         </div>
     </section>
@@ -451,7 +452,7 @@
 
                     submitBtn.disabled = true;
                     const oldLabel = submitBtn.textContent;
-                    submitBtn.textContent = 'Dang tao QR thanh toan...';
+                    submitBtn.textContent = 'Dang tao phien PayOS...';
 
                     const formData = new URLSearchParams(new FormData(form));
                     try {
@@ -473,6 +474,11 @@
                         }
 
                         const data = result.data;
+                        if (data.status === 'WAITING_REVIEW') {
+                            window.location.href = `/Subscription/PaymentResult?transactionId=${data.transactionId}`;
+                            return;
+                        }
+
                         if (!data.qrCodeUrl && !data.checkoutUrl) {
                             notify('Khong tao duoc ma QR thanh toan.', 'error');
                             return;
