@@ -24,9 +24,9 @@
     PersonalProfileViewModel? nannyVerifyPromptProfile = null;
     var showNannyVerifyPrompt = false;
     var nannyVerifyPromptUrl = "/NannyVerificationRequest/Submit";
-    var nannyVerifyPromptButton = "Xac minh ID ngay";
+    var nannyVerifyPromptButton = "Xác minh ID ngay";
     var nannyVerifyPromptStatusClass = "is-not-submitted";
-    var nannyVerifyPromptStatusText = "Chua gui xac minh";
+    var nannyVerifyPromptStatusText = "Chưa gửi xác minh";
 
     if (canCheckNannyVerifyPrompt)
     {
@@ -64,16 +64,16 @@
                             if (verificationCode == 1)
                             {
                                 nannyVerifyPromptUrl = "/NannyVerificationRequest";
-                                nannyVerifyPromptButton = "Xem yeu cau xac minh";
+                                nannyVerifyPromptButton = "Xem yêu cầu xác minh";
                                 nannyVerifyPromptStatusClass = "is-pending";
-                                nannyVerifyPromptStatusText = "Dang cho duyet";
+                                nannyVerifyPromptStatusText = "Đang chờ duyệt";
                             }
                             else if (verificationCode == 3)
                             {
                                 nannyVerifyPromptUrl = "/NannyVerificationRequest";
-                                nannyVerifyPromptButton = "Xem va gui lai ho so";
+                                nannyVerifyPromptButton = "Xem và gửi lại hồ sơ";
                                 nannyVerifyPromptStatusClass = "is-rejected";
-                                nannyVerifyPromptStatusText = "Da bi tu choi";
+                                nannyVerifyPromptStatusText = "Đã bị từ chối";
                             }
                         }
                     }
@@ -1097,21 +1097,27 @@
     {
         <div id="nmVerifyPromptOverlay" class="nm-verify-overlay" aria-hidden="true">
             <div class="nm-verify-card" role="dialog" aria-modal="true" aria-labelledby="nmVerifyPromptTitle">
-                <button type="button" class="nm-verify-close" id="nmVerifyPromptClose" aria-label="Dong">
+                <button type="button" class="nm-verify-close" id="nmVerifyPromptClose" aria-label="Đóng">
                     <span class="material-icons-round">close</span>
                 </button>
 
                 <div class="nm-verify-body">
-                    <h2 id="nmVerifyPromptTitle" class="nm-verify-title">Xac minh ID de mo khoa ket noi</h2>
+                    <span class="nm-verify-status @nannyVerifyPromptStatusClass">
+                        <span class="material-icons-round">shield</span>
+                        <span>@nannyVerifyPromptStatusText</span>
+                    </span>
+                    <h2 id="nmVerifyPromptTitle" class="nm-verify-title">Xác minh ID để mở khóa kết nối</h2>
                     <p class="nm-verify-subtitle">
-                        Ho so nanny cua @(string.IsNullOrWhiteSpace(nannyVerifyPromptProfile?.FirstName) ? "ban" : nannyVerifyPromptProfile!.FirstName)
-                        chua hoan tat xac minh giay to. Khi xac minh xong, phu huynh se tin tuong hon khi xem ho so va gui contact request.
+                        Hồ sơ nanny của @(string.IsNullOrWhiteSpace(nannyVerifyPromptProfile?.FirstName) ? "bạn" : nannyVerifyPromptProfile!.FirstName)
+                        chưa hoàn tất xác minh giấy tờ. Khi xác minh xong, phụ huynh sẽ tin tưởng hơn khi xem hồ sơ và gửi contact request.
                     </p>
 
                     <div class="nm-verify-hero" aria-hidden="true">
-                        <span class="material-icons-round"> </span>
+                        <span class="nm-verify-hero-core">
+                            <span class="material-icons-round">badge</span>
+                        </span>
                         <span class="nm-verify-hero-badge">
-                            <span class="material-icons-round style=" color: #fff">badge">verified_user</span>
+                            <span class="material-icons-round">verified</span>
                         </span>
                     </div>
                 </div>
@@ -1119,7 +1125,7 @@
                 <div class="nm-verify-footer">
                     <div class="nm-verify-actions">
                         <a href="@nannyVerifyPromptUrl" class="nm-verify-primary">
-                            <span class="material-icons-round text-[20px]">arrow_upward</span>
+                            <span class="material-icons-round">arrow_upward</span>
                             <span>@nannyVerifyPromptButton</span>
                         </a>
                     </div>

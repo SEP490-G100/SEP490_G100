@@ -5,14 +5,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 20px;
+    padding: 24px;
     background:
-        linear-gradient(180deg, rgba(15, 23, 42, 0.34), rgba(15, 23, 42, 0.58)),
-        radial-gradient(circle at top left, rgba(251, 146, 60, 0.16), transparent 26%),
-        radial-gradient(circle at bottom right, rgba(244, 114, 182, 0.10), transparent 24%);
+        radial-gradient(circle at 15% 20%, rgba(251, 146, 60, 0.14), transparent 42%),
+        radial-gradient(circle at 85% 80%, rgba(59, 130, 246, 0.10), transparent 45%),
+        linear-gradient(180deg, rgba(15, 23, 42, 0.42), rgba(15, 23, 42, 0.62));
+    backdrop-filter: blur(6px);
     opacity: 0;
     visibility: hidden;
-    transition: opacity .42s ease, visibility .42s ease;
+    transition: opacity .32s ease, visibility .32s ease;
     pointer-events: none;
 }
 
@@ -27,17 +28,17 @@
 }
 
 .nm-verify-card {
-    width: min(980px, calc(100vw - 28px));
+    width: min(720px, calc(100vw - 28px));
     position: relative;
     overflow: hidden;
-    border-radius: 32px;
-    border: 1px solid rgba(251, 191, 36, 0.18);
+    border-radius: 28px;
+    border: 1px solid rgba(251, 191, 36, 0.22);
     background:
-        radial-gradient(circle at top left, rgba(255, 237, 213, 0.65), transparent 34%),
-        linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,250,245,.98));
-    box-shadow: 0 28px 60px rgba(15, 23, 42, 0.22);
-    transform: translateY(88px) scale(.965);
-    transition: transform .52s cubic-bezier(.16,1,.3,1), opacity .42s ease;
+        radial-gradient(circle at top left, rgba(255, 237, 213, 0.72), transparent 45%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(255, 248, 240, 0.99));
+    box-shadow: 0 26px 62px rgba(15, 23, 42, 0.24);
+    transform: translateY(40px) scale(.97);
+    transition: transform .36s cubic-bezier(.16, 1, .3, 1), opacity .3s ease;
     opacity: 0;
     will-change: transform, opacity;
 }
@@ -49,73 +50,91 @@
 
 .nm-verify-close {
     position: absolute;
-    top: 18px;
-    right: 18px;
-    width: 42px;
-    height: 42px;
+    top: 16px;
+    right: 16px;
+    width: 44px;
+    height: 44px;
     border-radius: 14px;
-    border: 1px solid rgba(251, 146, 60, 0.18);
-    background: rgba(255,255,255,.84);
+    border: 1px solid rgba(251, 146, 60, 0.24);
+    background: rgba(255, 255, 255, 0.92);
     color: #6b7280;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: all .2s ease;
+    z-index: 2;
+    transition: all .18s ease;
+}
+
+.nm-verify-close .material-icons-round {
+    font-size: 22px;
 }
 
 .nm-verify-close:hover {
     color: #c2410c;
     background: #fff7ed;
-    transform: translateY(-1px);
+    transform: translateY(-1px) scale(1.02);
 }
 
 .nm-verify-body {
-    padding: 36px 34px 28px;
+    padding: 30px 34px 16px;
     text-align: center;
 }
 
 .nm-verify-title {
-    font-size: clamp(28px, 3vw, 40px);
+    margin-top: 14px;
+    font-size: clamp(30px, 3vw, 46px);
     font-weight: 800;
     color: #0f172a;
-    line-height: 1.08;
+    line-height: 1.12;
+    letter-spacing: -0.01em;
 }
 
 .nm-verify-subtitle {
     margin: 12px auto 0;
-    max-width: 720px;
+    max-width: 620px;
     color: #64748b;
-    font-size: 15px;
-    line-height: 1.75;
+    font-size: 17px;
+    line-height: 1.68;
 }
 
 .nm-verify-hero {
-    margin: 28px auto 20px;
+    margin: 22px auto 8px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 200px;
-    height: 200px;
-    border-radius: 40px;
+    width: 148px;
+    height: 148px;
+    border-radius: 36px;
     background:
-        radial-gradient(circle at top left, rgba(255,255,255,.7), transparent 38%),
-        linear-gradient(135deg, #fff7ed, #ffedd5);
-    border: 1px solid rgba(251, 191, 36, 0.28);
-    box-shadow: 0 20px 38px rgba(249, 115, 22, 0.16);
+        radial-gradient(circle at top left, rgba(255, 255, 255, .75), transparent 38%),
+        linear-gradient(140deg, #fff7ed, #ffedd5);
+    border: 1px solid rgba(251, 191, 36, 0.34);
+    box-shadow: 0 20px 38px rgba(249, 115, 22, 0.2);
     position: relative;
 }
 
-.nm-verify-hero .material-icons-round {
-    font-size: 70px;
-    color: #f97316;
+.nm-verify-hero-core {
+    width: 84px;
+    height: 84px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, #fb923c, #f97316);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 14px 30px rgba(249, 115, 22, 0.35);
+}
+
+.nm-verify-hero-core .material-icons-round {
+    font-size: 44px;
 }
 
 .nm-verify-hero-badge {
     position: absolute;
-    right: -8px;
+    right: -10px;
     bottom: -8px;
-    width: 52px;
-    height: 52px;
+    width: 50px;
+    height: 50px;
     border-radius: 18px;
     border: 4px solid #fff;
     background: linear-gradient(135deg, #fb923c, #f97316);
@@ -126,19 +145,29 @@
     box-shadow: 0 16px 28px rgba(249, 115, 22, 0.22);
 }
 
+.nm-verify-hero-badge .material-icons-round {
+    font-size: 28px;
+}
+
 .nm-verify-status {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    min-height: 38px;
-    padding: 0 16px;
+    gap: 7px;
+    min-height: 36px;
+    padding: 0 14px;
     border-radius: 999px;
-    margin-top: 6px;
+    margin-top: 4px;
     background: #fff7ed;
     border: 1px solid #fed7aa;
     color: #c2410c;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.nm-verify-status .material-icons-round {
+    font-size: 16px;
 }
 
 .nm-verify-status.is-pending {
@@ -160,37 +189,42 @@
 }
 
 .nm-verify-footer {
-    padding: 18px 22px 22px;
-    border-top: 1px solid rgba(251, 191, 36, 0.16);
-    background: rgba(255,255,255,.55);
+    padding: 18px 22px 24px;
+    border-top: 1px solid rgba(251, 191, 36, 0.14);
+    background: rgba(255, 255, 255, .62);
 }
 
 .nm-verify-actions {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 12px;
+    display: flex;
+    justify-content: center;
     align-items: center;
+    gap: 10px;
 }
 
 .nm-verify-primary {
-    min-height: 54px;
+    min-height: 56px;
     border-radius: 999px;
-    padding: 0 24px;
+    min-width: min(380px, 100%);
+    padding: 0 28px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
     color: #fff;
-    font-size: 15px;
+    font-size: 17px;
     font-weight: 800;
-    background: linear-gradient(135deg, #f97316, #ea580c);
-    box-shadow: 0 18px 34px rgba(249, 115, 22, 0.24);
-    transition: all .22s ease;
+    background: linear-gradient(135deg, #fb7406, #f25a03);
+    box-shadow: 0 16px 34px rgba(249, 115, 22, 0.3);
+    transition: all .2s ease;
+}
+
+.nm-verify-primary .material-icons-round {
+    font-size: 22px;
 }
 
 .nm-verify-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 22px 40px rgba(249, 115, 22, 0.28);
+    transform: translateY(-1px) scale(1.01);
+    box-shadow: 0 20px 40px rgba(249, 115, 22, 0.34);
 }
 
 .nm-verify-secondary {
@@ -213,25 +247,52 @@
 
 @media (max-width: 768px) {
     .nm-verify-body {
-        padding: 30px 20px 20px;
+        padding: 26px 18px 14px;
     }
 
     .nm-verify-footer {
         padding: 16px;
     }
 
-    .nm-verify-actions {
-        grid-template-columns: 1fr;
+    .nm-verify-title {
+        margin-top: 10px;
+        font-size: clamp(24px, 7vw, 32px);
     }
 
-    .nm-verify-secondary,
-    .nm-verify-primary {
-        width: 100%;
+    .nm-verify-subtitle {
+        font-size: 15px;
+        line-height: 1.55;
     }
 
     .nm-verify-hero {
-        width: 126px;
-        height: 126px;
-        border-radius: 32px;
+        width: 118px;
+        height: 118px;
+        border-radius: 30px;
+        margin-top: 18px;
+    }
+
+    .nm-verify-hero-core {
+        width: 70px;
+        height: 70px;
+        border-radius: 20px;
+    }
+
+    .nm-verify-hero-core .material-icons-round {
+        font-size: 36px;
+    }
+
+    .nm-verify-hero-badge {
+        width: 44px;
+        height: 44px;
+        border-radius: 15px;
+    }
+
+    .nm-verify-hero-badge .material-icons-round {
+        font-size: 24px;
+    }
+
+    .nm-verify-primary {
+        min-width: 100%;
+        font-size: 16px;
     }
 }
