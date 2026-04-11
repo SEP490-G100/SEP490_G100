@@ -7,13 +7,6 @@
     var rating = Model.AverageRating ?? 0m;
     var isReadOnly = Model.IsReadOnlyView;
     var canEditProfile = !isReadOnly;
-    var canShowFavoriteHeart = User.IsInRole("Parent") && isNanny;
-    var canContactNanny = isReadOnly && User.IsInRole("Parent") && isNanny;
-    var currentUserId = Guid.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var parsedUserId)
-        ? parsedUserId
-        : Guid.Empty;
-    var canReportProfile = isReadOnly && Model.UserId != Guid.Empty && Model.UserId != currentUserId;
-    var currentProfileUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
     var suppressEngagementActions = (bool?)ViewBag.SuppressEngagementActions == true;
     var canShowFavoriteHeart = User.IsInRole("Parent") && isNanny && !suppressEngagementActions;
     var canContactNanny = isReadOnly && User.IsInRole("Parent") && isNanny && Model.UserId != Guid.Empty;
@@ -28,6 +21,12 @@
     var canHireInContactFlow = canMessageInContactFlow;
     var canMessageInHiringFlow = canContactNanny && hasHiringContext;
     var canShowAnyAction = canContactNanny || canShowFavoriteHeart;
+    var isModeratorViewer = User.IsInRole("Moderator");
+    var currentUserId = Guid.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var parsedUserId)
+     ? parsedUserId
+     : Guid.Empty;
+    var canComplainProfile = isReadOnly && !isModeratorViewer && Model.UserId != Guid.Empty && Model.UserId != currentUserId;
+    var currentProfileUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
 
     string EducationLabel(int? level) => level switch
     {
@@ -99,13 +98,20 @@
                 </div>
             </div>
 
+            @if (isModeratorViewer && isReadOnly)
+            {
+                <a href="javascript:void(0);"
+                   onclick="if (window.history.length > 1) { window.history.back(); } else { window.location.href = '/Moderator/ManageComplaint'; }"
+                   class="profile-primary-btn">
+                    Trở về trang trước
+                </a>
+            }
             @if (canEditProfile)
             {
                 <a href="@Url.Action("Edit", "Profile")" class="profile-primary-btn">
                     Chinh sua ho so
                 </a>
             }
-            else if (canContactNanny || canShowFavoriteHeart || canReportProfile)
             else if (canShowAnyAction)
             {
                 <div class="profile-header-actions flex items-center gap-2">
@@ -130,14 +136,6 @@
                             Gui request contact
                         </button>
                     }
-                    @if (canReportProfile)
-                    {
-                        <button type="button"
-                                id="reportProfileBtn"
-                                class="inline-flex items-center justify-center h-10 w-10 rounded-full border border-rose-200 bg-white text-rose-500 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-rose-300 hover:bg-rose-50 hover:shadow-md"
-                                title="Phan nan ho so"
-                                aria-label="Phan nan ho so">
-                            <span class="material-icons-round text-[20px]">flag</span>
 
                     @if (canMessageInContactFlow || canMessageInHiringFlow)
                     {
@@ -363,32 +361,32 @@
     </div>
 </section>
 
-@if (canReportProfile)
+@if (canComplainProfile)
 {
-    <div id="profileReportModal" class="nmodal fixed inset-0 z-50 bg-black/50 backdrop-blur-sm items-center justify-center px-4" onclick="if(event.target===this)closeProfileReportModal()">
+    <div id="profileComplainModal" class="nmodal fixed inset-0 z-50 bg-black/50 backdrop-blur-sm items-center justify-center px-4" onclick="if(event.target===this)closeProfileComplainModal()">
         <div class="nmodal-box bg-white rounded-2xl w-full max-w-xl shadow-2xl relative">
             <div class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
                 <div>
                     <h2 class="text-lg font-bold text-gray-900">Gui phan nan ho so</h2>
                     <p class="text-xs text-gray-400 font-semibold mt-0.5">Ho so: @Model.FirstName @Model.LastName</p>
                 </div>
-                <button type="button" onclick="closeProfileReportModal()" class="text-gray-300 hover:text-gray-700 material-icons-round text-2xl transition-colors">close</button>
+                <button type="button" onclick="closeProfileComplainModal()" class="text-gray-300 hover:text-gray-700 material-icons-round text-2xl transition-colors">close</button>
             </div>
-            <form id="profileReportForm" method="post" asp-controller="Report" asp-action="ReportProfile" class="px-6 py-5 space-y-4">
+            <form id="profileComplainForm" method="post" asp-controller="Complain" asp-action="ComplainProfile" class="px-6 py-5 space-y-4">
                 @Html.AntiForgeryToken()
-                <input type="hidden" id="profileReportedUserId" name="ReportedUserId" value="@Model.UserId" />
+                <input type="hidden" id="profileComplainedUserId" name="ComplainedUserId" value="@Model.UserId" />
                 <input type="hidden" name="ReturnUrl" value="@currentProfileUrl" />
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-2">Ly do phan nan <span class="text-red-500">*</span></label>
-                    <textarea id="profileReportReason" name="Reason" rows="4" class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400" placeholder="Nhap ly do phan nan..."></textarea>
+                    <textarea id="profileComplainReason" name="Reason" rows="4" class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400" placeholder="Nhap ly do phan nan..."></textarea>
                 </div>
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-2">Bang chung (khong bat buoc)</label>
-                    <textarea id="profileReportEvidence" name="Evidence" rows="3" class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400" placeholder="Mo ta, hinh anh, video lien quan..."></textarea>
+                    <textarea id="profileComplainEvidence" name="Evidence" rows="3" class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400" placeholder="Mo ta, hinh anh, video lien quan..."></textarea>
                 </div>
                 <div class="flex gap-2">
-                    <button type="button" onclick="closeProfileReportModal()" class="modal-btn modal-btn-secondary w-full">Huy</button>
-                    <button id="profileReportSubmitBtn" type="submit" class="modal-btn modal-btn-primary w-full">Gui phan nan</button>
+                    <button type="button" onclick="closeProfileComplainModal()" class="modal-btn modal-btn-secondary w-full">Huy</button>
+                    <button id="profileComplainSubmitBtn" type="submit" class="modal-btn modal-btn-primary w-full">Gui phan nan</button>
                 </div>
             </form>
         </div>
@@ -397,7 +395,7 @@
 
 @section Scripts {
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    @if (canReportProfile)
+    @if (canComplainProfile)
     {
         <script src="~/lib/tinymce/tinymce.min.js" asp-append-version="true"></script>
     }
@@ -548,14 +546,14 @@
                 });
             }
 
-            var reportBtn = document.getElementById('reportProfileBtn');
-            var reportModal = document.getElementById('profileReportModal');
-            var reportForm = document.getElementById('profileReportForm');
-            var reportSubmitBtn = document.getElementById('profileReportSubmitBtn');
-            var reportReasonEl = document.getElementById('profileReportReason');
-            var reportEvidenceEl = document.getElementById('profileReportEvidence');
-            var reportEditorsReady = false;
-            var isSubmittingProfileReport = false;
+            var complainBtn = document.getElementById('complainProfileBtn');
+            var complainModal = document.getElementById('profileComplainModal');
+            var complainForm = document.getElementById('profileComplainForm');
+            var complainSubmitBtn = document.getElementById('profileComplainSubmitBtn');
+            var complainReasonEl = document.getElementById('profileComplainReason');
+            var complainEvidenceEl = document.getElementById('profileComplainEvidence');
+            var complainEditorsReady = false;
+            var isSubmittingProfileComplain = false;
 
             function notifyProfileToast(message, type) {
                 if (typeof window.showToast === 'function') {
@@ -563,13 +561,13 @@
                 }
             }
 
-            function extractProfileReportPlainText(html) {
+            function extractProfileComplainPlainText(html) {
                 var div = document.createElement('div');
                 div.innerHTML = String(html || '');
                 return (div.textContent || div.innerText || '').replace(/\s+/g, ' ').trim();
             }
 
-            function getProfileReportEditorContent(editorId) {
+            function getProfileComplainEditorContent(editorId) {
                 if (typeof tinymce !== 'undefined') {
                     var editor = tinymce.get(editorId);
                     if (editor) return editor.getContent();
@@ -578,7 +576,7 @@
                 return input ? (input.value || '') : '';
             }
 
-            function setProfileReportEditorContent(editorId, value) {
+            function setProfileComplainEditorContent(editorId, value) {
                 if (typeof tinymce !== 'undefined') {
                     var editor = tinymce.get(editorId);
                     if (editor) {
@@ -590,7 +588,7 @@
                 if (input) input.value = value || '';
             }
 
-            async function uploadProfileReportMediaFiles(files, endpoint, emptyMessage) {
+            async function uploadProfileComplainMediaFiles(files, endpoint, emptyMessage) {
                 if (!files || !files.length) throw new Error(emptyMessage);
 
                 var formData = new FormData();
@@ -626,7 +624,7 @@
                 return result.data.urls;
             }
 
-            function pickProfileReportFile(accept, multiple) {
+            function pickProfileComplainFile(accept, multiple) {
                 return new Promise(function (resolve) {
                     var input = document.createElement('input');
                     input.type = 'file';
@@ -640,12 +638,12 @@
                 });
             }
 
-            function uploadSingleProfileReportImageForTiny(blobInfo) {
+            function uploadSingleProfileComplainImageForTiny(blobInfo) {
                 return new Promise(async function (resolve, reject) {
                     try {
-                        var urls = await uploadProfileReportMediaFiles(
+                        var urls = await uploadProfileComplainMediaFiles(
                             [blobInfo.blob()],
-                            '/Report/UploadReportMedia?mediaType=image',
+                            '/Complain/UploadComplainMedia?mediaType=image',
                             'Vui long chon it nhat mot anh.');
                         resolve(urls[0]);
                     } catch (error) {
@@ -654,19 +652,19 @@
                 });
             }
 
-            function handleProfileReportTinyFilePicker(callback, meta) {
+            function handleProfileComplainTinyFilePicker(callback, meta) {
                 var isImage = meta.filetype === 'image';
                 var accept = isImage
                     ? 'image/*'
                     : 'video/mp4,video/webm,video/ogg,video/quicktime,.mp4,.webm,.ogg,.mov';
                 var endpoint = isImage
-                    ? '/Report/UploadReportMedia?mediaType=image'
-                    : '/Report/UploadReportMedia?mediaType=video';
+                    ? '/Complain/UploadComplainMedia?mediaType=image'
+                    : '/Complain/UploadComplainMedia?mediaType=video';
 
-                pickProfileReportFile(accept, false).then(async function (file) {
+                pickProfileComplainFile(accept, false).then(async function (file) {
                     if (!file) return;
                     try {
-                        var urls = await uploadProfileReportMediaFiles([file], endpoint, 'Vui long chon file de upload.');
+                        var urls = await uploadProfileComplainMediaFiles([file], endpoint, 'Vui long chon file de upload.');
                         var url = urls[0];
                         if (isImage) callback(url, { alt: file.name || 'image' });
                         else callback(url, { source2: '', poster: '' });
@@ -676,13 +674,13 @@
                 });
             }
 
-            function ensureProfileReportEditorsInitialized() {
-                if (reportEditorsReady) return;
+            function ensureProfileComplainEditorsInitialized() {
+                if (complainEditorsReady) return;
                 if (typeof tinymce === 'undefined') return;
-                if (!reportReasonEl || !reportEvidenceEl) return;
+                if (!complainReasonEl || !complainEvidenceEl) return;
 
                 tinymce.init({
-                    selector: '#profileReportReason',
+                    selector: '#profileComplainReason',
                     license_key: 'gpl',
                     menubar: false,
                     branding: false,
@@ -694,7 +692,7 @@
                 });
 
                 tinymce.init({
-                    selector: '#profileReportEvidence',
+                    selector: '#profileComplainEvidence',
                     license_key: 'gpl',
                     menubar: false,
                     branding: false,
@@ -703,50 +701,50 @@
                     height: 220,
                     automatic_uploads: true,
                     images_upload_handler: function (blobInfo) {
-                        return uploadSingleProfileReportImageForTiny(blobInfo);
+                        return uploadSingleProfileComplainImageForTiny(blobInfo);
                     },
                     file_picker_types: 'image media',
                     file_picker_callback: function (callback, _value, meta) {
-                        handleProfileReportTinyFilePicker(callback, meta);
+                        handleProfileComplainTinyFilePicker(callback, meta);
                     },
                     statusbar: false,
                     content_style: 'body{font-family:Segoe UI,Arial,sans-serif;font-size:14px;line-height:1.6;} img,video{max-width:100%;height:auto;border-radius:8px;}'
                 });
 
-                reportEditorsReady = true;
+                complainEditorsReady = true;
             }
 
-            function openProfileReportModal() {
-                if (!reportModal) return;
-                ensureProfileReportEditorsInitialized();
-                setProfileReportEditorContent('profileReportReason', '');
-                setProfileReportEditorContent('profileReportEvidence', '');
-                isSubmittingProfileReport = false;
-                if (reportSubmitBtn) {
-                    reportSubmitBtn.disabled = false;
-                    reportSubmitBtn.textContent = 'Gui phan nan';
+            function openProfileComplainModal() {
+                if (!complainModal) return;
+                ensureProfileComplainEditorsInitialized();
+                setProfileComplainEditorContent('profileComplainReason', '');
+                setProfileComplainEditorContent('profileComplainEvidence', '');
+                isSubmittingProfileComplain = false;
+                if (complainSubmitBtn) {
+                    complainSubmitBtn.disabled = false;
+                    complainSubmitBtn.textContent = 'Gui phan nan';
                 }
-                reportModal.classList.add('show');
+                complainModal.classList.add('show');
             }
 
-            window.closeProfileReportModal = function () {
-                if (reportModal) reportModal.classList.remove('show');
-                isSubmittingProfileReport = false;
-                if (reportSubmitBtn) {
-                    reportSubmitBtn.disabled = false;
-                    reportSubmitBtn.textContent = 'Gui phan nan';
+            window.closeProfileComplainModal = function () {
+                if (complainModal) complainModal.classList.remove('show');
+                isSubmittingProfileComplain = false;
+                if (complainSubmitBtn) {
+                    complainSubmitBtn.disabled = false;
+                    complainSubmitBtn.textContent = 'Gui phan nan';
                 }
             };
 
-            if (reportBtn && reportModal && reportForm) {
-                reportBtn.addEventListener('click', function () {
-                    openProfileReportModal();
+            if (complainBtn && complainModal && complainForm) {
+                complainBtn.addEventListener('click', function () {
+                    openProfileComplainModal();
                 });
 
-                reportForm.addEventListener('submit', function (event) {
-                    var reportedUserIdInput = document.getElementById('profileReportedUserId');
-                    var reportedUserId = reportedUserIdInput ? String(reportedUserIdInput.value || '').trim() : '';
-                    if (!reportedUserId) {
+                complainForm.addEventListener('submit', function (event) {
+                    var complainedUserIdInput = document.getElementById('profileComplainedUserId');
+                    var complainedUserId = complainedUserIdInput ? String(complainedUserIdInput.value || '').trim() : '';
+                    if (!complainedUserId) {
                         event.preventDefault();
                         notifyProfileToast('Khong tim thay ho so can phan nan.', 'error');
                         return;
@@ -754,18 +752,18 @@
 
                     if (typeof tinymce !== 'undefined') tinymce.triggerSave();
 
-                    var reasonHtml = getProfileReportEditorContent('profileReportReason');
-                    var evidenceHtml = getProfileReportEditorContent('profileReportEvidence');
-                    var reason = extractProfileReportPlainText(reasonHtml);
+                    var reasonHtml = getProfileComplainEditorContent('profileComplainReason');
+                    var evidenceHtml = getProfileComplainEditorContent('profileComplainEvidence');
+                    var reason = extractProfileComplainPlainText(reasonHtml);
                     var evidence = String(evidenceHtml || '').trim();
 
                     if (reason.length < 5 || reason.length > 500) {
                         event.preventDefault();
                         notifyProfileToast('Ly do phan nan phai tu 5 den 500 ky tu.', 'warning');
-                        if (typeof tinymce !== 'undefined' && tinymce.get('profileReportReason')) {
-                            tinymce.get('profileReportReason').focus();
-                        } else if (reportReasonEl) {
-                            reportReasonEl.focus();
+                        if (typeof tinymce !== 'undefined' && tinymce.get('profileComplainReason')) {
+                            tinymce.get('profileComplainReason').focus();
+                        } else if (complainReasonEl) {
+                            complainReasonEl.focus();
                         }
                         return;
                     }
@@ -773,21 +771,21 @@
                     if (evidence.length > 2000) {
                         event.preventDefault();
                         notifyProfileToast('Bang chung khong duoc vuot qua 2000 ky tu.', 'warning');
-                        if (typeof tinymce !== 'undefined' && tinymce.get('profileReportEvidence')) {
-                            tinymce.get('profileReportEvidence').focus();
+                        if (typeof tinymce !== 'undefined' && tinymce.get('profileComplainEvidence')) {
+                            tinymce.get('profileComplainEvidence').focus();
                         }
                         return;
                     }
 
-                    if (isSubmittingProfileReport) {
+                    if (isSubmittingProfileComplain) {
                         event.preventDefault();
                         return;
                     }
 
-                    isSubmittingProfileReport = true;
-                    if (reportSubmitBtn) {
-                        reportSubmitBtn.disabled = true;
-                        reportSubmitBtn.textContent = 'Dang gui...';
+                    isSubmittingProfileComplain = true;
+                    if (complainSubmitBtn) {
+                        complainSubmitBtn.disabled = true;
+                        complainSubmitBtn.textContent = 'Dang gui...';
                     }
                 });
             }
@@ -826,3 +824,5 @@
 {
     <partial name="~/Views/Hiring/_HireModal.cshtml" />
 }
+
+

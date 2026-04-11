@@ -14,13 +14,13 @@ using WebSite.Services;
 namespace WebSite.Controllers;
 
 [Authorize]
-public class ReportController : Controller
+public class ComplainController : Controller
 {
     private readonly HttpClient _http;
     private readonly IHubContext<NotificationHub> _notificationHub;
     private readonly IAzureBlobStorageService _blobStorageService;
 
-    public ReportController(
+    public ComplainController(
         IHttpClientFactory httpFactory,
         IHubContext<NotificationHub> notificationHub,
         IAzureBlobStorageService blobStorageService)
@@ -32,7 +32,7 @@ public class ReportController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ReportJobPosting(JobPostingReportFormModel model, CancellationToken cancellationToken)
+    public async Task<IActionResult> ComplainJobPosting(JobPostingComplainFormModel model, CancellationToken cancellationToken)
     {
         if (model.JobPostingId == Guid.Empty)
         {
@@ -83,7 +83,7 @@ public class ReportController : Controller
             {
                 await _notificationHub.Clients.Group("role:Moderator").SendAsync("notification:new", new
                 {
-                    type = "report-submitted",
+                    type = "complain-submitted",
                     title = "Co bao cao bai dang moi",
                     message = "Mot bao cao job posting moi vua duoc gui va can moderator xu ly.",
                     toastType = "warning"
@@ -114,23 +114,23 @@ public class ReportController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ReportProfile(ProfileReportFormModel model, CancellationToken cancellationToken)
+    public async Task<IActionResult> ComplainProfile(ProfileComplainFormModel model, CancellationToken cancellationToken)
     {
-        if (model.ReportedUserId == Guid.Empty)
+        if (model.ComplainedUserId == Guid.Empty)
         {
-            return RedirectToProfileReportReturn(
+            return RedirectToProfileComplainReturn(
                 model.ReturnUrl,
-                model.ReportedUserId,
+                model.ComplainedUserId,
                 "error",
                 "Khong tim thay ho so can phan nan.");
         }
 
         var currentUserIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (Guid.TryParse(currentUserIdValue, out var currentUserId) && currentUserId == model.ReportedUserId)
+        if (Guid.TryParse(currentUserIdValue, out var currentUserId) && currentUserId == model.ComplainedUserId)
         {
-            return RedirectToProfileReportReturn(
+            return RedirectToProfileComplainReturn(
                 model.ReturnUrl,
-                model.ReportedUserId,
+                model.ComplainedUserId,
                 "warning",
                 "Ban khong the phan nan chinh ho so cua minh.");
         }
@@ -138,9 +138,9 @@ public class ReportController : Controller
         var reason = ExtractPlainText(model.Reason);
         if (reason.Length < 5 || reason.Length > 500)
         {
-            return RedirectToProfileReportReturn(
+            return RedirectToProfileComplainReturn(
                 model.ReturnUrl,
-                model.ReportedUserId,
+                model.ComplainedUserId,
                 "warning",
                 "Ly do phan nan phai tu 5 den 500 ky tu.");
         }
@@ -148,9 +148,9 @@ public class ReportController : Controller
         var evidence = NormalizeEvidence(model.Evidence);
         if (!string.IsNullOrEmpty(evidence) && evidence.Length > 2000)
         {
-            return RedirectToProfileReportReturn(
+            return RedirectToProfileComplainReturn(
                 model.ReturnUrl,
-                model.ReportedUserId,
+                model.ComplainedUserId,
                 "warning",
                 "Bang chung khong duoc vuot qua 2000 ky tu.");
         }
@@ -159,7 +159,7 @@ public class ReportController : Controller
         try
         {
             var response = await _http.PostAsJsonAsync(
-                $"/api/reports/profiles/{model.ReportedUserId}",
+                $"/api/reports/profiles/{model.ComplainedUserId}",
                 new
                 {
                     reason,
@@ -175,30 +175,30 @@ public class ReportController : Controller
             {
                 await _notificationHub.Clients.Group("role:Moderator").SendAsync("notification:new", new
                 {
-                    type = "report-submitted",
+                    type = "complain-submitted",
                     title = "Co bao cao ho so moi",
                     message = "Mot bao cao profile moi vua duoc gui va can moderator xu ly.",
                     toastType = "warning"
                 }, cancellationToken);
 
-                return RedirectToProfileReportReturn(
+                return RedirectToProfileComplainReturn(
                     model.ReturnUrl,
-                    model.ReportedUserId,
+                    model.ComplainedUserId,
                     "success",
                     message ?? "Gui phan nan ho so thanh cong.");
             }
 
-            return RedirectToProfileReportReturn(
+            return RedirectToProfileComplainReturn(
                 model.ReturnUrl,
-                model.ReportedUserId,
+                model.ComplainedUserId,
                 "error",
                 message ?? "Khong the gui phan nan ho so.");
         }
         catch (Exception)
         {
-            return RedirectToProfileReportReturn(
+            return RedirectToProfileComplainReturn(
                 model.ReturnUrl,
-                model.ReportedUserId,
+                model.ComplainedUserId,
                 "error",
                 "Khong the gui phan nan ho so.");
         }
@@ -206,11 +206,11 @@ public class ReportController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ReportMessage(MessageReportFormModel model, CancellationToken cancellationToken)
+    public async Task<IActionResult> ComplainMessage(MessageComplainFormModel model, CancellationToken cancellationToken)
     {
         if (model.MessageId == Guid.Empty)
         {
-            return RedirectToMessageReportReturn(
+            return RedirectToMessageComplainReturn(
                 model.ReturnUrl,
                 "error",
                 "Khong tim thay tin nhan can phan nan.");
@@ -219,7 +219,7 @@ public class ReportController : Controller
         var reason = ExtractPlainText(model.Reason);
         if (reason.Length < 5 || reason.Length > 500)
         {
-            return RedirectToMessageReportReturn(
+            return RedirectToMessageComplainReturn(
                 model.ReturnUrl,
                 "warning",
                 "Ly do phan nan phai tu 5 den 500 ky tu.");
@@ -228,7 +228,7 @@ public class ReportController : Controller
         var evidence = NormalizeEvidence(model.Evidence);
         if (!string.IsNullOrEmpty(evidence) && evidence.Length > 2000)
         {
-            return RedirectToMessageReportReturn(
+            return RedirectToMessageComplainReturn(
                 model.ReturnUrl,
                 "warning",
                 "Bang chung khong duoc vuot qua 2000 ky tu.");
@@ -254,26 +254,26 @@ public class ReportController : Controller
             {
                 await _notificationHub.Clients.Group("role:Moderator").SendAsync("notification:new", new
                 {
-                    type = "report-submitted",
+                    type = "complain-submitted",
                     title = "Co bao cao tin nhan moi",
                     message = "Mot bao cao message moi vua duoc gui va can moderator xu ly.",
                     toastType = "warning"
                 }, cancellationToken);
 
-                return RedirectToMessageReportReturn(
+                return RedirectToMessageComplainReturn(
                     model.ReturnUrl,
                     "success",
                     message ?? "Gui phan nan tin nhan thanh cong.");
             }
 
-            return RedirectToMessageReportReturn(
+            return RedirectToMessageComplainReturn(
                 model.ReturnUrl,
                 "error",
                 message ?? "Khong the gui phan nan tin nhan.");
         }
         catch (Exception)
         {
-            return RedirectToMessageReportReturn(
+            return RedirectToMessageComplainReturn(
                 model.ReturnUrl,
                 "error",
                 "Khong the gui phan nan tin nhan.");
@@ -282,17 +282,17 @@ public class ReportController : Controller
 
     [HttpPost]
     [IgnoreAntiforgeryToken]
-    public async Task<IActionResult> UploadReportImages(List<IFormFile>? files, CancellationToken cancellationToken)
-        => await UploadReportMediaCore(files, BlobMediaType.Image, cancellationToken);
+    public async Task<IActionResult> UploadComplainImages(List<IFormFile>? files, CancellationToken cancellationToken)
+        => await UploadComplainMediaCore(files, BlobMediaType.Image, cancellationToken);
 
     [HttpPost]
     [IgnoreAntiforgeryToken]
-    public async Task<IActionResult> UploadReportVideos(List<IFormFile>? files, CancellationToken cancellationToken)
-        => await UploadReportMediaCore(files, BlobMediaType.Video, cancellationToken);
+    public async Task<IActionResult> UploadComplainVideos(List<IFormFile>? files, CancellationToken cancellationToken)
+        => await UploadComplainMediaCore(files, BlobMediaType.Video, cancellationToken);
 
     [HttpPost]
     [IgnoreAntiforgeryToken]
-    public async Task<IActionResult> UploadReportMedia(List<IFormFile>? files, [FromQuery] string? mediaType, CancellationToken cancellationToken)
+    public async Task<IActionResult> UploadComplainMedia(List<IFormFile>? files, [FromQuery] string? mediaType, CancellationToken cancellationToken)
     {
         var normalized = mediaType?.Trim().ToLowerInvariant();
         if (normalized is not ("image" or "video"))
@@ -301,10 +301,10 @@ public class ReportController : Controller
         }
 
         var type = normalized == "video" ? BlobMediaType.Video : BlobMediaType.Image;
-        return await UploadReportMediaCore(files, type, cancellationToken);
+        return await UploadComplainMediaCore(files, type, cancellationToken);
     }
 
-    private async Task<IActionResult> UploadReportMediaCore(List<IFormFile>? files, BlobMediaType mediaType, CancellationToken cancellationToken)
+    private async Task<IActionResult> UploadComplainMediaCore(List<IFormFile>? files, BlobMediaType mediaType, CancellationToken cancellationToken)
     {
         var mediaLabel = mediaType == BlobMediaType.Video ? "video" : "anh";
 
@@ -331,7 +331,7 @@ public class ReportController : Controller
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = $"Khong the upload {mediaLabel} report: {ex.Message}" });
+            return Json(new { success = false, message = $"Khong the upload {mediaLabel} complain: {ex.Message}" });
         }
     }
 
@@ -428,9 +428,9 @@ public class ReportController : Controller
         return null;
     }
 
-    private IActionResult RedirectToProfileReportReturn(
+    private IActionResult RedirectToProfileComplainReturn(
         string? returnUrl,
-        Guid reportedUserId,
+        Guid complainedUserId,
         string toastType,
         string toastMessage)
     {
@@ -442,13 +442,13 @@ public class ReportController : Controller
 
         return RedirectToAction("ViewUser", "Profile", new
         {
-            userId = reportedUserId,
+            userId = complainedUserId,
             toastType,
             toastMessage
         });
     }
 
-    private IActionResult RedirectToMessageReportReturn(
+    private IActionResult RedirectToMessageComplainReturn(
         string? returnUrl,
         string toastType,
         string toastMessage)
@@ -517,3 +517,5 @@ public class ReportController : Controller
         return string.IsNullOrEmpty(hash) ? resultUrl : $"{resultUrl}{hash}";
     }
 }
+
+

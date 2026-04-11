@@ -3,8 +3,6 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
-using WebSite.Hubs;
 
 namespace WebSite.Controllers;
 
@@ -13,13 +11,11 @@ public class CommunicationController : Controller
 {
     private readonly HttpClient _http;
     private readonly string _apiBaseUrl;
-    private readonly IHubContext<NotificationHub> _notificationHub;
 
-    public CommunicationController(IHttpClientFactory httpFactory, IConfiguration config, IHubContext<NotificationHub> notificationHub)
+    public CommunicationController(IHttpClientFactory httpFactory, IConfiguration config)
     {
         _http = httpFactory.CreateClient("BackendApi");
         _apiBaseUrl = (config["ApiSettings:BaseUrl"] ?? "").TrimEnd('/');
-        _notificationHub = notificationHub;
     }
 
     // GET /Communication  — Trang chat chính
@@ -28,6 +24,7 @@ public class CommunicationController : Controller
     {
         ViewBag.ApiBaseUrl = _apiBaseUrl;
         ViewBag.InitialConversationId = conversationId;
+        ViewBag.AccessToken = HttpContext.Session.GetString("AccessToken") ?? "";
         return View();
     }
 
@@ -63,20 +60,8 @@ public class CommunicationController : Controller
     {
         setAuthHeader();
         var content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
-        var result = await proxy(() =>
+        return await proxy(() =>
             _http.PostAsync($"/api/communication/conversations/{conversationId}/messages", content));
-        if (result is ContentResult { StatusCode: >= 200 and < 300 })
-        {
-            await _notificationHub.Clients.Group("role:Moderator").SendAsync("notification:new", new
-            {
-                type = "message-to-moderator",
-                title = "Co tin nhan moi toi moderator",
-                message = "Parent hoac nanny vua gui tin nhan moi.",
-                toastType = "info"
-            });
-        }
-
-        return result;
     }
 
     // DELETE /Communication/DeleteMessage/{id}
@@ -93,19 +78,7 @@ public class CommunicationController : Controller
     {
         setAuthHeader();
         var content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
-        var result = await proxy(() => _http.PostAsync($"/api/communication/messages/{id}/report", content));
-        if (result is ContentResult { StatusCode: >= 200 and < 300 })
-        {
-            await _notificationHub.Clients.Group("role:Moderator").SendAsync("notification:new", new
-            {
-                type = "report-submitted",
-                title = "Co bao cao moi",
-                message = "Mot report moi vua duoc gui va can moderator xu ly.",
-                toastType = "warning"
-            });
-        }
-
-        return result;
+        return await proxy(() => _http.PostAsync($"/api/communication/messages/{id}/report", content));
     }
 
     // PATCH /Communication/UpdateStatus/{id}

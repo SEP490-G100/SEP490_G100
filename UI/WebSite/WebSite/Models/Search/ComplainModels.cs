@@ -1,6 +1,6 @@
 namespace WebSite.Models.Search;
 
-public class JobPostingReportFormModel
+public class JobPostingComplainFormModel
 {
     public Guid JobPostingId { get; set; }
     public string Reason { get; set; } = string.Empty;
@@ -8,18 +8,20 @@ public class JobPostingReportFormModel
     public string? ReturnUrl { get; set; }
 }
 
-public class ProfileReportFormModel
+public class ProfileComplainFormModel
 {
-    public Guid ReportedUserId { get; set; }
+    public Guid ComplainedUserId { get; set; }
     public string Reason { get; set; } = string.Empty;
     public string? Evidence { get; set; }
     public string? ReturnUrl { get; set; }
 }
 
-public class MessageReportFormModel
+public class MessageComplainFormModel
 {
     public Guid MessageId { get; set; }
     public string Reason { get; set; } = string.Empty;
     public string? Evidence { get; set; }
     public string? ReturnUrl { get; set; }
 }
+
+
