@@ -112,7 +112,7 @@ public class AuthController : Controller
                 model.ConfirmPassword
             });
 
-            var result = await ReadApiResult<LoginResponseDto>(response);
+            var result = await ReadApiResult(response);
 
             if (result == null || !result.Success)
             {
@@ -121,7 +121,6 @@ public class AuthController : Controller
                 return View(model);
             }
 
-            await SignInUserAsync(result.Data!);
             return RedirectToAction("VerifyEmail", new { email = model.Email });
         }
         catch (HttpRequestException)
@@ -382,14 +381,6 @@ public class AuthController : Controller
         return RedirectToAction("ChangePassword");
     }
 
-    /// <summary>Trả về JWT access token từ session — dùng bởi SignalR JS client.</summary>
-    [Authorize, HttpGet]
-    public IActionResult GetToken()
-    {
-        var token = HttpContext.Session.GetString("AccessToken") ?? "";
-        return Content(token, "text/plain");
-    }
-
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Logout()
     {
@@ -438,11 +429,41 @@ public class AuthController : Controller
 
     private async Task<HttpResponseMessage> SendAuthorizedAsync(HttpMethod method, string url, object body)
     {
+        await EnsureTokenFreshAsync();
         var req = new HttpRequestMessage(method, url) { Content = JsonContent.Create(body) };
         var token = HttpContext.Session.GetString("AccessToken");
         if (!string.IsNullOrEmpty(token))
             req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return await _http.SendAsync(req);
+    }
+
+    /// <summary>
+    /// Tự động refresh AccessToken nếu còn dưới 2 phút hết hạn.
+    /// </summary>
+    private async Task EnsureTokenFreshAsync()
+    {
+        var expiresAtStr = HttpContext.Session.GetString("TokenExpiresAt");
+        if (!DateTime.TryParse(expiresAtStr, null,
+                System.Globalization.DateTimeStyles.RoundtripKind, out var expiresAt))
+            return;
+
+        if (DateTime.UtcNow < expiresAt.AddMinutes(-2))
+            return;
+
+        var accessToken  = HttpContext.Session.GetString("AccessToken");
+        var refreshToken = HttpContext.Session.GetString("RefreshToken");
+        if (string.IsNullOrEmpty(accessToken) || string.IsNullOrEmpty(refreshToken))
+            return;
+
+        try
+        {
+            var response = await _http.PostAsJsonAsync("/api/auth/refresh",
+                new { accessToken, refreshToken });
+            var result = await ReadApiResult<LoginResponseDto>(response);
+            if (result?.Success == true && result.Data != null)
+                await SignInUserAsync(result.Data);
+        }
+        catch { /* silent — không block main flow */ }
     }
 
     private static async Task<ApiResult?> ReadApiResult(HttpResponseMessage response) =>

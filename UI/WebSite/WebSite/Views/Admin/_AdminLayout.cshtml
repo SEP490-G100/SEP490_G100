@@ -45,6 +45,14 @@
                     <span class="sidebar-text">Manage Moderators</span>
                 </a>
 
+                <p class="sidebar-text px-2 text-[10px] uppercase tracking-widest text-slate-500 mt-5 mb-2 font-semibold">AI System</p>
+
+                <a href="/Admin/RecommendationConfig"
+                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() == "RecommendationConfig" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-slate-300 hover:bg-white/5 hover:text-white")">
+                    <span class="material-icons-round text-xl flex-shrink-0">tune</span>
+                    <span class="sidebar-text">Recommendation Config</span>
+                </a>
+
             </nav>
 
             <!-- Bottom: User info + logout -->

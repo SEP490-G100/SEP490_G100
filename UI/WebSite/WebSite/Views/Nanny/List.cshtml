@@ -12,11 +12,25 @@
 @section Head {
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="~/css/nanny-list.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/recommendation.css" asp-append-version="true" />
 }
 
 <div class="nanny-page">
     <div class="nanny-toolbar-shell">
         <div class="nanny-toolbar">
+            @* ── Tab bar — chỉ hiện với Parent, ngoài cùng bên trái ── *@
+            @if (User.IsInRole("Parent") && (User.Identity?.IsAuthenticated ?? false))
+            {
+                <div class="rec-tab-bar">
+                    <button id="nannyTabAll" class="rec-tab active" onclick="switchNannyTab('all')">
+                        <span class="material-icons-round">list</span>Tất cả
+                    </button>
+                    <button id="nannyTabRec" class="rec-tab" onclick="switchNannyTab('rec')">
+                        <span class="material-icons-round">auto_awesome</span>Gợi ý
+                    </button>
+                </div>
+            }
+
             <div class="nanny-toolbar__search">
                 <span class="material-icons-round">search</span>
                 <input id="nannyKeyword" type="text" placeholder="Tìm theo tên, kỹ năng hoặc mô tả..." oninput="debounceNannySearch()" />
@@ -48,6 +62,26 @@
 
     <div class="nanny-layout">
         <div class="nanny-list-panel">
+
+            @* ── Rec panel (Tab 2) — chỉ render với Parent ── *@
+            @if (User.IsInRole("Parent") && (User.Identity?.IsAuthenticated ?? false))
+            {
+                <div id="recNannyPanel" class="rec-panel">
+                    <div class="rec-panel__header">
+                        <span class="rec-panel__label">Gợi ý nanny cho:</span>
+                        <select id="recJobSelect" class="rec-panel__select" onchange="loadRecNannies(this.value)">
+                            <option value="">— Chọn bài đăng —</option>
+                        </select>
+                    </div>
+                    <div id="recNannyContent">
+                        <div class="rec-panel__loading" style="padding:20px">
+                            <span class="material-icons-round" style="font-size:20px;opacity:.4">arrow_upward</span>
+                            Chọn bài đăng để xem nanny phù hợp
+                        </div>
+                    </div>
+                </div>
+            }
+
             <div id="nannyList" class="nanny-list"></div>
         </div>
         <div class="nanny-map-panel">
@@ -261,6 +295,181 @@
     </script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="~/js/nanny-list.js" asp-append-version="true"></script>
+
+    <script>
+    if (IS_PARENT && IS_AUTH) {
+    // ── Recommendation tab (Parent — Nannies for Job) ───────────────
+    const EDU_LABELS = ['Trung học','Cao đẳng','Đại học','Thạc sĩ','Khác'];
+
+    function escNRec(v) {
+        return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // Lưu dữ liệu rec để dùng cho map
+    window.recNannies = [];
+
+    function renderRecNannyCard(n, idx) {
+        const pct = Math.round((n.finalScore ?? 0) * 100);
+        const color = pct >= 80 ? '#16a34a' : pct >= 60 ? '#f97316' : '#6b7280';
+        const exp  = n.yearsOfExperience != null ? `<span class="rec-chip rec-chip--distance">${n.yearsOfExperience} năm KN</span>` : '';
+        const rating = n.averageRating != null
+            ? `<span class="rec-stars"><span class="material-icons-round" style="font-size:13px">star</span>${n.averageRating.toFixed(1)}</span>`
+            : '';
+        const dist = n.distanceKm != null
+            ? `<span class="rec-chip rec-chip--distance"><span class="material-icons-round" style="font-size:11px">near_me</span>${n.distanceKm.toFixed(1)} km</span>`
+            : '';
+        const badgeCls = `rec-badge rec-badge--${n.matchTier || 'ok'}`;
+        const skills = (n.skills || []).slice(0, 4).map(s =>
+            `<span class="rec-chip rec-chip--skill">${escNRec(s.skillName ?? s)}</span>`).join('');
+
+        return `
+        <div class="rec-card rec-card--clickable" data-rec-idx="${idx}"
+             onclick="openNannyDetail('${escNRec(n.nannyProfileId)}')">
+            <div class="rec-card-header">
+                <div class="rec-score-ring" style="--score-color:${color}">
+                    <span class="rec-score-value" style="color:${color}">${pct}%</span>
+                </div>
+                <div class="rec-card-meta">
+                    <h3 class="rec-card-title">${escNRec(n.fullName)}</h3>
+                    <p class="rec-card-sub">${rating} ${exp}</p>
+                </div>
+            </div>
+            <div class="rec-card-chips">
+                ${dist}
+                ${skills}
+            </div>
+            <div class="rec-card-footer">
+                <span class="rec-ai-badge"><span class="material-icons-round" style="font-size:13px">auto_awesome</span>AI Gợi ý</span>
+                <span class="${badgeCls}">${escNRec(n.matchLabel || '')}</span>
+            </div>
+        </div>`;
+    }
+
+    function plotRecNannyMarkers(nannies) {
+        if (typeof clearNannyMarkers === 'function') clearNannyMarkers();
+        if (!window.nannyMap || !window.L) return;
+        nannies.forEach((n, idx) => {
+            if (!n.latitude || !n.longitude) return;
+            const pct = Math.round((n.finalScore ?? 0) * 100);
+            const color = pct >= 80 ? '#16a34a' : pct >= 60 ? '#f97316' : '#6b7280';
+            const el = document.createElement('div');
+            el.className = 'nanny-marker';
+            el.innerHTML = `<span style="font-size:11px;font-weight:800;color:${color}">${pct}%</span>`;
+            el.style.cssText = `background:#fff;border:2px solid ${color};border-radius:999px;padding:2px 7px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.15);cursor:pointer`;
+            const marker = window.L.marker([n.latitude, n.longitude], {
+                icon: window.L.divIcon({ html: el, className: '', iconAnchor: [20, 12] })
+            }).addTo(window.nannyMap);
+            marker.bindPopup(`<div style="font-size:.82rem;font-weight:700">${n.fullName}</div><div style="font-size:.75rem;color:#64748b">${pct}% phù hợp</div>`);
+            const circle = window.L.circle([n.latitude, n.longitude], {
+                radius: 600, color: '#fdba74', fillColor: '#fdba74',
+                fillOpacity: 0.1, weight: 1
+            }).addTo(window.nannyMap);
+            window.nannyMarkers.push({ marker, circle, point: { lat: n.latitude, lng: n.longitude, zoom: 14 }, element: el });
+        });
+        // Fit map to rec markers
+        const valid = nannies.filter(n => n.latitude && n.longitude);
+        if (valid.length && window.nannyMap) {
+            const bounds = window.L.latLngBounds(valid.map(n => [n.latitude, n.longitude]));
+            window.suppressNextNannyMapMove = true;
+            window.nannyMap.fitBounds(bounds, { padding: [32, 32], maxZoom: 14 });
+        }
+    }
+
+    function bindRecNannyHover() {
+        document.querySelectorAll('.rec-card[data-rec-idx]').forEach(card => {
+            const idx = Number(card.dataset.recIdx);
+            card.addEventListener('mouseenter', () => {
+                if (typeof setNannyMarkerHover === 'function') setNannyMarkerHover(idx, true, true);
+            });
+            card.addEventListener('mouseleave', () => {
+                if (typeof setNannyMarkerHover === 'function') setNannyMarkerHover(idx, false, false);
+            });
+        });
+    }
+
+    function loadRecNannies(jobId) {
+        const content = document.getElementById('recNannyContent');
+        if (!content) return;
+        if (!jobId) {
+            if (typeof clearNannyMarkers === 'function') clearNannyMarkers();
+            content.innerHTML = `<div class="rec-panel__loading" style="padding:20px">
+                <span class="material-icons-round" style="font-size:20px;opacity:.4">arrow_upward</span>Chọn bài đăng để xem gợi ý
+            </div>`;
+            return;
+        }
+        content.innerHTML = `<div class="rec-panel__loading">
+            <span class="material-icons-round" style="font-size:22px;opacity:.4">hourglass_top</span>Đang tải...
+        </div>`;
+        fetch(`/Recommendation/NanniesData?jobId=${jobId}&topK=10`)
+            .then(r => r.json())
+            .then(res => {
+                if (!res.success || !res.data || res.data.length === 0) {
+                    if (typeof clearNannyMarkers === 'function') clearNannyMarkers();
+                    content.innerHTML = `<div class="rec-panel__empty">
+                        <span class="material-icons-round">person_search</span>
+                        <p>Chưa tìm được nanny phù hợp cho bài đăng này.</p>
+                    </div>`;
+                } else {
+                    window.recNannies = res.data;
+                    content.innerHTML = `<div class="rec-card-list">${res.data.map((n,i) => renderRecNannyCard(n, i)).join('')}</div>`;
+                    plotRecNannyMarkers(res.data);
+                    bindRecNannyHover();
+                }
+            })
+            .catch(() => {
+                content.innerHTML = `<div class="rec-panel__empty">
+                    <span class="material-icons-round">wifi_off</span><p>Không tải được gợi ý.</p>
+                </div>`;
+            });
+    }
+
+    function switchNannyTab(tab) {
+        const tabAll = document.getElementById('nannyTabAll');
+        const tabRec = document.getElementById('nannyTabRec');
+        const nannyList = document.getElementById('nannyList');
+        const recPanel = document.getElementById('recNannyPanel');
+        const cnt = document.getElementById('nannyResultCount');
+
+        if (tab === 'rec') {
+            tabAll.classList.remove('active');
+            tabRec.classList.add('active');
+            nannyList.style.display = 'none';
+            if (cnt) cnt.style.display = 'none';
+            recPanel.classList.add('active');
+            // Re-plot markers nếu đã có data
+            if (window.recNannies.length) {
+                plotRecNannyMarkers(window.recNannies);
+                bindRecNannyHover();
+            }
+            // Populate job dropdown lần đầu
+            const sel = document.getElementById('recJobSelect');
+            if (sel && sel.options.length <= 1) {
+                fetch('/Search/MyJobs')
+                    .then(r => r.json())
+                    .then(res => {
+                        const active = (res.data || []).filter(j => j.status === 1 && j.moderationStatus === 2);
+                        active.forEach(j => {
+                            const opt = document.createElement('option');
+                            opt.value = j.id;
+                            opt.textContent = j.title;
+                            sel.appendChild(opt);
+                        });
+                    })
+                    .catch(() => {});
+            }
+        } else {
+            if (tabRec) tabRec.classList.remove('active');
+            tabAll.classList.add('active');
+            nannyList.style.display = '';
+            if (cnt) cnt.style.display = '';
+            if (recPanel) recPanel.classList.remove('active');
+            // Xoá rec markers, trigger lại search thường
+            if (typeof clearNannyMarkers === 'function') clearNannyMarkers();
+            if (typeof doNannySearch === 'function') doNannySearch();
+        }
+    }
+    } // end if (IS_PARENT && IS_AUTH)
+    </script>
     @if (hasHiringContext)
     {
         <script>

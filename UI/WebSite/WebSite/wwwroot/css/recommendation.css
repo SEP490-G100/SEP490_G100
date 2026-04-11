@@ -1,0 +1,407 @@
+/* ================================================================
+   Recommendation — NannyMatch
+   ================================================================ */
+
+/* ── Tab bar ─────────────────────────────────────────────────── */
+.rec-tab-bar {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 12px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    flex-shrink: 0;
+}
+
+.rec-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 14px;
+    border-radius: 9px;
+    font-size: .82rem;
+    font-weight: 700;
+    color: #64748b;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all .18s ease;
+    white-space: nowrap;
+}
+
+.rec-tab:hover { color: #0f172a; background: rgba(255,255,255,.7); }
+
+.rec-tab.active {
+    background: #fff;
+    color: #ea580c;
+    box-shadow: 0 2px 8px rgba(15,23,42,.08);
+}
+
+.rec-tab .material-icons-round { font-size: 15px; }
+
+/* ── Rec panel (tab 2 content) ───────────────────────────────── */
+.rec-panel {
+    padding: 12px 12px 20px;
+    display: none;
+}
+
+.rec-panel.active { display: block; }
+
+/* Panel header (for Parent: job selector) */
+.rec-panel__header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+
+.rec-panel__label {
+    font-size: .82rem;
+    font-weight: 700;
+    color: #64748b;
+    white-space: nowrap;
+}
+
+.rec-panel__select {
+    flex: 1;
+    min-width: 180px;
+    max-width: 320px;
+    font-size: .82rem;
+    font-weight: 700;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 7px 12px;
+    background: #fff;
+    color: #0f172a;
+    outline: none;
+    transition: border-color .15s;
+}
+
+.rec-panel__select:focus { border-color: #f97316; }
+
+/* ── Loading / empty state ──────────────────────────────────────*/
+.rec-panel__loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 40px 20px;
+    color: #94a3b8;
+    font-size: .875rem;
+    font-weight: 600;
+}
+
+.rec-panel__empty {
+    text-align: center;
+    padding: 48px 20px;
+    color: #94a3b8;
+}
+
+.rec-panel__empty .material-icons-round {
+    font-size: 48px;
+    opacity: .35;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.rec-panel__empty p { font-size: .875rem; font-weight: 600; }
+
+/* ── Card list ───────────────────────────────────────────────── */
+.rec-card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* ── Full rec card ───────────────────────────────────────────── */
+.rec-card {
+    position: relative;
+    background: #fff;
+    border-radius: 16px;
+    border: 1px solid rgba(226,232,240,.9);
+    box-shadow: 0 2px 12px rgba(15,23,42,.04);
+    padding: 14px 16px 12px;
+    transition: box-shadow .18s, transform .18s;
+}
+
+.rec-card:hover {
+    box-shadow: 0 8px 28px rgba(249,115,22,.10);
+    transform: translateY(-1px);
+}
+
+/* Rank badge */
+.rec-rank {
+    position: absolute;
+    top: -9px;
+    left: 14px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .7rem;
+    font-weight: 900;
+    border: 2px solid #fff;
+    box-shadow: 0 3px 8px rgba(0,0,0,.12);
+    z-index: 1;
+}
+
+.rec-rank--1 { background: linear-gradient(135deg,#fbbf24,#f59e0b); color:#fff; }
+.rec-rank--2 { background: linear-gradient(135deg,#94a3b8,#64748b); color:#fff; }
+.rec-rank--3 { background: linear-gradient(135deg,#b45309,#92400e); color:#fff; }
+.rec-rank--n { background: #f1f5f9; color: #64748b; }
+
+/* Card top row */
+.rec-card__top {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.rec-card__job-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 11px;
+    background: linear-gradient(135deg,#dbeafe,#eff6ff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.rec-card__avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 11px;
+    object-fit: cover;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 8px rgba(15,23,42,.10);
+    flex-shrink: 0;
+}
+
+.rec-card__avatar--placeholder {
+    width: 44px;
+    height: 44px;
+    border-radius: 11px;
+    background: linear-gradient(135deg,#fed7aa,#ffedd5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ea580c;
+    font-size: 1.1rem;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
+.rec-card__info { flex: 1; min-width: 0; }
+
+.rec-card__name {
+    font-size: .9rem;
+    font-weight: 800;
+    color: #0f172a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rec-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 5px;
+    align-items: center;
+}
+
+.rec-card__bio {
+    font-size: .78rem;
+    color: #64748b;
+    margin-top: 6px;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.rec-card__skills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 8px;
+}
+
+/* Score bar row */
+.rec-card__score-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.rec-score-bar {
+    flex: 1;
+    height: 6px;
+    border-radius: 99px;
+    background: #f1f5f9;
+    overflow: hidden;
+}
+
+.rec-score-bar__fill {
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg,#f97316,#ea580c);
+    transition: width .5s ease;
+}
+
+.rec-score-pct {
+    font-size: .82rem;
+    font-weight: 900;
+    color: #ea580c;
+    white-space: nowrap;
+    min-width: 72px;
+    text-align: right;
+}
+
+/* ── Chips ───────────────────────────────────────────────────── */
+.rec-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.rec-chip--skill    { background:#f0fdf4; color:#166534; border:1px solid #bbf7d0; }
+.rec-chip--distance { background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; }
+.rec-chip--salary   { background:#faf5ff; color:#7e22ce; border:1px solid #e9d5ff; }
+
+/* ── Match badge ─────────────────────────────────────────────── */
+.rec-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+.rec-badge--high { background:#f0fdf4; color:#15803d; border:1px solid #86efac; }
+.rec-badge--good { background:#eff6ff; color:#1d4ed8; border:1px solid #93c5fd; }
+.rec-badge--ok   { background:#f8fafc; color:#64748b; border:1px solid #e2e8f0; }
+
+/* ── Rating stars ─────────────────────────────────────────────── */
+.rec-stars {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    color: #f59e0b;
+    font-size: .78rem;
+    font-weight: 700;
+}
+
+/* ── Clickable card ───────────────────────────────────────────── */
+.rec-card--clickable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.rec-card--clickable:active {
+    transform: scale(.99);
+}
+
+/* ── Score ring (circular % indicator) ───────────────────────── */
+.rec-score-ring {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    border: 3px solid var(--score-color, #6b7280);
+    background: color-mix(in srgb, var(--score-color, #6b7280) 8%, white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.rec-score-value {
+    font-size: .78rem;
+    font-weight: 900;
+    line-height: 1;
+    text-align: center;
+}
+
+/* ── Card header (ring + meta side by side) ───────────────────── */
+.rec-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.rec-card-meta {
+    flex: 1;
+    min-width: 0;
+}
+
+.rec-card-title {
+    font-size: .9rem;
+    font-weight: 800;
+    color: #0f172a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0;
+}
+
+.rec-card-sub {
+    font-size: .76rem;
+    color: #64748b;
+    font-weight: 600;
+    margin: 3px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ── Card chips row ───────────────────────────────────────────── */
+.rec-card-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 10px;
+}
+
+/* ── Card footer (AI badge + match label) ─────────────────────── */
+.rec-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid #f1f5f9;
+}
+
+/* ── AI suggestion badge ──────────────────────────────────────── */
+.rec-ai-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #fff7ed, #ffedd5);
+    color: #ea580c;
+    border: 1px solid #fed7aa;
+    white-space: nowrap;
+}

@@ -12,9 +12,11 @@ public class BlogService
 
     // ── List (paged) ──────────────────────────────────────────────────────
     public async Task<BlogListResponse> GetBlogsAsync(
-        string? search, int page, int pageSize, int? status = null, bool? isDeleted = null, Guid? categoryId = null)
+        string? search, int page, int pageSize,
+        int? status = null, bool? isDeleted = null, Guid? categoryId = null,
+        string? sort = null)
     {
-        var (items, total) = await _repo.GetPagedAsync(search, page, pageSize, status, isDeleted, categoryId);
+        var (items, total) = await _repo.GetPagedAsync(search, page, pageSize, status, isDeleted, categoryId, sort);
 
         var dtos = items.Select(MapToDto).ToList();
 
@@ -27,12 +29,25 @@ public class BlogService
         };
     }
 
-    // ── Get single ────────────────────────────────────────────────────────
+    // ── Get single (by ID) ───────────────────────────────────────────────
     public async Task<(bool Success, int StatusCode, string Message, BlogDto? Data)>
         GetBlogAsync(Guid id)
     {
         var blog = await _repo.GetByIdAsync(id);
         if (blog == null) return (false, 404, "Không tìm thấy bài viết.", null);
+        return (true, 200, "OK", MapToDto(blog));
+    }
+
+    // ── Get single (by Slug, public — increments ViewCount) ───────────────
+    public async Task<(bool Success, int StatusCode, string Message, BlogDto? Data)>
+        GetBlogBySlugAsync(string slug)
+    {
+        var blog = await _repo.GetBySlugAsync(slug);
+        if (blog == null) return (false, 404, "Không tìm thấy bài viết.", null);
+
+        blog.ViewCount++;
+        await _repo.SaveChangesAsync();
+
         return (true, 200, "OK", MapToDto(blog));
     }
 
