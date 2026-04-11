@@ -16,17 +16,11 @@
             <h1>@Model.Headline</h1>
             <p>@Model.Summary</p>
             <div class="sub-chip-row">
-                @if (Model.IsParent)
+                @if (Model.Plans.Count > 0)
                 {
-                    <span class="sub-chip">Dang bai theo cap do Free, Plus, Pro</span>
-                    <span class="sub-chip">Uu tien hien thi cho bai dang Pro</span>
-                    <span class="sub-chip">Gia tang thoi han bai dang</span>
-                }
-                else if (Model.IsNanny)
-                {
-                    <span class="sub-chip">Tang so luot ung tuyen moi thang</span>
-                    <span class="sub-chip">Ho so co badge noi bat</span>
-                    <span class="sub-chip">Uu tien hien thi cho ho so Pro</span>
+                    <span class="sub-chip">Dang mo ban @Model.Plans.Count goi subscription</span>
+                    <span class="sub-chip">Danh sach goi duoc dong bo tu he thong quan tri</span>
+                    <span class="sub-chip">Quyen loi moi goi se thay doi theo du lieu admin cap nhat</span>
                 }
             </div>
         </div>
@@ -95,7 +89,7 @@
                 <div>
                     <div class="sub-section-label">Cac goi thanh vien</div>
                     <h2>So sanh quyen loi theo goi</h2>
-                    <p>Free la moc co ban. Plus va Pro mo rong quyen loi danh cho @Model.RoleLabel.ToLowerInvariant().</p>
+                    <p>Free la moc co ban. Danh sach cac goi tra phi ben duoi duoc render tu du lieu admin hien co trong he thong.</p>
                 </div>
                 @if (Model.HasActiveSubscription)
                 {
@@ -123,17 +117,22 @@
 
                 @foreach (var plan in Model.Plans)
                 {
-                    <article class="sub-benefit-item @(plan.Code.Contains("PRO") ? "is-pro" : "is-plus")">
+                    var isCurrentBenefitPlan = Model.CurrentSubscription?.Plan?.Code == plan.Code && Model.HasActiveSubscription;
+                    var isHighestPricePlan = Model.Plans.Count > 0 && plan.Id == Model.Plans.OrderByDescending(p => p.Price).ThenByDescending(p => p.DurationDays).First().Id;
+                    <article class="sub-benefit-item @(isCurrentBenefitPlan ? "sub-benefit-item--current" : (isHighestPricePlan ? "sub-benefit-item--accent" : "sub-benefit-item--paid"))">
                         <span class="sub-benefit-plan">@plan.Name</span>
                         @if (Model.IsParent)
                         {
-                            <h4>@plan.Benefits.MonthlyJobPostLimit bai dang</h4>
-                            <p>@plan.Benefits.ListingDurationDays ngay hien thi - @(plan.Benefits.SearchPriority ? "co uu tien" : "khong uu tien tim kiem").</p>
+                            <h4>@(plan.Benefits.MonthlyJobPostLimit > 0 ? $"{plan.Benefits.MonthlyJobPostLimit} bai dang" : "Goi tra phi")</h4>
+                            <p>
+                                @(plan.Benefits.ListingDurationDays > 0 ? $"{plan.Benefits.ListingDurationDays} ngay hien thi" : $"{plan.DurationDays} ngay su dung")
+                                - @(plan.Benefits.SearchPriority ? "co uu tien tim kiem" : "khong uu tien tim kiem")
+                            </p>
                         }
                         else if (Model.IsNanny)
                         {
-                            <h4>@plan.Benefits.MonthlyApplicationLimit luot ung tuyen</h4>
-                            <p>@(plan.Benefits.SearchPriority ? "Ho so duoc uu tien hien thi." : "Ho so noi bat hon Free.")</p>
+                            <h4>@(plan.Benefits.MonthlyApplicationLimit > 0 ? $"{plan.Benefits.MonthlyApplicationLimit} luot ung tuyen" : "Goi tra phi")</h4>
+                            <p>@(plan.Benefits.SearchPriority ? "Ho so duoc uu tien hien thi." : "Ho so co them quyen loi so voi goi Free.")</p>
                         }
                     </article>
                 }
@@ -158,7 +157,8 @@
                 @foreach (var plan in Model.Plans)
                 {
                     var isCurrent = Model.CurrentSubscription?.Plan?.Code == plan.Code && Model.HasActiveSubscription;
-                    <article class="plan-card @(plan.Code.Contains("PRO") ? "pro-card" : "plus-card") @(isCurrent ? "current-card" : "")">
+                    var isHighestPricePlan = Model.Plans.Count > 0 && plan.Id == Model.Plans.OrderByDescending(p => p.Price).ThenByDescending(p => p.DurationDays).First().Id;
+                    <article class="plan-card paid-card @(isHighestPricePlan ? "accent-card" : "") @(isCurrent ? "current-card" : "")">
                         <div class="plan-top">
                             <span class="plan-tag">@plan.Name</span>
                             <h3>@plan.Name</h3>
@@ -184,16 +184,28 @@
                         <ul class="plan-list">
                             @if (Model.IsParent)
                             {
-                                <li>Dang toi da @plan.Benefits.MonthlyJobPostLimit bai moi thang</li>
-                                <li>Bai dang hien thi @plan.Benefits.ListingDurationDays ngay</li>
+                                <li>
+                                    @(plan.Benefits.MonthlyJobPostLimit > 0
+                                        ? $"Dang toi da {plan.Benefits.MonthlyJobPostLimit} bai moi thang"
+                                        : "So luong bai dang duoc mo rong theo cau hinh goi")
+                                </li>
+                                <li>
+                                    @(plan.Benefits.ListingDurationDays > 0
+                                        ? $"Bai dang hien thi {plan.Benefits.ListingDurationDays} ngay"
+                                        : $"Goi co thoi han su dung {plan.DurationDays} ngay")
+                                </li>
                                 <li>@(plan.Benefits.FeaturedBadge ? "Co badge noi bat cho bai dang" : "Khong co badge noi bat")</li>
                                 <li>@(plan.Benefits.SearchPriority ? "Duoc uu tien hien thi trong tim kiem" : "Khong uu tien hien thi")</li>
                             }
                             else if (Model.IsNanny)
                             {
-                                <li>Ung tuyen toi da @plan.Benefits.MonthlyApplicationLimit cong viec moi thang</li>
+                                <li>
+                                    @(plan.Benefits.MonthlyApplicationLimit > 0
+                                        ? $"Ung tuyen toi da {plan.Benefits.MonthlyApplicationLimit} cong viec moi thang"
+                                        : "Quyen ung tuyen duoc mo rong theo cau hinh goi")
+                                </li>
                                 <li>@(plan.Benefits.FeaturedBadge ? "Ho so co badge noi bat" : "Ho so hien thi thuong")</li>
-                                <li>@(plan.Benefits.SearchPriority ? "Ho so duoc uu tien hien thi cao hon" : "Ho so noi bat hon Free")</li>
+                                <li>@(plan.Benefits.SearchPriority ? "Ho so duoc uu tien hien thi cao hon" : "Ho so co them quyen loi so voi goi Free")</li>
                             }
 
                             @foreach (var feature in plan.Features)

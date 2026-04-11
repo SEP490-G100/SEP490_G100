@@ -1,4 +1,7 @@
 ﻿using System.Text.Json;
+using System.Globalization;
+using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Options;
 using Nanny_BackEnd.DTOs.Subscription;
 using Nanny_BackEnd.Helpers;
@@ -9,117 +12,6 @@ namespace Nanny_BackEnd.Services;
 
 public class SubscriptionService
 {
-    private sealed record ManagedPlanDefinition(
-        string Code,
-        string TargetRole,
-        string Name,
-        string Description,
-        decimal Price,
-        int DurationDays,
-        int SortOrder,
-        SubscriptionBenefitResponse Benefits,
-        List<string> Features);
-
-    private static readonly ManagedPlanDefinition ParentPlusPlan = new(
-        Code: "PLUS",
-        TargetRole: "Parent",
-        Name: "Plus",
-        Description: "Goi Plus cho Parent can dang them bai va lam bai dang noi bat hon.",
-        Price: 299000m,
-        DurationDays: 30,
-        SortOrder: 1,
-        Benefits: new SubscriptionBenefitResponse
-        {
-            MonthlyJobPostLimit = 3,
-            MonthlyApplicationLimit = 0,
-            FeaturedBadge = true,
-            SearchPriority = false,
-            ListingDurationDays = 45
-        },
-        Features:
-        [
-            "Dang toi da 3 bai moi moi thang",
-            "Bai dang co badge noi bat",
-            "Thoi gian hien thi bai dang 45 ngay"
-        ]);
-
-    private static readonly ManagedPlanDefinition ParentProPlan = new(
-        Code: "PRO",
-        TargetRole: "Parent",
-        Name: "Pro",
-        Description: "Goi Pro cho Parent can uu tien hien thi va gia tang co hoi tiep can.",
-        Price: 499000m,
-        DurationDays: 30,
-        SortOrder: 2,
-        Benefits: new SubscriptionBenefitResponse
-        {
-            MonthlyJobPostLimit = 5,
-            MonthlyApplicationLimit = 0,
-            FeaturedBadge = true,
-            SearchPriority = true,
-            ListingDurationDays = 60
-        },
-        Features:
-        [
-            "Dang toi da 5 bai moi moi thang",
-            "Bai dang co badge noi bat",
-            "Duoc uu tien hien thi trong ket qua tim kiem",
-            "Thoi gian hien thi bai dang 60 ngay"
-        ]);
-
-    private static readonly ManagedPlanDefinition NannyPlusPlan = new(
-        Code: "NANNY_PLUS",
-        TargetRole: "Nanny",
-        Name: "Nanny Plus",
-        Description: "Goi Plus cho Nanny muon co them luot ung tuyen va ho so noi bat hon.",
-        Price: 199000m,
-        DurationDays: 30,
-        SortOrder: 3,
-        Benefits: new SubscriptionBenefitResponse
-        {
-            MonthlyJobPostLimit = 0,
-            MonthlyApplicationLimit = 3,
-            FeaturedBadge = true,
-            SearchPriority = false,
-            ListingDurationDays = 0
-        },
-        Features:
-        [
-            "Ung tuyen toi da 3 cong viec moi moi thang",
-            "Ho so co badge noi bat",
-            "Ho so duoc hien thi tot hon tai khoan Free"
-        ]);
-
-    private static readonly ManagedPlanDefinition NannyProPlan = new(
-        Code: "NANNY_PRO",
-        TargetRole: "Nanny",
-        Name: "Nanny Pro",
-        Description: "Goi Pro cho Nanny muon co them luot ung tuyen va uu tien hien thi cao hon.",
-        Price: 299000m,
-        DurationDays: 30,
-        SortOrder: 4,
-        Benefits: new SubscriptionBenefitResponse
-        {
-            MonthlyJobPostLimit = 0,
-            MonthlyApplicationLimit = 5,
-            FeaturedBadge = true,
-            SearchPriority = true,
-            ListingDurationDays = 0
-        },
-        Features:
-        [
-            "Ung tuyen toi da 5 cong viec moi moi thang",
-            "Ho so co badge noi bat",
-            "Ho so duoc uu tien hien thi cao hon goi Nanny Plus"
-        ]);
-    private static readonly ManagedPlanDefinition[] ManagedPlans =
-    [
-        ParentPlusPlan,
-        ParentProPlan,
-        NannyPlusPlan,
-        NannyProPlan
-    ];
-
     private readonly SubscriptionRepository _subscriptionRepo;
     private readonly NotificationService _notificationService;
     private readonly CassoService _cassoService;
@@ -142,15 +34,16 @@ public class SubscriptionService
 
     public async Task<List<SubscriptionPlanResponse>> getPlans()
     {
-        var plans = await ensureManagedPlans();
+        var plans = await _subscriptionRepo.getActivePlans();
         return plans.Select(mapPlan).ToList();
     }
 
     public async Task<SubscriptionPlanResponse?> getPlanByCode(string code)
     {
-        var plans = await ensureManagedPlans();
+        var normalizedCode = normalizeCode(code);
+        var plans = await _subscriptionRepo.getActivePlans();
         var plan = plans.FirstOrDefault(p =>
-            string.Equals(getManagedPlanDefinition(p.Name)?.Code, code, StringComparison.OrdinalIgnoreCase));
+            string.Equals(buildPlanCode(p), normalizedCode, StringComparison.OrdinalIgnoreCase));
         return plan == null ? null : mapPlan(plan);
     }
 
@@ -180,15 +73,12 @@ public class SubscriptionService
     public async Task<UserSubscriptionResponse> subscribe(Guid userId, SubscribeRequest request)
     {
         await expireOldSubscriptions(userId);
-        await ensureManagedPlans();
 
         var plan = await _subscriptionRepo.findPlanById(request.SubscriptionPlanId)
             ?? throw new KeyNotFoundException("Khong tim thay goi subscription hoac goi da ngung hoat dong.");
 
-        var definition = getManagedPlanDefinition(plan.Name)
-            ?? throw new InvalidOperationException("He thong chi ho tro cac goi subscription duoc quan ly san.");
-
-        await validatePlanOwnership(userId, definition);
+        var planResponse = mapPlan(plan);
+        await validatePlanOwnership(userId, planResponse.TargetRole);
 
         var currentSubscription = await _subscriptionRepo.findCurrentSubscription(userId, DateTime.UtcNow);
         if (currentSubscription != null)
@@ -235,27 +125,24 @@ public class SubscriptionService
     {
         await expireOldSubscriptions(userId);
         await expirePendingTransactions(userId);
-        await ensureManagedPlans();
 
         var plan = await _subscriptionRepo.findPlanById(request.SubscriptionPlanId)
             ?? throw new KeyNotFoundException("Khong tim thay goi subscription hoac goi da ngung hoat dong.");
 
-        var definition = getManagedPlanDefinition(plan.Name)
-            ?? throw new InvalidOperationException("He thong chi ho tro cac goi subscription duoc quan ly san.");
-
-        await validatePlanOwnership(userId, definition);
+        var planResponse = mapPlan(plan);
+        await validatePlanOwnership(userId, planResponse.TargetRole);
 
         var currentSubscription = await _subscriptionRepo.findCurrentSubscription(userId, DateTime.UtcNow);
         if (currentSubscription != null)
             throw new InvalidOperationException("Ban dang co goi subscription con hieu luc. Vui long huy hoac cho goi hien tai het han.");
 
-        var existingPendingTransaction = await findReusablePendingTransaction(userId, definition.Code);
+        var existingPendingTransaction = await findReusablePendingTransaction(userId, planResponse.Code);
         if (existingPendingTransaction != null)
             return await buildPaymentSessionResponse(plan, existingPendingTransaction);
 
         var nowUtc = DateTime.UtcNow;
         var orderCode = await generateUniqueOrderCode();
-        var paymentContent = buildPaymentContent(definition.Code, orderCode);
+        var paymentContent = buildPaymentContent(planResponse.Code, orderCode);
         var transaction = new Transaction
         {
             Id = Guid.NewGuid(),
@@ -414,26 +301,37 @@ public class SubscriptionService
 
     public async Task<SubscriptionBenefitResponse> getBenefitsForParentProfile(Guid parentProfileId)
     {
-        await ensureManagedPlans();
         var subscription = await _subscriptionRepo.findCurrentSubscriptionByParentProfile(parentProfileId, DateTime.UtcNow);
-        var definition = getManagedPlanDefinition(subscription?.SubscriptionPlan?.Name);
-        return definition?.Benefits ?? SubscriptionBenefitResponse.FreeParent;
+        if (subscription?.SubscriptionPlan == null)
+            return SubscriptionBenefitResponse.FreeParent;
+
+        var plan = mapPlan(subscription.SubscriptionPlan);
+        return string.Equals(plan.TargetRole, "Parent", StringComparison.OrdinalIgnoreCase)
+            ? plan.Benefits
+            : SubscriptionBenefitResponse.FreeParent;
     }
 
     public async Task<SubscriptionBenefitResponse> getBenefitsForNannyProfile(Guid nannyProfileId)
     {
-        await ensureManagedPlans();
         var subscription = await _subscriptionRepo.findCurrentSubscriptionByNannyProfile(nannyProfileId, DateTime.UtcNow);
-        var definition = getManagedPlanDefinition(subscription?.SubscriptionPlan?.Name);
-        return definition?.Benefits ?? SubscriptionBenefitResponse.FreeNanny;
+        if (subscription?.SubscriptionPlan == null)
+            return SubscriptionBenefitResponse.FreeNanny;
+
+        var plan = mapPlan(subscription.SubscriptionPlan);
+        return string.Equals(plan.TargetRole, "Nanny", StringComparison.OrdinalIgnoreCase)
+            ? plan.Benefits
+            : SubscriptionBenefitResponse.FreeNanny;
     }
 
     public async Task<bool> hasActiveParentSubscription(Guid parentProfileId)
     {
-        await ensureManagedPlans();
         var subscription = await _subscriptionRepo.findCurrentSubscriptionByParentProfile(parentProfileId, DateTime.UtcNow);
-        var definition = getManagedPlanDefinition(subscription?.SubscriptionPlan?.Name);
-        return definition != null && string.Equals(definition.TargetRole, "Parent", StringComparison.OrdinalIgnoreCase);
+        if (subscription?.SubscriptionPlan == null)
+            return false;
+
+        var targetRole = mapPlan(subscription.SubscriptionPlan).TargetRole;
+        return string.Equals(targetRole, "Parent", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(targetRole, "Unknown", StringComparison.OrdinalIgnoreCase);
     }
 
     public async Task<UserSubscriptionResponse> cancelCurrentSubscription(Guid userId)
@@ -861,117 +759,22 @@ public class SubscriptionService
         await _subscriptionRepo.saveChanges();
     }
 
-    private async Task<List<SubscriptionPlan>> ensureManagedPlans()
-    {
-        var existingPlans = await _subscriptionRepo.getPlansByNames(ManagedPlans.Select(p => p.Name));
-        var planMap = existingPlans.ToDictionary(p => p.Name, StringComparer.OrdinalIgnoreCase);
-        var needsSave = false;
-
-        foreach (var definition in ManagedPlans)
-        {
-            if (!planMap.TryGetValue(definition.Name, out var plan))
-            {
-                plan = new SubscriptionPlan
-                {
-                    Id = Guid.NewGuid(),
-                    CreatedAt = DateTime.UtcNow,
-                    IsDeleted = false
-                };
-                applyDefinition(plan, definition);
-                _subscriptionRepo.addPlan(plan);
-                existingPlans.Add(plan);
-                needsSave = true;
-                continue;
-            }
-
-            if (applyDefinition(plan, definition))
-                needsSave = true;
-        }
-
-        if (needsSave)
-            await _subscriptionRepo.saveChanges();
-
-        return existingPlans
-            .Where(p => !p.IsDeleted && p.IsActive)
-            .OrderBy(p => p.SortOrder)
-            .ThenBy(p => p.Price)
-            .ToList();
-    }
-
-    private static bool applyDefinition(SubscriptionPlan plan, ManagedPlanDefinition definition)
-    {
-        var changed = false;
-
-        if (plan.Name != definition.Name)
-        {
-            plan.Name = definition.Name;
-            changed = true;
-        }
-
-        if (plan.Description != definition.Description)
-        {
-            plan.Description = definition.Description;
-            changed = true;
-        }
-
-        if (plan.Price != definition.Price)
-        {
-            plan.Price = definition.Price;
-            changed = true;
-        }
-
-        if (plan.DurationDays != definition.DurationDays)
-        {
-            plan.DurationDays = definition.DurationDays;
-            changed = true;
-        }
-
-        if (plan.SortOrder != definition.SortOrder)
-        {
-            plan.SortOrder = definition.SortOrder;
-            changed = true;
-        }
-
-        var features = JsonSerializer.Serialize(definition.Features);
-        if (plan.Features != features)
-        {
-            plan.Features = features;
-            changed = true;
-        }
-
-        if (!plan.IsActive)
-        {
-            plan.IsActive = true;
-            changed = true;
-        }
-
-        if (plan.IsDeleted)
-        {
-            plan.IsDeleted = false;
-            changed = true;
-        }
-
-        if (changed)
-            plan.UpdatedAt = DateTime.UtcNow;
-
-        return changed;
-    }
-
     private static SubscriptionPlanResponse mapPlan(SubscriptionPlan plan)
     {
-        var definition = getManagedPlanDefinition(plan.Name);
+        var features = splitFeatures(plan.Features);
+        var targetRole = inferTargetRole(plan, features);
         return new SubscriptionPlanResponse
         {
             Id = plan.Id,
-            Code = definition?.Code ?? plan.Name.ToUpperInvariant().Replace(' ', '_'),
-            TargetRole = definition?.TargetRole ?? "Unknown",
+            Code = buildPlanCode(plan),
+            TargetRole = targetRole,
             Name = plan.Name,
             Description = plan.Description,
             Price = plan.Price,
             DurationDays = plan.DurationDays,
-            Features = definition?.Features ?? splitFeatures(plan.Features),
+            Features = features,
             SortOrder = plan.SortOrder,
-            Benefits = definition?.Benefits ?? new SubscriptionBenefitResponse()
+            Benefits = inferBenefits(plan, targetRole, features)
         };
     }
 
@@ -1086,9 +889,6 @@ public class SubscriptionService
         return int.TryParse(parts[2], out var orderCode) ? orderCode : null;
     }
 
-    private static ManagedPlanDefinition? getManagedPlanDefinition(string? planName) =>
-        ManagedPlans.FirstOrDefault(p => string.Equals(p.Name, planName, StringComparison.OrdinalIgnoreCase));
-
     private static List<string>? tryParseJsonFeatures(string features)
     {
         try
@@ -1101,9 +901,9 @@ public class SubscriptionService
         }
     }
 
-    private async Task validatePlanOwnership(Guid userId, ManagedPlanDefinition definition)
+    private async Task validatePlanOwnership(Guid userId, string targetRole)
     {
-        if (string.Equals(definition.TargetRole, "Parent", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(targetRole, "Parent", StringComparison.OrdinalIgnoreCase))
         {
             if (!await _subscriptionRepo.hasParentProfile(userId))
                 throw new InvalidOperationException("Tai khoan hien tai khong phai Parent nen khong the mua goi nay.");
@@ -1111,11 +911,156 @@ public class SubscriptionService
             return;
         }
 
-        if (string.Equals(definition.TargetRole, "Nanny", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(targetRole, "Nanny", StringComparison.OrdinalIgnoreCase))
         {
             if (!await _subscriptionRepo.hasNannyProfile(userId))
                 throw new InvalidOperationException("Tai khoan hien tai khong phai Nanny nen khong the mua goi nay.");
+
+            return;
         }
+
+        if (!await _subscriptionRepo.hasParentProfile(userId) && !await _subscriptionRepo.hasNannyProfile(userId))
+            throw new InvalidOperationException("Tai khoan hien tai khong hop le de mua goi subscription.");
+    }
+
+    private static SubscriptionBenefitResponse inferBenefits(
+        SubscriptionPlan plan,
+        string targetRole,
+        List<string> features)
+    {
+        var textSamples = new List<string> { plan.Name, plan.Description ?? string.Empty };
+        textSamples.AddRange(features);
+
+        var benefits = new SubscriptionBenefitResponse
+        {
+            FeaturedBadge = containsAny(textSamples, "badge", "featured", "noi bat"),
+            SearchPriority = containsAny(textSamples, "uu tien", "priority", "tim kiem"),
+            ListingDurationDays = inferListingDurationDays(textSamples, plan.DurationDays)
+        };
+
+        if (string.Equals(targetRole, "Parent", StringComparison.OrdinalIgnoreCase))
+        {
+            benefits.MonthlyJobPostLimit = inferNumericLimit(textSamples, "bai", "dang", "job");
+            return benefits;
+        }
+
+        if (string.Equals(targetRole, "Nanny", StringComparison.OrdinalIgnoreCase))
+        {
+            benefits.MonthlyApplicationLimit = inferNumericLimit(textSamples, "ung tuyen", "apply", "cong viec");
+            benefits.ListingDurationDays = 0;
+            return benefits;
+        }
+
+        benefits.MonthlyJobPostLimit = inferNumericLimit(textSamples, "bai", "dang", "job");
+        benefits.MonthlyApplicationLimit = inferNumericLimit(textSamples, "ung tuyen", "apply", "cong viec");
+        return benefits;
+    }
+
+    private static string inferTargetRole(SubscriptionPlan plan, IEnumerable<string>? features = null)
+    {
+        var text = string.Join(' ', new[] { plan.Name, plan.Description ?? string.Empty, plan.Features ?? string.Empty }
+            .Concat(features ?? []));
+        var normalized = normalizeText(text);
+
+        if (containsAny(normalized, "nanny", "bao mau", "ung tuyen", "ho so", "candidate"))
+            return "Nanny";
+
+        if (containsAny(normalized, "parent", "phu huynh", "gia dinh", "bai dang", "dang tin", "job post"))
+            return "Parent";
+
+        return "Unknown";
+    }
+
+    private static string buildPlanCode(SubscriptionPlan plan)
+    {
+        var source = string.IsNullOrWhiteSpace(plan.Name) ? plan.Id.ToString("N") : plan.Name;
+        return normalizeCode(source);
+    }
+
+    private static string normalizeCode(string value)
+    {
+        var normalized = normalizeText(value).ToUpperInvariant();
+        var builder = new StringBuilder(normalized.Length);
+        var lastUnderscore = false;
+
+        foreach (var ch in normalized)
+        {
+            if (char.IsLetterOrDigit(ch))
+            {
+                builder.Append(ch);
+                lastUnderscore = false;
+                continue;
+            }
+
+            if (!lastUnderscore)
+            {
+                builder.Append('_');
+                lastUnderscore = true;
+            }
+        }
+
+        return builder.ToString().Trim('_');
+    }
+
+    private static int inferNumericLimit(IEnumerable<string> texts, params string[] keywords)
+    {
+        foreach (var text in texts.Where(t => !string.IsNullOrWhiteSpace(t)))
+        {
+            var normalized = normalizeText(text);
+            if (!keywords.Any(keyword => normalized.Contains(normalizeText(keyword), StringComparison.OrdinalIgnoreCase)))
+                continue;
+
+            var match = Regex.Match(normalized, @"\d+");
+            if (match.Success && int.TryParse(match.Value, out var value))
+                return value;
+        }
+
+        return 0;
+    }
+
+    private static int inferListingDurationDays(IEnumerable<string> texts, int fallbackDurationDays)
+    {
+        foreach (var text in texts.Where(t => !string.IsNullOrWhiteSpace(t)))
+        {
+            var normalized = normalizeText(text);
+            if (!normalized.Contains("ngay", StringComparison.OrdinalIgnoreCase) &&
+                !normalized.Contains("day", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var match = Regex.Match(normalized, @"\d+");
+            if (match.Success && int.TryParse(match.Value, out var value))
+                return value;
+        }
+
+        return Math.Max(0, fallbackDurationDays);
+    }
+
+    private static bool containsAny(IEnumerable<string> texts, params string[] keywords) =>
+        texts.Any(text => containsAny(text, keywords));
+
+    private static bool containsAny(string text, params string[] keywords)
+    {
+        var normalized = normalizeText(text);
+        return keywords.Any(keyword => normalized.Contains(normalizeText(keyword), StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string normalizeText(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return string.Empty;
+
+        var normalized = text.Normalize(NormalizationForm.FormD);
+        var builder = new StringBuilder(normalized.Length);
+
+        foreach (var ch in normalized)
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(ch) != UnicodeCategory.NonSpacingMark)
+                builder.Append(char.ToLowerInvariant(ch));
+        }
+
+        return builder.ToString().Normalize(NormalizationForm.FormC);
     }
 
     private sealed class TransferConfirmationResult
