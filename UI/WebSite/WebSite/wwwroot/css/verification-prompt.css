@@ -82,7 +82,7 @@
 
 .nm-verify-title {
     margin-top: 14px;
-    font-size: clamp(30px, 3vw, 46px);
+    font-size: clamp(30px, 2.75vw, 46px);
     font-weight: 800;
     color: #0f172a;
     line-height: 1.12;
