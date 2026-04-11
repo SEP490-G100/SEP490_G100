@@ -124,14 +124,12 @@
                             <input type="text" id="cf-location" style="border-radius: 10px;" class="form-input" />
                         </div>
                         <div>
-                            <label class="form-label" >Thành phố</label>
-                            <input type="text" id="cf-city" style="border-radius: 10px;" class="form-input" list="cf-cityOptions" oninput="handleCreateCityChange()" placeholder="Nhập để gợi ý thành phố" required />
-                            <datalist id="cf-cityOptions"></datalist>
+                            <label class="form-label">Thành phố</label>
+                            <input type="text" id="cf-city" style="border-radius: 10px;" class="form-input form-select-picker-input" autocomplete="off" placeholder="Nhập hoặc chọn thành phố" required />
                         </div>
                         <div>
-                            <label class="form-label" >Quận/Huyện</label>
-                            <input type="text" id="cf-district" style="border-radius: 10px;" class="form-input" list="cf-districtOptions" placeholder="Nhập để gợi ý quận/huyện" />
-                            <datalist id="cf-districtOptions"></datalist>
+                            <label class="form-label">Phường/Xã</label>
+                            <input type="text" id="cf-district" style="border-radius: 10px;" class="form-input form-select-picker-input" autocomplete="off" placeholder="Nhập hoặc chọn phường/xã" />
                         </div>
                         <div>
                             <label class="form-label" >Độ tuổi bảo mẫu từ</label>
@@ -285,13 +283,11 @@
                         </div>
                         <div>
                             <label class="form-label">Thành phố</label>
-                            <input type="text" id="ef-city" class="form-input" list="ef-cityOptions" oninput="handleEditCityChange()" placeholder="Nhập để gợi ý thành phố" />
-                            <datalist id="ef-cityOptions"></datalist>
+                            <input type="text" id="ef-city" class="form-input form-select-picker-input" autocomplete="off" placeholder="Nhập hoặc chọn thành phố" />
                         </div>
                         <div>
-                            <label class="form-label">Quận/Huyện</label>
-                            <input type="text" id="ef-district" class="form-input" list="ef-districtOptions" placeholder="Nhập để gợi ý quận/huyện" />
-                            <datalist id="ef-districtOptions"></datalist>
+                            <label class="form-label">Phường/Xã</label>
+                            <input type="text" id="ef-district" class="form-input form-select-picker-input" autocomplete="off" placeholder="Nhập hoặc chọn phường/xã" />
                         </div>
                         <div>
                             <label class="form-label">Độ tuổi bảo mẫu từ</label>

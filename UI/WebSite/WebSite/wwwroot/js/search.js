@@ -17,8 +17,6 @@ let isSubmittingCreate = false;
 let isSubmittingEdit = false;
 let provinces = [];
 let locationDataPromise = null;
-let provinceCatalog = [];
-let provinceCatalogPromise = null;
 let suppressNextMapSearch = false;
 const autocompleteDropdowns = new Map();
 const selectPickerSyncFns = [];
@@ -27,59 +25,6 @@ const districtOptionsCache = new Map();
 const ownedJobIds = new Set();
 const appliedJobIds = new Set();
 let ownedJobsLoaded = false;
-const FALLBACK_PROVINCES = [
-  'Thành phố Hà Nội',
-  'Thành phố Hồ Chí Minh',
-  'Thành phố Hải Phòng',
-  'Thành phố Huế',
-  'Thành phố Đà Nẵng',
-  'Thành phố Cần Thơ',
-  'Tỉnh Cao Bằng',
-  'Tỉnh Điện Biên',
-  'Tỉnh Lai Châu',
-  'Tỉnh Sơn La',
-  'Tỉnh Lạng Sơn',
-  'Tỉnh Quảng Ninh',
-  'Tỉnh Thanh Hóa',
-  'Tỉnh Nghệ An',
-  'Tỉnh Hà Tĩnh',
-  'Tỉnh Tuyên Quang',
-  'Tỉnh Lào Cai',
-  'Tỉnh Thái Nguyên',
-  'Tỉnh Phú Thọ',
-  'Tỉnh Bắc Ninh',
-  'Tỉnh Hưng Yên',
-  'Tỉnh Ninh Bình',
-  'Tỉnh Quảng Trị',
-  'Tỉnh Quảng Ngãi',
-  'Tỉnh Gia Lai',
-  'Tỉnh Khánh Hòa',
-  'Tỉnh Lâm Đồng',
-  'Tỉnh Đắk Lắk',
-  'Tỉnh Đồng Nai',
-  'Tỉnh Tây Ninh',
-  'Tỉnh Vĩnh Long',
-  'Tỉnh Đồng Tháp',
-  'Tỉnh Cà Mau',
-  'Tỉnh An Giang'
-];
-const FALLBACK_DISTRICTS_BY_CITY = {
-  'ho chi minh': [
-    'Quận 1', 'Quận 3', 'Quận 4', 'Quận 5', 'Quận 6', 'Quận 7', 'Quận 8',
-    'Quận 10', 'Quận 11', 'Quận 12', 'Quận Bình Thạnh', 'Quận Gò Vấp',
-    'Quận Phú Nhuận', 'Quận Tân Bình', 'Quận Tân Phú', 'Thành phố Thủ Đức',
-    'Huyện Bình Chánh', 'Huyện Cần Giờ', 'Huyện Củ Chi', 'Huyện Hóc Môn', 'Huyện Nhà Bè'
-  ],
-  'ha noi': [
-    'Quận Ba Đình', 'Quận Hoàn Kiếm', 'Quận Tây Hồ', 'Quận Long Biên', 'Quận Cầu Giấy',
-    'Quận Đống Đa', 'Quận Hai Bà Trưng', 'Quận Hoàng Mai', 'Quận Thanh Xuân',
-    'Quận Bắc Từ Liêm', 'Quận Nam Từ Liêm', 'Quận Hà Đông'
-  ],
-  'da nang': ['Quận Hải Châu', 'Quận Thanh Khê', 'Quận Sơn Trà', 'Quận Ngũ Hành Sơn', 'Quận Liên Chiểu', 'Huyện Hòa Vang'],
-  'can tho': ['Quận Ninh Kiều', 'Quận Bình Thủy', 'Quận Cái Răng', 'Quận Ô Môn', 'Quận Thốt Nốt'],
-  'hai phong': ['Quận Hồng Bàng', 'Quận Ngô Quyền', 'Quận Lê Chân', 'Quận Hải An', 'Quận Kiến An', 'Quận Dương Kinh', 'Quận Đồ Sơn'],
-  'hue': ['Quận Phú Xuân', 'Quận Thuận Hóa', 'Thị xã Hương Thủy', 'Thị xã Hương Trà']
-};
 
 const DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 const ROW_LABELS = ['Morning', 'Afternoon', 'Evening', 'Night'];
@@ -94,23 +39,22 @@ const GEO_FALLBACK = {
 function loadLocationData() {
   if (locationDataPromise) return locationDataPromise;
 
-  // Attach autocomplete ngay, dù nguồn ngoài chậm/lỗi thì vẫn có fallback để dùng.
-  attachLocationAutocomplete('cf');
-  attachLocationAutocomplete('ef');
-
-  locationDataPromise = fetch('https://provinces.open-api.vn/api/v2/?depth=2')
+  locationDataPromise = fetch('/Address/LocationTree', { credentials: 'same-origin' })
     .then((response) => response.ok ? response.json() : [])
     .then((data) => {
       provinces = Array.isArray(data) ? data : [];
+      attachLocationAutocomplete('cf');
       return provinces;
     })
     .catch(() => {
       provinces = [];
+      attachLocationAutocomplete('cf');
       return provinces;
     });
 
   return locationDataPromise;
 }
+
 
 function normalizeText(value) {
   return String(value ?? '')
@@ -139,9 +83,6 @@ function getDistrictOptions(cityName) {
   return (selectedProvince?.districts || []).map((district) => district.name);
 }
 
-function getFallbackDistrictOptions(cityName) {
-  return FALLBACK_DISTRICTS_BY_CITY[normalizeAdministrativeName(cityName)] || [];
-}
 
 function getDistrictCacheKey(cityName) {
   return normalizeAdministrativeName(cityName);
@@ -156,22 +97,6 @@ function getCachedDistrictOptions(cityName) {
   return districtOptionsCache.get(getDistrictCacheKey(cityName)) || [];
 }
 
-function loadProvinceCatalog() {
-  if (provinceCatalogPromise) return provinceCatalogPromise;
-
-  provinceCatalogPromise = fetch('https://provinces.open-api.vn/api/v2/p/')
-    .then((response) => response.ok ? response.json() : [])
-    .then((data) => {
-      provinceCatalog = Array.isArray(data) ? data : [];
-      return provinceCatalog;
-    })
-    .catch(() => {
-      provinceCatalog = [];
-      return provinceCatalog;
-    });
-
-  return provinceCatalogPromise;
-}
 
 async function fetchDistrictOptionsByCity(cityName) {
   const normalizedCity = String(cityName ?? '').trim();
@@ -180,33 +105,7 @@ async function fetchDistrictOptionsByCity(cityName) {
   const cached = getCachedDistrictOptions(normalizedCity);
   if (cached.length) return cached;
 
-  const localOptions = getDistrictOptions(normalizedCity);
-  if (localOptions.length) {
-    return cacheDistrictOptions(normalizedCity, localOptions);
-  }
-
-  const fallbackOptions = getFallbackDistrictOptions(normalizedCity);
-  if (fallbackOptions.length) {
-    return cacheDistrictOptions(normalizedCity, fallbackOptions);
-  }
-
-  try {
-    const response = await fetch(`/Address/Districts?city=${encodeURIComponent(normalizedCity)}`, {
-      credentials: 'same-origin'
-    });
-    if (!response.ok) return [];
-
-    const data = await response.json();
-    const districts = Array.isArray(data)
-      ? data.filter(Boolean)
-      : [];
-    if (districts.length) {
-      return cacheDistrictOptions(normalizedCity, districts);
-    }
-    return cacheDistrictOptions(normalizedCity, fallbackOptions);
-  } catch {
-    return cacheDistrictOptions(normalizedCity, fallbackOptions);
-  }
+  return cacheDistrictOptions(normalizedCity, getDistrictOptions(normalizedCity));
 }
 
 async function fetchAddressSuggestions(query) {
@@ -244,17 +143,7 @@ function uniqueNormalizedValues(values, query) {
 }
 
 async function getProvinceOptionsAsync(query) {
-  if (provinces.length) {
-    return uniqueNormalizedValues(getProvinceOptions(), query);
-  }
-
-  if (!String(query ?? '').trim()) {
-    return [...FALLBACK_PROVINCES];
-  }
-
-  const suggestions = await fetchAddressSuggestions(query);
-  const values = uniqueNormalizedValues(suggestions.map((item) => item.city), query);
-  return values.length ? values : uniqueNormalizedValues(FALLBACK_PROVINCES, query);
+  return uniqueNormalizedValues(getProvinceOptions(), query);
 }
 
 async function getDistrictOptionsAsync(cityName, query) {
@@ -1248,7 +1137,7 @@ function validatePayload(payload) {
   if (!payload.childProfileId) return 'Vui long chon tre tu Child Profile.';
   if (!payload.location || payload.location.length < 3) return 'Vui long nhap dia chi chi tiet.';
   if (!payload.city) return 'Vui long nhap thanh pho.';
-  if (!payload.district) return 'Vui long nhap quan/huyen.';
+  if (!payload.district) return 'Vui long nhap phuong/xa.';
   if (!Array.isArray(payload.skills) || !payload.skills.length) return 'Vui long chon it nhat 1 ky nang.';
   if (!Array.isArray(payload.scheduleSlots) || !payload.scheduleSlots.length) return 'Vui long chon it nhat 1 khung lich.';
   return '';
@@ -1398,9 +1287,6 @@ function closePreview() {
   document.getElementById('previewModal')?.classList.remove('show');
 }
 
-function handleCreateCityChange() {
-  handleCityChange('cf');
-}
 
 function handleEditCityChange() {
   handleCityChange('ef');
@@ -1413,6 +1299,7 @@ async function bootstrapSearchPage() {
   ['createForm', 'editForm'].forEach((id) => {
     document.getElementById(id)?.setAttribute('autocomplete', 'off');
   });
+
   attachCreateSelectPickers();
   initMoneyInputs();
   initMap();
