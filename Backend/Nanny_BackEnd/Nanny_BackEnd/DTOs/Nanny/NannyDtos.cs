@@ -79,6 +79,15 @@ public class NannyListItemResponse
     [JsonPropertyName("totalReviews")]
     public int TotalReviews { get; set; }
 
+    [JsonPropertyName("subscriptionPlanCode")]
+    public string? SubscriptionPlanCode { get; set; }
+
+    [JsonPropertyName("featuredBadge")]
+    public bool FeaturedBadge { get; set; }
+
+    [JsonPropertyName("searchPriority")]
+    public bool SearchPriority { get; set; }
+
     [JsonPropertyName("verificationStatus")]
     public int VerificationStatus { get; set; }
 

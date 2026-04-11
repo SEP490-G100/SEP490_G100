@@ -136,6 +136,11 @@
                         <p class="mt-3 text-sm text-slate-600 leading-6 line-clamp-2">${escapeHtml(item.bio || 'Ho so chua co mo ta.')}</p>
 
                         <div class="mt-4 flex flex-wrap gap-2">
+                            ${item.searchPriority
+                                ? '<span class="px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold">Nanny Pro</span><span class="px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold">Uu tien hien thi</span>'
+                                : item.featuredBadge
+                                    ? '<span class="px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold">Nanny Plus</span>'
+                                    : ''}
                             <span class="px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold">${escapeHtml(formatSalary(item.expectedSalaryMin, item.expectedSalaryMax))}</span>
                             <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">${item.yearsOfExperience ? `${item.yearsOfExperience} nam KN` : 'Chua ro kinh nghiem'}</span>
                             <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">${item.age ? `${item.age} tuoi` : 'Chua ro tuoi'}</span>

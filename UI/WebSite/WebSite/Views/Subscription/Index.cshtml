@@ -6,6 +6,7 @@
 
 @section Head {
     <link rel="stylesheet" href="~/css/subscription.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 }
 
 <div class="sub-shell">
@@ -15,17 +16,11 @@
             <h1>@Model.Headline</h1>
             <p>@Model.Summary</p>
             <div class="sub-chip-row">
-                @if (Model.IsParent)
+                @if (Model.Plans.Count > 0)
                 {
-                    <span class="sub-chip">Dang bai theo cap do Free, Plus, Pro</span>
-                    <span class="sub-chip">Uu tien hien thi cho bai dang Pro</span>
-                    <span class="sub-chip">Gia tang thoi han bai dang</span>
-                }
-                else if (Model.IsNanny)
-                {
-                    <span class="sub-chip">Tang so luot ung tuyen moi thang</span>
-                    <span class="sub-chip">Ho so co badge noi bat</span>
-                    <span class="sub-chip">Uu tien hien thi cho ho so Pro</span>
+                    <span class="sub-chip">Dang mo ban @Model.Plans.Count goi subscription</span>
+                    <span class="sub-chip">Danh sach goi duoc dong bo tu he thong quan tri</span>
+                    <span class="sub-chip">Quyen loi moi goi se thay doi theo du lieu admin cap nhat</span>
                 }
             </div>
         </div>
@@ -94,7 +89,7 @@
                 <div>
                     <div class="sub-section-label">Cac goi thanh vien</div>
                     <h2>So sanh quyen loi theo goi</h2>
-                    <p>Free la moc co ban. Plus va Pro mo rong quyen loi danh cho @Model.RoleLabel.ToLowerInvariant().</p>
+                    <p>Free la moc co ban. Danh sach cac goi tra phi ben duoi duoc render tu du lieu admin hien co trong he thong.</p>
                 </div>
                 @if (Model.HasActiveSubscription)
                 {
@@ -122,17 +117,22 @@
 
                 @foreach (var plan in Model.Plans)
                 {
-                    <article class="sub-benefit-item @(plan.Code.Contains("PRO") ? "is-pro" : "is-plus")">
+                    var isCurrentBenefitPlan = Model.CurrentSubscription?.Plan?.Code == plan.Code && Model.HasActiveSubscription;
+                    var isHighestPricePlan = Model.Plans.Count > 0 && plan.Id == Model.Plans.OrderByDescending(p => p.Price).ThenByDescending(p => p.DurationDays).First().Id;
+                    <article class="sub-benefit-item @(isCurrentBenefitPlan ? "sub-benefit-item--current" : (isHighestPricePlan ? "sub-benefit-item--accent" : "sub-benefit-item--paid"))">
                         <span class="sub-benefit-plan">@plan.Name</span>
                         @if (Model.IsParent)
                         {
-                            <h4>@plan.Benefits.MonthlyJobPostLimit bai dang</h4>
-                            <p>@plan.Benefits.ListingDurationDays ngay hien thi - @(plan.Benefits.SearchPriority ? "co uu tien" : "khong uu tien tim kiem").</p>
+                            <h4>@(plan.Benefits.MonthlyJobPostLimit > 0 ? $"{plan.Benefits.MonthlyJobPostLimit} bai dang" : "Goi tra phi")</h4>
+                            <p>
+                                @(plan.Benefits.ListingDurationDays > 0 ? $"{plan.Benefits.ListingDurationDays} ngay hien thi" : $"{plan.DurationDays} ngay su dung")
+                                - @(plan.Benefits.SearchPriority ? "co uu tien tim kiem" : "khong uu tien tim kiem")
+                            </p>
                         }
                         else if (Model.IsNanny)
                         {
-                            <h4>@plan.Benefits.MonthlyApplicationLimit luot ung tuyen</h4>
-                            <p>@(plan.Benefits.SearchPriority ? "Ho so duoc uu tien hien thi." : "Ho so noi bat hon Free.")</p>
+                            <h4>@(plan.Benefits.MonthlyApplicationLimit > 0 ? $"{plan.Benefits.MonthlyApplicationLimit} luot ung tuyen" : "Goi tra phi")</h4>
+                            <p>@(plan.Benefits.SearchPriority ? "Ho so duoc uu tien hien thi." : "Ho so co them quyen loi so voi goi Free.")</p>
                         }
                     </article>
                 }
@@ -157,7 +157,8 @@
                 @foreach (var plan in Model.Plans)
                 {
                     var isCurrent = Model.CurrentSubscription?.Plan?.Code == plan.Code && Model.HasActiveSubscription;
-                    <article class="plan-card @(plan.Code.Contains("PRO") ? "pro-card" : "plus-card") @(isCurrent ? "current-card" : "")">
+                    var isHighestPricePlan = Model.Plans.Count > 0 && plan.Id == Model.Plans.OrderByDescending(p => p.Price).ThenByDescending(p => p.DurationDays).First().Id;
+                    <article class="plan-card paid-card @(isHighestPricePlan ? "accent-card" : "") @(isCurrent ? "current-card" : "")">
                         <div class="plan-top">
                             <span class="plan-tag">@plan.Name</span>
                             <h3>@plan.Name</h3>
@@ -183,16 +184,28 @@
                         <ul class="plan-list">
                             @if (Model.IsParent)
                             {
-                                <li>Dang toi da @plan.Benefits.MonthlyJobPostLimit bai moi thang</li>
-                                <li>Bai dang hien thi @plan.Benefits.ListingDurationDays ngay</li>
+                                <li>
+                                    @(plan.Benefits.MonthlyJobPostLimit > 0
+                                        ? $"Dang toi da {plan.Benefits.MonthlyJobPostLimit} bai moi thang"
+                                        : "So luong bai dang duoc mo rong theo cau hinh goi")
+                                </li>
+                                <li>
+                                    @(plan.Benefits.ListingDurationDays > 0
+                                        ? $"Bai dang hien thi {plan.Benefits.ListingDurationDays} ngay"
+                                        : $"Goi co thoi han su dung {plan.DurationDays} ngay")
+                                </li>
                                 <li>@(plan.Benefits.FeaturedBadge ? "Co badge noi bat cho bai dang" : "Khong co badge noi bat")</li>
                                 <li>@(plan.Benefits.SearchPriority ? "Duoc uu tien hien thi trong tim kiem" : "Khong uu tien hien thi")</li>
                             }
                             else if (Model.IsNanny)
                             {
-                                <li>Ung tuyen toi da @plan.Benefits.MonthlyApplicationLimit cong viec moi thang</li>
+                                <li>
+                                    @(plan.Benefits.MonthlyApplicationLimit > 0
+                                        ? $"Ung tuyen toi da {plan.Benefits.MonthlyApplicationLimit} cong viec moi thang"
+                                        : "Quyen ung tuyen duoc mo rong theo cau hinh goi")
+                                </li>
                                 <li>@(plan.Benefits.FeaturedBadge ? "Ho so co badge noi bat" : "Ho so hien thi thuong")</li>
-                                <li>@(plan.Benefits.SearchPriority ? "Ho so duoc uu tien hien thi cao hon" : "Ho so noi bat hon Free")</li>
+                                <li>@(plan.Benefits.SearchPriority ? "Ho so duoc uu tien hien thi cao hon" : "Ho so co them quyen loi so voi goi Free")</li>
                             }
 
                             @foreach (var feature in plan.Features)
@@ -298,7 +311,8 @@
 
         <div class="sub-pay-main">
             <div class="sub-pay-qr-wrap">
-                <img id="subPayQrImage" class="sub-pay-qr" alt="QR payment" />
+                <div id="subPayQrCanvas" class="sub-pay-qr"></div>
+                <img id="subPayQrImage" class="sub-pay-qr" alt="QR payment" style="display:none;" />
             </div>
 
             <div class="sub-pay-info">
@@ -331,6 +345,7 @@
             const modal = document.getElementById('purchaseQrModal');
             const closeBtn = document.getElementById('subPayCloseBtn');
             const backdrop = modal?.querySelector('[data-close-pay-modal="true"]');
+            const qrCanvas = document.getElementById('subPayQrCanvas');
             const qrImage = document.getElementById('subPayQrImage');
             const planText = document.getElementById('subPayPlan');
             const amountText = document.getElementById('subPayAmount');
@@ -346,6 +361,7 @@
 
             let currentTransactionId = null;
             let pollingTimer = null;
+            let currentQrCode = null;
 
             const notify = (message, type = 'error') => {
                 if (typeof window.showToast === 'function') {
@@ -364,6 +380,33 @@
                 clearPolling();
                 currentTransactionId = null;
                 modal?.setAttribute('aria-hidden', 'true');
+            };
+
+            const renderQr = (payload, imageUrl) => {
+                if (qrCanvas) {
+                    qrCanvas.innerHTML = '';
+                }
+
+                if (payload && typeof window.QRCode === 'function' && qrCanvas) {
+                    qrImage.style.display = 'none';
+                    qrCanvas.style.display = 'block';
+                    currentQrCode = new window.QRCode(qrCanvas, {
+                        text: payload,
+                        width: 320,
+                        height: 320,
+                        correctLevel: window.QRCode.CorrectLevel.M
+                    });
+                    return;
+                }
+
+                currentQrCode = null;
+                if (qrImage) {
+                    qrImage.src = imageUrl || '';
+                    qrImage.style.display = 'block';
+                }
+                if (qrCanvas) {
+                    qrCanvas.style.display = 'none';
+                }
             };
 
             const openModal = () => {
@@ -385,7 +428,7 @@
 
             const applySession = (data) => {
                 currentTransactionId = data.transactionId;
-                if (qrImage) qrImage.src = data.qrCodeUrl || data.checkoutUrl || '';
+                renderQr(data.qrPayload, data.qrCodeUrl || data.checkoutUrl || '');
                 if (planText) planText.textContent = data.planName || '-';
                 if (amountText) amountText.textContent = formatMoney(data.amount);
                 if (bankText) bankText.textContent = data.bankId || '-';

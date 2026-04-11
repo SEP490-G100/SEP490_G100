@@ -499,6 +499,30 @@ function formatSalaryRange(min, max, negotiable) {
   return 'Khong xac dinh';
 }
 
+function getJobPlanLabel(job) {
+  const code = String(job?.subscriptionPlanCode || '').trim().toUpperCase();
+  if (code === 'PRO') return 'Parent Pro';
+  if (code === 'PLUS') return 'Parent Plus';
+  return '';
+}
+
+function renderJobBenefitBadges(job) {
+  const badges = [];
+  const planLabel = getJobPlanLabel(job);
+
+  if (planLabel) {
+    badges.push(`<span class="px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold">${escapeHtml(planLabel)}</span>`);
+  }
+
+  if (job?.searchPriority) {
+    badges.push('<span class="px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold">Uu tien tim kiem</span>');
+  } else if (job?.featuredBadge) {
+    badges.push('<span class="px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold">Tin noi bat</span>');
+  }
+
+  return badges.join('');
+}
+
 function sanitizeMoneyDigits(value) {
   return String(value ?? '').replace(/[^\d]/g, '');
 }
@@ -963,6 +987,7 @@ function renderJobs(jobs) {
       <p class="mt-3 text-sm font-semibold text-orange-600">${escapeHtml([job.location, job.district, job.city].filter(Boolean).join(', ') || 'Chua cap nhat dia diem')}</p>
       <p class="mt-3 text-sm leading-6 text-slate-500 line-clamp-2">${escapeHtml(job.description || 'Khong co mo ta.')}</p>
       <div class="mt-4 flex flex-wrap gap-2">
+        ${renderJobBenefitBadges(job)}
         <span class="px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold">${escapeHtml(JOB_TYPES[job.jobType] || 'Khac')}</span>
         <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">${escapeHtml(MODERATION_LABELS[job.moderationStatus] || 'Dang cap nhat')}</span>
         <span class="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold">${job.numberOfChildren ? `${job.numberOfChildren} be` : 'Chua ro'}</span>
@@ -1333,6 +1358,8 @@ function openPreview(job) {
   editingJobId = job.id;
   document.getElementById('pv-title').textContent = job.title || 'Tin dang';
   document.getElementById('pv-parentName').textContent = job.parentName || 'Phu huynh';
+  const premiumBadges = document.getElementById('pv-premiumBadges');
+  if (premiumBadges) premiumBadges.innerHTML = renderJobBenefitBadges(job);
   document.getElementById('pv-type').textContent = JOB_TYPES[job.jobType] || 'Khac';
   document.getElementById('pv-sal').textContent = formatSalaryRange(job.salaryMin, job.salaryMax, job.salaryNegotiable);
   document.getElementById('pv-status').textContent = POST_STATUS_LABELS[job.status] || 'Dang cap nhat';

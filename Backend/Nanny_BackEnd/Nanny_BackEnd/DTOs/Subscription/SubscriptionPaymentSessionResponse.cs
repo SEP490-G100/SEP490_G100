@@ -10,6 +10,7 @@ public class SubscriptionPaymentSessionResponse
     public string PaymentContent { get; set; } = "";
     public string CheckoutUrl { get; set; } = "";
     public string QrCodeUrl { get; set; } = "";
+    public string QrPayload { get; set; } = "";
     public string BankId { get; set; } = "";
     public string AccountNumber { get; set; } = "";
     public string AccountName { get; set; } = "";
