@@ -46,7 +46,7 @@ public class ModeratorController : ControllerBase
     // ACCOUNT MANAGEMENT
     // ─────────────────────────────────────────────────────
 
-    /// GET /api/Moderator/accounts?role=Nanny&status=0&search=lan&page=1&pageSize=3
+    // GET /api/Moderator/accounts?role=Nanny&status=0&search=lan&page=1&pageSize=3
     [HttpGet("accounts")]
     public async Task<IActionResult> GetAccounts(
         [FromQuery] string? role = null,

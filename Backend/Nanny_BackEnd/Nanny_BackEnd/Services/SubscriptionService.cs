@@ -352,24 +352,32 @@ public class SubscriptionService
         return mapSubscription(subscription);
     }
 
-    public async Task<AdminSubscriptionPlanListResponse> getAdminPlans(string? search, string? targetRole, bool? isActive, int page, int pageSize)
+    public async Task<AdminSubscriptionPlanListResponse> getAdminPlans(
+        string? search,
+        string? targetRole,
+        bool? isActive,
+        int page,
+        int pageSize)
     {
-        await ensureAdminManagedPlans();
         var plans = await _subscriptionRepo.getAdminPlansIncludingDeleted();
+        var normalizedTargetRole = string.IsNullOrWhiteSpace(targetRole)
+            ? null
+            : SubscriptionPlanMetadataHelper.NormalizeTargetRole(targetRole);
+        var normalizedSearch = search?.Trim();
 
-        var filtered = plans
+        var projected = plans
             .Select(plan => new
             {
                 Plan = plan,
-                Metadata = resolveAdminPlanMetadata(plan)
+                PlanResponse = mapPlan(plan)
             })
             .Where(item =>
-                string.IsNullOrWhiteSpace(search) ||
-                item.Plan.Name.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                item.Metadata.Code.Contains(search, StringComparison.OrdinalIgnoreCase))
+                string.IsNullOrWhiteSpace(normalizedSearch) ||
+                item.Plan.Name.Contains(normalizedSearch, StringComparison.OrdinalIgnoreCase) ||
+                item.PlanResponse.Code.Contains(normalizedSearch, StringComparison.OrdinalIgnoreCase))
             .Where(item =>
-                string.IsNullOrWhiteSpace(targetRole) ||
-                string.Equals(item.Metadata.TargetRole, SubscriptionPlanMetadataHelper.NormalizeTargetRole(targetRole), StringComparison.OrdinalIgnoreCase))
+                string.IsNullOrWhiteSpace(normalizedTargetRole) ||
+                string.Equals(item.PlanResponse.TargetRole, normalizedTargetRole, StringComparison.OrdinalIgnoreCase))
             .Where(item => !isActive.HasValue || item.Plan.IsActive == isActive.Value)
             .OrderBy(item => item.Plan.SortOrder)
             .ThenBy(item => item.Plan.Price)
@@ -378,22 +386,23 @@ public class SubscriptionService
 
         page = Math.Max(1, page);
         pageSize = Math.Max(1, pageSize);
-        var totalCount = filtered.Count;
-        var items = new List<AdminSubscriptionPlanListItemResponse>();
+        var totalCount = projected.Count;
+        var pagedItems = projected.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
-        foreach (var item in filtered.Skip((page - 1) * pageSize).Take(pageSize))
+        var items = new List<AdminSubscriptionPlanListItemResponse>(pagedItems.Count);
+        foreach (var item in pagedItems)
         {
             items.Add(new AdminSubscriptionPlanListItemResponse
             {
                 Id = item.Plan.Id,
-                Code = item.Metadata.Code,
-                TargetRole = item.Metadata.TargetRole,
+                Code = item.PlanResponse.Code,
+                TargetRole = item.PlanResponse.TargetRole,
                 Name = item.Plan.Name,
                 Price = item.Plan.Price,
                 DurationDays = item.Plan.DurationDays,
                 SortOrder = item.Plan.SortOrder,
                 IsActive = item.Plan.IsActive,
-                FeatureCount = item.Metadata.Features.Count,
+                FeatureCount = item.PlanResponse.Features.Count,
                 ActiveSubscriberCount = await _subscriptionRepo.countActiveSubscriptionsByPlan(item.Plan.Id, DateTime.UtcNow),
                 CreatedAt = item.Plan.CreatedAt
             });
@@ -411,24 +420,23 @@ public class SubscriptionService
 
     public async Task<AdminSubscriptionPlanDetailResponse?> getAdminPlanDetail(Guid id)
     {
-        await ensureAdminManagedPlans();
         var plan = await _subscriptionRepo.findAdminPlanByIdIncludingDeleted(id);
         if (plan == null)
             return null;
 
-        var metadata = resolveAdminPlanMetadata(plan);
+        var planResponse = mapPlan(plan);
         return new AdminSubscriptionPlanDetailResponse
         {
             Id = plan.Id,
-            Code = metadata.Code,
-            TargetRole = metadata.TargetRole,
+            Code = planResponse.Code,
+            TargetRole = planResponse.TargetRole,
             Name = plan.Name,
             Description = plan.Description,
             Price = plan.Price,
             DurationDays = plan.DurationDays,
-            Features = metadata.Features,
+            Features = planResponse.Features,
             SortOrder = plan.SortOrder,
-            Benefits = metadata.Benefits,
+            Benefits = planResponse.Benefits,
             IsActive = plan.IsActive,
             ActiveSubscriberCount = await _subscriptionRepo.countActiveSubscriptionsByPlan(plan.Id, DateTime.UtcNow),
             CreatedAt = plan.CreatedAt,
@@ -511,6 +519,22 @@ public class SubscriptionService
         plan.UpdatedBy = adminUserId;
         await _subscriptionRepo.saveChanges();
     }
+
+    //public async Task toggleAdminPlanStatus(Guid id, Guid adminUserId, bool isActive)
+    //{
+    //    var plan = await _subscriptionRepo.findAdminPlanByIdIncludingDeleted(id)
+    //        ?? throw new KeyNotFoundException("Khong tim thay goi subscription.");
+
+    //    var targetIsDeleted = !isActive;
+    //    if (plan.IsActive == isActive && plan.IsDeleted == targetIsDeleted)
+    //        return;
+
+    //    plan.IsActive = isActive;
+    //    plan.IsDeleted = targetIsDeleted;
+    //    plan.UpdatedAt = DateTime.UtcNow;
+    //    plan.UpdatedBy = adminUserId;
+    //    await _subscriptionRepo.saveChanges();
+    //}
 
     private async Task<Transaction?> findReusablePendingTransaction(Guid userId, string planCode)
     {
@@ -816,45 +840,45 @@ public class SubscriptionService
         return true;
     }
 
-    private async Task ensureAdminManagedPlans()
-    {
-        var existingPlans = await _subscriptionRepo.getPlansByNamesIncludingDeleted(ManagedPlans.Select(p => p.Name));
-        var existingNames = existingPlans
-            .Select(p => p.Name)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+    //private async Task ensureAdminManagedPlans()
+    //{
+    //    var existingPlans = await _subscriptionRepo.getPlansByNamesIncludingDeleted(ManagedPlans.Select(p => p.Name));
+    //    var existingNames = existingPlans
+    //        .Select(p => p.Name)
+    //        .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        var needsSave = false;
-        foreach (var definition in ManagedPlans)
-        {
-            if (existingNames.Contains(definition.Name))
-                continue;
+    //    var needsSave = false;
+    //    foreach (var definition in ManagedPlans)
+    //    {
+    //        if (existingNames.Contains(definition.Name))
+    //            continue;
 
-            _subscriptionRepo.addPlan(new SubscriptionPlan
-            {
-                Id = Guid.NewGuid(),
-                Name = definition.Name,
-                Description = definition.Description,
-                Price = definition.Price,
-                DurationDays = definition.DurationDays,
-                Features = SubscriptionPlanMetadataHelper.Serialize(new SubscriptionPlanMetadata
-                {
-                    Code = definition.Code,
-                    TargetRole = definition.TargetRole,
-                    Features = definition.Features,
-                    Benefits = definition.Benefits
-                }),
-                IsActive = true,
-                SortOrder = definition.SortOrder,
-                CreatedAt = DateTime.UtcNow,
-                CreatedBy = null,
-                IsDeleted = false
-            });
-            needsSave = true;
-        }
+    //        _subscriptionRepo.addPlan(new SubscriptionPlan
+    //        {
+    //            Id = Guid.NewGuid(),
+    //            Name = definition.Name,
+    //            Description = definition.Description,
+    //            Price = definition.Price,
+    //            DurationDays = definition.DurationDays,
+    //            Features = SubscriptionPlanMetadataHelper.Serialize(new SubscriptionPlanMetadata
+    //            {
+    //                Code = definition.Code,
+    //                TargetRole = definition.TargetRole,
+    //                Features = definition.Features,
+    //                Benefits = definition.Benefits
+    //            }),
+    //            IsActive = true,
+    //            SortOrder = definition.SortOrder,
+    //            CreatedAt = DateTime.UtcNow,
+    //            CreatedBy = null,
+    //            IsDeleted = false
+    //        });
+    //        needsSave = true;
+    //    }
 
-        if (needsSave)
-            await _subscriptionRepo.saveChanges();
-    }
+    //    if (needsSave)
+    //        await _subscriptionRepo.saveChanges();
+    //}
 
     private static void markTransactionFailed(Transaction transaction, DateTime nowUtc)
     {
@@ -959,89 +983,89 @@ public class SubscriptionService
         await _subscriptionRepo.saveChanges();
     }
 
-    private async Task<List<SubscriptionPlan>> ensureManagedPlans()
-    {
-        var existingPlans = await _subscriptionRepo.getPlansByNamesIncludingDeleted(ManagedPlans.Select(p => p.Name));
-        var planMap = existingPlans.ToDictionary(p => p.Name, StringComparer.OrdinalIgnoreCase);
-        var needsSave = false;
+    //private async Task<List<SubscriptionPlan>> ensureManagedPlans()
+    //{
+    //    var existingPlans = await _subscriptionRepo.getPlansByNamesIncludingDeleted(ManagedPlans.Select(p => p.Name));
+    //    var planMap = existingPlans.ToDictionary(p => p.Name, StringComparer.OrdinalIgnoreCase);
+    //    var needsSave = false;
 
-        foreach (var definition in ManagedPlans)
-        {
-            if (!planMap.TryGetValue(definition.Name, out var plan))
-            {
-                plan = new SubscriptionPlan
-                {
-                    Id = Guid.NewGuid(),
-                    CreatedAt = DateTime.UtcNow,
-                    IsDeleted = false
-                };
-                applyDefinition(plan, definition);
-                _subscriptionRepo.addPlan(plan);
-                existingPlans.Add(plan);
-                needsSave = true;
-                continue;
-            }
+    //    foreach (var definition in ManagedPlans)
+    //    {
+    //        if (!planMap.TryGetValue(definition.Name, out var plan))
+    //        {
+    //            plan = new SubscriptionPlan
+    //            {
+    //                Id = Guid.NewGuid(),
+    //                CreatedAt = DateTime.UtcNow,
+    //                IsDeleted = false
+    //            };
+    //            applyDefinition(plan, definition);
+    //            _subscriptionRepo.addPlan(plan);
+    //            existingPlans.Add(plan);
+    //            needsSave = true;
+    //            continue;
+    //        }
 
-            if (applyDefinition(plan, definition))
-                needsSave = true;
-        }
+    //        if (applyDefinition(plan, definition))
+    //            needsSave = true;
+    //    }
 
-        if (needsSave)
-            await _subscriptionRepo.saveChanges();
+    //    if (needsSave)
+    //        await _subscriptionRepo.saveChanges();
 
-        return existingPlans
-            .Where(p => !p.IsDeleted && p.IsActive)
-            .OrderBy(p => p.SortOrder)
-            .ThenBy(p => p.Price)
-            .ToList();
-    }
+    //    return existingPlans
+    //        .Where(p => !p.IsDeleted && p.IsActive)
+    //        .OrderBy(p => p.SortOrder)
+    //        .ThenBy(p => p.Price)
+    //        .ToList();
+    //}
 
-    private static bool applyDefinition(SubscriptionPlan plan, ManagedPlanDefinition definition)
-    {
-        var changed = false;
+    //private static bool applyDefinition(SubscriptionPlan plan, ManagedPlanDefinition definition)
+    //{
+    //    var changed = false;
 
-        if (plan.Name != definition.Name)
-        {
-            plan.Name = definition.Name;
-            changed = true;
-        }
+    //    if (plan.Name != definition.Name)
+    //    {
+    //        plan.Name = definition.Name;
+    //        changed = true;
+    //    }
 
-        if (plan.Description != definition.Description)
-        {
-            plan.Description = definition.Description;
-            changed = true;
-        }
+    //    if (plan.Description != definition.Description)
+    //    {
+    //        plan.Description = definition.Description;
+    //        changed = true;
+    //    }
 
-        if (plan.Price != definition.Price)
-        {
-            plan.Price = definition.Price;
-            changed = true;
-        }
+    //    if (plan.Price != definition.Price)
+    //    {
+    //        plan.Price = definition.Price;
+    //        changed = true;
+    //    }
 
-        if (plan.DurationDays != definition.DurationDays)
-        {
-            plan.DurationDays = definition.DurationDays;
-            changed = true;
-        }
+    //    if (plan.DurationDays != definition.DurationDays)
+    //    {
+    //        plan.DurationDays = definition.DurationDays;
+    //        changed = true;
+    //    }
 
-        if (plan.SortOrder != definition.SortOrder)
-        {
-            plan.SortOrder = definition.SortOrder;
-            changed = true;
-        }
+    //    if (plan.SortOrder != definition.SortOrder)
+    //    {
+    //        plan.SortOrder = definition.SortOrder;
+    //        changed = true;
+    //    }
 
-        var features = JsonSerializer.Serialize(definition.Features);
-        if (plan.Features != features)
-        {
-            plan.Features = features;
-            changed = true;
-        }
+    //    var features = JsonSerializer.Serialize(definition.Features);
+    //    if (plan.Features != features)
+    //    {
+    //        plan.Features = features;
+    //        changed = true;
+    //    }
 
-        if (changed)
-            plan.UpdatedAt = DateTime.UtcNow;
+    //    if (changed)
+    //        plan.UpdatedAt = DateTime.UtcNow;
 
-        return changed;
-    }
+    //    return changed;
+    //}
 
     private static SubscriptionPlanResponse mapPlan(SubscriptionPlan plan)
     {
@@ -1173,40 +1197,40 @@ public class SubscriptionService
         return int.TryParse(parts[2], out var orderCode) ? orderCode : null;
     }
 
-    private static SubscriptionPlanMetadata resolveAdminPlanMetadata(SubscriptionPlan plan)
-    {
-        var metadata = SubscriptionPlanMetadataHelper.TryParse(plan.Features);
-        var definition = getManagedPlanDefinition(plan.Name);
-        var targetRole = metadata?.TargetRole;
-        if (string.IsNullOrWhiteSpace(targetRole))
-            targetRole = definition?.TargetRole ?? "Parent";
+    //private static SubscriptionPlanMetadata resolveAdminPlanMetadata(SubscriptionPlan plan)
+    //{
+    //    var metadata = SubscriptionPlanMetadataHelper.TryParse(plan.Features);
+    //    var definition = getManagedPlanDefinition(plan.Name);
+    //    var targetRole = metadata?.TargetRole;
+    //    if (string.IsNullOrWhiteSpace(targetRole))
+    //        targetRole = definition?.TargetRole ?? "Parent";
 
-        var features = metadata?.Features.Count > 0
-            ? metadata.Features
-            : definition?.Features ?? splitFeatures(plan.Features);
+    //    var features = metadata?.Features.Count > 0
+    //        ? metadata.Features
+    //        : definition?.Features ?? splitFeatures(plan.Features);
 
-        var benefits = metadata?.Benefits;
-        if (benefits == null || (
-            benefits.MonthlyJobPostLimit == 0 &&
-            benefits.MonthlyApplicationLimit == 0 &&
-            !benefits.FeaturedBadge &&
-            !benefits.SearchPriority &&
-            benefits.ListingDurationDays == 0))
-        {
-            benefits = definition?.Benefits
-                ?? (string.Equals(targetRole, "Nanny", StringComparison.OrdinalIgnoreCase)
-                    ? SubscriptionBenefitResponse.FreeNanny
-                    : SubscriptionBenefitResponse.FreeParent);
-        }
+    //    var benefits = metadata?.Benefits;
+    //    if (benefits == null || (
+    //        benefits.MonthlyJobPostLimit == 0 &&
+    //        benefits.MonthlyApplicationLimit == 0 &&
+    //        !benefits.FeaturedBadge &&
+    //        !benefits.SearchPriority &&
+    //        benefits.ListingDurationDays == 0))
+    //    {
+    //        benefits = definition?.Benefits
+    //            ?? (string.Equals(targetRole, "Nanny", StringComparison.OrdinalIgnoreCase)
+    //                ? SubscriptionBenefitResponse.FreeNanny
+    //                : SubscriptionBenefitResponse.FreeParent);
+    //    }
 
-        return new SubscriptionPlanMetadata
-        {
-            Code = SubscriptionPlanMetadataHelper.NormalizeCode(metadata?.Code, targetRole, plan.Name),
-            TargetRole = SubscriptionPlanMetadataHelper.NormalizeTargetRole(targetRole),
-            Features = SubscriptionPlanMetadataHelper.NormalizeFeatures(features),
-            Benefits = benefits
-        };
-    }
+    //    return new SubscriptionPlanMetadata
+    //    {
+    //        Code = SubscriptionPlanMetadataHelper.NormalizeCode(metadata?.Code, targetRole, plan.Name),
+    //        TargetRole = SubscriptionPlanMetadataHelper.NormalizeTargetRole(targetRole),
+    //        Features = SubscriptionPlanMetadataHelper.NormalizeFeatures(features),
+    //        Benefits = benefits
+    //    };
+    //}
 
     private static SubscriptionPlanMetadata buildAdminPlanMetadata(AdminSubscriptionPlanUpsertRequest request, string normalizedName)
     {

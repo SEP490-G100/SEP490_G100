@@ -725,7 +725,7 @@ public class AdminController : Controller
         }
     }
 }
-}
+
 
 // ── Internal DTOs ───────────────────────────────────────
 public class ScoringWeightsDto

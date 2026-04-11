@@ -196,7 +196,6 @@ builder.Services.AddScoped<CassoService>();
 builder.Services.AddScoped<PayOsService>();
 builder.Services.AddScoped<CommunicationService>();
 builder.Services.AddScoped<ReportService>();
-builder.Services.AddScoped<VnPayService>();
 builder.Services.AddScoped<HiringService>();
 builder.Services.AddScoped<ContractService>();
 builder.Services.AddScoped<FaqService>();
