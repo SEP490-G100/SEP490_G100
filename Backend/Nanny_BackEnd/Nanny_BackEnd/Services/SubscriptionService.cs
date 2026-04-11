@@ -1,5 +1,8 @@
 ﻿using System.Text.Json;
-using Microsoft.AspNetCore.Http;
+using System.Globalization;
+using System.Text;
+using System.Text.RegularExpressions;
+using Microsoft.Extensions.Options;
 using Nanny_BackEnd.DTOs.Subscription;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
@@ -9,142 +12,38 @@ namespace Nanny_BackEnd.Services;
 
 public class SubscriptionService
 {
-    private sealed record ManagedPlanDefinition(
-        string Code,
-        string TargetRole,
-        string Name,
-        string Description,
-        decimal Price,
-        int DurationDays,
-        int SortOrder,
-        SubscriptionBenefitResponse Benefits,
-        List<string> Features);
-
-    private static readonly ManagedPlanDefinition ParentPlusPlan = new(
-        Code: "PLUS",
-        TargetRole: "Parent",
-        Name: "Plus",
-        Description: "Goi Plus cho Parent can dang them bai va lam bai dang noi bat hon.",
-        Price: 299000m,
-        DurationDays: 30,
-        SortOrder: 1,
-        Benefits: new SubscriptionBenefitResponse
-        {
-            MonthlyJobPostLimit = 3,
-            MonthlyApplicationLimit = 0,
-            FeaturedBadge = true,
-            SearchPriority = false,
-            ListingDurationDays = 45
-        },
-        Features:
-        [
-            "Dang toi da 3 bai moi moi thang",
-            "Bai dang co badge noi bat",
-            "Thoi gian hien thi bai dang 45 ngay"
-        ]);
-
-    private static readonly ManagedPlanDefinition ParentProPlan = new(
-        Code: "PRO",
-        TargetRole: "Parent",
-        Name: "Pro",
-        Description: "Goi Pro cho Parent can uu tien hien thi va gia tang co hoi tiep can.",
-        Price: 499000m,
-        DurationDays: 30,
-        SortOrder: 2,
-        Benefits: new SubscriptionBenefitResponse
-        {
-            MonthlyJobPostLimit = 5,
-            MonthlyApplicationLimit = 0,
-            FeaturedBadge = true,
-            SearchPriority = true,
-            ListingDurationDays = 60
-        },
-        Features:
-        [
-            "Dang toi da 5 bai moi moi thang",
-            "Bai dang co badge noi bat",
-            "Duoc uu tien hien thi trong ket qua tim kiem",
-            "Thoi gian hien thi bai dang 60 ngay"
-        ]);
-
-    private static readonly ManagedPlanDefinition NannyPlusPlan = new(
-        Code: "NANNY_PLUS",
-        TargetRole: "Nanny",
-        Name: "Nanny Plus",
-        Description: "Goi Plus cho Nanny muon co them luot ung tuyen va ho so noi bat hon.",
-        Price: 199000m,
-        DurationDays: 30,
-        SortOrder: 3,
-        Benefits: new SubscriptionBenefitResponse
-        {
-            MonthlyJobPostLimit = 0,
-            MonthlyApplicationLimit = 3,
-            FeaturedBadge = true,
-            SearchPriority = false,
-            ListingDurationDays = 0
-        },
-        Features:
-        [
-            "Ung tuyen toi da 3 cong viec moi moi thang",
-            "Ho so co badge noi bat",
-            "Ho so duoc hien thi tot hon tai khoan Free"
-        ]);
-
-    private static readonly ManagedPlanDefinition NannyProPlan = new(
-        Code: "NANNY_PRO",
-        TargetRole: "Nanny",
-        Name: "Nanny Pro",
-        Description: "Goi Pro cho Nanny muon co them luot ung tuyen va uu tien hien thi cao hon.",
-        Price: 299000m,
-        DurationDays: 30,
-        SortOrder: 4,
-        Benefits: new SubscriptionBenefitResponse
-        {
-            MonthlyJobPostLimit = 0,
-            MonthlyApplicationLimit = 5,
-            FeaturedBadge = true,
-            SearchPriority = true,
-            ListingDurationDays = 0
-        },
-        Features:
-        [
-            "Ung tuyen toi da 5 cong viec moi moi thang",
-            "Ho so co badge noi bat",
-            "Ho so duoc uu tien hien thi cao hon goi Nanny Plus"
-        ]);
-    private static readonly ManagedPlanDefinition[] ManagedPlans =
-    [
-        ParentPlusPlan,
-        ParentProPlan,
-        NannyPlusPlan,
-        NannyProPlan
-    ];
-
     private readonly SubscriptionRepository _subscriptionRepo;
     private readonly NotificationService _notificationService;
-    private readonly VnPayService _vnPayService;
+    private readonly CassoService _cassoService;
+    private readonly PayOsService _payOsService;
+    private readonly PayOsOptions _payOsOptions;
 
     public SubscriptionService(
         SubscriptionRepository subscriptionRepo,
         NotificationService notificationService,
-        VnPayService vnPayService)
+        CassoService cassoService,
+        PayOsService payOsService,
+        IOptions<PayOsOptions> payOsOptions)
     {
         _subscriptionRepo = subscriptionRepo;
         _notificationService = notificationService;
-        _vnPayService = vnPayService;
+        _cassoService = cassoService;
+        _payOsService = payOsService;
+        _payOsOptions = payOsOptions.Value;
     }
 
     public async Task<List<SubscriptionPlanResponse>> getPlans()
     {
-        var plans = await ensureManagedPlans();
+        var plans = await _subscriptionRepo.getActivePlans();
         return plans.Select(mapPlan).ToList();
     }
 
     public async Task<SubscriptionPlanResponse?> getPlanByCode(string code)
     {
-        var plans = await ensureManagedPlans();
+        var normalizedCode = normalizeCode(code);
+        var plans = await _subscriptionRepo.getActivePlans();
         var plan = plans.FirstOrDefault(p =>
-            string.Equals(getManagedPlanDefinition(p.Name)?.Code, code, StringComparison.OrdinalIgnoreCase));
+            string.Equals(buildPlanCode(p), normalizedCode, StringComparison.OrdinalIgnoreCase));
         return plan == null ? null : mapPlan(plan);
     }
 
@@ -166,6 +65,7 @@ public class SubscriptionService
 
     public async Task<List<SubscriptionTransactionResponse>> getTransactionHistory(Guid userId)
     {
+        await expirePendingTransactions(userId);
         var transactions = await _subscriptionRepo.getUserSubscriptionTransactions(userId);
         return transactions.Select(mapTransaction).ToList();
     }
@@ -173,15 +73,12 @@ public class SubscriptionService
     public async Task<UserSubscriptionResponse> subscribe(Guid userId, SubscribeRequest request)
     {
         await expireOldSubscriptions(userId);
-        await ensureManagedPlans();
 
         var plan = await _subscriptionRepo.findPlanById(request.SubscriptionPlanId)
             ?? throw new KeyNotFoundException("Khong tim thay goi subscription hoac goi da ngung hoat dong.");
 
-        var definition = getManagedPlanDefinition(plan.Name)
-            ?? throw new InvalidOperationException("He thong chi ho tro cac goi subscription duoc quan ly san.");
-
-        await validatePlanOwnership(userId, definition);
+        var planResponse = mapPlan(plan);
+        await validatePlanOwnership(userId, planResponse.TargetRole);
 
         var currentSubscription = await _subscriptionRepo.findCurrentSubscription(userId, DateTime.UtcNow);
         if (currentSubscription != null)
@@ -227,23 +124,25 @@ public class SubscriptionService
     public async Task<SubscriptionPaymentSessionResponse> createPayment(Guid userId, CreateSubscriptionPaymentRequest request)
     {
         await expireOldSubscriptions(userId);
-        await ensureManagedPlans();
+        await expirePendingTransactions(userId);
 
         var plan = await _subscriptionRepo.findPlanById(request.SubscriptionPlanId)
             ?? throw new KeyNotFoundException("Khong tim thay goi subscription hoac goi da ngung hoat dong.");
 
-        var definition = getManagedPlanDefinition(plan.Name)
-            ?? throw new InvalidOperationException("He thong chi ho tro cac goi subscription duoc quan ly san.");
-
-        await validatePlanOwnership(userId, definition);
+        var planResponse = mapPlan(plan);
+        await validatePlanOwnership(userId, planResponse.TargetRole);
 
         var currentSubscription = await _subscriptionRepo.findCurrentSubscription(userId, DateTime.UtcNow);
         if (currentSubscription != null)
             throw new InvalidOperationException("Ban dang co goi subscription con hieu luc. Vui long huy hoac cho goi hien tai het han.");
 
+        var existingPendingTransaction = await findReusablePendingTransaction(userId, planResponse.Code);
+        if (existingPendingTransaction != null)
+            return await buildPaymentSessionResponse(plan, existingPendingTransaction);
+
         var nowUtc = DateTime.UtcNow;
         var orderCode = await generateUniqueOrderCode();
-        var paymentContent = buildPaymentContent(definition.Code, orderCode);
+        var paymentContent = buildPaymentContent(planResponse.Code, orderCode);
         var transaction = new Transaction
         {
             Id = Guid.NewGuid(),
@@ -262,23 +161,7 @@ public class SubscriptionService
 
         try
         {
-            var checkoutUrl = _vnPayService.createPaymentUrl(
-                orderCode,
-                plan.Price,
-                paymentContent,
-                request.ClientIp);
-
-            return new SubscriptionPaymentSessionResponse
-            {
-                TransactionId = transaction.Id,
-                PlanName = plan.Name,
-                Amount = plan.Price,
-                OrderCode = orderCode,
-                PaymentContent = paymentContent,
-                CheckoutUrl = checkoutUrl,
-                ProviderPaymentId = orderCode.ToString(),
-                Status = "PENDING"
-            };
+            return await buildPaymentSessionResponse(plan, transaction);
         }
         catch
         {
@@ -295,6 +178,14 @@ public class SubscriptionService
         var transaction = await _subscriptionRepo.findTransactionById(transactionId, userId)
             ?? throw new KeyNotFoundException("Khong tim thay giao dich thanh toan.");
 
+        await reconcilePendingTransaction(transaction);
+
+        if (transaction.Status == 1 && isPendingTransactionExpired(transaction, DateTime.UtcNow))
+        {
+            markTransactionFailed(transaction, DateTime.UtcNow);
+            await _subscriptionRepo.saveChanges();
+        }
+
         var planCode = tryExtractPlanCode(transaction.Description);
         var planName = planCode == null
             ? "Subscription"
@@ -310,131 +201,137 @@ public class SubscriptionService
         };
     }
 
-    public async Task<VnPayReturnResult> handleVnPayReturn(IQueryCollection query)
+    public async Task<MarkSubscriptionTransferredResponse> markTransferred(Guid userId, Guid transactionId)
     {
-        var process = await processVnPayCallback(query);
-        var transactionId = process.TransactionId ?? Guid.Empty;
-        var redirectUrl = process.IsSuccess
-            ? _vnPayService.buildSuccessUrl(transactionId)
-            : _vnPayService.buildCancelUrl(transactionId);
+        var transaction = await _subscriptionRepo.findTransactionById(transactionId, userId)
+            ?? throw new KeyNotFoundException("Khong tim thay giao dich thanh toan.");
 
-        return new VnPayReturnResult
+        if (transaction.Type != 1)
+            throw new InvalidOperationException("Chi ho tro xac nhan giao dich subscription.");
+
+        if (await _subscriptionRepo.hasAnySubscriptionLinkedToTransaction(transaction.Id) || transaction.Status == 2)
         {
-            TransactionId = process.TransactionId,
-            IsSuccess = process.IsSuccess,
-            Message = process.Message,
-            RedirectUrl = redirectUrl
-        };
-    }
+            return new MarkSubscriptionTransferredResponse
+            {
+                TransactionId = transaction.Id,
+                TransactionStatus = 2,
+                TransactionStatusLabel = getTransactionStatusLabel(2),
+                Message = "Giao dich da thanh cong truoc do."
+            };
+        }
 
-    public async Task<VnPayIpnResult> handleVnPayIpn(IQueryCollection query)
-    {
+        if (transaction.Status == 3)
+            throw new InvalidOperationException("Giao dich da that bai hoac het han. Vui long tao giao dich moi.");
+
+        if (transaction.Status == 1 && isPendingTransactionExpired(transaction, DateTime.UtcNow))
+        {
+            markTransactionFailed(transaction, DateTime.UtcNow);
+            await _subscriptionRepo.saveChanges();
+            throw new InvalidOperationException("Giao dich da het han. Vui long tao QR moi.");
+        }
+
+        var nowUtc = DateTime.UtcNow;
+        transaction.Status = 5;
+        transaction.UpdatedAt = nowUtc;
+        transaction.UpdatedBy = userId;
+        await _subscriptionRepo.saveChanges();
+
         try
         {
-            var process = await processVnPayCallback(query);
-            if (!process.IsValidSignature)
-                return new VnPayIpnResult { RspCode = "97", Message = "Invalid signature" };
-
-            if (!process.TransactionFound)
-                return new VnPayIpnResult { RspCode = "01", Message = "Order not found" };
-
-            if (process.AmountMismatch)
-                return new VnPayIpnResult { RspCode = "04", Message = "Invalid amount" };
-
-            if (process.IsAlreadyProcessed)
-                return new VnPayIpnResult { RspCode = "02", Message = "Order already confirmed" };
-
-            return new VnPayIpnResult { RspCode = "00", Message = "Confirm success" };
+            await reconcilePendingTransaction(transaction);
+            if (transaction.Status is not 2 and not 3)
+                await _cassoService.syncTransactions();
         }
         catch
         {
-            return new VnPayIpnResult { RspCode = "99", Message = "Unknown error" };
+            // Keep the transaction in waiting-review state; webhook may still arrive later.
         }
+
+        return new MarkSubscriptionTransferredResponse
+        {
+            TransactionId = transaction.Id,
+            TransactionStatus = transaction.Status,
+            TransactionStatusLabel = getTransactionStatusLabel(transaction.Status),
+            Message = transaction.Status == 2
+                ? "He thong da doi soat va kich hoat goi subscription."
+                : "Da ghi nhan ban xac nhan chuyen khoan va dang doi doi soat."
+        };
     }
 
-    // Backward compatibility for existing tests and legacy webhook flow.
-    public async Task<int> handleVietQrWebhook(VietQrWebhookRequest request)
+    public async Task<int> handleCassoWebhook(CassoWebhookRequest request)
     {
-        if (request.Data.Count == 0)
+        if (request.Error != 0 || request.Data.Count == 0)
             return 0;
 
         var processed = 0;
         foreach (var item in request.Data)
         {
-            if (item.OrderCode <= 0)
+            var orderCode = tryExtractOrderCode(item.Description);
+            if (orderCode == null)
                 continue;
 
-            var transaction = await _subscriptionRepo.findTransactionByGatewayCode(item.OrderCode.ToString());
-            if (transaction == null)
-                continue;
+            var result = await confirmTransfer(
+                orderCode.Value.ToString(),
+                item.Amount,
+                true,
+                item.Tid ?? item.Reference,
+                item.Description);
 
-            try
-            {
-                if (transaction.Status == 2 || transaction.Status == 3 ||
-                    await _subscriptionRepo.hasAnySubscriptionLinkedToTransaction(transaction.Id))
-                    continue;
-
-                var nowUtc = DateTime.UtcNow;
-                if (!string.Equals(item.Code, "00", StringComparison.OrdinalIgnoreCase))
-                {
-                    markTransactionFailed(transaction, nowUtc);
-                    continue;
-                }
-
-                var expectedAmount = decimal.Round(transaction.Amount, 0, MidpointRounding.AwayFromZero);
-                var callbackAmount = decimal.Round(item.Amount, 0, MidpointRounding.AwayFromZero);
-                if (callbackAmount <= 0 || callbackAmount != expectedAmount)
-                {
-                    markTransactionFailed(transaction, nowUtc);
-                    continue;
-                }
-
-                transaction.Status = 2;
-                transaction.CompletedAt = nowUtc;
-                transaction.UpdatedAt = nowUtc;
-                transaction.UpdatedBy = transaction.UserId;
-
-                var activated = await activateSubscriptionFromTransaction(transaction, nowUtc);
-                if (!activated)
-                {
-                    markTransactionFailed(transaction, nowUtc);
-                    continue;
-                }
-
+            if (result.IsSuccess)
                 processed++;
-            }
-            catch
-            {
-                markTransactionFailed(transaction, DateTime.UtcNow);
-            }
         }
 
-        await _subscriptionRepo.saveChanges();
         return processed;
+    }
+
+    public async Task<int> handlePayOsWebhook(PayOsWebhookRequest request)
+    {
+        if (!request.Success || request.Data.OrderCode <= 0)
+            return 0;
+
+        var result = await confirmTransfer(
+            request.Data.OrderCode.ToString(),
+            request.Data.Amount,
+            string.Equals(request.Data.Code, "00", StringComparison.OrdinalIgnoreCase),
+            request.Data.PaymentLinkId,
+            request.Data.Description);
+
+        return result.IsSuccess ? 1 : 0;
     }
 
     public async Task<SubscriptionBenefitResponse> getBenefitsForParentProfile(Guid parentProfileId)
     {
-        await ensureManagedPlans();
         var subscription = await _subscriptionRepo.findCurrentSubscriptionByParentProfile(parentProfileId, DateTime.UtcNow);
-        var definition = getManagedPlanDefinition(subscription?.SubscriptionPlan?.Name);
-        return definition?.Benefits ?? SubscriptionBenefitResponse.FreeParent;
+        if (subscription?.SubscriptionPlan == null)
+            return SubscriptionBenefitResponse.FreeParent;
+
+        var plan = mapPlan(subscription.SubscriptionPlan);
+        return string.Equals(plan.TargetRole, "Parent", StringComparison.OrdinalIgnoreCase)
+            ? plan.Benefits
+            : SubscriptionBenefitResponse.FreeParent;
     }
 
     public async Task<SubscriptionBenefitResponse> getBenefitsForNannyProfile(Guid nannyProfileId)
     {
-        await ensureManagedPlans();
         var subscription = await _subscriptionRepo.findCurrentSubscriptionByNannyProfile(nannyProfileId, DateTime.UtcNow);
-        var definition = getManagedPlanDefinition(subscription?.SubscriptionPlan?.Name);
-        return definition?.Benefits ?? SubscriptionBenefitResponse.FreeNanny;
+        if (subscription?.SubscriptionPlan == null)
+            return SubscriptionBenefitResponse.FreeNanny;
+
+        var plan = mapPlan(subscription.SubscriptionPlan);
+        return string.Equals(plan.TargetRole, "Nanny", StringComparison.OrdinalIgnoreCase)
+            ? plan.Benefits
+            : SubscriptionBenefitResponse.FreeNanny;
     }
 
     public async Task<bool> hasActiveParentSubscription(Guid parentProfileId)
     {
-        await ensureManagedPlans();
         var subscription = await _subscriptionRepo.findCurrentSubscriptionByParentProfile(parentProfileId, DateTime.UtcNow);
-        var definition = getManagedPlanDefinition(subscription?.SubscriptionPlan?.Name);
-        return definition != null && string.Equals(definition.TargetRole, "Parent", StringComparison.OrdinalIgnoreCase);
+        if (subscription?.SubscriptionPlan == null)
+            return false;
+
+        var targetRole = mapPlan(subscription.SubscriptionPlan).TargetRole;
+        return string.Equals(targetRole, "Parent", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(targetRole, "Unknown", StringComparison.OrdinalIgnoreCase);
     }
 
     public async Task<UserSubscriptionResponse> cancelCurrentSubscription(Guid userId)
@@ -615,90 +512,241 @@ public class SubscriptionService
         await _subscriptionRepo.saveChanges();
     }
 
-    private async Task<VnPayProcessInternalResult> processVnPayCallback(IQueryCollection query)
+    private async Task<Transaction?> findReusablePendingTransaction(Guid userId, string planCode)
     {
-        var callback = _vnPayService.validateCallback(query);
-        if (!callback.IsValidSignature)
+        var nowUtc = DateTime.UtcNow;
+        var pendingTransactions = await _subscriptionRepo.getPendingSubscriptionTransactions(userId);
+        if (pendingTransactions.Count == 0)
+            return null;
+
+        Transaction? reusable = null;
+        var hasChanges = false;
+
+        foreach (var transaction in pendingTransactions)
         {
-            return new VnPayProcessInternalResult
+            if (isPendingTransactionExpired(transaction, nowUtc))
             {
-                IsValidSignature = false,
-                Message = callback.Message
-            };
+                markTransactionFailed(transaction, nowUtc);
+                hasChanges = true;
+                continue;
+            }
+
+            if (!hasPayOsDisplayMetadata(transaction))
+            {
+                markTransactionFailed(transaction, nowUtc);
+                hasChanges = true;
+                continue;
+            }
+
+            if (reusable == null &&
+                string.Equals(tryExtractPlanCode(transaction.Description), planCode, StringComparison.OrdinalIgnoreCase))
+            {
+                reusable = transaction;
+            }
         }
 
-        if (string.IsNullOrWhiteSpace(callback.OrderCode))
+        if (hasChanges)
+            await _subscriptionRepo.saveChanges();
+
+        return reusable;
+    }
+
+    private async Task<SubscriptionPaymentSessionResponse> buildPaymentSessionResponse(SubscriptionPlan plan, Transaction transaction)
+    {
+        var orderCode = int.TryParse(transaction.PaymentGatewayTransactionId, out var parsedOrderCode)
+            ? parsedOrderCode
+            : 0;
+
+        var payOsInstruction = await getOrCreatePayOsInstruction(plan, transaction, orderCode);
+
+        return new SubscriptionPaymentSessionResponse
         {
-            return new VnPayProcessInternalResult
-            {
-                IsValidSignature = true,
-                Message = "Khong tim thay ma don hang VNPay."
-            };
+            TransactionId = transaction.Id,
+            PaymentMethod = "PAYOS",
+            PlanName = plan.Name,
+            Amount = transaction.Amount,
+            OrderCode = payOsInstruction.OrderCode,
+            PaymentContent = payOsInstruction.TransferContent,
+            CheckoutUrl = payOsInstruction.CheckoutUrl,
+            QrPayload = payOsInstruction.QrPayload,
+            QrCodeUrl = payOsInstruction.QrCodeUrl,
+            BankId = payOsInstruction.BankId,
+            AccountNumber = payOsInstruction.AccountNumber,
+            AccountName = payOsInstruction.AccountName,
+            ProviderPaymentId = payOsInstruction.PaymentLinkId,
+            Status = resolveSessionStatus(transaction.Status, payOsInstruction.Status),
+            ExpiresAt = payOsInstruction.ExpiresAt
+        };
+    }
+
+    private async Task expirePendingTransactions(Guid userId)
+    {
+        var nowUtc = DateTime.UtcNow;
+        var pendingTransactions = await _subscriptionRepo.getPendingSubscriptionTransactions(userId);
+        if (pendingTransactions.Count == 0)
+            return;
+
+        var hasChanges = false;
+        foreach (var transaction in pendingTransactions)
+        {
+            if (!isPendingTransactionExpired(transaction, nowUtc))
+                continue;
+
+            markTransactionFailed(transaction, nowUtc);
+            hasChanges = true;
         }
 
-        var transaction = await _subscriptionRepo.findTransactionByGatewayCode(callback.OrderCode);
+        if (hasChanges)
+            await _subscriptionRepo.saveChanges();
+    }
+
+    private bool isPendingTransactionExpired(Transaction transaction, DateTime nowUtc) =>
+        transaction.Status == 1 && getPendingTransactionExpiresAt(transaction.CreatedAt) <= nowUtc;
+
+    private DateTime getPendingTransactionExpiresAt(DateTime createdAtUtc) =>
+        createdAtUtc.AddMinutes(Math.Max(1, _payOsOptions.ExpiresAfterMinutes));
+
+    private async Task<PayOsPaymentInstruction> getOrCreatePayOsInstruction(
+        SubscriptionPlan plan,
+        Transaction transaction,
+        int orderCode)
+    {
+        if (orderCode <= 0)
+            throw new InvalidOperationException("Ma giao dich PayOS khong hop le.");
+
+        var existingInstruction = await _payOsService.getPaymentInstruction(orderCode);
+        if (existingInstruction != null)
+            return hydratePayOsInstruction(existingInstruction, transaction);
+
+        var createdInstruction = await _payOsService.createPaymentInstruction(transaction.Id, orderCode, transaction.Amount, plan.Name);
+        persistPayOsInstructionMetadata(transaction, createdInstruction);
+        await _subscriptionRepo.saveChanges();
+        return createdInstruction;
+    }
+
+    private async Task reconcilePendingTransaction(Transaction transaction)
+    {
+        if (transaction.Status is 2 or 3)
+            return;
+
+        if (!int.TryParse(transaction.PaymentGatewayTransactionId, out var orderCode) || orderCode <= 0)
+            return;
+
+        try
+        {
+            var paymentStatus = await _payOsService.getPaymentStatus(orderCode);
+            if (paymentStatus == null)
+                return;
+
+            if (paymentStatus.IsPaid)
+            {
+                await confirmTransfer(
+                    orderCode.ToString(),
+                    paymentStatus.Amount,
+                    true,
+                    paymentStatus.PaymentLinkId,
+                    null);
+                return;
+            }
+
+            if (paymentStatus.IsCancelled)
+            {
+                markTransactionFailed(transaction, DateTime.UtcNow);
+                await _subscriptionRepo.saveChanges();
+            }
+        }
+        catch
+        {
+            // Keep polling-based flow working even when PayOS status lookup is temporarily unavailable.
+        }
+    }
+
+    private static string resolveSessionStatus(int transactionStatus, string? providerStatus)
+    {
+        if (transactionStatus == 2)
+            return "SUCCESS";
+
+        if (transactionStatus == 3)
+            return "FAILED";
+
+        if (transactionStatus == 5)
+            return "WAITING_REVIEW";
+
+        if (string.Equals(providerStatus, "PAID", StringComparison.OrdinalIgnoreCase))
+            return "SUCCESS";
+
+        if (string.Equals(providerStatus, "CANCELLED", StringComparison.OrdinalIgnoreCase))
+            return "FAILED";
+
+        return "PENDING";
+    }
+
+    private async Task<TransferConfirmationResult> confirmTransfer(
+        string gatewayCode,
+        decimal amount,
+        bool isSuccess,
+        string? providerTransactionId = null,
+        string? transferContent = null)
+    {
+        var transaction = await _subscriptionRepo.findTransactionByGatewayCode(gatewayCode);
         if (transaction == null)
         {
-            return new VnPayProcessInternalResult
+            return new TransferConfirmationResult
             {
-                IsValidSignature = true,
-                TransactionFound = false,
+                Status = "NOT_FOUND",
                 Message = "Khong tim thay giao dich thanh toan."
             };
         }
 
-        var result = new VnPayProcessInternalResult
+        var result = new TransferConfirmationResult
         {
-            IsValidSignature = true,
-            TransactionFound = true,
             TransactionId = transaction.Id
         };
 
-        var linkedSubscription = await _subscriptionRepo.hasAnySubscriptionLinkedToTransaction(transaction.Id);
-        if (linkedSubscription || transaction.Status == 2)
+        if (await _subscriptionRepo.hasAnySubscriptionLinkedToTransaction(transaction.Id) || transaction.Status == 2)
         {
-            result.IsAlreadyProcessed = true;
             result.IsSuccess = true;
+            result.SubscriptionActivated = true;
+            result.Status = "ALREADY_PROCESSED";
             result.Message = "Giao dich da duoc xu ly truoc do.";
             return result;
         }
 
         if (transaction.Status == 3)
         {
-            result.IsAlreadyProcessed = true;
-            result.IsSuccess = false;
+            result.Status = "FAILED";
             result.Message = "Giao dich da o trang thai that bai.";
             return result;
         }
 
+        var nowUtc = DateTime.UtcNow;
+        if (!isSuccess)
+        {
+            markTransactionFailed(transaction, nowUtc);
+            await _subscriptionRepo.saveChanges();
+
+            result.Status = "FAILED";
+            result.Message = "Callback noi bo tra ve trang thai that bai.";
+            return result;
+        }
+
         var expectedAmount = decimal.Round(transaction.Amount, 0, MidpointRounding.AwayFromZero);
-        var callbackAmount = decimal.Round(callback.Amount, 0, MidpointRounding.AwayFromZero);
+        var callbackAmount = decimal.Round(amount, 0, MidpointRounding.AwayFromZero);
         if (callbackAmount <= 0 || callbackAmount != expectedAmount)
         {
-            markTransactionFailed(transaction, DateTime.UtcNow);
+            markTransactionFailed(transaction, nowUtc);
             await _subscriptionRepo.saveChanges();
 
-            result.AmountMismatch = true;
-            result.IsSuccess = false;
-            result.Message = "So tien giao dich khong khop.";
+            result.Status = "AMOUNT_MISMATCH";
+            result.Message = "So tien callback khong khop voi giao dich dang cho.";
             return result;
         }
 
-        if (!callback.IsSuccess)
-        {
-            markTransactionFailed(transaction, DateTime.UtcNow);
-            await _subscriptionRepo.saveChanges();
-
-            result.IsSuccess = false;
-            result.Message = "VNPay tra ve trang thai thanh toan that bai.";
-            return result;
-        }
-
-        var nowUtc = DateTime.UtcNow;
         transaction.Status = 2;
         transaction.CompletedAt = nowUtc;
         transaction.UpdatedAt = nowUtc;
         transaction.UpdatedBy = transaction.UserId;
+        transaction.Description = appendCallbackMetadata(transaction.Description, transferContent, providerTransactionId);
 
         var activated = await activateSubscriptionFromTransaction(transaction, nowUtc);
         if (!activated)
@@ -706,14 +754,17 @@ public class SubscriptionService
             markTransactionFailed(transaction, nowUtc);
             await _subscriptionRepo.saveChanges();
 
-            result.IsSuccess = false;
-            result.Message = "Khong kich hoat duoc goi subscription tu giao dich thanh toan.";
+            result.Status = "ACTIVATION_FAILED";
+            result.Message = "Khong kich hoat duoc goi subscription tu callback noi bo.";
             return result;
         }
 
         await _subscriptionRepo.saveChanges();
+
         result.IsSuccess = true;
-        result.Message = "Da xu ly callback VNPay thanh cong.";
+        result.SubscriptionActivated = true;
+        result.Status = "SUCCESS";
+        result.Message = "Da kich hoat subscription tu callback noi bo.";
         return result;
     }
 
@@ -811,6 +862,85 @@ public class SubscriptionService
         transaction.UpdatedAt = nowUtc;
         transaction.UpdatedBy = transaction.UserId;
     }
+
+    private static string appendCallbackMetadata(
+        string? description,
+        string? transferContent,
+        string? providerTransactionId)
+    {
+        var baseDescription = description?.Trim() ?? "";
+        var segments = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(baseDescription))
+            segments.Add(baseDescription);
+
+        if (!string.IsNullOrWhiteSpace(transferContent) &&
+            !string.Equals(transferContent.Trim(), baseDescription, StringComparison.OrdinalIgnoreCase))
+        {
+            segments.Add($"TRANSFER:{transferContent.Trim()}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(providerTransactionId))
+            segments.Add($"REF:{providerTransactionId.Trim()}");
+
+        return string.Join(" | ", segments);
+    }
+
+    private static PayOsPaymentInstruction hydratePayOsInstruction(PayOsPaymentInstruction instruction, Transaction transaction)
+    {
+        instruction.BankId = firstNonEmpty(instruction.BankId, extractMetadataValue(transaction.Description, "PAYOS_BANK"));
+        instruction.AccountNumber = firstNonEmpty(instruction.AccountNumber, extractMetadataValue(transaction.Description, "PAYOS_ACC"));
+        instruction.AccountName = firstNonEmpty(instruction.AccountName, extractMetadataValue(transaction.Description, "PAYOS_NAME"));
+        return instruction;
+    }
+
+    private static bool hasPayOsDisplayMetadata(Transaction transaction) =>
+        !string.IsNullOrWhiteSpace(extractMetadataValue(transaction.Description, "PAYOS_BANK")) &&
+        !string.IsNullOrWhiteSpace(extractMetadataValue(transaction.Description, "PAYOS_ACC")) &&
+        !string.IsNullOrWhiteSpace(extractMetadataValue(transaction.Description, "PAYOS_NAME"));
+
+    private static void persistPayOsInstructionMetadata(Transaction transaction, PayOsPaymentInstruction instruction)
+    {
+        transaction.Description = appendMetadataValue(transaction.Description, "PAYOS_BANK", instruction.BankId);
+        transaction.Description = appendMetadataValue(transaction.Description, "PAYOS_ACC", instruction.AccountNumber);
+        transaction.Description = appendMetadataValue(transaction.Description, "PAYOS_NAME", instruction.AccountName);
+    }
+
+    private static string appendMetadataValue(string? description, string key, string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return description?.Trim() ?? "";
+
+        var baseDescription = description?.Trim() ?? "";
+        if (baseDescription.Contains($"{key}:", StringComparison.OrdinalIgnoreCase))
+            return baseDescription;
+
+        return string.IsNullOrWhiteSpace(baseDescription)
+            ? $"{key}:{value.Trim()}"
+            : $"{baseDescription} | {key}:{value.Trim()}";
+    }
+
+    private static string? extractMetadataValue(string? description, string key)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+            return null;
+
+        var segments = description.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        foreach (var segment in segments)
+        {
+            if (!segment.StartsWith($"{key}:", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            var parts = segment.Split(':', 2, StringSplitOptions.TrimEntries);
+            if (parts.Length == 2 && !string.IsNullOrWhiteSpace(parts[1]))
+                return parts[1];
+        }
+
+        return null;
+    }
+
+    private static string firstNonEmpty(string? preferred, string? fallback) =>
+        !string.IsNullOrWhiteSpace(preferred) ? preferred : fallback ?? "";
 
     private async Task expireOldSubscriptions(Guid userId)
     {
@@ -915,19 +1045,20 @@ public class SubscriptionService
 
     private static SubscriptionPlanResponse mapPlan(SubscriptionPlan plan)
     {
-        var definition = getManagedPlanDefinition(plan.Name);
+        var features = splitFeatures(plan.Features);
+        var targetRole = inferTargetRole(plan, features);
         return new SubscriptionPlanResponse
         {
             Id = plan.Id,
-            Code = definition?.Code ?? plan.Name.ToUpperInvariant().Replace(' ', '_'),
-            TargetRole = definition?.TargetRole ?? "Unknown",
+            Code = buildPlanCode(plan),
+            TargetRole = targetRole,
             Name = plan.Name,
             Description = plan.Description,
             Price = plan.Price,
             DurationDays = plan.DurationDays,
-            Features = definition?.Features ?? splitFeatures(plan.Features),
+            Features = features,
             SortOrder = plan.SortOrder,
-            Benefits = definition?.Benefits ?? new SubscriptionBenefitResponse()
+            Benefits = inferBenefits(plan, targetRole, features)
         };
     }
 
@@ -981,6 +1112,7 @@ public class SubscriptionService
     private static string getTransactionStatusLabel(int status) => status switch
     {
         1 => "Cho thanh toan",
+        5 => "Dang cho xet duyet",
         2 => "Thanh cong",
         3 => "That bai",
         4 => "Da hoan tien",
@@ -1029,8 +1161,17 @@ public class SubscriptionService
             : null;
     }
 
-    private static ManagedPlanDefinition? getManagedPlanDefinition(string? planName) =>
-        ManagedPlans.FirstOrDefault(p => string.Equals(p.Name, planName, StringComparison.OrdinalIgnoreCase));
+    private static int? tryExtractOrderCode(string? description)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+            return null;
+
+        var parts = description.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length < 3 || !string.Equals(parts[0], "NM", StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        return int.TryParse(parts[2], out var orderCode) ? orderCode : null;
+    }
 
     private static SubscriptionPlanMetadata resolveAdminPlanMetadata(SubscriptionPlan plan)
     {
@@ -1106,9 +1247,9 @@ public class SubscriptionService
         }
     }
 
-    private async Task validatePlanOwnership(Guid userId, ManagedPlanDefinition definition)
+    private async Task validatePlanOwnership(Guid userId, string targetRole)
     {
-        if (string.Equals(definition.TargetRole, "Parent", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(targetRole, "Parent", StringComparison.OrdinalIgnoreCase))
         {
             if (!await _subscriptionRepo.hasParentProfile(userId))
                 throw new InvalidOperationException("Tai khoan hien tai khong phai Parent nen khong the mua goi nay.");
@@ -1116,35 +1257,164 @@ public class SubscriptionService
             return;
         }
 
-        if (string.Equals(definition.TargetRole, "Nanny", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(targetRole, "Nanny", StringComparison.OrdinalIgnoreCase))
         {
             if (!await _subscriptionRepo.hasNannyProfile(userId))
                 throw new InvalidOperationException("Tai khoan hien tai khong phai Nanny nen khong the mua goi nay.");
+
+            return;
         }
+
+        if (!await _subscriptionRepo.hasParentProfile(userId) && !await _subscriptionRepo.hasNannyProfile(userId))
+            throw new InvalidOperationException("Tai khoan hien tai khong hop le de mua goi subscription.");
     }
 
-    private sealed class VnPayProcessInternalResult
+    private static SubscriptionBenefitResponse inferBenefits(
+        SubscriptionPlan plan,
+        string targetRole,
+        List<string> features)
     {
-        public bool IsValidSignature { get; set; }
-        public bool TransactionFound { get; set; }
-        public bool IsAlreadyProcessed { get; set; }
-        public bool AmountMismatch { get; set; }
+        var textSamples = new List<string> { plan.Name, plan.Description ?? string.Empty };
+        textSamples.AddRange(features);
+
+        var benefits = new SubscriptionBenefitResponse
+        {
+            FeaturedBadge = containsAny(textSamples, "badge", "featured", "noi bat"),
+            SearchPriority = containsAny(textSamples, "uu tien", "priority", "tim kiem"),
+            ListingDurationDays = inferListingDurationDays(textSamples, plan.DurationDays)
+        };
+
+        if (string.Equals(targetRole, "Parent", StringComparison.OrdinalIgnoreCase))
+        {
+            benefits.MonthlyJobPostLimit = inferNumericLimit(textSamples, "bai", "dang", "job");
+            return benefits;
+        }
+
+        if (string.Equals(targetRole, "Nanny", StringComparison.OrdinalIgnoreCase))
+        {
+            benefits.MonthlyApplicationLimit = inferNumericLimit(textSamples, "ung tuyen", "apply", "cong viec");
+            benefits.ListingDurationDays = 0;
+            return benefits;
+        }
+
+        benefits.MonthlyJobPostLimit = inferNumericLimit(textSamples, "bai", "dang", "job");
+        benefits.MonthlyApplicationLimit = inferNumericLimit(textSamples, "ung tuyen", "apply", "cong viec");
+        return benefits;
+    }
+
+    private static string inferTargetRole(SubscriptionPlan plan, IEnumerable<string>? features = null)
+    {
+        var text = string.Join(' ', new[] { plan.Name, plan.Description ?? string.Empty, plan.Features ?? string.Empty }
+            .Concat(features ?? []));
+        var normalized = normalizeText(text);
+
+        if (containsAny(normalized, "nanny", "bao mau", "ung tuyen", "ho so", "candidate"))
+            return "Nanny";
+
+        if (containsAny(normalized, "parent", "phu huynh", "gia dinh", "bai dang", "dang tin", "job post"))
+            return "Parent";
+
+        return "Unknown";
+    }
+
+    private static string buildPlanCode(SubscriptionPlan plan)
+    {
+        var source = string.IsNullOrWhiteSpace(plan.Name) ? plan.Id.ToString("N") : plan.Name;
+        return normalizeCode(source);
+    }
+
+    private static string normalizeCode(string value)
+    {
+        var normalized = normalizeText(value).ToUpperInvariant();
+        var builder = new StringBuilder(normalized.Length);
+        var lastUnderscore = false;
+
+        foreach (var ch in normalized)
+        {
+            if (char.IsLetterOrDigit(ch))
+            {
+                builder.Append(ch);
+                lastUnderscore = false;
+                continue;
+            }
+
+            if (!lastUnderscore)
+            {
+                builder.Append('_');
+                lastUnderscore = true;
+            }
+        }
+
+        return builder.ToString().Trim('_');
+    }
+
+    private static int inferNumericLimit(IEnumerable<string> texts, params string[] keywords)
+    {
+        foreach (var text in texts.Where(t => !string.IsNullOrWhiteSpace(t)))
+        {
+            var normalized = normalizeText(text);
+            if (!keywords.Any(keyword => normalized.Contains(normalizeText(keyword), StringComparison.OrdinalIgnoreCase)))
+                continue;
+
+            var match = Regex.Match(normalized, @"\d+");
+            if (match.Success && int.TryParse(match.Value, out var value))
+                return value;
+        }
+
+        return 0;
+    }
+
+    private static int inferListingDurationDays(IEnumerable<string> texts, int fallbackDurationDays)
+    {
+        foreach (var text in texts.Where(t => !string.IsNullOrWhiteSpace(t)))
+        {
+            var normalized = normalizeText(text);
+            if (!normalized.Contains("ngay", StringComparison.OrdinalIgnoreCase) &&
+                !normalized.Contains("day", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var match = Regex.Match(normalized, @"\d+");
+            if (match.Success && int.TryParse(match.Value, out var value))
+                return value;
+        }
+
+        return Math.Max(0, fallbackDurationDays);
+    }
+
+    private static bool containsAny(IEnumerable<string> texts, params string[] keywords) =>
+        texts.Any(text => containsAny(text, keywords));
+
+    private static bool containsAny(string text, params string[] keywords)
+    {
+        var normalized = normalizeText(text);
+        return keywords.Any(keyword => normalized.Contains(normalizeText(keyword), StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string normalizeText(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return string.Empty;
+
+        var normalized = text.Normalize(NormalizationForm.FormD);
+        var builder = new StringBuilder(normalized.Length);
+
+        foreach (var ch in normalized)
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(ch) != UnicodeCategory.NonSpacingMark)
+                builder.Append(char.ToLowerInvariant(ch));
+        }
+
+        return builder.ToString().Normalize(NormalizationForm.FormC);
+    }
+
+    private sealed class TransferConfirmationResult
+    {
         public bool IsSuccess { get; set; }
+        public bool SubscriptionActivated { get; set; }
         public Guid? TransactionId { get; set; }
+        public string Status { get; set; } = "";
         public string Message { get; set; } = "";
     }
-}
-
-public class VnPayReturnResult
-{
-    public Guid? TransactionId { get; set; }
-    public bool IsSuccess { get; set; }
-    public string Message { get; set; } = "";
-    public string RedirectUrl { get; set; } = "";
-}
-
-public class VnPayIpnResult
-{
-    public string RspCode { get; set; } = "99";
-    public string Message { get; set; } = "Unknown error";
 }

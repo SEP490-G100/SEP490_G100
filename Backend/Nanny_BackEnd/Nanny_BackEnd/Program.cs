@@ -127,7 +127,18 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddHttpClient();
-builder.Services.Configure<VnPayOptions>(builder.Configuration.GetSection("VnPay"));
+builder.Services.AddHttpClient("Casso", client =>
+{
+    client.BaseAddress = new Uri("https://oauth.casso.vn/v2/");
+    client.Timeout = TimeSpan.FromSeconds(15);
+});
+builder.Services.AddHttpClient("PayOs", client =>
+{
+    client.BaseAddress = new Uri("https://api-merchant.payos.vn/");
+    client.Timeout = TimeSpan.FromSeconds(20);
+});
+builder.Services.Configure<CassoOptions>(builder.Configuration.GetSection("Casso"));
+builder.Services.Configure<PayOsOptions>(builder.Configuration.GetSection("PayOs"));
 // Nominatim (OpenStreetMap geocoding) — User-Agent bắt buộc theo ToS
 builder.Services.AddHttpClient("Nominatim", c =>
 {
@@ -156,6 +167,7 @@ builder.Services.AddScoped<ReportRepository>();
 builder.Services.AddScoped<FaqRepository>();
 builder.Services.AddScoped<BlogCategoryRepository>();
 builder.Services.AddScoped<BlogRepository>();
+builder.Services.AddScoped<ReviewRepository>();
 
 // DI — Services
 builder.Services.AddScoped<JwtService>();
@@ -180,7 +192,8 @@ builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<SubscriptionService>();
 builder.Services.AddScoped<ExportService>();
 builder.Services.AddScoped<NotificationService>();
-builder.Services.AddScoped<VietQrService>();
+builder.Services.AddScoped<CassoService>();
+builder.Services.AddScoped<PayOsService>();
 builder.Services.AddScoped<CommunicationService>();
 builder.Services.AddScoped<ReportService>();
 builder.Services.AddScoped<VnPayService>();
@@ -189,6 +202,14 @@ builder.Services.AddScoped<ContractService>();
 builder.Services.AddScoped<FaqService>();
 builder.Services.AddScoped<BlogCategoryService>();
 builder.Services.AddScoped<BlogService>();
+builder.Services.AddScoped<ReviewService>();
+
+// Recommendation feature
+builder.Services.Configure<AzureOpenAIOptions>(builder.Configuration.GetSection("AzureOpenAI"));
+builder.Services.AddScoped<RecommendationRepository>();
+builder.Services.AddScoped<RecommendationConfigRepository>();
+builder.Services.AddScoped<EmbeddingService>();
+builder.Services.AddScoped<RecommendationService>();
 
 
 // Background Services
@@ -211,10 +232,9 @@ app.UseCors("RestApi");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHealthChecks("/health");
 
 // SignalR hub endpoint — dùng SignalR CORS policy
 app.MapHub<ChatHub>("/hubs/chat").RequireCors("SignalR");
-
-app.MapHealthChecks("/health");
 
 app.Run();

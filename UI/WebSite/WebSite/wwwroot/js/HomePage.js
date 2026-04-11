@@ -1,8 +1,20 @@
 ﻿
 (function () {
+    const HOME_LOADER_SESSION_KEY = 'nm:home-loader-shown';
+
     // Chỉ chạy khi loader tồn tại (tức là trang chủ)
     const loader = document.getElementById('nanny-loader');
     if (!loader) return;
+
+    // Chỉ hiện một lần cho mỗi phiên duyệt tab hiện tại.
+    // Khi người dùng vào login rồi quay lại trang chủ trong cùng phiên,
+    // loader sẽ không chạy lại.
+    if (sessionStorage.getItem(HOME_LOADER_SESSION_KEY) === '1') {
+        loader.style.display = 'none';
+        return;
+    }
+
+    sessionStorage.setItem(HOME_LOADER_SESSION_KEY, '1');
 
     const fillBar = document.getElementById('nl-fillBar');
     const statusText = document.getElementById('nl-statusText');

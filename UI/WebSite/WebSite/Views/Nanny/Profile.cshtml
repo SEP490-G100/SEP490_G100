@@ -21,7 +21,7 @@
             <div class="p-8">
                 <div asp-validation-summary="ModelOnly" class="text-red-500 text-sm mb-4"></div>
 
-                <form asp-action="Profile" asp-controller="Nanny" method="post">
+                <form id="nannyProfileForm" asp-action="Profile" asp-controller="Nanny" method="post">
                     @Html.AntiForgeryToken()
 
                     <div class="space-y-5">
@@ -59,7 +59,8 @@
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Mức lương tối thiểu</label>
                                 <div class="relative">
-                                    <input asp-for="ExpectedSalaryMin" type="number" step="1000" min="20000"
+                                    <input type="hidden" asp-for="ExpectedSalaryMin" />
+                                    <input id="ExpectedSalaryMinDisplay" type="text" inputmode="numeric" autocomplete="off" value="@(Model.ExpectedSalaryMin?.ToString("0") ?? "")"
                                            class="w-full px-4 py-3 pr-16 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-400" />
                                     <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-500">VND</span>
                                 </div>
@@ -68,7 +69,8 @@
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Mức lương tối đa</label>
                                 <div class="relative">
-                                    <input asp-for="ExpectedSalaryMax" type="number" step="1000" max="500000"
+                                    <input type="hidden" asp-for="ExpectedSalaryMax" />
+                                    <input id="ExpectedSalaryMaxDisplay" type="text" inputmode="numeric" autocomplete="off" value="@(Model.ExpectedSalaryMax?.ToString("0") ?? "")"
                                            class="w-full px-4 py-3 pr-16 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-400" />
                                     <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-500">VND</span>
                                 </div>
@@ -104,10 +106,44 @@
 
 <script>
 (function () {
-    var form = document.querySelector('form[asp-action="Profile"]') || document.querySelector('form');
-    var minEl = document.getElementById('ExpectedSalaryMin');
-    var maxEl = document.getElementById('ExpectedSalaryMax');
+    var form = document.getElementById('nannyProfileForm');
+    var minEl = document.getElementById('ExpectedSalaryMinDisplay');
+    var maxEl = document.getElementById('ExpectedSalaryMaxDisplay');
+    var minHiddenEl = document.getElementById('ExpectedSalaryMin');
+    var maxHiddenEl = document.getElementById('ExpectedSalaryMax');
     var errEl = document.getElementById('salaryRangeError');
+
+    function onlyDigits(value) {
+        return String(value || '').replace(/\D/g, '');
+    }
+
+    function formatCurrencyInput(value) {
+        var digits = onlyDigits(value);
+        if (!digits) return '';
+        return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+
+    function parseCurrencyValue(value) {
+        var digits = onlyDigits(value);
+        return digits ? Number(digits) : null;
+    }
+
+    function bindCurrencyInput(input) {
+        if (!input) return;
+
+        input.value = formatCurrencyInput(input.value);
+
+        input.addEventListener('input', function () {
+            input.value = formatCurrencyInput(input.value);
+            syncHiddenValues();
+            showErr(validate());
+        });
+
+        input.addEventListener('blur', function () {
+            input.value = formatCurrencyInput(input.value);
+            syncHiddenValues();
+        });
+    }
 
     function showErr(msg) {
         if (!errEl) return;
@@ -116,23 +152,35 @@
     }
 
     function validate() {
-        var min = minEl && minEl.value ? Number(minEl.value) : null;
-        var max = maxEl && maxEl.value ? Number(maxEl.value) : null;
+        var min = minEl ? parseCurrencyValue(minEl.value) : null;
+        var max = maxEl ? parseCurrencyValue(maxEl.value) : null;
 
-        if (min != null && min <= 20000) return 'Mức lương tối thiểu phải lớn hơn 20000 VND.';
-        if (max != null && max >= 500000) return 'Mức lương tối đa phải nhỏ hơn 500000 VND.';
+        if (min != null && min <= 0) return 'Mức lương tối thiểu phải lớn hơn 0 VND.';
+        if (max != null && max <= 0) return 'Mức lương tối đa phải lớn hơn 0 VND.';
         if (min != null && max != null && max < min) return 'Mức lương tối đa phải lớn hơn hoặc bằng mức tối thiểu.';
         return '';
     }
 
-    if (minEl) minEl.addEventListener('input', function () { showErr(validate()); });
-    if (maxEl) maxEl.addEventListener('input', function () { showErr(validate()); });
+    bindCurrencyInput(minEl);
+    bindCurrencyInput(maxEl);
+
+    function syncHiddenValues() {
+        if (minHiddenEl) minHiddenEl.value = onlyDigits(minEl ? minEl.value : '');
+        if (maxHiddenEl) maxHiddenEl.value = onlyDigits(maxEl ? maxEl.value : '');
+    }
+
+    syncHiddenValues();
 
     if (form) {
         form.addEventListener('submit', function (e) {
             var msg = validate();
             showErr(msg);
-            if (msg) e.preventDefault();
+            if (msg) {
+                e.preventDefault();
+                return;
+            }
+
+            syncHiddenValues();
         });
     }
 })();

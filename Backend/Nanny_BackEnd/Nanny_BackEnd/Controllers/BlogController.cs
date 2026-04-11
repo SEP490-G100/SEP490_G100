@@ -17,14 +17,15 @@ public class BlogController : ControllerBase
     // GET /api/Blog?search=...&page=1&pageSize=5&status=1&isDeleted=false
     [HttpGet]
     public async Task<IActionResult> GetAll(
-        [FromQuery] string? search    = null,
-        [FromQuery] int     page      = 1,
-        [FromQuery] int     pageSize  = 5,
-        [FromQuery] int?    status    = null,
-        [FromQuery] bool?   isDeleted = null,
-        [FromQuery] Guid?   categoryId = null)
+        [FromQuery] string? search     = null,
+        [FromQuery] int     page       = 1,
+        [FromQuery] int     pageSize   = 5,
+        [FromQuery] int?    status     = null,
+        [FromQuery] bool?   isDeleted  = null,
+        [FromQuery] Guid?   categoryId = null,
+        [FromQuery] string? sort       = null)
     {
-        var result = await _svc.GetBlogsAsync(search, page, pageSize, status, isDeleted, categoryId);
+        var result = await _svc.GetBlogsAsync(search, page, pageSize, status, isDeleted, categoryId, sort);
         return Ok(new { success = true, data = result });
     }
 
@@ -33,6 +34,18 @@ public class BlogController : ControllerBase
     public async Task<IActionResult> GetOne(Guid id)
     {
         var (ok, code, msg, data) = await _svc.GetBlogAsync(id);
+        if (!ok) return StatusCode(code, new { success = false, message = msg });
+        return Ok(new { success = true, data });
+    }
+
+    // GET /api/Blog/by-slug/{slug} — public detail page
+    [HttpGet("by-slug/{slug}")]
+    public async Task<IActionResult> GetBySlug(string slug)
+    {
+        if (string.IsNullOrWhiteSpace(slug))
+            return BadRequest(new { success = false, message = "Slug không hợp lệ." });
+
+        var (ok, code, msg, data) = await _svc.GetBlogBySlugAsync(slug);
         if (!ok) return StatusCode(code, new { success = false, message = msg });
         return Ok(new { success = true, data });
     }

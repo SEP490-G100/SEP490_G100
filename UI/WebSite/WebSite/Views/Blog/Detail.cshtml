@@ -1,0 +1,166 @@
+@model WebSite.Models.Blog.BlogDto
+@using WebSite.Models.Blog
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = Model.Title + " - NannyMatch Blog";
+    var related = ViewBag.Related as List<BlogDto> ?? new();
+}
+
+<div class="min-h-screen bg-gray-50">
+    <div class="max-w-6xl mx-auto px-4 py-10">
+
+        <!-- Breadcrumb -->
+        <nav class="flex items-center gap-2 text-sm text-gray-400 mb-8">
+            <a href="/" class="hover:text-orange-500 transition-colors">Trang chủ</a>
+            <span class="material-icons-round text-base">chevron_right</span>
+            <a href="/Blog" class="hover:text-orange-500 transition-colors">Blog</a>
+            @if (!string.IsNullOrEmpty(Model.CategoryName))
+            {
+                <span class="material-icons-round text-base">chevron_right</span>
+                <span class="text-gray-500">@Model.CategoryName</span>
+            }
+            <span class="material-icons-round text-base">chevron_right</span>
+            <span class="text-gray-700 font-medium line-clamp-1 max-w-xs">@Model.Title</span>
+        </nav>
+
+        <div class="flex flex-col lg:flex-row gap-10">
+
+            <!-- Main Article -->
+            <article class="flex-1 min-w-0">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+
+                    <!-- Thumbnail -->
+                    @if (!string.IsNullOrEmpty(Model.ThumbnailUrl))
+                    {
+                        <div class="aspect-[21/9] overflow-hidden">
+                            <img src="@Model.ThumbnailUrl" alt="@Model.Title"
+                                 class="w-full h-full object-cover" />
+                        </div>
+                    }
+
+                    <div class="p-7 md:p-10">
+                        <!-- Category + Meta -->
+                        <div class="flex flex-wrap items-center gap-3 mb-5">
+                            @if (!string.IsNullOrEmpty(Model.CategoryName))
+                            {
+                                <span class="px-3 py-1 rounded-full bg-orange-100 text-orange-600 text-xs font-bold">
+                                    @Model.CategoryName
+                                </span>
+                            }
+                            <span class="flex items-center gap-1 text-xs text-gray-400">
+                                <span class="material-icons-round text-sm">calendar_today</span>
+                                @(Model.PublishedAt?.ToString("dd/MM/yyyy") ?? Model.CreatedAt.ToString("dd/MM/yyyy"))
+                            </span>
+                            <span class="flex items-center gap-1 text-xs text-gray-400">
+                                <span class="material-icons-round text-sm">visibility</span>
+                                @Model.ViewCount lượt xem
+                            </span>
+                        </div>
+
+                        <!-- Title -->
+                        <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 leading-tight mb-4">
+                            @Model.Title
+                        </h1>
+
+                        <!-- Summary -->
+                        @if (!string.IsNullOrEmpty(Model.Summary))
+                        {
+                            <p class="text-gray-500 text-base leading-relaxed border-l-4 border-orange-300 pl-4 mb-8 italic">
+                                @Model.Summary
+                            </p>
+                        }
+
+                        <!-- Content -->
+                        <div class="text-gray-700 leading-relaxed blog-content">
+                            @Html.Raw(Model.Content)
+                        </div>
+
+                        <!-- Author -->
+                        <div class="mt-10 pt-8 border-t border-gray-100 flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center flex-shrink-0">
+                                <span class="material-icons-round text-orange-500 text-2xl">person</span>
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-gray-800">@(Model.AuthorName ?? "NannyMatch")</p>
+                                <p class="text-xs text-gray-400">Tác giả</p>
+                            </div>
+                        </div>
+
+                        <!-- Share -->
+                        <div class="mt-6 flex items-center gap-3">
+                            <span class="text-sm text-gray-500 font-semibold">Chia sẻ:</span>
+                            <button onclick="copyLink()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-sm text-gray-600 hover:border-orange-300 hover:text-orange-500 transition-all">
+                                <span class="material-icons-round text-base">link</span>
+                                Sao chép link
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Back -->
+                <div class="mt-6">
+                    <a href="/Blog" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-orange-500 transition-colors font-semibold">
+                        <span class="material-icons-round text-base">arrow_back</span>
+                        Quay lại danh sách bài viết
+                    </a>
+                </div>
+            </article>
+
+            <!-- Sidebar -->
+            <aside class="w-full lg:w-80 flex-shrink-0">
+
+                @if (related.Any())
+                {
+                    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sticky top-24">
+                        <h3 class="font-bold text-gray-900 mb-5 flex items-center gap-2">
+                            <span class="material-icons-round text-orange-500 text-lg">library_books</span>
+                            Bài viết liên quan
+                        </h3>
+                        <div class="flex flex-col gap-5">
+                            @foreach (var post in related)
+                            {
+                                <a href="/Blog/@post.Slug" class="group flex gap-3 hover:bg-gray-50 rounded-xl p-2 -m-2 transition-colors">
+                                    <div class="w-20 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gradient-to-br from-orange-100 to-orange-50">
+                                        @if (!string.IsNullOrEmpty(post.ThumbnailUrl))
+                                        {
+                                            <img src="@post.ThumbnailUrl" alt="@post.Title" class="w-full h-full object-cover" />
+                                        }
+                                        else
+                                        {
+                                            <div class="w-full h-full flex items-center justify-center">
+                                                <span class="material-icons-round text-orange-300">article</span>
+                                            </div>
+                                        }
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-semibold text-gray-800 leading-snug line-clamp-2 group-hover:text-orange-600 transition-colors">
+                                            @post.Title
+                                        </p>
+                                        <p class="text-xs text-gray-400 mt-1">
+                                            @(post.PublishedAt?.ToString("dd/MM/yyyy") ?? post.CreatedAt.ToString("dd/MM/yyyy"))
+                                        </p>
+                                    </div>
+                                </a>
+                            }
+                        </div>
+                        <a href="/Blog" class="mt-5 flex items-center justify-center gap-1 text-sm text-orange-500 font-semibold hover:text-orange-600 transition-colors pt-4 border-t border-gray-100">
+                            Xem tất cả bài viết
+                            <span class="material-icons-round text-base">arrow_forward</span>
+                        </a>
+                    </div>
+                }
+
+            </aside>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function copyLink() {
+            navigator.clipboard.writeText(window.location.href).then(() => {
+                alert('Đã sao chép link!');
+            });
+        }
+    </script>
+}

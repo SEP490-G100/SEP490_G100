@@ -124,6 +124,9 @@ public class SubscriptionPaymentSessionViewModel
     [JsonPropertyName("transactionId")]
     public Guid TransactionId { get; set; }
 
+    [JsonPropertyName("paymentMethod")]
+    public string PaymentMethod { get; set; } = "";
+
     [JsonPropertyName("planName")]
     public string PlanName { get; set; } = "";
 
@@ -139,11 +142,29 @@ public class SubscriptionPaymentSessionViewModel
     [JsonPropertyName("checkoutUrl")]
     public string CheckoutUrl { get; set; } = "";
 
+    [JsonPropertyName("qrCodeUrl")]
+    public string QrCodeUrl { get; set; } = "";
+
+    [JsonPropertyName("qrPayload")]
+    public string QrPayload { get; set; } = "";
+
+    [JsonPropertyName("bankId")]
+    public string BankId { get; set; } = "";
+
+    [JsonPropertyName("accountNumber")]
+    public string AccountNumber { get; set; } = "";
+
+    [JsonPropertyName("accountName")]
+    public string AccountName { get; set; } = "";
+
     [JsonPropertyName("providerPaymentId")]
     public string ProviderPaymentId { get; set; } = "";
 
     [JsonPropertyName("status")]
     public string Status { get; set; } = "";
+
+    [JsonPropertyName("expiresAt")]
+    public DateTime ExpiresAt { get; set; }
 }
 
 public class SubscriptionPaymentStatusViewModel
@@ -169,6 +190,21 @@ public class SubscriptionPaymentResultPageViewModel
     public Guid TransactionId { get; set; }
     public bool Cancelled { get; set; }
     public SubscriptionPaymentStatusViewModel? PaymentStatus { get; set; }
+}
+
+public class MarkSubscriptionTransferredViewModel
+{
+    [JsonPropertyName("transactionId")]
+    public Guid TransactionId { get; set; }
+
+    [JsonPropertyName("transactionStatus")]
+    public int TransactionStatus { get; set; }
+
+    [JsonPropertyName("transactionStatusLabel")]
+    public string TransactionStatusLabel { get; set; } = "";
+
+    [JsonPropertyName("message")]
+    public string Message { get; set; } = "";
 }
 
 public class SubscriptionPageViewModel
