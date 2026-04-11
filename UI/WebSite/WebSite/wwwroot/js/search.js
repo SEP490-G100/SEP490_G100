@@ -43,12 +43,12 @@ function loadLocationData() {
     .then((response) => response.ok ? response.json() : [])
     .then((data) => {
       provinces = Array.isArray(data) ? data : [];
-      attachLocationAutocomplete('cf');
+      bindLocationInputs('cf');
       return provinces;
     })
     .catch(() => {
       provinces = [];
-      attachLocationAutocomplete('cf');
+      bindLocationInputs('cf');
       return provinces;
     });
 
@@ -60,6 +60,7 @@ function normalizeText(value) {
   return String(value ?? '')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[đĐ]/g, 'd')
     .toLowerCase()
     .trim();
 }
@@ -139,7 +140,7 @@ function uniqueNormalizedValues(values, query) {
       seen.add(key);
       return true;
     })
-    .slice(0, 12);
+    .slice(0, 40);
 }
 
 async function getProvinceOptionsAsync(query) {
@@ -259,6 +260,17 @@ function attachLocationAutocomplete(prefix) {
     (query) => getDistrictOptionsAsync(document.getElementById(`${prefix}-city`)?.value.trim() || '', query),
     () => {}
   );
+}
+
+function bindLocationInputs(prefix) {
+  attachLocationAutocomplete(prefix);
+
+  const cityInput = document.getElementById(`${prefix}-city`);
+  if (!cityInput || cityInput.dataset.locationBindReady === 'true') return;
+
+  cityInput.dataset.locationBindReady = 'true';
+  cityInput.addEventListener('input', () => handleCityChange(prefix));
+  cityInput.addEventListener('change', () => handleCityChange(prefix));
 }
 
 function attachSelectPicker(prefix, kind, selectId, inputId, emptyLabel, onValueChanged) {
