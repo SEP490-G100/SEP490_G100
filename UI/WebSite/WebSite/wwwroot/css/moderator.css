@@ -241,6 +241,20 @@
     background: #fff;
 }
 
+/* Keep filter dropdown menus above data cards, but below modals */
+.mod-filter-form,
+#filterForm {
+    position: relative;
+    z-index: auto;
+}
+
+.mod-filter-form .content-card,
+#filterForm .content-card {
+    position: relative;
+    z-index: 20;
+    overflow: visible;
+}
+
 /* ============================================================
    BUTTONS
    ============================================================ */
