@@ -50,9 +50,8 @@ public class NannyVerificationRequestController : Controller
         }
     }
 
-    [HttpGet("")]
-    [HttpGet("Index")]
-    public async Task<IActionResult> NannyGetVerificationRequests(int? status = null, int page = 1)
+    [HttpGet("NannyGetVerificationRequestList")]
+    public async Task<IActionResult> NannyGetVerificationRequestList(int? status = null, int page = 1)
     {
         ViewBag.Status = status;
         AddAuthHeader();
@@ -63,7 +62,7 @@ public class NannyVerificationRequestController : Controller
             queryParts.Add($"status={status.Value}");
         }
 
-        var response = await _http.GetAsync($"/api/NannyVerificationRequest/nanny-verification-requests?{string.Join("&", queryParts)}");
+        var response = await _http.GetAsync($"/api/NannyVerificationRequest/nanny-view-verification-list?{string.Join("&", queryParts)}");
         if (!response.IsSuccessStatusCode)
         {
             return View(new VerificationRequestListResponse
@@ -83,15 +82,15 @@ public class NannyVerificationRequestController : Controller
         });
     }
 
-    [HttpGet("NannyGetVerificationRequestDetail/{id:guid}")]
-    public async Task<IActionResult> NannyGetVerificationRequestDetail(Guid id)
+    [HttpGet("NannyViewVerificationRequestDetail/{id:guid}")]
+    public async Task<IActionResult> NannyViewVerificationRequestDetail(Guid id)
     {
         AddAuthHeader();
 
-        var response = await _http.GetAsync($"/api/NannyVerificationRequest/nanny-verification-requests/{id}");
+        var response = await _http.GetAsync($"/api/NannyVerificationRequest/nanny-view-verification-detail/{id}");
         if (!response.IsSuccessStatusCode)
         {
-            return RedirectToAction(nameof(NannyGetVerificationRequests), new
+            return RedirectToAction(nameof(NannyGetVerificationRequestList), new
             {
                 toastType = "error",
                 toastMessage = "Khong tim thay chi tiet yeu cau xac minh."
@@ -102,7 +101,7 @@ public class NannyVerificationRequestController : Controller
         var apiResult = JsonSerializer.Deserialize<ApiResult<VerificationRequestDetailDto>>(json, JsonOptions);
         if (apiResult?.Success != true || apiResult.Data == null)
         {
-            return RedirectToAction(nameof(NannyGetVerificationRequests), new
+            return RedirectToAction(nameof(NannyGetVerificationRequestList), new
             {
                 toastType = "error",
                 toastMessage = apiResult?.Message ?? "Khong tim thay chi tiet yeu cau xac minh."
@@ -113,7 +112,6 @@ public class NannyVerificationRequestController : Controller
     }
 
     [HttpGet("NannySubmitVerificationRequest")]
-    [HttpGet("Submit")]
     public async Task<IActionResult> NannySubmitVerificationRequest()
     {
         var model = new SubmitVerificationRequestViewModel();
@@ -130,7 +128,6 @@ public class NannyVerificationRequestController : Controller
     }
 
     [HttpPost("NannySubmitVerificationRequest")]
-    [HttpPost("Submit")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> NannySubmitVerificationRequest(SubmitVerificationRequestViewModel model)
     {
@@ -192,7 +189,7 @@ public class NannyVerificationRequestController : Controller
 
         var payload = JsonSerializer.Serialize(new { Documents = documents });
         var jsonContent = new StringContent(payload, Encoding.UTF8, "application/json");
-        var response = await _http.PostAsync("/api/NannyVerificationRequest/nanny-submit-verification-request", jsonContent);
+        var response = await _http.PostAsync("/api/NannyVerificationRequest/nanny-submit-verification", jsonContent);
 
         var json = await response.Content.ReadAsStringAsync();
         ApiResult? result;
@@ -226,7 +223,7 @@ public class NannyVerificationRequestController : Controller
             toastType = "info"
         });
 
-        return RedirectToAction(nameof(NannyGetVerificationRequests), new
+        return RedirectToAction(nameof(NannyGetVerificationRequestList), new
         {
             toastType = "success",
             toastMessage = "Ban da gui yeu cau xac minh thanh cong."

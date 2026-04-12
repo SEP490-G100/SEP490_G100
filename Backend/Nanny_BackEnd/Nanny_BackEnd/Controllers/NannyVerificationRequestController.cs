@@ -18,9 +18,8 @@ public class NannyVerificationRequestController : ControllerBase
     }
 
     [Authorize(Roles = "Nanny")]
-    [HttpGet("nanny-verification-requests")]
-    [HttpGet("nanny-requests")]
-    public async Task<IActionResult> NannyGetVerificationRequests([FromQuery] int? status = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 3)
+    [HttpGet("nanny-view-verification-list")]
+    public async Task<IActionResult> NannyGetVerificationRequestList([FromQuery] int? status = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 3)
     {
         var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!Guid.TryParse(userIdString, out var userId))
@@ -28,13 +27,12 @@ public class NannyVerificationRequestController : ControllerBase
             return Unauthorized();
         }
 
-        var requests = await _verificationService.NannyGetVerificationRequestsAsync(userId, status, page, pageSize);
+        var requests = await _verificationService.NannyGetVerificationRequestListAsync(userId, status, page, pageSize);
         return Ok(new { success = true, data = requests });
     }
 
     [Authorize(Roles = "Nanny")]
-    [HttpGet("nanny-verification-requests/{id:guid}")]
-    [HttpGet("nanny-requests/{id:guid}")]
+    [HttpGet("nanny-view-verification-detail/{id:guid}")]
     public async Task<IActionResult> NannyGetVerificationRequestDetail(Guid id)
     {
         var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -53,8 +51,7 @@ public class NannyVerificationRequestController : ControllerBase
     }
 
     [Authorize(Roles = "Nanny")]
-    [HttpPost("nanny-submit-verification-request")]
-    [HttpPost("submit")]
+    [HttpPost("nanny-submit-verification")]
     public async Task<IActionResult> NannySubmitVerificationRequest([FromBody] SubmitVerificationRequestDto model)
     {
         try

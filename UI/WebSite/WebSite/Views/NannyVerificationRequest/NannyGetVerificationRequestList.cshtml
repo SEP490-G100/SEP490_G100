@@ -30,7 +30,7 @@
         </div>
     </div>
 
-    <form method="get" action="/NannyVerificationRequest" id="filterForm">
+    <form method="get" action="@Url.Action("NannyGetVerificationRequestList", "NannyVerificationRequest")" id="filterForm">
         <div class="content-card p-4 mb-5 fade-in-up" style="animation-delay:.05s;">
             <div class="flex flex-col md:flex-row gap-3 md:items-center">
                 <div class="relative md:w-60">
@@ -108,7 +108,7 @@
                                     </span>
                                 </td>
                                 <td class="text-center">
-                                    <a href="@Url.Action("NannyGetVerificationRequestDetail", "NannyVerificationRequest", new { id = item.Id })"
+                                    <a href="@Url.Action("NannyViewVerificationRequestDetail", "NannyVerificationRequest", new { id = item.Id })"
                                        class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-orange-50 text-orange-600 border border-orange-200 hover:bg-orange-100 transition-all"
                                        title="View detail">
                                         <span class="material-icons-round text-sm">visibility</span>

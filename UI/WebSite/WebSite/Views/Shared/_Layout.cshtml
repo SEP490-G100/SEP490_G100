@@ -63,14 +63,14 @@
 
                             if (verificationCode == 1)
                             {
-                                nannyVerifyPromptUrl = "/NannyVerificationRequest";
+                                nannyVerifyPromptUrl = "/NannyVerificationRequest/NannyGetVerificationRequestList";
                                 nannyVerifyPromptButton = "Xem yêu cầu xác minh";
                                 nannyVerifyPromptStatusClass = "is-pending";
                                 nannyVerifyPromptStatusText = "Đang chờ duyệt";
                             }
                             else if (verificationCode == 3)
                             {
-                                nannyVerifyPromptUrl = "/NannyVerificationRequest";
+                                nannyVerifyPromptUrl = "/NannyVerificationRequest/NannyGetVerificationRequestList";
                                 nannyVerifyPromptButton = "Xem và gửi lại hồ sơ";
                                 nannyVerifyPromptStatusClass = "is-rejected";
                                 nannyVerifyPromptStatusText = "Đã bị từ chối";
@@ -1098,7 +1098,7 @@
                                         <span class="material-icons-round text-base">contact_mail</span>
                                         Request contact đã nhận
                                     </a>
-                                    <a href="/NannyVerificationRequest" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                    <a href="/NannyVerificationRequest/NannyGetVerificationRequestList" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                         <span class="material-icons-round text-base">verified_user</span>
                                         Yêu cầu xác minh
                                     </a>

@@ -474,11 +474,11 @@ public class NotificationService
             NotificationTypes.VerificationRequestSubmitted when notification.RelatedEntityId.HasValue =>
                 $"/Moderator/ViewNannyVerificationDetail/{notification.RelatedEntityId.Value}",
             NotificationTypes.VerificationRequestApproved when notification.RelatedEntityId.HasValue =>
-                $"/NannyVerificationRequest/NannyViewVerificationDetail/{notification.RelatedEntityId.Value}",
+                $"/NannyVerificationRequest/NannyViewVerificationRequestDetail/{notification.RelatedEntityId.Value}",
             NotificationTypes.VerificationRequestRejected when notification.RelatedEntityId.HasValue =>
-                $"/NannyVerificationRequest/NannyViewVerificationDetail/{notification.RelatedEntityId.Value}",
+                $"/NannyVerificationRequest/NannyViewVerificationRequestDetail/{notification.RelatedEntityId.Value}",
             NotificationTypes.VerificationRequestCreated when notification.RelatedEntityId.HasValue =>
-                $"/NannyVerificationRequest/NannyViewVerificationDetail/{notification.RelatedEntityId.Value}",
+                $"/NannyVerificationRequest/NannyViewVerificationRequestDetail/{notification.RelatedEntityId.Value}",
             NotificationTypes.ReportSubmitted when notification.RelatedEntityId.HasValue =>
                 $"/Moderator/ViewComplaintDetail/{notification.RelatedEntityId.Value}",
             NotificationTypes.ReportSubmitted =>

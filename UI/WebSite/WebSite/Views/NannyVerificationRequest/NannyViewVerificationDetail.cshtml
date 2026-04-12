@@ -23,7 +23,7 @@
 
 <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
     <div class="flex items-center gap-2 text-sm text-gray-400 mb-6 fade-in-up">
-        <a href="/NannyVerificationRequest" class="hover:text-orange-500 transition-colors font-semibold">Verification Requests</a>
+        <a href="/NannyVerificationRequest/NannyGetVerificationRequestList" class="hover:text-orange-500 transition-colors font-semibold">Verification Requests</a>
         <span class="material-icons-round text-base">chevron_right</span>
         <span class="text-gray-600 font-semibold">Request Detail</span>
     </div>
@@ -59,7 +59,7 @@
                     <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Reviewed</p>
                     <p class="font-bold text-gray-800 mt-1">@(Model.ReviewedAt.HasValue ? Model.ReviewedAt.Value.ToString("MMM dd, yyyy HH:mm") : "Not reviewed yet")</p>
                 </div>
-                <a href="/NannyVerificationRequest" class="btn-outline self-start whitespace-nowrap px-4 py-3 min-h-[52px] inline-flex items-center justify-center">
+                <a href="/NannyVerificationRequest/NannyGetVerificationRequestList" class="btn-outline self-start whitespace-nowrap px-4 py-3 min-h-[52px] inline-flex items-center justify-center">
                     <span class="material-icons-round text-base">arrow_back</span>
                     Back to List
                 </a>
