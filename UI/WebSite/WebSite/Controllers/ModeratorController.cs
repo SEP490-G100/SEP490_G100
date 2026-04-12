@@ -223,7 +223,7 @@ public class ModeratorController : Controller
 
         try
         {
-            var response = await _http.GetAsync($"/api/Moderator/job-postings/{jobPostingId}");
+            var response = await _http.GetAsync($"/api/Moderator/moderator-view-job-detail/{jobPostingId}");
             var json = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<ApiResult<JobPostingDetailResponse>>(json, JsonOpts);
 
@@ -266,7 +266,7 @@ public class ModeratorController : Controller
 
         try
         {
-            var response = await _http.PatchAsJsonAsync($"/api/Moderator/job-postings/{jobPostingId}/deactivate", new { });
+            var response = await _http.PatchAsJsonAsync($"/api/Moderator/moderator-deactivate-job-posting/{jobPostingId}", new { });
             var json = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
 
@@ -1147,7 +1147,7 @@ public class ModeratorController : Controller
         var token = HttpContext.Session.GetString("AccessToken");
         _http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-        var url = $"api/Moderator/job-postings?page={page}&pageSize=10";
+        var url = $"api/Moderator/moderator-view-job-list?page={page}&pageSize=10";
         if (status.HasValue) url += $"&status={status}";
         if (moderationStatus.HasValue) url += $"&moderationStatus={moderationStatus}";
         if (!string.IsNullOrEmpty(search)) url += $"&search={Uri.EscapeDataString(search)}";
@@ -1177,7 +1177,7 @@ public class ModeratorController : Controller
 
         try
         {
-            var response = await _http.GetAsync($"/api/Moderator/job-postings/{id}");
+            var response = await _http.GetAsync($"/api/Moderator/moderator-view-job-detail/{id}");
             var json = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<ApiResult<JobPostingDetailResponse>>(json, JsonOpts);
 
@@ -1204,7 +1204,7 @@ public class ModeratorController : Controller
         _http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
         var body = new { action, note };
-        var response = await _http.PatchAsJsonAsync($"api/Moderator/job-postings/{id}/review", body);
+        var response = await _http.PatchAsJsonAsync($"api/Moderator/moderator-review-job/{id}", body);
 
         if (response.IsSuccessStatusCode)
         {
