@@ -10,6 +10,19 @@ public class BlogService
     private readonly BlogRepository _repo;
     public BlogService(BlogRepository repo) => _repo = repo;
 
+    public async Task<List<BlogCategoryOptionDto>> GetActiveCategoriesAsync()
+    {
+        var categories = await _repo.GetActiveCategoriesAsync();
+        return categories
+            .Select(c => new BlogCategoryOptionDto
+            {
+                Id = c.Id,
+                Name = c.Name,
+                Slug = c.Slug
+            })
+            .ToList();
+    }
+
 
     public async Task<BlogListResponse> ModeratorViewBlogListAsync(
         string? search, int page, int pageSize,

@@ -13,65 +13,56 @@ namespace Nanny_BackEnd.Controllers;
 [Authorize(Roles = "Moderator")]
 public class BlogCategoryController : ControllerBase
 {
-    private readonly BlogCategoryService _svc;
-    public BlogCategoryController(BlogCategoryService svc) => _svc = svc;
-
+    private readonly BlogCategoryService _blogCategoryService;
+    public BlogCategoryController(BlogCategoryService blogCategoryService) {
+        _blogCategoryService = blogCategoryService;
+    }  
     // GET /api/BlogCategory?search=...&page=1&pageSize=3&isDeleted=false
-    [HttpGet]
-    public async Task<IActionResult> GetAll(
+    [HttpGet("moderator-view-blog-category-list")]
+    public async Task<IActionResult> ModeratorViewBlogCategoryList(
         [FromQuery] string? search    = null,
         [FromQuery] int     page      = 1,
         [FromQuery] int     pageSize  = 3,
         [FromQuery] bool?   isDeleted = null)
     {
-        var result = await _svc.GetCategoriesAsync(search, page, pageSize, isDeleted);
+        var result = await _blogCategoryService.ModeratorViewBlogCategoryListAsync(search, page, pageSize, isDeleted);
         return Ok(new { success = true, data = result });
     }
 
     // GET /api/BlogCategory/{id}
-    [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetOne(Guid id)
+    [HttpGet("moderator-view-blog-category-detail/{id:guid}")]
+    public async Task<IActionResult> ModeratorViewBlogCategoryDetail(Guid id)
     {
-        var (ok, code, msg, data) = await _svc.GetCategoryAsync(id);
+        var (ok, code, msg, data) = await _blogCategoryService.ModeratorViewBlogCategoryDetailAsync(id);
         if (!ok) return StatusCode(code, new { success = false, message = msg });
         return Ok(new { success = true, data });
     }
 
     // POST /api/BlogCategory
-    [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateBlogCategoryRequest req)
+    [HttpPost("moderator-create-blog-category")]
+    public async Task<IActionResult> ModeratorCreateBlogCategory([FromBody] CreateBlogCategoryRequest req)
     {
-        if (string.IsNullOrWhiteSpace(req?.Name))
-            return BadRequest(new { success = false, message = "Name không được để trống." });
-        if (string.IsNullOrWhiteSpace(req?.Slug))
-            return BadRequest(new { success = false, message = "Slug không được để trống." });
-
         var userId = GetUserId();
-        var (ok, code, msg, data) = await _svc.CreateCategoryAsync(req, userId);
+        var (ok, code, msg, data) = await _blogCategoryService.ModeratorCreateBlogCategoryAsync(req, userId);
         if (!ok) return StatusCode(code, new { success = false, message = msg });
         return StatusCode(201, new { success = true, message = msg, data });
     }
 
     // PUT /api/BlogCategory/{id}
-    [HttpPut("{id:guid}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateBlogCategoryRequest req)
+    [HttpPut("moderator-update-blog-category/{id:guid}")]
+    public async Task<IActionResult> ModeratorUpdateBlogCategory(Guid id, [FromBody] UpdateBlogCategoryRequest req)
     {
-        if (string.IsNullOrWhiteSpace(req?.Name))
-            return BadRequest(new { success = false, message = "Name không được để trống." });
-        if (string.IsNullOrWhiteSpace(req?.Slug))
-            return BadRequest(new { success = false, message = "Slug không được để trống." });
-
         var userId = GetUserId();
-        var (ok, code, msg) = await _svc.UpdateCategoryAsync(id, req, userId);
+        var (ok, code, msg) = await _blogCategoryService.ModeratorUpdateBlogCategoryAsync(id, req, userId);
         if (!ok) return StatusCode(code, new { success = false, message = msg });
         return Ok(new { success = true, message = msg });
     }
 
     // PUT /api/BlogCategory/{id}/toggle-status
-    [HttpPut("{id}/toggle-status")]
-    public async Task<IActionResult> ToggleStatus(Guid id, [FromQuery] bool activate)
+    [HttpPut("moderator-toggle-status/{id:guid}")]
+    public async Task<IActionResult> ModeratorToggleCategoryStatus(Guid id, [FromQuery] bool activate)
     {
-        var (success, code, msg) = await _svc.ToggleCategoryStatusAsync(id, activate);
+        var (success, code, msg) = await _blogCategoryService.ModeratorToggleCategoryStatusAsync(id, activate);
         if (!success) return StatusCode(code, new { success = false, message = msg });
 
         return Ok(new { success = true, message = msg });

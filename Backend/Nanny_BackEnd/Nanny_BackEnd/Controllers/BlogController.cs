@@ -17,7 +17,9 @@ public class BlogController : ControllerBase
         _blogService = blogService;
     }
     // GET /api/Blog?search=...&page=1&pageSize=5&status=1&isDeleted=false
-    [HttpGet]
+
+
+    [HttpGet("moderator-view-blog-list")]
     public async Task<IActionResult> ModeratorViewBlogList(
         [FromQuery] string? search     = null,
         [FromQuery] int     page       = 1,
@@ -32,7 +34,7 @@ public class BlogController : ControllerBase
     }
 
     // GET /api/Blog/{id}
-    [HttpGet("{id:guid}")]
+    [HttpGet("moderator-view-blog-detail/{id:guid}")]
     public async Task<IActionResult> ModeratorViewBlogDetail(Guid id)
     {
         var (ok, code, msg, data) = await _blogService.ModeratorViewBlogDetailAsync(id);
@@ -56,14 +58,12 @@ public class BlogController : ControllerBase
     [HttpGet("categories")]
     public async Task<IActionResult> GetCategories()
     {
-        var repo = HttpContext.RequestServices.GetRequiredService<Nanny_BackEnd.Repositories.BlogRepository>();
-        var cats = await repo.GetActiveCategoriesAsync();
-        var result = cats.Select(c => new { c.Id, c.Name, c.Slug }).ToList();
+        var result = await _blogService.GetActiveCategoriesAsync();
         return Ok(new { success = true, data = result });
     }
 
     // POST /api/Blog
-    [HttpPost]
+    [HttpPost("moderator-create-blog")]
     public async Task<IActionResult> ModeratorCreateBlog([FromBody] CreateBlogRequest req)
     {
         var userId = GetUserId();
@@ -76,7 +76,7 @@ public class BlogController : ControllerBase
     }
 
     // PUT /api/Blog/{id}
-    [HttpPut("{id:guid}")]
+    [HttpPut("moderator-update-blog/{id:guid}")]
     public async Task<IActionResult> ModeratorUpdateBlog(Guid id, [FromBody] UpdateBlogRequest req)
     {
         var userId = GetUserId();
@@ -85,8 +85,8 @@ public class BlogController : ControllerBase
         return Ok(new { success = true, message = msg });
     }
 
-    // PUT /api/Blog/{id}/toggle-status?activate=true/false
-    [HttpPut("{id:guid}/toggle-status")]
+    // PUT /api/Blog/moderator-toggle-blog-status/{id}
+    [HttpPut("moderator-toggle-blog-status/{id:guid}")]
     public async Task<IActionResult> ModeratorToggleBlogStatus(Guid id, [FromQuery] bool activate)
     {
         var (ok, code, msg) = await _blogService.ModeratorToggleBlogStatusAsync(id, activate);
