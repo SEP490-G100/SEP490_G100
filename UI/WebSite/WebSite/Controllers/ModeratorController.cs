@@ -406,26 +406,26 @@ public class ModeratorController : Controller
         }
     }
 
-    public IActionResult ManageBlogs()         => View();
+    public IActionResult ManageBlogs() => View();
     public IActionResult ModerateJobPostings() => View();
 
     // ──────────────────────────────────────────────
     // GET /Moderator/ManageFAQ
     // ──────────────────────────────────────────────
     public async Task<IActionResult> ManageFAQ(
-        string? search   = null,
-        bool?   isActive = null,
+        string? search = null,
+        bool? isActive = null,
         string? category = null,
-        int     page     = 1)
+        int page = 1)
     {
-        ViewBag.Search   = search;
+        ViewBag.Search = search;
         ViewBag.IsActive = isActive?.ToString() ?? "";
         ViewBag.Category = category ?? "";
 
         var qs = new List<string> { $"page={page}", "pageSize=3" };
-        if (!string.IsNullOrWhiteSpace(search))   qs.Add($"search={Uri.EscapeDataString(search)}");
-        if (isActive.HasValue)                     qs.Add($"isActive={isActive.Value.ToString().ToLower()}");
-        if (!string.IsNullOrWhiteSpace(category))  qs.Add($"category={Uri.EscapeDataString(category)}");
+        if (!string.IsNullOrWhiteSpace(search)) qs.Add($"search={Uri.EscapeDataString(search)}");
+        if (isActive.HasValue) qs.Add($"isActive={isActive.Value.ToString().ToLower()}");
+        if (!string.IsNullOrWhiteSpace(category)) qs.Add($"category={Uri.EscapeDataString(category)}");
 
         var token = HttpContext.Session.GetString("AccessToken");
 
@@ -443,12 +443,12 @@ public class ModeratorController : Controller
         {
             var listResp = await _http.SendAsync(listReq);
             var listJson = await listResp.Content.ReadAsStringAsync();
-            var result   = JsonSerializer.Deserialize<ApiResult<FaqListResponse>>(listJson, JsonOpts);
+            var result = JsonSerializer.Deserialize<ApiResult<FaqListResponse>>(listJson, JsonOpts);
 
             try
             {
-                var catResp  = await _http.SendAsync(catReq);
-                var catJson  = await catResp.Content.ReadAsStringAsync();
+                var catResp = await _http.SendAsync(catReq);
+                var catJson = await catResp.Content.ReadAsStringAsync();
                 var catResult = JsonSerializer.Deserialize<ApiResult<List<string>>>(catJson, JsonOpts);
                 ViewBag.Categories = catResult?.Data ?? new List<string>();
             }
@@ -479,12 +479,12 @@ public class ModeratorController : Controller
         var body = JsonSerializer.Serialize(new
         {
             question = model.Question,
-            answer   = model.Answer,
+            answer = model.Answer,
             category = model.Category,
             isActive = model.IsActive
             // SortOrder auto-assigned by backend
         });
-        var token   = HttpContext.Session.GetString("AccessToken");
+        var token = HttpContext.Session.GetString("AccessToken");
         var request = new HttpRequestMessage(HttpMethod.Post, "/api/Faq")
         {
             Content = new StringContent(body, Encoding.UTF8, "application/json")
@@ -495,8 +495,8 @@ public class ModeratorController : Controller
         try
         {
             var response = await _http.SendAsync(request);
-            var json     = await response.Content.ReadAsStringAsync();
-            var result   = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
             if (result?.Success == true)
             {
                 return RedirectToAction(nameof(ManageFAQ), new
@@ -506,7 +506,7 @@ public class ModeratorController : Controller
                 });
             }
             TempData["Error"] = result?.Message ?? "Tạo FAQ thất bại.";
-                return View("~/Views/Moderator/FAQ/CreateFAQ.cshtml", model);
+            return View("~/Views/Moderator/FAQ/CreateFAQ.cshtml", model);
         }
         catch (Exception ex)
         {
@@ -520,7 +520,7 @@ public class ModeratorController : Controller
     // ──────────────────────────────────────────────
     public async Task<IActionResult> ViewFAQDetail(Guid id)
     {
-        var token   = HttpContext.Session.GetString("AccessToken");
+        var token = HttpContext.Session.GetString("AccessToken");
         var request = new HttpRequestMessage(HttpMethod.Get, $"/api/Faq/{id}");
         if (!string.IsNullOrEmpty(token))
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -528,8 +528,8 @@ public class ModeratorController : Controller
         try
         {
             var response = await _http.SendAsync(request);
-            var json     = await response.Content.ReadAsStringAsync();
-            var result   = JsonSerializer.Deserialize<ApiResult<FaqDto>>(json, JsonOpts);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult<FaqDto>>(json, JsonOpts);
             if (result?.Success != true || result.Data == null)
             {
                 TempData["Error"] = "Không tìm thấy FAQ.";
@@ -553,11 +553,11 @@ public class ModeratorController : Controller
     {
         var body = JsonSerializer.Serialize(new
         {
-            question  = model.Question,
-            answer    = model.Answer,
-            isActive  = model.IsActive
+            question = model.Question,
+            answer = model.Answer,
+            isActive = model.IsActive
         });
-        var token   = HttpContext.Session.GetString("AccessToken");
+        var token = HttpContext.Session.GetString("AccessToken");
         var request = new HttpRequestMessage(HttpMethod.Put, $"/api/Faq/{id}")
         {
             Content = new StringContent(body, Encoding.UTF8, "application/json")
@@ -568,7 +568,7 @@ public class ModeratorController : Controller
         try
         {
             var response = await _http.SendAsync(request);
-            var json     = await response.Content.ReadAsStringAsync();
+            var json = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
             if (result?.Success == true)
             {
@@ -597,7 +597,7 @@ public class ModeratorController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ToggleFaqStatus(Guid id)
     {
-        var token   = HttpContext.Session.GetString("AccessToken");
+        var token = HttpContext.Session.GetString("AccessToken");
         var request = new HttpRequestMessage(HttpMethod.Patch, $"/api/Faq/{id}/toggle-status");
         if (!string.IsNullOrEmpty(token))
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -605,7 +605,7 @@ public class ModeratorController : Controller
         try
         {
             var response = await _http.SendAsync(request);
-            var json     = await response.Content.ReadAsStringAsync();
+            var json = await response.Content.ReadAsStringAsync();
             // Return the raw JSON from the backend directly to the AJAX caller
             return Content(json, "application/json");
         }
@@ -634,16 +634,16 @@ public class ModeratorController : Controller
         try
         {
             var response = await _http.SendAsync(req);
-            var json     = await response.Content.ReadAsStringAsync();
-            var result   = JsonSerializer.Deserialize<ApiResult<BlogCategoryListResponse>>(json, JsonOpts);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult<BlogCategoryListResponse>>(json, JsonOpts);
 
-            ViewBag.Search    = search ?? "";
+            ViewBag.Search = search ?? "";
             ViewBag.IsDeleted = isDeleted.HasValue ? isDeleted.Value.ToString().ToLower() : "";
             return View("BlogCategory/ManageBlogCategory", result?.Data ?? new BlogCategoryListResponse { Page = page, PageSize = pageSize });
         }
         catch
         {
-            ViewBag.Search    = search ?? "";
+            ViewBag.Search = search ?? "";
             ViewBag.IsDeleted = "";
             TempData["Error"] = "Không thể tải danh sách danh mục.";
             return View("BlogCategory/ManageBlogCategory", new BlogCategoryListResponse { Page = page, PageSize = pageSize });
@@ -658,8 +658,8 @@ public class ModeratorController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateBlogCategory(CreateBlogCategoryRequest model)
     {
-        var body    = JsonSerializer.Serialize(new { name = model.Name, slug = model.Slug });
-        var token   = HttpContext.Session.GetString("AccessToken");
+        var body = JsonSerializer.Serialize(new { name = model.Name, slug = model.Slug });
+        var token = HttpContext.Session.GetString("AccessToken");
         var request = new HttpRequestMessage(HttpMethod.Post, "/api/BlogCategory")
         {
             Content = new StringContent(body, Encoding.UTF8, "application/json")
@@ -670,8 +670,8 @@ public class ModeratorController : Controller
         try
         {
             var response = await _http.SendAsync(request);
-            var json     = await response.Content.ReadAsStringAsync();
-            var result   = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
 
             if (result?.Success == true)
             {
@@ -694,7 +694,7 @@ public class ModeratorController : Controller
     // GET /Moderator/ViewBlogCategoryDetail/{id}
     public async Task<IActionResult> ViewBlogCategoryDetail(Guid id)
     {
-        var token   = HttpContext.Session.GetString("AccessToken");
+        var token = HttpContext.Session.GetString("AccessToken");
         var request = new HttpRequestMessage(HttpMethod.Get, $"/api/BlogCategory/{id}");
         if (!string.IsNullOrEmpty(token))
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -702,8 +702,8 @@ public class ModeratorController : Controller
         try
         {
             var response = await _http.SendAsync(request);
-            var json     = await response.Content.ReadAsStringAsync();
-            var result   = JsonSerializer.Deserialize<ApiResult<BlogCategoryDto>>(json, JsonOpts);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult<BlogCategoryDto>>(json, JsonOpts);
 
             if (result?.Success == true && result.Data != null)
                 return View("BlogCategory/ViewBlogCategoryDetail", result.Data);
@@ -723,8 +723,8 @@ public class ModeratorController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ViewBlogCategoryDetail(Guid id, UpdateBlogCategoryRequest model)
     {
-        var body    = JsonSerializer.Serialize(new { name = model.Name, slug = model.Slug });
-        var token   = HttpContext.Session.GetString("AccessToken");
+        var body = JsonSerializer.Serialize(new { name = model.Name, slug = model.Slug });
+        var token = HttpContext.Session.GetString("AccessToken");
         var request = new HttpRequestMessage(HttpMethod.Put, $"/api/BlogCategory/{id}")
         {
             Content = new StringContent(body, Encoding.UTF8, "application/json")
@@ -735,8 +735,8 @@ public class ModeratorController : Controller
         try
         {
             var response = await _http.SendAsync(request);
-            var json     = await response.Content.ReadAsStringAsync();
-            var result   = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
 
             if (result?.Success == true)
             {
@@ -761,7 +761,7 @@ public class ModeratorController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ToggleBlogCategoryStatus(Guid id, bool activate)
     {
-        var token   = HttpContext.Session.GetString("AccessToken");
+        var token = HttpContext.Session.GetString("AccessToken");
         var request = new HttpRequestMessage(HttpMethod.Put, $"/api/BlogCategory/{id}/toggle-status?activate={(activate ? "true" : "false")}");
         if (!string.IsNullOrEmpty(token))
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -769,8 +769,8 @@ public class ModeratorController : Controller
         try
         {
             var response = await _http.SendAsync(request);
-            var json     = await response.Content.ReadAsStringAsync();
-            var result   = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
             if (result?.Success == true)
             {
                 return RedirectToAction(nameof(ManageBlogCategory), new
@@ -886,7 +886,7 @@ public class ModeratorController : Controller
         var token = HttpContext.Session.GetString("AccessToken");
 
         var qs = $"?search={Uri.EscapeDataString(search ?? "")}&page={page}&pageSize={pageSize}";
-        if (status.HasValue)    qs += $"&status={status.Value}";
+        if (status.HasValue) qs += $"&status={status.Value}";
         if (isDeleted.HasValue) qs += $"&isDeleted={isDeleted.Value.ToString().ToLower()}";
         if (categoryId.HasValue) qs += $"&categoryId={categoryId.Value}";
 
@@ -897,11 +897,11 @@ public class ModeratorController : Controller
         try
         {
             var response = await _http.SendAsync(req);
-            var json     = await response.Content.ReadAsStringAsync();
-            var result   = JsonSerializer.Deserialize<ApiResult<BlogListResponse>>(json, JsonOpts);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult<BlogListResponse>>(json, JsonOpts);
 
-            ViewBag.Search    = search ?? "";
-            ViewBag.Status    = status.HasValue ? status.Value.ToString() : "";
+            ViewBag.Search = search ?? "";
+            ViewBag.Status = status.HasValue ? status.Value.ToString() : "";
             ViewBag.IsDeleted = isDeleted.HasValue ? isDeleted.Value.ToString().ToLower() : "";
             ViewBag.CategoryId = categoryId.HasValue ? categoryId.Value.ToString() : "";
             ViewBag.Categories = await FetchBlogCategoriesAsync();
@@ -909,8 +909,8 @@ public class ModeratorController : Controller
         }
         catch
         {
-            ViewBag.Search    = search ?? "";
-            ViewBag.Status    = "";
+            ViewBag.Search = search ?? "";
+            ViewBag.Status = "";
             ViewBag.IsDeleted = "";
             ViewBag.CategoryId = "";
             ViewBag.Categories = new List<BlogCategoryOption>();
@@ -958,13 +958,13 @@ public class ModeratorController : Controller
         var token = HttpContext.Session.GetString("AccessToken");
         var payload = JsonSerializer.Serialize(new
         {
-            title        = model.Title.Trim(),
-            slug         = model.Slug.Trim().ToLower(),
-            content      = model.Content.Trim(),
-            summary      = model.Summary?.Trim(),
+            title = model.Title.Trim(),
+            slug = model.Slug.Trim().ToLower(),
+            content = model.Content.Trim(),
+            summary = model.Summary?.Trim(),
             thumbnailUrl = model.ThumbnailUrl?.Trim(),
-            categoryId   = model.CategoryId,
-            status       = model.Status
+            categoryId = model.CategoryId,
+            status = model.Status
         });
         var req = new HttpRequestMessage(HttpMethod.Post, "/api/Blog")
         {
@@ -976,8 +976,8 @@ public class ModeratorController : Controller
         try
         {
             var response = await _http.SendAsync(req);
-            var json     = await response.Content.ReadAsStringAsync();
-            var result   = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
 
             if (result?.Success == true)
             {
@@ -1009,8 +1009,8 @@ public class ModeratorController : Controller
         try
         {
             var response = await _http.SendAsync(req);
-            var json     = await response.Content.ReadAsStringAsync();
-            var result   = JsonSerializer.Deserialize<ApiResult<BlogDto>>(json, JsonOpts);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult<BlogDto>>(json, JsonOpts);
 
             if (result?.Success != true || result.Data == null)
             {
@@ -1055,13 +1055,13 @@ public class ModeratorController : Controller
         var token = HttpContext.Session.GetString("AccessToken");
         var payload = JsonSerializer.Serialize(new
         {
-            title        = model.Title.Trim(),
-            slug         = model.Slug.Trim().ToLower(),
-            content      = model.Content.Trim(),
-            summary      = model.Summary?.Trim(),
+            title = model.Title.Trim(),
+            slug = model.Slug.Trim().ToLower(),
+            content = model.Content.Trim(),
+            summary = model.Summary?.Trim(),
             thumbnailUrl = model.ThumbnailUrl?.Trim(),
-            categoryId   = model.CategoryId,
-            status       = model.Status
+            categoryId = model.CategoryId,
+            status = model.Status
         });
         var req = new HttpRequestMessage(HttpMethod.Put, $"/api/Blog/{id}")
         {
@@ -1073,8 +1073,8 @@ public class ModeratorController : Controller
         try
         {
             var response = await _http.SendAsync(req);
-            var json     = await response.Content.ReadAsStringAsync();
-            var result   = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
 
             if (result?.Success == true)
             {
@@ -1101,7 +1101,7 @@ public class ModeratorController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ToggleBlogStatus(Guid id, bool activate)
     {
-        var token   = HttpContext.Session.GetString("AccessToken");
+        var token = HttpContext.Session.GetString("AccessToken");
         var request = new HttpRequestMessage(HttpMethod.Put,
             $"/api/Blog/{id}/toggle-status?activate={(activate ? "true" : "false")}");
         if (!string.IsNullOrEmpty(token))
@@ -1110,8 +1110,8 @@ public class ModeratorController : Controller
         try
         {
             var response = await _http.SendAsync(request);
-            var json     = await response.Content.ReadAsStringAsync();
-            var result   = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
             if (result?.Success == true)
             {
                 return RedirectToAction(nameof(ManageBlog), new
@@ -1133,125 +1133,5 @@ public class ModeratorController : Controller
         return RedirectToAction(nameof(ManageBlog));
     }
 
-    // ─────────────────────────────────────────────────────
-    // JOB POSTING MODERATION
-    // ─────────────────────────────────────────────────────
 
-    [HttpGet]
-    public async Task<IActionResult> ManageJobPosting(
-        int? status = null,
-        int? moderationStatus = null,
-        string? search = null,
-        int page = 1)
-    {
-        var token = HttpContext.Session.GetString("AccessToken");
-        _http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-
-        var url = $"api/Moderator/moderator-view-job-list?page={page}&pageSize=10";
-        if (status.HasValue) url += $"&status={status}";
-        if (moderationStatus.HasValue) url += $"&moderationStatus={moderationStatus}";
-        if (!string.IsNullOrEmpty(search)) url += $"&search={Uri.EscapeDataString(search)}";
-
-        var response = await _http.GetAsync(url);
-        if (response.IsSuccessStatusCode)
-        {
-            var json = await response.Content.ReadAsStringAsync();
-            var result = JsonSerializer.Deserialize<ApiResult<JobPostingListResponse>>(json, JsonOpts);
-
-            ViewBag.Search = search;
-            ViewBag.Status = status?.ToString();
-            ViewBag.ModerationStatus = moderationStatus?.ToString();
-
-            return View("~/Views/Moderator/JobPosting/ManageJobPosting.cshtml", result?.Data);
-        }
-
-        TempData["Error"] = "Could not fetch job postings.";
-        return View("~/Views/Moderator/JobPosting/ManageJobPosting.cshtml", new JobPostingListResponse());
-    }
-
-    [HttpGet]
-    public async Task<IActionResult> ViewJobPostingDetail(Guid id)
-    {
-        var token = HttpContext.Session.GetString("AccessToken");
-        _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        try
-        {
-            var response = await _http.GetAsync($"/api/Moderator/moderator-view-job-detail/{id}");
-            var json = await response.Content.ReadAsStringAsync();
-            var result = JsonSerializer.Deserialize<ApiResult<JobPostingDetailResponse>>(json, JsonOpts);
-
-            if (result?.Success != true || result.Data == null)
-            {
-                TempData["Error"] = result?.Message ?? "Could not find the job posting.";
-                return RedirectToAction(nameof(ManageJobPosting));
-            }
-
-            return View("~/Views/Moderator/JobPosting/ViewJobPostingDetail.cshtml", result.Data);
-        }
-        catch
-        {
-            TempData["Error"] = "Could not load the job posting detail.";
-            return RedirectToAction(nameof(ManageJobPosting));
-        }
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ReviewJobPosting(Guid id, int action, string? note, Guid? parentUserId = null, bool returnToDetail = false)
-    {
-        var token = HttpContext.Session.GetString("AccessToken");
-        _http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-
-        var body = new { action, note };
-        var response = await _http.PatchAsJsonAsync($"api/Moderator/moderator-review-job/{id}", body);
-
-        if (response.IsSuccessStatusCode)
-        {
-            if (parentUserId.HasValue && parentUserId.Value != Guid.Empty)
-            {
-                await _notificationHub.Clients.Group($"user:{parentUserId.Value}").SendAsync("notification:new", new
-                {
-                    type = action == 2 ? "job-posting-approved" : "job-posting-rejected",
-                    title = action == 2 ? "Bai dang da duoc duyet" : "Bai dang da bi tu choi",
-                    message = action == 2
-                        ? "Bai dang cua ban da duoc moderator duyet."
-                        : "Bai dang cua ban da bi moderator tu choi.",
-                    toastType = action == 2 ? "success" : "warning"
-                });
-            }
-
-            return RedirectToAction(nameof(ManageJobPosting), new
-            {
-                toastType = action == 2 ? "success" : "warning",
-                toastMessage = action == 2
-                    ? "Job posting approved successfully."
-                    : "Job posting rejected successfully."
-            });
-        }
-        else
-        {
-            var errorJson = await response.Content.ReadAsStringAsync();
-            TempData["Error"] = "Review failed: " + errorJson;
-        }
-
-        return RedirectToAction(nameof(ManageJobPosting));
-    }
-}
-
-public class JobPostingListResponse
-{
-    [JsonPropertyName("items")]
-    public List<SearchJobResponse> Items { get; set; } = new();
-
-    [JsonPropertyName("totalCount")]
-    public int TotalCount { get; set; }
-
-    [JsonPropertyName("page")]
-    public int Page { get; set; }
-
-    [JsonPropertyName("pageSize")]
-    public int PageSize { get; set; }
-
-    public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
 }

@@ -153,7 +153,22 @@ public class JobPostingPrefillResponse
     [JsonPropertyName("children")]
     public List<JobPostingPrefillChildResponse> Children { get; set; } = [];
 }
+public class JobPostingListResponse
+{
+    [JsonPropertyName("items")]
+    public List<SearchJobResponse> Items { get; set; } = new();
 
+    [JsonPropertyName("totalCount")]
+    public int TotalCount { get; set; }
+
+    [JsonPropertyName("page")]
+    public int Page { get; set; }
+
+    [JsonPropertyName("pageSize")]
+    public int PageSize { get; set; }
+
+    public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
+}
 public class JobPostingDetailResponse
 {
     [JsonPropertyName("id")]
