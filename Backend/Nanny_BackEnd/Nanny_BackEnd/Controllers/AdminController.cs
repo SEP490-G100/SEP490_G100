@@ -41,7 +41,7 @@ public class AdminController : ControllerBase
     [HttpGet("dashboard")]
     public async Task<IActionResult> GetDashboard()
     {
-        var stats = await _dashboardService.GetDashboardStatsAsync();
+        var stats = await _dashboardService.GetAdminDashboardStatsAsync();
         return Ok(new { success = true, data = stats });
     }
 

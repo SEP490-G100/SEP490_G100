@@ -11,6 +11,15 @@ public class AdminDashboardStatsDto
     public UserGrowthStatsDto UserGrowth { get; set; } = null!;
 }
 
+public class ModeratorDashboardStatsDto
+{
+    public UserStatsDto UserStats { get; set; } = null!;
+    public PlatformHealthStatsDto PlatformHealth { get; set; } = null!;
+    public ModerationQueueStatsDto ModerationQueue { get; set; } = null!;
+    public ModerationResultsStatsDto ModerationResults { get; set; } = null!;
+    public UserGrowthStatsDto UserGrowth { get; set; } = null!;
+}
+
 
 public class PlatformHealthStatsDto
 {

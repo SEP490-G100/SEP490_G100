@@ -34,31 +34,13 @@ public class DashboardService
         _db = db;
     }
 
-    public async Task<AdminDashboardStatsDto> GetDashboardStatsAsync()
+    public async Task<AdminDashboardStatsDto> GetAdminDashboardStatsAsync()
     {
         var userStats = await GetUserStatsAsync();
         var revenueStats = await GetRevenueStatsAsync();
         var subscriptionStats = await GetSubscriptionStatsAsync();
-
-        var pendingVerifications = await _verificationRepo.GetQuery()
-            .CountAsync(v => !v.IsDeleted && v.Status == (int)NannyVerificationRequestStatus.Pending);
-
-        /*
-         Job posting co 2 status: 1:Public, 2: Hidden, Job Posting Moderation status: 0: Pending, 1: Rejected, 2: Approved
-         */
-        var activeJobs = await _jobRepo.GetQuery()
-            .CountAsync(j => !j.IsDeleted && j.Status == 1);
-
-        //phaỉ xem lại các status của contract, phần status , !isDeleted đúng rồi
-        var totalContracts = await _contractRepo.GetQuery()
-            .CountAsync(c => !c.IsDeleted);
-
-        var pendingJobPostings = await _jobRepo.GetQuery()
-            .CountAsync(j => !j.IsDeleted && j.ModerationStatus == (int)JobPostingModerationStatus.Pending);
-
-        var pendingReports = await _db.Reports
-            .AsNoTracking()
-            .CountAsync(r => !r.IsDeleted && r.HandledAt == null);
+        var (pendingVerifications, pendingJobPostings, pendingReports, activeJobs, totalContracts) =
+            await GetCurrentModerationHealthCountersAsync();
 
         return new AdminDashboardStatsDto
         {
@@ -75,6 +57,51 @@ public class DashboardService
             ModerationResults = await GetModerationResultsAsync(),
             UserGrowth = await GetUserGrowthStatsAsync()
         };
+    }
+
+    public async Task<ModeratorDashboardStatsDto> GetModeratorDashboardStatsAsync()
+    {
+        var userStats = await GetUserStatsAsync();
+        var (pendingVerifications, pendingJobPostings, pendingReports, activeJobs, totalContracts) =
+            await GetCurrentModerationHealthCountersAsync();
+
+        return new ModeratorDashboardStatsDto
+        {
+            UserStats = userStats,
+            PlatformHealth = new PlatformHealthStatsDto
+            {
+                PendingVerifications = pendingVerifications,
+                ActiveJobPostings = activeJobs,
+                TotalContracts = totalContracts
+            },
+            ModerationQueue = await GetModerationQueueStatsAsync(pendingVerifications, pendingJobPostings, pendingReports),
+            ModerationResults = await GetModerationResultsAsync(),
+            UserGrowth = await GetUserGrowthStatsAsync()
+        };
+    }
+
+    private async Task<(int PendingVerifications, int PendingJobPostings, int PendingReports, int ActiveJobs, int TotalContracts)> GetCurrentModerationHealthCountersAsync()
+    {
+        var pendingVerifications = await _verificationRepo.GetQuery()
+            .CountAsync(v => !v.IsDeleted && v.Status == (int)NannyVerificationRequestStatus.Pending);
+
+        /*
+         Job posting co 2 status: 1:Public, 2: Hidden, Job Posting Moderation status: 0: Pending, 1: Rejected, 2: Approved
+         */
+        var activeJobs = await _jobRepo.GetQuery()
+            .CountAsync(j => !j.IsDeleted && j.Status == 1);
+
+        var totalContracts = await _contractRepo.GetQuery()
+            .CountAsync(c => !c.IsDeleted);
+
+        var pendingJobPostings = await _jobRepo.GetQuery()
+            .CountAsync(j => !j.IsDeleted && j.ModerationStatus == (int)JobPostingModerationStatus.Pending);
+
+        var pendingReports = await _db.Reports
+            .AsNoTracking()
+            .CountAsync(r => !r.IsDeleted && r.Status == 0);
+
+        return (pendingVerifications, pendingJobPostings, pendingReports, activeJobs, totalContracts);
     }
 
     private async Task<UserStatsDto> GetUserStatsAsync()
@@ -222,7 +249,7 @@ public class DashboardService
             .ToListAsync();
         var pendingReportDates = await _db.Reports
             .AsNoTracking()
-            .Where(r => !r.IsDeleted && r.HandledAt == null && r.CreatedAt >= startDateUtc)
+            .Where(r => !r.IsDeleted && r.Status == 0 && r.CreatedAt >= startDateUtc)
             .Select(r => r.CreatedAt)
             .ToListAsync();
 
