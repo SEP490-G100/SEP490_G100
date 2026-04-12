@@ -18,19 +18,22 @@ public class RecommendationController : ControllerBase
     private readonly RecommendationRepository _repo;
     private readonly RecommendationConfigRepository _configRepo;
     private readonly Sep490NannyDbContext _db;
+    private readonly SubscriptionService _subscriptionService;
 
     public RecommendationController(
         RecommendationService recSvc,
         EmbeddingService embedSvc,
         RecommendationRepository repo,
         RecommendationConfigRepository configRepo,
-        Sep490NannyDbContext db)
+        Sep490NannyDbContext db,
+        SubscriptionService subscriptionService)
     {
         _recSvc = recSvc;
         _embedSvc = embedSvc;
         _repo = repo;
         _configRepo = configRepo;
         _db = db;
+        _subscriptionService = subscriptionService;
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -176,6 +179,10 @@ public class RecommendationController : ControllerBase
                 .FirstOrDefaultAsync(p => p.UserId == userId.Value && !p.IsDeleted);
             if (parent == null) return Forbid();
 
+            var benefits = await _subscriptionService.getBenefitsForParentProfile(parent.Id);
+            if (!benefits.CanUseRecommendation)
+                return StatusCode(403, Fail("Tính năng gợi ý AI yêu cầu gói Plus hoặc Pro."));
+
             var jobExists = await _db.JobPostings
                 .AnyAsync(j => j.Id == jobId && j.ParentProfileId == parent.Id && !j.IsDeleted);
             if (!jobExists) return NotFound(Fail("Không tìm thấy job posting."));
@@ -202,6 +209,10 @@ public class RecommendationController : ControllerBase
         var nanny = await _db.NannyProfiles
             .FirstOrDefaultAsync(n => n.UserId == userId.Value && !n.IsDeleted);
         if (nanny == null) return NotFound(Fail("Không tìm thấy nanny profile."));
+
+        var benefits = await _subscriptionService.getBenefitsForNannyProfile(nanny.Id);
+        if (!benefits.CanUseRecommendation)
+            return StatusCode(403, Fail("Tính năng gợi ý AI yêu cầu gói Plus hoặc Pro."));
 
         var results = await _recSvc.GetTopJobsForNannyAsync(nanny.Id, topK);
         return Ok(Success(results, results.Count));
