@@ -170,6 +170,7 @@ builder.Services.AddScoped<ContractRepository>();
 builder.Services.AddScoped<HiringRepository>();
 builder.Services.AddScoped<CommunicationRepository>();
 builder.Services.AddScoped<ReportRepository>();
+builder.Services.AddScoped<ExportRepository>();
 builder.Services.AddScoped<AdminDashboardRepository>();
 builder.Services.AddScoped<ModeratorDashboardRepository>();
 builder.Services.AddScoped<FaqRepository>();
