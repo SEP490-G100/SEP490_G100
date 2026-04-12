@@ -76,28 +76,29 @@
                                         </div>
                                     </div>
 
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Mật khẩu</label>
-                        <div class="relative">
-                            <input asp-for="Password" type="password" placeholder="Tối thiểu 8 ký tự" id="regPassword"
-                                   class="w-full px-4 py-3 pr-12 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition-all" />
-                            <button type="button" onclick="togglePassword('regPassword', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                                <span class="material-icons-round text-xl">visibility_off</span>
-                            </button>
-                        </div>
-                        <span asp-validation-for="Password" class="text-red-500 text-xs mt-1"></span>
-                    </div>
+                                    <div class="nm-col-6">
+                                        <div class="nm-field">
+                                            <label asp-for="Password" class="nm-label">Mat khau <span class="required">*</span></label>
+                                            <div class="nm-password-wrap">
+                                                <input asp-for="Password" type="text" id="regPassword" class="nm-input pwd-field" placeholder="Toi thieu 8 ky tu" />
+                                                <button type="button" onclick="togglePassword('regPassword', this)" class="nm-password-toggle" aria-label="Hien thi mat khau">
+                                                    <span class="material-icons-round text-xl">visibility_off</span>
+                                                </button>
+                                            </div>
+                                            <span asp-validation-for="Password" class="nm-error"></span>
+                                        </div>
+                                    </div>
 
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Xác nhận mật khẩu</label>
-                        <div class="relative">
-                            <input asp-for="ConfirmPassword" type="password" placeholder="Nhập lại mật khẩu" id="regConfirmPassword"
-                                   class="w-full px-4 py-3 pr-12 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition-all" />
-                            <button type="button" onclick="togglePassword('regConfirmPassword', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                                <span class="material-icons-round text-xl">visibility_off</span>
-                            </button>
+                                    <div class="nm-col-6">
+                                        <div class="nm-field">
+                                            <label asp-for="ConfirmPassword" class="nm-label">Xac nhan mat khau <span class="required">*</span></label>
+                                            <input asp-for="ConfirmPassword" type="password" class="nm-input" placeholder="Nhap lai mat khau" />
+                                            <span asp-validation-for="ConfirmPassword" class="nm-error"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <span asp-validation-for="ConfirmPassword" class="text-red-500 text-xs mt-1"></span>
                     </div>
 
                     <div class="nm-flow-actions">
