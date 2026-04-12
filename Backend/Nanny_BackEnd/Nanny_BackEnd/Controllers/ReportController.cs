@@ -44,26 +44,6 @@ public class ReportController : ControllerBase
         catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
     }
 
-    [HttpPost("messages/{id:guid}")]
-    public async Task<IActionResult> ReportMessage(Guid id, [FromBody] CreateReportRequest request)
-    {
-        if (!ModelState.IsValid)
-            return BadRequest(FailValidation(ModelState));
-
-        var userId = getCurrentUserId();
-        if (!userId.HasValue)
-            return Unauthorized(Fail("Khong xac dinh duoc nguoi dung hien tai."));
-
-        try
-        {
-            await _reportService.ReportMessageAsync(id, userId.Value, request);
-            return Ok(new { success = true, message = "Bao cao da duoc gui. Chung toi se kiem tra trong thoi gian som nhat." });
-        }
-        catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
-        catch (RateLimitExceededException ex) { return RateLimit(ex); }
-        catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
-    }
-
     [HttpPost("profiles/{id:guid}")]
     public async Task<IActionResult> ReportProfile(Guid id, [FromBody] CreateReportRequest request)
     {

@@ -33,7 +33,7 @@ public class NannyVerificationRequestController : ControllerBase
 
     [Authorize(Roles = "Nanny")]
     [HttpGet("nanny-view-verification-detail/{id:guid}")]
-    public async Task<IActionResult> NannyGetVerificationRequestDetail(Guid id)
+    public async Task<IActionResult> NannyViewVerificationRequestDetail(Guid id)
     {
         var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!Guid.TryParse(userIdString, out var userId))
@@ -41,7 +41,7 @@ public class NannyVerificationRequestController : ControllerBase
             return Unauthorized();
         }
 
-        var (success, data, message) = await _verificationService.NannyGetVerificationRequestDetailAsync(userId, id);
+        var (success, data, message) = await _verificationService.NannyViewVerificationRequestDetailAsync(userId, id);
         if (!success || data == null)
         {
             return NotFound(new { success = false, message = message ?? "Khong tim thay yeu cau xac minh." });

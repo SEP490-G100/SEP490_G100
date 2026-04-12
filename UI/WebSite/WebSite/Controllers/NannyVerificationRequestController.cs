@@ -108,7 +108,7 @@ public class NannyVerificationRequestController : Controller
             });
         }
 
-        return View("~/Views/NannyVerificationRequest/NannyViewVerificationDetail.cshtml", apiResult.Data);
+        return View("~/Views/NannyVerificationRequest/NannyViewVerificationRequestDetail.cshtml", apiResult.Data);
     }
 
     [HttpGet("NannySubmitVerificationRequest")]

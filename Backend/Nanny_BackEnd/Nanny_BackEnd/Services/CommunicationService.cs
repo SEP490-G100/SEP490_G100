@@ -206,11 +206,27 @@ public class CommunicationService
 
     public async Task ReportMessageAsync(Guid messageId, Guid reporterUserId, ReportMessageDto dto)
     {
-        await _reportService.ReportMessageAsync(messageId, reporterUserId, new Nanny_BackEnd.DTOs.Report.CreateReportRequest
+        var message = await _repo.GetMessageByIdAsync(messageId)
+            ?? throw new KeyNotFoundException("Khong tim thay tin nhan.");
+
+        if (message.SenderUserId == reporterUserId)
+            throw new InvalidOperationException("Ban khong the bao cao tin nhan cua chinh minh.");
+
+        _repo.AddReport(new Report
         {
+            Id = Guid.NewGuid(),
+            ReporterUserId = reporterUserId,
+            ReportedEntityId = messageId,
+            ReportedEntityType = "Message",
             Reason = dto.Reason,
-            Evidence = dto.Evidence
+            Evidence = dto.Evidence,
+            Status = 0, // Pending
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = reporterUserId,
+            IsDeleted = false
         });
+
+        await _repo.SaveChangesAsync();
     }
 
     // ─── Cập nhật trạng thái hội thoại (Block/Hide) ──────────────────────────
