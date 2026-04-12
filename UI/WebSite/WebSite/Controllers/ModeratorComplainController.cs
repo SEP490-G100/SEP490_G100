@@ -4,41 +4,35 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using WebSite.Enums;
 using WebSite.Hubs;
 using WebSite.Models;
-using WebSite.Models.BlogCategory;
-using WebSite.Models.Blog;
 using WebSite.Models.Moderator;
 using WebSite.Models.Profile;
-using WebSite.Models.Search;
-using WebSite.Services;
 using System.Text.Json.Serialization;
 
 
 namespace WebSite.Controllers;
 
 [Authorize(Roles = "Moderator")]
-public class ModeratorController : Controller
+[Route("Moderator")]
+public class ModeratorComplainController : Controller
 {
     private readonly HttpClient _http;
     private readonly IHubContext<NotificationHub> _notificationHub;
-    private readonly IAzureBlobStorageService _blobStorageService;
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
 
-    public ModeratorController(
+    public ModeratorComplainController(
         IHttpClientFactory httpFactory,
-        IHubContext<NotificationHub> notificationHub,
-        IAzureBlobStorageService blobStorageService)
+        IHubContext<NotificationHub> notificationHub)
     {
         _http = httpFactory.CreateClient("BackendApi");
         _notificationHub = notificationHub;
-        _blobStorageService = blobStorageService;
     }
 
     // ──────────────────────────────────────────────
     // GET /Moderator/ManageComplaint
     // ──────────────────────────────────────────────
+    [HttpGet("ManageComplaint")]
     public async Task<IActionResult> ManageComplaint(
         string? search = null,
         int? status = null,
@@ -76,6 +70,7 @@ public class ModeratorController : Controller
     // ──────────────────────────────────────────────
     // GET /Moderator/ViewComplaintDetail/{id}
     // ──────────────────────────────────────────────
+    [HttpGet("ViewComplaintDetail/{id:guid}")]
     public async Task<IActionResult> ViewComplaintDetail(Guid id)
     {
         var detail = await FetchComplaintDetailAsync(id);
@@ -101,7 +96,7 @@ public class ModeratorController : Controller
     // ──────────────────────────────────────────────
     // POST /Moderator/ViewComplaintDetail/{id}
     // ──────────────────────────────────────────────
-    [HttpPost]
+    [HttpPost("ViewComplaintDetail/{id:guid}")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ViewComplaintDetail(Guid id, [Bind(Prefix = "Form")] ModeratorResolveComplaintRequest form)
     {
@@ -211,7 +206,7 @@ public class ModeratorController : Controller
         }
     }
 
-    [HttpGet]
+    [HttpGet("ViewComplainedJobPostingDetail")]
     public async Task<IActionResult> ViewComplainedJobPostingDetail(Guid jobPostingId, Guid? complaintId = null)
     {
         if (jobPostingId == Guid.Empty)
@@ -224,7 +219,7 @@ public class ModeratorController : Controller
         {
             var response = await _http.GetAsync($"/api/Moderator/moderator-view-job-detail/{jobPostingId}");
             var json = await response.Content.ReadAsStringAsync();
-            var result = JsonSerializer.Deserialize<ApiResult<JobPostingDetailResponse>>(json, JsonOpts);
+            var result = JsonSerializer.Deserialize<ApiResult<WebSite.Models.Search.JobPostingDetailResponse>>(json, JsonOpts);
 
             if (result?.Success != true || result.Data == null)
             {
@@ -253,7 +248,7 @@ public class ModeratorController : Controller
         }
     }
 
-    [HttpPost]
+    [HttpPost("DeactivateComplainedJobPosting")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeactivateComplainedJobPosting(Guid jobPostingId, Guid? complaintId = null)
     {
@@ -310,7 +305,7 @@ public class ModeratorController : Controller
         }
     }
 
-    [HttpGet]
+    [HttpGet("ViewComplainedProfileDetail")]
     public async Task<IActionResult> ViewComplainedProfileDetail(Guid userId, Guid? complaintId = null)
     {
         if (userId == Guid.Empty)
@@ -374,7 +369,7 @@ public class ModeratorController : Controller
     // ──────────────────────────────────────────────
     // POST /Moderator/ToggleComplaintStatus
     // ──────────────────────────────────────────────
-    [HttpPost]
+    [HttpPost("ToggleComplaintStatus")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ToggleComplaintStatus(Guid id, bool isActive)
     {

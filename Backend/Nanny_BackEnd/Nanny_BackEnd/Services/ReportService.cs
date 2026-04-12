@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Nanny_BackEnd.DTOs.Report;
 using Nanny_BackEnd.Exceptions;
 using Nanny_BackEnd.Helpers;
@@ -110,6 +111,13 @@ public class ReportService
         Guid moderatorUserId,
         ResolveReportRequest request)
     {
+        if (request == null)
+            return (false, 400, "Request body is required.");
+
+        var resolveValidation = validateResolveReportRequest(request);
+        if (resolveValidation != null)
+            return (false, 400, resolveValidation);
+
         var report = await _reportRepo.GetReportByIdAsync(id, includeDeleted: true);
         if (report == null)
             return (false, 404, "Report not found.");
@@ -192,6 +200,13 @@ public class ReportService
         string reportedEntityType,
         CreateReportRequest request)
     {
+        if (request == null)
+            throw new InvalidOperationException("Request body is required.");
+
+        var createValidation = validateCreateReportRequest(request);
+        if (!string.IsNullOrWhiteSpace(createValidation))
+            throw new InvalidOperationException(createValidation);
+
         var reason = request.Reason?.Trim();
         if (string.IsNullOrWhiteSpace(reason))
             throw new InvalidOperationException("Ly do bao cao la bat buoc.");
@@ -387,5 +402,27 @@ public class ReportService
             return await _reportRepo.GetJobPostingOwnerUserIdAsync(report.ReportedEntityId);
 
         return null;
+    }
+
+    private static string? validateCreateReportRequest(CreateReportRequest request)
+    {
+        var ctx = new ValidationContext(request);
+        var results = new List<ValidationResult>();
+        var ok = Validator.TryValidateObject(request, ctx, results, validateAllProperties: true);
+        if (ok)
+            return null;
+
+        return results.FirstOrDefault()?.ErrorMessage ?? "Du lieu bao cao khong hop le.";
+    }
+
+    private static string? validateResolveReportRequest(ResolveReportRequest request)
+    {
+        var ctx = new ValidationContext(request);
+        var results = new List<ValidationResult>();
+        var ok = Validator.TryValidateObject(request, ctx, results, validateAllProperties: true);
+        if (ok)
+            return null;
+
+        return results.FirstOrDefault()?.ErrorMessage ?? "Du lieu xu ly bao cao khong hop le.";
     }
 }

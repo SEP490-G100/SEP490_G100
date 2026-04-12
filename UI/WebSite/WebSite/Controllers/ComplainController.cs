@@ -205,82 +205,6 @@ public class ComplainController : Controller
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ComplainMessage(MessageComplainFormModel model, CancellationToken cancellationToken)
-    {
-        if (model.MessageId == Guid.Empty)
-        {
-            return RedirectToMessageComplainReturn(
-                model.ReturnUrl,
-                "error",
-                "Khong tim thay tin nhan can phan nan.");
-        }
-
-        var reason = ExtractPlainText(model.Reason);
-        if (reason.Length < 5 || reason.Length > 500)
-        {
-            return RedirectToMessageComplainReturn(
-                model.ReturnUrl,
-                "warning",
-                "Ly do phan nan phai tu 5 den 500 ky tu.");
-        }
-
-        var evidence = NormalizeEvidence(model.Evidence);
-        if (!string.IsNullOrEmpty(evidence) && evidence.Length > 2000)
-        {
-            return RedirectToMessageComplainReturn(
-                model.ReturnUrl,
-                "warning",
-                "Bang chung khong duoc vuot qua 2000 ky tu.");
-        }
-
-        SetAuthHeader();
-        try
-        {
-            var response = await _http.PostAsJsonAsync(
-                $"/api/reports/messages/{model.MessageId}",
-                new
-                {
-                    reason,
-                    evidence
-                },
-                cancellationToken);
-
-            var json = await response.Content.ReadAsStringAsync(cancellationToken);
-            var message = TryExtractMessage(json);
-            var isBusinessSuccess = TryExtractSuccessFlag(json);
-
-            if (response.IsSuccessStatusCode && isBusinessSuccess != false)
-            {
-                await _notificationHub.Clients.Group("role:Moderator").SendAsync("notification:new", new
-                {
-                    type = "complain-submitted",
-                    title = "Co bao cao tin nhan moi",
-                    message = "Mot bao cao message moi vua duoc gui va can moderator xu ly.",
-                    toastType = "warning"
-                }, cancellationToken);
-
-                return RedirectToMessageComplainReturn(
-                    model.ReturnUrl,
-                    "success",
-                    message ?? "Gui phan nan tin nhan thanh cong.");
-            }
-
-            return RedirectToMessageComplainReturn(
-                model.ReturnUrl,
-                "error",
-                message ?? "Khong the gui phan nan tin nhan.");
-        }
-        catch (Exception)
-        {
-            return RedirectToMessageComplainReturn(
-                model.ReturnUrl,
-                "error",
-                "Khong the gui phan nan tin nhan.");
-        }
-    }
-
-    [HttpPost]
     [IgnoreAntiforgeryToken]
     public async Task<IActionResult> UploadComplainImages(List<IFormFile>? files, CancellationToken cancellationToken)
         => await UploadComplainMediaCore(files, BlobMediaType.Image, cancellationToken);
@@ -443,24 +367,6 @@ public class ComplainController : Controller
         return RedirectToAction("ViewUser", "Profile", new
         {
             userId = complainedUserId,
-            toastType,
-            toastMessage
-        });
-    }
-
-    private IActionResult RedirectToMessageComplainReturn(
-        string? returnUrl,
-        string toastType,
-        string toastMessage)
-    {
-        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
-        {
-            var redirectUrl = BuildToastRedirectUrl(returnUrl, toastType, toastMessage);
-            return LocalRedirect(redirectUrl);
-        }
-
-        return RedirectToAction("Index", "Communication", new
-        {
             toastType,
             toastMessage
         });

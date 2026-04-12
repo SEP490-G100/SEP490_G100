@@ -38,12 +38,12 @@
     <div class="flex gap-2">
         @if (Model.ComplaintId.HasValue && Model.ComplaintId.Value != Guid.Empty)
         {
-            <a href="@Url.Action("ViewComplaintDetail", "Moderator", new { id = Model.ComplaintId })" class="btn-outline">
+            <a href="@Url.Action("ViewComplaintDetail", "ModeratorComplain", new { id = Model.ComplaintId })" class="btn-outline">
                 <span class="material-icons-round text-base">arrow_back</span>
                 Back to Complaint
             </a>
         }
-        <a href="@Url.Action("ManageComplaint", "Moderator")" class="btn-outline">
+        <a href="@Url.Action("ManageComplaint", "ModeratorComplain")" class="btn-outline">
             <span class="material-icons-round text-base">list</span>
             Back to List
         </a>
