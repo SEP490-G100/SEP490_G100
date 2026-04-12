@@ -121,6 +121,7 @@ public class AddressController : Controller
             .Trim();
     }
 
+    [AllowAnonymous]
     [HttpGet("LocationTree")]
     public async Task<IActionResult> LocationTree(CancellationToken cancellationToken)
     {
