@@ -24,9 +24,9 @@
     PersonalProfileViewModel? nannyVerifyPromptProfile = null;
     var showNannyVerifyPrompt = false;
     var nannyVerifyPromptUrl = "/NannyVerificationRequest/Submit";
-    var nannyVerifyPromptButton = "Xac minh ID ngay";
+    var nannyVerifyPromptButton = "Xác minh ID ngay";
     var nannyVerifyPromptStatusClass = "is-not-submitted";
-    var nannyVerifyPromptStatusText = "Chua gui xac minh";
+    var nannyVerifyPromptStatusText = "Chưa gửi xác minh";
 
     if (canCheckNannyVerifyPrompt)
     {
@@ -64,16 +64,16 @@
                             if (verificationCode == 1)
                             {
                                 nannyVerifyPromptUrl = "/NannyVerificationRequest";
-                                nannyVerifyPromptButton = "Xem yeu cau xac minh";
+                                nannyVerifyPromptButton = "Xem yêu cầu xác minh";
                                 nannyVerifyPromptStatusClass = "is-pending";
-                                nannyVerifyPromptStatusText = "Dang cho duyet";
+                                nannyVerifyPromptStatusText = "Đang chờ duyệt";
                             }
                             else if (verificationCode == 3)
                             {
                                 nannyVerifyPromptUrl = "/NannyVerificationRequest";
-                                nannyVerifyPromptButton = "Xem va gui lai ho so";
+                                nannyVerifyPromptButton = "Xem và gửi lại hồ sơ";
                                 nannyVerifyPromptStatusClass = "is-rejected";
-                                nannyVerifyPromptStatusText = "Da bi tu choi";
+                                nannyVerifyPromptStatusText = "Đã bị từ chối";
                             }
                         }
                     }
@@ -99,6 +99,7 @@
     <link href="~/css/tailwind.generated.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/onboarding.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/verification-prompt.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/unified-dropdown.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/homepage.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&amp;display=swap"
           rel="stylesheet" />
@@ -562,6 +563,322 @@
             background: linear-gradient(135deg, #c22525, #dc2626);
         }
 
+        .nm-user-sheet-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 12080;
+            background:
+                radial-gradient(circle at 70% 20%, rgba(249, 115, 22, .16), transparent 46%),
+                linear-gradient(180deg, rgba(15, 23, 42, .18), rgba(15, 23, 42, .34));
+            backdrop-filter: blur(4px);
+            opacity: 0;
+            transition: opacity .28s ease;
+        }
+
+        .nm-user-sheet-backdrop.is-open {
+            opacity: 1;
+        }
+
+        .nm-user-sheet {
+            position: fixed;
+            top: 0;
+            right: 0;
+            z-index: 12090;
+            width: min(410px, calc(100vw - 12px));
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            color: #334155;
+            border-left: 1px solid rgba(249, 115, 22, .2);
+            background:
+                radial-gradient(circle at top right, rgba(249, 115, 22, .16), transparent 42%),
+                radial-gradient(circle at 12% 82%, rgba(251, 191, 36, .1), transparent 40%),
+                linear-gradient(180deg, #fffdfa 0%, #fff7ed 100%);
+            box-shadow: -24px 0 56px rgba(15, 23, 42, .24);
+            transform: translate3d(104%, 0, 0);
+            opacity: .98;
+            transition: transform .36s cubic-bezier(.16, 1, .3, 1), opacity .22s ease;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        .nm-user-sheet::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 220px;
+            pointer-events: none;
+            background: linear-gradient(180deg, rgba(255, 255, 255, .82), rgba(255, 255, 255, 0));
+        }
+
+        .nm-user-sheet.is-open {
+            transform: translate3d(0, 0, 0);
+            opacity: 1;
+        }
+
+        .nm-user-sheet__top {
+            position: sticky;
+            top: 0;
+            z-index: 3;
+            display: flex;
+            justify-content: flex-end;
+            padding: 12px 14px 8px;
+            background: linear-gradient(180deg, rgba(255, 247, 237, .98), rgba(255, 247, 237, 0));
+        }
+
+        .nm-user-sheet__close {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            border: 1px solid rgba(251, 146, 60, .3);
+            color: #64748b;
+            background: rgba(255, 255, 255, .9);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .18s ease;
+        }
+
+        .nm-user-sheet__close:hover {
+            background: #fff;
+            color: #ea580c;
+            transform: translateY(-1px);
+        }
+
+        .nm-user-sheet__profile {
+            margin: 0 14px 14px;
+            padding: 14px;
+            border-radius: 18px;
+            border: 1px solid rgba(251, 146, 60, .2);
+            border-bottom: 1px solid rgba(251, 146, 60, .2) !important;
+            background: linear-gradient(135deg, rgba(255, 255, 255, .92), rgba(255, 247, 237, .94));
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8), 0 8px 20px rgba(15, 23, 42, .08);
+            display: flex;
+            flex-direction: row !important;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .nm-user-sheet__profile-meta {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .nm-user-sheet__avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 17px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            box-shadow: 0 10px 22px rgba(249, 115, 22, .34);
+            flex-shrink: 0;
+        }
+
+        .nm-user-sheet__name {
+            margin: 0;
+            font-size: 20px;
+            line-height: 1.2;
+            font-weight: 800;
+            color: #1f2937 !important;
+            letter-spacing: -0.01em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .nm-user-sheet__email {
+            margin: 0;
+            font-size: 13px;
+            color: #64748b !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .nm-user-sheet__section-title {
+            margin: 4px 18px 10px;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: .08em;
+            color: #475569;
+            text-transform: uppercase;
+        }
+
+        .nm-user-sheet > a:not(.nm-user-sheet__profile),
+        .nm-user-sheet form > button {
+            width: calc(100% - 28px);
+            margin: 0 auto;
+            min-height: 52px;
+            padding: 0 14px 0 12px !important;
+            border-radius: 15px !important;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #334155 !important;
+            font-size: 15px !important;
+            font-weight: 700 !important;
+            text-decoration: none;
+            background: rgba(255, 255, 255, .76);
+            border: 1px solid rgba(148, 163, 184, .22);
+            box-shadow: 0 6px 16px rgba(15, 23, 42, .06), inset 0 1px 0 rgba(255, 255, 255, .78);
+            transition: all .2s ease;
+        }
+
+        .nm-user-sheet > a:not(.nm-user-sheet__profile) + a:not(.nm-user-sheet__profile),
+        .nm-user-sheet > a:not(.nm-user-sheet__profile) + form,
+        .nm-user-sheet form + a {
+            margin-top: 9px;
+        }
+
+        .nm-user-sheet > a:not(.nm-user-sheet__profile):hover,
+        .nm-user-sheet form > button:hover {
+            color: #1f2937 !important;
+            border-color: rgba(251, 146, 60, .46);
+            background: linear-gradient(135deg, #fff7ed, #ffedd5);
+            transform: translateX(-2px);
+        }
+
+        .nm-user-sheet > a:not(.nm-user-sheet__profile) .material-icons-round,
+        .nm-user-sheet form > button .material-icons-round {
+            width: 30px;
+            height: 30px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px !important;
+            color: #475569 !important;
+            background: #fff;
+            border: 1px solid rgba(148, 163, 184, .28);
+            flex-shrink: 0;
+        }
+
+        .nm-user-sheet > a:not(.nm-user-sheet__profile)::after,
+        .nm-user-sheet form > button::after {
+            content: 'chevron_right';
+            font-family: 'Material Icons Round';
+            margin-left: auto;
+            font-size: 20px;
+            color: #94a3b8;
+            line-height: 1;
+            transition: transform .2s ease;
+        }
+
+        .nm-user-sheet > a:not(.nm-user-sheet__profile):hover::after,
+        .nm-user-sheet form > button:hover::after {
+            transform: translateX(2px);
+        }
+
+        .nm-user-sheet form > button {
+            color: #b91c1c !important;
+            border-color: rgba(248, 113, 113, .36);
+            background: linear-gradient(135deg, #fff1f2, #ffe4e6);
+        }
+
+        .nm-user-sheet form > button::after,
+        .nm-user-sheet form > button .material-icons-round {
+            color: #ef4444 !important;
+        }
+
+        .nm-user-sheet .border-t {
+            height: 1px;
+            width: calc(100% - 24px);
+            margin: 16px auto 10px !important;
+            border: none !important;
+            background: linear-gradient(90deg, rgba(148, 163, 184, .02), rgba(148, 163, 184, .35), rgba(148, 163, 184, .02));
+        }
+
+        .nm-user-sheet::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .nm-user-sheet::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, .42);
+            border-radius: 999px;
+        }
+
+        .nm-user-sheet__item {
+            width: 100%;
+            min-height: 48px;
+            padding: 0 14px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #e2e8f0;
+            font-size: 15px;
+            font-weight: 700;
+            background: rgba(71, 85, 105, .36);
+            border: 1px solid rgba(148, 163, 184, .18);
+            transition: all .18s ease;
+        }
+
+        .nm-user-sheet__item + .nm-user-sheet__item {
+            margin-top: 8px;
+        }
+
+        .nm-user-sheet__item:hover {
+            color: #fff;
+            border-color: rgba(251, 146, 60, .5);
+            background: linear-gradient(135deg, rgba(251, 146, 60, .16), rgba(249, 115, 22, .12));
+            transform: translateX(-2px);
+        }
+
+        .nm-user-sheet__item .material-icons-round {
+            font-size: 20px;
+            color: #d6e0ec;
+            flex-shrink: 0;
+        }
+
+        .nm-user-sheet__item-label {
+            flex: 1;
+            text-align: left;
+        }
+
+        .nm-user-sheet__item-chev {
+            font-size: 20px;
+            color: #b7c4d3;
+            flex-shrink: 0;
+        }
+
+        .nm-user-sheet__divider {
+            height: 1px;
+            margin: 14px 6px 8px;
+            background: linear-gradient(90deg, rgba(148, 163, 184, .06), rgba(148, 163, 184, .5), rgba(148, 163, 184, .06));
+        }
+
+        .nm-user-sheet__footer {
+            padding: 0 14px 18px;
+        }
+
+        .nm-user-sheet__item.is-logout {
+            color: #fecaca;
+            border-color: rgba(248, 113, 113, .42);
+            background: linear-gradient(135deg, rgba(127, 29, 29, .34), rgba(153, 27, 27, .26));
+        }
+
+        .nm-user-sheet__item.is-logout .material-icons-round,
+        .nm-user-sheet__item.is-logout .nm-user-sheet__item-chev {
+            color: #fecaca;
+        }
+
+        .nm-user-sheet-open {
+            overflow: hidden;
+        }
+
         @@media (max-width: 767px) {
             .nm-nav-shell {
                 padding: 0 12px;
@@ -593,6 +910,14 @@
 
             .nm-toast {
                 width: 100%;
+            }
+
+            .nm-user-sheet {
+                width: min(370px, calc(100vw - 8px));
+            }
+
+            .nm-user-sheet__name {
+                font-size: 22px;
             }
         }
     </style>
@@ -680,7 +1005,11 @@
                         </div>
 
                         <div class="relative" id="userDropdown">
-                            <button onclick="document.getElementById('dropdownMenu').classList.toggle('hidden')"
+                            <button type="button"
+                                    id="userMenuToggle"
+                                    aria-haspopup="dialog"
+                                    aria-controls="dropdownMenu"
+                                    aria-expanded="false"
                                     class="flex items-center gap-2 px-3 py-2 rounded-2xl border border-orange-100 bg-white/80 hover:bg-orange-50 dark:hover:bg-gray-800 transition-all">
                                 <div class="w-8 h-8 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
                                     @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value?.Substring(0, 1).ToUpper())
@@ -691,12 +1020,30 @@
                                 <span class="material-icons-round text-gray-400 text-lg">expand_more</span>
                             </button>
 
-                            <div id="dropdownMenu" class="hidden absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-1 z-50">
-                                <a href="@Url.Action("Index", "Profile")" class="flex flex-col px-3 py-2 border-b border-gray-100 dark:border-gray-700 mb-1 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-all cursor-pointer">
-                                    <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                                        @User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value @User.FindFirst(System.Security.Claims.ClaimTypes.Surname)?.Value
-                                    </p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate">@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</p>
+                            <div id="userMenuBackdrop" class="nm-user-sheet-backdrop hidden"></div>
+                            <div id="dropdownMenu" class="hidden nm-user-sheet">
+                                <div class="nm-user-sheet__top">
+                                    <button type="button" id="userMenuClose" class="nm-user-sheet__close" aria-label="Đóng menu tài khoản">
+                                        <span class="material-icons-round">close</span>
+                                    </button>
+                                </div>
+                                <div class="nm-user-sheet__profile flex flex-col px-3 py-2 border-b border-gray-100 dark:border-gray-700 mb-1 rounded-md">
+                                    <span class="nm-user-sheet__avatar">
+                                        @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value?.Substring(0, 1).ToUpper())
+                                    </span>
+                                    <div class="nm-user-sheet__profile-meta">
+                                        <p class="nm-user-sheet__name">
+                                            @User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value @User.FindFirst(System.Security.Claims.ClaimTypes.Surname)?.Value
+                                        </p>
+                                        <p class="nm-user-sheet__email">@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</p>
+                                    </div>
+                                </div>
+
+                                <p class="nm-user-sheet__section-title">Tài khoản</p>
+
+                                <a href="@Url.Action("Index", "Profile")" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                    <span class="material-icons-round text-base">account_circle</span>
+                                    Xem hồ sơ
                                 </a>
 
                                 @if (User.FindFirst("AuthProvider")?.Value != "google")
@@ -709,19 +1056,19 @@
 
                                 <a href="/Subscription" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                     <span class="material-icons-round text-base">workspace_premium</span>
-                                    Goi cua toi
+                                    Gói của tôi
                                 </a>
 
                                 <a href="/Search/History" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                     <span class="material-icons-round text-base">history</span>
-                                    Lich su bai dang
+                                    Lịch sử bài đăng
                                 </a>
 
                                 @if (User.IsInRole("Parent") || User.IsInRole("Nanny"))
                                 {
                                     <a href="/Contract" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                         <span class="material-icons-round text-base">description</span>
-                                        Hop dong cua toi
+                                        Hợp đồng của tôi
                                     </a>
                                 }
 
@@ -729,11 +1076,11 @@
                                 {
                                     <a href="/Nanny/Favorites" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                         <span class="material-icons-round text-base">favorite</span>
-                                        Nanny yeu thich
+                                        Nanny yêu thích
                                     </a>
                                     <a href="/Nanny/ContactRequests" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                         <span class="material-icons-round text-base">contact_phone</span>
-                                        Lich su contact
+                                        Lịch sử contact
                                     </a>
                                 }
 
@@ -741,15 +1088,15 @@
                                 {
                                     <a href="/Search/SavedJobs" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                         <span class="material-icons-round text-base">bookmark</span>
-                                        Bai dang da luu
+                                        Bài đăng đã lưu
                                     </a>
                                     <a href="/Search/Applications" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                         <span class="material-icons-round text-base">work_history</span>
-                                        Lich su ung tuyen
+                                        Lịch sử ứng tuyển
                                     </a>
                                     <a href="/Nanny/ReceivedContactRequests" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                         <span class="material-icons-round text-base">contact_mail</span>
-                                        Request contact da nhan
+                                        Request contact đã nhận
                                     </a>
                                     <a href="/NannyVerificationRequest" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                         <span class="material-icons-round text-base">verified_user</span>
@@ -969,11 +1316,71 @@
                                 connectNotificationRealtime();
                             })();
 
-                            document.addEventListener('click', function(e) {
-                                var dropdown = document.getElementById('userDropdown');
-                                var menu = document.getElementById('dropdownMenu');
-                                if (dropdown && !dropdown.contains(e.target)) menu.classList.add('hidden');
-                            });
+                            (() => {
+                                const toggle = document.getElementById('userMenuToggle');
+                                const menu = document.getElementById('dropdownMenu');
+                                const backdrop = document.getElementById('userMenuBackdrop');
+                                const closeBtn = document.getElementById('userMenuClose');
+
+                                if (!toggle || !menu || !backdrop || !closeBtn) return;
+
+                                if (backdrop.parentElement !== document.body) {
+                                    document.body.appendChild(backdrop);
+                                }
+
+                                if (menu.parentElement !== document.body) {
+                                    document.body.appendChild(menu);
+                                }
+
+                                let closingTimer = null;
+
+                                const openMenu = () => {
+                                    if (closingTimer) {
+                                        window.clearTimeout(closingTimer);
+                                        closingTimer = null;
+                                    }
+
+                                    menu.classList.remove('hidden');
+                                    backdrop.classList.remove('hidden');
+
+                                    requestAnimationFrame(() => {
+                                        menu.classList.add('is-open');
+                                        backdrop.classList.add('is-open');
+                                    });
+
+                                    toggle.setAttribute('aria-expanded', 'true');
+                                    document.body.classList.add('nm-user-sheet-open');
+                                };
+
+                                const closeMenu = () => {
+                                    menu.classList.remove('is-open');
+                                    backdrop.classList.remove('is-open');
+                                    toggle.setAttribute('aria-expanded', 'false');
+                                    document.body.classList.remove('nm-user-sheet-open');
+
+                                    closingTimer = window.setTimeout(() => {
+                                        menu.classList.add('hidden');
+                                        backdrop.classList.add('hidden');
+                                    }, 320);
+                                };
+
+                                toggle.addEventListener('click', () => {
+                                    if (menu.classList.contains('hidden')) {
+                                        openMenu();
+                                    } else {
+                                        closeMenu();
+                                    }
+                                });
+
+                                closeBtn.addEventListener('click', closeMenu);
+                                backdrop.addEventListener('click', closeMenu);
+
+                                document.addEventListener('keydown', (event) => {
+                                    if (event.key === 'Escape' && !menu.classList.contains('hidden')) {
+                                        closeMenu();
+                                    }
+                                });
+                            })();
                         </script>
                     }
                     else
@@ -1096,21 +1503,27 @@
     {
         <div id="nmVerifyPromptOverlay" class="nm-verify-overlay" aria-hidden="true">
             <div class="nm-verify-card" role="dialog" aria-modal="true" aria-labelledby="nmVerifyPromptTitle">
-                <button type="button" class="nm-verify-close" id="nmVerifyPromptClose" aria-label="Dong">
+                <button type="button" class="nm-verify-close" id="nmVerifyPromptClose" aria-label="Đóng">
                     <span class="material-icons-round">close</span>
                 </button>
 
                 <div class="nm-verify-body">
-                    <h2 id="nmVerifyPromptTitle" class="nm-verify-title">Xac minh ID de mo khoa ket noi</h2>
+                    <span class="nm-verify-status @nannyVerifyPromptStatusClass">
+                        <span class="material-icons-round">shield</span>
+                        <span>@nannyVerifyPromptStatusText</span>
+                    </span>
+                    <h2 id="nmVerifyPromptTitle" class="nm-verify-title">Xác minh ID để mở khóa kết nối</h2>
                     <p class="nm-verify-subtitle">
-                        Ho so nanny cua @(string.IsNullOrWhiteSpace(nannyVerifyPromptProfile?.FirstName) ? "ban" : nannyVerifyPromptProfile!.FirstName)
-                        chua hoan tat xac minh giay to. Khi xac minh xong, phu huynh se tin tuong hon khi xem ho so va gui contact request.
+                        Hồ sơ nanny của @(string.IsNullOrWhiteSpace(nannyVerifyPromptProfile?.FirstName) ? "bạn" : nannyVerifyPromptProfile!.FirstName)
+                        chưa hoàn tất xác minh giấy tờ. Khi xác minh xong, phụ huynh sẽ tin tưởng hơn khi xem hồ sơ và gửi contact request.
                     </p>
 
                     <div class="nm-verify-hero" aria-hidden="true">
-                        <span class="material-icons-round"> </span>
+                        <span class="nm-verify-hero-core">
+                            <span class="material-icons-round">badge</span>
+                        </span>
                         <span class="nm-verify-hero-badge">
-                            <span class="material-icons-round style=" color: #fff">badge">verified_user</span>
+                            <span class="material-icons-round">verified</span>
                         </span>
                     </div>
                 </div>
@@ -1118,7 +1531,7 @@
                 <div class="nm-verify-footer">
                     <div class="nm-verify-actions">
                         <a href="@nannyVerifyPromptUrl" class="nm-verify-primary">
-                            <span class="material-icons-round text-[20px]">arrow_upward</span>
+                            <span class="material-icons-round">arrow_upward</span>
                             <span>@nannyVerifyPromptButton</span>
                         </a>
                     </div>
@@ -1275,6 +1688,7 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/unified-dropdown.js" asp-append-version="true"></script>
 
     @if (showNannyVerifyPrompt)
     {
