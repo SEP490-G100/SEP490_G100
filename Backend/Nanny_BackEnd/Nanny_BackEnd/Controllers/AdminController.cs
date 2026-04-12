@@ -14,13 +14,11 @@ namespace Nanny_BackEnd.Controllers;
 [Authorize(Roles = "Admin")]
 public class AdminController : ControllerBase
 {
-    private readonly DashboardService _dashboardService;
     private readonly UserService _userService;
     private readonly ExportService _exportService;
 
-    public AdminController(DashboardService dashboardService, UserService userService, ExportService exportService)
+    public AdminController(UserService userService, ExportService exportService)
     {
-        _dashboardService = dashboardService;
         _userService      = userService;
         _exportService    = exportService;
     }
@@ -38,13 +36,6 @@ public class AdminController : ControllerBase
     // ────────────────────────────────────────────────
     // GET /api/admin/dashboard
     // ────────────────────────────────────────────────
-    [HttpGet("dashboard")]
-    public async Task<IActionResult> GetDashboard()
-    {
-        var stats = await _dashboardService.GetAdminDashboardStatsAsync();
-        return Ok(new { success = true, data = stats });
-    }
-
     // ────────────────────────────────────────────────
     // GET /api/admin/moderators?search=&status=&page=1&pageSize=10
     // ────────────────────────────────────────────────

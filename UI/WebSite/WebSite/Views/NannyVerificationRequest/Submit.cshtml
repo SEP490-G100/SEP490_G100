@@ -9,7 +9,7 @@
             <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">Gửi yêu cầu xác minh</h1>
             <p class="text-gray-600 dark:text-gray-400">Vui lòng kiểm tra thông tin và tải lên 3 nhóm tài liệu xác minh riêng biệt.</p>
         </div>
-        <a href="@Url.Action("Index", "NannyVerificationRequest")"
+        <a href="@Url.Action("NannyGetVerificationRequests", "NannyVerificationRequest")"
            class="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-medium transition-colors">
             <span class="material-icons-round">arrow_back</span>
             Trở về
@@ -54,7 +54,7 @@
         </div>
 
         <div class="min-w-0">
-            <form asp-action="Submit" method="post" enctype="multipart/form-data" class="w-full flex flex-col gap-6 bg-white dark:bg-gray-800 rounded-2xl shadow-xl shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-700/50 p-6 sm:p-8 lg:p-10">
+            <form asp-action="NannySubmitVerificationRequest" method="post" enctype="multipart/form-data" class="w-full flex flex-col gap-6 bg-white dark:bg-gray-800 rounded-2xl shadow-xl shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-700/50 p-6 sm:p-8 lg:p-10">
                 @Html.AntiForgeryToken()
 
                 <div class="rounded-2xl border border-orange-200 dark:border-gray-700 bg-orange-50/60 dark:bg-gray-900/30 p-5 sm:p-6" style="order:1;">

@@ -1,40 +1,20 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Nanny_BackEnd.Data;
 using Nanny_BackEnd.DTOs.Dashboard;
 using Nanny_BackEnd.Enums;
+using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Repositories;
 
 namespace Nanny_BackEnd.Services;
 
-public class DashboardService
+public class AdminDashboardService
 {
-    private readonly UserRepository _userRepo;
-    private readonly TransactionRepository _transactionRepo;
-    private readonly UserSubscriptionRepository _subscriptionRepo;
-    private readonly VerificationRequestRepository _verificationRepo;
-    private readonly JobRepository _jobRepo;
-    private readonly ContractRepository _contractRepo;
-    private readonly Sep490NannyDbContext _db;
+    private readonly AdminDashboardRepository _adminDashboardRepo;
 
-    public DashboardService(
-        UserRepository userRepo,
-        TransactionRepository transactionRepo,
-        UserSubscriptionRepository subscriptionRepo,
-        VerificationRequestRepository verificationRepo,
-        JobRepository jobRepo,
-        ContractRepository contractRepo,
-        Sep490NannyDbContext db)
+    public AdminDashboardService(AdminDashboardRepository adminDashboardRepo)
     {
-        _userRepo = userRepo;
-        _transactionRepo = transactionRepo;
-        _subscriptionRepo = subscriptionRepo;
-        _verificationRepo = verificationRepo;
-        _jobRepo = jobRepo;
-        _contractRepo = contractRepo;
-        _db = db;
+        _adminDashboardRepo = adminDashboardRepo;
     }
 
-    public async Task<AdminDashboardStatsDto> GetAdminDashboardStatsAsync()
+    public async Task<AdminDashboardStatsDto> GetDashboardStatsAsync()
     {
         var userStats = await GetUserStatsAsync();
         var revenueStats = await GetRevenueStatsAsync();
@@ -59,59 +39,27 @@ public class DashboardService
         };
     }
 
-    public async Task<ModeratorDashboardStatsDto> GetModeratorDashboardStatsAsync()
-    {
-        var userStats = await GetUserStatsAsync();
-        var (pendingVerifications, pendingJobPostings, pendingReports, activeJobs, totalContracts) =
-            await GetCurrentModerationHealthCountersAsync();
-
-        return new ModeratorDashboardStatsDto
-        {
-            UserStats = userStats,
-            PlatformHealth = new PlatformHealthStatsDto
-            {
-                PendingVerifications = pendingVerifications,
-                ActiveJobPostings = activeJobs,
-                TotalContracts = totalContracts
-            },
-            ModerationQueue = await GetModerationQueueStatsAsync(pendingVerifications, pendingJobPostings, pendingReports),
-            ModerationResults = await GetModerationResultsAsync(),
-            UserGrowth = await GetUserGrowthStatsAsync()
-        };
-    }
-
     private async Task<(int PendingVerifications, int PendingJobPostings, int PendingReports, int ActiveJobs, int TotalContracts)> GetCurrentModerationHealthCountersAsync()
     {
-        var pendingVerifications = await _verificationRepo.GetQuery()
-            .CountAsync(v => !v.IsDeleted && v.Status == (int)NannyVerificationRequestStatus.Pending);
-
-        /*
-         Job posting co 2 status: 1:Public, 2: Hidden, Job Posting Moderation status: 0: Pending, 1: Rejected, 2: Approved
-         */
-        var activeJobs = await _jobRepo.GetQuery()
-            .CountAsync(j => !j.IsDeleted && j.Status == 1);
-
-        var totalContracts = await _contractRepo.GetQuery()
-            .CountAsync(c => !c.IsDeleted);
-
-        var pendingJobPostings = await _jobRepo.GetQuery()
-            .CountAsync(j => !j.IsDeleted && j.ModerationStatus == (int)JobPostingModerationStatus.Pending);
-
-        var pendingReports = await _db.Reports
-            .AsNoTracking()
-            .CountAsync(r => !r.IsDeleted && r.Status == 0);
+        var pendingVerifications = await _adminDashboardRepo.GetPendingVerificationCountAsync();
+        var activeJobs = await _adminDashboardRepo.GetActiveJobPostingCountAsync();
+        var totalContracts = await _adminDashboardRepo.GetTotalContractsCountAsync();
+        var pendingJobPostings = await _adminDashboardRepo.GetPendingJobPostingCountAsync();
+        var pendingReports = await _adminDashboardRepo.GetPendingReportsCountAsync();
 
         return (pendingVerifications, pendingJobPostings, pendingReports, activeJobs, totalContracts);
     }
 
     private async Task<UserStatsDto> GetUserStatsAsync()
     {
-        var totalUsers = await _userRepo.GetTotalUsersCountAsync();
-        var totalParents = await _userRepo.GetUserCountByRoleAsync("Parent");
-        var totalNannies = await _userRepo.GetUserCountByRoleAsync("Nanny");
-        var totalModerators = await _userRepo.GetUserCountByRoleAsync("Moderator");
-        var activeUsers = await _userRepo.GetUserCountByStatusAsync(1);
-        var inactiveUsers = await _userRepo.GetUserCountByStatusAsync(0);
+        var totalUsers = await _adminDashboardRepo.GetTotalUsersCountAsync();
+        var totalParents = await _adminDashboardRepo.GetUserCountByRoleAsync("Parent");
+        var totalNannies = await _adminDashboardRepo.GetUserCountByRoleAsync("Nanny");
+        var totalModerators = await _adminDashboardRepo.GetUserCountByRoleAsync("Moderator");
+        var activeUsers = await _adminDashboardRepo.GetUserCountByStatusAsync((int)UserStatus.Active);
+        var inactiveUsers = await _adminDashboardRepo.GetUserCountByStatusAsync((int)UserStatus.Inactive);
+        var pendingUsers = await _adminDashboardRepo.GetUserCountByStatusAsync((int)UserStatus.Pending);
+        var bannedUsers = await _adminDashboardRepo.GetUserCountByStatusAsync((int)UserStatus.Banned);
 
         return new UserStatsDto
         {
@@ -121,8 +69,8 @@ public class DashboardService
             TotalModerators = totalModerators,
             ActiveUsers = activeUsers,
             InactiveUsers = inactiveUsers,
-            PendingUsers = 0,
-            BannedUsers = 0
+            PendingUsers = pendingUsers,
+            BannedUsers = bannedUsers
         };
     }
 
@@ -134,18 +82,10 @@ public class DashboardService
         var start12Months = new DateTime(todayUtc.Year, todayUtc.Month, 1).AddMonths(-11);
         var endMonth = new DateTime(todayUtc.Year, todayUtc.Month, 1);
 
-        var totalRevenue = await _transactionRepo.GetTotalRevenueAsync();
-        var recentTransactions = await _transactionRepo.GetRecentTransactionsAsync(5);
-        var monthlyRevenue = await _transactionRepo.GetMonthlyRevenueAsync(12);
-        var completedTransactions = await _db.Transactions
-            .AsNoTracking()
-            .Where(t => !t.IsDeleted && t.Status == 1 && t.CreatedAt >= start12Months)
-            .Select(t => new RevenueEventPoint
-            {
-                Date = t.CreatedAt,
-                Revenue = t.Amount
-            })
-            .ToListAsync();
+        var totalRevenue = await _adminDashboardRepo.GetTotalRevenueAsync();
+        var recentTransactions = await _adminDashboardRepo.GetRecentTransactionsAsync(5);
+        var monthlyRevenue = await _adminDashboardRepo.GetMonthlyRevenueAsync(12);
+        var completedTransactions = await _adminDashboardRepo.GetCompletedTransactionEventsSinceAsync(start12Months);
 
         return new RevenueStatsDto
         {
@@ -167,8 +107,8 @@ public class DashboardService
                 Type = t.Type,
                 Description = t.Description,
                 CreatedAt = t.CreatedAt,
-                UserName = t.User?.FirstName + " " + t.User?.LastName,
-                UserEmail = t.User?.Email
+                UserName = t.UserName?.Trim(),
+                UserEmail = t.UserEmail
             }).ToList()
         };
     }
@@ -181,15 +121,11 @@ public class DashboardService
         var start12Months = new DateTime(todayUtc.Year, todayUtc.Month, 1).AddMonths(-11);
         var endMonth = new DateTime(todayUtc.Year, todayUtc.Month, 1);
 
-        var total = await _subscriptionRepo.GetTotalSubscriptionsAsync();
-        var active = await _subscriptionRepo.GetActiveSubscriptionsAsync();
-        var expired = await _subscriptionRepo.GetExpiredSubscriptionsAsync();
-        var monthlySubscriptions = await _subscriptionRepo.GetMonthlySubscriptionsAsync(12);
-        var createdSubscriptions = await _db.UserSubscriptions
-            .AsNoTracking()
-            .Where(s => !s.IsDeleted && s.CreatedAt >= start12Months)
-            .Select(s => s.CreatedAt)
-            .ToListAsync();
+        var total = await _adminDashboardRepo.GetTotalSubscriptionsAsync();
+        var active = await _adminDashboardRepo.GetActiveSubscriptionsAsync();
+        var expired = await _adminDashboardRepo.GetExpiredSubscriptionsAsync();
+        var monthlySubscriptions = await _adminDashboardRepo.GetMonthlySubscriptionsAsync(12);
+        var createdSubscriptions = await _adminDashboardRepo.GetCreatedSubscriptionDatesSinceAsync(start12Months);
 
         return new SubscriptionStatsDto
         {
@@ -235,23 +171,9 @@ public class DashboardService
         var startDate = startDateUtc.Date;
         var useMonthlyBuckets = startDate.Day == 1 && startDate.Month != todayUtc.Month || (todayUtc - startDate).TotalDays > 31;
 
-        var pendingVerificationDates = await _verificationRepo.GetQuery()
-            .Where(v => !v.IsDeleted
-                        && v.Status == (int)NannyVerificationRequestStatus.Pending
-                        && v.CreatedAt >= startDateUtc)
-            .Select(v => v.CreatedAt)
-            .ToListAsync();
-        var pendingJobPostingDates = await _jobRepo.GetQuery()
-            .Where(j => !j.IsDeleted
-                        && j.ModerationStatus == (int)JobPostingModerationStatus.Pending
-                        && j.CreatedAt >= startDateUtc)
-            .Select(j => j.CreatedAt)
-            .ToListAsync();
-        var pendingReportDates = await _db.Reports
-            .AsNoTracking()
-            .Where(r => !r.IsDeleted && r.Status == 0 && r.CreatedAt >= startDateUtc)
-            .Select(r => r.CreatedAt)
-            .ToListAsync();
+        var pendingVerificationDates = await _adminDashboardRepo.GetPendingVerificationDatesSinceAsync(startDateUtc);
+        var pendingJobPostingDates = await _adminDashboardRepo.GetPendingJobPostingDatesSinceAsync(startDateUtc);
+        var pendingReportDates = await _adminDashboardRepo.GetPendingReportDatesSinceAsync(startDateUtc);
 
         return new QueueRangeStatsDto
         {
@@ -282,33 +204,8 @@ public class DashboardService
         var start12Months = new DateTime(todayUtc.Year, todayUtc.Month, 1).AddMonths(-11);
         var endMonth = new DateTime(todayUtc.Year, todayUtc.Month, 1);
 
-        var verificationItems = await _db.VerificationRequests
-            .AsNoTracking()
-            .Where(v => !v.IsDeleted
-                        && v.ReviewedAt.HasValue
-                        && v.ReviewedAt.Value >= start12Months
-                        && (v.Status == (int)NannyVerificationRequestStatus.Approved
-                            || v.Status == (int)NannyVerificationRequestStatus.Rejected))
-            .Select(v => new ModerationEventPoint
-            {
-                Date = v.ReviewedAt!.Value,
-                Status = v.Status
-            })
-            .ToListAsync();
-
-        var jobItems = await _db.JobPostings
-            .AsNoTracking()
-            .Where(j => !j.IsDeleted
-                        && j.ModeratedAt.HasValue
-                        && j.ModeratedAt.Value >= start12Months
-                        && (j.ModerationStatus == (int)JobPostingModerationStatus.Approved
-                            || j.ModerationStatus == (int)JobPostingModerationStatus.Rejected))
-            .Select(j => new ModerationEventPoint
-            {
-                Date = j.ModeratedAt!.Value,
-                Status = j.ModerationStatus
-            })
-            .ToListAsync();
+        var verificationItems = await _adminDashboardRepo.GetVerificationModerationEventsSinceAsync(start12Months);
+        var jobItems = await _adminDashboardRepo.GetJobPostingModerationEventsSinceAsync(start12Months);
 
         return new ModerationResultsStatsDto
         {
@@ -326,11 +223,7 @@ public class DashboardService
         var start12Months = new DateTime(todayUtc.Year, todayUtc.Month, 1).AddMonths(-11);
         var endMonth = new DateTime(todayUtc.Year, todayUtc.Month, 1);
 
-        var createdAtList = await _db.Users
-            .AsNoTracking()
-            .Where(u => !u.IsDeleted && u.CreatedAt >= start12Months)
-            .Select(u => u.CreatedAt)
-            .ToListAsync();
+        var createdAtList = await _adminDashboardRepo.GetUserCreatedDatesSinceAsync(start12Months);
 
         return new UserGrowthStatsDto
         {
@@ -343,8 +236,8 @@ public class DashboardService
     private static List<DailyModerationResultDto> BuildModerationDailySeries(
         DateTime startDate,
         DateTime endDate,
-        IEnumerable<ModerationEventPoint> verificationItems,
-        IEnumerable<ModerationEventPoint> jobItems)
+        IEnumerable<DashboardModerationEventQueryDto> verificationItems,
+        IEnumerable<DashboardModerationEventQueryDto> jobItems)
     {
         var verificationApproved = verificationItems
             .Where(v => v.Status == (int)NannyVerificationRequestStatus.Approved)
@@ -388,8 +281,8 @@ public class DashboardService
     private static List<DailyModerationResultDto> BuildModerationMonthlySeries(
         DateTime startMonth,
         DateTime endMonth,
-        IEnumerable<ModerationEventPoint> verificationItems,
-        IEnumerable<ModerationEventPoint> jobItems)
+        IEnumerable<DashboardModerationEventQueryDto> verificationItems,
+        IEnumerable<DashboardModerationEventQueryDto> jobItems)
     {
         var verificationApproved = verificationItems
             .Where(v => v.Status == (int)NannyVerificationRequestStatus.Approved)
@@ -555,7 +448,7 @@ public class DashboardService
     private static List<RevenuePointDto> BuildRevenueDailySeries(
         DateTime startDate,
         DateTime endDate,
-        IEnumerable<RevenueEventPoint> events)
+        IEnumerable<DashboardRevenueEventQueryDto> events)
     {
         var revenueByDate = events
             .GroupBy(item => item.Date.Date)
@@ -579,7 +472,7 @@ public class DashboardService
     private static List<RevenuePointDto> BuildRevenueMonthlySeries(
         DateTime startMonth,
         DateTime endMonth,
-        IEnumerable<RevenueEventPoint> events)
+        IEnumerable<DashboardRevenueEventQueryDto> events)
     {
         var revenueByMonth = events
             .GroupBy(item => new DateTime(item.Date.Year, item.Date.Month, 1))
@@ -646,17 +539,5 @@ public class DashboardService
         }
 
         return items;
-    }
-
-    private sealed class ModerationEventPoint
-    {
-        public DateTime Date { get; set; }
-        public int Status { get; set; }
-    }
-
-    private sealed class RevenueEventPoint
-    {
-        public DateTime Date { get; set; }
-        public decimal Revenue { get; set; }
     }
 }

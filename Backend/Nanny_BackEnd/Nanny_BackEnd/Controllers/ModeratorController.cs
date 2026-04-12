@@ -18,34 +18,21 @@ public class ModeratorController : ControllerBase
     private readonly UserService _userService;
     private readonly VerificationRequestService _verificationService;
     private readonly JobService _jobService;
-    private readonly DashboardService _dashboardService;
     private readonly ReportService _reportService;
 
     public ModeratorController(
         UserService userService,
         VerificationRequestService verificationService,
         JobService jobService,
-        DashboardService dashboardService,
         ReportService reportService)
     {
         _userService = userService;
         _verificationService = verificationService;
         _jobService = jobService;
-        _dashboardService = dashboardService;
         _reportService = reportService;
     }
 
-    [HttpGet("dashboard")]
-    public async Task<IActionResult> GetDashboard()
-    {
-        var stats = await _dashboardService.GetModeratorDashboardStatsAsync();
-        return Ok(new { success = true, data = stats });
-    }
-
-    // ─────────────────────────────────────────────────────
-    // ACCOUNT MANAGEMENT
-    // ─────────────────────────────────────────────────────
-
+    // MODERATOR MANAGE ACCOUNTS
     // GET /api/Moderator/accounts?role=Nanny&status=0&search=lan&page=1&pageSize=3
     [HttpGet("accounts")]
     public async Task<IActionResult> GetAccounts(

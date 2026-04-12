@@ -50,8 +50,9 @@ public class NannyVerificationRequestController : Controller
         }
     }
 
-    [HttpGet]
-    public async Task<IActionResult> Index(int? status = null, int page = 1)
+    [HttpGet("")]
+    [HttpGet("Index")]
+    public async Task<IActionResult> NannyGetVerificationRequests(int? status = null, int page = 1)
     {
         ViewBag.Status = status;
         AddAuthHeader();
@@ -62,7 +63,7 @@ public class NannyVerificationRequestController : Controller
             queryParts.Add($"status={status.Value}");
         }
 
-        var response = await _http.GetAsync($"/api/NannyVerificationRequest/nanny-requests?{string.Join("&", queryParts)}");
+        var response = await _http.GetAsync($"/api/NannyVerificationRequest/nanny-verification-requests?{string.Join("&", queryParts)}");
         if (!response.IsSuccessStatusCode)
         {
             return View(new VerificationRequestListResponse
@@ -82,15 +83,15 @@ public class NannyVerificationRequestController : Controller
         });
     }
 
-    [HttpGet]
-    public async Task<IActionResult> NannyViewVerificationDetail(Guid id)
+    [HttpGet("NannyGetVerificationRequestDetail/{id:guid}")]
+    public async Task<IActionResult> NannyGetVerificationRequestDetail(Guid id)
     {
         AddAuthHeader();
 
-        var response = await _http.GetAsync($"/api/NannyVerificationRequest/nanny-requests/{id}");
+        var response = await _http.GetAsync($"/api/NannyVerificationRequest/nanny-verification-requests/{id}");
         if (!response.IsSuccessStatusCode)
         {
-            return RedirectToAction(nameof(Index), new
+            return RedirectToAction(nameof(NannyGetVerificationRequests), new
             {
                 toastType = "error",
                 toastMessage = "Khong tim thay chi tiet yeu cau xac minh."
@@ -101,7 +102,7 @@ public class NannyVerificationRequestController : Controller
         var apiResult = JsonSerializer.Deserialize<ApiResult<VerificationRequestDetailDto>>(json, JsonOptions);
         if (apiResult?.Success != true || apiResult.Data == null)
         {
-            return RedirectToAction(nameof(Index), new
+            return RedirectToAction(nameof(NannyGetVerificationRequests), new
             {
                 toastType = "error",
                 toastMessage = apiResult?.Message ?? "Khong tim thay chi tiet yeu cau xac minh."
@@ -111,8 +112,9 @@ public class NannyVerificationRequestController : Controller
         return View("~/Views/NannyVerificationRequest/NannyViewVerificationDetail.cshtml", apiResult.Data);
     }
 
-    [HttpGet]
-    public async Task<IActionResult> Submit()
+    [HttpGet("NannySubmitVerificationRequest")]
+    [HttpGet("Submit")]
+    public async Task<IActionResult> NannySubmitVerificationRequest()
     {
         var model = new SubmitVerificationRequestViewModel();
         if (!await PopulateProfileInfoAsync(model))
@@ -127,9 +129,10 @@ public class NannyVerificationRequestController : Controller
         return View(model);
     }
 
-    [HttpPost]
+    [HttpPost("NannySubmitVerificationRequest")]
+    [HttpPost("Submit")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Submit(SubmitVerificationRequestViewModel model)
+    public async Task<IActionResult> NannySubmitVerificationRequest(SubmitVerificationRequestViewModel model)
     {
         if (!await PopulateProfileInfoAsync(model))
         {
@@ -172,7 +175,7 @@ public class NannyVerificationRequestController : Controller
         }
         catch (InvalidOperationException ex)
         {
-            return RedirectToAction(nameof(Submit), new
+            return RedirectToAction(nameof(NannySubmitVerificationRequest), new
             {
                 toastType = "error",
                 toastMessage = ex.Message
@@ -180,7 +183,7 @@ public class NannyVerificationRequestController : Controller
         }
         catch (RequestFailedException)
         {
-            return RedirectToAction(nameof(Submit), new
+            return RedirectToAction(nameof(NannySubmitVerificationRequest), new
             {
                 toastType = "error",
                 toastMessage = "Khong the upload tai lieu len Azure Blob Storage. Vui long thu lai sau."
@@ -189,7 +192,7 @@ public class NannyVerificationRequestController : Controller
 
         var payload = JsonSerializer.Serialize(new { Documents = documents });
         var jsonContent = new StringContent(payload, Encoding.UTF8, "application/json");
-        var response = await _http.PostAsync("/api/NannyVerificationRequest/submit", jsonContent);
+        var response = await _http.PostAsync("/api/NannyVerificationRequest/nanny-submit-verification-request", jsonContent);
 
         var json = await response.Content.ReadAsStringAsync();
         ApiResult? result;
@@ -199,7 +202,7 @@ public class NannyVerificationRequestController : Controller
         }
         catch (JsonException)
         {
-            return RedirectToAction(nameof(Submit), new
+            return RedirectToAction(nameof(NannySubmitVerificationRequest), new
             {
                 toastType = "error",
                 toastMessage = "Loi he thong tu server. Vui long thu lai sau."
@@ -208,7 +211,7 @@ public class NannyVerificationRequestController : Controller
 
         if (!response.IsSuccessStatusCode || result == null || !result.Success)
         {
-            return RedirectToAction(nameof(Submit), new
+            return RedirectToAction(nameof(NannySubmitVerificationRequest), new
             {
                 toastType = "error",
                 toastMessage = result?.Message ?? "Gui yeu cau that bai."
@@ -223,7 +226,7 @@ public class NannyVerificationRequestController : Controller
             toastType = "info"
         });
 
-        return RedirectToAction(nameof(Index), new
+        return RedirectToAction(nameof(NannyGetVerificationRequests), new
         {
             toastType = "success",
             toastMessage = "Ban da gui yeu cau xac minh thanh cong."

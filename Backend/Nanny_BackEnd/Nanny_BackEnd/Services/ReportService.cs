@@ -50,28 +50,6 @@ public class ReportService
         return report.Id;
     }
 
-    public async Task<Guid> ReportMessageAsync(Guid messageId, Guid reporterUserId, CreateReportRequest request)
-    {
-        var message = await _reportRepo.GetMessageForReportAsync(messageId)
-            ?? throw new KeyNotFoundException("Khong tim thay tin nhan.");
-
-        if (message.SenderUserId == reporterUserId)
-            throw new InvalidOperationException("Ban khong the bao cao tin nhan cua chinh minh.");
-
-        var report = await createReportAsync(reporterUserId, messageId, "Message", request);
-
-        var reporter = await _userRepo.FindByIdAsync(reporterUserId);
-        await _notificationService.createNotificationForModerators(
-            "Co bao cao moi can xu ly",
-            $"{getDisplayName(reporter)} vua gui mot bao cao moi trong he thong.",
-            NotificationTypes.ReportSubmitted,
-            report.Id,
-            "Report",
-            reporterUserId);
-
-        return report.Id;
-    }
-
     public async Task<Guid> ReportProfileAsync(Guid profileUserId, Guid reporterUserId, CreateReportRequest request)
     {
         var targetUser = await _reportRepo.GetUserForProfileReportAsync(profileUserId)

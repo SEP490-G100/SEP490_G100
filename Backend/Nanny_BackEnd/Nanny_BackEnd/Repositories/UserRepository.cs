@@ -199,21 +199,6 @@ public class UserRepository
 
     public void AddUserRole(UserRole userRole) => _db.UserRoles.Add(userRole);
 
-    // ── Dashboard stats ────────────────────────────────────────────────────
-
-    /// <summary>Total number of non-deleted users.</summary>
-    public async Task<int> GetTotalUsersCountAsync() =>
-        await _db.Users.CountAsync(u => !u.IsDeleted);
-
-    /// <summary>Number of users holding a specific role.</summary>
-    public async Task<int> GetUserCountByRoleAsync(string roleName) =>
-        await _db.Users.CountAsync(u => !u.IsDeleted &&
-            u.UserRoles.Any(ur => !ur.IsDeleted && ur.Role.Name == roleName));
-
-    /// <summary>Number of non-deleted users in a specific status.</summary>
-    public async Task<int> GetUserCountByStatusAsync(int status) =>
-        await _db.Users.CountAsync(u => !u.IsDeleted && u.Status == status);
-
     /// <summary>
     /// Hard-delete: remove UserRoles first (FK), then the User row itself.
     /// </summary>

@@ -23,7 +23,7 @@
         </div>
         <div class="flex items-center gap-2">
             <span class="badge badge-pending px-3 py-1.5">@(Model?.TotalCount ?? 0) Total</span>
-            <a href="@Url.Action("Submit", "NannyVerificationRequest")" class="btn-primary flex items-center gap-2">
+            <a href="@Url.Action("NannySubmitVerificationRequest", "NannyVerificationRequest")" class="btn-primary flex items-center gap-2">
                 <span class="material-icons-round text-base">upload_file</span>
                 New Request
             </a>
@@ -108,7 +108,7 @@
                                     </span>
                                 </td>
                                 <td class="text-center">
-                                    <a href="@Url.Action("NannyViewVerificationDetail", "NannyVerificationRequest", new { id = item.Id })"
+                                    <a href="@Url.Action("NannyGetVerificationRequestDetail", "NannyVerificationRequest", new { id = item.Id })"
                                        class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-orange-50 text-orange-600 border border-orange-200 hover:bg-orange-100 transition-all"
                                        title="View detail">
                                         <span class="material-icons-round text-sm">visibility</span>

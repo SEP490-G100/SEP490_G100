@@ -130,7 +130,7 @@ public class VerificationRequestService
         return (true, 200, message);
     }
 
-    public async Task<VerificationRequestListResponse> GetNannyRequestsAsync(Guid userId, int? status, int page, int pageSize)
+    public async Task<VerificationRequestListResponse> NannyGetVerificationRequestsAsync(Guid userId, int? status, int page, int pageSize)
     {
         if (page < 1) page = 1;
         if (pageSize < 1 || pageSize > 100) pageSize = 3;
@@ -168,7 +168,7 @@ public class VerificationRequestService
         };
     }
 
-    public async Task<(bool Success, VerificationRequestDetailDto? Data, string? Message)> GetNannyRequestDetailAsync(Guid userId, Guid id)
+    public async Task<(bool Success, VerificationRequestDetailDto? Data, string? Message)> NannyGetVerificationRequestDetailAsync(Guid userId, Guid id)
     {
         var profile = await _repo.GetNannyProfileByUserIdAsync(userId);
         if (profile == null)
@@ -185,7 +185,7 @@ public class VerificationRequestService
         return (true, MapDetailDto(request), null);
     }
 
-    public async Task<(bool Success, string Message)> SubmitRequestAsync(Guid userId, SubmitVerificationRequestDto request)
+    public async Task<(bool Success, string Message)> NannySubmitVerificationRequestAsync(Guid userId, SubmitVerificationRequestDto request)
     {
         var profile = await _repo.GetNannyProfileByUserIdAsync(userId);
         if (profile == null)

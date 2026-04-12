@@ -18,8 +18,9 @@ public class NannyVerificationRequestController : ControllerBase
     }
 
     [Authorize(Roles = "Nanny")]
+    [HttpGet("nanny-verification-requests")]
     [HttpGet("nanny-requests")]
-    public async Task<IActionResult> GetMyRequests([FromQuery] int? status = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 3)
+    public async Task<IActionResult> NannyGetVerificationRequests([FromQuery] int? status = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 3)
     {
         var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!Guid.TryParse(userIdString, out var userId))
@@ -27,13 +28,14 @@ public class NannyVerificationRequestController : ControllerBase
             return Unauthorized();
         }
 
-        var requests = await _verificationService.GetNannyRequestsAsync(userId, status, page, pageSize);
+        var requests = await _verificationService.NannyGetVerificationRequestsAsync(userId, status, page, pageSize);
         return Ok(new { success = true, data = requests });
     }
 
     [Authorize(Roles = "Nanny")]
+    [HttpGet("nanny-verification-requests/{id:guid}")]
     [HttpGet("nanny-requests/{id:guid}")]
-    public async Task<IActionResult> GetMyRequestDetail(Guid id)
+    public async Task<IActionResult> NannyGetVerificationRequestDetail(Guid id)
     {
         var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!Guid.TryParse(userIdString, out var userId))
@@ -41,7 +43,7 @@ public class NannyVerificationRequestController : ControllerBase
             return Unauthorized();
         }
 
-        var (success, data, message) = await _verificationService.GetNannyRequestDetailAsync(userId, id);
+        var (success, data, message) = await _verificationService.NannyGetVerificationRequestDetailAsync(userId, id);
         if (!success || data == null)
         {
             return NotFound(new { success = false, message = message ?? "Khong tim thay yeu cau xac minh." });
@@ -51,8 +53,9 @@ public class NannyVerificationRequestController : ControllerBase
     }
 
     [Authorize(Roles = "Nanny")]
+    [HttpPost("nanny-submit-verification-request")]
     [HttpPost("submit")]
-    public async Task<IActionResult> SubmitRequest([FromBody] SubmitVerificationRequestDto model)
+    public async Task<IActionResult> NannySubmitVerificationRequest([FromBody] SubmitVerificationRequestDto model)
     {
         try
         {
@@ -67,7 +70,7 @@ public class NannyVerificationRequestController : ControllerBase
                 return BadRequest(new { success = false, message = "Ban phai tai len it nhat mot tai lieu." });
             }
 
-            var (success, message) = await _verificationService.SubmitRequestAsync(userId, model);
+            var (success, message) = await _verificationService.NannySubmitVerificationRequestAsync(userId, model);
             if (!success)
             {
                 return BadRequest(new { success = false, message });

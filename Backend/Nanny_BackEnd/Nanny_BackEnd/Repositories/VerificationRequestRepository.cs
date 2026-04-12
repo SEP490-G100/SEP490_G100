@@ -13,8 +13,6 @@ public class VerificationRequestRepository
         _db = db;
     }
 
-    public IQueryable<VerificationRequest> GetQuery() => _db.VerificationRequests.AsQueryable();
-
     public async Task<(List<VerificationRequest> Items, int TotalCount)> GetListAsync(
         int? status,
         string? search,
