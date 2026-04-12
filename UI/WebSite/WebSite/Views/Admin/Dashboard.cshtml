@@ -533,16 +533,19 @@
         let subscriptionChart = null;
         if (subscriptionTrendCanvas) {
             subscriptionChart = new Chart(subscriptionTrendCanvas, {
-                type: 'bar',
+                type: 'line',
                 data: {
                     labels: subscription7.map(item => item.Label),
                     datasets: [{
                         label: 'Subscriptions',
                         data: subscription7.map(item => item.Count),
-                        backgroundColor: '#8B5CF6',
-                        borderRadius: 10,
-                        borderSkipped: false,
-                        maxBarThickness: 42
+                        borderColor: '#8B5CF6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.14)',
+                        fill: true,
+                        tension: 0.35,
+                        borderWidth: 3,
+                        pointRadius: 2,
+                        pointHoverRadius: 4
                     }]
                 },
                 options: {

@@ -41,17 +41,9 @@ public class AdminAccountService
 
     public async Task<(bool Success, AccountDto? Data, string? Message)> AdminViewModeratorAccountDetailAsync(Guid id)
     {
-        var user = await _adminAccountRepository.GetUserWithRolesAsync(id);
+        var user = await _adminAccountRepository.GetModeratorAccountWithRolesAsync(id);
         if (user == null)
             return (false, null, "Khong tim thay Moderator.");
-
-        var roles = user.UserRoles
-            .Where(ur => !ur.IsDeleted)
-            .Select(ur => ur.Role.Name)
-            .ToList();
-
-        if (!roles.Contains(ModeratorRole))
-            return (false, null, "Tai khoan nay khong phai Moderator.");
 
         return (true, MapAccountDto(user), null);
     }
@@ -104,43 +96,29 @@ public class AdminAccountService
 
     public async Task<(bool Success, int StatusCode, string Message)> AdminUpdateModeratorAccountAsync(
         Guid id,
-        UpdateModeratorRequest request)
+        UpdateAccountStatusRequest request)
     {
+        return await AdminToggleModeratorAccountAsync(id, request);
+    }
+
+    public async Task<(bool Success, int StatusCode, string Message)> AdminToggleModeratorAccountAsync(
+        Guid id,
+        UpdateAccountStatusRequest request)
+    {
+        if (request.Status is not (0 or 1))
+            return (false, 400, "Status khong hop le.");
+
         var user = await _adminAccountRepository.GetModeratorAccountWithRolesAsync(id);
         if (user == null)
             return (false, 404, "Khong tim thay Moderator.");
 
-        var validationMessage = ValidateUpdateRequest(request);
-        if (validationMessage != null)
-            return (false, 400, validationMessage);
-
-        user.FirstName = request.FirstName.Trim();
-        user.LastName = request.LastName.Trim();
-        user.PhoneNumber = NormalizePhone(request.PhoneNumber);
-        user.Status = request.Status;
+        ApplyModeratorActiveState(user, request.Status);
         user.UpdatedAt = DateTime.UtcNow;
-
         await _adminAccountRepository.SaveChangesAsync();
-        return (true, 200, "Cap nhat Moderator thanh cong.");
-    }
-
-    public async Task<(bool Success, int StatusCode, string Message)> AdminDeleteModeratorAccountAsync(Guid id)
-    {
-        var user = await _adminAccountRepository.GetUserWithRolesAsync(id);
-        if (user == null)
-            return (false, 404, "Khong tim thay tai khoan.");
-
-        var roles = user.UserRoles
-            .Where(ur => !ur.IsDeleted)
-            .Select(ur => ur.Role.Name)
-            .ToList();
-
-        if (!roles.Contains(ModeratorRole))
-            return (false, 403, "Tai khoan nay khong phai Moderator.");
-
-        await _adminAccountRepository.HardDeleteUserAsync(id);
-        await _adminAccountRepository.SaveChangesAsync();
-        return (true, 200, "Da xoa tai khoan Moderator.");
+        return (true, 200,
+            request.Status == 1
+                ? "Kich hoat tai khoan Moderator thanh cong."
+                : "Vo hieu hoa tai khoan Moderator thanh cong.");
     }
 
     private static AccountDto MapAccountDto(User user) => new()
@@ -189,20 +167,6 @@ public class AdminAccountService
         return null;
     }
 
-    private static string? ValidateUpdateRequest(UpdateModeratorRequest request)
-    {
-        if (string.IsNullOrWhiteSpace(request.FirstName))
-            return "FirstName la bat buoc.";
-        if (string.IsNullOrWhiteSpace(request.LastName))
-            return "LastName la bat buoc.";
-        if (request.Status is not (0 or 1))
-            return "Status khong hop le.";
-        if (!string.IsNullOrWhiteSpace(request.PhoneNumber) && !IsValidPhone(request.PhoneNumber.Trim()))
-            return "So dien thoai phai la 10-11 chu so.";
-
-        return null;
-    }
-
     private static bool IsValidEmail(string email)
     {
         try
@@ -221,4 +185,17 @@ public class AdminAccountService
 
     private static string? NormalizePhone(string? phoneNumber) =>
         string.IsNullOrWhiteSpace(phoneNumber) ? null : phoneNumber.Trim();
+
+    private static void ApplyModeratorActiveState(User user, int status)
+    {
+        if (status == 1)
+        {
+            user.Status = 1;
+            user.IsDeleted = false;
+            return;
+        }
+
+        user.Status = 0;
+        user.IsDeleted = true;
+    }
 }

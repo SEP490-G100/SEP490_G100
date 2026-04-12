@@ -139,6 +139,7 @@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
     <script>
         var sidebarCollapsed = false;
         function toggleSidebar() {
@@ -153,6 +154,24 @@
                 sidebar.classList.remove('collapsed');
             }
         }
+
+        (() => {
+            const params = new URLSearchParams(window.location.search);
+            const toastMessage = params.get('toastMessage');
+            const toastType = params.get('toastType') || 'info';
+
+            if (!toastMessage || typeof window.showToast !== 'function') {
+                return;
+            }
+
+            window.showToast(toastMessage, { type: toastType });
+            params.delete('toastMessage');
+            params.delete('toastType');
+
+            const nextQuery = params.toString();
+            const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ''}${window.location.hash || ''}`;
+            window.history.replaceState({}, document.title, nextUrl);
+        })();
     </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

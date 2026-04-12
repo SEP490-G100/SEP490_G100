@@ -154,36 +154,6 @@ public class UserRepository
             .Select(r => r.Name)
             .ToListAsync();
 
-    public async Task<(List<User> Users, int TotalCount)> GetPagedUsersByRoleAsync(
-        string roleName, string? search, int? status, int page, int pageSize)
-    {
-        var query = _db.Users
-            .Where(u => !u.IsDeleted &&
-                u.UserRoles.Any(ur => !ur.IsDeleted && ur.Role.Name == roleName))
-            .AsQueryable();
-
-        if (status.HasValue)
-            query = query.Where(u => u.Status == status.Value);
-
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var s = search.Trim().ToLower();
-            query = query.Where(u =>
-                u.Email.ToLower().Contains(s) ||
-                u.FirstName.ToLower().Contains(s) ||
-                u.LastName.ToLower().Contains(s));
-        }
-
-        var totalCount = await query.CountAsync();
-        var users = await query
-            .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
-            .OrderByDescending(u => u.CreatedAt)
-            .Skip((page - 1) * pageSize).Take(pageSize)
-            .ToListAsync();
-
-        return (users, totalCount);
-    }
-
     /// <summary>Check whether an email is already registered.</summary>
     public async Task<bool> IsEmailInUseAsync(string email) =>
         await _db.Users.AnyAsync(u => u.Email == email && !u.IsDeleted);

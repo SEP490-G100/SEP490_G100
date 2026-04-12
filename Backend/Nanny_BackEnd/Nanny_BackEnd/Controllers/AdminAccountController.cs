@@ -49,7 +49,7 @@ public class AdminAccountController : ControllerBase
     }
 
     [HttpPatch("admin-update-moderator-account/{id:guid}")]
-    public async Task<IActionResult> AdminUpdateModeratorAccount(Guid id, [FromBody] UpdateModeratorRequest request)
+    public async Task<IActionResult> AdminUpdateModeratorAccount(Guid id, [FromBody] UpdateAccountStatusRequest request)
     {
         var result = await _adminAccountService.AdminUpdateModeratorAccountAsync(id, request);
         if (!result.Success)
@@ -58,10 +58,10 @@ public class AdminAccountController : ControllerBase
         return Ok(new { success = true, message = result.Message });
     }
 
-    [HttpDelete("admin-delete-moderator-account/{id:guid}")]
-    public async Task<IActionResult> AdminDeleteModeratorAccount(Guid id)
+    [HttpPatch("admin-toggle-moderator-account/{id:guid}")]
+    public async Task<IActionResult> AdminToggleModeratorAccount(Guid id, [FromBody] UpdateAccountStatusRequest request)
     {
-        var result = await _adminAccountService.AdminDeleteModeratorAccountAsync(id);
+        var result = await _adminAccountService.AdminToggleModeratorAccountAsync(id, request);
         if (!result.Success)
             return StatusCode(result.StatusCode, new { success = false, message = result.Message });
 

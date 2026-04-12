@@ -8,7 +8,6 @@ using WebSite.Models;
 namespace WebSite.Controllers;
 
 [Authorize(Roles = "Admin")]
-[Route("Admin")]
 public class AdminController : Controller
 {
     private readonly HttpClient _http;
@@ -18,7 +17,7 @@ public class AdminController : Controller
     {
         _http = httpFactory.CreateClient("BackendApi");
     }
-
+    [Route("Admin")]
     [HttpGet("ExportData")]
     public async Task<IActionResult> ExportData()
     {

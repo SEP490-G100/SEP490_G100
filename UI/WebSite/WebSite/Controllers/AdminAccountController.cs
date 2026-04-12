@@ -42,7 +42,7 @@ public class AdminAccountController : Controller
         }
         catch
         {
-            TempData["Error"] = "Không thể tải danh sách Moderator.";
+            TempData["Error"] = "Khong the tai danh sach Moderator.";
             return View("~/Views/Admin/ModeratorAccount/ManageModerators.cshtml", new AccountListResponse());
         }
     }
@@ -76,23 +76,28 @@ public class AdminAccountController : Controller
             var json = await response.Content.ReadAsStringAsync();
             if (string.IsNullOrWhiteSpace(json))
             {
-                TempData["Error"] = $"API trả về rỗng (HTTP {(int)response.StatusCode}).";
+                TempData["Error"] = $"API tra ve rong (HTTP {(int)response.StatusCode}).";
                 return View("~/Views/Admin/ModeratorAccount/CreateModerator.cshtml", model);
             }
 
             var result = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
             if (result?.Success == true)
             {
-                TempData["Success"] = result.Message ?? "Tạo Moderator thành công!";
-                return RedirectToAction(nameof(ManageModerators));
+                return RedirectToAction(
+                    nameof(ManageModerators),
+                    new
+                    {
+                        toastType = "success",
+                        toastMessage = result.Message ?? "Tao Moderator thanh cong."
+                    });
             }
 
-            TempData["Error"] = result?.Message ?? "Tạo Moderator thất bại.";
+            TempData["Error"] = result?.Message ?? "Tao Moderator that bai.";
             return View("~/Views/Admin/ModeratorAccount/CreateModerator.cshtml", model);
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"Lỗi kết nối: {ex.Message}";
+            TempData["Error"] = $"Loi ket noi: {ex.Message}";
             return View("~/Views/Admin/ModeratorAccount/CreateModerator.cshtml", model);
         }
     }
@@ -109,7 +114,7 @@ public class AdminAccountController : Controller
             var result = JsonSerializer.Deserialize<ApiResult<AccountDto>>(json, JsonOpts);
             if (result?.Success != true || result.Data == null)
             {
-                TempData["Error"] = "Không tìm thấy Moderator.";
+                TempData["Error"] = "Khong tim thay Moderator.";
                 return RedirectToAction(nameof(ManageModerators));
             }
 
@@ -117,21 +122,18 @@ public class AdminAccountController : Controller
         }
         catch
         {
-            TempData["Error"] = "Lỗi kết nối.";
+            TempData["Error"] = "Loi ket noi.";
             return RedirectToAction(nameof(ManageModerators));
         }
     }
 
     [HttpPost("EditModerator/{id:guid}")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> EditModerator(Guid id, UpdateModeratorRequest model)
+    public async Task<IActionResult> EditModerator(Guid id, [FromForm] int status)
     {
         var body = JsonSerializer.Serialize(new
         {
-            firstName = model.FirstName,
-            lastName = model.LastName,
-            phoneNumber = model.PhoneNumber,
-            status = model.Status
+            status
         });
 
         var request = new HttpRequestMessage(HttpMethod.Patch, $"/api/Admin/admin-update-moderator-account/{id}")
@@ -146,24 +148,68 @@ public class AdminAccountController : Controller
             var json = await response.Content.ReadAsStringAsync();
             if (string.IsNullOrWhiteSpace(json))
             {
-                TempData["Error"] = $"API trả về rỗng (HTTP {(int)response.StatusCode}).";
+                TempData["Error"] = $"API tra ve rong (HTTP {(int)response.StatusCode}).";
                 return RedirectToAction(nameof(EditModerator), new { id });
             }
 
             var result = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
             if (result?.Success == true)
             {
-                TempData["Success"] = result.Message;
-                return RedirectToAction(nameof(ManageModerators));
+                return RedirectToAction(
+                    nameof(ManageModerators),
+                    new
+                    {
+                        toastType = "success",
+                        toastMessage = result.Message ?? "Cap nhat Moderator thanh cong."
+                    });
             }
 
-            TempData["Error"] = result?.Message ?? "Cập nhật thất bại.";
+            TempData["Error"] = result?.Message ?? "Cap nhat that bai.";
             return RedirectToAction(nameof(EditModerator), new { id });
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"Lỗi kết nối: {ex.Message}";
+            TempData["Error"] = $"Loi ket noi: {ex.Message}";
             return RedirectToAction(nameof(EditModerator), new { id });
+        }
+    }
+
+    [HttpPost("ToggleModeratorStatus")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ToggleModeratorStatus(
+        [FromForm] Guid id,
+        [FromForm] int status,
+        [FromForm] string? returnUrl = null)
+    {
+        var body = JsonSerializer.Serialize(new { status });
+        var request = new HttpRequestMessage(HttpMethod.Patch, $"/api/Admin/admin-toggle-moderator-account/{id}")
+        {
+            Content = new StringContent(body, Encoding.UTF8, "application/json")
+        };
+        AttachToken(request);
+
+        try
+        {
+            var response = await _http.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
+
+            if (result?.Success == true)
+            {
+                var successMessage = result.Message ??
+                                     (status == 1
+                                         ? "Moderator activated successfully."
+                                         : "Moderator deactivated successfully.");
+                return RedirectToReturnUrlOrList(returnUrl, "success", successMessage);
+            }
+
+            TempData["Error"] = result?.Message ?? "Khong the cap nhat trang thai Moderator.";
+            return RedirectToReturnUrlOrList(returnUrl);
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = $"Loi ket noi: {ex.Message}";
+            return RedirectToReturnUrlOrList(returnUrl);
         }
     }
 
@@ -178,11 +224,11 @@ public class AdminAccountController : Controller
             var response = await _http.SendAsync(request);
             var json = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
-            TempData[result?.Success == true ? "Success" : "Error"] = result?.Message ?? "Đã xoá.";
+            TempData[result?.Success == true ? "Success" : "Error"] = result?.Message ?? "Da xoa.";
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"Lỗi: {ex.Message}";
+            TempData["Error"] = $"Loi: {ex.Message}";
         }
 
         return RedirectToAction(nameof(ManageModerators));
@@ -193,5 +239,42 @@ public class AdminAccountController : Controller
         var token = HttpContext.Session.GetString("AccessToken");
         if (!string.IsNullOrEmpty(token))
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+    }
+
+    private IActionResult RedirectToReturnUrlOrList(
+        string? returnUrl,
+        string? toastType = null,
+        string? toastMessage = null)
+    {
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            return Redirect(AppendToastQuery(returnUrl, toastType, toastMessage));
+
+        if (!string.IsNullOrWhiteSpace(toastMessage))
+        {
+            return RedirectToAction(
+                nameof(ManageModerators),
+                new { toastType = toastType ?? "info", toastMessage });
+        }
+
+        return RedirectToAction(nameof(ManageModerators));
+    }
+
+    private static string AppendToastQuery(string url, string? toastType, string? toastMessage)
+    {
+        var updatedUrl = url;
+
+        if (!string.IsNullOrWhiteSpace(toastType))
+            updatedUrl = AppendQuery(updatedUrl, "toastType", toastType);
+
+        if (!string.IsNullOrWhiteSpace(toastMessage))
+            updatedUrl = AppendQuery(updatedUrl, "toastMessage", toastMessage);
+
+        return updatedUrl;
+    }
+
+    private static string AppendQuery(string url, string key, string value)
+    {
+        var separator = url.Contains('?') ? "&" : "?";
+        return $"{url}{separator}{Uri.EscapeDataString(key)}={Uri.EscapeDataString(value)}";
     }
 }

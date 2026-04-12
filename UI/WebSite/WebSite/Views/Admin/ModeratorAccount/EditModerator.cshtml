@@ -39,7 +39,7 @@
     </div>
 }
 
-<form method="post" action="/Admin/EditModerator/@Model.Id" onsubmit="return validateForm()">
+<form method="post" action="/Admin/EditModerator/@Model.Id">
     @Html.AntiForgeryToken()
 
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -90,38 +90,37 @@
                 <div class="card-header">
                     <div class="flex items-center gap-2">
                         <span class="material-icons-round text-orange-400">edit</span>
-                        <h2>Edit Details <span class="text-xs text-green-500 font-semibold ml-1">✏️ editable</span></h2>
+                        <h2>Moderator Information <span class="text-xs text-gray-500 font-semibold ml-1">read-only</span></h2>
                     </div>
                 </div>
                 <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
 
                     <!-- First Name -->
                     <div class="field-group">
-                        <label class="field-label">First Name <span class="text-red-400">*</span></label>
-                        <input name="FirstName" type="text" value="@Model.FirstName" required
-                               placeholder="First name" class="search-input w-full" />
+                        <label class="field-label">First Name</label>
+                        <input type="text" value="@Model.FirstName"
+                               class="search-input w-full bg-gray-50 text-gray-500 cursor-not-allowed" readonly />
                     </div>
 
                     <!-- Last Name -->
                     <div class="field-group">
-                        <label class="field-label">Last Name <span class="text-red-400">*</span></label>
-                        <input name="LastName" type="text" value="@Model.LastName" required
-                               placeholder="Last name" class="search-input w-full" />
+                        <label class="field-label">Last Name</label>
+                        <input type="text" value="@Model.LastName"
+                               class="search-input w-full bg-gray-50 text-gray-500 cursor-not-allowed" readonly />
                     </div>
 
                     <!-- Phone -->
                     <div class="field-group sm:col-span-2">
                         <label class="field-label">
-                            Phone Number <span class="text-orange-400 text-[10px] ml-1">✏️</span>
+                            Phone Number
                         </label>
                         <div class="relative">
                             <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-base pointer-events-none">phone</span>
-                            <input id="phoneInput" name="PhoneNumber" type="tel"
-                                   value="@Model.PhoneNumber" placeholder="10–11 digits"
-                                   maxlength="11" oninput="validatePhone(this)"
-                                   class="search-input !pl-9 w-full" />
+                            <input type="text"
+                                   value="@((string.IsNullOrWhiteSpace(Model.PhoneNumber) ? "N/A" : Model.PhoneNumber))"
+                                   class="search-input !pl-9 w-full bg-gray-50 text-gray-500 cursor-not-allowed" readonly />
                         </div>
-                        <p id="phone-error" class="text-xs text-red-500 mt-1 hidden">Phone number must be 10–11 digits.</p>
+                        <p class="text-xs text-gray-400 mt-1">Moderator can update phone number in personal profile.</p>
                     </div>
 
                     <!-- Status -->
@@ -247,29 +246,6 @@
 
 @section Scripts {
 <script>
-function validatePhone(input) {
-    var val = input.value.replace(/\D/g, ''); // strip non-digits
-    input.value = val;                         // auto-strip letters as user types
-    var err = document.getElementById('phone-error');
-    if (val.length > 0 && (val.length < 10 || val.length > 11)) {
-        err.classList.remove('hidden');
-        input.classList.add('!border-red-400');
-    } else {
-        err.classList.add('hidden');
-        input.classList.remove('!border-red-400');
-    }
-}
-
-function validateForm() {
-    var phone = document.getElementById('phoneInput').value;
-    if (phone.length > 0 && !/^[0-9]{10,11}$/.test(phone)) {
-        document.getElementById('phone-error').classList.remove('hidden');
-        document.getElementById('phoneInput').focus();
-        return false;
-    }
-    return true;
-}
-
 function updateStatusLabel(val) {
     var display = document.getElementById('current-status-display');
     var dot     = document.getElementById('status-dot');

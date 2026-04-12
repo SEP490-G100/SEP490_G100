@@ -1,44 +1,72 @@
+using Microsoft.EntityFrameworkCore;
+using Nanny_BackEnd.Data;
 using Nanny_BackEnd.Models;
 
 namespace Nanny_BackEnd.Repositories;
 
 public class AdminAccountRepository
 {
-    private readonly UserRepository _userRepository;
+    private const string ModeratorRole = "Moderator";
+    private readonly Sep490NannyDbContext _db;
 
-    public AdminAccountRepository(UserRepository userRepository)
+    public AdminAccountRepository(Sep490NannyDbContext db)
     {
-        _userRepository = userRepository;
+        _db = db;
     }
 
     public async Task<(List<User> Users, int TotalCount)> GetPagedModeratorAccountsAsync(
         string? search,
         int? status,
         int page,
-        int pageSize) =>
-        await _userRepository.GetPagedUsersByRoleAsync("Moderator", search, status, page, pageSize);
+        int pageSize)
+    {
+        var query = _db.Users
+            .Where(u => u.UserRoles.Any(ur => !ur.IsDeleted && ur.Role.Name == ModeratorRole))
+            .AsQueryable();
+
+        if (status.HasValue)
+            query = query.Where(u => u.Status == status.Value);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var s = search.Trim().ToLower();
+            query = query.Where(u =>
+                u.Email.ToLower().Contains(s) ||
+                u.FirstName.ToLower().Contains(s) ||
+                u.LastName.ToLower().Contains(s));
+        }
+
+        var totalCount = await query.CountAsync();
+        var users = await query
+            .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
+            .OrderByDescending(u => u.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (users, totalCount);
+    }
 
     public async Task<User?> GetModeratorAccountWithRolesAsync(Guid id) =>
-        await _userRepository.GetUserByIdAndRoleAsync(id, "Moderator");
-
-    public async Task<User?> GetUserWithRolesAsync(Guid id) =>
-        await _userRepository.GetUserWithRolesAsync(id);
+        await _db.Users
+            .Include(u => u.UserRoles)
+            .ThenInclude(ur => ur.Role)
+            .FirstOrDefaultAsync(u =>
+                u.Id == id &&
+                u.UserRoles.Any(ur => !ur.IsDeleted && ur.Role.Name == ModeratorRole));
 
     public async Task<bool> IsEmailInUseAsync(string email) =>
-        await _userRepository.IsEmailInUseAsync(email);
+        await _db.Users.AnyAsync(u => u.Email == email);
 
     public async Task<Role?> GetRoleByNameAsync(string roleName) =>
-        await _userRepository.GetRoleByNameAsync(roleName);
+        await _db.Roles.FirstOrDefaultAsync(r => r.Name == roleName && !r.IsDeleted);
 
     public void AddUser(User user) =>
-        _userRepository.Add(user);
+        _db.Users.Add(user);
 
     public void AddUserRole(UserRole userRole) =>
-        _userRepository.AddUserRole(userRole);
-
-    public async Task HardDeleteUserAsync(Guid userId) =>
-        await _userRepository.HardDeleteUserAsync(userId);
+        _db.UserRoles.Add(userRole);
 
     public async Task SaveChangesAsync() =>
-        await _userRepository.saveChanges();
+        await _db.SaveChangesAsync();
 }

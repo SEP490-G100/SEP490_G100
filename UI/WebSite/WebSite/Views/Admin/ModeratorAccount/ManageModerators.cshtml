@@ -5,14 +5,13 @@
 
     var currentSearch = ViewBag.Search as string ?? "";
     var currentStatus = ViewBag.Status as string ?? "";
-    var currentPage   = Model?.Page ?? 1;
-    var totalPages    = Model?.TotalPages ?? 1;
-    var accounts      = Model?.Items ?? new List<WebSite.Models.Account.AccountDto>();
+    var currentPage = Model?.Page ?? 1;
+    var totalPages = Model?.TotalPages ?? 1;
+    var pageSize = Model?.PageSize ?? 3;
+    var accounts = Model?.Items ?? new List<WebSite.Models.Account.AccountDto>();
+    var currentUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
 }
 
-<!-- ====================================================
-     PAGE HEADER  — Home-style section label + gradient title
-     ==================================================== -->
 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
     <div>
         <h1 class="page-title mt-2">
@@ -28,7 +27,6 @@
     </div>
 </div>
 
-<!-- Alert messages -->
 @if (TempData["Error"] != null)
 {
     <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 fade-in-up">
@@ -36,34 +34,24 @@
         @TempData["Error"]
     </div>
 }
-@if (TempData["Success"] != null)
-{
-    <div class="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 fade-in-up">
-        <span class="material-icons-round text-base">check_circle_outline</span>
-        @TempData["Success"]
-    </div>
-}
 
-<!-- ====================================================
-     FILTER / SEARCH FORM  — glassmorphism card
-     ==================================================== -->
 <form method="get" action="/Admin/ManageModerators" id="filterForm">
     <div class="content-card p-4 mb-5 fade-in-up" style="animation-delay:.05s;">
         <div class="flex flex-col md:flex-row gap-3">
-
-            <!-- Search -->
             <div class="relative flex-1">
                 <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">search</span>
-                <input name="search" type="text" value="@currentSearch"
+                <input name="search"
+                       type="text"
+                       value="@currentSearch"
                        placeholder="Search by name or email..."
                        class="search-input pl-9 w-full border border-gray-200 rounded-xl px-4 py-2 font-medium"
                        onkeydown="if(event.key==='Enter'){this.form.submit();}" />
             </div>
 
-            <!-- Status Filter -->
             <div class="relative">
                 <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">toggle_on</span>
-                <select name="status" onchange="this.form.submit()"
+                <select name="status"
+                        onchange="this.form.submit()"
                         class="search-input md:w-44 !pl-9 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
                     <option value="">All Statuses</option>
                     <option value="1" selected="@(currentStatus == "1" ? "selected" : null)">Active</option>
@@ -71,7 +59,6 @@
                 </select>
             </div>
 
-            <!-- Submit -->
             <button type="submit" class="btn-primary flex-shrink-0 flex items-center gap-1">
                 <span class="material-icons-round text-base">search</span>
                 Search
@@ -80,12 +67,7 @@
     </div>
 </form>
 
-<!-- ====================================================
-     ACCOUNT TABLE
-     ==================================================== -->
 <div class="content-card overflow-hidden fade-in-up" style="animation-delay:.1s;">
-
-    <!-- Table header row -->
     <div class="card-header">
         <span class="text-sm text-gray-500">
             Showing <span class="font-bold text-gray-800">@accounts.Count</span>
@@ -125,26 +107,26 @@
                         </td>
                     </tr>
                 }
-                @{int rowNum = ((currentPage - 1) * 10) + 1;}
+                @{ int rowNum = ((currentPage - 1) * pageSize) + 1; }
                 @foreach (var acc in accounts)
                 {
-                    var statusBadge = acc.Status == 1 ? "badge-active"   : "badge-inactive";
-                    var statusLabel = acc.Status == 1 ? "Active"          : "Inactive";
-                    var avatarColors = new[] { "#F97316","#EA580C","#F59E0B","#FBBF24","#FCD34D" };
+                    var statusBadge = acc.Status == 1 ? "badge-active" : "badge-inactive";
+                    var statusLabel = acc.Status == 1 ? "Active" : "Inactive";
+                    var avatarColors = new[] { "#F97316", "#EA580C", "#F59E0B", "#FBBF24", "#FCD34D" };
                     var avatarBg = avatarColors[Math.Abs(acc.Id.GetHashCode()) % avatarColors.Length];
 
                     <tr class="account-row" id="row-@acc.Id">
                         <td class="text-gray-300 text-xs font-mono">@rowNum</td>
                         <td>
                             <div class="flex items-center gap-3">
-                                <div class="user-avatar" style="background:@avatarBg;">@acc.FirstName.Substring(0,1).ToUpper()</div>
+                                <div class="user-avatar" style="background:@avatarBg;">@acc.FirstName.Substring(0, 1).ToUpper()</div>
                                 <div>
                                     <span class="font-bold text-gray-800">@acc.FullName</span>
                                 </div>
                             </div>
                         </td>
                         <td class="text-gray-500 text-sm">@acc.Email</td>
-                        <td class="text-gray-500 text-sm">@(acc.PhoneNumber ?? "—")</td>
+                        <td class="text-gray-500 text-sm">@(acc.PhoneNumber ?? "-")</td>
                         <td class="text-gray-500 text-xs">@acc.CreatedAt.ToString("MMM dd, yyyy")</td>
                         <td>
                             <div class="flex items-center gap-1.5" id="status-cell-@acc.Id">
@@ -154,16 +136,26 @@
                         </td>
                         <td>
                             <div class="flex items-center justify-center gap-1.5">
-                                <!-- View / Edit -->
-                                <a href="/Admin/EditModerator/@acc.Id" title="Edit"
+                                <a href="/Admin/EditModerator/@acc.Id"
+                                   title="Edit"
                                    class="w-8 h-8 rounded-xl hover:bg-orange-50 hover:text-orange-600 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-orange-200">
                                     <span class="material-icons-round text-base">edit</span>
                                 </a>
-                                <!-- Delete -->
-                                <button onclick="confirmDelete('@acc.Id','@acc.FullName')" title="Delete"
-                                        class="w-8 h-8 rounded-xl hover:bg-red-50 hover:text-red-500 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-red-200">
-                                    <span class="material-icons-round text-base">delete_outline</span>
-                                </button>
+
+                                <form method="post"
+                                      action="/Admin/ToggleModeratorStatus"
+                                      class="inline"
+                                      onsubmit="return confirm('@(acc.Status == 1 ? "Deactivate" : "Activate") this moderator account?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@acc.Id" />
+                                    <input type="hidden" name="status" value="@(acc.Status == 1 ? 0 : 1)" />
+                                    <input type="hidden" name="returnUrl" value="@currentUrl" />
+                                    <button type="submit"
+                                            title="@(acc.Status == 1 ? "Deactivate" : "Activate")"
+                                            class="w-8 h-8 rounded-xl @(acc.Status == 1 ? "hover:bg-red-50 hover:text-red-500 hover:border-red-200" : "hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200") flex items-center justify-center text-gray-300 transition-all border border-gray-100">
+                                        <span class="material-icons-round text-base">@(acc.Status == 1 ? "block" : "check_circle_outline")</span>
+                                    </button>
+                                </form>
                             </div>
                         </td>
                     </tr>
@@ -173,7 +165,6 @@
         </table>
     </div>
 
-    <!-- Pagination -->
     <div class="flex items-center justify-between px-6 py-4 border-t border-gray-50">
         <span class="text-sm text-gray-400">
             Page <span class="font-bold text-gray-600">@currentPage</span> of <span class="font-bold text-gray-600">@totalPages</span>
@@ -181,8 +172,7 @@
         <div class="flex gap-1.5">
             @if (currentPage > 1)
             {
-                <a href="?search=@currentSearch&status=@currentStatus&page=@(currentPage - 1)"
-                   class="page-btn">
+                <a href="?search=@currentSearch&status=@currentStatus&page=@(currentPage - 1)" class="page-btn">
                     <span class="material-icons-round text-sm">chevron_left</span>
                 </a>
             }
@@ -194,13 +184,11 @@
             }
             @for (int p = Math.Max(1, currentPage - 2); p <= Math.Min(totalPages, currentPage + 2); p++)
             {
-                <a href="?search=@currentSearch&status=@currentStatus&page=@p"
-                   class="page-btn @(p == currentPage ? "active" : "")">@p</a>
+                <a href="?search=@currentSearch&status=@currentStatus&page=@p" class="page-btn @(p == currentPage ? "active" : "")">@p</a>
             }
             @if (currentPage < totalPages)
             {
-                <a href="?search=@currentSearch&status=@currentStatus&page=@(currentPage + 1)"
-                   class="page-btn">
+                <a href="?search=@currentSearch&status=@currentStatus&page=@(currentPage + 1)" class="page-btn">
                     <span class="material-icons-round text-sm">chevron_right</span>
                 </a>
             }
@@ -213,44 +201,3 @@
         </div>
     </div>
 </div>
-
-<!-- ====================================================
-     DELETE CONFIRM MODAL
-     ==================================================== -->
-<div id="deleteModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeModal('deleteModal')">
-    <div class="modal-box">
-        <div class="flex items-center gap-3 mb-4">
-            <div id="toggleIcon" class="w-12 h-12 rounded-2xl flex items-center justify-center" style="background:#FEE2E2;">
-                <span class="material-icons-round text-2xl" style="color:#EF4444;">delete_forever</span>
-            </div>
-            <div>
-                <h3 class="text-lg font-bold text-gray-900">Delete Moderator</h3>
-                <p class="text-sm text-gray-400">This action requires confirmation</p>
-            </div>
-        </div>
-        <p class="text-sm text-gray-600 mb-6 bg-gray-50 rounded-2xl p-4 border border-gray-100 leading-relaxed">
-            Are you sure you want to <strong>delete</strong> the account of <strong id="deleteName"></strong>? This user will be removed from the system.
-        </p>
-        <div id="deleteFormContainer" class="flex gap-2"></div>
-    </div>
-</div>
-
-@section Scripts {
-<script>
-    function confirmDelete(id, name) {
-        document.getElementById('deleteName').textContent = name;
-        document.getElementById('deleteFormContainer').innerHTML =
-            '<button onclick="closeModal(\'deleteModal\')" class="btn-outline flex-1 justify-center">Cancel</button>' +
-            '<form method="post" action="/Admin/DeleteModerator" class="flex-1 flex">' +
-            '@Html.AntiForgeryToken()'.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&') +
-            '<input type="hidden" name="id" value="' + id + '" />' +
-            '<button type="submit" class="btn-danger w-full justify-center">Confirm</button>' +
-            '</form>';
-        document.getElementById('deleteModal').classList.remove('hidden');
-    }
-
-    function closeModal(id) {
-        document.getElementById(id).classList.add('hidden');
-    }
-</script>
-}
