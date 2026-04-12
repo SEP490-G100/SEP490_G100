@@ -10,7 +10,7 @@ public class BlogRepository
     public BlogRepository(Sep490NannyDbContext db) => _db = db;
 
     /// <summary>Paginated list with optional status, isDeleted, categoryId filter and sort.</summary>
-    public async Task<(List<Blog> Items, int TotalCount)> GetPagedAsync(
+    public async Task<(List<Blog> Items, int TotalCount)> GetBlogListAsync(
         string? search, int page, int pageSize,
         int? status = null, bool? isDeleted = null, Guid? categoryId = null,
         string? sort = null)
