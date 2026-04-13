@@ -200,14 +200,24 @@ public class AdminNotificationController : Controller
             var response = await _http.SendAsync(request);
             var json = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
-            TempData[result?.Success == true ? "Success" : "Error"] =
-                result?.Message ?? "Khong the cap nhat trang thai thong bao admin.";
-            return RedirectToAdminNotificationReturnUrlOrList(returnUrl);
+            if (result?.Success == true)
+            {
+                return RedirectToAdminNotificationReturnUrlOrList(
+                    returnUrl,
+                    "success",
+                    result.Message ?? (isDeleted
+                        ? "Da vo hieu hoa thong bao thanh cong"
+                        : "Da kich hoat thong bao thanh cong"));
+            }
+
+            return RedirectToAdminNotificationReturnUrlOrList(
+                returnUrl,
+                "error",
+                result?.Message ?? "Khong the cap nhat trang thai thong bao admin.");
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"Loi ket noi: {ex.Message}";
-            return RedirectToAdminNotificationReturnUrlOrList(returnUrl);
+            return RedirectToAdminNotificationReturnUrlOrList(returnUrl, "error", $"Loi ket noi: {ex.Message}");
         }
     }
 
@@ -233,12 +243,41 @@ public class AdminNotificationController : Controller
             ModelState.AddModelError(nameof(model.TargetRole), "Admin cannot receive admin broadcast notifications.");
     }
 
-    private IActionResult RedirectToAdminNotificationReturnUrlOrList(string? returnUrl)
+    private IActionResult RedirectToAdminNotificationReturnUrlOrList(
+        string? returnUrl,
+        string? toastType = null,
+        string? toastMessage = null)
     {
         if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
-            return Redirect(returnUrl);
+            return Redirect(AppendToastQuery(returnUrl, toastType, toastMessage));
+
+        if (!string.IsNullOrWhiteSpace(toastMessage))
+        {
+            return RedirectToAction(
+                nameof(ManageAdminNotification),
+                new { toastType = toastType ?? "info", toastMessage });
+        }
 
         return RedirectToAction(nameof(ManageAdminNotification));
+    }
+
+    private static string AppendToastQuery(string url, string? toastType, string? toastMessage)
+    {
+        var updatedUrl = url;
+
+        if (!string.IsNullOrWhiteSpace(toastType))
+            updatedUrl = AppendQuery(updatedUrl, "toastType", toastType);
+
+        if (!string.IsNullOrWhiteSpace(toastMessage))
+            updatedUrl = AppendQuery(updatedUrl, "toastMessage", toastMessage);
+
+        return updatedUrl;
+    }
+
+    private static string AppendQuery(string url, string key, string value)
+    {
+        var separator = url.Contains('?') ? "&" : "?";
+        return $"{url}{separator}{Uri.EscapeDataString(key)}={Uri.EscapeDataString(value)}";
     }
 
     private async Task PushAdminNotificationRealtime(AdminNotificationDetailViewModel notification)

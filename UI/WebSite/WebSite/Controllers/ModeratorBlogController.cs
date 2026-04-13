@@ -316,7 +316,24 @@ public class ModeratorBlogController : Controller
         }
 
         ViewBag.Categories = await FetchBlogCategoriesAsync();
-        return RedirectToAction("~/Views/Moderator/Blog/ViewBlogDetail.cshtml", new { id });
+        var detailVm = await FetchBlogByIdAsync(id);
+        if (detailVm == null)
+        {
+            return RedirectToAction(nameof(ManageBlog), new
+            {
+                toastType = "error",
+                toastMessage = "Khong the tai lai bai blog de chinh sua"
+            });
+        }
+
+        detailVm.Title = model.Title ?? detailVm.Title;
+        detailVm.Slug = model.Slug ?? detailVm.Slug;
+        detailVm.Content = model.Content ?? detailVm.Content;
+        detailVm.Summary = model.Summary;
+        detailVm.ThumbnailUrl = model.ThumbnailUrl;
+        detailVm.CategoryId = model.CategoryId;
+        detailVm.Status = model.Status;
+        return View("~/Views/Moderator/Blog/ViewBlogDetail.cshtml", detailVm);
     }
 
     [HttpPost("ToggleBlogStatus")]
@@ -353,6 +370,26 @@ public class ModeratorBlogController : Controller
         }
 
         return RedirectToAction(nameof(ManageBlog));
+    }
+
+    private async Task<BlogDto?> FetchBlogByIdAsync(Guid id)
+    {
+        var token = HttpContext.Session.GetString("AccessToken");
+        var req = new HttpRequestMessage(HttpMethod.Get, $"/api/Blog/moderator-view-blog-detail/{id}");
+        if (!string.IsNullOrEmpty(token))
+            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        try
+        {
+            var response = await _http.SendAsync(req);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult<BlogDto>>(json, JsonOpts);
+            return result?.Success == true ? result.Data : null;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
 

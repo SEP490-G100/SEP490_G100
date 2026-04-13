@@ -437,9 +437,9 @@
                         toggleBtn.querySelector('span').textContent = 'check_circle_outline';
                     }
                 }
-                triggerToast(newStatus === 1 ? 'success' : 'error', newStatus === 1
-                    ? 'Đã activate account ' + name + ' thành công'
-                    : 'Đã deactivate account ' + name + ' thành công');
+                triggerToast('success', newStatus === 1
+                    ? 'Ban da activate account ' + name + ' thanh cong'
+                    : 'Ban da deactivate account ' + name + ' thanh cong');
             } else {
                 triggerToast('error', data.message);
             }

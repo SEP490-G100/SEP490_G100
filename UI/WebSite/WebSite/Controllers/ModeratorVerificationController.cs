@@ -139,11 +139,10 @@ public class ModeratorVerificationController : Controller
                     });
                 }
 
-                return RedirectToAction(nameof(ManageNannyVerification), new
-                {
-                    toastType = "success",
-                    toastMessage = "Bạn đã xử lí yêu cầu xác minh thành công"
-                });
+                var listUrl = Url.Action(nameof(ManageNannyVerification), "ModeratorVerification")
+                              ?? "/Moderator/ManageNannyVerification";
+                var toastMessage = Uri.EscapeDataString("Bạn đã xử lí yêu cầu xác minh thành công");
+                return Redirect($"{listUrl}?toastType=success&toastMessage={toastMessage}");
             }
 
             TempData["Error"] = result?.Message ?? "Xu ly that bai.";

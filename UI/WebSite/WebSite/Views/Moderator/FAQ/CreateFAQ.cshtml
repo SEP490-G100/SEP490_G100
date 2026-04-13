@@ -2,6 +2,15 @@
 @{
     Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
     ViewData["Title"] = "Create FAQ";
+    var questionError = ViewData.ModelState[nameof(Model.Question)]?.Errors.Count > 0
+        ? ViewData.ModelState[nameof(Model.Question)]?.Errors[0].ErrorMessage
+        : null;
+    var answerError = ViewData.ModelState[nameof(Model.Answer)]?.Errors.Count > 0
+        ? ViewData.ModelState[nameof(Model.Answer)]?.Errors[0].ErrorMessage
+        : null;
+    var categoryError = ViewData.ModelState[nameof(Model.Category)]?.Errors.Count > 0
+        ? ViewData.ModelState[nameof(Model.Category)]?.Errors[0].ErrorMessage
+        : null;
 }
 
 <!-- PAGE HEADER -->
@@ -16,20 +25,6 @@
         Back to FAQs
     </a>
 </div>
-
-<!-- Global error banner (shown when all fields empty) -->
-<div id="globalError" class="hidden mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 fade-in-up">
-    <span class="material-icons-round text-base">error_outline</span>
-    <span id="globalErrorMsg">Vui lòng điền đầy đủ thông tin bắt buộc.</span>
-</div>
-
-@if (TempData["Error"] != null)
-{
-    <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2">
-        <span class="material-icons-round text-base">error_outline</span>
-        @TempData["Error"]
-    </div>
-}
 
 <form method="post" action="/Moderator/CreateFAQ" id="faqForm" novalidate>
     @Html.AntiForgeryToken()
@@ -56,11 +51,11 @@
                             <span class="material-icons-round absolute left-3 top-3 text-gray-300 text-base pointer-events-none">help_outline</span>
                             <textarea id="questionInput" name="Question" rows="3"
                                       placeholder="e.g. How do I find a nanny on NannyMatch?"
-                                      class="search-input !pl-9 w-full resize-none">@Model.Question</textarea>
+                                      class="search-input !pl-9 w-full resize-none @(!string.IsNullOrWhiteSpace(questionError) ? "!border-red-400" : "")">@Model.Question</textarea>
                         </div>
-                        <p id="questionError" class="hidden text-xs text-red-500 mt-0.5 flex items-center gap-1">
+                        <p id="questionError" class="text-xs text-red-500 mt-0.5 flex items-center gap-1 @((string.IsNullOrWhiteSpace(questionError) ? "hidden" : ""))">
                             <span class="material-icons-round text-xs">error</span>
-                            Question không được để trống.
+                            @(questionError ?? "Question khong duoc de trong.")
                         </p>
                     </div>
 
@@ -71,11 +66,11 @@
                             <span class="material-icons-round absolute left-3 top-3 text-gray-300 text-base pointer-events-none">chat_bubble_outline</span>
                             <textarea id="answerInput" name="Answer" rows="6"
                                       placeholder="Provide a clear and helpful answer..."
-                                      class="search-input !pl-9 w-full resize-y">@Model.Answer</textarea>
+                                      class="search-input !pl-9 w-full resize-y @(!string.IsNullOrWhiteSpace(answerError) ? "!border-red-400" : "")">@Model.Answer</textarea>
                         </div>
-                        <p id="answerError" class="hidden text-xs text-red-500 mt-0.5 flex items-center gap-1">
+                        <p id="answerError" class="text-xs text-red-500 mt-0.5 flex items-center gap-1 @((string.IsNullOrWhiteSpace(answerError) ? "hidden" : ""))">
                             <span class="material-icons-round text-xs">error</span>
-                            Answer không được để trống.
+                            @(answerError ?? "Answer khong duoc de trong.")
                         </p>
                     </div>
 
@@ -99,11 +94,11 @@
                             <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-base pointer-events-none">label_outline</span>
                             <input id="categoryInput" name="Category" type="text" value="@Model.Category"
                                    placeholder="e.g. Payment, Booking, Account"
-                                   class="search-input !pl-9 w-full" />
+                                   class="search-input !pl-9 w-full @(!string.IsNullOrWhiteSpace(categoryError) ? "!border-red-400" : "")" />
                         </div>
-                        <p id="categoryError" class="hidden text-xs text-red-500 mt-0.5 flex items-center gap-1">
+                        <p id="categoryError" class="text-xs text-red-500 mt-0.5 flex items-center gap-1 @((string.IsNullOrWhiteSpace(categoryError) ? "hidden" : ""))">
                             <span class="material-icons-round text-xs">error</span>
-                            Category không được để trống.
+                            @(categoryError ?? "Category khong duoc de trong.")
                         </p>
                     </div>
 
@@ -213,18 +208,9 @@ function submitFaqForm() {
     setFieldError('categoryInput', 'categoryError', !c);
 
     if (!q || !a || !c) {
-        var missing = [];
-        if (!q) missing.push('Question');
-        if (!a) missing.push('Answer');
-        if (!c) missing.push('Category');
-        document.getElementById('globalErrorMsg').textContent =
-            missing.join(', ') + ' không được để trống.';
-        document.getElementById('globalError').classList.remove('hidden');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
     }
 
-    document.getElementById('globalError').classList.add('hidden');
     document.getElementById('faqForm').submit();
 }
 

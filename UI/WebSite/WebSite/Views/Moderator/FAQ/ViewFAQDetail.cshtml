@@ -3,6 +3,12 @@
     Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
     ViewData["Title"] = "FAQ Detail";
     var statusLabel = Model.IsActive ? "Active" : "Inactive";
+    var questionError = ViewData.ModelState["Question"]?.Errors.Count > 0
+        ? ViewData.ModelState["Question"]?.Errors[0].ErrorMessage
+        : null;
+    var answerError = ViewData.ModelState["Answer"]?.Errors.Count > 0
+        ? ViewData.ModelState["Answer"]?.Errors[0].ErrorMessage
+        : null;
 }
 
 <!-- PAGE HEADER -->
@@ -17,20 +23,6 @@
         Back to FAQs
     </a>
 </div>
-
-<!-- Global error banner -->
-<div id="globalError" class="hidden mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2">
-    <span class="material-icons-round text-base">error_outline</span>
-    <span id="globalErrorMsg"></span>
-</div>
-
-@if (TempData["Error"] != null)
-{
-    <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2">
-        <span class="material-icons-round text-base">error_outline</span>
-        @TempData["Error"]
-    </div>
-}
 
 <form method="post" action="/Moderator/ViewFAQDetail/@Model.Id" id="faqEditForm" novalidate>
     @Html.AntiForgeryToken()
@@ -116,11 +108,11 @@
                             <span class="material-icons-round absolute left-3 top-3 text-gray-300 text-base pointer-events-none">help_outline</span>
                             <textarea id="questionInput" name="Question" rows="3"
                                       placeholder="Enter the question..."
-                                      class="search-input !pl-9 w-full resize-none">@Model.Question</textarea>
+                                      class="search-input !pl-9 w-full resize-none @(!string.IsNullOrWhiteSpace(questionError) ? "!border-red-400" : "")">@Model.Question</textarea>
                         </div>
-                        <p id="questionError" class="hidden text-xs text-red-500 mt-0.5 flex items-center gap-1">
+                        <p id="questionError" class="text-xs text-red-500 mt-0.5 flex items-center gap-1 @((string.IsNullOrWhiteSpace(questionError) ? "hidden" : ""))">
                             <span class="material-icons-round text-xs">error</span>
-                            Question không được để trống.
+                            @(questionError ?? "Question khong duoc de trong.")
                         </p>
                     </div>
 
@@ -134,11 +126,11 @@
                             <span class="material-icons-round absolute left-3 top-3 text-gray-300 text-base pointer-events-none">chat_bubble_outline</span>
                             <textarea id="answerInput" name="Answer" rows="7"
                                       placeholder="Enter the answer..."
-                                      class="search-input !pl-9 w-full resize-y">@Model.Answer</textarea>
+                                      class="search-input !pl-9 w-full resize-y @(!string.IsNullOrWhiteSpace(answerError) ? "!border-red-400" : "")">@Model.Answer</textarea>
                         </div>
-                        <p id="answerError" class="hidden text-xs text-red-500 mt-0.5 flex items-center gap-1">
+                        <p id="answerError" class="text-xs text-red-500 mt-0.5 flex items-center gap-1 @((string.IsNullOrWhiteSpace(answerError) ? "hidden" : ""))">
                             <span class="material-icons-round text-xs">error</span>
-                            Answer không được để trống.
+                            @(answerError ?? "Answer khong duoc de trong.")
                         </p>
                     </div>
 
@@ -264,16 +256,9 @@ function submitEditForm() {
     setFieldError('answerInput',  'answerError',   !a);
 
     if (!q || !a) {
-        var msg = !q && !a ? 'Question và Answer không được để trống.'
-                : !q ? 'Question không được để trống.'
-                :       'Answer không được để trống.';
-        document.getElementById('globalErrorMsg').textContent = msg;
-        document.getElementById('globalError').classList.remove('hidden');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
     }
 
-    document.getElementById('globalError').classList.add('hidden');
     document.getElementById('faqEditForm').submit();
 }
 

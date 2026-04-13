@@ -116,11 +116,10 @@ namespace WebSite.Controllers
                     });
                 }
 
-                return RedirectToAction(nameof(ManageJobPosting), new
-                {
-                    toastType = "success",
-                    toastMessage = "Bạn đã xử lí yêu cầu duyệt bài đăng thành công"
-                });
+                var listUrl = Url.Action(nameof(ManageJobPosting), "ModeratorJob")
+                              ?? "/Moderator/ManageJobPosting";
+                var toastMessage = Uri.EscapeDataString("Bạn đã xử lí yêu cầu duyệt bài đăng thành công");
+                return Redirect($"{listUrl}?toastType=success&toastMessage={toastMessage}");
             }
             else
             {

@@ -186,17 +186,22 @@ public class AdminSubcriptionPlanController : Controller
 
             if (result?.Success == true)
             {
-                TempData["Success"] = result.Message;
-                return RedirectToReturnUrlOrList(returnUrl);
+                return RedirectToReturnUrlOrList(
+                    returnUrl,
+                    "success",
+                    result.Message ?? (isActive
+                        ? "Da kich hoat goi subscription thanh cong"
+                        : "Da vo hieu hoa goi subscription thanh cong"));
             }
 
-            TempData["Error"] = result?.Message ?? "Khong the cap nhat trang thai subscription plan.";
-            return RedirectToReturnUrlOrList(returnUrl);
+            return RedirectToReturnUrlOrList(
+                returnUrl,
+                "error",
+                result?.Message ?? "Khong the cap nhat trang thai subscription plan.");
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"Loi ket noi: {ex.Message}";
-            return RedirectToReturnUrlOrList(returnUrl);
+            return RedirectToReturnUrlOrList(returnUrl, "error", $"Loi ket noi: {ex.Message}");
         }
     }
 
@@ -235,11 +240,40 @@ public class AdminSubcriptionPlanController : Controller
         }
     };
 
-    private IActionResult RedirectToReturnUrlOrList(string? returnUrl)
+    private IActionResult RedirectToReturnUrlOrList(
+        string? returnUrl,
+        string? toastType = null,
+        string? toastMessage = null)
     {
         if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
-            return Redirect(returnUrl);
+            return Redirect(AppendToastQuery(returnUrl, toastType, toastMessage));
+
+        if (!string.IsNullOrWhiteSpace(toastMessage))
+        {
+            return RedirectToAction(
+                nameof(ManageSubscriptionPlan),
+                new { toastType = toastType ?? "info", toastMessage });
+        }
 
         return RedirectToAction(nameof(ManageSubscriptionPlan));
+    }
+
+    private static string AppendToastQuery(string url, string? toastType, string? toastMessage)
+    {
+        var updatedUrl = url;
+
+        if (!string.IsNullOrWhiteSpace(toastType))
+            updatedUrl = AppendQuery(updatedUrl, "toastType", toastType);
+
+        if (!string.IsNullOrWhiteSpace(toastMessage))
+            updatedUrl = AppendQuery(updatedUrl, "toastMessage", toastMessage);
+
+        return updatedUrl;
+    }
+
+    private static string AppendQuery(string url, string key, string value)
+    {
+        var separator = url.Contains('?') ? "&" : "?";
+        return $"{url}{separator}{Uri.EscapeDataString(key)}={Uri.EscapeDataString(value)}";
     }
 }

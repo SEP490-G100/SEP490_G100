@@ -85,11 +85,11 @@ public class BlogCategoryController : Controller
                     toastMessage = "Bạn đã tạo thể loại blog thành công"
                 });
             }
-            TempData["Error"] = result?.Message ?? "Tao danh muc that bai.";
+            ModelState.AddModelError(nameof(model.Name), result?.Message ?? "Tao danh muc that bai.");
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"Loi ket noi: {ex.Message}";
+            ModelState.AddModelError(nameof(model.Name), $"Loi ket noi: {ex.Message}");
         }
 
         return View("~/Views/Moderator/BlogCategory/CreateBlogCategory.cshtml", model);
@@ -141,14 +141,15 @@ public class BlogCategoryController : Controller
                     toastMessage = "Bạn đã chỉnh sửa thể loại blog thành công"
                 });
             }
-            TempData["Error"] = result?.Message ?? "Cap nhat danh muc that bai.";
+            ModelState.AddModelError(nameof(model.Name), result?.Message ?? "Cap nhat danh muc that bai.");
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"Loi ket noi: {ex.Message}";
+            ModelState.AddModelError(nameof(model.Name), $"Loi ket noi: {ex.Message}");
         }
 
-        return RedirectToAction(nameof(ViewBlogCategoryDetail), new { id });
+        var failedVm = await BuildCategoryDetailViewModelForInvalidPost(id, model);
+        return View("~/Views/Moderator/BlogCategory/ViewBlogCategoryDetail.cshtml", failedVm);
     }
 
     // POST /Moderator/ToggleBlogCategoryStatus
@@ -187,9 +188,13 @@ public class BlogCategoryController : Controller
         return RedirectToAction(nameof(ManageBlogCategory));
     }
 
-    private static void ValidateCategoryForm(string? name, string? slug)
+    private void ValidateCategoryForm(string? name, string? slug)
     {
-        // Validation is handled at controller level so the view can render inline errors consistently.
+        if (string.IsNullOrWhiteSpace(name))
+            ModelState.AddModelError(nameof(CreateBlogCategoryRequest.Name), "Name is required.");
+
+        if (string.IsNullOrWhiteSpace(slug))
+            ModelState.AddModelError(nameof(CreateBlogCategoryRequest.Slug), "Slug is required.");
     }
 
     private async Task<BlogCategoryDto?> FetchCategoryByIdAsync(Guid id)

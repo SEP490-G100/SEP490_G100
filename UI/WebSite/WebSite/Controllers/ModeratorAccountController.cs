@@ -134,10 +134,10 @@ public class ModeratorAccountController : Controller
             {
                 return RedirectToAction(nameof(ManageAccount), new
                 {
-                    toastType = model.Status == 1 ? "success" : "error",
+                    toastType = "success",
                     toastMessage = model.Status == 1
-                        ? "Da activate account thanh cong"
-                        : "Da deactivate account thanh cong"
+                        ? "Ban da activate account thanh cong"
+                        : "Ban da deactivate account thanh cong"
                 });
             }
 

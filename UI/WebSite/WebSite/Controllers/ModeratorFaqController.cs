@@ -117,12 +117,12 @@ public class ModeratorFaqController : Controller
                 });
             }
 
-            TempData["Error"] = result?.Message ?? "Tao FAQ that bai.";
+            ModelState.AddModelError(nameof(model.Question), result?.Message ?? "Tao FAQ that bai.");
             return View("~/Views/Moderator/FAQ/CreateFAQ.cshtml", model);
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"Loi ket noi: {ex.Message}";
+            ModelState.AddModelError(nameof(model.Question), $"Loi ket noi: {ex.Message}");
             return View("~/Views/Moderator/FAQ/CreateFAQ.cshtml", model);
         }
     }
@@ -195,14 +195,15 @@ public class ModeratorFaqController : Controller
                 });
             }
 
-            TempData["Error"] = result?.Message ?? "Cap nhat FAQ that bai.";
+            ModelState.AddModelError(nameof(model.Question), result?.Message ?? "Cap nhat FAQ that bai.");
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"Loi ket noi: {ex.Message}";
+            ModelState.AddModelError(nameof(model.Question), $"Loi ket noi: {ex.Message}");
         }
 
-        return RedirectToAction(nameof(ViewFAQDetail), new { id });
+        var failedVm = await BuildFaqDetailViewModelForInvalidPost(id, model);
+        return View("~/Views/Moderator/FAQ/ViewFAQDetail.cshtml", failedVm);
     }
 
     // POST /Moderator/ToggleFaqStatus

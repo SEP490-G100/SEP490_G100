@@ -2,6 +2,12 @@
 @{
     Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
     ViewData["Title"] = "Create Blog Category";
+    var nameError = ViewData.ModelState[nameof(Model.Name)]?.Errors.Count > 0
+        ? ViewData.ModelState[nameof(Model.Name)]?.Errors[0].ErrorMessage
+        : null;
+    var slugError = ViewData.ModelState[nameof(Model.Slug)]?.Errors.Count > 0
+        ? ViewData.ModelState[nameof(Model.Slug)]?.Errors[0].ErrorMessage
+        : null;
 }
 
 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
@@ -15,19 +21,6 @@
         Back to Categories
     </a>
 </div>
-
-<div id="globalError" class="hidden mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2">
-    <span class="material-icons-round text-base">error_outline</span>
-    <span id="globalErrorMsg"></span>
-</div>
-
-@if (TempData["Error"] != null)
-{
-    <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2">
-        <span class="material-icons-round text-base">error_outline</span>
-        @TempData["Error"]
-    </div>
-}
 
 <form method="post" action="/Moderator/CreateBlogCategory" id="createCatForm" novalidate>
     @Html.AntiForgeryToken()
@@ -51,11 +44,11 @@
                             <input id="nameInput" name="Name" type="text"
                                    value="@Model?.Name"
                                    placeholder="e.g. Parenting Tips"
-                                   class="search-input !pl-9 w-full" />
+                                   class="search-input !pl-9 w-full @(!string.IsNullOrWhiteSpace(nameError) ? "!border-red-400" : "")" />
                         </div>
-                        <p id="nameError" class="hidden text-xs text-red-500 mt-0.5 flex items-center gap-1">
+                        <p id="nameError" class="text-xs text-red-500 mt-0.5 flex items-center gap-1 @((string.IsNullOrWhiteSpace(nameError) ? "hidden" : ""))">
                             <span class="material-icons-round text-xs">error</span>
-                            Name cannot be empty.
+                            @(nameError ?? "Name is required.")
                         </p>
                     </div>
 
@@ -69,12 +62,12 @@
                             <input id="slugInput" name="Slug" type="text"
                                    value="@Model?.Slug"
                                    placeholder="e.g. parenting-tips"
-                                   class="search-input !pl-9 w-full bg-gray-50 text-gray-500"
+                                   class="search-input !pl-9 w-full bg-gray-50 text-gray-500 @(!string.IsNullOrWhiteSpace(slugError) ? "!border-red-400" : "")"
                                    readonly />
                         </div>
-                        <p id="slugError" class="hidden text-xs text-red-500 mt-0.5 flex items-center gap-1">
+                        <p id="slugError" class="text-xs text-red-500 mt-0.5 flex items-center gap-1 @((string.IsNullOrWhiteSpace(slugError) ? "hidden" : ""))">
                             <span class="material-icons-round text-xs">error</span>
-                            Slug cannot be empty.
+                            @(slugError ?? "Slug is required.")
                         </p>
                     </div>
 
@@ -163,16 +156,9 @@ function submitForm() {
     setErr('slugInput', 'slugError', !slug);
 
     if (!name || !slug) {
-        var parts = [];
-        if (!name) parts.push('Name');
-        if (!slug) parts.push('Slug');
-        document.getElementById('globalErrorMsg').textContent = parts.join(' and ') + ' cannot be empty.';
-        document.getElementById('globalError').classList.remove('hidden');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
     }
 
-    document.getElementById('globalError').classList.add('hidden');
     document.getElementById('createCatForm').submit();
 }
 

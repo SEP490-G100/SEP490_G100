@@ -179,11 +179,10 @@ public class ModeratorComplainController : Controller
                     });
                 }
 
-                return RedirectToAction(nameof(ManageComplaint), new
-                {
-                    toastType = "success",
-                    toastMessage = "Bạn đã xử lí yêu cầu phàn nàn thành công"
-                });
+                var listUrl = Url.Action(nameof(ManageComplaint), "ModeratorComplain")
+                              ?? "/Moderator/ManageComplaint";
+                var toastMessage = Uri.EscapeDataString("Bạn đã xử lí yêu cầu phàn nàn thành công");
+                return Redirect($"{listUrl}?toastType=success&toastMessage={toastMessage}");
             }
 
             TempData["Error"] = result?.Message ?? "Failed to resolve complaint.";
@@ -266,8 +265,6 @@ public class ModeratorComplainController : Controller
 
             if (result?.Success == true)
             {
-                TempData["Success"] = "Da vo hieu hoa bai dang";
-
                 if (complaintId.HasValue && complaintId.Value != Guid.Empty)
                 {
                     return RedirectToAction(nameof(ViewComplaintDetail), new
