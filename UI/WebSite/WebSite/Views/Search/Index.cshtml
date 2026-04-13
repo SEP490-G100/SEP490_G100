@@ -693,6 +693,19 @@ function loadRecJobs() {
     fetch('/Recommendation/JobsData?topK=10')
         .then(r => r.json())
         .then(res => {
+            if (res.requiresUpgrade) {
+                if (typeof clearMapMarkers === 'function') clearMapMarkers();
+                content.innerHTML = `
+                <div class="rec-upgrade-prompt">
+                    <span class="material-icons-round rec-upgrade-icon">auto_awesome</span>
+                    <h3 class="rec-upgrade-title">Tính năng dành cho gói Plus / Pro</h3>
+                    <p class="rec-upgrade-desc">Nâng cấp để AI tự động gợi ý những công việc phù hợp nhất với hồ sơ của bạn — tiết kiệm thời gian tìm kiếm.</p>
+                    <a href="/Subscription" class="rec-upgrade-btn">
+                        <span class="material-icons-round">rocket_launch</span>Nâng cấp ngay
+                    </a>
+                </div>`;
+                return;
+            }
             if (!res.success || !res.data || res.data.length === 0) {
                 if (typeof clearMapMarkers === 'function') clearMapMarkers();
                 content.innerHTML = `<div class="rec-panel__empty">

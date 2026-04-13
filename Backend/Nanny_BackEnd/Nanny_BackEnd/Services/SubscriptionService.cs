@@ -1305,7 +1305,8 @@ public class SubscriptionService
         {
             FeaturedBadge = containsAny(textSamples, "badge", "featured", "noi bat"),
             SearchPriority = containsAny(textSamples, "uu tien", "priority", "tim kiem"),
-            ListingDurationDays = inferListingDurationDays(textSamples, plan.DurationDays)
+            ListingDurationDays = inferListingDurationDays(textSamples, plan.DurationDays),
+            CanUseRecommendation = true
         };
 
         if (string.Equals(targetRole, "Parent", StringComparison.OrdinalIgnoreCase))

@@ -2,6 +2,63 @@
    Recommendation — NannyMatch
    ================================================================ */
 
+/* ── Upgrade prompt ──────────────────────────────────────────── */
+.rec-upgrade-prompt {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 40px 24px;
+    gap: 12px;
+}
+
+.rec-upgrade-icon {
+    font-size: 40px !important;
+    color: #f59e0b;
+}
+
+.rec-upgrade-title {
+    font-size: .95rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.rec-upgrade-desc {
+    font-size: .82rem;
+    color: #64748b;
+    max-width: 280px;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.rec-upgrade-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    padding: 9px 20px;
+    background: linear-gradient(135deg, #f59e0b, #f97316);
+    color: #fff;
+    font-size: .84rem;
+    font-weight: 600;
+    border-radius: 10px;
+    text-decoration: none;
+    transition: opacity .15s, transform .15s;
+    box-shadow: 0 2px 8px rgba(249,115,22,.35);
+}
+
+.rec-upgrade-btn:hover {
+    opacity: .9;
+    transform: translateY(-1px);
+    color: #fff;
+    text-decoration: none;
+}
+
+.rec-upgrade-btn .material-icons-round {
+    font-size: 16px;
+}
+
 /* ── Tab bar ─────────────────────────────────────────────────── */
 .rec-tab-bar {
     display: inline-flex;

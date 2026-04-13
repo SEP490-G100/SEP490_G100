@@ -35,6 +35,8 @@ public class RecommendationController : Controller
         try
         {
             var response = await _http.GetAsync($"/api/recommendation/jobs-for-nanny?topK={topK}");
+            if (response.StatusCode == System.Net.HttpStatusCode.PaymentRequired)
+                return Json(new { success = false, requiresUpgrade = true, data = Array.Empty<object>() });
             if (!response.IsSuccessStatusCode)
                 return Json(new { success = false, data = Array.Empty<object>() });
 
@@ -78,6 +80,8 @@ public class RecommendationController : Controller
         try
         {
             var response = await _http.GetAsync($"/api/recommendation/nannies-for-job/{jobId}?topK={topK}");
+            if (response.StatusCode == System.Net.HttpStatusCode.PaymentRequired)
+                return Json(new { success = false, requiresUpgrade = true, data = Array.Empty<object>() });
             if (!response.IsSuccessStatusCode)
                 return Json(new { success = false, data = Array.Empty<object>() });
 
