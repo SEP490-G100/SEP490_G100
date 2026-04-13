@@ -47,7 +47,7 @@ public class AdminNotificationController : Controller
         }
         catch
         {
-            TempData["Error"] = "Không thể tải danh sách thông báo admin.";
+            TempData["Error"] = "Khong the tai danh sach thong bao admin.";
             return View("~/Views/Admin/AdminNotification/ManageAdminNotification.cshtml", new AdminNotificationListResponse());
         }
     }
@@ -92,16 +92,19 @@ public class AdminNotificationController : Controller
             if (result?.Success == true && result.Data != null)
             {
                 await PushAdminNotificationRealtime(result.Data);
-                TempData["Success"] = "Tạo thông báo admin thành công.";
-                return RedirectToAction(nameof(ManageAdminNotification));
+                return RedirectToAction(nameof(ManageAdminNotification), new
+                {
+                    toastType = "success",
+                    toastMessage = "Bạn đã tạo thông báo thành công"
+                });
             }
 
-            ModelState.AddModelError(string.Empty, result?.Message ?? "Không thể tạo thông báo admin.");
+            ModelState.AddModelError(string.Empty, result?.Message ?? "Khong the tao thong bao admin.");
             return View("~/Views/Admin/AdminNotification/CreateAdminNotification.cshtml", model);
         }
         catch (Exception ex)
         {
-            ModelState.AddModelError(string.Empty, $"Lỗi kết nối: {ex.Message}");
+            ModelState.AddModelError(string.Empty, $"Loi ket noi: {ex.Message}");
             return View("~/Views/Admin/AdminNotification/CreateAdminNotification.cshtml", model);
         }
     }
@@ -118,7 +121,7 @@ public class AdminNotificationController : Controller
             var result = JsonSerializer.Deserialize<ApiResult<AdminNotificationDetailViewModel>>(json, JsonOpts);
             if (result?.Success != true || result.Data == null)
             {
-                TempData["Error"] = result?.Message ?? "Không tìm thấy thông báo admin.";
+                TempData["Error"] = result?.Message ?? "Khong tim thay thong bao admin.";
                 return RedirectToAction(nameof(ManageAdminNotification));
             }
 
@@ -126,7 +129,7 @@ public class AdminNotificationController : Controller
         }
         catch
         {
-            TempData["Error"] = "Lỗi kết nối đến API.";
+            TempData["Error"] = "Loi ket noi den API.";
             return RedirectToAction(nameof(ManageAdminNotification));
         }
     }
@@ -162,17 +165,20 @@ public class AdminNotificationController : Controller
 
             if (result?.Success == true)
             {
-                TempData["Success"] = "Cập nhật thông báo admin thành công.";
-                return RedirectToAction(nameof(ManageAdminNotification));
+                return RedirectToAction(nameof(ManageAdminNotification), new
+                {
+                    toastType = "success",
+                    toastMessage = "Bạn đã chỉnh sửa thông báo thành công"
+                });
             }
 
-            ModelState.AddModelError(string.Empty, result?.Message ?? "Không thể cập nhật thông báo admin.");
+            ModelState.AddModelError(string.Empty, result?.Message ?? "Khong the cap nhat thong bao admin.");
             model.Id = id;
             return View("~/Views/Admin/AdminNotification/ViewAdminNotificationDetail.cshtml", model);
         }
         catch (Exception ex)
         {
-            ModelState.AddModelError(string.Empty, $"Lỗi kết nối: {ex.Message}");
+            ModelState.AddModelError(string.Empty, $"Loi ket noi: {ex.Message}");
             model.Id = id;
             return View("~/Views/Admin/AdminNotification/ViewAdminNotificationDetail.cshtml", model);
         }
@@ -195,12 +201,12 @@ public class AdminNotificationController : Controller
             var json = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
             TempData[result?.Success == true ? "Success" : "Error"] =
-                result?.Message ?? "Không thể cập nhật trạng thái thông báo admin.";
+                result?.Message ?? "Khong the cap nhat trang thai thong bao admin.";
             return RedirectToAdminNotificationReturnUrlOrList(returnUrl);
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"Lỗi kết nối: {ex.Message}";
+            TempData["Error"] = $"Loi ket noi: {ex.Message}";
             return RedirectToAdminNotificationReturnUrlOrList(returnUrl);
         }
     }

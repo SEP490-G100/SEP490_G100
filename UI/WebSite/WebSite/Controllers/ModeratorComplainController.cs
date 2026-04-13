@@ -182,7 +182,7 @@ public class ModeratorComplainController : Controller
                 return RedirectToAction(nameof(ManageComplaint), new
                 {
                     toastType = "success",
-                    toastMessage = "Complaint resolved successfully."
+                    toastMessage = "Bạn đã xử lí yêu cầu phàn nàn thành công"
                 });
             }
 

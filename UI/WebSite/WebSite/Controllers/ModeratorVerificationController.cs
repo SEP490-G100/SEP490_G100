@@ -141,8 +141,8 @@ public class ModeratorVerificationController : Controller
 
                 return RedirectToAction(nameof(ManageNannyVerification), new
                 {
-                    toastType = action == 2 ? "success" : "warning",
-                    toastMessage = action == 2 ? "Da duyet ho so thanh cong." : "Da tu choi ho so."
+                    toastType = "success",
+                    toastMessage = "Bạn đã xử lí yêu cầu xác minh thành công"
                 });
             }
 

@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebSite.Models;
 using WebSite.Models.FAQ;
-using System.Text.Json.Serialization;
 
 namespace WebSite.Controllers;
 
@@ -70,7 +69,7 @@ public class ModeratorFaqController : Controller
         }
         catch
         {
-            TempData["Error"] = "Không thể tải danh sách FAQ.";
+            TempData["Error"] = "Khong the tai danh sach FAQ.";
             ViewBag.Categories = new List<string>();
             return View("~/Views/Moderator/FAQ/ManageFAQ.cshtml", new FaqListResponse());
         }
@@ -85,11 +84,15 @@ public class ModeratorFaqController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateFAQ(CreateFaqRequest model)
     {
+        ValidateCreateFaq(model);
+        if (!ModelState.IsValid)
+            return View("~/Views/Moderator/FAQ/CreateFAQ.cshtml", model);
+
         var body = JsonSerializer.Serialize(new
         {
-            question = model.Question,
-            answer = model.Answer,
-            category = model.Category,
+            question = model.Question.Trim(),
+            answer = model.Answer.Trim(),
+            category = model.Category?.Trim(),
             isActive = model.IsActive
         });
         var token = HttpContext.Session.GetString("AccessToken");
@@ -110,15 +113,16 @@ public class ModeratorFaqController : Controller
                 return RedirectToAction(nameof(ManageFAQ), new
                 {
                     toastType = "success",
-                    toastMessage = "Đã tạo FAQ thành công"
+                    toastMessage = "Bạn đã tạo FAQ thành công"
                 });
             }
-            TempData["Error"] = result?.Message ?? "Tạo FAQ thất bại.";
+
+            TempData["Error"] = result?.Message ?? "Tao FAQ that bai.";
             return View("~/Views/Moderator/FAQ/CreateFAQ.cshtml", model);
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"Lỗi kết nối: {ex.Message}";
+            TempData["Error"] = $"Loi ket noi: {ex.Message}";
             return View("~/Views/Moderator/FAQ/CreateFAQ.cshtml", model);
         }
     }
@@ -139,14 +143,14 @@ public class ModeratorFaqController : Controller
             var result = JsonSerializer.Deserialize<ApiResult<FaqDto>>(json, JsonOpts);
             if (result?.Success != true || result.Data == null)
             {
-                TempData["Error"] = "Không tìm thấy FAQ.";
+                TempData["Error"] = "Khong tim thay FAQ.";
                 return RedirectToAction(nameof(ManageFAQ));
             }
             return View("~/Views/Moderator/FAQ/ViewFAQDetail.cshtml", result.Data);
         }
         catch
         {
-            TempData["Error"] = "Lỗi kết nối đến API.";
+            TempData["Error"] = "Loi ket noi den API.";
             return RedirectToAction(nameof(ManageFAQ));
         }
     }
@@ -156,10 +160,17 @@ public class ModeratorFaqController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ViewFAQDetail(Guid id, UpdateFaqRequest model)
     {
+        ValidateUpdateFaq(model);
+        if (!ModelState.IsValid)
+        {
+            var invalidVm = await BuildFaqDetailViewModelForInvalidPost(id, model);
+            return View("~/Views/Moderator/FAQ/ViewFAQDetail.cshtml", invalidVm);
+        }
+
         var body = JsonSerializer.Serialize(new
         {
-            question = model.Question,
-            answer = model.Answer,
+            question = model.Question.Trim(),
+            answer = model.Answer.Trim(),
             isActive = model.IsActive
         });
         var token = HttpContext.Session.GetString("AccessToken");
@@ -180,14 +191,15 @@ public class ModeratorFaqController : Controller
                 return RedirectToAction(nameof(ManageFAQ), new
                 {
                     toastType = "success",
-                    toastMessage = "Đã chỉnh sửa FAQ thành công"
+                    toastMessage = "Bạn đã chỉnh sửa FAQ thành công"
                 });
             }
-            TempData["Error"] = result?.Message ?? "Cập nhật FAQ thất bại.";
+
+            TempData["Error"] = result?.Message ?? "Cap nhat FAQ that bai.";
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"Lỗi kết nối: {ex.Message}";
+            TempData["Error"] = $"Loi ket noi: {ex.Message}";
         }
 
         return RedirectToAction(nameof(ViewFAQDetail), new { id });
@@ -211,7 +223,72 @@ public class ModeratorFaqController : Controller
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = $"Lỗi kết nối: {ex.Message}" });
+            return Json(new { success = false, message = $"Loi ket noi: {ex.Message}" });
+        }
+    }
+
+    private void ValidateCreateFaq(CreateFaqRequest model)
+    {
+        if (string.IsNullOrWhiteSpace(model.Question))
+            ModelState.AddModelError(nameof(model.Question), "Question is required.");
+
+        if (string.IsNullOrWhiteSpace(model.Answer))
+            ModelState.AddModelError(nameof(model.Answer), "Answer is required.");
+
+        if (string.IsNullOrWhiteSpace(model.Category))
+            ModelState.AddModelError(nameof(model.Category), "Category is required.");
+    }
+
+    private void ValidateUpdateFaq(UpdateFaqRequest model)
+    {
+        if (string.IsNullOrWhiteSpace(model.Question))
+            ModelState.AddModelError(nameof(model.Question), "Question is required.");
+
+        if (string.IsNullOrWhiteSpace(model.Answer))
+            ModelState.AddModelError(nameof(model.Answer), "Answer is required.");
+    }
+
+    private async Task<FaqDto> BuildFaqDetailViewModelForInvalidPost(Guid id, UpdateFaqRequest model)
+    {
+        var current = await FetchFaqByIdAsync(id);
+        if (current == null)
+        {
+            return new FaqDto
+            {
+                Id = id,
+                Question = model.Question ?? string.Empty,
+                Answer = model.Answer ?? string.Empty,
+                IsActive = model.IsActive,
+                Category = string.Empty,
+                SortOrder = 0,
+                ViewCount = 0,
+                CreatedAt = DateTime.UtcNow
+            };
+        }
+
+        current.Question = model.Question ?? string.Empty;
+        current.Answer = model.Answer ?? string.Empty;
+        current.IsActive = model.IsActive;
+        return current;
+    }
+
+    private async Task<FaqDto?> FetchFaqByIdAsync(Guid id)
+    {
+        var token = HttpContext.Session.GetString("AccessToken");
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/Faq/{id}");
+        if (!string.IsNullOrEmpty(token))
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        try
+        {
+            var response = await _http.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult<FaqDto>>(json, JsonOpts);
+            return result?.Success == true ? result.Data : null;
+        }
+        catch
+        {
+            return null;
         }
     }
 }

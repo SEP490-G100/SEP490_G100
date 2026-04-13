@@ -413,7 +413,8 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
 }
 
     [HttpGet]
-    public IActionResult Verify() => Redirect("/verification");
+    public IActionResult Verify() =>
+        RedirectToAction("NannyGetVerificationRequestList", "NannyVerificationRequest");
 
     [NonAction]
     public async Task<IActionResult> Verify(CreateCertificateViewModel model)

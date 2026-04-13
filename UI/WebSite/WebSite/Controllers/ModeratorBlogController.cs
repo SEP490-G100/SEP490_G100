@@ -208,7 +208,7 @@ public class ModeratorBlogController : Controller
                 return RedirectToAction(nameof(ManageBlog), new
                 {
                     toastType = "success",
-                    toastMessage = "Đã tạo blog thành công"
+                    toastMessage = "Bạn đã tạo bài blog thành công"
                 });
             }
             TempData["Error"] = result?.Message ?? "Tạo bài viết thất bại.";
@@ -304,7 +304,7 @@ public class ModeratorBlogController : Controller
                 return RedirectToAction(nameof(ManageBlog), new
                 {
                     toastType = "success",
-                    toastMessage = "Đã chỉnh sửa blog thành công"
+                    toastMessage = "Bạn đã chỉnh sửa bài blog thành công"
                 });
             }
 

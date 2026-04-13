@@ -118,10 +118,8 @@ namespace WebSite.Controllers
 
                 return RedirectToAction(nameof(ManageJobPosting), new
                 {
-                    toastType = action == 2 ? "success" : "warning",
-                    toastMessage = action == 2
-                        ? "Job posting approved successfully."
-                        : "Job posting rejected successfully."
+                    toastType = "success",
+                    toastMessage = "Bạn đã xử lí yêu cầu duyệt bài đăng thành công"
                 });
             }
             else
