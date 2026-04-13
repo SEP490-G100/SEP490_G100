@@ -224,10 +224,26 @@
         }
 
         .nm-notify-detail {
-            padding: 20px 22px;
+            padding: 22px;
             height: 100%;
             display: flex;
             flex-direction: column;
+        }
+
+        .nm-notify-detail-shell {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .nm-notify-detail-header {
+            padding: 16px;
+            border-radius: 16px;
+            border: 1px solid rgba(251, 146, 60, .24);
+            background:
+                radial-gradient(circle at top right, rgba(249, 115, 22, .14), transparent 42%),
+                linear-gradient(180deg, #fff 0%, #fff7ed 100%);
         }
 
         .nm-notify-detail-empty {
@@ -244,37 +260,86 @@
         }
 
         .nm-notify-detail-title {
-            margin: 0;
-            font-size: clamp(20px, 2.2vw, 26px);
-            line-height: 1.3;
+            margin: 10px 0 0;
+            font-size: clamp(22px, 2.2vw, 30px);
+            line-height: 1.28;
             font-weight: 800;
             color: #0f172a;
+            letter-spacing: -0.01em;
         }
 
         .nm-notify-detail-sub {
-            margin-top: 10px;
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
         }
 
+        .nm-notify-state {
+            min-height: 22px;
+            padding: 0 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .nm-notify-state .material-icons-round {
+            font-size: 14px;
+        }
+
+        .nm-notify-state.is-read {
+            color: #166534;
+            border: 1px solid #86efac;
+            background: #f0fdf4;
+        }
+
+        .nm-notify-state.is-unread {
+            color: #b45309;
+            border: 1px solid #fdba74;
+            background: #fff7ed;
+        }
+
+        .nm-notify-detail-time {
+            margin-top: 12px;
+            font-size: 13px;
+            color: #64748b;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .nm-notify-detail-time .material-icons-round {
+            font-size: 15px;
+        }
+
+        .nm-notify-detail-content-wrap {
+            flex: 1;
+            border: 1px solid rgba(148, 163, 184, .24);
+            border-radius: 16px;
+            background: #fff;
+            padding: 16px;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8);
+        }
+
         .nm-notify-detail-content {
-            margin-top: 16px;
+            margin: 0;
             color: #334155;
             font-size: 15px;
             line-height: 1.75;
             white-space: pre-wrap;
         }
 
-        .nm-notify-detail-time {
-            margin-top: 14px;
-            font-size: 13px;
-            color: #94a3b8;
-            font-weight: 700;
+        .nm-notify-detail-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
         }
 
         .nm-notify-cta {
-            margin-top: 18px;
             display: inline-flex;
             align-items: center;
             gap: 8px;
@@ -296,6 +361,12 @@
             box-shadow: 0 14px 30px rgba(249, 115, 22, .32);
         }
 
+        .nm-notify-detail-hint {
+            color: #64748b;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
         @@media (max-width: 960px) {
             .nm-notify-layout {
                 grid-template-columns: 1fr;
@@ -307,6 +378,10 @@
 
             .nm-notify-detail {
                 min-height: 360px;
+            }
+
+            .nm-notify-detail-title {
+                font-size: clamp(20px, 6vw, 26px);
             }
         }
     </style>
@@ -429,23 +504,38 @@
                 const sender = item?.senderLabel
                     ? `<span class="nm-notify-from">Từ ${escapeHtml(item.senderLabel)}</span>`
                     : '';
+                const statusChip = item?.isRead
+                    ? `<span class="nm-notify-state is-read"><span class="material-icons-round">done</span>Đã đọc</span>`
+                    : `<span class="nm-notify-state is-unread"><span class="material-icons-round">mark_email_unread</span>Chưa đọc</span>`;
                 const action = item?.actionUrl
                     ? `
                         <a class="nm-notify-cta" href="${escapeHtml(item.actionUrl)}">
                             <span class="material-icons-round">open_in_new</span>
                             <span>Mở trang liên quan</span>
                         </a>`
-                    : '';
+                    : `<span class="nm-notify-detail-hint">Thông báo này không có liên kết điều hướng.</span>`;
 
                 detailEl.innerHTML = `
-                    <h2 class="nm-notify-detail-title">${escapeHtml(item.title || 'Thông báo')}</h2>
-                    <div class="nm-notify-detail-sub">
-                        ${chip}
-                        ${sender}
+                    <div class="nm-notify-detail-shell">
+                        <div class="nm-notify-detail-header">
+                            <div class="nm-notify-detail-sub">
+                                ${chip}
+                                ${sender}
+                                ${statusChip}
+                            </div>
+                            <h2 class="nm-notify-detail-title">${escapeHtml(item.title || 'Thông báo')}</h2>
+                            <div class="nm-notify-detail-time">
+                                <span class="material-icons-round">schedule</span>
+                                <span>${escapeHtml(formatTime(item.createdAt))}</span>
+                            </div>
+                        </div>
+                        <div class="nm-notify-detail-content-wrap">
+                            <p class="nm-notify-detail-content">${escapeHtml(item.content || 'Không có nội dung chi tiết.')}</p>
+                        </div>
+                        <div class="nm-notify-detail-actions">
+                            ${action}
+                        </div>
                     </div>
-                    <div class="nm-notify-detail-content">${escapeHtml(item.content || 'Không có nội dung chi tiết.')}</div>
-                    <div class="nm-notify-detail-time">${escapeHtml(formatTime(item.createdAt))}</div>
-                    ${action}
                 `;
             };
 
@@ -515,6 +605,7 @@
                 item.isRead = true;
                 unreadCount = Math.max(0, unreadCount - 1);
                 updateUnreadPill();
+                renderDetail(item);
                 renderList();
                 window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
             };
@@ -599,4 +690,3 @@
         })();
     </script>
 }
-
