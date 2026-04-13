@@ -11,8 +11,8 @@ public class ReviewService
     private readonly ReviewRepository _reviewRepo;
     private readonly Sep490NannyDbContext _db;
 
-    // HiringRecord.Status = 2 nghĩa là Completed (xác nhận theo CHECK constraint DB: 0–5)
-    private const int HiringRecordCompleted = 2;
+    // HiringRecord.Status: 0=Pending, 1=Active, 2=Declined, 3=Cancelled, 4=Completed
+    private const int HiringRecordCompleted = 4;
 
     public ReviewService(ReviewRepository reviewRepo, Sep490NannyDbContext db)
     {
