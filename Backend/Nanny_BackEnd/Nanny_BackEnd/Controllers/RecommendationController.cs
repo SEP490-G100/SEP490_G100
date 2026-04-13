@@ -181,7 +181,7 @@ public class RecommendationController : ControllerBase
 
             var benefits = await _subscriptionService.getBenefitsForParentProfile(parent.Id);
             if (!benefits.CanUseRecommendation)
-                return StatusCode(403, Fail("Tính năng gợi ý AI yêu cầu gói Plus hoặc Pro."));
+                return StatusCode(402, Fail("Tính năng gợi ý AI yêu cầu gói Plus hoặc Pro."));
 
             var jobExists = await _db.JobPostings
                 .AnyAsync(j => j.Id == jobId && j.ParentProfileId == parent.Id && !j.IsDeleted);
@@ -212,7 +212,7 @@ public class RecommendationController : ControllerBase
 
         var benefits = await _subscriptionService.getBenefitsForNannyProfile(nanny.Id);
         if (!benefits.CanUseRecommendation)
-            return StatusCode(403, Fail("Tính năng gợi ý AI yêu cầu gói Plus hoặc Pro."));
+            return StatusCode(402, Fail("Tính năng gợi ý AI yêu cầu gói Plus hoặc Pro."));
 
         var results = await _recSvc.GetTopJobsForNannyAsync(nanny.Id, topK);
         return Ok(Success(results, results.Count));
