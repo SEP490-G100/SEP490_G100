@@ -136,8 +136,9 @@ public class AdminSubscriptionPlanFormViewModel
     [StringLength(100, MinimumLength = 2)]
     public string Name { get; set; } = "";
 
-    [StringLength(500)]
-    public string? Description { get; set; }
+    [Required(ErrorMessage = "Description is required.")]
+    [StringLength(500, ErrorMessage = "Description must be at most 500 characters.")]
+    public string Description { get; set; } = "";
 
     [Required]
     [RegularExpression("^(Parent|Nanny)$", ErrorMessage = "Target role must be Parent or Nanny.")]
@@ -184,7 +185,7 @@ public class AdminSubscriptionPlanFormViewModel
         CreatedAt = detail.CreatedAt,
         UpdatedAt = detail.UpdatedAt,
         Name = detail.Name,
-        Description = detail.Description,
+        Description = detail.Description ?? "",
         TargetRole = detail.TargetRole,
         Price = detail.Price,
         DurationDays = detail.DurationDays,

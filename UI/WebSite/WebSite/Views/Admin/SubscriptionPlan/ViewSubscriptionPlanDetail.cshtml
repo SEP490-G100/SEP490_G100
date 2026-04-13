@@ -79,8 +79,6 @@
     <form id="updateSubscriptionPlanForm" method="post" action="/Admin/UpdateSubscriptionPlan/@Model.Id" class="space-y-6">
         @Html.AntiForgeryToken()
         <div class="content-card p-6">
-            <div asp-validation-summary="All" class="mb-4 text-sm text-red-600"></div>
-
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 <div class="field-group">
                     <label asp-for="Name" class="field-label"></label>
@@ -97,7 +95,7 @@
                 </div>
                 <div class="field-group lg:col-span-2">
                     <label asp-for="Description" class="field-label"></label>
-                    <textarea asp-for="Description" class="search-input !pl-4 !h-28 py-3" maxlength="500"></textarea>
+                    <textarea asp-for="Description" class="search-input !pl-4 !h-28 py-3" maxlength="500" required></textarea>
                     <span asp-validation-for="Description" class="text-xs text-red-500"></span>
                 </div>
                 <div class="field-group">
