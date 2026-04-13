@@ -7,6 +7,7 @@ public class SubscriptionBenefitResponse
     public bool FeaturedBadge { get; set; }
     public bool SearchPriority { get; set; }
     public int ListingDurationDays { get; set; }
+    public bool CanUseRecommendation { get; set; }
 
     public static SubscriptionBenefitResponse FreeParent => new()
     {
@@ -14,7 +15,8 @@ public class SubscriptionBenefitResponse
         MonthlyApplicationLimit = 0,
         FeaturedBadge = false,
         SearchPriority = false,
-        ListingDurationDays = 30
+        ListingDurationDays = 30,
+        CanUseRecommendation = false
     };
 
     public static SubscriptionBenefitResponse FreeNanny => new()
@@ -23,6 +25,7 @@ public class SubscriptionBenefitResponse
         MonthlyApplicationLimit = 2,
         FeaturedBadge = false,
         SearchPriority = false,
-        ListingDurationDays = 0
+        ListingDurationDays = 0,
+        CanUseRecommendation = false
     };
 }

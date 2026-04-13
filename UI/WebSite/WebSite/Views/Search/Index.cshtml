@@ -152,14 +152,12 @@
                             <input type="text" id="cf-location" style="border-radius: 10px;" class="form-input" />
                         </div>
                         <div>
-                            <label class="form-label" >Thành phố</label>
-                            <input type="text" id="cf-city" style="border-radius: 10px;" class="form-input" list="cf-cityOptions" oninput="handleCreateCityChange()" placeholder="Nhập để gợi ý thành phố" required />
-                            <datalist id="cf-cityOptions"></datalist>
+                            <label class="form-label">Thành phố</label>
+                            <input type="text" id="cf-city" style="border-radius: 10px;" class="form-input form-select-picker-input" autocomplete="off" placeholder="Nhập hoặc chọn thành phố" required />
                         </div>
                         <div>
-                            <label class="form-label" >Quận/Huyện</label>
-                            <input type="text" id="cf-district" style="border-radius: 10px;" class="form-input" list="cf-districtOptions" placeholder="Nhập để gợi ý quận/huyện" />
-                            <datalist id="cf-districtOptions"></datalist>
+                            <label class="form-label">Phường/Xã</label>
+                            <input type="text" id="cf-district" style="border-radius: 10px;" class="form-input form-select-picker-input" autocomplete="off" placeholder="Nhập hoặc chọn phường/xã" />
                         </div>
                         <div>
                             <label class="form-label" >Độ tuổi bảo mẫu từ</label>
@@ -313,13 +311,11 @@
                         </div>
                         <div>
                             <label class="form-label">Thành phố</label>
-                            <input type="text" id="ef-city" class="form-input" list="ef-cityOptions" oninput="handleEditCityChange()" placeholder="Nhập để gợi ý thành phố" />
-                            <datalist id="ef-cityOptions"></datalist>
+                            <input type="text" id="ef-city" class="form-input form-select-picker-input" autocomplete="off" placeholder="Nhập hoặc chọn thành phố" />
                         </div>
                         <div>
-                            <label class="form-label">Quận/Huyện</label>
-                            <input type="text" id="ef-district" class="form-input" list="ef-districtOptions" placeholder="Nhập để gợi ý quận/huyện" />
-                            <datalist id="ef-districtOptions"></datalist>
+                            <label class="form-label">Phường/Xã</label>
+                            <input type="text" id="ef-district" class="form-input form-select-picker-input" autocomplete="off" placeholder="Nhập hoặc chọn phường/xã" />
                         </div>
                         <div>
                             <label class="form-label">Độ tuổi bảo mẫu từ</label>
@@ -426,6 +422,7 @@
                         </div>
                         <h2 id="pv-title" class="search-detail-title">Ten bai viet</h2>
                         <p id="pv-parentName" class="search-detail-subtitle">Dang boi phu huynh</p>
+                        <div id="pv-premiumBadges" class="mt-3 flex flex-wrap gap-2"></div>
                         <div class="search-detail-chips">
                             <span id="pv-type" class="search-detail-chip">Loai viec</span>
                             <span id="pv-sal" class="search-detail-chip search-detail-chip--strong">Luong</span>
@@ -659,6 +656,19 @@ function loadRecJobs() {
     fetch('/Recommendation/JobsData?topK=10')
         .then(r => r.json())
         .then(res => {
+            if (res.requiresUpgrade) {
+                if (typeof clearMapMarkers === 'function') clearMapMarkers();
+                content.innerHTML = `
+                <div class="rec-upgrade-prompt">
+                    <span class="material-icons-round rec-upgrade-icon">auto_awesome</span>
+                    <h3 class="rec-upgrade-title">Tính năng dành cho gói Plus / Pro</h3>
+                    <p class="rec-upgrade-desc">Nâng cấp để AI tự động gợi ý những công việc phù hợp nhất với hồ sơ của bạn — tiết kiệm thời gian tìm kiếm.</p>
+                    <a href="/Subscription" class="rec-upgrade-btn">
+                        <span class="material-icons-round">rocket_launch</span>Nâng cấp ngay
+                    </a>
+                </div>`;
+                return;
+            }
             if (!res.success || !res.data || res.data.length === 0) {
                 if (typeof clearMapMarkers === 'function') clearMapMarkers();
                 content.innerHTML = `<div class="rec-panel__empty">
@@ -728,4 +738,3 @@ const CURRENT_USER_NAME = '@userName';
 </script>
 <script src="~/js/search.js" asp-append-version="true"></script>
 }
-

@@ -216,6 +216,7 @@
                         <h2 id="nd-name">Tên bảo mẫu</h2>
                         <p id="nd-location">Khu vực hoạt động</p>
                         <div class="nanny-detail-chips">
+                            <span id="nd-plan" class="nanny-chip hidden"></span>
                             <span id="nd-age" class="nanny-chip">Tuổi</span>
                             <span id="nd-exp" class="nanny-chip">Kinh nghiệm</span>
                             <span id="nd-education" class="nanny-chip">Học vấn</span>
@@ -402,6 +403,20 @@
         fetch(`/Recommendation/NanniesData?jobId=${jobId}&topK=10`)
             .then(r => r.json())
             .then(res => {
+                if (res.requiresUpgrade) {
+                    if (typeof clearNannyMarkers === 'function') clearNannyMarkers();
+                    window.recNannies = [];
+                    content.innerHTML = `
+                    <div class="rec-upgrade-prompt">
+                        <span class="material-icons-round rec-upgrade-icon">auto_awesome</span>
+                        <h3 class="rec-upgrade-title">Tính năng dành cho gói Plus / Pro</h3>
+                        <p class="rec-upgrade-desc">Nâng cấp để AI tự động gợi ý những bảo mẫu phù hợp nhất với yêu cầu công việc của bạn.</p>
+                        <a href="/Subscription" class="rec-upgrade-btn">
+                            <span class="material-icons-round">rocket_launch</span>Nâng cấp ngay
+                        </a>
+                    </div>`;
+                    return;
+                }
                 if (!res.success || !res.data || res.data.length === 0) {
                     if (typeof clearNannyMarkers === 'function') clearNannyMarkers();
                     content.innerHTML = `<div class="rec-panel__empty">

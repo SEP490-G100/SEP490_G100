@@ -24,7 +24,7 @@
 
                 <div asp-validation-summary="ModelOnly" class="nm-alert"></div>
 
-                <form asp-action="Step2Family" method="post">
+                <form asp-action="Step2Family" method="post" data-nm-unified-skip="true">
                     @Html.AntiForgeryToken()
 
                     <div class="nm-form-grid">
