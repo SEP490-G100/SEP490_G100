@@ -1,0 +1,602 @@
+@{
+    ViewData["Title"] = "Trung tâm thông báo";
+    var selectedNotificationId = (ViewData["NotificationId"] as string ?? string.Empty).Trim();
+}
+
+@section Head {
+    <style>
+        .nm-notify-page {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 28px 16px 40px;
+        }
+
+        .nm-notify-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+
+        .nm-notify-title-wrap h1 {
+            margin: 0;
+            font-size: clamp(24px, 3vw, 32px);
+            line-height: 1.2;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .nm-notify-title-wrap p {
+            margin: 4px 0 0;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .nm-notify-actions {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nm-notify-pill {
+            display: inline-flex;
+            align-items: center;
+            min-height: 34px;
+            padding: 0 12px;
+            border-radius: 999px;
+            border: 1px solid #fed7aa;
+            background: #fff7ed;
+            color: #c2410c;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .nm-notify-btn {
+            min-height: 40px;
+            padding: 0 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(148, 163, 184, .32);
+            background: #fff;
+            color: #334155;
+            font-size: 13px;
+            font-weight: 700;
+            transition: all .18s ease;
+        }
+
+        .nm-notify-btn:hover {
+            border-color: #fdba74;
+            color: #9a3412;
+            background: #fff7ed;
+            transform: translateY(-1px);
+        }
+
+        .nm-notify-layout {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 14px;
+            min-height: 620px;
+        }
+
+        .nm-notify-list-card,
+        .nm-notify-detail-card {
+            border: 1px solid rgba(251, 146, 60, .18);
+            border-radius: 20px;
+            background:
+                radial-gradient(circle at top right, rgba(249, 115, 22, .10), transparent 44%),
+                linear-gradient(180deg, rgba(255, 255, 255, .98), rgba(255, 250, 244, .98));
+            box-shadow: 0 18px 40px rgba(15, 23, 42, .08);
+            overflow: hidden;
+        }
+
+        .nm-notify-list {
+            max-height: 620px;
+            overflow: auto;
+            padding: 12px;
+        }
+
+        .nm-notify-item {
+            width: 100%;
+            text-align: left;
+            border: 1px solid rgba(148, 163, 184, .22);
+            border-radius: 14px;
+            background: #fff;
+            padding: 12px 12px 11px;
+            transition: all .18s ease;
+            margin-top: 10px;
+        }
+
+        .nm-notify-item:first-child {
+            margin-top: 0;
+        }
+
+        .nm-notify-item:hover {
+            border-color: #fdba74;
+            background: #fffaf4;
+            transform: translateY(-1px);
+            box-shadow: 0 12px 24px rgba(249, 115, 22, .12);
+        }
+
+        .nm-notify-item.is-active {
+            border-color: rgba(249, 115, 22, .52);
+            background: linear-gradient(180deg, #fff7ed 0%, #fff 100%);
+            box-shadow: 0 12px 26px rgba(249, 115, 22, .16);
+        }
+
+        .nm-notify-item.is-unread {
+            border-color: rgba(249, 115, 22, .42);
+        }
+
+        .nm-notify-item-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .nm-notify-item-title {
+            font-size: 14px;
+            font-weight: 800;
+            color: #111827;
+            line-height: 1.45;
+        }
+
+        .nm-notify-item-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: #f97316;
+            box-shadow: 0 0 0 4px rgba(249, 115, 22, .18);
+            flex-shrink: 0;
+            margin-top: 4px;
+        }
+
+        .nm-notify-item-meta {
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .nm-notify-chip {
+            min-height: 22px;
+            padding: 0 10px;
+            border-radius: 999px;
+            border: 1px solid #fed7aa;
+            background: #fff7ed;
+            color: #c2410c;
+            font-size: 11px;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .nm-notify-from {
+            min-height: 22px;
+            padding: 0 9px;
+            border-radius: 999px;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            color: #64748b;
+            font-size: 11px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .nm-notify-item-body {
+            margin-top: 6px;
+            color: #475569;
+            font-size: 13px;
+            line-height: 1.55;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .nm-notify-item-time {
+            margin-top: 7px;
+            color: #94a3b8;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .nm-notify-more {
+            width: calc(100% - 24px);
+            margin: 10px auto 12px;
+            min-height: 40px;
+            border-radius: 12px;
+            border: 1px dashed rgba(148, 163, 184, .52);
+            color: #475569;
+            background: rgba(255, 255, 255, .9);
+            font-size: 13px;
+            font-weight: 700;
+            transition: all .18s ease;
+        }
+
+        .nm-notify-more:hover {
+            border-color: #fdba74;
+            color: #9a3412;
+            background: #fff7ed;
+        }
+
+        .nm-notify-detail {
+            padding: 20px 22px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .nm-notify-detail-empty {
+            margin: auto 0;
+            text-align: center;
+            color: #64748b;
+            padding: 24px 12px;
+        }
+
+        .nm-notify-detail-empty .material-icons-round {
+            font-size: 36px;
+            color: #fb923c;
+            margin-bottom: 8px;
+        }
+
+        .nm-notify-detail-title {
+            margin: 0;
+            font-size: clamp(20px, 2.2vw, 26px);
+            line-height: 1.3;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .nm-notify-detail-sub {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .nm-notify-detail-content {
+            margin-top: 16px;
+            color: #334155;
+            font-size: 15px;
+            line-height: 1.75;
+            white-space: pre-wrap;
+        }
+
+        .nm-notify-detail-time {
+            margin-top: 14px;
+            font-size: 13px;
+            color: #94a3b8;
+            font-weight: 700;
+        }
+
+        .nm-notify-cta {
+            margin-top: 18px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 44px;
+            padding: 0 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(251, 146, 60, .2);
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            color: #fff;
+            font-size: 14px;
+            font-weight: 800;
+            width: fit-content;
+            box-shadow: 0 12px 26px rgba(249, 115, 22, .28);
+            transition: all .2s ease;
+        }
+
+        .nm-notify-cta:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 30px rgba(249, 115, 22, .32);
+        }
+
+        @@media (max-width: 960px) {
+            .nm-notify-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .nm-notify-list {
+                max-height: 420px;
+            }
+
+            .nm-notify-detail {
+                min-height: 360px;
+            }
+        }
+    </style>
+}
+
+<div class="nm-notify-page">
+    <div class="nm-notify-head">
+        <div class="nm-notify-title-wrap">
+            <h1>Trung tâm thông báo</h1>
+            <p>Theo dõi tất cả thông báo và xem chi tiết từng nội dung.</p>
+        </div>
+        <div class="nm-notify-actions">
+            <span id="nmCenterUnreadPill" class="nm-notify-pill">0 chưa đọc</span>
+            <button type="button" id="nmCenterMarkAllBtn" class="nm-notify-btn">Đánh dấu tất cả đã đọc</button>
+        </div>
+    </div>
+
+    <div class="nm-notify-layout">
+        <section class="nm-notify-list-card">
+            <div id="nmCenterList" class="nm-notify-list">
+                <div class="nm-empty-state">
+                    <span class="material-icons-round">notifications_none</span>
+                    <p class="text-sm font-semibold text-gray-700">Đang tải thông báo...</p>
+                </div>
+            </div>
+            <button type="button" id="nmCenterLoadMore" class="nm-notify-more hidden">Tải thêm thông báo</button>
+        </section>
+
+        <section class="nm-notify-detail-card">
+            <div id="nmCenterDetail" class="nm-notify-detail">
+                <div class="nm-notify-detail-empty">
+                    <span class="material-icons-round">mark_email_read</span>
+                    <p>Chọn một thông báo ở bên trái để xem chi tiết.</p>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const initialSelectedId = '@selectedNotificationId';
+            const listEl = document.getElementById('nmCenterList');
+            const detailEl = document.getElementById('nmCenterDetail');
+            const loadMoreBtn = document.getElementById('nmCenterLoadMore');
+            const markAllBtn = document.getElementById('nmCenterMarkAllBtn');
+            const unreadPill = document.getElementById('nmCenterUnreadPill');
+
+            if (!listEl || !detailEl || !loadMoreBtn || !markAllBtn || !unreadPill) return;
+
+            const pageSize = 12;
+            let page = 1;
+            let hasMore = true;
+            let loading = false;
+            let unreadCount = 0;
+            const items = [];
+            let selectedId = initialSelectedId || '';
+
+            const escapeHtml = (value) => String(value ?? '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
+
+            const normalizeText = (value) => String(value ?? '')
+                .trim()
+                .toLowerCase()
+                .replace(/\s+/g, ' ');
+
+            const shouldShowTypeChip = (item) => {
+                const typeLabel = normalizeText(item?.typeLabel);
+                const title = normalizeText(item?.title);
+                if (!typeLabel) return false;
+                return typeLabel !== title;
+            };
+
+            const formatTime = (value) => {
+                if (!value) return '';
+                const date = new Date(value);
+                if (Number.isNaN(date.getTime())) return '';
+                return new Intl.DateTimeFormat('vi-VN', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }).format(date);
+            };
+
+            const updateUnreadPill = () => {
+                const value = Number(unreadCount) || 0;
+                unreadPill.textContent = value > 0 ? `${value} chưa đọc` : 'Tất cả đã đọc';
+            };
+
+            const renderEmptyList = (message) => {
+                listEl.innerHTML = `
+                    <div class="nm-empty-state">
+                        <span class="material-icons-round">notifications_none</span>
+                        <p class="text-sm font-semibold text-gray-700">${escapeHtml(message)}</p>
+                    </div>
+                `;
+            };
+
+            const renderDetail = (item) => {
+                if (!item) {
+                    detailEl.innerHTML = `
+                        <div class="nm-notify-detail-empty">
+                            <span class="material-icons-round">mark_email_read</span>
+                            <p>Chọn một thông báo ở bên trái để xem chi tiết.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const chip = shouldShowTypeChip(item)
+                    ? `<span class="nm-notify-chip">${escapeHtml(item.typeLabel || 'Thông báo')}</span>`
+                    : '';
+                const sender = item?.senderLabel
+                    ? `<span class="nm-notify-from">Từ ${escapeHtml(item.senderLabel)}</span>`
+                    : '';
+                const action = item?.actionUrl
+                    ? `
+                        <a class="nm-notify-cta" href="${escapeHtml(item.actionUrl)}">
+                            <span class="material-icons-round">open_in_new</span>
+                            <span>Mở trang liên quan</span>
+                        </a>`
+                    : '';
+
+                detailEl.innerHTML = `
+                    <h2 class="nm-notify-detail-title">${escapeHtml(item.title || 'Thông báo')}</h2>
+                    <div class="nm-notify-detail-sub">
+                        ${chip}
+                        ${sender}
+                    </div>
+                    <div class="nm-notify-detail-content">${escapeHtml(item.content || 'Không có nội dung chi tiết.')}</div>
+                    <div class="nm-notify-detail-time">${escapeHtml(formatTime(item.createdAt))}</div>
+                    ${action}
+                `;
+            };
+
+            const renderList = () => {
+                if (!items.length) {
+                    renderEmptyList('Bạn chưa có thông báo nào.');
+                    return;
+                }
+
+                listEl.innerHTML = items.map((item) => {
+                    const isUnread = !item.isRead;
+                    const isActive = String(item.id) === String(selectedId);
+                    const chip = shouldShowTypeChip(item)
+                        ? `<span class="nm-notify-chip">${escapeHtml(item.typeLabel || 'Thông báo')}</span>`
+                        : '';
+                    const sender = item?.senderLabel
+                        ? `<span class="nm-notify-from">Từ ${escapeHtml(item.senderLabel)}</span>`
+                        : '';
+
+                    return `
+                        <button type="button"
+                                class="nm-notify-item ${isUnread ? 'is-unread' : ''} ${isActive ? 'is-active' : ''}"
+                                data-id="${escapeHtml(item.id)}">
+                            <div class="nm-notify-item-head">
+                                <div class="nm-notify-item-title">${escapeHtml(item.title || 'Thông báo mới')}</div>
+                                ${isUnread ? '<span class="nm-notify-item-dot" aria-hidden="true"></span>' : ''}
+                            </div>
+                            <div class="nm-notify-item-meta">
+                                ${chip}
+                                ${sender}
+                            </div>
+                            <div class="nm-notify-item-body">${escapeHtml(item.content || 'Bạn có thông báo mới từ hệ thống.')}</div>
+                            <div class="nm-notify-item-time">${escapeHtml(formatTime(item.createdAt))}</div>
+                        </button>
+                    `;
+                }).join('');
+            };
+
+            const syncLoadMore = () => {
+                if (hasMore) {
+                    loadMoreBtn.classList.remove('hidden');
+                } else {
+                    loadMoreBtn.classList.add('hidden');
+                }
+            };
+
+            const markRead = async (id) => {
+                if (!id) return;
+                try {
+                    await fetch(`/Notification/MarkRead/${id}`, {
+                        method: 'POST',
+                        credentials: 'same-origin'
+                    });
+                } catch {
+                }
+            };
+
+            const selectNotification = async (id) => {
+                selectedId = id;
+                const item = items.find(x => String(x.id) === String(id));
+                renderList();
+                renderDetail(item);
+
+                if (!item || item.isRead) return;
+
+                await markRead(id);
+                item.isRead = true;
+                unreadCount = Math.max(0, unreadCount - 1);
+                updateUnreadPill();
+                renderList();
+                window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
+            };
+
+            const loadPage = async () => {
+                if (loading || !hasMore) return;
+                loading = true;
+                loadMoreBtn.disabled = true;
+                loadMoreBtn.textContent = 'Đang tải...';
+
+                try {
+                    const response = await fetch(`/Notification/My?page=${page}&pageSize=${pageSize}`, {
+                        credentials: 'same-origin'
+                    });
+                    const result = await response.json();
+                    const fetched = Array.isArray(result?.data) ? result.data : [];
+                    unreadCount = Number(result?.unreadCount) || 0;
+                    updateUnreadPill();
+
+                    items.push(...fetched);
+                    page += 1;
+                    hasMore = fetched.length >= pageSize;
+                    syncLoadMore();
+                    renderList();
+
+                    if (selectedId) {
+                        const selected = items.find(x => String(x.id) === String(selectedId));
+                        if (selected) {
+                            renderDetail(selected);
+                        } else if (!hasMore) {
+                            selectedId = '';
+                            renderDetail(items[0]);
+                        }
+                    } else {
+                        renderDetail(items[0]);
+                        selectedId = items[0]?.id ? String(items[0].id) : '';
+                        renderList();
+                    }
+                } catch {
+                    if (!items.length) {
+                        renderEmptyList('Không thể tải thông báo lúc này.');
+                    }
+                } finally {
+                    loading = false;
+                    loadMoreBtn.disabled = false;
+                    loadMoreBtn.textContent = 'Tải thêm thông báo';
+                }
+            };
+
+            listEl.addEventListener('click', async (event) => {
+                const item = event.target.closest('.nm-notify-item[data-id]');
+                if (!item) return;
+                await selectNotification(item.dataset.id);
+            });
+
+            loadMoreBtn.addEventListener('click', loadPage);
+
+            markAllBtn.addEventListener('click', async () => {
+                markAllBtn.disabled = true;
+                const oldText = markAllBtn.textContent;
+                markAllBtn.textContent = 'Đang xử lý...';
+
+                try {
+                    await fetch('/Notification/MarkAllRead', {
+                        method: 'POST',
+                        credentials: 'same-origin'
+                    });
+                    items.forEach(item => item.isRead = true);
+                    unreadCount = 0;
+                    updateUnreadPill();
+                    renderList();
+                    renderDetail(items.find(x => String(x.id) === String(selectedId)) || items[0] || null);
+                    window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
+                } catch {
+                } finally {
+                    markAllBtn.disabled = false;
+                    markAllBtn.textContent = oldText;
+                }
+            });
+
+            loadPage();
+        })();
+    </script>
+}
+
