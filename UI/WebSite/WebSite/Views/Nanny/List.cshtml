@@ -405,13 +405,14 @@
             .then(res => {
                 if (res.requiresUpgrade) {
                     if (typeof clearNannyMarkers === 'function') clearNannyMarkers();
+                    window.recNannies = [];
                     content.innerHTML = `
                     <div class="rec-upgrade-prompt">
                         <span class="material-icons-round rec-upgrade-icon">auto_awesome</span>
                         <h3 class="rec-upgrade-title">Tính năng dành cho gói Plus / Pro</h3>
                         <p class="rec-upgrade-desc">Nâng cấp để AI tự động gợi ý những bảo mẫu phù hợp nhất với yêu cầu công việc của bạn.</p>
                         <a href="/Subscription" class="rec-upgrade-btn">
-                            <span class="material-icons-round" style="font-size:16px">rocket_launch</span>Nâng cấp ngay
+                            <span class="material-icons-round">rocket_launch</span>Nâng cấp ngay
                         </a>
                     </div>`;
                     return;

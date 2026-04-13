@@ -55,6 +55,10 @@
     text-decoration: none;
 }
 
+.rec-upgrade-btn .material-icons-round {
+    font-size: 16px;
+}
+
 /* ── Tab bar ─────────────────────────────────────────────────── */
 .rec-tab-bar {
     display: inline-flex;

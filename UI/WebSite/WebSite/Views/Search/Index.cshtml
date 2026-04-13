@@ -664,10 +664,9 @@ function loadRecJobs() {
                     <h3 class="rec-upgrade-title">Tính năng dành cho gói Plus / Pro</h3>
                     <p class="rec-upgrade-desc">Nâng cấp để AI tự động gợi ý những công việc phù hợp nhất với hồ sơ của bạn — tiết kiệm thời gian tìm kiếm.</p>
                     <a href="/Subscription" class="rec-upgrade-btn">
-                        <span class="material-icons-round" style="font-size:16px">rocket_launch</span>Nâng cấp ngay
+                        <span class="material-icons-round">rocket_launch</span>Nâng cấp ngay
                     </a>
                 </div>`;
-                recJobsLoaded = true;
                 return;
             }
             if (!res.success || !res.data || res.data.length === 0) {
