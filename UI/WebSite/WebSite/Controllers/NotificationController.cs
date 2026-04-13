@@ -15,6 +15,13 @@ public class NotificationController : Controller
     }
 
     [HttpGet]
+    public IActionResult Center(Guid? notificationId = null)
+    {
+        ViewData["NotificationId"] = notificationId?.ToString() ?? string.Empty;
+        return View();
+    }
+
+    [HttpGet]
     public async Task<IActionResult> My(int page = 1, int pageSize = 8)
     {
         setAuthHeader();
