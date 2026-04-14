@@ -67,6 +67,10 @@ public partial class JobPosting
 
     public Guid? ChildProfileId { get; set; }
 
+    public string? Embedding { get; set; }
+
+    public DateTime? EmbeddingUpdatedAt { get; set; }
+
     public virtual ChildProfile? ChildProfile { get; set; }
 
     public virtual ICollection<FavoriteJobPosting> FavoriteJobPostings { get; set; } = new List<FavoriteJobPosting>();

@@ -100,11 +100,11 @@
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label class="form-label" for="ExpectedSalaryMin">Luong toi thieu</label>
-                                        <input asp-for="ExpectedSalaryMin" id="ExpectedSalaryMin" type="number" min="0" step="1000" class="form-input" />
+                                        <input asp-for="ExpectedSalaryMin" id="ExpectedSalaryMin" type="text" inputmode="numeric" autocomplete="off" class="form-input" />
                                     </div>
                                     <div>
                                         <label class="form-label" for="ExpectedSalaryMax">Luong toi da</label>
-                                        <input asp-for="ExpectedSalaryMax" id="ExpectedSalaryMax" type="number" min="0" step="1000" class="form-input" />
+                                        <input asp-for="ExpectedSalaryMax" id="ExpectedSalaryMax" type="text" inputmode="numeric" autocomplete="off" class="form-input" />
                                     </div>
                                 </div>
                                 <div>
@@ -243,6 +243,10 @@
             var avatarPathDisplay = document.getElementById("avatarPathDisplay");
             var currentAvatarUrl = "@avatarUrl";
             var objectUrl = null;
+            var salaryInputs = [
+                document.getElementById("ExpectedSalaryMin"),
+                document.getElementById("ExpectedSalaryMax")
+            ].filter(Boolean);
 
             function showAvatarError(msg) {
                 avatarErr.textContent = msg || "";
@@ -289,6 +293,30 @@
                 setPreview(objectUrl);
             });
 
+            function getDigits(value) {
+                return (value || "").replace(/\D/g, "");
+            }
+
+            function formatMoneyValue(value) {
+                var digits = getDigits(value);
+                if (!digits) return "";
+                return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            }
+
+            salaryInputs.forEach(function (input) {
+                input.addEventListener("input", function () {
+                    input.value = formatMoneyValue(input.value);
+                });
+
+                input.addEventListener("blur", function () {
+                    input.value = formatMoneyValue(input.value);
+                });
+
+                if (input.value) {
+                    input.value = formatMoneyValue(input.value);
+                }
+            });
+
             function validateNannyDob() {
                 if (!isNanny) return true;
                 var value = dobInput.value;
@@ -313,7 +341,14 @@
             }
 
             form.addEventListener("submit", function (e) {
-                if (!validateNannyDob()) e.preventDefault();
+                if (!validateNannyDob()) {
+                    e.preventDefault();
+                    return;
+                }
+
+                salaryInputs.forEach(function (input) {
+                    input.value = getDigits(input.value);
+                });
             });
             dobInput.addEventListener("change", validateNannyDob);
 

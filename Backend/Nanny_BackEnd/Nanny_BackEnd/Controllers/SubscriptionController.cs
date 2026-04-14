@@ -11,10 +11,17 @@ namespace Nanny_BackEnd.Controllers;
 public class SubscriptionController : ControllerBase
 {
     private readonly SubscriptionService _subscriptionService;
+    private readonly CassoService _cassoService;
+    private readonly PayOsService _payOsService;
 
-    public SubscriptionController(SubscriptionService subscriptionService)
+    public SubscriptionController(
+        SubscriptionService subscriptionService,
+        CassoService cassoService,
+        PayOsService payOsService)
     {
         _subscriptionService = subscriptionService;
+        _cassoService = cassoService;
+        _payOsService = payOsService;
     }
 
     [AllowAnonymous]
@@ -115,7 +122,7 @@ public class SubscriptionController : ControllerBase
             return Ok(new
             {
                 success = true,
-                message = "Da tao lien ket thanh toan thanh cong.",
+                message = "Da tao phien thanh toan subscription thanh cong.",
                 data = session
             });
         }
@@ -139,23 +146,44 @@ public class SubscriptionController : ControllerBase
         catch (KeyNotFoundException ex) { return NotFound(fail(ex.Message)); }
     }
 
-    [AllowAnonymous]
-    [HttpGet("vnpay/return")]
-    public async Task<IActionResult> VnPayReturn()
+    [Authorize]
+    [HttpPost("mark-transferred/{transactionId:guid}")]
+    public async Task<IActionResult> MarkTransferred(Guid transactionId)
     {
-        var result = await _subscriptionService.handleVnPayReturn(Request.Query);
-        if (!string.IsNullOrWhiteSpace(result.RedirectUrl))
-            return Redirect(result.RedirectUrl);
+        var userId = getCurrentUserId();
+        if (!userId.HasValue)
+            return Unauthorized(fail("Khong xac dinh duoc nguoi dung hien tai."));
 
-        return BadRequest(fail(result.Message));
+        try
+        {
+            var result = await _subscriptionService.markTransferred(userId.Value, transactionId);
+            return Ok(new { success = true, message = result.Message, data = result });
+        }
+        catch (KeyNotFoundException ex) { return NotFound(fail(ex.Message)); }
+        catch (InvalidOperationException ex) { return BadRequest(fail(ex.Message)); }
     }
 
     [AllowAnonymous]
-    [HttpGet("vnpay/ipn")]
-    public async Task<IActionResult> VnPayIpn()
+    [HttpPost("payos/webhook")]
+    public async Task<IActionResult> PayOsWebhook([FromBody] PayOsWebhookRequest request)
     {
-        var result = await _subscriptionService.handleVnPayIpn(Request.Query);
-        return Ok(result);
+        if (!_payOsService.isWebhookValid(request))
+            return Unauthorized(fail("PayOS signature khong hop le."));
+
+        var processed = await _subscriptionService.handlePayOsWebhook(request);
+        return Ok(new { success = true, processed });
+    }
+
+    [AllowAnonymous]
+    [HttpPost("casso/webhook")]
+    public async Task<IActionResult> CassoWebhook([FromBody] CassoWebhookRequest request)
+    {
+        var secureToken = Request.Headers["secure-token"].FirstOrDefault();
+        if (!_cassoService.isWebhookAuthorized(secureToken))
+            return Unauthorized(fail("Casso secure token khong hop le."));
+
+        var processed = await _subscriptionService.handleCassoWebhook(request);
+        return Ok(new { success = true, processed });
     }
 
     [Authorize]

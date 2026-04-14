@@ -1,138 +1,130 @@
 @model WebSite.Models.Profile.NannyBasicInfoWizardViewModel
 @{
-    ViewData["Title"] = "Nanny - Thông tin cơ bản";
+    ViewData["Title"] = "Nanny - Thong tin co ban";
 }
 
-<div class="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50/30 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-2xl mx-auto">
-        <div class="mb-8">
-            <span class="section-label bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">👩‍👧 Nanny Onboarding</span>
-            <h1 class="text-3xl font-bold text-gray-900 dark:text-white mt-3">
-                Bước 1: Thông tin cá nhân
-            </h1>
-            <div class="section-divider left mt-4 bg-indigo-500"></div>
-        </div>
-
-        <div class="bg-white dark:bg-gray-800/80 rounded-3xl p-8 shadow-soft border border-gray-100/80 dark:border-gray-700/50 backdrop-blur-sm">
-            <div asp-validation-summary="ModelOnly" class="text-red-500 text-sm mb-4"></div>
-
-            <form asp-action="Step1BasicInfo" method="post" enctype="multipart/form-data">
-                @Html.AntiForgeryToken()
-
-                <input type="hidden" asp-for="Latitude" id="Latitude" />
-                <input type="hidden" asp-for="Longitude" id="Longitude" />
-                <input type="hidden" asp-for="AvatarUrl" />
-
-                <div class="space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="md:col-span-2">
-                            <label asp-for="FullName" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                                Họ và tên <span class="text-red-500">*</span>
-                            </label>
-                            <input asp-for="FullName"
-                                   class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                                   placeholder="VD: Nguyễn Thị A" />
-                            <span asp-validation-for="FullName" class="text-red-500 text-sm mt-1"></span>
-                        </div>
-
-                        <div class="md:col-span-2">
-                            <label asp-for="AvatarFile" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                                Ảnh đại diện (.jpg, .png)
-                            </label>
-                            <input type="file" asp-for="AvatarFile" accept=".jpg,.jpeg,.png,image/jpeg,image/png"
-                                   class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition-all" />
-                            <div id="avatarUploadError" class="hidden mt-2 text-sm text-red-600"></div>
-                            <div class="mt-3">
-                                <img id="avatarPreview"
-                                     class="hidden w-24 h-24 rounded-2xl object-cover border border-gray-200 dark:border-gray-600"
-                                     alt="Avatar preview" />
-                            </div>
-                            <span asp-validation-for="AvatarFile" class="text-red-500 text-sm mt-1"></span>
-                        </div>
-
-                        <div>
-                            <label asp-for="DateOfBirth" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                                Ngày sinh <span class="text-red-500">*</span>
-                            </label>
-                            <input asp-for="DateOfBirth" type="date"
-                                   class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all" />
-                            <span asp-validation-for="DateOfBirth" class="text-red-500 text-sm mt-1"></span>
-                        </div>
-
-                        <div>
-                            <label asp-for="Gender" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                                Giới tính <span class="text-red-500">*</span>
-                            </label>
-                            <select asp-for="Gender"
-                                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
-                                <option value="">-- Chọn --</option>
-                                <option value="0">Nam</option>
-                                <option value="1">Nữ</option>
-                                <option value="2">Khác</option>
-                            </select>
-                            <span asp-validation-for="Gender" class="text-red-500 text-sm mt-1"></span>
-                        </div>
+<div class="nm-flow-shell nm-flow-shell--cool">
+    <div class="nm-flow-container">
+        <div class="nm-flow-card">
+            <div class="nm-flow-card__inner">
+                <div class="nm-flow-header">
+                    <div class="nm-flow-header__content">
+                        <span class="nm-flow-badge nm-flow-badge--cool">Nanny onboarding</span>
+                        <h1 class="nm-flow-title">Hoan thien ho so co ban</h1>
+                        <p class="nm-flow-subtitle">
+                            Day la thong tin nen ban dau de ho so nanny hien thi tot hon trong tim kiem va de parent nhan dien nhanh kha nang phu hop.
+                        </p>
                     </div>
-
-                    <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
-                        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">📍 Địa chỉ liên hệ</h3>
-                        
-                        <div class="space-y-4">
-                            <div>
-                                <label asp-for="Address" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                                    Địa chỉ chi tiết <span class="text-red-500">*</span>
-                                </label>
-                                <input asp-for="Address" id="Address"
-                                       class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                                       placeholder="Số nhà, tên đường, ..." />
-                                <span asp-validation-for="Address" class="text-red-500 text-sm mt-1"></span>
-                            </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label asp-for="City" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                                        Tỉnh/Thành phố <span class="text-red-500">*</span>
-                                    </label>
-                                    <select asp-for="City" id="City"
-                                            class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
-                                        <option value="">-- Chọn Tỉnh/Thành --</option>
-                                    </select>
-                                    <span asp-validation-for="City" class="text-red-500 text-sm mt-1"></span>
-                                </div>
-                                <div>
-                                    <label asp-for="District" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                                        Phường/Xã <span class="text-red-500">*</span>
-                                    </label>
-                                    <select asp-for="District" id="District"
-                                            class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
-                                        <option value="">-- Chọn Phường/Xã --</option>
-                                    </select>
-                                    <span asp-validation-for="District" class="text-red-500 text-sm mt-1"></span>
-                                </div>
-                            </div>
-                            <div id="addressLoadError" class="hidden text-sm text-red-600"></div>
-                        </div>
+                    <div class="nm-flow-progress" aria-hidden="true">
+                        <span class="nm-progress-step is-active is-cool">1</span>
                     </div>
                 </div>
 
-                <div class="flex justify-between mt-8">
-                    <a href="@Url.Action("Index", "Home")"
-                       class="px-6 py-2 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm font-semibold">
-                        Bỏ qua
-                    </a>
-                    <button type="submit" name="direction" value="next"
-                            class="px-6 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-semibold text-sm shadow-md">
-                        Tiếp tục
-                    </button>
-                </div>
-            </form>
+                <div asp-validation-summary="ModelOnly" class="nm-alert"></div>
+
+                <form asp-action="Step1BasicInfo" method="post" enctype="multipart/form-data" data-nm-unified-skip="true">
+                    @Html.AntiForgeryToken()
+
+                    <input type="hidden" asp-for="Latitude" id="Latitude" />
+                    <input type="hidden" asp-for="Longitude" id="Longitude" />
+                    <input type="hidden" asp-for="AvatarUrl" />
+
+                    <div class="nm-form-grid">
+                        <div class="nm-col-12">
+                            <div class="nm-section-card nm-section-card--cool">
+                                <div class="nm-section-title">Thong tin ca nhan</div>
+                                <div class="nm-section-note">Anh dai dien, ngay sinh va dia chi se duoc dung de hoan thien ho so nghe nghiep o cac buoc tiep theo.</div>
+
+                                <div class="nm-form-grid">
+                                    <div class="nm-col-12">
+                                        <div class="nm-field">
+                                            <label asp-for="FullName" class="nm-label">Ho va ten <span class="required">*</span></label>
+                                            <input asp-for="FullName" class="nm-input" placeholder="Nguyen Thi A" />
+                                            <span asp-validation-for="FullName" class="nm-error"></span>
+                                        </div>
+                                    </div>
+
+                                    <div class="nm-col-12">
+                                        <div class="nm-field">
+                                            <label asp-for="AvatarFile" class="nm-label">Anh dai dien</label>
+                                            <input type="file" asp-for="AvatarFile" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="nm-file" />
+                                            <div class="nm-field-hint">Nen dung anh ro mat, dung dinh dang .jpg, .jpeg, .png.</div>
+                                            <div id="avatarUploadError" class="nm-error hidden"></div>
+                                            <div class="mt-3">
+                                                <img id="avatarPreview" class="nm-avatar-preview hidden" alt="Avatar preview" />
+                                            </div>
+                                            <span asp-validation-for="AvatarFile" class="nm-error"></span>
+                                        </div>
+                                    </div>
+
+                                    <div class="nm-col-6">
+                                        <div class="nm-field">
+                                            <label asp-for="DateOfBirth" class="nm-label">Ngay sinh <span class="required">*</span></label>
+                                            <input asp-for="DateOfBirth" type="date" class="nm-input" max="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                                            <span asp-validation-for="DateOfBirth" class="nm-error"></span>
+                                            <div id="dateOfBirthClientError" class="nm-error hidden">Ngay sinh khong duoc lon hon ngay hien tai.</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="nm-col-6">
+                                        <div class="nm-field">
+                                            <label asp-for="Gender" class="nm-label">Gioi tinh <span class="required">*</span></label>
+                                            <select asp-for="Gender" class="nm-select">
+                                                <option value="">Chon gioi tinh</option>
+                                                <option value="0">Nam</option>
+                                                <option value="1">Nu</option>
+                                                <option value="2">Khac</option>
+                                            </select>
+                                            <span asp-validation-for="Gender" class="nm-error"></span>
+                                        </div>
+                                    </div>
+
+                                    <div class="nm-col-12">
+                                        <div class="nm-field">
+                                            <label asp-for="Address" class="nm-label">Dia chi chi tiet <span class="required">*</span></label>
+                                            <input asp-for="Address" id="Address" class="nm-input" placeholder="So nha, ten duong..." />
+                                            <span asp-validation-for="Address" class="nm-error"></span>
+                                        </div>
+                                    </div>
+
+                                    <div class="nm-col-6">
+                                        <div class="nm-field">
+                                            <label asp-for="City" class="nm-label">Tinh / Thanh pho <span class="required">*</span></label>
+                                            <select asp-for="City" id="City" class="nm-select">
+                                                <option value="">Chon tinh / thanh</option>
+                                            </select>
+                                            <span asp-validation-for="City" class="nm-error"></span>
+                                        </div>
+                                    </div>
+
+                                    <div class="nm-col-6">
+                                        <div class="nm-field">
+                                            <label asp-for="District" class="nm-label">Quan / Huyen / Phuong <span class="required">*</span></label>
+                                            <select asp-for="District" id="District" class="nm-select">
+                                                <option value="">Chon khu vuc</option>
+                                            </select>
+                                            <span asp-validation-for="District" class="nm-error"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="addressLoadError" class="nm-error hidden mt-3"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="nm-flow-actions">
+                        <a href="@Url.Action("Index", "Home")" class="nm-btn nm-btn--ghost">Bo qua</a>
+                        <button type="submit" name="direction" value="next" class="nm-btn nm-btn--primary nm-btn--cool">Tiep tuc</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
 (function () {
-    // Avatar upload: only png/jpg/jpeg + instant preview
     var avatarInput = document.getElementById('AvatarFile');
     var avatarErr = document.getElementById('avatarUploadError');
     var avatarPreview = document.getElementById('avatarPreview');
@@ -184,7 +176,7 @@
 
             if (!isAllowedImage(file)) {
                 avatarInput.value = '';
-                showAvatarError('Chỉ cho phép upload ảnh định dạng .png, .jpg, .jpeg.');
+                showAvatarError('Chi cho phep upload anh .png, .jpg, .jpeg.');
                 if (currentAvatarUrl) setPreview(currentAvatarUrl);
                 return;
             }
@@ -194,14 +186,53 @@
         });
     }
 
+    var form = document.querySelector('form[asp-action], form');
+    var dateOfBirthInput = document.getElementById('DateOfBirth');
+    var dateOfBirthClientError = document.getElementById('dateOfBirthClientError');
     var citySelect = document.getElementById('City');
     var districtSelect = document.getElementById('District');
     var addressInput = document.getElementById('Address');
     var latEl = document.getElementById('Latitude');
     var lngEl = document.getElementById('Longitude');
     var addressLoadError = document.getElementById('addressLoadError');
-
     var provinces = [];
+    if (dateOfBirthInput) {
+        var today = new Date();
+        var todayStr = today.toISOString().split('T')[0];
+        dateOfBirthInput.max = todayStr;
+
+        function validateDateOfBirth() {
+            if (!dateOfBirthInput.value) {
+                dateOfBirthInput.setCustomValidity('');
+                if (dateOfBirthClientError) dateOfBirthClientError.classList.add('hidden');
+                return true;
+            }
+
+            if (dateOfBirthInput.value > todayStr) {
+                dateOfBirthInput.setCustomValidity('Ngay sinh khong duoc lon hon ngay hien tai.');
+                if (dateOfBirthClientError) dateOfBirthClientError.classList.remove('hidden');
+                return false;
+            }
+
+            dateOfBirthInput.setCustomValidity('');
+            if (dateOfBirthClientError) dateOfBirthClientError.classList.add('hidden');
+            return true;
+        }
+
+        dateOfBirthInput.addEventListener('input', validateDateOfBirth);
+        dateOfBirthInput.addEventListener('change', validateDateOfBirth);
+
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                if (!validateDateOfBirth()) {
+                    e.preventDefault();
+                    dateOfBirthInput.reportValidity();
+                    dateOfBirthInput.focus();
+                }
+            });
+        }
+    }
+
     setAddressSelectState(true);
 
     fetch('/Address/LocationTree')
@@ -226,7 +257,7 @@
         .catch(function () {
             provinces = [];
             setAddressSelectState(true);
-            showAddressLoadError('Khong tai duoc danh sach tinh/thanh. Vui long thu lai sau.');
+            showAddressLoadError('Khong tai duoc danh sach tinh thanh. Vui long thu lai sau.');
         });
 
     function setAddressSelectState(disabled) {
@@ -275,7 +306,7 @@
     }
 
     function onCityChange(callback) {
-        districtSelect.innerHTML = '<option value="">-- Chọn Phường/Xã --</option>';
+        districtSelect.innerHTML = '<option value="">Chon khu vuc</option>';
 
         var selectedCity = normalizeText(citySelect.value);
         var selected = provinces.find(function (p) { return normalizeText(p.name) === selectedCity; });
@@ -306,13 +337,8 @@
         autoGeocode();
     }
 
-    citySelect.addEventListener('change', function () {
-        onCityChange();
-    });
-
-    districtSelect.addEventListener('change', function () {
-        onDistrictChange();
-    });
+    citySelect.addEventListener('change', function () { onCityChange(); });
+    districtSelect.addEventListener('change', function () { onDistrictChange(); });
 
     var debounceTimer;
     addressInput.addEventListener('blur', function () {
@@ -323,7 +349,6 @@
     function autoGeocode() {
         var city = (citySelect.value || '').trim();
         var dist = (districtSelect.value || '').trim();
-
         if (!city) return;
 
         var parts = [];
@@ -336,10 +361,8 @@
             .then(function (items) {
                 if (!items || !items.length) return;
                 var item = items[0];
-
                 var lat = item.latitude != null ? item.latitude : item.Latitude;
                 var lng = item.longitude != null ? item.longitude : item.Longitude;
-
                 if (latEl && lat != null) latEl.value = lat;
                 if (lngEl && lng != null) lngEl.value = lng;
             })

@@ -203,6 +203,30 @@ function formatSalary(min, max) {
   return 'Thỏa thuận';
 }
 
+function getNannyPlanLabel(profile) {
+  const code = String(profile?.subscriptionPlanCode || '').trim().toUpperCase();
+  if (code === 'NANNY_PRO') return 'Nanny Pro';
+  if (code === 'NANNY_PLUS') return 'Nanny Plus';
+  return '';
+}
+
+function renderNannyBenefitPills(profile) {
+  const pills = [];
+  const planLabel = getNannyPlanLabel(profile);
+
+  if (planLabel) {
+    pills.push(`<span class="nanny-pill ${profile?.searchPriority ? 'nanny-pill--orange' : ''}">${escapeHtml(planLabel)}</span>`);
+  }
+
+  if (profile?.searchPriority) {
+    pills.push('<span class="nanny-pill nanny-pill--orange">Uu tien hien thi</span>');
+  } else if (profile?.featuredBadge) {
+    pills.push('<span class="nanny-pill">Ho so noi bat</span>');
+  }
+
+  return pills.join('');
+}
+
 function isLoggedIn() {
   return typeof IS_AUTH !== 'undefined' && IS_AUTH === true;
 }
@@ -1006,6 +1030,7 @@ function renderNannyCards(items, options = {}) {
           </div>
           <p class="nanny-card__bio">${escapeHtml(profile.bio || 'Hồ sơ chưa có mô tả giới thiệu.')}</p>
           <div class="nanny-card__meta">
+            ${renderNannyBenefitPills(profile)}
             <span class="nanny-pill nanny-pill--orange">${escapeHtml(profile.verificationStatusLabel || 'Chưa xác minh')}</span>
             <span class="nanny-pill">${profile.age ? `${profile.age} tuổi` : 'Chưa rõ tuổi'}</span>
             <span class="nanny-pill">${profile.yearsOfExperience ? `${profile.yearsOfExperience} năm KN` : 'Chưa rõ KN'}</span>
@@ -1182,6 +1207,10 @@ function renderAvailability(slots) {
   return html;
 }
 
+function formatPublicLocation(detail) {
+  return [detail?.ward, detail?.district, detail?.city].filter(Boolean).join(', ');
+}
+
 async function openNannyDetail(id) {
   if (!id) return;
 
@@ -1193,17 +1222,29 @@ async function openNannyDetail(id) {
 
     document.getElementById('nd-avatar').src = detail.avatarUrl || '/img/nanny-logo.jpg';
     document.getElementById('nd-name').textContent = detail.fullName || 'Bảo mẫu';
-    document.getElementById('nd-location').textContent = [detail.address, detail.ward, detail.district, detail.city].filter(Boolean).join(', ') || 'Chưa cập nhật địa chỉ';
+    const publicLocation = formatPublicLocation(detail);
+    document.getElementById('nd-location').textContent = publicLocation || 'Chua cap nhat khu vuc';
     document.getElementById('nd-verify').textContent = detail.verificationStatusLabel || 'Đang cập nhật';
     document.getElementById('nd-bio').textContent = detail.bio || 'Hồ sơ chưa có mô tả.';
-    document.getElementById('nd-phone').textContent = detail.phoneNumber || 'Chưa cập nhật';
-    document.getElementById('nd-address').textContent = [detail.address, detail.ward, detail.district, detail.city].filter(Boolean).join(', ') || 'Chưa cập nhật';
+    document.getElementById('nd-phone').textContent = isParentRole() ? 'Gui request contact de trao doi truc tiep voi nanny' : 'Thong tin lien he chi hien sau khi da ket noi';
+    document.getElementById('nd-address').textContent = publicLocation || 'Chua cap nhat';
     document.getElementById('nd-travel').textContent = detail.maxTravelDistance ? `${detail.maxTravelDistance} km` : 'Chưa cập nhật';
     document.getElementById('nd-completeness').textContent = `${detail.profileCompleteness || 0}%`;
     document.getElementById('nd-age').textContent = detail.age ? `${detail.age} tuổi` : 'Chưa rõ tuổi';
     document.getElementById('nd-exp').textContent = detail.yearsOfExperience ? `${detail.yearsOfExperience} năm kinh nghiệm` : 'Chưa rõ kinh nghiệm';
     document.getElementById('nd-education').textContent = detail.educationLevelLabel || 'Chưa cập nhật học vấn';
     document.getElementById('nd-salary').textContent = formatSalary(detail.expectedSalaryMin, detail.expectedSalaryMax);
+    const planChip = document.getElementById('nd-plan');
+    if (planChip) {
+      const planLabel = getNannyPlanLabel(detail);
+      const planText = detail.searchPriority
+        ? `${planLabel || 'Ho so noi bat'} • Uu tien hien thi`
+        : detail.featuredBadge
+          ? (planLabel || 'Ho so noi bat')
+          : '';
+      planChip.textContent = planText;
+      planChip.classList.toggle('hidden', !planText);
+    }
 
     const skillsEl = document.getElementById('nd-skills');
     skillsEl.innerHTML = Array.isArray(detail.skills) && detail.skills.length

@@ -1,4 +1,5 @@
 using Nanny_BackEnd.DTOs.Nanny;
+using Nanny_BackEnd.DTOs.Subscription;
 using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
@@ -108,6 +109,7 @@ public class NannyService
 
     private static NannyListItemResponse MapToListResponse(NannyProfile nanny, HashSet<Guid>? favoriteNannyIds = null)
     {
+        var entitlement = getNannyEntitlement(nanny);
         var educationLevel = nanny.EducationLevel.HasValue && Enum.IsDefined(typeof(EducationLevel), nanny.EducationLevel.Value)
             ? (EducationLevel?)nanny.EducationLevel.Value
             : null;
@@ -131,6 +133,9 @@ public class NannyService
             ExpectedSalaryMax = nanny.ExpectedSalaryMax,
             AverageRating = nanny.AverageRating,
             TotalReviews = nanny.TotalReviews,
+            SubscriptionPlanCode = entitlement.PlanCode,
+            FeaturedBadge = entitlement.Benefits.FeaturedBadge,
+            SearchPriority = entitlement.Benefits.SearchPriority,
             VerificationStatus = nanny.VerificationStatus,
             VerificationStatusLabel = EnumDisplayHelper.GetDisplayName(verificationStatus),
             EducationLevel = nanny.EducationLevel,
@@ -225,6 +230,45 @@ public class NannyService
             TimeSlot = slot.TimeSlot,
             TimeSlotLabel = GetTimeSlotLabel(slot.TimeSlot)
         };
+
+    private static (string? PlanCode, SubscriptionBenefitResponse Benefits) getNannyEntitlement(NannyProfile nanny)
+    {
+        var nowUtc = DateTime.UtcNow;
+        var activeSubscription = nanny.User?.UserSubscriptions?
+            .Where(s => !s.IsDeleted && s.Status == 1 && s.EndDate >= nowUtc)
+            .OrderByDescending(s => s.EndDate)
+            .FirstOrDefault();
+
+        var plan = activeSubscription?.SubscriptionPlan;
+        var planName = plan?.Name;
+        if (string.Equals(planName, "Pro", StringComparison.OrdinalIgnoreCase))
+        {
+            return ("NANNY_PRO", new SubscriptionBenefitResponse
+            {
+                MonthlyJobPostLimit = 0,
+                MonthlyApplicationLimit = 5,
+                FeaturedBadge = true,
+                SearchPriority = true,
+                ListingDurationDays = 0,
+                CanUseRecommendation = plan!.CanUseRecommendation
+            });
+        }
+
+        if (string.Equals(planName, "Plus", StringComparison.OrdinalIgnoreCase))
+        {
+            return ("NANNY_PLUS", new SubscriptionBenefitResponse
+            {
+                MonthlyJobPostLimit = 0,
+                MonthlyApplicationLimit = 3,
+                FeaturedBadge = true,
+                SearchPriority = false,
+                ListingDurationDays = 0,
+                CanUseRecommendation = plan!.CanUseRecommendation
+            });
+        }
+
+        return (null, SubscriptionBenefitResponse.FreeNanny);
+    }
 
     private static string GetDayLabel(int dayOfWeek) => dayOfWeek switch
     {

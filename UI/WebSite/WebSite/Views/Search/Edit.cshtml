@@ -89,11 +89,11 @@
                             </div>
                             <div>
                                 <label class="form-label">Thanh pho</label>
-                                <input type="text" id="ef-city" class="form-input" />
+                                <input type="text" id="ef-city" class="form-input form-select-picker-input" autocomplete="off" placeholder="Nhap hoac chon thanh pho" />
                             </div>
                             <div>
-                                <label class="form-label">Quan/Huyen</label>
-                                <input type="text" id="ef-district" class="form-input" />
+                                <label class="form-label">Phuong/Xa</label>
+                                <input type="text" id="ef-district" class="form-input form-select-picker-input" autocomplete="off" placeholder="Nhap hoac chon phuong/xa" />
                             </div>
                             <div>
                                 <label class="form-label">Do tuoi bao mau tu</label>
@@ -201,6 +201,8 @@ let initialFormSignature = '';
 let hasLoadedEditData = false;
 let isSubmittingEdit = false;
 let currentModerationStatus = null;
+let locationTree = [];
+let locationTreePromise = null;
 
 const DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 const ROW_LABELS = ['Morning', 'Afternoon', 'Evening', 'Night'];
@@ -292,6 +294,192 @@ function redirectToHistory(jobId) {
 
 function normalizeText(value) {
     return String(value ?? '').toLowerCase().trim();
+}
+
+function normalizeLocationName(value) {
+    return String(value ?? '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/đ/g, 'd')
+        .toLowerCase()
+        .replace(/^thanh pho\s+/i, '')
+        .replace(/^tp\.?\s*/i, '')
+        .replace(/^tinh\s+/i, '')
+        .trim();
+}
+
+function findProvinceByName(cityName) {
+    const cityKey = normalizeLocationName(cityName);
+    if (!cityKey) return null;
+
+    const exact = locationTree.find((province) => normalizeLocationName(province.name) === cityKey);
+    if (exact) return exact;
+
+    return locationTree.find((province) => {
+        const provinceKey = normalizeLocationName(province.name);
+        return provinceKey.includes(cityKey) || cityKey.includes(provinceKey);
+    }) || null;
+}
+
+function getDistrictNamesByCity(cityName) {
+    const province = findProvinceByName(cityName);
+    if (!province || !Array.isArray(province.districts)) return [];
+    return province.districts
+        .map((district) => district?.name)
+        .filter((name) => !!name);
+}
+
+function uniqueNormalizedValues(values, query) {
+    const queryKey = normalizeLocationName(query);
+    const seen = new Set();
+    return values
+        .filter((value) => !!value)
+        .filter((value) => !queryKey || normalizeLocationName(value).includes(queryKey))
+        .filter((value) => {
+            const key = normalizeLocationName(value);
+            if (!key || seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        })
+        .slice(0, 40);
+}
+
+function getCityOptions(query) {
+    return uniqueNormalizedValues(
+        locationTree.map((province) => province?.name),
+        query
+    );
+}
+
+function getDistrictOptionsByCity(cityName, query) {
+    return uniqueNormalizedValues(getDistrictNamesByCity(cityName), query);
+}
+
+function renderAutocompleteOptions(prefix, kind, options, onSelect) {
+    const dropdown = autocompleteDropdowns.get(getAutocompleteKey(prefix, kind));
+    if (!dropdown) return;
+
+    if (!options.length) {
+        dropdown.innerHTML = '';
+        dropdown.classList.remove('show');
+        return;
+    }
+
+    dropdown.innerHTML = options
+        .map((option) => `<li data-value="${escapeHtml(option)}">${escapeHtml(option)}</li>`)
+        .join('');
+    dropdown.classList.add('show');
+
+    dropdown.querySelectorAll('li').forEach((item) => {
+        item.addEventListener('mousedown', (event) => {
+            event.preventDefault();
+            onSelect(item.dataset.value || '');
+        });
+    });
+}
+
+function attachAutocomplete(prefix, kind, optionGetter, onSelect) {
+    const input = document.getElementById(`${prefix}-${kind}`);
+    if (!input || input.dataset.acReady === 'true') return;
+
+    input.dataset.acReady = 'true';
+    input.removeAttribute('list');
+    input.parentElement?.classList.add('autocomplete-field');
+
+    const dropdown = document.createElement('ul');
+    dropdown.className = 'ac-dropdown';
+    input.insertAdjacentElement('afterend', dropdown);
+    autocompleteDropdowns.set(getAutocompleteKey(prefix, kind), dropdown);
+
+    let requestToken = 0;
+    const showForQuery = async () => {
+        const token = ++requestToken;
+        const query = input.value.trim();
+        const options = await Promise.resolve(optionGetter(query));
+        if (token !== requestToken) return;
+
+        renderAutocompleteOptions(prefix, kind, options, (value) => {
+            input.value = value;
+            onSelect(value);
+            updateSubmitState();
+            hideAutocomplete(prefix, kind);
+        });
+    };
+
+    input.addEventListener('focus', showForQuery);
+    input.addEventListener('input', showForQuery);
+    input.addEventListener('blur', () => {
+        setTimeout(() => hideAutocomplete(prefix, kind), 120);
+    });
+}
+
+function attachLocationAutocomplete(prefix) {
+    attachAutocomplete(
+        prefix,
+        'city',
+        (query) => getCityOptions(query),
+        (value) => {
+            const districtInput = document.getElementById(`${prefix}-district`);
+            if (districtInput) districtInput.value = '';
+            handleLocationCityChange(prefix, value);
+        }
+    );
+
+    attachAutocomplete(
+        prefix,
+        'district',
+        (query) => {
+            const cityValue = document.getElementById(`${prefix}-city`)?.value?.trim() || '';
+            return getDistrictOptionsByCity(cityValue, query);
+        },
+        () => {}
+    );
+}
+
+function handleLocationCityChange(prefix, explicitCityValue) {
+    const cityInput = document.getElementById(`${prefix}-city`);
+    const districtInput = document.getElementById(`${prefix}-district`);
+    if (!cityInput) return;
+
+    const cityValue = String(explicitCityValue ?? cityInput.value ?? '').trim();
+    const districtValue = String(districtInput?.value ?? '').trim();
+    const allowedDistricts = getDistrictNamesByCity(cityValue);
+
+    if (districtInput && districtValue) {
+        const districtKey = normalizeLocationName(districtValue);
+        const isValidDistrict = allowedDistricts.some((value) => normalizeLocationName(value) === districtKey);
+        if (!isValidDistrict) districtInput.value = '';
+    }
+}
+
+function bindLocationInputs() {
+    attachLocationAutocomplete('ef');
+
+    const cityInput = document.getElementById('ef-city');
+    if (!cityInput || cityInput.dataset.locationBindReady === 'true') return;
+
+    cityInput.dataset.locationBindReady = 'true';
+    cityInput.addEventListener('input', () => handleLocationCityChange('ef'));
+    cityInput.addEventListener('change', () => handleLocationCityChange('ef'));
+}
+
+async function loadLocationTree() {
+    if (locationTreePromise) return locationTreePromise;
+
+    locationTreePromise = fetch('/Address/LocationTree', { credentials: 'same-origin' })
+        .then((response) => (response.ok ? response.json() : []))
+        .then((data) => {
+            locationTree = Array.isArray(data) ? data : [];
+            const cityValue = document.getElementById('ef-city')?.value?.trim() || '';
+            if (cityValue) handleLocationCityChange('ef', cityValue);
+            return locationTree;
+        })
+        .catch(() => {
+            locationTree = [];
+            return locationTree;
+        });
+
+    return locationTreePromise;
 }
 
 function getAutocompleteKey(prefix, kind) {
@@ -548,7 +736,7 @@ function validateEditPayload(payload) {
 
     const district = String(payload?.district ?? '').trim();
     if (!district || district.length > 100) {
-        return { message: 'Quan/Huyen la bat buoc va toi da 100 ky tu.', fieldId: 'ef-district' };
+        return { message: 'Phuong/Xa la bat buoc va toi da 100 ky tu.', fieldId: 'ef-district' };
     }
 
     const salaryMin = payload?.salaryMin;
@@ -663,6 +851,7 @@ async function loadEditPage() {
         document.getElementById('ef-location').value = job.location || '';
         document.getElementById('ef-city').value = job.city || '';
         document.getElementById('ef-district').value = job.district || '';
+        handleLocationCityChange('ef', document.getElementById('ef-city').value);
         document.getElementById('ef-minAge').value = job.minNannyAge || '';
         document.getElementById('ef-maxAge').value = job.maxNannyAge || '';
         setEditStatus(Number(job.status) || 1);
@@ -812,6 +1001,8 @@ function initializeEditPage() {
     ['ef-typeText', 'ef-childProfileText', 'ef-skillSelectText'].forEach((id) => {
         document.getElementById(id)?.setAttribute('autocomplete', 'off');
     });
+    bindLocationInputs();
+    loadLocationTree();
     initMoneyInputs();
     attachEditSelectPickers();
     updateSubmitState();

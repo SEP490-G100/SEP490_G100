@@ -201,6 +201,8 @@ public class FavoriteRepository
             .AsNoTracking()
             .Where(n => pageNannyIds.Contains(n.Id) && !n.IsDeleted && !n.User.IsDeleted && n.User.Status == (int)UserStatus.Active)
             .Include(n => n.User)
+                .ThenInclude(u => u.UserSubscriptions)
+                    .ThenInclude(s => s.SubscriptionPlan)
             .Include(n => n.NannySkills.Where(s => !s.IsDeleted && !s.Skill.IsDeleted && s.Skill.IsActive))
                 .ThenInclude(s => s.Skill)
             .Include(n => n.NannyAvailabilities.Where(a => !a.IsDeleted && a.IsAvailable))

@@ -18,7 +18,7 @@
     var canHireInHiringFlow = canContactNanny && hasHiringContext && !string.IsNullOrWhiteSpace(hiringJobPostingId) && !string.IsNullOrWhiteSpace(hiringJobApplicationId);
     var canSendContactRequest = !suppressEngagementActions && canContactNanny && !hasHiringContext && Model.ContactNannyProfileId.HasValue && Model.ContactNannyProfileId.Value != Guid.Empty && !isContactAccepted;
     var canMessageInContactFlow = canContactNanny && !hasHiringContext && isContactAccepted;
-    var canHireInContactFlow = canMessageInContactFlow;
+    var canHireInContactFlow = canMessageInContactFlow && !string.IsNullOrWhiteSpace(contactRequestId);
     var canMessageInHiringFlow = canContactNanny && hasHiringContext;
     var canShowAnyAction = canContactNanny || canShowFavoriteHeart;
 
@@ -489,9 +489,8 @@
                     }
                     if (!hasHiringContext) {
                         if (typeof window.showToast === 'function') {
-                            window.showToast('Can co ngu canh hop le de tao hiring record.', { type: 'info' });
+                            window.showToast('Khong tim thay Contact Request hop le de tao hiring record.', { type: 'warning' });
                         }
-                        window.location.href = '/Search/History';
                     }
                 });
             }

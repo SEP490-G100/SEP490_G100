@@ -56,9 +56,23 @@ public class SubscriptionController : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        if (string.IsNullOrWhiteSpace(result.Data?.CheckoutUrl))
+        if (string.Equals(result.Data?.Status, "WAITING_REVIEW", StringComparison.OrdinalIgnoreCase))
         {
-            const string message = "Không tạo được liên kết thanh toán.";
+            if (isAjaxRequest())
+                return Json(new
+                {
+                    success = true,
+                    message = "Giao dich dang cho xet duyet.",
+                    data = result.Data
+                });
+
+            return RedirectToAction(nameof(PaymentResult), new { transactionId = result.Data!.TransactionId });
+        }
+
+        if (string.IsNullOrWhiteSpace(result.Data?.QrCodeUrl) &&
+            string.IsNullOrWhiteSpace(result.Data?.CheckoutUrl))
+        {
+            const string message = "Không tạo được phiên thanh toán PayOS.";
             if (isAjaxRequest())
                 return Json(new { success = false, message });
 
@@ -70,11 +84,11 @@ public class SubscriptionController : Controller
             return Json(new
             {
                 success = true,
-                message = "Đã tạo giao dịch cho thanh toán.",
+                message = "Đã tạo giao dịch thanh toán PayOS.",
                 data = result.Data
             });
 
-        return Redirect(result.Data.CheckoutUrl);
+        return RedirectToAction(nameof(PaymentResult), new { transactionId = result.Data.TransactionId });
     }
 
     [HttpPost]
@@ -141,6 +155,24 @@ public class SubscriptionController : Controller
         });
     }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> MarkTransferred(Guid transactionId)
+    {
+        var token = getToken();
+        if (string.IsNullOrWhiteSpace(token))
+            return Json(new { success = false, message = "Bạn cần đăng nhập để xác nhận thanh toán." });
+
+        setAuthHeader(token);
+        var response = await _http.PostAsync($"/api/subscriptions/mark-transferred/{transactionId}", content: null);
+        var result = await readApiResult<MarkSubscriptionTransferredViewModel>(response);
+        return Json(result ?? new ApiResult<MarkSubscriptionTransferredViewModel>
+        {
+            Success = false,
+            Message = "Không thể ghi nhận xác nhận chuyển khoản."
+        });
+    }
+
     private async Task<SubscriptionPageViewModel> buildPageModel(string token)
     {
         setAuthHeader(token);
@@ -161,7 +193,7 @@ public class SubscriptionController : Controller
         if (planResult?.Success == true && planResult.Data != null)
         {
             page.Plans = planResult.Data
-                .Where(p => string.Equals(p.TargetRole, role, StringComparison.OrdinalIgnoreCase))
+                .Where(p => roleMatches(p, role))
                 .OrderBy(p => p.SortOrder)
                 .ThenBy(p => p.Price)
                 .ToList();
@@ -217,8 +249,8 @@ public class SubscriptionController : Controller
 
     private static string getSummary(string role) => role switch
     {
-        "Parent" => "Plus và Pro giúp phụ huynh đăng nhiều hơn, giữ bài lâu hơn và nổi bật hơn khi tìm bảo mẫu.",
-        "Nanny" => "Plus và Pro giúp bảo mẫu tăng lượt ứng tuyển, hồ sơ nổi bật hơn và được ưu tiên hiển thị.",
+        "Parent" => "Các gói subscription được lấy trực tiếp từ hệ thống quản trị, giúp phụ huynh mở rộng quyền đăng tin và tăng khả năng tiếp cận bảo mẫu.",
+        "Nanny" => "Các gói subscription được lấy trực tiếp từ hệ thống quản trị, giúp bảo mẫu tăng quyền ứng tuyển và cải thiện độ nổi bật của hồ sơ.",
         _ => "Đăng nhập bằng tài khoản Parent hoặc Nanny để xem các gói phù hợp."
     };
 
@@ -247,20 +279,31 @@ public class SubscriptionController : Controller
     {
         "Parent" =>
         [
-            "Tối đa 3 bài đăng đang hoạt động",
-            "Thời gian hiển thị bài đăng 30 ngày",
+            "Tối đa 3 bài đăng đang hoạt động theo thiết lập Free hiện tại",
+            "Thời gian hiển thị bài đăng cơ bản 30 ngày",
             "Không có badge nổi bật",
             "Không ưu tiên trong kết quả tìm kiếm"
         ],
         "Nanny" =>
         [
-            "Tối đa 2 lượt ứng tuyển mỗi tháng",
+            "Tối đa 2 lượt ứng tuyển mỗi tháng theo thiết lập Free hiện tại",
             "Hồ sơ hiển thị cơ bản",
             "Không có badge nổi bật",
             "Không ưu tiên trong kết quả tìm kiếm"
         ],
         _ => []
     };
+
+    private static bool roleMatches(SubscriptionPlanViewModel plan, string currentRole)
+    {
+        if (string.IsNullOrWhiteSpace(plan.TargetRole) ||
+            string.Equals(plan.TargetRole, "Unknown", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return string.Equals(plan.TargetRole, currentRole, StringComparison.OrdinalIgnoreCase);
+    }
 
     private static async Task<ApiResult<T>?> readApiResult<T>(HttpResponseMessage response)
     {

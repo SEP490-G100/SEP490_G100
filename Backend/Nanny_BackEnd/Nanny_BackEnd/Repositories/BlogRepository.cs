@@ -9,9 +9,11 @@ public class BlogRepository
     private readonly Sep490NannyDbContext _db;
     public BlogRepository(Sep490NannyDbContext db) => _db = db;
 
-    /// <summary>Paginated list with optional status and isDeleted filter.</summary>
+    /// <summary>Paginated list with optional status, isDeleted, categoryId filter and sort.</summary>
     public async Task<(List<Blog> Items, int TotalCount)> GetPagedAsync(
-        string? search, int page, int pageSize, int? status = null, bool? isDeleted = null, Guid? categoryId = null)
+        string? search, int page, int pageSize,
+        int? status = null, bool? isDeleted = null, Guid? categoryId = null,
+        string? sort = null)
     {
         var query = _db.Blogs.AsQueryable();
 
@@ -31,8 +33,15 @@ public class BlogRepository
         }
 
         var total = await query.CountAsync();
-        var items = await query
-            .OrderByDescending(b => b.CreatedAt)
+
+        IOrderedQueryable<Blog> ordered = sort switch
+        {
+            "popular" => query.OrderByDescending(b => b.ViewCount),
+            "oldest"  => query.OrderBy(b => b.CreatedAt),
+            _         => query.OrderByDescending(b => b.CreatedAt)
+        };
+
+        var items = await ordered
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Include(b => b.AuthorUser)
@@ -47,6 +56,12 @@ public class BlogRepository
             .Include(b => b.AuthorUser)
             .Include(b => b.Category)
             .FirstOrDefaultAsync(b => b.Id == id);
+
+    public async Task<Blog?> GetBySlugAsync(string slug) =>
+        await _db.Blogs
+            .Include(b => b.AuthorUser)
+            .Include(b => b.Category)
+            .FirstOrDefaultAsync(b => b.Slug == slug && b.Status == (int)Nanny_BackEnd.Enums.BlogStatus.Published && !b.IsDeleted);
 
     public async Task<bool> SlugExistsAsync(string slug, Guid? excludeId = null) =>
         await _db.Blogs.AnyAsync(b =>

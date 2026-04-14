@@ -1,12 +1,12 @@
 namespace Nanny_BackEnd.Services;
 
-public class VietQrOptions
+public class PayOsOptions
 {
-    public string BaseUrl { get; set; } = "https://api.vietqr.io/v2/";
+    public string BaseUrl { get; set; } = "https://api-merchant.payos.vn/";
     public string ClientId { get; set; } = "";
     public string ApiKey { get; set; } = "";
-    public string Template { get; set; } = "compact";
+    public string ChecksumKey { get; set; } = "";
     public string SuccessUrl { get; set; } = "";
     public string CancelUrl { get; set; } = "";
-    public string WebhookToken { get; set; } = "";
+    public int ExpiresAfterMinutes { get; set; } = 15;
 }

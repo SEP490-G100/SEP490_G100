@@ -1,0 +1,311 @@
+@using WebSite.Controllers
+@model ScoringWeightsDto
+@{
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+    ViewData["Title"] = "Recommendation Config";
+}
+
+<!-- PAGE HEADER -->
+<div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-7 fade-in-up">
+    <div>
+        <span class="section-label">AI System</span>
+        <h1 class="page-title mt-2">
+            Recommendation <span class="gradient-text">Config</span>
+        </h1>
+        <p class="page-subtitle">Tune scoring weights and manage embedding vectors. Changes apply within 5 minutes.</p>
+    </div>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2">
+        <span class="material-icons-round text-base">error_outline</span>@TempData["Error"]
+    </div>
+}
+
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+
+    <!-- ── Scoring Weights ── -->
+    <div class="xl:col-span-2 content-card p-6 fade-in-up">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="icon-badge" style="background:linear-gradient(135deg,#FFF7ED,#FED7AA);">
+                <span class="material-icons-round text-orange-500 text-2xl">tune</span>
+            </div>
+            <div>
+                <h2 class="font-bold text-gray-800">Scoring Weights</h2>
+                <p class="text-xs text-gray-400">semantic + salary + distance must sum to 1.0</p>
+            </div>
+        </div>
+
+        <div id="weightsForm" class="space-y-5">
+
+            <!-- Semantic -->
+            <div class="weight-row p-4 rounded-2xl border border-gray-100 bg-gray-50/50">
+                <div class="flex items-center justify-between mb-2">
+                    <div>
+                        <span class="font-semibold text-sm text-gray-700">Semantic (Cosine Similarity)</span>
+                        <span class="ml-2 text-xs text-gray-400">rec:semantic_weight</span>
+                    </div>
+                    <span id="lbl-semantic" class="font-bold text-orange-500 text-sm">@Model.SemanticWeight.ToString("P0")</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <input type="range" min="0" max="1" step="0.01"
+                           value="@Model.SemanticWeight.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)"
+                           class="flex-1 accent-orange-500"
+                           oninput="syncSlider('semantic', this.value)" />
+                    <input type="number" id="inp-semantic" min="0" max="1" step="0.01"
+                           value="@Model.SemanticWeight.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)"
+                           class="w-20 border border-gray-200 rounded-xl px-3 py-1.5 text-sm text-center font-semibold"
+                           oninput="syncSlider('semantic', this.value)" />
+                </div>
+            </div>
+
+            <!-- Salary -->
+            <div class="weight-row p-4 rounded-2xl border border-gray-100 bg-gray-50/50">
+                <div class="flex items-center justify-between mb-2">
+                    <div>
+                        <span class="font-semibold text-sm text-gray-700">Salary Range Overlap</span>
+                        <span class="ml-2 text-xs text-gray-400">rec:salary_weight</span>
+                    </div>
+                    <span id="lbl-salary" class="font-bold text-orange-500 text-sm">@Model.SalaryWeight.ToString("P0")</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <input type="range" min="0" max="1" step="0.01"
+                           value="@Model.SalaryWeight.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)"
+                           class="flex-1 accent-orange-500"
+                           oninput="syncSlider('salary', this.value)" />
+                    <input type="number" id="inp-salary" min="0" max="1" step="0.01"
+                           value="@Model.SalaryWeight.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)"
+                           class="w-20 border border-gray-200 rounded-xl px-3 py-1.5 text-sm text-center font-semibold"
+                           oninput="syncSlider('salary', this.value)" />
+                </div>
+            </div>
+
+            <!-- Distance -->
+            <div class="weight-row p-4 rounded-2xl border border-gray-100 bg-gray-50/50">
+                <div class="flex items-center justify-between mb-2">
+                    <div>
+                        <span class="font-semibold text-sm text-gray-700">Distance Score</span>
+                        <span class="ml-2 text-xs text-gray-400">rec:distance_weight</span>
+                    </div>
+                    <span id="lbl-distance" class="font-bold text-orange-500 text-sm">@Model.DistanceWeight.ToString("P0")</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <input type="range" min="0" max="1" step="0.01"
+                           value="@Model.DistanceWeight.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)"
+                           class="flex-1 accent-orange-500"
+                           oninput="syncSlider('distance', this.value)" />
+                    <input type="number" id="inp-distance" min="0" max="1" step="0.01"
+                           value="@Model.DistanceWeight.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)"
+                           class="w-20 border border-gray-200 rounded-xl px-3 py-1.5 text-sm text-center font-semibold"
+                           oninput="syncSlider('distance', this.value)" />
+                </div>
+            </div>
+
+            <!-- Cold Start -->
+            <div class="weight-row p-4 rounded-2xl border border-gray-100 bg-gray-50/50">
+                <div class="flex items-center justify-between mb-2">
+                    <div>
+                        <span class="font-semibold text-sm text-gray-700">Cold Start Score</span>
+                        <span class="ml-2 text-xs text-gray-400">rec:cold_start_score — used when embedding is null</span>
+                    </div>
+                    <span id="lbl-coldstart" class="font-bold text-orange-500 text-sm">@Model.ColdStartScore.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <input type="range" min="0" max="1" step="0.01"
+                           value="@Model.ColdStartScore.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)"
+                           class="flex-1 accent-orange-500"
+                           oninput="syncSlider('coldstart', this.value)" />
+                    <input type="number" id="inp-coldstart" min="0" max="1" step="0.01"
+                           value="@Model.ColdStartScore.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)"
+                           class="w-20 border border-gray-200 rounded-xl px-3 py-1.5 text-sm text-center font-semibold"
+                           oninput="syncSlider('coldstart', this.value)" />
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Sum indicator -->
+        <div id="sumWarning" class="mt-4 hidden bg-amber-50 border border-amber-200 text-amber-700 px-4 py-2.5 rounded-xl text-sm flex items-center gap-2">
+            <span class="material-icons-round text-base">warning_amber</span>
+            <span id="sumText"></span>
+        </div>
+        <div id="sumOk" class="mt-4 bg-green-50 border border-green-200 text-green-700 px-4 py-2.5 rounded-xl text-sm flex items-center gap-2">
+            <span class="material-icons-round text-base">check_circle_outline</span>
+            <span>Weights sum = <strong id="sumValue">@((Model.SemanticWeight + Model.SalaryWeight + Model.DistanceWeight).ToString("F2", System.Globalization.CultureInfo.InvariantCulture))</strong> ✓</span>
+        </div>
+
+        <!-- Save All -->
+        <div class="mt-5 flex justify-end">
+            <button onclick="saveAll()"
+                    class="btn-primary flex items-center gap-2 px-6 py-2.5 text-sm font-semibold">
+                <span class="material-icons-round text-base">save</span>
+                Save All Weights
+            </button>
+        </div>
+    </div>
+
+    <!-- ── Embedding Panel ── -->
+    <div class="space-y-5">
+
+        <!-- Reembed -->
+        <div class="content-card p-6 fade-in-up">
+            <div class="flex items-center gap-3 mb-5">
+                <div class="icon-badge" style="background:linear-gradient(135deg,#EFF6FF,#BFDBFE);">
+                    <span class="material-icons-round text-blue-500 text-2xl">auto_fix_high</span>
+                </div>
+                <div>
+                    <h2 class="font-bold text-gray-800">Embedding</h2>
+                    <p class="text-xs text-gray-400">Generate embedding vectors via Azure AI</p>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <button onclick="reembed(false)"
+                        class="w-full flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white py-2.5 rounded-xl font-semibold text-sm transition-all">
+                    <span class="material-icons-round text-base">play_circle_outline</span>
+                    Embed Pending Only
+                </button>
+                <button onclick="reembed(true)"
+                        class="w-full flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-800 text-white py-2.5 rounded-xl font-semibold text-sm transition-all">
+                    <span class="material-icons-round text-base">refresh</span>
+                    Force Re-embed All
+                </button>
+            </div>
+
+            <div id="embedResult" class="mt-4 hidden text-sm rounded-xl p-3 border"></div>
+        </div>
+
+        <!-- Info card -->
+        <div class="content-card p-5 fade-in-up bg-orange-50/50 border border-orange-100">
+            <p class="text-xs font-semibold text-orange-600 uppercase tracking-wider mb-3">How it works</p>
+            <ul class="space-y-2 text-xs text-gray-600">
+                <li class="flex gap-2"><span class="text-orange-400 font-bold">80%</span> Semantic — cosine similarity of embedding vectors</li>
+                <li class="flex gap-2"><span class="text-orange-400 font-bold">12%</span> Salary — range overlap between nanny & job</li>
+                <li class="flex gap-2"><span class="text-orange-400 font-bold">8%</span> Distance — Haversine soft score</li>
+                <li class="flex gap-2"><span class="text-orange-400 font-bold">×</span> Boost — rating multiplier up to +15%</li>
+            </ul>
+            <p class="text-xs text-gray-400 mt-3">Cache TTL: 5 minutes after each update.</p>
+        </div>
+
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="fixed bottom-6 right-6 z-50 hidden transition-all">
+    <div id="toastBody" class="px-5 py-3 rounded-2xl shadow-xl text-sm font-semibold flex items-center gap-2"></div>
+</div>
+
+@section Scripts {
+<script>
+    const token = '@Html.Raw(Context.Session.GetString("AccessToken") ?? "")';
+
+    function syncSlider(name, val) {
+        val = parseFloat(val) || 0;
+        document.getElementById('inp-' + name).value = val.toFixed(2);
+        document.querySelectorAll('input[type=range]').forEach(r => {
+            if (r.getAttribute('oninput')?.includes("'" + name + "'")) r.value = val;
+        });
+        const pct = name !== 'coldstart';
+        document.getElementById('lbl-' + name).textContent = pct
+            ? (val * 100).toFixed(0) + '%'
+            : val.toFixed(2);
+        updateSum();
+    }
+
+    function updateSum() {
+        const s = parseFloat(document.getElementById('inp-semantic').value)  || 0;
+        const sal = parseFloat(document.getElementById('inp-salary').value)  || 0;
+        const d = parseFloat(document.getElementById('inp-distance').value)  || 0;
+        const sum = s + sal + d;
+        document.getElementById('sumValue').textContent = sum.toFixed(2);
+        const ok = Math.abs(sum - 1.0) < 0.005;
+        document.getElementById('sumOk').classList.toggle('hidden', !ok);
+        document.getElementById('sumWarning').classList.toggle('hidden', ok);
+        if (!ok) document.getElementById('sumText').textContent =
+            `semantic + salary + distance = ${sum.toFixed(2)} (should be 1.00)`;
+    }
+
+    async function saveWeight(key, name) {
+        const value = parseFloat(document.getElementById('inp-' + name).value);
+        if (isNaN(value) || value < 0 || value > 1) return false;
+        const res = await fetch('/Admin/UpdateWeight', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getAntiForgery() },
+            body: JSON.stringify({ key, value })
+        });
+        const data = await res.json();
+        return data.success;
+    }
+
+    async function saveAll() {
+        const btn = document.querySelector('button[onclick="saveAll()"]');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="material-icons-round text-base animate-spin">sync</span> Saving...';
+        try {
+            const pairs = [
+                { key: 'rec:semantic_weight',  name: 'semantic'  },
+                { key: 'rec:salary_weight',    name: 'salary'    },
+                { key: 'rec:distance_weight',  name: 'distance'  },
+                { key: 'rec:cold_start_score', name: 'coldstart' },
+            ];
+            for (const p of pairs) {
+                const val = parseFloat(document.getElementById('inp-' + p.name).value);
+                if (isNaN(val) || val < 0 || val > 1) {
+                    showToast(`Invalid value for ${p.key}`, false); return;
+                }
+            }
+            const results = await Promise.all(pairs.map(p => saveWeight(p.key, p.name)));
+            const allOk = results.every(Boolean);
+            showToast(allOk ? 'All weights saved ✓' : 'Some weights failed to save', allOk);
+        } catch { showToast('Network error', false); }
+        finally {
+            btn.disabled = false;
+            btn.innerHTML = '<span class="material-icons-round text-base">save</span> Save All Weights';
+        }
+    }
+
+    async function reembed(force) {
+        const btn = event.currentTarget;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="material-icons-round text-base animate-spin">sync</span> Running...';
+        document.getElementById('embedResult').classList.add('hidden');
+        try {
+            const res = await fetch(`/Admin/ReembedBatch?force=${force}`, {
+                method: 'POST',
+                headers: { 'RequestVerificationToken': getAntiForgery() }
+            });
+            const data = await res.json();
+            const el = document.getElementById('embedResult');
+            el.classList.remove('hidden');
+            if (data.success) {
+                el.className = 'mt-4 text-sm rounded-xl p-3 border bg-green-50 border-green-200 text-green-700';
+                el.innerHTML = `<strong>${data.nanniesEmbedded}</strong> nannies, <strong>${data.jobsEmbedded}</strong> jobs embedded${force ? ' (forced)' : ''}.`;
+            } else {
+                el.className = 'mt-4 text-sm rounded-xl p-3 border bg-red-50 border-red-200 text-red-700';
+                el.textContent = data.message || 'Embed failed.';
+            }
+        } catch { showToast('Network error', false); }
+        finally {
+            btn.disabled = false;
+            btn.innerHTML = force
+                ? '<span class="material-icons-round text-base">refresh</span> Force Re-embed All'
+                : '<span class="material-icons-round text-base">play_circle_outline</span> Embed Pending Only';
+        }
+    }
+
+    function showToast(msg, ok) {
+        const t = document.getElementById('toast');
+        const b = document.getElementById('toastBody');
+        b.className = `px-5 py-3 rounded-2xl shadow-xl text-sm font-semibold flex items-center gap-2 ${ok ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`;
+        b.innerHTML = `<span class="material-icons-round text-base">${ok ? 'check_circle' : 'error'}</span>${msg}`;
+        t.classList.remove('hidden');
+        setTimeout(() => t.classList.add('hidden'), 3000);
+    }
+
+    function getAntiForgery() {
+        return document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+    }
+</script>
+@Html.AntiForgeryToken()
+}

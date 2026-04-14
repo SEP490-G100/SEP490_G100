@@ -185,13 +185,13 @@
 
 .sub-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 18px;
 }
 
 .sub-benefit-compare {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 12px;
     margin-bottom: 18px;
 }
@@ -203,14 +203,19 @@
     padding: 14px 16px;
 }
 
-.sub-benefit-item.is-plus {
+.sub-benefit-item--paid {
     border-color: rgba(249, 115, 22, 0.24);
     background: #fff7ed;
 }
 
-.sub-benefit-item.is-pro {
+.sub-benefit-item--accent {
     border-color: #cbd5e1;
     background: linear-gradient(135deg, #1f2937, #111827);
+}
+
+.sub-benefit-item--current {
+    border-color: rgba(16, 185, 129, 0.32);
+    background: linear-gradient(135deg, #ecfdf5, #ffffff);
 }
 
 .sub-benefit-plan {
@@ -227,14 +232,19 @@
     text-transform: uppercase;
 }
 
-.sub-benefit-item.is-plus .sub-benefit-plan {
+.sub-benefit-item--paid .sub-benefit-plan {
     color: #c2410c;
     background: rgba(255, 255, 255, 0.8);
 }
 
-.sub-benefit-item.is-pro .sub-benefit-plan {
+.sub-benefit-item--accent .sub-benefit-plan {
     color: #fde68a;
     background: rgba(251, 191, 36, 0.14);
+}
+
+.sub-benefit-item--current .sub-benefit-plan {
+    color: #047857;
+    background: rgba(16, 185, 129, 0.10);
 }
 
 .sub-benefit-item h4 {
@@ -250,8 +260,8 @@
     line-height: 1.5;
 }
 
-.sub-benefit-item.is-pro h4,
-.sub-benefit-item.is-pro p {
+.sub-benefit-item--accent h4,
+.sub-benefit-item--accent p {
     color: #f8fafc;
 }
 
@@ -271,14 +281,14 @@
     background: linear-gradient(180deg, #ffffff, #f9fafb);
 }
 
-.plus-card {
+.paid-card {
     background:
         radial-gradient(circle at top right, rgba(251, 191, 36, 0.22), transparent 30%),
         linear-gradient(180deg, #fff7ed, #ffffff 72%);
     border-color: rgba(249, 115, 22, 0.22);
 }
 
-.pro-card {
+.accent-card {
     background:
         radial-gradient(circle at top right, rgba(245, 158, 11, 0.24), transparent 30%),
         linear-gradient(180deg, #1f2937, #111827);
@@ -286,13 +296,13 @@
     color: #fff;
 }
 
-.pro-card .plan-top h3,
-.pro-card .plan-price,
-.pro-card .plan-list li {
+.accent-card .plan-top h3,
+.accent-card .plan-price,
+.accent-card .plan-list li {
     color: #fff;
 }
 
-.pro-card .plan-top p {
+.accent-card .plan-top p {
     color: rgba(255, 255, 255, 0.72);
 }
 
@@ -317,7 +327,7 @@
     letter-spacing: 0.06em;
 }
 
-.pro-card .plan-tag {
+.accent-card .plan-tag {
     background: rgba(251, 191, 36, 0.16);
     color: #fcd34d;
 }
@@ -362,7 +372,7 @@
     font-weight: 800;
 }
 
-.pro-card .plan-highlight span {
+.accent-card .plan-highlight span {
     background: rgba(251,191,36,0.14);
     color: #fde68a;
 }
@@ -394,7 +404,7 @@
     background: #f97316;
 }
 
-.pro-card .plan-list li::before {
+.accent-card .plan-list li::before {
     background: #fbbf24;
 }
 
@@ -752,6 +762,7 @@
     color: #111827;
     font-size: 14px;
     text-align: right;
+    word-break: break-word;
 }
 
 .sub-pay-actions {
@@ -947,6 +958,10 @@
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
+}
+
+.sub-result-inline-form {
+    margin: 0;
 }
 
 .sub-result-btn {

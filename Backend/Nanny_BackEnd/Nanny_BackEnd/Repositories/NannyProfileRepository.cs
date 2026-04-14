@@ -19,6 +19,8 @@ public class NannyProfileRepository
         _db.NannyProfiles
             .Where(n => !n.IsDeleted && !n.User.IsDeleted && n.User.Status == (int)UserStatus.Active)
             .Include(n => n.User)
+                .ThenInclude(u => u.UserSubscriptions)
+                    .ThenInclude(s => s.SubscriptionPlan)
             .Include(n => n.NannySkills.Where(s => !s.IsDeleted && !s.Skill.IsDeleted && s.Skill.IsActive))
                 .ThenInclude(s => s.Skill)
             .Include(n => n.NannyAvailabilities.Where(a => !a.IsDeleted && a.IsAvailable))
@@ -110,8 +112,19 @@ public class NannyProfileRepository
         var pageSize = request.PageSize < 1 ? 12 : Math.Min(request.PageSize, 50);
 
         var totalCount = await query.CountAsync();
+        var nowUtc = DateTime.UtcNow;
         var items = await query
-            .OrderByDescending(n => n.VerificationStatus == 2)
+            .OrderByDescending(n => n.User.UserSubscriptions.Any(s =>
+                !s.IsDeleted &&
+                s.Status == 1 &&
+                s.EndDate >= nowUtc &&
+                s.SubscriptionPlan.Name == "Pro"))
+            .ThenByDescending(n => n.User.UserSubscriptions.Any(s =>
+                !s.IsDeleted &&
+                s.Status == 1 &&
+                s.EndDate >= nowUtc &&
+                (s.SubscriptionPlan.Name == "Plus" || s.SubscriptionPlan.Name == "Pro")))
+            .ThenByDescending(n => n.VerificationStatus == 2)
             .ThenByDescending(n => n.AverageRating)
             .ThenByDescending(n => n.YearsOfExperience)
             .ThenBy(n => n.User.FirstName)
