@@ -1,0 +1,380 @@
+@using System.Net
+@using System.Text.RegularExpressions
+@model WebSite.Models.Moderator.ModeratorComplaintDetailPageModel
+@{
+    Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
+    ViewData["Title"] = "Complaint Detail";
+
+    var detail = Model.Detail;
+    var isMessageComplaint = string.Equals(detail.ReportedEntityType, "Message", StringComparison.OrdinalIgnoreCase);
+    var isJobPostingComplaint = string.Equals(detail.ReportedEntityType, "JobPosting", StringComparison.OrdinalIgnoreCase);
+    var isProfileComplaint = string.Equals(detail.ReportedEntityType, "Profile", StringComparison.OrdinalIgnoreCase);
+    var isCompletedComplaint = detail.Status == 1;
+    var offenderName = string.IsNullOrWhiteSpace(detail.OffenderName) ? "Nguoi dung" : detail.OffenderName;
+    var messageContent = string.IsNullOrWhiteSpace(detail.ReportedMessageContent) ? "-" : detail.ReportedMessageContent;
+    var evidenceRaw = detail.Evidence ?? string.Empty;
+    var evidenceUrls = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    if (!string.IsNullOrWhiteSpace(evidenceRaw))
+    {
+        foreach (Match m in Regex.Matches(evidenceRaw, "(?i)(?:src|href)\\s*=\\s*['\\\"](?<url>[^'\\\"]+)['\\\"]"))
+        {
+            var url = m.Groups["url"].Value.Trim();
+            if (Uri.TryCreate(url, UriKind.Absolute, out var abs))
+                evidenceUrls.Add(abs.ToString());
+        }
+
+        foreach (Match m in Regex.Matches(evidenceRaw, @"https?://[^\s""'<>]+"))
+        {
+            var url = m.Value.Trim();
+            if (Uri.TryCreate(url, UriKind.Absolute, out var abs))
+                evidenceUrls.Add(abs.ToString());
+        }
+    }
+
+    bool IsImageUrl(string url) =>
+        Regex.IsMatch(url, @"\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?.*)?$", RegexOptions.IgnoreCase);
+    bool IsVideoUrl(string url) =>
+        Regex.IsMatch(url, @"\.(mp4|webm|ogg|mov|m4v)(\?.*)?$", RegexOptions.IgnoreCase);
+
+    var imageUrls = evidenceUrls.Where(IsImageUrl).ToList();
+    var videoUrls = evidenceUrls.Where(IsVideoUrl).ToList();
+
+    var evidenceText = string.Empty;
+    if (!string.IsNullOrWhiteSpace(evidenceRaw))
+    {
+        evidenceText = Regex.Replace(evidenceRaw, "<.*?>", " ");
+        evidenceText = WebUtility.HtmlDecode(evidenceText) ?? string.Empty;
+        evidenceText = Regex.Replace(evidenceText, @"\s+", " ").Trim();
+    }
+}
+
+<div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
+    <div>
+        <span class="section-label">Moderation</span>
+        <h1 class="page-title mt-2">
+            Complaint <span class="gradient-text">Detail</span>
+        </h1>
+        <p class="page-subtitle">Review complaint details and add handling result.</p>
+    </div>
+    <a href="/Moderator/ManageComplaint" class="btn-outline flex-shrink-0">
+        <span class="material-icons-round text-base">arrow_back</span>
+        Back to List
+    </a>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 fade-in-up">
+        <span class="material-icons-round text-base">error_outline</span>
+        @TempData["Error"]
+    </div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 fade-in-up">
+        <span class="material-icons-round text-base">check_circle_outline</span>
+        @TempData["Success"]
+    </div>
+}
+
+<form method="post" action="/Moderator/ViewComplaintDetail/@detail.Id">
+    @Html.AntiForgeryToken()
+
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div class="xl:col-span-2 space-y-5">
+            <div class="content-card p-0 fade-in-up">
+                <div class="card-header">
+                    <div class="flex items-center gap-2">
+                        <span class="material-icons-round text-orange-400">info</span>
+                        <h2>Complaint Information</h2>
+                    </div>
+                </div>
+                <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="field-group">
+                        <label class="field-label">Complaint ID</label>
+                        <div class="field-readonly font-mono text-xs break-all">@detail.Id</div>
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Complained Type</label>
+                        <div class="field-readonly">@detail.EntityTypeLabel</div>
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Complained Entity ID</label>
+                        <div class="field-readonly font-mono text-xs break-all">@detail.ReportedEntityId</div>
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Created At</label>
+                        <div class="field-readonly">@detail.CreatedAt.ToString("dd MMM yyyy, HH:mm")</div>
+                    </div>
+                    <div class="field-group sm:col-span-2">
+                        <label class="field-label">Reason</label>
+                        <div class="field-readonly whitespace-pre-wrap">@detail.Reason</div>
+                    </div>
+                    <div class="field-group sm:col-span-2">
+                        <label class="field-label">Evidence</label>
+                        @if (!imageUrls.Any() && !videoUrls.Any() && string.IsNullOrWhiteSpace(evidenceText))
+                        {
+                            <div class="field-readonly">-</div>
+                        }
+                        else
+                        {
+                            @if (!string.IsNullOrWhiteSpace(evidenceText))
+                            {
+                                <div class="evidence-text">@evidenceText</div>
+                            }
+
+                            @if (imageUrls.Any())
+                            {
+                                <div class="evidence-grid mt-3">
+                                    @foreach (var imgUrl in imageUrls)
+                                    {
+                                        <a href="@imgUrl" target="_blank" rel="noopener noreferrer" class="evidence-link">
+                                            <img src="@imgUrl" alt="Complaint evidence image" class="evidence-image" loading="lazy" />
+                                        </a>
+                                    }
+                                </div>
+                            }
+
+                            @if (videoUrls.Any())
+                            {
+                                <div class="space-y-3 mt-3">
+                                    @foreach (var videoUrl in videoUrls)
+                                    {
+                                        <div class="evidence-video-card">
+                                            <video controls preload="metadata" class="evidence-video">
+                                                <source src="@videoUrl" />
+                                                Your browser does not support HTML5 video.
+                                            </video>
+                                            <a href="@videoUrl" target="_blank" rel="noopener noreferrer" class="text-xs text-blue-600 font-semibold hover:underline mt-1 inline-block">
+                                                Open video in new tab
+                                            </a>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        }
+                    </div>
+
+                    @if (isMessageComplaint)
+                    {
+                        <div class="field-group sm:col-span-2">
+                            <label class="field-label">Người tham gia đoạn chat</label>
+                            <div class="field-readonly whitespace-nowrap overflow-x-auto">
+                                Đoạn tin nhắn trong đoạn chat giữa người phàn nàn: <strong>@detail.ReporterDisplay</strong> và người có tin nhắn bị phàn nàn: <strong>@offenderName</strong>
+                            </div>
+                        </div>
+                        <div class="field-group sm:col-span-2">
+                            <label class="field-label">Nội dung tin nhắn bị phàn nàn</label>
+                            <div class="field-readonly whitespace-pre-wrap">@messageContent</div>
+                        </div>
+                    }
+
+                    @if (isJobPostingComplaint)
+                    {
+                        <div class="field-group sm:col-span-2">
+                            <label class="field-label">Bài đăng</label>
+                            <div class="field-readonly flex-wrap justify-between">
+                                <span class="text-sm text-gray-700">@(string.IsNullOrWhiteSpace(detail.JobPostingTitle) ? "Bai dang" : detail.JobPostingTitle)</span>
+                                <a href="@Url.Action("ViewComplainedJobPostingDetail", "ModeratorComplain", new { jobPostingId = detail.ReportedEntityId, complaintId = detail.Id })"
+                                   class="inline-flex items-center gap-1 rounded-lg border border-orange-200 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-700 hover:bg-orange-100 transition-colors">
+                                    <span class="material-icons-round text-sm">visibility</span>
+                                    Xem chi tiết bài đăng
+                                </a>
+                            </div>
+                        </div>
+                    }
+
+                    @if (isProfileComplaint)
+                    {
+                        <div class="field-group sm:col-span-2">
+                            <label class="field-label">Profile của người bị phàn nàn</label>
+                            <div class="field-readonly flex-wrap justify-between">
+                                <span class="text-sm text-gray-700">@offenderName</span>
+                                <a href="@Url.Action("ViewComplainedProfileDetail", "ModeratorComplain", new { userId = detail.ReportedEntityId, complaintId = detail.Id })"
+                                   class="inline-flex items-center gap-1 rounded-lg border border-orange-200 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-700 hover:bg-orange-100 transition-colors">
+                                    <span class="material-icons-round text-sm">person</span>
+                                    Xem chi tiết profile
+                                </a>
+                            </div>
+                        </div>
+                        <div class="field-group sm:col-span-2">
+                            <label class="field-label">Tài khoản người bị phàn nàn</label>
+                            <div class="field-readonly flex-wrap justify-between">
+                                <span class="text-sm text-gray-700">@(string.IsNullOrWhiteSpace(detail.OffenderEmail) ? "-" : detail.OffenderEmail)</span>
+                                <a href="/Moderator/ViewAccountDetail/@(detail.OffenderUserId ?? detail.ReportedEntityId)"
+                                   class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+                                    <span class="material-icons-round text-sm">manage_accounts</span>
+                                    Xem chi tiết tài khoản
+                                </a>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="content-card p-0 fade-in-up" style="animation-delay:.05s;">
+                <div class="card-header">
+                    <div class="flex items-center gap-2">
+                        <span class="material-icons-round text-orange-400">task_alt</span>
+                        <h2>Handling</h2>
+                    </div>
+                </div>
+                <div class="p-5 grid grid-cols-1 gap-4">
+                    @if (isCompletedComplaint)
+                    {
+                        <div class="rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 px-4 py-3 text-sm font-semibold">
+                            Complaint is completed. Editing is locked.
+                        </div>
+                    }
+                    <div>
+                        <label class="field-label">Resolution</label>
+                        <textarea asp-for="Form.Resolution"
+                                  rows="5"
+                                  readonly="@(isCompletedComplaint ? "readonly" : null)"
+                                  class="search-input w-full border border-gray-200 rounded-xl px-4 py-3 font-medium"
+                                  placeholder="Enter resolution..."></textarea>
+                        <span asp-validation-for="Form.Resolution" class="text-red-500 text-xs"></span>
+                    </div>
+
+                    <div>
+                        <label class="field-label">Action Taken</label>
+                        <input asp-for="Form.ActionTaken"
+                               readonly="@(isCompletedComplaint ? "readonly" : null)"
+                               class="search-input w-full border border-gray-200 rounded-xl px-4 py-2 font-medium"
+                               placeholder="Enter action taken..." />
+                        <span asp-validation-for="Form.ActionTaken" class="text-red-500 text-xs"></span>
+                    </div>
+
+                    <div>
+                        <label class="field-label">Nhập thông báo đến người bị phàn nàn (optional)</label>
+                        <textarea asp-for="Form.OffenderNotificationMessage"
+                                  rows="4"
+                                  readonly="@(isCompletedComplaint ? "readonly" : null)"
+                                  class="search-input w-full border border-gray-200 rounded-xl px-4 py-3 font-medium"
+                                  placeholder="Nhập nội dung thông báo gửi đến người bị phàn nàn (có thể để trống)..."></textarea>
+                        <span asp-validation-for="Form.OffenderNotificationMessage" class="text-red-500 text-xs"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-5">
+            <div class="content-card p-6 fade-in-up text-center">
+                <div class="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center text-white shadow-lg mb-3"
+                     style="background:linear-gradient(135deg,#F97316,#FB923C);">
+                    <span class="material-icons-round text-3xl">flag</span>
+                </div>
+
+                <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold">Tên người phàn nàn:</p>
+                <h3 class="font-bold text-gray-900 text-lg mt-1">@detail.ReporterDisplay</h3>
+                <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mt-3">Email người phàn nàn:</p>
+                <p class="text-sm text-gray-500 mt-1 break-all">@((string.IsNullOrWhiteSpace(detail.ReporterEmail) ? "-" : detail.ReporterEmail))</p>
+
+                <div class="mt-4">
+                    <span class="badge @detail.StatusClass">@detail.StatusLabel</span>
+                </div>
+
+                <div class="mt-2">
+                    <span class="badge @(detail.IsDeleted ? "badge-inactive" : "badge-active")">
+                        @(detail.IsDeleted ? "Inactive" : "Active")
+                    </span>
+                </div>
+            </div>
+
+            <div class="content-card p-4">
+                <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Handled By</p>
+                <p class="text-sm text-gray-700">@((string.IsNullOrWhiteSpace(detail.HandledByName) ? "-" : detail.HandledByName))</p>
+
+                <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mt-4 mb-1">Handled At</p>
+                <p class="text-sm text-gray-700">@(detail.HandledAt.HasValue ? detail.HandledAt.Value.ToString("dd MMM yyyy, HH:mm") : "-")</p>
+            </div>
+
+            <div class="content-card p-4 space-y-2.5">
+                @if (!isCompletedComplaint)
+                {
+                    <button type="submit" class="btn-primary w-full justify-center">
+                        <span class="material-icons-round text-base">save</span>
+                        Save Resolution
+                    </button>
+                    <a href="/Moderator/ManageComplaint" class="btn-outline w-full justify-center">
+                        <span class="material-icons-round text-base">close</span>
+                        Cancel
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+</form>
+
+<style>
+    .field-group { display: flex; flex-direction: column; gap: .4rem; }
+    .field-label {
+        font-size: .72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: #9CA3AF;
+    }
+    .field-readonly {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        background: #F9FAFB;
+        border: 1px solid #F3F4F6;
+        border-radius: .85rem;
+        padding: .7rem .9rem;
+        font-size: .875rem;
+        color: #374151;
+        min-height: 2.6rem;
+    }
+    .evidence-text {
+        background: #F9FAFB;
+        border: 1px solid #F3F4F6;
+        border-radius: .85rem;
+        padding: .75rem .9rem;
+        font-size: .875rem;
+        color: #374151;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+    .evidence-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: .75rem;
+    }
+    .evidence-link {
+        display: block;
+        border-radius: .85rem;
+        overflow: hidden;
+        border: 1px solid #E5E7EB;
+        background: #fff;
+        transition: transform .15s ease, box-shadow .15s ease;
+    }
+    .evidence-link:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+    }
+    .evidence-image {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+        display: block;
+    }
+    .evidence-video-card {
+        background: #F9FAFB;
+        border: 1px solid #F3F4F6;
+        border-radius: .85rem;
+        padding: .6rem;
+    }
+    .evidence-video {
+        width: 100%;
+        border-radius: .65rem;
+        background: #111827;
+    }
+</style>
+
+@section Scripts {
+<partial name="_ValidationScriptsPartial" />
+}

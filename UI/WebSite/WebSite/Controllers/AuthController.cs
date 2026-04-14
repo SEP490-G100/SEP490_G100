@@ -28,12 +28,37 @@ public class AuthController : Controller
     [HttpGet]
     public IActionResult Login(string? returnUrl = null)
     {
+        if (User.Identity?.IsAuthenticated == true && IsRestrictedArea(returnUrl) && !CanAccessRestrictedArea(User, returnUrl))
+            return RedirectToAction(nameof(AccessDenied), new { returnUrl });
+
         if (User.Identity?.IsAuthenticated == true)
-            return LocalRedirect(returnUrl ?? "/");
+        {
+            if (!string.IsNullOrWhiteSpace(returnUrl))
+                return LocalRedirect(returnUrl);
+
+            if (User.IsInRole("Admin"))
+                return Redirect("/Admin/Dashboard");
+
+            if (User.IsInRole("Moderator"))
+                return Redirect("/Moderator/Dashboard");
+
+            return RedirectToAction("Index", "Home");
+        }
 
         ViewBag.ReturnUrl = returnUrl;
         SetGoogleClientId();
         return View();
+    }
+
+    [HttpGet]
+    public IActionResult AccessDenied(string? returnUrl = null)
+    {
+        if (User.Identity?.IsAuthenticated != true)
+            return RedirectToAction(nameof(Login), new { returnUrl });
+
+        Response.StatusCode = StatusCodes.Status403Forbidden;
+        ViewBag.ReturnUrl = returnUrl;
+        return View("~/Views/Auth/AccessDenied.cshtml");
     }
 
     [HttpPost, ValidateAntiForgeryToken]
@@ -60,16 +85,37 @@ public class AuthController : Controller
 
         var loginData = result.Data!;
         await SignInUserAsync(loginData);
+        var normalizedRoles = normalizeRoles(loginData.User.Roles);
+
+        if (isAdminArea(returnUrl))
+        {
+            if (hasRole(normalizedRoles, "Admin"))
+                return LocalRedirect(returnUrl!);
+            if (hasRole(normalizedRoles, "Moderator"))
+                return Redirect("/Moderator/Dashboard");
+
+            return RedirectToAction(nameof(AccessDenied), new { returnUrl });
+        }
+
+        if (isModeratorArea(returnUrl))
+        {
+            if (hasRole(normalizedRoles, "Moderator"))
+                return LocalRedirect(returnUrl!);
+            if (hasRole(normalizedRoles, "Admin"))
+                return Redirect("/Admin/Dashboard");
+
+            return RedirectToAction(nameof(AccessDenied), new { returnUrl });
+        }
 
         // --- Staff roles: skip onboarding, redirect directly to their dashboards ---
-        if (loginData.User.Roles.Contains("Admin", StringComparer.OrdinalIgnoreCase))
+        if (hasRole(normalizedRoles, "Admin"))
             return Redirect("/Admin/Dashboard");
-        if (loginData.User.Roles.Contains("Moderator", StringComparer.OrdinalIgnoreCase))
+        if (hasRole(normalizedRoles, "Moderator"))
             return Redirect("/Moderator/Dashboard");
 
         // Nếu user chưa có role (đặc biệt case đăng ký/đăng nhập Google lần đầu),
         // luôn bắt buộc chọn role trước khi chạy onboarding theo role.
-        if (loginData.User?.Roles == null || !loginData.User.Roles.Any())
+        if (!normalizedRoles.Any())
             return RedirectToAction("ChooseRole", "Auth");
 
         // Sau khi đăng nhập, kiểm tra trạng thái onboarding (kèm Bearer token)
@@ -133,7 +179,7 @@ public class AuthController : Controller
     }
 
     [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> GoogleLogin(string idToken)
+    public async Task<IActionResult> GoogleLogin(string idToken, string? returnUrl = null)
     {
         var response = await _http.PostAsJsonAsync("/api/auth/google", new { idToken });
         var result = await ReadApiResult<LoginResponseDto>(response);
@@ -146,16 +192,37 @@ public class AuthController : Controller
 
         var loginData = result.Data!;
         await SignInUserAsync(loginData);
+        var normalizedRoles = normalizeRoles(loginData.User.Roles);
+
+        if (isAdminArea(returnUrl))
+        {
+            if (hasRole(normalizedRoles, "Admin"))
+                return LocalRedirect(returnUrl!);
+            if (hasRole(normalizedRoles, "Moderator"))
+                return Redirect("/Moderator/Dashboard");
+
+            return RedirectToAction(nameof(AccessDenied), new { returnUrl });
+        }
+
+        if (isModeratorArea(returnUrl))
+        {
+            if (hasRole(normalizedRoles, "Moderator"))
+                return LocalRedirect(returnUrl!);
+            if (hasRole(normalizedRoles, "Admin"))
+                return Redirect("/Admin/Dashboard");
+
+            return RedirectToAction(nameof(AccessDenied), new { returnUrl });
+        }
 
         // --- Staff roles: skip onboarding, redirect directly to their dashboards ---
-        if (loginData.User.Roles.Contains("Admin", StringComparer.OrdinalIgnoreCase))
+        if (hasRole(normalizedRoles, "Admin"))
             return Redirect("/Admin/Dashboard");
-        if (loginData.User.Roles.Contains("Moderator", StringComparer.OrdinalIgnoreCase))
+        if (hasRole(normalizedRoles, "Moderator"))
             return Redirect("/Moderator/Dashboard");
 
         // Nếu user chưa có role (đặc biệt case đăng ký Google lần đầu),
         // luôn bắt buộc chọn role trước khi chạy onboarding theo role.
-        if (loginData.User?.Roles == null || !loginData.User.Roles.Any())
+        if (!normalizedRoles.Any())
             return RedirectToAction("ChooseRole", "Auth");
 
         try
@@ -395,10 +462,12 @@ public class AuthController : Controller
 
     private async Task SignInUserAsync(LoginResponseDto data)
     {
+        var normalizedRoles = normalizeRoles(data.User.Roles);
+
         HttpContext.Session.SetString("AccessToken", data.AccessToken);
         HttpContext.Session.SetString("RefreshToken", data.RefreshToken);
         HttpContext.Session.SetString("TokenExpiresAt", data.ExpiresAt.ToString("O"));
-        if (data.User.Roles.Any(r => r.Equals("Nanny", StringComparison.OrdinalIgnoreCase)))
+        if (hasRole(normalizedRoles, "Nanny"))
             HttpContext.Session.SetString("ShowNannyVerifyPrompt", "1");
         else
             HttpContext.Session.Remove("ShowNannyVerifyPrompt");
@@ -412,7 +481,7 @@ public class AuthController : Controller
             new("AuthProvider", data.User.AuthProvider),
         };
 
-        foreach (var role in data.User.Roles)
+        foreach (var role in normalizedRoles)
             claims.Add(new Claim(ClaimTypes.Role, role));
 
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -423,6 +492,62 @@ public class AuthController : Controller
 
     private bool IsGoogleUser() =>
         User.FindFirst("AuthProvider")?.Value?.Equals("google", StringComparison.OrdinalIgnoreCase) == true;
+
+    private static bool IsRestrictedArea(string? returnUrl)
+    {
+        if (string.IsNullOrWhiteSpace(returnUrl))
+            return false;
+
+        return isAdminArea(returnUrl) || isModeratorArea(returnUrl);
+    }
+
+    private static bool CanAccessRestrictedArea(ClaimsPrincipal principal, string? returnUrl)
+    {
+        if (string.IsNullOrWhiteSpace(returnUrl))
+            return true;
+
+        if (returnUrl.StartsWith("/Admin", StringComparison.OrdinalIgnoreCase))
+            return principal.IsInRole("Admin");
+
+        if (returnUrl.StartsWith("/Moderator", StringComparison.OrdinalIgnoreCase))
+            return principal.IsInRole("Moderator");
+
+        return true;
+    }
+
+    private static bool CanAccessRestrictedArea(IEnumerable<string> roles, string? returnUrl)
+    {
+        if (string.IsNullOrWhiteSpace(returnUrl))
+            return true;
+
+        var normalizedRoles = normalizeRoles(roles);
+
+        if (isAdminArea(returnUrl))
+            return hasRole(normalizedRoles, "Admin");
+
+        if (isModeratorArea(returnUrl))
+            return hasRole(normalizedRoles, "Moderator");
+
+        return true;
+    }
+
+    private static bool isAdminArea(string? returnUrl) =>
+        !string.IsNullOrWhiteSpace(returnUrl) &&
+        returnUrl.StartsWith("/Admin", StringComparison.OrdinalIgnoreCase);
+
+    private static bool isModeratorArea(string? returnUrl) =>
+        !string.IsNullOrWhiteSpace(returnUrl) &&
+        returnUrl.StartsWith("/Moderator", StringComparison.OrdinalIgnoreCase);
+
+    private static List<string> normalizeRoles(IEnumerable<string>? roles) =>
+        (roles ?? [])
+            .Where(static role => !string.IsNullOrWhiteSpace(role))
+            .Select(static role => role.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    private static bool hasRole(IEnumerable<string> roles, string roleName) =>
+        roles.Any(role => string.Equals(role, roleName, StringComparison.OrdinalIgnoreCase));
 
     private void SetGoogleClientId() =>
         ViewBag.GoogleClientId = _config["Google:ClientId"];

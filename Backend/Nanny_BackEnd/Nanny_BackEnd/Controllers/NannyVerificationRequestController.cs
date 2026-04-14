@@ -18,33 +18,67 @@ public class NannyVerificationRequestController : ControllerBase
     }
 
     [Authorize(Roles = "Nanny")]
-    [HttpGet("nanny-requests")]
-    public async Task<IActionResult> GetMyRequests()
+    [HttpGet("nanny-view-verification-list")]
+    public async Task<IActionResult> NannyGetVerificationRequestList([FromQuery] int? status = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 3)
     {
         var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!Guid.TryParse(userIdString, out var userId))
+        {
             return Unauthorized();
+        }
 
-        var requests = await _verificationService.GetNannyRequestsAsync(userId);
+        var requests = await _verificationService.NannyGetVerificationRequestListAsync(userId, status, page, pageSize);
         return Ok(new { success = true, data = requests });
     }
 
     [Authorize(Roles = "Nanny")]
-    [HttpPost("submit")]
-    public async Task<IActionResult> SubmitRequest([FromBody] SubmitVerificationRequestDto model)
+    [HttpGet("nanny-view-verification-detail/{id:guid}")]
+    public async Task<IActionResult> NannyViewVerificationRequestDetail(Guid id)
     {
         var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!Guid.TryParse(userIdString, out var userId))
+        {
             return Unauthorized();
+        }
 
-        if (model.Documents == null || !model.Documents.Any())
-            return BadRequest(new { success = false, message = "Bạn phải tải lên ít nhất một tài liệu." });
+        var (success, data, message) = await _verificationService.NannyViewVerificationRequestDetailAsync(userId, id);
+        if (!success || data == null)
+        {
+            return NotFound(new { success = false, message = message ?? "Khong tim thay yeu cau xac minh." });
+        }
 
-        var (success, message) = await _verificationService.SubmitRequestAsync(userId, model);
+        return Ok(new { success = true, data });
+    }
 
-        if (!success)
-            return BadRequest(new { success = false, message });
+    [Authorize(Roles = "Nanny")]
+    [HttpPost("nanny-submit-verification")]
+    public async Task<IActionResult> NannySubmitVerificationRequest([FromBody] SubmitVerificationRequestDto model)
+    {
+        try
+        {
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userIdString, out var userId))
+            {
+                return Unauthorized();
+            }
 
-        return Ok(new { success = true, message });
+            if (model.Documents == null || !model.Documents.Any())
+            {
+                return BadRequest(new { success = false, message = "Ban phai tai len it nhat mot tai lieu." });
+            }
+
+            var (success, message) = await _verificationService.NannySubmitVerificationRequestAsync(userId, model);
+            if (!success)
+            {
+                return BadRequest(new { success = false, message });
+            }
+
+            return Ok(new { success = true, message });
+        }
+        catch (Exception ex)
+        {
+            var errorMessage = ex.InnerException?.Message ?? ex.Message;
+            return StatusCode(500, new { success = false, message = errorMessage });
+        }
     }
 }

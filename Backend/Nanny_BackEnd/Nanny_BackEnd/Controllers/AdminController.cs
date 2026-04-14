@@ -1,121 +1,136 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Nanny_BackEnd.DTOs.Account;
-using Nanny_BackEnd.DTOs.Subscription;
+using Nanny_BackEnd.DTOs.Notification;
 using Nanny_BackEnd.Services;
 
 namespace Nanny_BackEnd.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/Admin")]
 [Authorize(Roles = "Admin")]
 public class AdminController : ControllerBase
 {
-    private readonly DashboardService _dashboardService;
-    private readonly UserService _userService;
     private readonly ExportService _exportService;
-    private readonly SubscriptionService _subscriptionService;
+    private readonly AdminNotificationService _adminNotificationService;
 
     public AdminController(
-        DashboardService dashboardService,
-        UserService userService,
         ExportService exportService,
-        SubscriptionService subscriptionService)
+        AdminNotificationService adminNotificationService)
     {
-        _dashboardService    = dashboardService;
-        _userService         = userService;
-        _exportService       = exportService;
-        _subscriptionService = subscriptionService;
+        _exportService = exportService;
+        _adminNotificationService = adminNotificationService;
     }
 
-    // ────────────────────────────────────────────────
-    // GET /api/admin/export
-    // ────────────────────────────────────────────────
     [HttpGet("export")]
+    [HttpGet("export-system-data")]
     public async Task<IActionResult> ExportSystemData()
     {
         var fileContents = await _exportService.ExportSystemDataToExcelAsync();
-        return File(fileContents, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"NannyMatch_SystemData_{DateTime.Now:yyyyMMdd}.xlsx");
+        return File(
+            fileContents,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"NannyMatch_SystemData_{DateTime.Now:yyyyMMdd}.xlsx");
     }
 
-    // ────────────────────────────────────────────────
-    // GET /api/admin/dashboard
-    // ────────────────────────────────────────────────
-    [HttpGet("dashboard")]
-    public async Task<IActionResult> GetDashboard()
+    [HttpGet("admin-view-notification-list")]
+    public async Task<IActionResult> AdminViewNotificationList(
+        [FromQuery] string? search = null,
+        [FromQuery] bool? isDeleted = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 3)
     {
-        var stats = await _dashboardService.GetDashboardStatsAsync();
-        return Ok(new { success = true, data = stats });
+        var result = await _adminNotificationService.AdminViewNotificationListAsync(search, isDeleted, page, pageSize);
+        return Ok(new { success = true, data = result });
     }
 
-    // ────────────────────────────────────────────────
-    // GET /api/admin/moderators?search=&status=&page=1&pageSize=10
-    // ────────────────────────────────────────────────
-    [HttpGet("moderators")]
-    public async Task<IActionResult> GetModerators(
-        [FromQuery] string? search   = null,
-        [FromQuery] int?    status   = null,
-        [FromQuery] int     page     = 1,
-        [FromQuery] int     pageSize = 3)
+    [HttpGet("admin-view-notification-role-list")]
+    public async Task<IActionResult> AdminViewNotificationRoleList()
     {
-        var response = await _userService.GetModeratorsAsync(search, status, page, pageSize);
-        return Ok(new { success = true, data = response });
+        var roles = await _adminNotificationService.AdminViewNotificationRoleListAsync();
+        return Ok(new { success = true, data = roles });
     }
 
-    // ────────────────────────────────────────────────
-    // GET /api/admin/moderators/{id}  — Get detail
-    // ────────────────────────────────────────────────
-    [HttpGet("moderators/{id:guid}")]
-    public async Task<IActionResult> GetModerator(Guid id)
+    [HttpGet("admin-view-notification-detail/{id:guid}")]
+    public async Task<IActionResult> AdminViewNotificationDetail(Guid id)
     {
-        var result = await _userService.GetModeratorAsync(id);
-
-        if (!result.Success)
-            return NotFound(new { success = false, message = result.Message });
-
-        return Ok(new { success = true, data = result.Data });
+        var result = await _adminNotificationService.AdminViewNotificationDetailAsync(id);
+        return result == null
+            ? NotFound(new { success = false, message = "Khong tim thay thong bao admin." })
+            : Ok(new { success = true, data = result });
     }
 
-    // ────────────────────────────────────────────────
-    // POST /api/admin/moderators  — Create moderator
-    // ────────────────────────────────────────────────
-    [HttpPost("moderators")]
-    public async Task<IActionResult> CreateModerator([FromBody] CreateModeratorRequest request)
+    [HttpPost("admin-create-notification")]
+    public async Task<IActionResult> AdminCreateNotification([FromBody] AdminNotificationUpsertRequest request)
     {
-        var result = await _userService.CreateModeratorAsync(request);
+        var adminUserId = GetCurrentUserId();
+        if (!adminUserId.HasValue)
+            return Unauthorized(new { success = false, message = "Khong xac dinh duoc admin hien tai." });
 
-        if (!result.Success)
-            return StatusCode(result.StatusCode, new { success = false, message = result.Message });
-
-        return Ok(new { success = true, message = result.Message, data = result.Data });
+        try
+        {
+            var result = await _adminNotificationService.AdminCreateNotificationAsync(adminUserId.Value, request);
+            return Ok(new { success = true, message = "Tao thong bao admin thanh cong.", data = result });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
     }
 
-    // ────────────────────────────────────────────────
-    // PATCH /api/admin/moderators/{id}  — Edit moderator
-    // ────────────────────────────────────────────────
-    [HttpPatch("moderators/{id:guid}")]
-    public async Task<IActionResult> UpdateModerator(Guid id, [FromBody] UpdateModeratorRequest request)
+    [HttpPatch("admin-update-notification/{id:guid}")]
+    public async Task<IActionResult> AdminUpdateNotification(Guid id, [FromBody] AdminNotificationUpsertRequest request)
     {
-        var result = await _userService.UpdateModeratorAsync(id, request);
+        var adminUserId = GetCurrentUserId();
+        if (!adminUserId.HasValue)
+            return Unauthorized(new { success = false, message = "Khong xac dinh duoc admin hien tai." });
 
-        if (!result.Success)
-            return StatusCode(result.StatusCode, new { success = false, message = result.Message });
-
-        return Ok(new { success = true, message = result.Message });
+        try
+        {
+            var result = await _adminNotificationService.AdminUpdateNotificationAsync(id, adminUserId.Value, request);
+            return Ok(new { success = true, message = "Cap nhat thong bao admin thanh cong.", data = result });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { success = false, message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
     }
 
-    // ────────────────────────────────────────────────
-    // DELETE /api/admin/moderators/{id}  — Soft delete
-    // ────────────────────────────────────────────────
-    [HttpDelete("moderators/{id:guid}")]
-    public async Task<IActionResult> DeleteModerator(Guid id)
+    [HttpPatch("admin-update-notification-status/{id:guid}")]
+    public async Task<IActionResult> AdminUpdateNotificationStatus(Guid id, [FromQuery] bool? isDeleted)
     {
-        var result = await _userService.DeleteModeratorAsync(id);
+        var adminUserId = GetCurrentUserId();
+        if (!adminUserId.HasValue)
+            return Unauthorized(new { success = false, message = "Khong xac dinh duoc admin hien tai." });
 
-        if (!result.Success)
-            return StatusCode(result.StatusCode, new { success = false, message = result.Message });
+        if (!isDeleted.HasValue)
+            return BadRequest(new { success = false, message = "Thieu trang thai kich hoat cua thong bao." });
 
-        return Ok(new { success = true, message = result.Message });
+        try
+        {
+            await _adminNotificationService.AdminUpdateNotificationStatusAsync(id, adminUserId.Value, isDeleted.Value);
+            return Ok(new
+            {
+                success = true,
+                message = isDeleted.Value
+                    ? "Da vo hieu hoa thong bao admin."
+                    : "Da kich hoat thong bao admin."
+            });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { success = false, message = ex.Message });
+        }
+    }
+
+    private Guid? GetCurrentUserId()
+    {
+        var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+        return Guid.TryParse(sub, out var userId) ? userId : null;
     }
 
     // ════════════════════════════════════════════════

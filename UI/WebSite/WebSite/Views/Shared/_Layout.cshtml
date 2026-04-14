@@ -23,7 +23,7 @@
 
     PersonalProfileViewModel? nannyVerifyPromptProfile = null;
     var showNannyVerifyPrompt = false;
-    var nannyVerifyPromptUrl = "/NannyVerificationRequest/Submit";
+    var nannyVerifyPromptUrl = "/NannyVerificationRequest/NannySubmitVerificationRequest";
     var nannyVerifyPromptButton = "Xác minh ID ngay";
     var nannyVerifyPromptStatusClass = "is-not-submitted";
     var nannyVerifyPromptStatusText = "Chưa gửi xác minh";
@@ -63,14 +63,14 @@
 
                             if (verificationCode == 1)
                             {
-                                nannyVerifyPromptUrl = "/NannyVerificationRequest";
+                                nannyVerifyPromptUrl = "/NannyVerificationRequest/NannyGetVerificationRequestList";
                                 nannyVerifyPromptButton = "Xem yêu cầu xác minh";
                                 nannyVerifyPromptStatusClass = "is-pending";
                                 nannyVerifyPromptStatusText = "Đang chờ duyệt";
                             }
                             else if (verificationCode == 3)
                             {
-                                nannyVerifyPromptUrl = "/NannyVerificationRequest";
+                                nannyVerifyPromptUrl = "/NannyVerificationRequest/NannyGetVerificationRequestList";
                                 nannyVerifyPromptButton = "Xem và gửi lại hồ sơ";
                                 nannyVerifyPromptStatusClass = "is-rejected";
                                 nannyVerifyPromptStatusText = "Đã bị từ chối";
@@ -986,6 +986,11 @@
                           currentAction.Equals("List", StringComparison.OrdinalIgnoreCase)
         ? "nm-nav-link active"
         : "nm-nav-link";
+    var homeNavCls = isHomePage ? "nm-nav-link active" : "nm-nav-link";
+    var faqNavCls = currentCtrl.Equals("Home", StringComparison.OrdinalIgnoreCase) &&
+                    currentAction.Equals("Faq", StringComparison.OrdinalIgnoreCase)
+        ? "nm-nav-link active"
+        : "nm-nav-link";
 }
 <body class="font-display bg-background-light dark:bg-background-dark text-gray-800 dark:text-gray-200 transition-colors duration-300" style="background-color: #f9fafb; color: #1f2937;" data-page="@(isHomePage ? "home" : "other")">
     <nav class="sticky top-0 z-50 bg-white/95 dark:bg-card-dark/95 backdrop-blur-lg border-b border-gray-100/80 dark:border-gray-800"
@@ -1004,7 +1009,7 @@
 
                 <!-- Nav Links (giữa) -->
                 <div class="hidden md:flex items-center gap-1 nm-nav-links">
-                    <a href="/" class="@NavCls("Home")">Trang chủ</a>
+                    <a href="/" class="@homeNavCls">Trang chủ</a>
                     <a href="/Search" class="@NavCls("Search")">Tìm bảo mẫu</a>
                     <a href="/Nanny/List" class="@nannyListNavCls">Tìm nanny</a>
                     <a href="/Blog" class="@NavCls("Blog")">Blog</a>
@@ -1012,7 +1017,7 @@
                     {
                         <a href="/Contract" class="@NavCls("Contract")">Hợp đồng của tôi</a>
                     }
-                    <a href="#how-it-works" class="nm-nav-link">Cách hoạt động</a>
+                    <a href="/Home/Faq" class="@faqNavCls">FAQ</a>
                 </div>
 
                 <!-- Actions -->
@@ -1128,6 +1133,10 @@
 
                                 @if (User.IsInRole("Parent"))
                                 {
+                                    <a href="/Review/History" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        <span class="material-icons-round text-base">star</span>
+                                        Đánh giá của tôi
+                                    </a>
                                     <a href="/Nanny/Favorites" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                         <span class="material-icons-round text-base">favorite</span>
                                         Nanny yêu thích
@@ -1152,7 +1161,7 @@
                                         <span class="material-icons-round text-base">contact_mail</span>
                                         Request contact đã nhận
                                     </a>
-                                    <a href="/NannyVerificationRequest" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                    <a href="/NannyVerificationRequest/NannyGetVerificationRequestList" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                         <span class="material-icons-round text-base">verified_user</span>
                                         Yêu cầu xác minh
                                     </a>
@@ -1257,6 +1266,7 @@
                                     const typeLabel = normalizeText(item?.typeLabel);
                                     const title = normalizeText(item?.title);
                                     if (!typeLabel) return false;
+                                    if (typeLabel.includes('moderator')) return true;
                                     return typeLabel !== title;
                                 };
 
@@ -1281,6 +1291,46 @@
                                             <span class="material-icons-round">notifications_none</span>
                                             <p class="text-sm font-semibold text-gray-700">${escapeHtml(message)}</p>
                                         </div>`;
+                                };
+
+                                const getRealtimeToastConfig = (payload) => {
+                                    if (!payload) return null;
+
+                                    const type = String(payload.type || '').trim().toLowerCase();
+                                    const message = payload.message || payload.title;
+                                    if (message) {
+                                        return {
+                                            message,
+                                            type: payload.toastType || 'info'
+                                        };
+                                    }
+
+                                    switch (type) {
+                                        case 'verification-request-submitted':
+                                            return { message: 'Co yeu cau xac minh moi dang cho duyet.', type: 'info' };
+                                        case 'verification-request-created':
+                                            return { message: 'Ban vua gui yeu cau xac minh thanh cong.', type: 'success' };
+                                        case 'job-posting-review-required':
+                                            return { message: 'Co bai dang moi dang cho moderator duyet.', type: 'info' };
+                                        case 'complain-submitted':
+                                            return { message: 'Co bao cao moi can xu ly.', type: 'warning' };
+                                        case 'verification-approved':
+                                            return { message: 'Yeu cau xac minh cua ban da duoc chap thuan.', type: 'success' };
+                                        case 'verification-rejected':
+                                            return { message: 'Yeu cau xac minh cua ban da bi tu choi.', type: 'warning' };
+                                        case 'job-posting-approved':
+                                            return { message: 'Bai dang cua ban da duoc duyet.', type: 'success' };
+                                        case 'job-posting-rejected':
+                                            return { message: 'Bai dang cua ban da bi tu choi.', type: 'warning' };
+                                        case 'job-posting-pending':
+                                            return { message: 'Bai dang cua ban dang cho moderator duyet.', type: 'success' };
+                                        case 'nanny-profile-favorited':
+                                            return { message: 'Ho so cua ban vua duoc yeu thich.', type: 'success' };
+                                        case 'system-warning':
+                                            return { message: 'Co canh bao he thong can xu ly.', type: 'warning' };
+                                        default:
+                                            return null;
+                                    }
                                 };
 
                                 const updateBadge = (count) => {
@@ -1380,6 +1430,12 @@
                                     }
                                 });
 
+                                document.addEventListener('click', function(e) {
+                                    if (!notificationDropdown.contains(e.target)) {
+                                        notificationMenu.classList.add('hidden');
+                                    }
+                                });
+
                                 const connectNotificationRealtime = async () => {
                                     if (!window.signalR) return;
 
@@ -1388,7 +1444,11 @@
                                         .withAutomaticReconnect()
                                         .build();
 
-                                    connection.on('notification:new', async () => {
+                                    connection.on('notification:new', async (payload) => {
+                                        const toastConfig = getRealtimeToastConfig(payload);
+                                        if (toastConfig && typeof window.showToast === 'function') {
+                                            window.showToast(toastConfig.message, { type: toastConfig.type });
+                                        }
                                         window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
                                     });
 
@@ -1401,12 +1461,6 @@
                                     } catch {
                                     }
                                 };
-
-                                document.addEventListener('click', function(e) {
-                                    if (!notificationDropdown.contains(e.target)) {
-                                        notificationMenu.classList.add('hidden');
-                                    }
-                                });
 
                                 loadUnreadCount();
                                 connectNotificationRealtime();
@@ -1491,7 +1545,8 @@
         </div>
     </nav>
 
-    @if (ViewContext.RouteData.Values["controller"]?.ToString() == "Home")
+    @if (ViewContext.RouteData.Values["controller"]?.ToString() == "Home" &&
+         ViewContext.RouteData.Values["action"]?.ToString() == "Index")
     {
     <header class="relative overflow-hidden pt-24 pb-28 lg:pt-32 lg:pb-36">
         <canvas class="hero-beam-canvas" id="heroBeamCanvas" aria-hidden="true"></canvas>
@@ -1829,6 +1884,24 @@
     }
 
     <script>
+        (() => {
+            const params = new URLSearchParams(window.location.search);
+            const toastMessage = params.get('toastMessage');
+            const toastType = params.get('toastType') || 'info';
+
+            if (!toastMessage || typeof window.showToast !== 'function') {
+                return;
+            }
+
+            window.showToast(toastMessage, { type: toastType });
+            params.delete('toastMessage');
+            params.delete('toastType');
+
+            const nextQuery = params.toString();
+            const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ''}${window.location.hash || ''}`;
+            window.history.replaceState({}, document.title, nextUrl);
+        })();
+
         /* Auto-scroll & Drag/Swipe Marquee */
         document.querySelectorAll('.marquee-container').forEach(function (container) {
             var track = container.querySelector('.marquee-track');

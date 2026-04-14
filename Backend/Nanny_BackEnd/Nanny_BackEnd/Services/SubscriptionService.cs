@@ -353,97 +353,191 @@ public class SubscriptionService
         return mapSubscription(subscription);
     }
 
-    // ══════════════════════════════════════════════════
-    // ADMIN: SUBSCRIPTION PLAN MANAGEMENT
-    // ══════════════════════════════════════════════════
-
-    public async Task<List<AdminPlanResponse>> getAllPlansForAdmin()
+    public async Task<AdminSubscriptionPlanListResponse> getAdminPlans(
+        string? search,
+        string? targetRole,
+        bool? isActive,
+        int page,
+        int pageSize)
     {
-        var plans = await _subscriptionRepo.getAllPlansIncludingInactive();
-        return plans.Select(p =>
-        {
-            var features = splitFeatures(p.Features);
-            return new AdminPlanResponse
+        var plans = await _subscriptionRepo.getAdminPlansIncludingDeleted();
+        var normalizedTargetRole = string.IsNullOrWhiteSpace(targetRole)
+            ? null
+            : SubscriptionPlanMetadataHelper.NormalizeTargetRole(targetRole);
+        var normalizedSearch = search?.Trim();
+
+        var projected = plans
+            .Select(plan => new
             {
-                Id                    = p.Id,
-                Name                  = p.Name,
-                Description           = p.Description,
-                Price                 = p.Price,
-                DurationDays          = p.DurationDays,
-                Features              = features,
-                IsActive              = p.IsActive,
-                SortOrder             = p.SortOrder,
-                CreatedAt             = p.CreatedAt,
-                UpdatedAt             = p.UpdatedAt,
-                ActiveSubscriberCount = p.UserSubscriptions.Count(s => !s.IsDeleted && s.Status == (int)UserSubscriptionStatus.Active)
-            };
-        }).ToList();
+                Plan = plan,
+                PlanResponse = mapPlan(plan)
+            })
+            .Where(item =>
+                string.IsNullOrWhiteSpace(normalizedSearch) ||
+                item.Plan.Name.Contains(normalizedSearch, StringComparison.OrdinalIgnoreCase) ||
+                item.PlanResponse.Code.Contains(normalizedSearch, StringComparison.OrdinalIgnoreCase))
+            .Where(item =>
+                string.IsNullOrWhiteSpace(normalizedTargetRole) ||
+                string.Equals(item.PlanResponse.TargetRole, normalizedTargetRole, StringComparison.OrdinalIgnoreCase))
+            .Where(item => !isActive.HasValue || item.Plan.IsActive == isActive.Value)
+            .OrderBy(item => item.Plan.SortOrder)
+            .ThenBy(item => item.Plan.Price)
+            .ThenBy(item => item.Plan.Name)
+            .ToList();
+
+        page = Math.Max(1, page);
+        pageSize = Math.Max(1, pageSize);
+        var totalCount = projected.Count;
+        var pagedItems = projected.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+        var items = new List<AdminSubscriptionPlanListItemResponse>(pagedItems.Count);
+        foreach (var item in pagedItems)
+        {
+            items.Add(new AdminSubscriptionPlanListItemResponse
+            {
+                Id = item.Plan.Id,
+                Code = item.PlanResponse.Code,
+                TargetRole = item.PlanResponse.TargetRole,
+                Name = item.Plan.Name,
+                Price = item.Plan.Price,
+                DurationDays = item.Plan.DurationDays,
+                SortOrder = item.Plan.SortOrder,
+                IsActive = item.Plan.IsActive,
+                FeatureCount = item.PlanResponse.Features.Count,
+                ActiveSubscriberCount = await _subscriptionRepo.countActiveSubscriptionsByPlan(item.Plan.Id, DateTime.UtcNow),
+                CanUseRecommendation = item.Plan.CanUseRecommendation,
+                CreatedAt = item.Plan.CreatedAt
+            });
+        }
+
+        return new AdminSubscriptionPlanListResponse
+        {
+            Items = items,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+            TotalPages = totalCount == 0 ? 1 : (int)Math.Ceiling(totalCount / (double)pageSize)
+        };
     }
 
-    public async Task<AdminPlanResponse> createPlan(AdminCreatePlanRequest request)
+    public async Task<AdminSubscriptionPlanDetailResponse?> getAdminPlanDetail(Guid id)
     {
-        var featuresJson = request.Features.Count > 0
-            ? JsonSerializer.Serialize(request.Features)
-            : null;
+        var plan = await _subscriptionRepo.findAdminPlanByIdIncludingDeleted(id);
+        if (plan == null)
+            return null;
+
+        var planResponse = mapPlan(plan);
+        return new AdminSubscriptionPlanDetailResponse
+        {
+            Id = plan.Id,
+            Code = planResponse.Code,
+            TargetRole = planResponse.TargetRole,
+            Name = plan.Name,
+            Description = plan.Description,
+            Price = plan.Price,
+            DurationDays = plan.DurationDays,
+            Features = planResponse.Features,
+            SortOrder = plan.SortOrder,
+            Benefits = planResponse.Benefits,
+            IsActive = plan.IsActive,
+            ActiveSubscriberCount = await _subscriptionRepo.countActiveSubscriptionsByPlan(plan.Id, DateTime.UtcNow),
+            CanUseRecommendation = plan.CanUseRecommendation,
+            CreatedAt = plan.CreatedAt,
+            UpdatedAt = plan.UpdatedAt
+        };
+    }
+
+    public async Task<AdminSubscriptionPlanDetailResponse> createAdminPlan(Guid adminUserId, AdminSubscriptionPlanUpsertRequest request)
+    {
+        validateAdminPlanRequest(request);
+
+        var normalizedName = request.Name.Trim();
+        if (await _subscriptionRepo.existsPlanNameIncludingDeleted(normalizedName))
+            throw new InvalidOperationException("Ten goi subscription da ton tai.");
 
         var nowUtc = DateTime.UtcNow;
+        var nextSortOrder = await _subscriptionRepo.getNextSubscriptionPlanSortOrder();
         var plan = new SubscriptionPlan
         {
-            Id          = Guid.NewGuid(),
-            Name        = request.Name.Trim(),
-            Description = request.Description?.Trim(),
-            Price       = request.Price,
-            DurationDays= request.DurationDays,
-            Features    = featuresJson,
-            IsActive    = request.IsActive,
-            SortOrder   = request.SortOrder,
-            CreatedAt   = nowUtc,
-            IsDeleted   = false
+            Id = Guid.NewGuid(),
+            Name = normalizedName,
+            Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
+            Price = request.Price,
+            DurationDays = request.DurationDays,
+            Features = serializeFeaturesForStorage(request.Features),
+            CanUseRecommendation = request.CanUseRecommendation,
+            IsActive = true,
+            SortOrder = nextSortOrder,
+            CreatedAt = nowUtc,
+            CreatedBy = adminUserId,
+            IsDeleted = false
         };
 
         _subscriptionRepo.addPlan(plan);
         await _subscriptionRepo.saveChanges();
 
-        return (await getAllPlansForAdmin()).First(p => p.Id == plan.Id);
+        return await getAdminPlanDetail(plan.Id)
+            ?? throw new InvalidOperationException("Khong the tao goi subscription.");
     }
 
-    public async Task updatePlan(Guid planId, AdminUpdatePlanRequest request)
+    public async Task<AdminSubscriptionPlanDetailResponse> updateAdminPlan(Guid id, Guid adminUserId, AdminSubscriptionPlanUpsertRequest request)
     {
-        var plan = await _subscriptionRepo.findPlanByIdIncludingInactive(planId)
+        validateAdminPlanRequest(request);
+
+        var plan = await _subscriptionRepo.findAdminPlanByIdIncludingDeleted(id)
             ?? throw new KeyNotFoundException("Khong tim thay goi subscription.");
 
-        var nowUtc = DateTime.UtcNow;
-        if (request.Name != null)         plan.Name        = request.Name.Trim();
-        if (request.Description != null)  plan.Description = request.Description.Trim();
-        if (request.Price.HasValue)       plan.Price       = request.Price.Value;
-        if (request.DurationDays.HasValue) plan.DurationDays = request.DurationDays.Value;
-        if (request.IsActive.HasValue)    plan.IsActive    = request.IsActive.Value;
-        if (request.SortOrder.HasValue)   plan.SortOrder   = request.SortOrder.Value;
-        if (request.Features != null)
-            plan.Features = request.Features.Count > 0
-                ? JsonSerializer.Serialize(request.Features)
-                : null;
+        var normalizedName = request.Name.Trim();
+        if (await _subscriptionRepo.existsPlanNameIncludingDeleted(normalizedName, id))
+            throw new InvalidOperationException("Ten goi subscription da ton tai.");
 
-        plan.UpdatedAt = nowUtc;
-        await _subscriptionRepo.saveChanges();
-    }
-
-    public async Task deletePlan(Guid planId)
-    {
-        var plan = await _subscriptionRepo.findPlanByIdIncludingInactive(planId)
-            ?? throw new KeyNotFoundException("Khong tim thay goi subscription.");
-
-        var activeSubscribers = plan.UserSubscriptions
-            .Count(s => !s.IsDeleted && s.Status == (int)UserSubscriptionStatus.Active);
-
-        if (activeSubscribers > 0)
-            throw new InvalidOperationException($"Khong the xoa goi dang co {activeSubscribers} nguoi dung su dung.");
-
-        plan.IsDeleted = true;
-        plan.IsActive  = false;
+        plan.Name = normalizedName;
+        plan.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
+        plan.Price = request.Price;
+        plan.DurationDays = request.DurationDays;
+        plan.SortOrder = request.SortOrder;
+        plan.Features = serializeFeaturesForStorage(request.Features);
+        plan.CanUseRecommendation = request.CanUseRecommendation;
         plan.UpdatedAt = DateTime.UtcNow;
+        plan.UpdatedBy = adminUserId;
+
+        await _subscriptionRepo.saveChanges();
+
+        return await getAdminPlanDetail(plan.Id)
+            ?? throw new InvalidOperationException("Khong the cap nhat goi subscription.");
+    }
+
+    public async Task toggleAdminPlanStatus(Guid id, Guid adminUserId, bool isActive)
+    {
+        var plan = await _subscriptionRepo.findAdminPlanByIdIncludingDeleted(id)
+            ?? throw new KeyNotFoundException("Khong tim thay goi subscription.");
+
+        var targetIsDeleted = !isActive;
+        if (plan.IsActive == isActive && plan.IsDeleted == targetIsDeleted)
+            return;
+
+        plan.IsActive = isActive;
+        plan.IsDeleted = targetIsDeleted;
+        plan.UpdatedAt = DateTime.UtcNow;
+        plan.UpdatedBy = adminUserId;
         await _subscriptionRepo.saveChanges();
     }
+
+    //public async Task toggleAdminPlanStatus(Guid id, Guid adminUserId, bool isActive)
+    //{
+    //    var plan = await _subscriptionRepo.findAdminPlanByIdIncludingDeleted(id)
+    //        ?? throw new KeyNotFoundException("Khong tim thay goi subscription.");
+
+    //    var targetIsDeleted = !isActive;
+    //    if (plan.IsActive == isActive && plan.IsDeleted == targetIsDeleted)
+    //        return;
+
+    //    plan.IsActive = isActive;
+    //    plan.IsDeleted = targetIsDeleted;
+    //    plan.UpdatedAt = DateTime.UtcNow;
+    //    plan.UpdatedBy = adminUserId;
+    //    await _subscriptionRepo.saveChanges();
+    //}
 
     private async Task<Transaction?> findReusablePendingTransaction(Guid userId, string planCode)
     {
@@ -749,6 +843,46 @@ public class SubscriptionService
         return true;
     }
 
+    //private async Task ensureAdminManagedPlans()
+    //{
+    //    var existingPlans = await _subscriptionRepo.getPlansByNamesIncludingDeleted(ManagedPlans.Select(p => p.Name));
+    //    var existingNames = existingPlans
+    //        .Select(p => p.Name)
+    //        .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+    //    var needsSave = false;
+    //    foreach (var definition in ManagedPlans)
+    //    {
+    //        if (existingNames.Contains(definition.Name))
+    //            continue;
+
+    //        _subscriptionRepo.addPlan(new SubscriptionPlan
+    //        {
+    //            Id = Guid.NewGuid(),
+    //            Name = definition.Name,
+    //            Description = definition.Description,
+    //            Price = definition.Price,
+    //            DurationDays = definition.DurationDays,
+    //            Features = SubscriptionPlanMetadataHelper.Serialize(new SubscriptionPlanMetadata
+    //            {
+    //                Code = definition.Code,
+    //                TargetRole = definition.TargetRole,
+    //                Features = definition.Features,
+    //                Benefits = definition.Benefits
+    //            }),
+    //            IsActive = true,
+    //            SortOrder = definition.SortOrder,
+    //            CreatedAt = DateTime.UtcNow,
+    //            CreatedBy = null,
+    //            IsDeleted = false
+    //        });
+    //        needsSave = true;
+    //    }
+
+    //    if (needsSave)
+    //        await _subscriptionRepo.saveChanges();
+    //}
+
     private static void markTransactionFailed(Transaction transaction, DateTime nowUtc)
     {
         transaction.Status = 3;
@@ -851,6 +985,90 @@ public class SubscriptionService
 
         await _subscriptionRepo.saveChanges();
     }
+
+    //private async Task<List<SubscriptionPlan>> ensureManagedPlans()
+    //{
+    //    var existingPlans = await _subscriptionRepo.getPlansByNamesIncludingDeleted(ManagedPlans.Select(p => p.Name));
+    //    var planMap = existingPlans.ToDictionary(p => p.Name, StringComparer.OrdinalIgnoreCase);
+    //    var needsSave = false;
+
+    //    foreach (var definition in ManagedPlans)
+    //    {
+    //        if (!planMap.TryGetValue(definition.Name, out var plan))
+    //        {
+    //            plan = new SubscriptionPlan
+    //            {
+    //                Id = Guid.NewGuid(),
+    //                CreatedAt = DateTime.UtcNow,
+    //                IsDeleted = false
+    //            };
+    //            applyDefinition(plan, definition);
+    //            _subscriptionRepo.addPlan(plan);
+    //            existingPlans.Add(plan);
+    //            needsSave = true;
+    //            continue;
+    //        }
+
+    //        if (applyDefinition(plan, definition))
+    //            needsSave = true;
+    //    }
+
+    //    if (needsSave)
+    //        await _subscriptionRepo.saveChanges();
+
+    //    return existingPlans
+    //        .Where(p => !p.IsDeleted && p.IsActive)
+    //        .OrderBy(p => p.SortOrder)
+    //        .ThenBy(p => p.Price)
+    //        .ToList();
+    //}
+
+    //private static bool applyDefinition(SubscriptionPlan plan, ManagedPlanDefinition definition)
+    //{
+    //    var changed = false;
+
+    //    if (plan.Name != definition.Name)
+    //    {
+    //        plan.Name = definition.Name;
+    //        changed = true;
+    //    }
+
+    //    if (plan.Description != definition.Description)
+    //    {
+    //        plan.Description = definition.Description;
+    //        changed = true;
+    //    }
+
+    //    if (plan.Price != definition.Price)
+    //    {
+    //        plan.Price = definition.Price;
+    //        changed = true;
+    //    }
+
+    //    if (plan.DurationDays != definition.DurationDays)
+    //    {
+    //        plan.DurationDays = definition.DurationDays;
+    //        changed = true;
+    //    }
+
+    //    if (plan.SortOrder != definition.SortOrder)
+    //    {
+    //        plan.SortOrder = definition.SortOrder;
+    //        changed = true;
+    //    }
+
+    //    var features = JsonSerializer.Serialize(definition.Features);
+    //    if (plan.Features != features)
+    //    {
+    //        plan.Features = features;
+    //        changed = true;
+    //    }
+
+    //    if (changed)
+    //        plan.UpdatedAt = DateTime.UtcNow;
+
+    //    return changed;
+    //}
 
     private static SubscriptionPlanResponse mapPlan(SubscriptionPlan plan)
     {
@@ -982,6 +1200,52 @@ public class SubscriptionService
         return int.TryParse(parts[2], out var orderCode) ? orderCode : null;
     }
 
+    //private static SubscriptionPlanMetadata resolveAdminPlanMetadata(SubscriptionPlan plan)
+    //{
+    //    var metadata = SubscriptionPlanMetadataHelper.TryParse(plan.Features);
+    //    var definition = getManagedPlanDefinition(plan.Name);
+    //    var targetRole = metadata?.TargetRole;
+    //    if (string.IsNullOrWhiteSpace(targetRole))
+    //        targetRole = definition?.TargetRole ?? "Parent";
+
+    //    var features = metadata?.Features.Count > 0
+    //        ? metadata.Features
+    //        : definition?.Features ?? splitFeatures(plan.Features);
+
+    //    var benefits = metadata?.Benefits;
+    //    if (benefits == null || (
+    //        benefits.MonthlyJobPostLimit == 0 &&
+    //        benefits.MonthlyApplicationLimit == 0 &&
+    //        !benefits.FeaturedBadge &&
+    //        !benefits.SearchPriority &&
+    //        benefits.ListingDurationDays == 0))
+    //    {
+    //        benefits = definition?.Benefits
+    //            ?? (string.Equals(targetRole, "Nanny", StringComparison.OrdinalIgnoreCase)
+    //                ? SubscriptionBenefitResponse.FreeNanny
+    //                : SubscriptionBenefitResponse.FreeParent);
+    //    }
+
+    //    return new SubscriptionPlanMetadata
+    //    {
+    //        Code = SubscriptionPlanMetadataHelper.NormalizeCode(metadata?.Code, targetRole, plan.Name),
+    //        TargetRole = SubscriptionPlanMetadataHelper.NormalizeTargetRole(targetRole),
+    //        Features = SubscriptionPlanMetadataHelper.NormalizeFeatures(features),
+    //        Benefits = benefits
+    //    };
+    //}
+
+    private static string serializeFeaturesForStorage(IEnumerable<string> features) =>
+        JsonSerializer.Serialize(SubscriptionPlanMetadataHelper.NormalizeFeatures(features));
+
+    private static void validateAdminPlanRequest(AdminSubscriptionPlanUpsertRequest request)
+    {
+        request.Features = SubscriptionPlanMetadataHelper.NormalizeFeatures(request.Features);
+
+        if (request.Features.Count == 0)
+            throw new InvalidOperationException("Phai co it nhat 1 feature cho goi subscription.");
+    }
+
     private static List<string>? tryParseJsonFeatures(string features)
     {
         try
@@ -1029,7 +1293,7 @@ public class SubscriptionService
             FeaturedBadge = containsAny(textSamples, "badge", "featured", "noi bat"),
             SearchPriority = containsAny(textSamples, "uu tien", "priority", "tim kiem"),
             ListingDurationDays = inferListingDurationDays(textSamples, plan.DurationDays),
-            CanUseRecommendation = true
+            CanUseRecommendation = plan.CanUseRecommendation
         };
 
         if (string.Equals(targetRole, "Parent", StringComparison.OrdinalIgnoreCase))

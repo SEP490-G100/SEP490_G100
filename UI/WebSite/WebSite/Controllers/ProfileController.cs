@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Json;
@@ -189,20 +189,24 @@ public class ProfileController : Controller
                 profile.ContactNannyProfileId = resolvedNannyProfileId;
 
             var isContactAccepted = false;
+            Guid? resolvedContactRequestId = contactRequestId;
             if (User.IsInRole("Parent")
                 && profile.IsNanny
                 && !hasHiringContext
                 && profile.ContactNannyProfileId.HasValue
                 && profile.ContactNannyProfileId.Value != Guid.Empty)
             {
-                isContactAccepted = await IsContactAcceptedAsync(profile.ContactNannyProfileId.Value);
+                var acceptedContact = await TryGetAcceptedContactRequestAsync(profile.ContactNannyProfileId.Value);
+                isContactAccepted = acceptedContact.IsAccepted;
+                if (!resolvedContactRequestId.HasValue || resolvedContactRequestId == Guid.Empty)
+                    resolvedContactRequestId = acceptedContact.ContactRequestId;
             }
 
             ViewBag.HasHiringContext = hasHiringContext;
             ViewBag.IsContactAccepted = isContactAccepted;
             ViewBag.HiringJobPostingId = hasHiringContext ? jobPostingId!.Value.ToString() : "";
             ViewBag.HiringJobApplicationId = hasHiringContext ? jobApplicationId!.Value.ToString() : "";
-            ViewBag.ContactRequestId = contactRequestId?.ToString() ?? "";
+            ViewBag.ContactRequestId = resolvedContactRequestId?.ToString() ?? "";
             ViewBag.SuppressEngagementActions = suppressEngagementActions;
 
             return View("Index", profile);
@@ -213,24 +217,24 @@ public class ProfileController : Controller
         }
     }
 
-    private async Task<bool> IsContactAcceptedAsync(Guid nannyProfileId)
+    private async Task<(bool IsAccepted, Guid? ContactRequestId)> TryGetAcceptedContactRequestAsync(Guid nannyProfileId)
     {
         var response = await _http.GetAsync("/api/nannies/contact-requests/sent");
         if (!response.IsSuccessStatusCode)
-            return false;
+            return (false, null);
 
         var json = await response.Content.ReadAsStringAsync();
         if (string.IsNullOrWhiteSpace(json))
-            return false;
+            return (false, null);
 
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
         if (!root.TryGetProperty("success", out var successEl) || successEl.ValueKind != JsonValueKind.True)
-            return false;
+            return (false, null);
         if (!root.TryGetProperty("data", out var dataEl) || dataEl.ValueKind != JsonValueKind.Object)
-            return false;
+            return (false, null);
         if (!dataEl.TryGetProperty("requests", out var requestsEl) || requestsEl.ValueKind != JsonValueKind.Array)
-            return false;
+            return (false, null);
 
         foreach (var requestEl in requestsEl.EnumerateArray())
         {
@@ -246,12 +250,24 @@ public class ProfileController : Controller
                 continue;
 
             if (!requestEl.TryGetProperty("status", out var statusEl) || statusEl.ValueKind != JsonValueKind.Number)
-                return false;
+                return (false, null);
 
-            return statusEl.TryGetInt32(out var status) && status == 1;
+            var isAccepted = statusEl.TryGetInt32(out var status) && status == 1;
+            if (!isAccepted)
+                return (false, null);
+
+            if (requestEl.TryGetProperty("id", out var requestIdEl)
+                && requestIdEl.ValueKind == JsonValueKind.String
+                && Guid.TryParse(requestIdEl.GetString(), out var requestId)
+                && requestId != Guid.Empty)
+            {
+                return (true, requestId);
+            }
+
+            return (true, null);
         }
 
-        return false;
+        return (false, null);
     }
 
     // Edit personal information
@@ -413,7 +429,8 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
 }
 
     [HttpGet]
-    public IActionResult Verify() => Redirect("/verification");
+    public IActionResult Verify() =>
+        RedirectToAction("NannyGetVerificationRequestList", "NannyVerificationRequest");
 
     [NonAction]
     public async Task<IActionResult> Verify(CreateCertificateViewModel model)

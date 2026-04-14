@@ -211,6 +211,13 @@ public class JobService
             job.Id,
             "JobPosting",
             null);
+        await _notificationService.createNotificationForModerators(
+            "Co bai dang moi can duyet",
+            $"Phu huynh {getDisplayName(parentProfile.User)} vua gui bai dang \"{job.Title}\" de moderator xem xet.",
+            NotificationTypes.JobPostingReviewRequired,
+            job.Id,
+            "JobPosting",
+            parentProfile.UserId);
 
         // Fire-and-forget: tạo embedding cho job mới
         _ = EmbedJobInBackgroundAsync(job.Id);
@@ -305,6 +312,7 @@ public class JobService
         job.ModerationNote = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
         job.ModeratedAt = nowUtc;
         job.ModeratedBy = moderatorUserId;
+        job.UpdatedBy = moderatorUserId;
         job.PublishedAt = approved && job.Status == (int)JobPostingStatus.Public ? nowUtc : null;
         job.ClosedAt = approved
             ? (job.Status == (int)JobPostingStatus.Hidden ? nowUtc : null)
@@ -470,6 +478,13 @@ public class JobService
             throw new InvalidOperationException("Do tuoi toi thieu khong duoc lon hon do tuoi toi da cua bao mau.");
     }
 
+    private static string getDisplayName(User? user)
+    {
+        if (user == null) return "Phu huynh";
+        var fullName = $"{user.FirstName} {user.LastName}".Trim();
+        return string.IsNullOrWhiteSpace(fullName) ? user.Email : fullName;
+    }
+
     private static SearchJobResponse mapToListItem(
         JobPosting job,
         double? nannyLat = null,
@@ -547,6 +562,7 @@ public class JobService
         {
             Id = job.Id,
             ParentProfileId = job.ParentProfileId,
+            ParentUserId = job.ParentProfile?.UserId ?? Guid.Empty,
             ChildProfileId = job.ChildProfileId,
             ParentName = $"{job.ParentProfile?.User?.FirstName} {job.ParentProfile?.User?.LastName}".Trim(),
             Title = job.Title,
@@ -646,40 +662,33 @@ public class JobService
             .OrderByDescending(s => s.EndDate)
             .FirstOrDefault();
 
-        if (activeSubscription?.SubscriptionPlan == null)
-            return (null, SubscriptionBenefitResponse.FreeParent);
-
-        var plan = activeSubscription.SubscriptionPlan;
-        var planName = plan.Name ?? string.Empty;
-
-        // Đọc Features JSON nếu có
-        List<string> featureList = [];
-        if (!string.IsNullOrWhiteSpace(plan.Features))
+        var plan = activeSubscription?.SubscriptionPlan;
+        var planName = plan?.Name;
+        if (string.Equals(planName, "Pro", StringComparison.OrdinalIgnoreCase))
         {
-            try { featureList = System.Text.Json.JsonSerializer.Deserialize<List<string>>(plan.Features) ?? []; }
-            catch { /* ignore malformed JSON */ }
+            return ("PRO", new SubscriptionBenefitResponse
+            {
+                MonthlyJobPostLimit = 5,
+                FeaturedBadge = true,
+                SearchPriority = true,
+                ListingDurationDays = 60,
+                CanUseRecommendation = plan!.CanUseRecommendation
+            });
         }
 
-        // Kết hợp name + description + features để phân loại benefit
-        var allText = new List<string> { planName, plan.Description ?? string.Empty };
-        allText.AddRange(featureList);
-        var combined = string.Join(' ', allText).ToLowerInvariant();
-
-        bool featuredBadge   = combined.Contains("badge") || combined.Contains("featured") || combined.Contains("noi bat");
-        bool searchPriority  = combined.Contains("uu tien") || combined.Contains("priority") || combined.Contains("tim kiem");
-        int  listingDuration = plan.DurationDays > 0 ? plan.DurationDays : 30;
-
-        // Tính planCode từ tên
-        var planCode = planName.ToUpperInvariant().Trim();
-
-        return (planCode, new SubscriptionBenefitResponse
+        if (string.Equals(planName, "Plus", StringComparison.OrdinalIgnoreCase))
         {
-            MonthlyJobPostLimit   = 0,   // Không dùng ở đây — chỉ dùng FeaturedBadge/SearchPriority
-            FeaturedBadge         = featuredBadge,
-            SearchPriority        = searchPriority,
-            ListingDurationDays   = listingDuration,
-            CanUseRecommendation  = true
-        });
+            return ("PLUS", new SubscriptionBenefitResponse
+            {
+                MonthlyJobPostLimit = 3,
+                FeaturedBadge = true,
+                SearchPriority = false,
+                ListingDurationDays = 45,
+                CanUseRecommendation = plan!.CanUseRecommendation
+            });
+        }
+
+        return (null, SubscriptionBenefitResponse.FreeParent);
     }
     public async Task<(List<SearchJobResponse> Items, int TotalCount)> GetModeratorJobsAsync(
         int? status,
@@ -703,6 +712,7 @@ public class JobService
         job.ModerationNote = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
         job.ModeratedAt = nowUtc;
         job.ModeratedBy = moderatorUserId;
+        job.UpdatedBy = moderatorUserId;
 
         if (moderationStatus == (int)JobPostingModerationStatus.Approved)
         {
@@ -733,6 +743,36 @@ public class JobService
                 title,
                 content,
                 notifType,
+                job.Id,
+                "JobPosting",
+                moderatorUserId);
+        }
+    }
+
+    public async Task DeactivateJobAsync(Guid jobId, Guid moderatorUserId)
+    {
+        var job = await _jobRepo.viewDetailPosting(jobId)
+            ?? throw new KeyNotFoundException("Khong tim thay tin dang hoac tin da bi xoa.");
+
+        if (job.IsDeleted)
+            return;
+
+        var nowUtc = DateTime.UtcNow;
+        job.IsDeleted = true;
+        job.Status = (int)JobPostingStatus.Hidden;
+        job.ClosedAt = nowUtc;
+        job.UpdatedAt = nowUtc;
+        job.UpdatedBy = moderatorUserId;
+
+        await _jobRepo.saveChanges();
+
+        if (job.ParentProfile != null)
+        {
+            await _notificationService.createNotification(
+                job.ParentProfile.UserId,
+                "Bai dang da bi vo hieu hoa",
+                $"Bai dang \"{job.Title}\" da bi moderator vo hieu hoa.",
+                NotificationTypes.JobPostingRejected,
                 job.Id,
                 "JobPosting",
                 moderatorUserId);

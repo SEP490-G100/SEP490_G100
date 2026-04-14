@@ -1,5 +1,7 @@
 namespace WebSite.Models.Verification;
 
+using WebSite.Enums;
+
 public class VerificationRequestListResponse
 {
     public List<VerificationRequestListDto> Items { get; set; } = new();
@@ -16,6 +18,9 @@ public class VerificationRequestListDto
     public int      Status          { get; set; }   // 1=Pending, 2=Approved, 3=Rejected
     public DateTime CreatedAt       { get; set; }
     public DateTime? ReviewedAt     { get; set; }
+    public Guid?    ReviewedBy      { get; set; }
+    public string?  ReviewedByName  { get; set; }
+    public string?  RejectionReason { get; set; }
 
     public Guid    NannyUserId    { get; set; }
     public string  NannyFirstName { get; set; } = "";
@@ -37,6 +42,7 @@ public class VerificationRequestDetailDto
     public string?  RejectionReason { get; set; }
     public DateTime CreatedAt       { get; set; }
     public DateTime? ReviewedAt     { get; set; }
+    public string?  ReviewedByName  { get; set; }
 
     public Guid    NannyUserId      { get; set; }
     public string  NannyFirstName   { get; set; } = "";
@@ -60,6 +66,8 @@ public class VerificationRequestDetailDto
     public int     SalaryType         { get; set; }
     public int?    MaxTravelDistance  { get; set; }
 
+    public List<VerificationSkillDto> Skills { get; set; } = new();
+    public List<VerificationCertificateDto> Certificates { get; set; } = new();
     public List<VerificationDocumentDto> Documents { get; set; } = new();
 
     public string FullName    => $"{NannyFirstName} {NannyLastName}".Trim();
@@ -76,6 +84,50 @@ public class VerificationRequestDetailDto
     };
 }
 
+public class VerificationSkillDto
+{
+    public Guid   Id               { get; set; }
+    public Guid   SkillId          { get; set; }
+    public string SkillName        { get; set; } = "";
+    public string SkillCategory    { get; set; } = "";
+    public int?   ProficiencyLevel { get; set; }
+
+    public string ProficiencyLabel => ProficiencyLevel switch
+    {
+        1 => "Basic",
+        2 => "Intermediate",
+        3 => "Advanced",
+        _ => "Not specified"
+    };
+}
+
+public class VerificationCertificateDto
+{
+    public Guid      Id                  { get; set; }
+    public string    Name                { get; set; } = "";
+    public string?   IssuingOrganization { get; set; }
+    public DateOnly? IssueDate           { get; set; }
+    public DateOnly? ExpiryDate          { get; set; }
+    public string?   CertificateUrl      { get; set; }
+    public int       VerificationStatus  { get; set; }
+
+    public string VerificationStatusLabel => VerificationStatus switch
+    {
+        1 => "Pending",
+        2 => "Approved",
+        3 => "Rejected",
+        _ => "Not submitted"
+    };
+
+    public string VerificationStatusClass => VerificationStatus switch
+    {
+        1 => "badge-pending",
+        2 => "badge-active",
+        3 => "badge-inactive",
+        _ => "bg-gray-100 text-gray-500"
+    };
+}
+
 public class VerificationDocumentDto
 {
     public Guid    Id           { get; set; }
@@ -86,19 +138,17 @@ public class VerificationDocumentDto
 
     public string TypeLabel => DocumentType switch
     {
-        1 => "National ID",
-        2 => "Degree / Certificate",
-        3 => "Background Check",
-        4 => "Health Certificate",
+        (int)VerificationDocumentType.IdentityCard => "National ID",
+        (int)VerificationDocumentType.DegreeCertificate => "Degree / Certificate",
+        (int)VerificationDocumentType.HealthCertificate => "Health Certificate",
         _ => "Document"
     };
 
     public string TypeIcon => DocumentType switch
     {
-        1 => "badge",
-        2 => "school",
-        3 => "verified_user",
-        4 => "medical_services",
+        (int)VerificationDocumentType.IdentityCard => "badge",
+        (int)VerificationDocumentType.DegreeCertificate => "school",
+        (int)VerificationDocumentType.HealthCertificate => "medical_services",
         _ => "description"
     };
 

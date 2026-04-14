@@ -31,7 +31,7 @@ public class UserService
         int pageSize)
     {
         if (page < 1) page = 1;
-        if (pageSize < 1 || pageSize > 100) pageSize = 10;
+        if (pageSize < 1 || pageSize > 100) pageSize = 3;
 
         var (users, totalCount) = await _userRepo.GetPagedUsersAsync(
             role, status, search, page, pageSize, ExcludedRoles, AllowedRoles);
@@ -169,8 +169,14 @@ public class UserService
         if (page < 1) page = 1;
         if (pageSize < 1 || pageSize > 100) pageSize = 10;
 
-        var (users, totalCount) = await _userRepo.GetPagedUsersByRoleAsync(
-            ModeratorRole, search, status, page, pageSize);
+        var (users, totalCount) = await _userRepo.GetPagedUsersAsync(
+            ModeratorRole,
+            status,
+            search,
+            page,
+            pageSize,
+            Array.Empty<string>(),
+            new[] { ModeratorRole });
 
         var items = users.Select(u => new AccountDto
         {

@@ -11,10 +11,10 @@ public class BlogCategoryService
     public BlogCategoryService(BlogCategoryRepository repo) => _repo = repo;
 
     // ── List (paged) ──────────────────────────────────────────────────────
-    public async Task<BlogCategoryListResponse> GetCategoriesAsync(
+    public async Task<BlogCategoryListResponse> ModeratorViewBlogCategoryListAsync(
         string? search, int page, int pageSize, bool? isDeleted = null)
     {
-        var (items, total) = await _repo.GetPagedAsync(search, page, pageSize, isDeleted);
+        var (items, total) = await _repo.GetBlogCategoryListAsync(search, page, pageSize, isDeleted);
 
         var dtos = new List<BlogCategoryDto>();
         foreach (var c in items)
@@ -34,7 +34,7 @@ public class BlogCategoryService
 
     // ── Get single ────────────────────────────────────────────────────────
     public async Task<(bool Success, int StatusCode, string Message, BlogCategoryDto? Data)>
-        GetCategoryAsync(Guid id)
+        ModeratorViewBlogCategoryDetailAsync(Guid id)
     {
         var cat = await _repo.GetByIdAsync(id);
         if (cat == null) return (false, 404, "Không tìm thấy danh mục.", null);
@@ -44,7 +44,7 @@ public class BlogCategoryService
 
     // ── Create ────────────────────────────────────────────────────────────
     public async Task<(bool Success, int StatusCode, string Message, BlogCategoryDto? Data)>
-        CreateCategoryAsync(CreateBlogCategoryRequest req, Guid? createdBy)
+        ModeratorCreateBlogCategoryAsync(CreateBlogCategoryRequest req, Guid? createdBy)
     {
         if (string.IsNullOrWhiteSpace(req.Name))
             return (false, 400, "Name không được để trống.", null);
@@ -76,7 +76,7 @@ public class BlogCategoryService
 
     // ── Update ────────────────────────────────────────────────────────────
     public async Task<(bool Success, int StatusCode, string Message)>
-        UpdateCategoryAsync(Guid id, UpdateBlogCategoryRequest req, Guid? updatedBy)
+        ModeratorUpdateBlogCategoryAsync(Guid id, UpdateBlogCategoryRequest req, Guid? updatedBy)
     {
         if (string.IsNullOrWhiteSpace(req.Name))
             return (false, 400, "Name không được để trống.");
@@ -101,7 +101,7 @@ public class BlogCategoryService
 
     // ── Toggle Status ─────────────────────────────────────────────────────
     public async Task<(bool Success, int StatusCode, string Message)>
-        ToggleCategoryStatusAsync(Guid id, bool activate)
+        ModeratorToggleCategoryStatusAsync(Guid id, bool activate)
     {
         var cat = await _repo.GetByIdAsync(id);
         if (cat == null) return (false, 404, "Không tìm thấy danh mục.");
