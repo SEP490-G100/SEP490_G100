@@ -233,12 +233,32 @@ public class AdminSubcriptionPlanService
 
     private static SubscriptionPlanResponse MapPlan(SubscriptionPlan plan)
     {
-        var features = SplitFeatures(plan.Features);
-        var targetRole = InferTargetRole(plan, features);
+        var metadata = SubscriptionPlanMetadataHelper.TryParse(plan.Features);
+        var hasStructuredMetadata = !string.IsNullOrWhiteSpace(plan.Features) &&
+                                    plan.Features.TrimStart().StartsWith("{", StringComparison.Ordinal);
+
+        var features = metadata?.Features?.Count > 0
+            ? SubscriptionPlanMetadataHelper.NormalizeFeatures(metadata.Features)
+            : hasStructuredMetadata
+                ? []
+                : SplitFeatures(plan.Features);
+
+        var targetRole = hasStructuredMetadata && !string.IsNullOrWhiteSpace(metadata?.TargetRole)
+            ? SubscriptionPlanMetadataHelper.NormalizeTargetRole(metadata!.TargetRole)
+            : InferTargetRole(plan, features);
+
+        var code = hasStructuredMetadata && !string.IsNullOrWhiteSpace(metadata?.Code)
+            ? SubscriptionPlanMetadataHelper.NormalizeCode(metadata!.Code, targetRole, plan.Name)
+            : BuildPlanCode(plan, targetRole);
+
+        var benefits = hasStructuredMetadata && metadata != null
+            ? metadata.Benefits
+            : InferBenefits(plan, targetRole, features);
+
         return new SubscriptionPlanResponse
         {
             Id = plan.Id,
-            Code = BuildPlanCode(plan),
+            Code = code,
             TargetRole = targetRole,
             Name = plan.Name,
             Description = plan.Description,
@@ -246,7 +266,7 @@ public class AdminSubcriptionPlanService
             DurationDays = plan.DurationDays,
             Features = features,
             SortOrder = plan.SortOrder,
-            Benefits = InferBenefits(plan, targetRole, features)
+            Benefits = benefits
         };
     }
 
@@ -317,10 +337,9 @@ public class AdminSubcriptionPlanService
         return "Unknown";
     }
 
-    private static string BuildPlanCode(SubscriptionPlan plan)
+    private static string BuildPlanCode(SubscriptionPlan plan, string targetRole)
     {
-        var source = string.IsNullOrWhiteSpace(plan.Name) ? plan.Id.ToString("N") : plan.Name;
-        return NormalizeCode(source);
+        return SubscriptionPlanMetadataHelper.NormalizeCode(null, targetRole, plan.Name);
     }
 
     private static string NormalizeCode(string value)

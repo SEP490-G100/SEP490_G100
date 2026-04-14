@@ -242,6 +242,37 @@
     box-shadow: 0 0 0 3px rgba(249,115,22,0.12);
 }
 
+textarea.search-input.subscription-feature-input {
+    height: 22rem;
+    min-height: 22rem;
+    padding-top: 0.9rem;
+    padding-bottom: 0.9rem;
+    font-size: 1.05rem;
+    line-height: 1.8;
+    resize: vertical;
+}
+
+textarea.search-input.subscription-description-input {
+    height: 10rem;
+    min-height: 10rem;
+    padding-top: 0.85rem;
+    padding-bottom: 0.85rem;
+    line-height: 1.7;
+    resize: vertical;
+}
+
+@media (min-width: 1024px) {
+    textarea.search-input.subscription-description-input {
+        height: 12rem;
+        min-height: 12rem;
+    }
+
+    textarea.search-input.subscription-feature-input {
+        height: 26rem;
+        min-height: 26rem;
+    }
+}
+
 /* ============================================================
    BUTTONS
    ============================================================ */

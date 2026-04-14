@@ -35,7 +35,10 @@
             </div>
             <div class="field-group lg:col-span-2">
                 <label asp-for="Description" class="field-label"></label>
-                <textarea asp-for="Description" class="search-input !pl-4 !h-28 py-3" maxlength="500" required></textarea>
+                <textarea asp-for="Description"
+                          class="search-input !pl-4 subscription-description-input"
+                          maxlength="500"
+                          required></textarea>
                 <span asp-validation-for="Description" class="text-xs text-red-500"></span>
             </div>
             <div class="field-group">
@@ -51,7 +54,10 @@
             <input asp-for="SortOrder" type="hidden" />
             <div class="field-group lg:col-span-2">
                 <label asp-for="FeatureLines" class="field-label">Features</label>
-                <textarea asp-for="FeatureLines" class="search-input !pl-4 !h-40 py-3" placeholder="One feature per line" required></textarea>
+                <textarea asp-for="FeatureLines"
+                          class="search-input !pl-4 subscription-feature-input"
+                          placeholder="One feature per line"
+                          required></textarea>
                 <span asp-validation-for="FeatureLines" class="text-xs text-red-500"></span>
             </div>
         </div>
