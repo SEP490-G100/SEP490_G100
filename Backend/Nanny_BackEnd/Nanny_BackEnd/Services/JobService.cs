@@ -642,7 +642,8 @@ public class JobService
             .OrderByDescending(s => s.EndDate)
             .FirstOrDefault();
 
-        var planName = activeSubscription?.SubscriptionPlan?.Name;
+        var plan = activeSubscription?.SubscriptionPlan;
+        var planName = plan?.Name;
         if (string.Equals(planName, "Pro", StringComparison.OrdinalIgnoreCase))
         {
             return ("PRO", new SubscriptionBenefitResponse
@@ -651,7 +652,7 @@ public class JobService
                 FeaturedBadge = true,
                 SearchPriority = true,
                 ListingDurationDays = 60,
-                CanUseRecommendation = true
+                CanUseRecommendation = plan!.CanUseRecommendation
             });
         }
 
@@ -663,7 +664,7 @@ public class JobService
                 FeaturedBadge = true,
                 SearchPriority = false,
                 ListingDurationDays = 45,
-                CanUseRecommendation = true
+                CanUseRecommendation = plan!.CanUseRecommendation
             });
         }
 

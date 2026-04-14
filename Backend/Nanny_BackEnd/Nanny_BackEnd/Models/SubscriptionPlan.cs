@@ -17,6 +17,8 @@ public partial class SubscriptionPlan
 
     public string? Features { get; set; }
 
+    public bool CanUseRecommendation { get; set; }
+
     public bool IsActive { get; set; }
 
     public int SortOrder { get; set; }

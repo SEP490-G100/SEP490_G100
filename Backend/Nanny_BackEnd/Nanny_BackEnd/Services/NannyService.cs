@@ -239,7 +239,8 @@ public class NannyService
             .OrderByDescending(s => s.EndDate)
             .FirstOrDefault();
 
-        var planName = activeSubscription?.SubscriptionPlan?.Name;
+        var plan = activeSubscription?.SubscriptionPlan;
+        var planName = plan?.Name;
         if (string.Equals(planName, "Pro", StringComparison.OrdinalIgnoreCase))
         {
             return ("NANNY_PRO", new SubscriptionBenefitResponse
@@ -249,7 +250,7 @@ public class NannyService
                 FeaturedBadge = true,
                 SearchPriority = true,
                 ListingDurationDays = 0,
-                CanUseRecommendation = true
+                CanUseRecommendation = plan!.CanUseRecommendation
             });
         }
 
@@ -262,7 +263,7 @@ public class NannyService
                 FeaturedBadge = true,
                 SearchPriority = false,
                 ListingDurationDays = 0,
-                CanUseRecommendation = true
+                CanUseRecommendation = plan!.CanUseRecommendation
             });
         }
 
