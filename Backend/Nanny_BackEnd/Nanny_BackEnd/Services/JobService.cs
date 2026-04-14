@@ -650,7 +650,8 @@ public class JobService
                 MonthlyJobPostLimit = 5,
                 FeaturedBadge = true,
                 SearchPriority = true,
-                ListingDurationDays = 60
+                ListingDurationDays = 60,
+                CanUseRecommendation = true
             });
         }
 
@@ -661,7 +662,8 @@ public class JobService
                 MonthlyJobPostLimit = 3,
                 FeaturedBadge = true,
                 SearchPriority = false,
-                ListingDurationDays = 45
+                ListingDurationDays = 45,
+                CanUseRecommendation = true
             });
         }
 

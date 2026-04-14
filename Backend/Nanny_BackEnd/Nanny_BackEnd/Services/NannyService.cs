@@ -248,7 +248,8 @@ public class NannyService
                 MonthlyApplicationLimit = 5,
                 FeaturedBadge = true,
                 SearchPriority = true,
-                ListingDurationDays = 0
+                ListingDurationDays = 0,
+                CanUseRecommendation = true
             });
         }
 
@@ -260,7 +261,8 @@ public class NannyService
                 MonthlyApplicationLimit = 3,
                 FeaturedBadge = true,
                 SearchPriority = false,
-                ListingDurationDays = 0
+                ListingDurationDays = 0,
+                CanUseRecommendation = true
             });
         }
 
