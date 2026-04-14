@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
     <link href="~/css/moderator.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/unified-dropdown.css" rel="stylesheet" asp-append-version="true" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body class="font-display bg-gray-50 text-gray-800" style="font-family:'Quicksand',sans-serif;">
 
@@ -138,23 +139,24 @@
                                     class="nm-icon-btn"
                                     aria-label="Thong bao">
                                 <span class="material-icons-round text-[20px]">notifications</span>
-                                <span id="notificationBadge" class="nm-badge-dot hidden">0</span>
+                                <span id="notificationBadge" class="nm-badge-dot hidden"></span>
                             </button>
 
                             <div id="notificationMenu" class="nm-panel hidden">
                                 <div class="nm-panel-header">
                                     <div>
-                                        <p class="nm-panel-title">Thong bao</p>
-                                        <p class="text-xs text-gray-500">Cong viec moi va cac cap nhat can moderator xu ly</p>
+                                        <p class="nm-panel-title">Thông báo</p>
+                                        <p class="nm-panel-subtitle">Nhắc nhở và cập nhật quan trọng</p>
                                     </div>
-                                    <button type="button" id="markAllNotificationsRead" class="nm-panel-link">
-                                        Danh dau da doc
-                                    </button>
+                                    <div class="nm-panel-actions">
+                                        <a href="/Notification/Center" class="nm-panel-link nm-panel-link--ghost">Xem tất cả</a>
+                                        <button type="button" id="markAllNotificationsRead" class="nm-panel-link">Đánh dấu đã đọc</button>
+                                    </div>
                                 </div>
                                 <div id="notificationList" class="nm-notification-list">
                                     <div class="nm-empty-state">
                                         <span class="material-icons-round">notifications_none</span>
-                                        <p class="text-sm font-semibold text-gray-700">Dang tai thong bao...</p>
+                                        <p class="text-sm font-semibold text-gray-700">Đang tải thông báo...</p>
                                     </div>
                                 </div>
                             </div>
@@ -212,6 +214,31 @@
                 return;
             }
 
+            const UI_TEXT = {
+                bellLabel: 'Thông báo',
+                panelTitle: 'Thông báo',
+                panelSubtitle: 'Nhắc nhở và cập nhật quan trọng',
+                markAll: 'Đánh dấu đã đọc',
+                viewAll: 'Xem tất cả',
+                loading: 'Đang tải thông báo...',
+                empty: 'Bạn chưa có thông báo nào.',
+                fallbackTitle: 'Thông báo mới',
+                fallbackBody: 'Bạn có thông báo mới từ hệ thống.',
+                fallbackType: 'Thông báo',
+                senderPrefix: 'Từ',
+                loadError: 'Không thể tải thông báo lúc này.'
+            };
+
+            notificationToggle.setAttribute('aria-label', UI_TEXT.bellLabel);
+
+            const titleEl = notificationMenu.querySelector('.nm-panel-title');
+            const subtitleEl = notificationMenu.querySelector('.nm-panel-subtitle');
+            const emptyEl = notificationMenu.querySelector('.nm-empty-state p');
+            titleEl && (titleEl.textContent = UI_TEXT.panelTitle);
+            subtitleEl && (subtitleEl.textContent = UI_TEXT.panelSubtitle);
+            emptyEl && (emptyEl.textContent = UI_TEXT.loading);
+            markAllButton.textContent = UI_TEXT.markAll;
+
             const escapeHtml = (value) => String(value ?? '')
                 .replaceAll('&', '&amp;')
                 .replaceAll('<', '&lt;')
@@ -232,6 +259,34 @@
                 }).format(date);
             };
 
+            const normalizeText = (value) => String(value ?? '')
+                .trim()
+                .toLowerCase()
+                .replace(/\s+/g, ' ');
+
+            const shouldShowTypeChip = (item) => {
+                const typeLabel = normalizeText(item?.typeLabel);
+                const title = normalizeText(item?.title);
+                if (!typeLabel) return false;
+                if (typeLabel.includes('moderator')) return true;
+                return typeLabel !== title;
+            };
+
+            const buildNotificationMeta = (item) => {
+                const parts = [];
+                if (shouldShowTypeChip(item)) {
+                    parts.push(`<span class="nm-notification-chip">${escapeHtml(item.typeLabel || UI_TEXT.fallbackType)}</span>`);
+                }
+
+                const sender = String(item?.senderLabel || '').trim();
+                if (sender) {
+                    parts.push(`<span class="nm-notification-sender">${UI_TEXT.senderPrefix} ${escapeHtml(sender)}</span>`);
+                }
+
+                if (!parts.length) return '';
+                return `<div class="nm-notification-item-meta">${parts.join('')}</div>`;
+            };
+
             const renderEmpty = (message) => {
                 notificationList.innerHTML = `
                     <div class="nm-empty-state">
@@ -242,6 +297,7 @@
 
             const updateBadge = (count) => {
                 if (!count || count <= 0) {
+                    notificationBadge.textContent = '';
                     notificationBadge.classList.add('hidden');
                     return;
                 }
@@ -262,14 +318,14 @@
 
             const loadNotifications = async () => {
                 try {
-                    const response = await fetch('/Notification/My?page=1&pageSize=8', { credentials: 'same-origin' });
+                    const response = await fetch('/Notification/My?page=1&pageSize=6', { credentials: 'same-origin' });
                     const result = await response.json();
                     const items = result?.data ?? [];
                     const unreadCount = result?.unreadCount ?? 0;
                     updateBadge(unreadCount);
 
                     if (!items.length) {
-                        renderEmpty('Moderator chua co thong bao nao.');
+                        renderEmpty(UI_TEXT.empty);
                         return;
                     }
 
@@ -278,17 +334,17 @@
                                 class="nm-notification-item ${item.isRead ? '' : 'unread'}"
                                 data-id="${escapeHtml(item.id)}"
                                 data-url="${escapeHtml(item.actionUrl || '')}">
-                            <div class="nm-notification-item-title">${escapeHtml(item.title)}</div>
-                            <div class="nm-notification-item-meta">
-                                <span class="nm-notification-chip">${escapeHtml(item.typeLabel || 'Thong bao')}</span>
-                                <span class="nm-notification-sender">Tu ${escapeHtml(item.senderLabel || 'He thong')}</span>
+                            <div class="nm-notification-item-title-row">
+                                <div class="nm-notification-item-title">${escapeHtml(item.title || UI_TEXT.fallbackTitle)}</div>
+                                ${item.isRead ? '' : '<span class="nm-notification-unread-dot" aria-hidden="true"></span>'}
                             </div>
-                            <div class="nm-notification-item-body">${escapeHtml(item.content)}</div>
+                            ${buildNotificationMeta(item)}
+                            <div class="nm-notification-item-body">${escapeHtml(item.content || UI_TEXT.fallbackBody)}</div>
                             <div class="nm-notification-item-time">${escapeHtml(formatTime(item.createdAt))}</div>
                         </button>
                     `).join('');
                 } catch {
-                    renderEmpty('Khong the tai thong bao luc nay.');
+                    renderEmpty(UI_TEXT.loadError);
                 }
             };
 
@@ -342,9 +398,9 @@
                 item.classList.remove('unread');
                 await loadUnreadCount();
 
-                if (actionUrl) {
-                    window.location.href = actionUrl;
-                }
+                window.location.href = actionUrl
+                    ? actionUrl
+                    : `/Notification/Center?notificationId=${encodeURIComponent(item.dataset.id)}`;
             });
 
             markAllButton.addEventListener('click', async () => {
