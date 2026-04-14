@@ -205,9 +205,7 @@ public class AdminNotificationController : Controller
                 return RedirectToAdminNotificationReturnUrlOrList(
                     returnUrl,
                     "success",
-                    result.Message ?? (isDeleted
-                        ? "Da vo hieu hoa thong bao thanh cong"
-                        : "Da kich hoat thong bao thanh cong"));
+                    "Đã chỉnh sửa trạng thái thông báo thành công");
             }
 
             return RedirectToAdminNotificationReturnUrlOrList(

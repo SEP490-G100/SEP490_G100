@@ -196,11 +196,7 @@ public class AdminAccountController : Controller
 
             if (result?.Success == true)
             {
-                var successMessage = result.Message ??
-                                     (status == 1
-                                         ? "Moderator activated successfully."
-                                         : "Moderator deactivated successfully.");
-                return RedirectToReturnUrlOrList(returnUrl, "success", successMessage);
+                return RedirectToReturnUrlOrList(returnUrl, "success", "Đã chỉnh sửa trạng thái tài khoản thành công");
             }
 
             TempData["Error"] = result?.Message ?? "Khong the cap nhat trang thai Moderator.";

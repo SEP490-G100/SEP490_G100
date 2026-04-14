@@ -189,9 +189,7 @@ public class AdminSubcriptionPlanController : Controller
                 return RedirectToReturnUrlOrList(
                     returnUrl,
                     "success",
-                    result.Message ?? (isActive
-                        ? "Da kich hoat goi subscription thanh cong"
-                        : "Da vo hieu hoa goi subscription thanh cong"));
+                    "Đã chỉnh sửa trạng thái gói thành công");
             }
 
             return RedirectToReturnUrlOrList(
