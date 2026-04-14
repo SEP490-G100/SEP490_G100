@@ -45,6 +45,8 @@ public class AdminSubscriptionPlanUpsertRequest
 
     [Required]
     public AdminSubscriptionPlanBenefitRequest Benefits { get; set; } = new();
+
+    public bool CanUseRecommendation { get; set; }
 }
 
 public class AdminSubscriptionPlanStatusRequest
@@ -64,6 +66,7 @@ public class AdminSubscriptionPlanListItemResponse
     public bool IsActive { get; set; }
     public int FeatureCount { get; set; }
     public int ActiveSubscriberCount { get; set; }
+    public bool CanUseRecommendation { get; set; }
     public DateTime CreatedAt { get; set; }
 }
 
@@ -71,6 +74,7 @@ public class AdminSubscriptionPlanDetailResponse : SubscriptionPlanResponse
 {
     public bool IsActive { get; set; }
     public int ActiveSubscriberCount { get; set; }
+    public bool CanUseRecommendation { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 }

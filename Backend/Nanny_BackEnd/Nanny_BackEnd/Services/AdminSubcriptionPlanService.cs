@@ -73,6 +73,7 @@ public class AdminSubcriptionPlanService
                 ActiveSubscriberCount = await _adminSubcriptionPlanRepository.CountActiveSubscriptionsByPlanAsync(
                     item.Plan.Id,
                     DateTime.UtcNow),
+                CanUseRecommendation = item.Plan.CanUseRecommendation,
                 CreatedAt = item.Plan.CreatedAt
             });
         }
@@ -110,6 +111,7 @@ public class AdminSubcriptionPlanService
             ActiveSubscriberCount = await _adminSubcriptionPlanRepository.CountActiveSubscriptionsByPlanAsync(
                 plan.Id,
                 DateTime.UtcNow),
+            CanUseRecommendation = plan.CanUseRecommendation,
             CreatedAt = plan.CreatedAt,
             UpdatedAt = plan.UpdatedAt
         };
@@ -125,7 +127,6 @@ public class AdminSubcriptionPlanService
         if (await _adminSubcriptionPlanRepository.ExistsPlanNameIncludingDeletedAsync(normalizedName))
             throw new InvalidOperationException("Ten goi subscription da ton tai.");
 
-        var metadata = BuildAdminPlanMetadata(request, normalizedName);
         var nowUtc = DateTime.UtcNow;
         var nextSortOrder = await _adminSubcriptionPlanRepository.GetNextSubscriptionPlanSortOrderAsync();
         var plan = new SubscriptionPlan
@@ -135,7 +136,8 @@ public class AdminSubcriptionPlanService
             Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
             Price = request.Price,
             DurationDays = request.DurationDays,
-            Features = SubscriptionPlanMetadataHelper.Serialize(metadata),
+            Features = SerializeFeaturesForStorage(request.Features),
+            CanUseRecommendation = request.CanUseRecommendation,
             IsActive = true,
             SortOrder = nextSortOrder,
             CreatedAt = nowUtc,
@@ -164,13 +166,13 @@ public class AdminSubcriptionPlanService
         if (await _adminSubcriptionPlanRepository.ExistsPlanNameIncludingDeletedAsync(normalizedName, id))
             throw new InvalidOperationException("Ten goi subscription da ton tai.");
 
-        var metadata = BuildAdminPlanMetadata(request, normalizedName);
         plan.Name = normalizedName;
         plan.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
         plan.Price = request.Price;
         plan.DurationDays = request.DurationDays;
         plan.SortOrder = request.SortOrder;
-        plan.Features = SubscriptionPlanMetadataHelper.Serialize(metadata);
+        plan.Features = SerializeFeaturesForStorage(request.Features);
+        plan.CanUseRecommendation = request.CanUseRecommendation;
         plan.UpdatedAt = DateTime.UtcNow;
         plan.UpdatedBy = adminUserId;
 
@@ -196,24 +198,8 @@ public class AdminSubcriptionPlanService
         await _adminSubcriptionPlanRepository.SaveChangesAsync();
     }
 
-    private static SubscriptionPlanMetadata BuildAdminPlanMetadata(AdminSubscriptionPlanUpsertRequest request, string normalizedName)
-    {
-        var targetRole = SubscriptionPlanMetadataHelper.NormalizeTargetRole(request.TargetRole);
-        return new SubscriptionPlanMetadata
-        {
-            Code = SubscriptionPlanMetadataHelper.NormalizeCode(null, targetRole, normalizedName),
-            TargetRole = targetRole,
-            Features = SubscriptionPlanMetadataHelper.NormalizeFeatures(request.Features),
-            Benefits = new SubscriptionBenefitResponse
-            {
-                MonthlyJobPostLimit = request.Benefits.MonthlyJobPostLimit,
-                MonthlyApplicationLimit = request.Benefits.MonthlyApplicationLimit,
-                FeaturedBadge = request.Benefits.FeaturedBadge,
-                SearchPriority = request.Benefits.SearchPriority,
-                ListingDurationDays = request.Benefits.ListingDurationDays
-            }
-        };
-    }
+    private static string SerializeFeaturesForStorage(IEnumerable<string> features) =>
+        JsonSerializer.Serialize(SubscriptionPlanMetadataHelper.NormalizeFeatures(features));
 
     private static void ValidateAdminPlanRequest(AdminSubscriptionPlanUpsertRequest request)
     {
@@ -301,7 +287,8 @@ public class AdminSubcriptionPlanService
         {
             FeaturedBadge = ContainsAny(textSamples, "badge", "featured", "noi bat"),
             SearchPriority = ContainsAny(textSamples, "uu tien", "priority", "tim kiem"),
-            ListingDurationDays = InferListingDurationDays(textSamples, plan.DurationDays)
+            ListingDurationDays = InferListingDurationDays(textSamples, plan.DurationDays),
+            CanUseRecommendation = plan.CanUseRecommendation
         };
 
         if (string.Equals(targetRole, "Parent", StringComparison.OrdinalIgnoreCase))

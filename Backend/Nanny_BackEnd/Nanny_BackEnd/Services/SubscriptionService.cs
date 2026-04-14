@@ -404,6 +404,7 @@ public class SubscriptionService
                 IsActive = item.Plan.IsActive,
                 FeatureCount = item.PlanResponse.Features.Count,
                 ActiveSubscriberCount = await _subscriptionRepo.countActiveSubscriptionsByPlan(item.Plan.Id, DateTime.UtcNow),
+                CanUseRecommendation = item.Plan.CanUseRecommendation,
                 CreatedAt = item.Plan.CreatedAt
             });
         }
@@ -439,6 +440,7 @@ public class SubscriptionService
             Benefits = planResponse.Benefits,
             IsActive = plan.IsActive,
             ActiveSubscriberCount = await _subscriptionRepo.countActiveSubscriptionsByPlan(plan.Id, DateTime.UtcNow),
+            CanUseRecommendation = plan.CanUseRecommendation,
             CreatedAt = plan.CreatedAt,
             UpdatedAt = plan.UpdatedAt
         };
@@ -452,7 +454,6 @@ public class SubscriptionService
         if (await _subscriptionRepo.existsPlanNameIncludingDeleted(normalizedName))
             throw new InvalidOperationException("Ten goi subscription da ton tai.");
 
-        var metadata = buildAdminPlanMetadata(request, normalizedName);
         var nowUtc = DateTime.UtcNow;
         var nextSortOrder = await _subscriptionRepo.getNextSubscriptionPlanSortOrder();
         var plan = new SubscriptionPlan
@@ -462,7 +463,8 @@ public class SubscriptionService
             Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
             Price = request.Price,
             DurationDays = request.DurationDays,
-            Features = SubscriptionPlanMetadataHelper.Serialize(metadata),
+            Features = serializeFeaturesForStorage(request.Features),
+            CanUseRecommendation = request.CanUseRecommendation,
             IsActive = true,
             SortOrder = nextSortOrder,
             CreatedAt = nowUtc,
@@ -488,13 +490,13 @@ public class SubscriptionService
         if (await _subscriptionRepo.existsPlanNameIncludingDeleted(normalizedName, id))
             throw new InvalidOperationException("Ten goi subscription da ton tai.");
 
-        var metadata = buildAdminPlanMetadata(request, normalizedName);
         plan.Name = normalizedName;
         plan.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
         plan.Price = request.Price;
         plan.DurationDays = request.DurationDays;
         plan.SortOrder = request.SortOrder;
-        plan.Features = SubscriptionPlanMetadataHelper.Serialize(metadata);
+        plan.Features = serializeFeaturesForStorage(request.Features);
+        plan.CanUseRecommendation = request.CanUseRecommendation;
         plan.UpdatedAt = DateTime.UtcNow;
         plan.UpdatedBy = adminUserId;
 
@@ -1232,24 +1234,8 @@ public class SubscriptionService
     //    };
     //}
 
-    private static SubscriptionPlanMetadata buildAdminPlanMetadata(AdminSubscriptionPlanUpsertRequest request, string normalizedName)
-    {
-        var targetRole = SubscriptionPlanMetadataHelper.NormalizeTargetRole(request.TargetRole);
-        return new SubscriptionPlanMetadata
-        {
-            Code = SubscriptionPlanMetadataHelper.NormalizeCode(null, targetRole, normalizedName),
-            TargetRole = targetRole,
-            Features = SubscriptionPlanMetadataHelper.NormalizeFeatures(request.Features),
-            Benefits = new SubscriptionBenefitResponse
-            {
-                MonthlyJobPostLimit = request.Benefits.MonthlyJobPostLimit,
-                MonthlyApplicationLimit = request.Benefits.MonthlyApplicationLimit,
-                FeaturedBadge = request.Benefits.FeaturedBadge,
-                SearchPriority = request.Benefits.SearchPriority,
-                ListingDurationDays = request.Benefits.ListingDurationDays
-            }
-        };
-    }
+    private static string serializeFeaturesForStorage(IEnumerable<string> features) =>
+        JsonSerializer.Serialize(SubscriptionPlanMetadataHelper.NormalizeFeatures(features));
 
     private static void validateAdminPlanRequest(AdminSubscriptionPlanUpsertRequest request)
     {

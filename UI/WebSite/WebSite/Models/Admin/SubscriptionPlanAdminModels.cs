@@ -56,6 +56,9 @@ public class AdminSubscriptionPlanListItemViewModel
     [JsonPropertyName("activeSubscriberCount")]
     public int ActiveSubscriberCount { get; set; }
 
+    [JsonPropertyName("canUseRecommendation")]
+    public bool CanUseRecommendation { get; set; }
+
     [JsonPropertyName("createdAt")]
     public DateTime CreatedAt { get; set; }
 }
@@ -116,6 +119,9 @@ public class AdminSubscriptionPlanDetailViewModel
     [JsonPropertyName("activeSubscriberCount")]
     public int ActiveSubscriberCount { get; set; }
 
+    [JsonPropertyName("canUseRecommendation")]
+    public bool CanUseRecommendation { get; set; }
+
     [JsonPropertyName("createdAt")]
     public DateTime CreatedAt { get; set; }
 
@@ -169,6 +175,8 @@ public class AdminSubscriptionPlanFormViewModel
     [Range(0, 3650)]
     public int ListingDurationDays { get; set; }
 
+    public bool CanUseRecommendation { get; set; }
+
     public List<string> GetFeatures() =>
         FeatureLines
             .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -195,6 +203,7 @@ public class AdminSubscriptionPlanFormViewModel
         MonthlyApplicationLimit = detail.Benefits.MonthlyApplicationLimit,
         FeaturedBadge = detail.Benefits.FeaturedBadge,
         SearchPriority = detail.Benefits.SearchPriority,
-        ListingDurationDays = detail.Benefits.ListingDurationDays
+        ListingDurationDays = detail.Benefits.ListingDurationDays,
+        CanUseRecommendation = detail.CanUseRecommendation
     };
 }
