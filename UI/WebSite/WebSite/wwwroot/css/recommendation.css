@@ -12,8 +12,8 @@
     gap: 12px;
 }
 
-.rec-upgrade-icon {
-    font-size: 40px !important;
+.rec-upgrade-prompt .rec-upgrade-icon {
+    font-size: 40px;
     color: #f59e0b;
 }
 

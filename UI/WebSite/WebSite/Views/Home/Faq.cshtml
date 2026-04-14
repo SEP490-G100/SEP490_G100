@@ -392,9 +392,7 @@
                     </div>
                     <h3 style="font-weight:700;font-size:.95rem;margin-bottom:6px">Vẫn còn thắc mắc?</h3>
                     <p style="font-size:.8rem;opacity:.85;line-height:1.6;margin-bottom:16px">Đội ngũ hỗ trợ phản hồi trong vòng <strong>24 giờ</strong>.</p>
-                    <a asp-controller="Communication" asp-action="Index"
-                       style="display:flex;align-items:center;justify-content:center;gap:8px;background:#fff;color:#ea580c;font-weight:700;font-size:.82rem;padding:10px;border-radius:12px;text-decoration:none;transition:opacity .15s"
-                       onmouseover="this.style.opacity='.9'" onmouseout="this.style.opacity='1'">
+                    <a asp-controller="Communication" asp-action="Index" class="faq-contact-btn">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                         Nhắn tin ngay
                     </a>
@@ -481,7 +479,19 @@
 
 @section Scripts {
 <script>
-    // ── Accordion (override layout's toggleFaq for this page) ──────
+(function () {
+    // ── Accordion aria init ────────────────────────────────────────
+    document.querySelectorAll('#faqAccordion .faq-item').forEach((item, i) => {
+        const btn   = item.querySelector('.faq-btn');
+        const panel = item.querySelector('.faq-answer-wrapper');
+        const id    = 'faq-panel-' + i;
+        panel.id    = id;
+        panel.setAttribute('role', 'region');
+        btn.setAttribute('aria-expanded', 'false');
+        btn.setAttribute('aria-controls', id);
+    });
+
+    // ── Accordion ──────────────────────────────────────────────────
     function toggleFaq(btn) {
         const wrapper = btn.nextElementSibling;
         const chevron = btn.querySelector('.faq-chevron');
@@ -497,12 +507,16 @@
         document.querySelectorAll('#faqAccordion .faq-card').forEach(c => {
             c.style.borderLeftColor = 'transparent';
         });
+        document.querySelectorAll('#faqAccordion .faq-btn').forEach(b => {
+            b.setAttribute('aria-expanded', 'false');
+        });
 
         // Open clicked
         if (!isOpen) {
             wrapper.style.gridTemplateRows = '1fr';
             chevron.style.transform = 'rotate(180deg)';
             btn.closest('.faq-card').style.borderLeftColor = '#f97316';
+            btn.setAttribute('aria-expanded', 'true');
         }
     }
 
@@ -527,7 +541,7 @@
         }
 
         items.forEach(item => {
-            const text  = (item.dataset.q || '') + ' ' + (item.querySelector('span[style*="font-weight:600"]')?.textContent || '');
+            const text  = item.dataset.q || '';
             const match = !kw || text.toLowerCase().includes(kw);
             item.style.display = match ? '' : 'none';
             if (match) shown++;
@@ -586,6 +600,13 @@
         const count = btn.querySelector('.faq-cat-count');
         if (count) { count.dataset.bg = count.style.background; count.style.background = '#f97316'; count.style.color = '#fff'; }
     }
+
+    // Expose page-level handlers to window (required by inline onclick/oninput)
+    window.toggleFaq  = toggleFaq;
+    window.searchFaq  = searchFaq;
+    window.clearSearch = clearSearch;
+    window.filterFaq  = filterFaq;
+}());
 </script>
 <style>
     .faq-card {
@@ -602,6 +623,22 @@
 
     .faq-cat-btn:hover { border-color: #fdba74 !important; background: #fff7ed !important; }
     .faq-cat-active { border-color: #f97316 !important; background: #fff7ed !important; }
+
+    .faq-contact-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        background: #fff;
+        color: #ea580c;
+        font-weight: 700;
+        font-size: .82rem;
+        padding: 10px;
+        border-radius: 12px;
+        text-decoration: none;
+        transition: opacity .15s;
+    }
+    .faq-contact-btn:hover { opacity: .9; color: #ea580c; }
 
     /* Mobile: stack layout */
     @@media (max-width: 767px) {

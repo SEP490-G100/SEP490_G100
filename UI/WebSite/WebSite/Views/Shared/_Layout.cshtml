@@ -986,6 +986,7 @@
                           currentAction.Equals("List", StringComparison.OrdinalIgnoreCase)
         ? "nm-nav-link active"
         : "nm-nav-link";
+    var homeNavCls = isHomePage ? "nm-nav-link active" : "nm-nav-link";
     var faqNavCls = currentCtrl.Equals("Home", StringComparison.OrdinalIgnoreCase) &&
                     currentAction.Equals("Faq", StringComparison.OrdinalIgnoreCase)
         ? "nm-nav-link active"
@@ -1008,7 +1009,7 @@
 
                 <!-- Nav Links (giữa) -->
                 <div class="hidden md:flex items-center gap-1 nm-nav-links">
-                    <a href="/" class="@(isHomePage ? "nm-nav-link active" : "nm-nav-link")">Trang chủ</a>
+                    <a href="/" class="@homeNavCls">Trang chủ</a>
                     <a href="/Search" class="@NavCls("Search")">Tìm bảo mẫu</a>
                     <a href="/Nanny/List" class="@nannyListNavCls">Tìm nanny</a>
                     <a href="/Blog" class="@NavCls("Blog")">Blog</a>
