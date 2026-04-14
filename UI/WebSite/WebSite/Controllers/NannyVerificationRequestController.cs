@@ -15,6 +15,7 @@ using WebSite.Services;
 namespace WebSite.Controllers;
 
 [Authorize(Roles = "Nanny")]
+[Route("[controller]")]
 public class NannyVerificationRequestController : Controller
 {
     private readonly HttpClient _http;
