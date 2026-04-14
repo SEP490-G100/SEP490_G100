@@ -85,7 +85,7 @@
     </div>
 
     <!-- Subscriptions -->
-    <div class="stat-card p-5 fade-in-up fade-in-up-delay-4">
+    <a href="/Admin/ManagePlans" class="stat-card p-5 fade-in-up fade-in-up-delay-4 hover:-translate-y-1 transition-all block">
         <div class="flex items-start justify-between mb-4">
             <div class="icon-badge" style="background:linear-gradient(135deg,#EDE9FE,#DDD6FE);">
                 <span class="material-icons-round text-violet-500 text-2xl">card_membership</span>
@@ -99,10 +99,10 @@
                 <span class="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span>@Model.ActiveSubs Active
             </span>
             <span class="flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-gray-300 inline-block"></span>@Model.ExpiredSubs Expired
+                <span class="w-2 h-2 rounded-full bg-gray-300 inline-block"></span>@Model.ExpiredSubs Expired/Cancelled
             </span>
         </div>
-    </div>
+    </a>
 </div>
 
 <!-- PLATFORM HEALTH (NEW ROW) -->
@@ -179,6 +179,18 @@
                 <div class="flex-1 min-w-0">
                     <p class="text-sm font-bold text-gray-700">Create Moderator</p>
                     <p class="text-xs text-gray-400">Add a new moderator account</p>
+                </div>
+                <span class="material-icons-round text-gray-300 text-base">arrow_forward_ios</span>
+            </a>
+
+            <a href="/Admin/ManagePlans"
+               class="quick-action-item hover:bg-violet-50 hover:border-violet-200">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-100 to-violet-200 flex items-center justify-center flex-shrink-0">
+                    <span class="material-icons-round text-violet-500 text-lg">card_membership</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-bold text-gray-700">Manage Plans</p>
+                    <p class="text-xs text-gray-400">@Model.ActiveSubs active subscriptions</p>
                 </div>
                 <span class="material-icons-round text-gray-300 text-base">arrow_forward_ios</span>
             </a>

@@ -17,6 +17,21 @@ public class SubscriptionRepository
             .ThenBy(p => p.Price)
             .ToListAsync();
 
+    /// <summary>Admin: all plans including inactive (but not soft-deleted).</summary>
+    public async Task<List<SubscriptionPlan>> getAllPlansIncludingInactive() =>
+        await _db.SubscriptionPlans
+            .Include(p => p.UserSubscriptions)
+            .Where(p => !p.IsDeleted)
+            .OrderBy(p => p.SortOrder)
+            .ThenBy(p => p.Price)
+            .ToListAsync();
+
+    /// <summary>Admin: find plan by ID including inactive, with subscriber count.</summary>
+    public async Task<SubscriptionPlan?> findPlanByIdIncludingInactive(Guid planId) =>
+        await _db.SubscriptionPlans
+            .Include(p => p.UserSubscriptions)
+            .FirstOrDefaultAsync(p => p.Id == planId && !p.IsDeleted);
+
     public async Task<List<SubscriptionPlan>> getPlansByNames(IEnumerable<string> names)
     {
         var normalizedNames = names.ToList();

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nanny_BackEnd.DTOs.Account;
 using Nanny_BackEnd.DTOs.Verification;
@@ -10,7 +11,7 @@ namespace Nanny_BackEnd.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-//[Authorize(Roles = "Moderator")]
+[Authorize(Roles = "Admin,Moderator")]
 public class ModeratorController : ControllerBase
 {
     private readonly UserService _userService;

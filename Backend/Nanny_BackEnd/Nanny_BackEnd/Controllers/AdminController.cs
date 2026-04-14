@@ -1,24 +1,31 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nanny_BackEnd.DTOs.Account;
+using Nanny_BackEnd.DTOs.Subscription;
 using Nanny_BackEnd.Services;
 
 namespace Nanny_BackEnd.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-//[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin")]
 public class AdminController : ControllerBase
 {
     private readonly DashboardService _dashboardService;
     private readonly UserService _userService;
     private readonly ExportService _exportService;
+    private readonly SubscriptionService _subscriptionService;
 
-    public AdminController(DashboardService dashboardService, UserService userService, ExportService exportService)
+    public AdminController(
+        DashboardService dashboardService,
+        UserService userService,
+        ExportService exportService,
+        SubscriptionService subscriptionService)
     {
-        _dashboardService = dashboardService;
-        _userService      = userService;
-        _exportService    = exportService;
+        _dashboardService    = dashboardService;
+        _userService         = userService;
+        _exportService       = exportService;
+        _subscriptionService = subscriptionService;
     }
 
     // ────────────────────────────────────────────────
@@ -109,5 +116,58 @@ public class AdminController : ControllerBase
             return StatusCode(result.StatusCode, new { success = false, message = result.Message });
 
         return Ok(new { success = true, message = result.Message });
+    }
+
+    // ════════════════════════════════════════════════
+    // SUBSCRIPTION PLAN MANAGEMENT
+    // ════════════════════════════════════════════════
+
+    // GET /api/admin/subscription-plans  — All plans (incl. inactive)
+    [HttpGet("subscription-plans")]
+    public async Task<IActionResult> GetAllPlans()
+    {
+        var plans = await _subscriptionService.getAllPlansForAdmin();
+        return Ok(new { success = true, data = plans });
+    }
+
+    // POST /api/admin/subscription-plans  — Create plan
+    [HttpPost("subscription-plans")]
+    public async Task<IActionResult> CreatePlan([FromBody] AdminCreatePlanRequest request)
+    {
+        try
+        {
+            var plan = await _subscriptionService.createPlan(request);
+            return Ok(new { success = true, message = "Tạo gói thành công.", data = plan });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+    }
+
+    // PATCH /api/admin/subscription-plans/{id}  — Update plan
+    [HttpPatch("subscription-plans/{id:guid}")]
+    public async Task<IActionResult> UpdatePlan(Guid id, [FromBody] AdminUpdatePlanRequest request)
+    {
+        try
+        {
+            await _subscriptionService.updatePlan(id, request);
+            return Ok(new { success = true, message = "Cập nhật gói thành công." });
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { success = false, message = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { success = false, message = ex.Message }); }
+    }
+
+    // DELETE /api/admin/subscription-plans/{id}  — Soft delete
+    [HttpDelete("subscription-plans/{id:guid}")]
+    public async Task<IActionResult> DeletePlan(Guid id)
+    {
+        try
+        {
+            await _subscriptionService.deletePlan(id);
+            return Ok(new { success = true, message = "Đã xóa gói thành công." });
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { success = false, message = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { success = false, message = ex.Message }); }
     }
 }

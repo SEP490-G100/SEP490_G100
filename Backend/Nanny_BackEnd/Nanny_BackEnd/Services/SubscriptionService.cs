@@ -1,9 +1,10 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Options;
 using Nanny_BackEnd.DTOs.Subscription;
+using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
@@ -350,6 +351,98 @@ public class SubscriptionService
 
         await _subscriptionRepo.saveChanges();
         return mapSubscription(subscription);
+    }
+
+    // ══════════════════════════════════════════════════
+    // ADMIN: SUBSCRIPTION PLAN MANAGEMENT
+    // ══════════════════════════════════════════════════
+
+    public async Task<List<AdminPlanResponse>> getAllPlansForAdmin()
+    {
+        var plans = await _subscriptionRepo.getAllPlansIncludingInactive();
+        return plans.Select(p =>
+        {
+            var features = splitFeatures(p.Features);
+            return new AdminPlanResponse
+            {
+                Id                    = p.Id,
+                Name                  = p.Name,
+                Description           = p.Description,
+                Price                 = p.Price,
+                DurationDays          = p.DurationDays,
+                Features              = features,
+                IsActive              = p.IsActive,
+                SortOrder             = p.SortOrder,
+                CreatedAt             = p.CreatedAt,
+                UpdatedAt             = p.UpdatedAt,
+                ActiveSubscriberCount = p.UserSubscriptions.Count(s => !s.IsDeleted && s.Status == (int)UserSubscriptionStatus.Active)
+            };
+        }).ToList();
+    }
+
+    public async Task<AdminPlanResponse> createPlan(AdminCreatePlanRequest request)
+    {
+        var featuresJson = request.Features.Count > 0
+            ? JsonSerializer.Serialize(request.Features)
+            : null;
+
+        var nowUtc = DateTime.UtcNow;
+        var plan = new SubscriptionPlan
+        {
+            Id          = Guid.NewGuid(),
+            Name        = request.Name.Trim(),
+            Description = request.Description?.Trim(),
+            Price       = request.Price,
+            DurationDays= request.DurationDays,
+            Features    = featuresJson,
+            IsActive    = request.IsActive,
+            SortOrder   = request.SortOrder,
+            CreatedAt   = nowUtc,
+            IsDeleted   = false
+        };
+
+        _subscriptionRepo.addPlan(plan);
+        await _subscriptionRepo.saveChanges();
+
+        return (await getAllPlansForAdmin()).First(p => p.Id == plan.Id);
+    }
+
+    public async Task updatePlan(Guid planId, AdminUpdatePlanRequest request)
+    {
+        var plan = await _subscriptionRepo.findPlanByIdIncludingInactive(planId)
+            ?? throw new KeyNotFoundException("Khong tim thay goi subscription.");
+
+        var nowUtc = DateTime.UtcNow;
+        if (request.Name != null)         plan.Name        = request.Name.Trim();
+        if (request.Description != null)  plan.Description = request.Description.Trim();
+        if (request.Price.HasValue)       plan.Price       = request.Price.Value;
+        if (request.DurationDays.HasValue) plan.DurationDays = request.DurationDays.Value;
+        if (request.IsActive.HasValue)    plan.IsActive    = request.IsActive.Value;
+        if (request.SortOrder.HasValue)   plan.SortOrder   = request.SortOrder.Value;
+        if (request.Features != null)
+            plan.Features = request.Features.Count > 0
+                ? JsonSerializer.Serialize(request.Features)
+                : null;
+
+        plan.UpdatedAt = nowUtc;
+        await _subscriptionRepo.saveChanges();
+    }
+
+    public async Task deletePlan(Guid planId)
+    {
+        var plan = await _subscriptionRepo.findPlanByIdIncludingInactive(planId)
+            ?? throw new KeyNotFoundException("Khong tim thay goi subscription.");
+
+        var activeSubscribers = plan.UserSubscriptions
+            .Count(s => !s.IsDeleted && s.Status == (int)UserSubscriptionStatus.Active);
+
+        if (activeSubscribers > 0)
+            throw new InvalidOperationException($"Khong the xoa goi dang co {activeSubscribers} nguoi dung su dung.");
+
+        plan.IsDeleted = true;
+        plan.IsActive  = false;
+        plan.UpdatedAt = DateTime.UtcNow;
+        await _subscriptionRepo.saveChanges();
     }
 
     private async Task<Transaction?> findReusablePendingTransaction(Guid userId, string planCode)
@@ -819,9 +912,9 @@ public class SubscriptionService
 
     private static string getSubscriptionStatusLabel(int status) => status switch
     {
-        1 => "Dang hoat dong",
-        2 => "Da huy",
-        3 => "Het han",
+        (int)UserSubscriptionStatus.Active    => "Dang hoat dong",
+        (int)UserSubscriptionStatus.Cancelled => "Da huy",
+        (int)UserSubscriptionStatus.Inactive  => "Het han",
         _ => "Khong xac dinh"
     };
 

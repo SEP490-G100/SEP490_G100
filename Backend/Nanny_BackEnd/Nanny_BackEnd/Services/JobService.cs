@@ -144,11 +144,15 @@ public class JobService
             var activePostingCount = await _jobRepo.countActiveJobPostings(parentProfileId);
             if (activePostingCount >= freeParentActivePostingLimit)
                 throw new InvalidOperationException($"Tai khoan Parent mien phi chi duoc dang toi da {freeParentActivePostingLimit} bai dang. Vui long mua goi de dang them.");
-        }
 
-        var countThisMonth = await _jobRepo.countJobPostingsInCurrentMonth(parentProfileId);
-        if (countThisMonth >= benefits.MonthlyJobPostLimit)
-            throw new InvalidOperationException($"Ban chi duoc dang toi da {benefits.MonthlyJobPostLimit} bai viet trong 1 thang.");
+            // Với free user: giới hạn tháng theo FreeParent benefits
+            var countThisMonth = await _jobRepo.countJobPostingsInCurrentMonth(parentProfileId);
+            var freeMonthlyLimit = Nanny_BackEnd.DTOs.Subscription.SubscriptionBenefitResponse.FreeParent.MonthlyJobPostLimit;
+            if (countThisMonth >= freeMonthlyLimit)
+                throw new InvalidOperationException($"Ban chi duoc dang toi da {freeMonthlyLimit} bai viet trong 1 thang. Vui long mua goi de tang gioi han.");
+        }
+        // Paid users: không giới hạn bài đăng tháng ở đây
+        // (plan benefits được apply khi tính ExpiresAt và FeaturedBadge)
 
         if (!req.SalaryNegotiable && req.SalaryMin == null)
             throw new InvalidOperationException("Phai nhap muc luong toi thieu hoac chon 'Thuong luong'.");
@@ -642,30 +646,40 @@ public class JobService
             .OrderByDescending(s => s.EndDate)
             .FirstOrDefault();
 
-        var planName = activeSubscription?.SubscriptionPlan?.Name;
-        if (string.Equals(planName, "Pro", StringComparison.OrdinalIgnoreCase))
+        if (activeSubscription?.SubscriptionPlan == null)
+            return (null, SubscriptionBenefitResponse.FreeParent);
+
+        var plan = activeSubscription.SubscriptionPlan;
+        var planName = plan.Name ?? string.Empty;
+
+        // Đọc Features JSON nếu có
+        List<string> featureList = [];
+        if (!string.IsNullOrWhiteSpace(plan.Features))
         {
-            return ("PRO", new SubscriptionBenefitResponse
-            {
-                MonthlyJobPostLimit = 5,
-                FeaturedBadge = true,
-                SearchPriority = true,
-                ListingDurationDays = 60
-            });
+            try { featureList = System.Text.Json.JsonSerializer.Deserialize<List<string>>(plan.Features) ?? []; }
+            catch { /* ignore malformed JSON */ }
         }
 
-        if (string.Equals(planName, "Plus", StringComparison.OrdinalIgnoreCase))
-        {
-            return ("PLUS", new SubscriptionBenefitResponse
-            {
-                MonthlyJobPostLimit = 3,
-                FeaturedBadge = true,
-                SearchPriority = false,
-                ListingDurationDays = 45
-            });
-        }
+        // Kết hợp name + description + features để phân loại benefit
+        var allText = new List<string> { planName, plan.Description ?? string.Empty };
+        allText.AddRange(featureList);
+        var combined = string.Join(' ', allText).ToLowerInvariant();
 
-        return (null, SubscriptionBenefitResponse.FreeParent);
+        bool featuredBadge   = combined.Contains("badge") || combined.Contains("featured") || combined.Contains("noi bat");
+        bool searchPriority  = combined.Contains("uu tien") || combined.Contains("priority") || combined.Contains("tim kiem");
+        int  listingDuration = plan.DurationDays > 0 ? plan.DurationDays : 30;
+
+        // Tính planCode từ tên
+        var planCode = planName.ToUpperInvariant().Trim();
+
+        return (planCode, new SubscriptionBenefitResponse
+        {
+            MonthlyJobPostLimit   = 0,   // Không dùng ở đây — chỉ dùng FeaturedBadge/SearchPriority
+            FeaturedBadge         = featuredBadge,
+            SearchPriority        = searchPriority,
+            ListingDurationDays   = listingDuration,
+            CanUseRecommendation  = true
+        });
     }
     public async Task<(List<SearchJobResponse> Items, int TotalCount)> GetModeratorJobsAsync(
         int? status,

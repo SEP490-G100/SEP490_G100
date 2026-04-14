@@ -35,7 +35,14 @@ public class RecentTransactionDto
     public string?  UserName    { get; set; }
     public string?  UserEmail   { get; set; }
 
-    public string StatusLabel => Status switch { 1 => "Completed", 0 => "Pending", _ => "Failed" };
+    public string StatusLabel => Status switch
+    {
+        1 => "Pending",
+        2 => "Completed",
+        3 => "Failed",
+        5 => "Waiting Review",
+        _ => "Unknown"
+    };
     public string TypeLabel   => Type   switch { 1 => "Subscription", 2 => "Refund", _ => "Payment" };
 }
 
@@ -78,6 +85,14 @@ public class ApiRevenueStatsDto
 {
     public decimal TotalRevenue { get; set; }
     public List<RecentTransactionDto> RecentTransactions { get; set; } = new();
+    public List<MonthlyRevenueDto> MonthlyRevenue { get; set; } = new();
+}
+
+public class MonthlyRevenueDto
+{
+    public int     Year    { get; set; }
+    public int     Month   { get; set; }
+    public decimal Revenue { get; set; }
 }
 
 public class ApiSubscriptionStatsDto
@@ -85,6 +100,14 @@ public class ApiSubscriptionStatsDto
     public int TotalSubscriptions { get; set; }
     public int ActiveSubs         { get; set; }
     public int ExpiredSubs        { get; set; }
+    public List<MonthlySubscriptionDto> MonthlySubs { get; set; } = new();
+}
+
+public class MonthlySubscriptionDto
+{
+    public int Year  { get; set; }
+    public int Month { get; set; }
+    public int Count { get; set; }
 }
 
 public class ApiPlatformHealthStatsDto

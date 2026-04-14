@@ -1,6 +1,7 @@
 using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
+using Nanny_BackEnd.Enums;
 
 namespace Nanny_BackEnd.Services;
 
@@ -30,11 +31,11 @@ public class ExportService
         var startOfMonth = new DateTime(now.Year, now.Month, 1);
 
         var totalRevenue = await _db.Transactions
-            .Where(t => !t.IsDeleted && t.Status == 1) // 1 = Completed
+            .Where(t => !t.IsDeleted && t.Status == (int)TransactionStatus.Completed)
             .SumAsync(t => (decimal?)t.Amount) ?? 0;
 
         var currentMonthRevenue = await _db.Transactions
-            .Where(t => !t.IsDeleted && t.Status == 1 && t.CreatedAt >= startOfMonth)
+            .Where(t => !t.IsDeleted && t.Status == (int)TransactionStatus.Completed && t.CreatedAt >= startOfMonth)
             .SumAsync(t => (decimal?)t.Amount) ?? 0;
 
         var totalSubscriptions = await _db.UserSubscriptions.CountAsync(s => !s.IsDeleted);
@@ -154,7 +155,12 @@ public class ExportService
             subSheet.Cell(subRow, 3).Value = s.SubscriptionPlan?.Name;
             subSheet.Cell(subRow, 4).Value = s.StartDate.ToString("yyyy-MM-dd");
             subSheet.Cell(subRow, 5).Value = s.EndDate.ToString("yyyy-MM-dd");
-            subSheet.Cell(subRow, 6).Value = s.Status == 1 ? "Active" : "Expired/Inactive";
+            subSheet.Cell(subRow, 6).Value = s.Status switch
+            {
+                (int)UserSubscriptionStatus.Active    => "Active",
+                (int)UserSubscriptionStatus.Cancelled => "Cancelled",
+                _                                     => "Expired"
+            };
             subRow++;
         }
         subSheet.Columns().AdjustToContents();
@@ -176,11 +182,11 @@ public class ExportService
 
     private static string GetTxStatusString(int status) => status switch
     {
-        0 => "Pending",
-        1 => "Completed",
-        2 => "Failed",
-        3 => "Refunded",
-        _ => "Unknown"
+        (int)TransactionStatus.Pending       => "Pending",
+        (int)TransactionStatus.Completed     => "Completed",
+        (int)TransactionStatus.Failed        => "Failed",
+        (int)TransactionStatus.WaitingReview => "Waiting Review",
+        _                                    => "Unknown"
     };
 
     private static string GetTxTypeString(int type) => type switch

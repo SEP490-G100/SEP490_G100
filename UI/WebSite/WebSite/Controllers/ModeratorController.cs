@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
@@ -15,7 +15,8 @@ using System.Text.Json.Serialization;
 
 namespace WebSite.Controllers;
 
-//[Authorize(Roles = "Moderator")]
+//[Authorize(Roles = "Moderator")]  // ← commented for local dev; uncomment for production
+[Authorize(Roles = "Admin,Moderator")]
 public class ModeratorController : Controller
 {
     private readonly HttpClient _http;
