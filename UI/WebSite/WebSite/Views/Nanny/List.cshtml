@@ -307,6 +307,7 @@
 
     // Lưu dữ liệu rec để dùng cho map
     window.recNannies = [];
+    let recUpgradeRequired = false;
 
     function renderRecNannyCard(n, idx) {
         const pct = Math.round((n.finalScore ?? 0) * 100);
@@ -390,6 +391,7 @@
     function loadRecNannies(jobId) {
         const content = document.getElementById('recNannyContent');
         if (!content) return;
+        if (recUpgradeRequired) return;
         if (!jobId) {
             if (typeof clearNannyMarkers === 'function') clearNannyMarkers();
             content.innerHTML = `<div class="rec-panel__loading" style="padding:20px">
@@ -404,6 +406,7 @@
             .then(r => r.json())
             .then(res => {
                 if (res.requiresUpgrade) {
+                    recUpgradeRequired = true;
                     if (typeof clearNannyMarkers === 'function') clearNannyMarkers();
                     window.recNannies = [];
                     content.innerHTML = `

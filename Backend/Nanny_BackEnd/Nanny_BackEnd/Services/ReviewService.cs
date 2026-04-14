@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
 using Nanny_BackEnd.DTOs.Review;
+using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
 
@@ -11,8 +12,6 @@ public class ReviewService
     private readonly ReviewRepository _reviewRepo;
     private readonly Sep490NannyDbContext _db;
 
-    // HiringRecord.Status = 2 nghĩa là Completed (xác nhận theo CHECK constraint DB: 0–5)
-    private const int HiringRecordCompleted = 2;
 
     public ReviewService(ReviewRepository reviewRepo, Sep490NannyDbContext db)
     {
@@ -33,7 +32,7 @@ public class ReviewService
         if (hiringRecord.ParentProfile.UserId != parentUserId)
             throw new UnauthorizedAccessException("Bạn không có quyền đánh giá hợp đồng này.");
 
-        if (hiringRecord.Status != HiringRecordCompleted)
+        if (hiringRecord.Status != (int)HiringRecordStatus.Completed)
             throw new InvalidOperationException("Chỉ có thể đánh giá sau khi hợp đồng hoàn thành.");
 
         if (await _reviewRepo.ExistsAsync(request.HiringRecordId, parentUserId))
@@ -93,7 +92,7 @@ public class ReviewService
             .Include(h => h.ParentProfile)
             .Where(h =>
                 h.ParentProfile.UserId == parentUserId &&
-                h.Status == HiringRecordCompleted &&
+                h.Status == (int)HiringRecordStatus.Completed &&
                 !h.IsDeleted &&
                 !reviewedIds.Contains(h.Id))
             .OrderByDescending(h => h.EndDate)

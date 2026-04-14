@@ -986,6 +986,11 @@
                           currentAction.Equals("List", StringComparison.OrdinalIgnoreCase)
         ? "nm-nav-link active"
         : "nm-nav-link";
+    var homeNavCls = isHomePage ? "nm-nav-link active" : "nm-nav-link";
+    var faqNavCls = currentCtrl.Equals("Home", StringComparison.OrdinalIgnoreCase) &&
+                    currentAction.Equals("Faq", StringComparison.OrdinalIgnoreCase)
+        ? "nm-nav-link active"
+        : "nm-nav-link";
 }
 <body class="font-display bg-background-light dark:bg-background-dark text-gray-800 dark:text-gray-200 transition-colors duration-300" style="background-color: #f9fafb; color: #1f2937;" data-page="@(isHomePage ? "home" : "other")">
     <nav class="sticky top-0 z-50 bg-white/95 dark:bg-card-dark/95 backdrop-blur-lg border-b border-gray-100/80 dark:border-gray-800"
@@ -1004,7 +1009,7 @@
 
                 <!-- Nav Links (giữa) -->
                 <div class="hidden md:flex items-center gap-1 nm-nav-links">
-                    <a href="/" class="@NavCls("Home")">Trang chủ</a>
+                    <a href="/" class="@homeNavCls">Trang chủ</a>
                     <a href="/Search" class="@NavCls("Search")">Tìm bảo mẫu</a>
                     <a href="/Nanny/List" class="@nannyListNavCls">Tìm nanny</a>
                     <a href="/Blog" class="@NavCls("Blog")">Blog</a>
@@ -1012,7 +1017,7 @@
                     {
                         <a href="/Contract" class="@NavCls("Contract")">Hợp đồng của tôi</a>
                     }
-                    <a href="#how-it-works" class="nm-nav-link">Cách hoạt động</a>
+                    <a href="/Home/Faq" class="@faqNavCls">FAQ</a>
                 </div>
 
                 <!-- Actions -->
@@ -1128,6 +1133,10 @@
 
                                 @if (User.IsInRole("Parent"))
                                 {
+                                    <a href="/Review/History" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        <span class="material-icons-round text-base">star</span>
+                                        Đánh giá của tôi
+                                    </a>
                                     <a href="/Nanny/Favorites" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                         <span class="material-icons-round text-base">favorite</span>
                                         Nanny yêu thích
@@ -1491,7 +1500,8 @@
         </div>
     </nav>
 
-    @if (ViewContext.RouteData.Values["controller"]?.ToString() == "Home")
+    @if (ViewContext.RouteData.Values["controller"]?.ToString() == "Home" &&
+         ViewContext.RouteData.Values["action"]?.ToString() == "Index")
     {
     <header class="relative overflow-hidden pt-24 pb-28 lg:pt-32 lg:pb-36">
         <canvas class="hero-beam-canvas" id="heroBeamCanvas" aria-hidden="true"></canvas>

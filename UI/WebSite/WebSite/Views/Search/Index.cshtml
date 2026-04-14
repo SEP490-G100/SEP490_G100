@@ -514,6 +514,7 @@
 <script>
 // ── Recommendation tab (Nanny) ──────────────────────────────
 let recJobsLoaded = false;
+let recUpgradeRequired = false;
 window.recJobs = [];
 
 function escRecHtml(v) {
@@ -649,7 +650,7 @@ function bindRecJobHover() {
 }
 
 function loadRecJobs() {
-    if (recJobsLoaded) return;
+    if (recJobsLoaded || recUpgradeRequired) return;
     const content = document.getElementById('recJobContent');
     if (!content) return;
 
@@ -657,6 +658,7 @@ function loadRecJobs() {
         .then(r => r.json())
         .then(res => {
             if (res.requiresUpgrade) {
+                recUpgradeRequired = true;
                 if (typeof clearMapMarkers === 'function') clearMapMarkers();
                 content.innerHTML = `
                 <div class="rec-upgrade-prompt">
