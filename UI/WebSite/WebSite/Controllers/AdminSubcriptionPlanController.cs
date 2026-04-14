@@ -232,6 +232,7 @@ public class AdminSubcriptionPlanController : Controller
         durationDays = model.DurationDays,
         sortOrder = model.SortOrder,
         features = model.GetFeatures(),
+        canUseRecommendation = model.CanUseRecommendation,
         benefits = new
         {
             monthlyJobPostLimit = model.MonthlyJobPostLimit,
