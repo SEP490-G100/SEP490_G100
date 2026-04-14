@@ -102,7 +102,6 @@ public class ReportRepository
         int pageSize)
     {
         var query = _db.Reports
-            .Where(r => !r.IsDeleted)
             .Include(r => r.ReporterUser)
             .Include(r => r.HandledByNavigation)
             .AsQueryable();

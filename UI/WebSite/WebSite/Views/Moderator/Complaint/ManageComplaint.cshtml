@@ -96,6 +96,7 @@
                     <th class="text-left">Reason</th>
                     <th class="text-left">Created</th>
                     <th class="text-left">Status</th>
+                    <th class="text-left">IsDeleted</th>
                     <th class="text-center">Actions</th>
                 </tr>
             </thead>
@@ -103,7 +104,7 @@
                 @if (!complaints.Any())
                 {
                     <tr>
-                        <td colspan="7" class="text-center py-16 text-gray-400">
+                        <td colspan="8" class="text-center py-16 text-gray-400">
                             <span class="material-icons-round text-5xl mb-3 block text-gray-200">flag</span>
                             <p class="font-semibold text-gray-400">No complaints found.</p>
                             <p class="text-xs text-gray-300 mt-1">Try adjusting the filters above.</p>
@@ -128,6 +129,14 @@
                         <td class="text-gray-500 text-xs">@item.CreatedAt.ToString("MMM dd, yyyy HH:mm")</td>
                         <td>
                             <span class="badge @item.StatusClass">@item.StatusLabel</span>
+                        </td>
+                        <td>
+                            <div class="flex items-center gap-1.5">
+                                <div class="w-2 h-2 rounded-full @(item.IsDeleted ? "bg-red-400 ring-2 ring-red-100" : "bg-emerald-400 ring-2 ring-emerald-100")"></div>
+                                <span class="badge @(item.IsDeleted ? "badge-inactive" : "badge-active")">
+                                    @(item.IsDeleted ? "Inactive" : "Active")
+                                </span>
+                            </div>
                         </td>
                         <td>
                             <div class="flex items-center justify-center gap-1.5">
@@ -201,14 +210,61 @@
     </div>
 </div>
 
+<div id="toggleComplaintModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeComplaintModal()">
+    <div class="modal-box">
+        <div class="flex items-center gap-3 mb-4">
+            <div id="toggleComplaintIconBg" class="w-12 h-12 rounded-2xl flex items-center justify-center">
+                <span id="toggleComplaintIcon" class="material-icons-round text-2xl"></span>
+            </div>
+            <div>
+                <h3 id="toggleComplaintTitle" class="text-lg font-bold text-gray-900"></h3>
+                <p id="toggleComplaintSubtitle" class="text-sm text-gray-400"></p>
+            </div>
+        </div>
+        <p id="toggleComplaintMessage" class="text-sm text-gray-600 mb-6 bg-gray-50 rounded-2xl p-4 border border-gray-100 leading-relaxed"></p>
+        <div class="flex gap-2">
+            <button type="button" onclick="closeComplaintModal()" class="btn-outline flex-1 justify-center">Cancel</button>
+            <button type="button" id="toggleComplaintConfirmBtn" class="btn-primary flex-1 justify-center"></button>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
 <script>
     function toggleComplaintStatus(id, isActive) {
-        const actionLabel = isActive ? 'activate' : 'deactivate';
-        if (!confirm(`Are you sure you want to ${actionLabel} this complaint?`)) {
-            return;
-        }
+        const title = isActive ? 'Kích hoạt phàn nàn' : 'Vô hiệu hóa phàn nàn';
+        const subtitle = isActive ? 'Hiển thị lại phàn nàn trong hệ thống' : 'Ẩn phàn nàn tạm thời khỏi hệ thống';
+        const message = isActive
+            ? 'Bạn có chắc muốn kích hoạt phàn nàn này?'
+            : 'Bạn có chắc muốn vô hiệu hóa phàn nàn này?';
 
+        const iconBg = document.getElementById('toggleComplaintIconBg');
+        const icon = document.getElementById('toggleComplaintIcon');
+        const titleEl = document.getElementById('toggleComplaintTitle');
+        const subtitleEl = document.getElementById('toggleComplaintSubtitle');
+        const messageEl = document.getElementById('toggleComplaintMessage');
+        const confirmBtn = document.getElementById('toggleComplaintConfirmBtn');
+
+        titleEl.textContent = title;
+        subtitleEl.textContent = subtitle;
+        messageEl.textContent = message;
+
+        iconBg.style.background = isActive ? '#D1FAE5' : '#FEE2E2';
+        icon.style.color = isActive ? '#10B981' : '#EF4444';
+        icon.textContent = isActive ? 'check_circle_outline' : 'block';
+
+        confirmBtn.className = (isActive ? 'btn-success' : 'btn-danger') + ' flex-1 justify-center';
+        confirmBtn.textContent = isActive ? 'Confirm Activate' : 'Confirm Deactivate';
+        confirmBtn.onclick = () => confirmToggleComplaintStatus(id, isActive);
+
+        document.getElementById('toggleComplaintModal').classList.remove('hidden');
+    }
+
+    function closeComplaintModal() {
+        document.getElementById('toggleComplaintModal').classList.add('hidden');
+    }
+
+    function confirmToggleComplaintStatus(id, isActive) {
         const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
         const token = tokenInput ? tokenInput.value : '';
 
@@ -223,8 +279,11 @@
         .then(res => res.json())
         .then(data => {
             if (data.success) {
+                closeComplaintModal();
                 if (typeof window.showToast === 'function') {
-                    window.showToast(data.message || (isActive ? 'Complaint activated successfully.' : 'Complaint deactivated successfully.'), {
+                    window.showToast(data.message || (isActive
+                        ? 'Bạn đã kích hoạt phàn nàn thành công'
+                        : 'Bạn đã vô hiệu hóa phàn nàn thành công'), {
                         type: isActive ? 'success' : 'warning'
                     });
                 }
@@ -236,12 +295,20 @@
             }
         })
         .catch(err => {
+            closeComplaintModal();
             if (typeof window.showToast === 'function') {
                 window.showToast('Connection error: ' + err.message, { type: 'error' });
             }
         });
     }
 </script>
+
+<style>
+.btn-danger  { display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.1rem;border-radius:.85rem;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .15s;background:#FEE2E2;color:#EF4444;border:1.5px solid #FECACA; }
+.btn-danger:hover  { background:#FCA5A5;border-color:#F87171; }
+.btn-success { display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.1rem;border-radius:.85rem;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .15s;background:#D1FAE5;color:#10B981;border:1.5px solid #A7F3D0; }
+.btn-success:hover { background:#A7F3D0;border-color:#6EE7B7; }
+</style>
 
 <form id="csrfForm" style="display:none;">
     @Html.AntiForgeryToken()

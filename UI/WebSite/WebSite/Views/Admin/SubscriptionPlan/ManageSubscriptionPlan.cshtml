@@ -11,7 +11,15 @@
     var totalPages = Model?.TotalPages ?? 1;
     var pageSize = Model?.PageSize ?? 3;
     var plans = Model?.Items ?? new List<WebSite.Models.Admin.AdminSubscriptionPlanListItemViewModel>();
-    var currentUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
+    var preservedQuery = Context.Request.Query
+        .Where(q =>
+            !string.Equals(q.Key, "toastType", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(q.Key, "toastMessage", StringComparison.OrdinalIgnoreCase))
+        .SelectMany(q => q.Value, (q, value) =>
+            $"{Uri.EscapeDataString(q.Key)}={Uri.EscapeDataString(value ?? string.Empty)}");
+    var currentUrl = preservedQuery.Any()
+        ? $"{Context.Request.Path}?{string.Join("&", preservedQuery)}"
+        : Context.Request.Path.ToString();
 }
 
 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
@@ -158,17 +166,12 @@
                                     <span class="material-icons-round text-base">visibility</span>
                                 </a>
 
-                                <form method="post" action="/Admin/ToggleSubscriptionPlanStatus" class="inline" onsubmit="return confirm('@(plan.IsActive ? "Deactivate" : "Activate") this subscription plan?');">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="id" value="@plan.Id" />
-                                    <input type="hidden" name="isActive" value="@(!plan.IsActive ? "true" : "false")" />
-                                    <input type="hidden" name="returnUrl" value="@currentUrl" />
-                                    <button type="submit"
-                                            title="@(plan.IsActive ? "Deactivate" : "Activate")"
-                                            class="w-8 h-8 rounded-xl @(plan.IsActive ? "hover:bg-red-50 hover:text-red-500 hover:border-red-200" : "hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200") flex items-center justify-center text-gray-300 transition-all border border-gray-100">
-                                        <span class="material-icons-round text-base">@(plan.IsActive ? "block" : "check_circle_outline")</span>
-                                    </button>
-                                </form>
+                                <button type="button"
+                                        onclick="openTogglePlanModal('@plan.Id', @(!plan.IsActive ? "true" : "false"))"
+                                        title="@(plan.IsActive ? "Deactivate" : "Activate")"
+                                        class="w-8 h-8 rounded-xl @(plan.IsActive ? "hover:bg-red-50 hover:text-red-500 hover:border-red-200" : "hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200") flex items-center justify-center text-gray-300 transition-all border border-gray-100">
+                                    <span class="material-icons-round text-base">@(plan.IsActive ? "block" : "check_circle_outline")</span>
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -216,3 +219,66 @@
         </div>
     </div>
 </div>
+
+<div id="togglePlanModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeTogglePlanModal()">
+    <div class="modal-box">
+        <div class="flex items-center gap-3 mb-4">
+            <div id="togglePlanIconBg" class="w-12 h-12 rounded-2xl flex items-center justify-center">
+                <span id="togglePlanIcon" class="material-icons-round text-2xl"></span>
+            </div>
+            <div>
+                <h3 id="togglePlanTitle" class="text-lg font-bold text-gray-900"></h3>
+                <p id="togglePlanSubtitle" class="text-sm text-gray-400"></p>
+            </div>
+        </div>
+        <p id="togglePlanMessage" class="text-sm text-gray-600 mb-6 bg-gray-50 rounded-2xl p-4 border border-gray-100 leading-relaxed"></p>
+        <div id="togglePlanFormContainer" class="flex gap-2"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <form id="togglePlanCsrfForm" style="display:none;">@Html.AntiForgeryToken()</form>
+    <script>
+        function openTogglePlanModal(id, isActive) {
+            const activate = isActive === true || isActive === 'true';
+            document.getElementById('togglePlanTitle').textContent = activate ? 'Kích hoạt gói' : 'Vô hiệu hóa gói';
+            document.getElementById('togglePlanSubtitle').textContent = activate ? 'Hiển thị lại gói cho người dùng' : 'Tạm ngừng gói khỏi danh sách khả dụng';
+            document.getElementById('togglePlanMessage').textContent = activate
+                ? 'Bạn có chắc muốn kích hoạt gói này không?'
+                : 'Bạn có chắc muốn vô hiệu hóa gói này không?';
+
+            const iconBg = document.getElementById('togglePlanIconBg');
+            const icon = document.getElementById('togglePlanIcon');
+            iconBg.style.background = activate ? '#D1FAE5' : '#FEE2E2';
+            icon.style.color = activate ? '#10B981' : '#EF4444';
+            icon.textContent = activate ? 'check_circle_outline' : 'block';
+
+            const token = document.querySelector('#togglePlanCsrfForm input[name="__RequestVerificationToken"]').value;
+            const returnUrl = '@(currentUrl.Replace("'", "\\'"))';
+            const btnClass = activate ? 'btn-success' : 'btn-danger';
+            const btnText = activate ? 'Confirm Activate' : 'Confirm Deactivate';
+
+            document.getElementById('togglePlanFormContainer').innerHTML =
+                '<button type="button" onclick="closeTogglePlanModal()" class="btn-outline flex-1 justify-center">Cancel</button>' +
+                '<form method="post" action="/Admin/ToggleSubscriptionPlanStatus" class="flex-1 flex">' +
+                '<input name="__RequestVerificationToken" type="hidden" value="' + token + '" />' +
+                '<input type="hidden" name="id" value="' + id + '" />' +
+                '<input type="hidden" name="isActive" value="' + (activate ? 'true' : 'false') + '" />' +
+                '<input type="hidden" name="returnUrl" value="' + returnUrl + '" />' +
+                '<button type="submit" class="' + btnClass + ' w-full justify-center">' + btnText + '</button>' +
+                '</form>';
+
+            document.getElementById('togglePlanModal').classList.remove('hidden');
+        }
+
+        function closeTogglePlanModal() {
+            document.getElementById('togglePlanModal').classList.add('hidden');
+        }
+    </script>
+    <style>
+        .btn-danger { display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.1rem;border-radius:.85rem;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .15s;background:#FEE2E2;color:#EF4444;border:1.5px solid #FECACA; }
+        .btn-danger:hover { background:#FCA5A5;border-color:#F87171; }
+        .btn-success { display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.1rem;border-radius:.85rem;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .15s;background:#D1FAE5;color:#10B981;border:1.5px solid #A7F3D0; }
+        .btn-success:hover { background:#A7F3D0;border-color:#6EE7B7; }
+    </style>
+}

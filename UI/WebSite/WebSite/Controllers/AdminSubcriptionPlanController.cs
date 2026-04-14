@@ -186,10 +186,14 @@ public class AdminSubcriptionPlanController : Controller
 
             if (result?.Success == true)
             {
+                var toastMessage = isActive
+                    ? "Đã kích hoạt gói thành công"
+                    : "Đã vô hiệu hóa gói thành công";
+                var toastType = isActive ? "success" : "warning";
                 return RedirectToReturnUrlOrList(
                     returnUrl,
-                    "success",
-                    "Đã chỉnh sửa trạng thái gói thành công");
+                    toastType,
+                    toastMessage);
             }
 
             return RedirectToReturnUrlOrList(

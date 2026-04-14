@@ -160,7 +160,7 @@ public class AdminAccountController : Controller
                     new
                     {
                         toastType = "success",
-                        toastMessage = result.Message ?? "Cap nhat Moderator thanh cong."
+                        toastMessage = "Đã thay đổi thông tin tài khoản thành công"
                     });
             }
 
@@ -196,7 +196,11 @@ public class AdminAccountController : Controller
 
             if (result?.Success == true)
             {
-                return RedirectToReturnUrlOrList(returnUrl, "success", "Đã chỉnh sửa trạng thái tài khoản thành công");
+                var toastMessage = status == 1
+                    ? "Đã kích hoạt tài khoản thành công"
+                    : "Đã vô hiệu hóa tài khoản thành công";
+                var toastType = status == 1 ? "success" : "warning";
+                return RedirectToReturnUrlOrList(returnUrl, toastType, toastMessage);
             }
 
             TempData["Error"] = result?.Message ?? "Khong the cap nhat trang thai Moderator.";

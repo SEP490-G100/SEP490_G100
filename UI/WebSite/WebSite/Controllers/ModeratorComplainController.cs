@@ -385,10 +385,16 @@ public class ModeratorComplainController : Controller
             var response = await _http.SendAsync(request);
             var json = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
+            var isSuccess = result?.Success ?? false;
+
             return Json(new
             {
-                success = result?.Success ?? false,
-                message = result?.Message ?? "Operation failed."
+                success = isSuccess,
+                message = isSuccess
+                    ? (isActive
+                        ? "Bạn đã kích hoạt phàn nàn thành công"
+                        : "Bạn đã vô hiệu hóa phàn nàn thành công")
+                    : (result?.Message ?? "Operation failed.")
             });
         }
         catch (Exception ex)

@@ -17,8 +17,7 @@ public class AdminController : Controller
     {
         _http = httpFactory.CreateClient("BackendApi");
     }
-    [Route("Admin")]
-    [HttpGet("ExportData")]
+    [HttpGet("/Admin/ExportData")]
     public async Task<IActionResult> ExportData()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "/api/Admin/export-system-data");

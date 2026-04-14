@@ -202,10 +202,14 @@ public class AdminNotificationController : Controller
             var result = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
             if (result?.Success == true)
             {
+                var toastMessage = isDeleted
+                    ? "Đã vô hiệu hóa thông báo thành công"
+                    : "Đã kích hoạt thông báo thành công";
+                var toastType = isDeleted ? "warning" : "success";
                 return RedirectToAdminNotificationReturnUrlOrList(
                     returnUrl,
-                    "success",
-                    "Đã chỉnh sửa trạng thái thông báo thành công");
+                    toastType,
+                    toastMessage);
             }
 
             return RedirectToAdminNotificationReturnUrlOrList(
