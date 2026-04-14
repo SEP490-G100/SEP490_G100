@@ -300,13 +300,16 @@
 
         .nm-panel {
             position: absolute;
-            right: 0;
-            top: calc(100% + 12px);
-            width: min(420px, calc(100vw - 24px));
-            background: rgba(255,255,255,.98);
-            border: 1px solid rgba(226,232,240,.92);
-            border-radius: 22px;
-            box-shadow: 0 24px 52px rgba(15, 23, 42, .16);
+            right: -4px;
+            top: calc(100% + 14px);
+            width: min(450px, calc(100vw - 24px));
+            background:
+                radial-gradient(circle at top right, rgba(249, 115, 22, .16), transparent 38%),
+                linear-gradient(180deg, rgba(255, 255, 255, .98), rgba(255, 250, 244, .98));
+            border: 1px solid rgba(251, 146, 60, .24);
+            border-radius: 24px;
+            box-shadow: 0 24px 56px rgba(15, 23, 42, .16);
+            backdrop-filter: blur(8px);
             overflow: hidden;
         }
 
@@ -315,36 +318,45 @@
             align-items: center;
             justify-content: space-between;
             gap: 12px;
-            padding: 16px 18px 14px;
-            border-bottom: 1px solid rgba(241,245,249,.95);
-            background: linear-gradient(180deg, #ffffff 0%, #fffaf4 100%);
+            padding: 18px 18px 14px;
+            border-bottom: 1px solid rgba(251, 146, 60, .16);
+            background: linear-gradient(180deg, #ffffff 0%, #fff7ed 100%);
         }
 
         .nm-panel-title {
-            font-size: 20px;
+            font-size: 19px;
             font-weight: 800;
-            color: #111827;
+            color: #0f172a;
             line-height: 1.2;
         }
 
         .nm-panel-subtitle {
-            margin-top: 2px;
+            margin-top: 3px;
             font-size: 13px;
             color: #64748b;
+            line-height: 1.35;
+        }
+
+        .nm-panel-actions {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
         }
 
         .nm-panel-link {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            min-height: 32px;
-            padding: 0 12px;
+            min-height: 34px;
+            padding: 0 13px;
             border-radius: 999px;
             border: 1px solid #fed7aa;
             background: #fff7ed;
             color: #c2410c;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 800;
+            letter-spacing: .01em;
             transition: all .2s ease;
         }
 
@@ -355,23 +367,58 @@
             transform: translateY(-1px);
         }
 
+        .nm-panel-link--ghost {
+            border-color: rgba(148, 163, 184, .32);
+            background: #fff;
+            color: #475569;
+        }
+
+        .nm-panel-link--ghost:hover {
+            border-color: rgba(251, 146, 60, .45);
+            background: #fff7ed;
+            color: #9a3412;
+        }
+
         .nm-notification-list {
-            max-height: 420px;
+            max-height: 440px;
             overflow: auto;
-            padding: 10px;
-            background: linear-gradient(180deg, #ffffff 0%, #fffcf8 100%);
+            padding: 12px;
+            background: linear-gradient(180deg, #ffffff 0%, #fffaf4 100%);
+        }
+
+        .nm-notification-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .nm-notification-list::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, .42);
+            border-radius: 999px;
         }
 
         .nm-notification-item {
             display: block;
             width: 100%;
             text-align: left;
-            padding: 14px 14px 12px;
-            border-radius: 16px;
-            border: 1px solid #e2e8f0;
-            background: #fff;
-            box-shadow: 0 8px 20px rgba(15, 23, 42, .05);
+            padding: 14px 14px 13px;
+            border-radius: 18px;
+            border: 1px solid rgba(148, 163, 184, .24);
+            background: rgba(255, 255, 255, .94);
+            box-shadow: 0 8px 18px rgba(15, 23, 42, .06);
             transition: all .2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nm-notification-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(180deg, #fb923c, #f97316);
+            opacity: 0;
+            transition: opacity .2s ease;
         }
 
         .nm-notification-item + .nm-notification-item {
@@ -382,12 +429,16 @@
             border-color: #fdba74;
             background: #fffaf4;
             transform: translateY(-1px);
-            box-shadow: 0 14px 28px rgba(249, 115, 22, .15);
+            box-shadow: 0 14px 30px rgba(249, 115, 22, .16);
         }
 
         .nm-notification-item.unread {
-            border-color: rgba(249, 115, 22, .35);
-            background: linear-gradient(180deg, #fff8ee 0%, #ffffff 100%);
+            border-color: rgba(249, 115, 22, .4);
+            background: linear-gradient(180deg, #fff7ed 0%, #ffffff 100%);
+        }
+
+        .nm-notification-item.unread::before {
+            opacity: 1;
         }
 
         .nm-notification-item-title-row {
@@ -395,7 +446,7 @@
             align-items: center;
             justify-content: space-between;
             gap: 8px;
-            margin-bottom: 4px;
+            margin-bottom: 5px;
         }
 
         .nm-notification-unread-dot {
@@ -411,14 +462,14 @@
             font-size: 14px;
             font-weight: 800;
             color: #111827;
-            line-height: 1.4;
+            line-height: 1.45;
         }
 
         .nm-notification-item-body {
             font-size: 13px;
-            line-height: 1.5;
+            line-height: 1.55;
             color: #475569;
-            margin-bottom: 7px;
+            margin-bottom: 8px;
         }
 
         .nm-notification-item-meta {
@@ -433,7 +484,7 @@
             display: inline-flex;
             align-items: center;
             min-height: 22px;
-            padding: 0 9px;
+            padding: 0 10px;
             border-radius: 999px;
             background: #fff7ed;
             border: 1px solid #fed7aa;
@@ -446,7 +497,7 @@
             display: inline-flex;
             align-items: center;
             min-height: 22px;
-            padding: 0 8px;
+            padding: 0 9px;
             border-radius: 999px;
             background: #f8fafc;
             border: 1px solid #e2e8f0;
@@ -462,15 +513,15 @@
         }
 
         .nm-empty-state {
-            padding: 28px 18px 30px;
+            padding: 34px 18px 36px;
             text-align: center;
             color: #6b7280;
         }
 
         .nm-empty-state .material-icons-round {
-            font-size: 28px;
-            color: #fdba74;
-            margin-bottom: 8px;
+            font-size: 32px;
+            color: #fb923c;
+            margin-bottom: 10px;
         }
 
         .nm-toast-root {
@@ -980,7 +1031,7 @@
                             <button type="button"
                                     id="notificationToggle"
                                     class="nm-icon-btn"
-                                    aria-label="Thong bao">
+                                    aria-label="Thông báo">
                                 <span class="material-icons-round text-[20px]">notifications</span>
                                 <span id="notificationBadge" class="nm-badge-dot hidden"></span>
                             </button>
@@ -988,17 +1039,20 @@
                             <div id="notificationMenu" class="nm-panel hidden">
                                 <div class="nm-panel-header">
                                     <div>
-                                        <p class="nm-panel-title">Thong bao</p>
-                                        <p class="nm-panel-subtitle">Nhac nho va cap nhat quan trong</p>
+                                        <p class="nm-panel-title">Thông báo</p>
+                                        <p class="nm-panel-subtitle">Nhắc nhở và cập nhật quan trọng</p>
                                     </div>
-                                    <button type="button" id="markAllNotificationsRead" class="nm-panel-link">
-                                        Danh dau da doc
-                                    </button>
+                                    <div class="nm-panel-actions">
+                                        <a href="/Notification/Center" class="nm-panel-link nm-panel-link--ghost">Xem tất cả</a>
+                                        <button type="button" id="markAllNotificationsRead" class="nm-panel-link">
+                                        Đánh dấu đã đọc
+                                        </button>
+                                    </div>
                                 </div>
                                 <div id="notificationList" class="nm-notification-list">
                                     <div class="nm-empty-state">
                                         <span class="material-icons-round">notifications_none</span>
-                                        <p class="text-sm font-semibold text-gray-700">Dang tai thong bao...</p>
+                                        <p class="text-sm font-semibold text-gray-700">Đang tải thông báo...</p>
                                     </div>
                                 </div>
                             </div>
@@ -1128,6 +1182,52 @@
                                     return;
                                 }
 
+                                const UI_TEXT = {
+                                    bellLabel: 'Thông báo',
+                                    panelTitle: 'Thông báo',
+                                    panelSubtitle: 'Nhắc nhở và cập nhật quan trọng',
+                                    markAll: 'Đánh dấu đã đọc',
+                                    viewAll: 'Xem tất cả',
+                                    loading: 'Đang tải thông báo...',
+                                    empty: 'Bạn chưa có thông báo nào.',
+                                    fallbackTitle: 'Thông báo mới',
+                                    fallbackBody: 'Bạn có thông báo mới từ hệ thống.',
+                                    fallbackType: 'Thông báo',
+                                    senderPrefix: 'Từ',
+                                    loadError: 'Không thể tải thông báo lúc này.'
+                                };
+
+                                notificationToggle.setAttribute('aria-label', UI_TEXT.bellLabel);
+
+                                const titleEl = notificationMenu.querySelector('.nm-panel-title');
+                                const subtitleEl = notificationMenu.querySelector('.nm-panel-subtitle');
+                                const emptyEl = notificationMenu.querySelector('.nm-empty-state p');
+                                titleEl && (titleEl.textContent = UI_TEXT.panelTitle);
+                                subtitleEl && (subtitleEl.textContent = UI_TEXT.panelSubtitle);
+                                emptyEl && (emptyEl.textContent = UI_TEXT.loading);
+                                markAllButton.textContent = UI_TEXT.markAll;
+
+                                const panelHeader = notificationMenu.querySelector('.nm-panel-header');
+                                if (panelHeader) {
+                                    let actionsWrap = panelHeader.querySelector('.nm-panel-actions');
+                                    if (!actionsWrap) {
+                                        actionsWrap = document.createElement('div');
+                                        actionsWrap.className = 'nm-panel-actions';
+                                        panelHeader.appendChild(actionsWrap);
+                                    }
+
+                                    let viewAllLink = actionsWrap.querySelector('.nm-panel-link--ghost');
+                                    if (!viewAllLink) {
+                                        viewAllLink = document.createElement('a');
+                                        viewAllLink.className = 'nm-panel-link nm-panel-link--ghost';
+                                        actionsWrap.prepend(viewAllLink);
+                                    }
+
+                                    viewAllLink.href = '/Notification/Center';
+                                    viewAllLink.textContent = UI_TEXT.viewAll;
+                                    actionsWrap.appendChild(markAllButton);
+                                }
+
                                 const escapeHtml = (value) => String(value ?? '')
                                     .replaceAll('&', '&amp;')
                                     .replaceAll('<', '&lt;')
@@ -1164,12 +1264,12 @@
                                 const buildNotificationMeta = (item) => {
                                     const parts = [];
                                     if (shouldShowTypeChip(item)) {
-                                        parts.push(`<span class="nm-notification-chip">${escapeHtml(item.typeLabel || 'Thong bao')}</span>`);
+                                        parts.push(`<span class="nm-notification-chip">${escapeHtml(item.typeLabel || UI_TEXT.fallbackType)}</span>`);
                                     }
 
                                     const sender = String(item?.senderLabel || '').trim();
                                     if (sender) {
-                                        parts.push(`<span class="nm-notification-sender">Tu ${escapeHtml(sender)}</span>`);
+                                        parts.push(`<span class="nm-notification-sender">${UI_TEXT.senderPrefix} ${escapeHtml(sender)}</span>`);
                                     }
 
                                     if (!parts.length) return '';
@@ -1254,26 +1354,26 @@
                                         updateBadge(unreadCount);
 
                                         if (!items.length) {
-                                            renderEmpty('Ban chua co thong bao nao.');
+                                            renderEmpty(UI_TEXT.empty);
                                             return;
                                          }
 
                                          notificationList.innerHTML = items.map(item => `
                                              <button type="button"
                                                      class="nm-notification-item ${item.isRead ? '' : 'unread'}"
-                                                     data-id="${escapeHtml(item.id)}"
-                                                     data-url="${escapeHtml(item.actionUrl || '')}">
-                                                 <div class="nm-notification-item-title-row">
-                                                     <div class="nm-notification-item-title">${escapeHtml(item.title || 'Thong bao moi')}</div>
-                                                     ${item.isRead ? '' : '<span class="nm-notification-unread-dot" aria-hidden="true"></span>'}
-                                                 </div>
-                                                 ${buildNotificationMeta(item)}
-                                                 <div class="nm-notification-item-body">${escapeHtml(item.content || 'Ban co thong bao moi tu he thong.')}</div>
-                                                 <div class="nm-notification-item-time">${escapeHtml(formatTime(item.createdAt))}</div>
-                                             </button>
-                                         `).join('');
-                                     } catch {
-                                        renderEmpty('Khong the tai thong bao luc nay.');
+                                                      data-id="${escapeHtml(item.id)}"
+                                                      data-url="${escapeHtml(item.actionUrl || '')}">
+                                                  <div class="nm-notification-item-title-row">
+                                                      <div class="nm-notification-item-title">${escapeHtml(item.title || UI_TEXT.fallbackTitle)}</div>
+                                                      ${item.isRead ? '' : '<span class="nm-notification-unread-dot" aria-hidden="true"></span>'}
+                                                  </div>
+                                                  ${buildNotificationMeta(item)}
+                                                  <div class="nm-notification-item-body">${escapeHtml(item.content || UI_TEXT.fallbackBody)}</div>
+                                                  <div class="nm-notification-item-time">${escapeHtml(formatTime(item.createdAt))}</div>
+                                              </button>
+                                          `).join('');
+                                      } catch {
+                                        renderEmpty(UI_TEXT.loadError);
                                     }
                                 };
 
@@ -1288,8 +1388,6 @@
                                     const item = event.target.closest('.nm-notification-item[data-id]');
                                     if (!item) return;
 
-                                    const actionUrl = item.dataset.url;
-
                                     try {
                                         await fetch(`/Notification/MarkRead/${item.dataset.id}`, {
                                             method: 'POST',
@@ -1301,9 +1399,7 @@
                                     item.classList.remove('unread');
                                     await loadUnreadCount();
 
-                                    if (actionUrl) {
-                                        window.location.href = actionUrl;
-                                    }
+                                    window.location.href = `/Notification/Center?notificationId=${encodeURIComponent(item.dataset.id)}`;
                                 });
 
                                 markAllButton.addEventListener('click', async () => {

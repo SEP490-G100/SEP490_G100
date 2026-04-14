@@ -58,7 +58,7 @@ public class JobPostingController : ControllerBase
 
     [AllowAnonymous]
     [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> getJobpostingById(Guid id)
     {
         try
         {
@@ -110,7 +110,7 @@ public class JobPostingController : ControllerBase
 
     [Authorize]
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateJobPostingRequest request)
+    public async Task<IActionResult> createJobPosting([FromBody] CreateJobPostingRequest request)
     {
         if (!ModelState.IsValid)
             return BadRequest(FailValidation(ModelState));
@@ -134,7 +134,7 @@ public class JobPostingController : ControllerBase
 
     [Authorize]
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateJobPostingRequest request)
+    public async Task<IActionResult> updateJobposting(Guid id, [FromBody] UpdateJobPostingRequest request)
     {
         if (!ModelState.IsValid)
             return BadRequest(FailValidation(ModelState));
@@ -158,7 +158,7 @@ public class JobPostingController : ControllerBase
 
     [Authorize]
     [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> deleteJobPosting(Guid id)
     {
         var parent = await getParent();
         if (parent is null) return BadRequest(Fail("Tai khoan hien tai khong phai Phu Huynh."));
