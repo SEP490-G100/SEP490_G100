@@ -36,6 +36,10 @@ const GEO_FALLBACK = {
   'Da Nang': { lat: 16.054, lng: 108.202, radius: 6500, zoom: 11 }
 };
 
+let pendingComplainJob = null;
+let isSubmittingJobComplain = false;
+let complainEditorsInitialized = false;
+
 function loadLocationData() {
   if (locationDataPromise) return locationDataPromise;
 
@@ -608,10 +612,230 @@ function canApplyJob(job) {
   return moderationStatus === 2 && postStatus === 1;
 }
 
+function canComplainJob(job) {
+  if (!isLoggedIn() || !job?.id) return false;
+  if (canEditJob(job)) return false;
+  return true;
+}
+
+function extractPlainText(html) {
+  const div = document.createElement('div');
+  div.innerHTML = String(html ?? '');
+  return (div.textContent || div.innerText || '').replace(/\s+/g, ' ').trim();
+}
+
+function getComplainEditorContent(editorId) {
+  if (typeof tinymce !== 'undefined') {
+    const editor = tinymce.get(editorId);
+    if (editor) return editor.getContent();
+  }
+  const input = document.getElementById(editorId);
+  return input ? (input.value || '') : '';
+}
+
+function setComplainEditorContent(editorId, value) {
+  if (typeof tinymce !== 'undefined') {
+    const editor = tinymce.get(editorId);
+    if (editor) {
+      editor.setContent(value || '');
+      return;
+    }
+  }
+  const input = document.getElementById(editorId);
+  if (input) input.value = value || '';
+}
+
+function appendToComplainEvidence(htmlSnippet) {
+  if (!htmlSnippet) return;
+
+  if (typeof tinymce !== 'undefined') {
+    const editor = tinymce.get('jobComplainEvidence');
+    if (editor) {
+      editor.insertContent(htmlSnippet);
+      return;
+    }
+  }
+
+  const evidenceEl = document.getElementById('jobComplainEvidence');
+  if (!evidenceEl) return;
+  evidenceEl.value = `${evidenceEl.value || ''}\n${extractPlainText(htmlSnippet)}`.trim();
+}
+
+function ensureComplainEditorsInitialized() {
+  if (complainEditorsInitialized) return;
+  if (typeof tinymce === 'undefined') return;
+
+  tinymce.init({
+    selector: '#jobComplainReason',
+    license_key: 'gpl',
+    menubar: false,
+    branding: false,
+    plugins: 'lists code',
+    toolbar: 'undo redo | bold italic underline | bullist numlist | removeformat | code',
+    height: 160,
+    statusbar: false,
+    content_style: 'body{font-family:Segoe UI,Arial,sans-serif;font-size:14px;line-height:1.6;}'
+  });
+
+  tinymce.init({
+    selector: '#jobComplainEvidence',
+    license_key: 'gpl',
+    menubar: false,
+    branding: false,
+    plugins: 'link lists code image media',
+    toolbar: 'undo redo | bold italic underline | bullist numlist | link image media | removeformat | code',
+    height: 220,
+    automatic_uploads: true,
+    images_upload_handler: function (blobInfo) {
+      return uploadSingleComplainImageForTiny(blobInfo);
+    },
+    file_picker_types: 'image media',
+    file_picker_callback: function (callback, _value, meta) {
+      handleComplainTinyFilePicker(callback, meta);
+    },
+    statusbar: false,
+    content_style: 'body{font-family:Segoe UI,Arial,sans-serif;font-size:14px;line-height:1.6;} img,video{max-width:100%;height:auto;border-radius:8px;}'
+  });
+
+  complainEditorsInitialized = true;
+}
+
+async function uploadComplainMediaFiles(files, endpoint, emptyMessage) {
+  if (!files || !files.length) throw new Error(emptyMessage);
+
+  const formData = new FormData();
+  Array.from(files).forEach((file) => formData.append('files', file));
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    credentials: 'same-origin',
+    body: formData
+  });
+  const raw = await response.text();
+  let result = null;
+
+  if (raw) {
+    try {
+      result = JSON.parse(raw);
+    } catch {
+      if (response.redirected && response.url && response.url.includes('/Auth/Login')) {
+        throw new Error('Phien dang nhap da het han. Vui long dang nhap lai.');
+      }
+      throw new Error('Server tra ve du lieu khong hop le khi upload media.');
+    }
+  }
+
+  if (!response.ok) {
+    throw new Error(result?.message || `Upload media that bai (HTTP ${response.status}).`);
+  }
+
+  if (!result?.success || !result?.data?.urls || !Array.isArray(result.data.urls) || result.data.urls.length === 0) {
+    throw new Error(result?.message || 'Upload media that bai.');
+  }
+
+  return result.data.urls;
+}
+
+function pickLocalComplainFile(accept, multiple = true) {
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = accept;
+    input.multiple = !!multiple;
+    input.onchange = () => {
+      const files = input.files ? Array.from(input.files) : [];
+      resolve(multiple ? files : (files[0] || null));
+    };
+    input.click();
+  });
+}
+
+function uploadSingleComplainImageForTiny(blobInfo) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const urls = await uploadComplainMediaFiles(
+        [blobInfo.blob()],
+        '/Complain/UploadComplainMedia?mediaType=image',
+        'Vui long chon it nhat mot anh.'
+      );
+      resolve(urls[0]);
+    } catch (error) {
+      reject({ message: error?.message || 'Khong the upload anh.' });
+    }
+  });
+}
+
+function handleComplainTinyFilePicker(callback, meta) {
+  const isImage = meta.filetype === 'image';
+  const accept = isImage
+    ? 'image/*'
+    : 'video/mp4,video/webm,video/ogg,video/quicktime,.mp4,.webm,.ogg,.mov';
+  const endpoint = isImage
+    ? '/Complain/UploadComplainMedia?mediaType=image'
+    : '/Complain/UploadComplainMedia?mediaType=video';
+
+  pickLocalComplainFile(accept, false).then(async (file) => {
+    if (!file) return;
+
+    try {
+      const urls = await uploadComplainMediaFiles([file], endpoint, 'Vui long chon file de upload.');
+      const url = urls[0];
+      if (isImage) callback(url, { alt: file.name || 'image' });
+      else callback(url, { source2: '', poster: '' });
+    } catch (error) {
+      notifyToast(error?.message || 'Khong the upload media.', 'error');
+    }
+  });
+}
+
+const complainMediaUploadConfig = {
+  image: {
+    accept: 'image/*',
+    endpoint: '/Complain/UploadComplainMedia?mediaType=image',
+    emptyMessage: 'Vui long chon it nhat mot anh.',
+    successMessage: 'Upload anh thanh cong.',
+    failedMessage: 'Khong the upload anh.',
+    buildHtml: (url) => `<p><img src="${url}" alt="complain-image" /></p>`
+  },
+  video: {
+    accept: 'video/mp4,video/webm,video/ogg,video/quicktime,.mp4,.webm,.ogg,.mov',
+    endpoint: '/Complain/UploadComplainMedia?mediaType=video',
+    emptyMessage: 'Vui long chon it nhat mot video.',
+    successMessage: 'Upload video thanh cong.',
+    failedMessage: 'Khong the upload video.',
+    buildHtml: (url) => `<p><video controls preload="metadata" src="${url}"></video></p>`
+  }
+};
+
+async function uploadComplainLocalMedia(mediaType) {
+  const cfg = complainMediaUploadConfig[mediaType];
+  if (!cfg) return;
+
+  try {
+    const files = await pickLocalComplainFile(cfg.accept, true);
+    if (!files.length) return;
+
+    const urls = await uploadComplainMediaFiles(files, cfg.endpoint, cfg.emptyMessage);
+    urls.forEach((url) => appendToComplainEvidence(cfg.buildHtml(url)));
+    notifyToast(cfg.successMessage, 'success');
+  } catch (error) {
+    notifyToast(error?.message || cfg.failedMessage, 'error');
+  }
+}
+
+async function uploadComplainLocalImages() {
+  await uploadComplainLocalMedia('image');
+}
+
+async function uploadComplainLocalVideos() {
+  await uploadComplainLocalMedia('video');
+}
+
 function updatePreviewActionButtons(job) {
   const editBtn = document.getElementById('pv-editBtn');
   const applyBtn = document.getElementById('pv-applyBtn');
   const applyTextEl = document.getElementById('pv-applyBtnText');
+  const complainBtn = document.getElementById('pv-complainBtn');
 
   if (editBtn) {
     const canEditByOwner = canEditJob(job);
@@ -639,6 +863,16 @@ function updatePreviewActionButtons(job) {
       applyBtn.onclick = null;
       applyBtn.removeAttribute('data-job-id');
       if (applyTextEl) applyTextEl.textContent = 'Ung tuyen ngay';
+    }
+  }
+
+  if (complainBtn) {
+    const canComplain = canComplainJob(job);
+    complainBtn.classList.toggle('hidden', !canComplain);
+    if (canComplain) {
+      complainBtn.onclick = (event) => openJobComplainModal(job, event);
+    } else {
+      complainBtn.onclick = null;
     }
   }
 }
@@ -710,6 +944,117 @@ async function applyJob(jobId, event) {
       applyBtn.classList.remove('opacity-60', 'cursor-not-allowed');
     }
     if (applyTextEl) applyTextEl.textContent = previousText;
+  }
+}
+
+function openJobComplainModal(job, event) {
+  event?.preventDefault?.();
+  event?.stopPropagation?.();
+
+  if (!isLoggedIn()) {
+    notifyToast('Vui long dang nhap de gui phan nan.', 'warning');
+    window.location.href = '/Auth/Login';
+    return;
+  }
+
+  if (!canComplainJob(job)) {
+    notifyToast('Ban khong the phan nan bai dang cua chinh minh.', 'warning');
+    return;
+  }
+
+  pendingComplainJob = job;
+  isSubmittingJobComplain = false;
+  ensureComplainEditorsInitialized();
+
+  const targetEl = document.getElementById('jobComplainTarget');
+  const jobPostingIdInput = document.getElementById('jobComplainJobPostingId');
+  if (targetEl) targetEl.textContent = job?.title ? `Bai dang: ${job.title}` : 'Bai dang';
+  if (jobPostingIdInput) jobPostingIdInput.value = job?.id || '';
+
+  setComplainEditorContent('jobComplainReason', '');
+  setComplainEditorContent('jobComplainEvidence', '');
+
+  const submitBtn = document.getElementById('jobComplainSubmitBtn');
+  if (submitBtn) {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Gui phan nan';
+  }
+
+  document.getElementById('jobComplainModal')?.classList.add('show');
+}
+
+function closeJobComplainModal() {
+  document.getElementById('jobComplainModal')?.classList.remove('show');
+  const jobPostingIdInput = document.getElementById('jobComplainJobPostingId');
+  if (jobPostingIdInput) jobPostingIdInput.value = '';
+  pendingComplainJob = null;
+  isSubmittingJobComplain = false;
+}
+
+async function submitJobComplain() {
+  if (!pendingComplainJob?.id) {
+    notifyToast('Khong tim thay bai dang can phan nan.', 'error');
+    return;
+  }
+
+  const reasonEl = document.getElementById('jobComplainReason');
+  const submitBtn = document.getElementById('jobComplainSubmitBtn');
+
+  const reasonHtml = getComplainEditorContent('jobComplainReason');
+  const evidenceHtml = getComplainEditorContent('jobComplainEvidence');
+  const reason = extractPlainText(reasonHtml);
+  const evidence = String(evidenceHtml || '').trim();
+
+  if (reason.length < 5) {
+    notifyToast('Ly do phan nan phai co it nhat 5 ky tu.', 'warning');
+    if (typeof tinymce !== 'undefined' && tinymce.get('jobComplainReason')) tinymce.get('jobComplainReason').focus();
+    else reasonEl?.focus();
+    return;
+  }
+
+  if (isSubmittingJobComplain) return;
+  isSubmittingJobComplain = true;
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Dang gui...';
+  }
+
+  try {
+    const response = await fetch(`/Search/ComplainJobPosting?jobPostingId=${encodeURIComponent(pendingComplainJob.id)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        reason,
+        evidence: evidence || null
+      })
+    });
+
+    const json = await response.json();
+    const payload = json?.raw && typeof json.raw === 'object' ? json.raw : json;
+    const isSuccess = !!(json?.success || payload?.success);
+
+    if (!isSuccess) {
+      notifyToast(json?.message || payload?.message || 'Khong the gui phan nan bai dang.', 'error');
+      isSubmittingJobComplain = false;
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Gui phan nan';
+      }
+      return;
+    }
+
+    closeJobComplainModal();
+    notifyToast('Gui phan nan thanh cong.', 'success');
+    window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
+  } catch {
+    notifyToast('Khong the gui phan nan bai dang.', 'error');
+    isSubmittingJobComplain = false;
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Gui phan nan';
+    }
   }
 }
 
@@ -1332,4 +1677,3 @@ window.addEventListener('pageshow', () => {
     bootstrapSearchPage();
   }
 });
-

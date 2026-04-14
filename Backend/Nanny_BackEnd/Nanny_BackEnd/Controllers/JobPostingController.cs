@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
 using Nanny_BackEnd.DTOs.JobPosting;
+using Nanny_BackEnd.DTOs.Report;
+using Nanny_BackEnd.Exceptions;
 using Nanny_BackEnd.Services;
 
 namespace Nanny_BackEnd.Controllers;
@@ -14,11 +16,13 @@ namespace Nanny_BackEnd.Controllers;
 public class JobPostingController : ControllerBase
 {
     private readonly JobService _jobSvc;
+    private readonly ReportService _reportService;
     private readonly Sep490NannyDbContext _db;
 
-    public JobPostingController(JobService jobSvc, Sep490NannyDbContext db)
+    public JobPostingController(JobService jobSvc, ReportService reportService, Sep490NannyDbContext db)
     {
         _jobSvc = jobSvc;
+        _reportService = reportService;
         _db = db;
     }
 
@@ -65,6 +69,43 @@ public class JobPostingController : ControllerBase
         {
             return NotFound(Fail(ex.Message));
         }
+    }
+
+    [Authorize]
+    [HttpPost("{id:guid}/report")]
+    public async Task<IActionResult> ReportJobPosting(Guid id, [FromBody] CreateReportRequest request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(FailValidation(ModelState));
+
+        var userId = getCurrentUserId();
+        if (!userId.HasValue)
+            return Unauthorized(Fail("Khong xac dinh duoc nguoi dung hien tai."));
+
+        try
+        {
+            var reportId = await _reportService.ReportJobPostingAsync(id, userId.Value, request);
+            return Ok(new
+            {
+                success = true,
+                message = "Bao cao bai dang da duoc gui thanh cong.",
+                data = new { reportId, jobPostingId = id }
+            });
+        }
+        catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
+        catch (RateLimitExceededException ex)
+        {
+            Response.Headers.RetryAfter = ex.RetryAfterSeconds.ToString();
+            return StatusCode(429, new
+            {
+                success = false,
+                code = ex.Code,
+                message = ex.Message,
+                retryAfterSeconds = ex.RetryAfterSeconds,
+                cooldownUntilUtc = ex.CooldownUntilUtc
+            });
+        }
+        catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
     }
 
     [Authorize]

@@ -7,7 +7,7 @@
     <link href="~/css/tailwind.generated.css" rel="stylesheet" asp-append-version="true" />
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
-    <link href="~/css/admin.css" rel="stylesheet" />
+    <link href="~/css/admin.css" rel="stylesheet" asp-append-version="true" />
 </head>
 <body class="font-display bg-gray-50 text-gray-800" style="font-family:'Quicksand',sans-serif;">
 
@@ -45,7 +45,17 @@
                     <span class="sidebar-text">Manage Moderators</span>
                 </a>
 
-                <p class="sidebar-text px-2 text-[10px] uppercase tracking-widest text-slate-500 mt-5 mb-2 font-semibold">AI System</p>
+                <a href="/Admin/ManageSubscriptionPlan"
+                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() is "ManageSubscriptionPlan" or "ViewSubscriptionPlanDetail" or "CreateSubscriptionPlan" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-slate-300 hover:bg-white/5 hover:text-white")">
+                    <span class="material-icons-round text-xl flex-shrink-0">workspace_premium</span>
+                    <span class="sidebar-text">Subscription Plans</span>
+                </a>
+
+                <a href="/Admin/ManageAdminNotification"
+                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() is "ManageAdminNotification" or "ViewAdminNotificationDetail" or "CreateAdminNotification" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-slate-300 hover:bg-white/5 hover:text-white")">
+                    <span class="material-icons-round text-xl flex-shrink-0">campaign</span>
+                    <span class="sidebar-text">Manage Notifications</span>
+                </a>
 
                 <a href="/Admin/RecommendationConfig"
                    class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() == "RecommendationConfig" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-slate-300 hover:bg-white/5 hover:text-white")">
@@ -130,6 +140,7 @@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
     <script>
         var sidebarCollapsed = false;
         function toggleSidebar() {
@@ -144,8 +155,25 @@
                 sidebar.classList.remove('collapsed');
             }
         }
+
+        (() => {
+            const params = new URLSearchParams(window.location.search);
+            const toastMessage = params.get('toastMessage');
+            const toastType = params.get('toastType') || 'info';
+
+            if (!toastMessage || typeof window.showToast !== 'function') {
+                return;
+            }
+
+            window.showToast(toastMessage, { type: toastType });
+            params.delete('toastMessage');
+            params.delete('toastType');
+
+            const nextQuery = params.toString();
+            const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ''}${window.location.hash || ''}`;
+            window.history.replaceState({}, document.title, nextUrl);
+        })();
     </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
-

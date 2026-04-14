@@ -12,6 +12,13 @@ public static class NotificationTypes
     public const int JobPostingRejected = 8;
     public const int JobPostingPending = 9;
     public const int NannyProfileFavorited = 10;
+    public const int VerificationRequestSubmitted = 98;
+    public const int ReportSubmitted = 92;
+    public const int MessageToModerator = 93;
+    public const int JobPostingReviewRequired = 94;
+    public const int VerificationRequestApproved = 95;
+    public const int VerificationRequestRejected = 96;
+    public const int VerificationRequestCreated = 97;
     public const int JobApplicationSubmitted = 11;
     public const int ContactRequestReceived = 12;
     public const int ContactRequestAccepted = 13;
@@ -19,6 +26,7 @@ public static class NotificationTypes
     public const int HiringOffer = 15;
     public const int HiringAccepted = 16;
     public const int HiringDeclined = 17;
+    public const int ModeratorBroadcast = 99;
 
     public static string getLabel(int type) => type switch
     {
@@ -32,6 +40,13 @@ public static class NotificationTypes
         JobPostingRejected => "Bai dang bi tu choi",
         JobPostingPending => "Bai dang dang cho duyet",
         NannyProfileFavorited => "Ho so duoc yeu thich",
+        VerificationRequestSubmitted => "Yeu cau xac minh moi",
+        ReportSubmitted => "Bao cao moi",
+        MessageToModerator => "Tin nhan toi moderator",
+        JobPostingReviewRequired => "Bai dang moi can duyet",
+        VerificationRequestApproved => "Yeu cau xac minh duoc chap thuan",
+        VerificationRequestRejected => "Yeu cau xac minh bi tu choi",
+        VerificationRequestCreated => "Da gui yeu cau xac minh",
         JobApplicationSubmitted => "Don ung tuyen da gui",
         ContactRequestReceived => "Nhan request contact",
         ContactRequestAccepted => "Request contact duoc chap nhan",
@@ -39,6 +54,7 @@ public static class NotificationTypes
         HiringOffer => "De nghi viec lam",
         HiringAccepted => "De nghi viec lam da duoc chap nhan",
         HiringDeclined => "De nghi viec lam bi tu choi",
+        ModeratorBroadcast => "Thong bao tu Moderator",
         _ => "Thong bao he thong"
     };
 }

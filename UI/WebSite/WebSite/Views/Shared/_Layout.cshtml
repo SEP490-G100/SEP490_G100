@@ -23,7 +23,7 @@
 
     PersonalProfileViewModel? nannyVerifyPromptProfile = null;
     var showNannyVerifyPrompt = false;
-    var nannyVerifyPromptUrl = "/NannyVerificationRequest/Submit";
+    var nannyVerifyPromptUrl = "/NannyVerificationRequest/NannySubmitVerificationRequest";
     var nannyVerifyPromptButton = "Xác minh ID ngay";
     var nannyVerifyPromptStatusClass = "is-not-submitted";
     var nannyVerifyPromptStatusText = "Chưa gửi xác minh";
@@ -63,14 +63,14 @@
 
                             if (verificationCode == 1)
                             {
-                                nannyVerifyPromptUrl = "/NannyVerificationRequest";
+                                nannyVerifyPromptUrl = "/NannyVerificationRequest/NannyGetVerificationRequestList";
                                 nannyVerifyPromptButton = "Xem yêu cầu xác minh";
                                 nannyVerifyPromptStatusClass = "is-pending";
                                 nannyVerifyPromptStatusText = "Đang chờ duyệt";
                             }
                             else if (verificationCode == 3)
                             {
-                                nannyVerifyPromptUrl = "/NannyVerificationRequest";
+                                nannyVerifyPromptUrl = "/NannyVerificationRequest/NannyGetVerificationRequestList";
                                 nannyVerifyPromptButton = "Xem và gửi lại hồ sơ";
                                 nannyVerifyPromptStatusClass = "is-rejected";
                                 nannyVerifyPromptStatusText = "Đã bị từ chối";
@@ -1161,7 +1161,7 @@
                                         <span class="material-icons-round text-base">contact_mail</span>
                                         Request contact đã nhận
                                     </a>
-                                    <a href="/NannyVerificationRequest" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                    <a href="/NannyVerificationRequest/NannyGetVerificationRequestList" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                         <span class="material-icons-round text-base">verified_user</span>
                                         Yêu cầu xác minh
                                     </a>
@@ -1266,6 +1266,7 @@
                                     const typeLabel = normalizeText(item?.typeLabel);
                                     const title = normalizeText(item?.title);
                                     if (!typeLabel) return false;
+                                    if (typeLabel.includes('moderator')) return true;
                                     return typeLabel !== title;
                                 };
 
@@ -1290,6 +1291,46 @@
                                             <span class="material-icons-round">notifications_none</span>
                                             <p class="text-sm font-semibold text-gray-700">${escapeHtml(message)}</p>
                                         </div>`;
+                                };
+
+                                const getRealtimeToastConfig = (payload) => {
+                                    if (!payload) return null;
+
+                                    const type = String(payload.type || '').trim().toLowerCase();
+                                    const message = payload.message || payload.title;
+                                    if (message) {
+                                        return {
+                                            message,
+                                            type: payload.toastType || 'info'
+                                        };
+                                    }
+
+                                    switch (type) {
+                                        case 'verification-request-submitted':
+                                            return { message: 'Co yeu cau xac minh moi dang cho duyet.', type: 'info' };
+                                        case 'verification-request-created':
+                                            return { message: 'Ban vua gui yeu cau xac minh thanh cong.', type: 'success' };
+                                        case 'job-posting-review-required':
+                                            return { message: 'Co bai dang moi dang cho moderator duyet.', type: 'info' };
+                                        case 'complain-submitted':
+                                            return { message: 'Co bao cao moi can xu ly.', type: 'warning' };
+                                        case 'verification-approved':
+                                            return { message: 'Yeu cau xac minh cua ban da duoc chap thuan.', type: 'success' };
+                                        case 'verification-rejected':
+                                            return { message: 'Yeu cau xac minh cua ban da bi tu choi.', type: 'warning' };
+                                        case 'job-posting-approved':
+                                            return { message: 'Bai dang cua ban da duoc duyet.', type: 'success' };
+                                        case 'job-posting-rejected':
+                                            return { message: 'Bai dang cua ban da bi tu choi.', type: 'warning' };
+                                        case 'job-posting-pending':
+                                            return { message: 'Bai dang cua ban dang cho moderator duyet.', type: 'success' };
+                                        case 'nanny-profile-favorited':
+                                            return { message: 'Ho so cua ban vua duoc yeu thich.', type: 'success' };
+                                        case 'system-warning':
+                                            return { message: 'Co canh bao he thong can xu ly.', type: 'warning' };
+                                        default:
+                                            return null;
+                                    }
                                 };
 
                                 const updateBadge = (count) => {
@@ -1389,6 +1430,12 @@
                                     }
                                 });
 
+                                document.addEventListener('click', function(e) {
+                                    if (!notificationDropdown.contains(e.target)) {
+                                        notificationMenu.classList.add('hidden');
+                                    }
+                                });
+
                                 const connectNotificationRealtime = async () => {
                                     if (!window.signalR) return;
 
@@ -1397,7 +1444,11 @@
                                         .withAutomaticReconnect()
                                         .build();
 
-                                    connection.on('notification:new', async () => {
+                                    connection.on('notification:new', async (payload) => {
+                                        const toastConfig = getRealtimeToastConfig(payload);
+                                        if (toastConfig && typeof window.showToast === 'function') {
+                                            window.showToast(toastConfig.message, { type: toastConfig.type });
+                                        }
                                         window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
                                     });
 
@@ -1410,12 +1461,6 @@
                                     } catch {
                                     }
                                 };
-
-                                document.addEventListener('click', function(e) {
-                                    if (!notificationDropdown.contains(e.target)) {
-                                        notificationMenu.classList.add('hidden');
-                                    }
-                                });
 
                                 loadUnreadCount();
                                 connectNotificationRealtime();
@@ -1839,6 +1884,24 @@
     }
 
     <script>
+        (() => {
+            const params = new URLSearchParams(window.location.search);
+            const toastMessage = params.get('toastMessage');
+            const toastType = params.get('toastType') || 'info';
+
+            if (!toastMessage || typeof window.showToast !== 'function') {
+                return;
+            }
+
+            window.showToast(toastMessage, { type: toastType });
+            params.delete('toastMessage');
+            params.delete('toastType');
+
+            const nextQuery = params.toString();
+            const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ''}${window.location.hash || ''}`;
+            window.history.replaceState({}, document.title, nextUrl);
+        })();
+
         /* Auto-scroll & Drag/Swipe Marquee */
         document.querySelectorAll('.marquee-container').forEach(function (container) {
             var track = container.querySelector('.marquee-track');
