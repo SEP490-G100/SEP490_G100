@@ -26,7 +26,8 @@ namespace WebSite.Controllers
 
             try
             {
-                var response = await _http.GetAsync("/api/nannies?verificationStatus=2&page=1&pageSize=12");
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                var response = await _http.GetAsync("/api/nannies?verificationStatus=2&page=1&pageSize=12", cts.Token);
                 if (response.IsSuccessStatusCode)
                 {
                     var json = await response.Content.ReadAsStringAsync();
@@ -47,6 +48,10 @@ namespace WebSite.Controllers
                     }
                 }
             }
+            catch (OperationCanceledException)
+            {
+                _logger.LogWarning("Homepage nanny data skipped — backend not reachable within 5s.");
+            }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Failed to load homepage featured nanny data.");
@@ -55,6 +60,8 @@ namespace WebSite.Controllers
             return View("_Services", vm);
         }
    
+
+        public IActionResult Faq() => View();
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
