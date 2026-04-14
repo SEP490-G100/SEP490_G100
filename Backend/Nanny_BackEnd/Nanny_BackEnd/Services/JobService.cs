@@ -144,11 +144,15 @@ public class JobService
             var activePostingCount = await _jobRepo.countActiveJobPostings(parentProfileId);
             if (activePostingCount >= freeParentActivePostingLimit)
                 throw new InvalidOperationException($"Tai khoan Parent mien phi chi duoc dang toi da {freeParentActivePostingLimit} bai dang. Vui long mua goi de dang them.");
-        }
 
-        var countThisMonth = await _jobRepo.countJobPostingsInCurrentMonth(parentProfileId);
-        if (countThisMonth >= benefits.MonthlyJobPostLimit)
-            throw new InvalidOperationException($"Ban chi duoc dang toi da {benefits.MonthlyJobPostLimit} bai viet trong 1 thang.");
+            // Với free user: giới hạn tháng theo FreeParent benefits
+            var countThisMonth = await _jobRepo.countJobPostingsInCurrentMonth(parentProfileId);
+            var freeMonthlyLimit = Nanny_BackEnd.DTOs.Subscription.SubscriptionBenefitResponse.FreeParent.MonthlyJobPostLimit;
+            if (countThisMonth >= freeMonthlyLimit)
+                throw new InvalidOperationException($"Ban chi duoc dang toi da {freeMonthlyLimit} bai viet trong 1 thang. Vui long mua goi de tang gioi han.");
+        }
+        // Paid users: không giới hạn bài đăng tháng ở đây
+        // (plan benefits được apply khi tính ExpiresAt và FeaturedBadge)
 
         if (!req.SalaryNegotiable && req.SalaryMin == null)
             throw new InvalidOperationException("Phai nhap muc luong toi thieu hoac chon 'Thuong luong'.");

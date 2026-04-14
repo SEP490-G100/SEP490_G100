@@ -132,4 +132,57 @@ public class AdminController : ControllerBase
         var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
         return Guid.TryParse(sub, out var userId) ? userId : null;
     }
+
+    // ════════════════════════════════════════════════
+    // SUBSCRIPTION PLAN MANAGEMENT
+    // ════════════════════════════════════════════════
+
+    // GET /api/admin/subscription-plans  — All plans (incl. inactive)
+    [HttpGet("subscription-plans")]
+    public async Task<IActionResult> GetAllPlans()
+    {
+        var plans = await _subscriptionService.getAllPlansForAdmin();
+        return Ok(new { success = true, data = plans });
+    }
+
+    // POST /api/admin/subscription-plans  — Create plan
+    [HttpPost("subscription-plans")]
+    public async Task<IActionResult> CreatePlan([FromBody] AdminCreatePlanRequest request)
+    {
+        try
+        {
+            var plan = await _subscriptionService.createPlan(request);
+            return Ok(new { success = true, message = "Tạo gói thành công.", data = plan });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+    }
+
+    // PATCH /api/admin/subscription-plans/{id}  — Update plan
+    [HttpPatch("subscription-plans/{id:guid}")]
+    public async Task<IActionResult> UpdatePlan(Guid id, [FromBody] AdminUpdatePlanRequest request)
+    {
+        try
+        {
+            await _subscriptionService.updatePlan(id, request);
+            return Ok(new { success = true, message = "Cập nhật gói thành công." });
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { success = false, message = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { success = false, message = ex.Message }); }
+    }
+
+    // DELETE /api/admin/subscription-plans/{id}  — Soft delete
+    [HttpDelete("subscription-plans/{id:guid}")]
+    public async Task<IActionResult> DeletePlan(Guid id)
+    {
+        try
+        {
+            await _subscriptionService.deletePlan(id);
+            return Ok(new { success = true, message = "Đã xóa gói thành công." });
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { success = false, message = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { success = false, message = ex.Message }); }
+    }
 }

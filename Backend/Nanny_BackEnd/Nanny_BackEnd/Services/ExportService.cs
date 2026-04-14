@@ -129,7 +129,12 @@ public class ExportService
             subSheet.Cell(subRow, 3).Value = s.SubscriptionPlan?.Name;
             subSheet.Cell(subRow, 4).Value = s.StartDate.ToString("yyyy-MM-dd");
             subSheet.Cell(subRow, 5).Value = s.EndDate.ToString("yyyy-MM-dd");
-            subSheet.Cell(subRow, 6).Value = s.Status == 1 ? "Active" : "Expired/Inactive";
+            subSheet.Cell(subRow, 6).Value = s.Status switch
+            {
+                (int)UserSubscriptionStatus.Active    => "Active",
+                (int)UserSubscriptionStatus.Cancelled => "Cancelled",
+                _                                     => "Expired"
+            };
             subRow++;
         }
         subSheet.Columns().AdjustToContents();
@@ -151,11 +156,11 @@ public class ExportService
 
     private static string GetTxStatusString(int status) => status switch
     {
-        0 => "Pending",
-        1 => "Completed",
-        2 => "Failed",
-        3 => "Refunded",
-        _ => "Unknown"
+        (int)TransactionStatus.Pending       => "Pending",
+        (int)TransactionStatus.Completed     => "Completed",
+        (int)TransactionStatus.Failed        => "Failed",
+        (int)TransactionStatus.WaitingReview => "Waiting Review",
+        _                                    => "Unknown"
     };
 
     private static string GetTxTypeString(int type) => type switch

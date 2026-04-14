@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Options;
 using Nanny_BackEnd.DTOs.Subscription;
+using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
@@ -1149,9 +1150,9 @@ public class SubscriptionService
 
     private static string getSubscriptionStatusLabel(int status) => status switch
     {
-        1 => "Dang hoat dong",
-        2 => "Da huy",
-        3 => "Het han",
+        (int)UserSubscriptionStatus.Active    => "Dang hoat dong",
+        (int)UserSubscriptionStatus.Cancelled => "Da huy",
+        (int)UserSubscriptionStatus.Inactive  => "Het han",
         _ => "Khong xac dinh"
     };
 

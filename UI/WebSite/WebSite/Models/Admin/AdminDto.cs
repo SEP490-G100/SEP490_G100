@@ -148,6 +148,7 @@ public class ApiRevenueStatsDto
     public List<ApiRevenuePointDto> Last30Days { get; set; } = new();
     public List<ApiRevenuePointDto> Last12Months { get; set; } = new();
     public List<RecentTransactionDto> RecentTransactions { get; set; } = new();
+    public List<MonthlyRevenueDto> MonthlyRevenue { get; set; } = new();
 }
 
 public class ApiRevenuePointDto
