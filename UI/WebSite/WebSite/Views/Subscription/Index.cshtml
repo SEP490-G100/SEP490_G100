@@ -100,7 +100,7 @@
                 }
             </div>
 
-            <div class="sub-benefit-compare">
+            @* <div class="sub-benefit-compare">
                 <article class="sub-benefit-item">
                     <span class="sub-benefit-plan">Free</span>
                     @if (Model.IsParent)
@@ -136,7 +136,7 @@
                         }
                     </article>
                 }
-            </div>
+            </div> *@
 
             <div class="sub-grid">
                 <article class="plan-card free-card">
@@ -503,8 +503,7 @@
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                                'X-Requested-With': 'XMLHttpRequest',
-                                ...(antiForgeryToken ? { 'RequestVerificationToken': antiForgeryToken } : {})
+                                'X-Requested-With': 'XMLHttpRequest'
                             },
                             body: formData.toString(),
                             credentials: 'same-origin'

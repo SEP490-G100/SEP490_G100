@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -1071,12 +1071,32 @@ public class SubscriptionService
 
     private static SubscriptionPlanResponse mapPlan(SubscriptionPlan plan)
     {
-        var features = splitFeatures(plan.Features);
-        var targetRole = inferTargetRole(plan, features);
+        var metadata = SubscriptionPlanMetadataHelper.TryParse(plan.Features);
+        var hasStructuredMetadata = !string.IsNullOrWhiteSpace(plan.Features) &&
+                                    plan.Features.TrimStart().StartsWith("{", StringComparison.Ordinal);
+
+        var features = metadata?.Features?.Count > 0
+            ? SubscriptionPlanMetadataHelper.NormalizeFeatures(metadata.Features)
+            : hasStructuredMetadata
+                ? []
+                : splitFeatures(plan.Features);
+
+        var targetRole = hasStructuredMetadata && !string.IsNullOrWhiteSpace(metadata?.TargetRole)
+            ? SubscriptionPlanMetadataHelper.NormalizeTargetRole(metadata!.TargetRole)
+            : inferTargetRole(plan, features);
+
+        var code = hasStructuredMetadata && !string.IsNullOrWhiteSpace(metadata?.Code)
+            ? metadata!.Code
+            : buildPlanCode(plan);
+
+        var benefits = hasStructuredMetadata && metadata?.Benefits != null
+            ? metadata.Benefits
+            : inferBenefits(plan, targetRole, features);
+
         return new SubscriptionPlanResponse
         {
             Id = plan.Id,
-            Code = buildPlanCode(plan),
+            Code = code,
             TargetRole = targetRole,
             Name = plan.Name,
             Description = plan.Description,
@@ -1084,7 +1104,7 @@ public class SubscriptionService
             DurationDays = plan.DurationDays,
             Features = features,
             SortOrder = plan.SortOrder,
-            Benefits = inferBenefits(plan, targetRole, features)
+            Benefits = benefits
         };
     }
 
@@ -1199,40 +1219,7 @@ public class SubscriptionService
         return int.TryParse(parts[2], out var orderCode) ? orderCode : null;
     }
 
-    //private static SubscriptionPlanMetadata resolveAdminPlanMetadata(SubscriptionPlan plan)
-    //{
-    //    var metadata = SubscriptionPlanMetadataHelper.TryParse(plan.Features);
-    //    var definition = getManagedPlanDefinition(plan.Name);
-    //    var targetRole = metadata?.TargetRole;
-    //    if (string.IsNullOrWhiteSpace(targetRole))
-    //        targetRole = definition?.TargetRole ?? "Parent";
-
-    //    var features = metadata?.Features.Count > 0
-    //        ? metadata.Features
-    //        : definition?.Features ?? splitFeatures(plan.Features);
-
-    //    var benefits = metadata?.Benefits;
-    //    if (benefits == null || (
-    //        benefits.MonthlyJobPostLimit == 0 &&
-    //        benefits.MonthlyApplicationLimit == 0 &&
-    //        !benefits.FeaturedBadge &&
-    //        !benefits.SearchPriority &&
-    //        benefits.ListingDurationDays == 0))
-    //    {
-    //        benefits = definition?.Benefits
-    //            ?? (string.Equals(targetRole, "Nanny", StringComparison.OrdinalIgnoreCase)
-    //                ? SubscriptionBenefitResponse.FreeNanny
-    //                : SubscriptionBenefitResponse.FreeParent);
-    //    }
-
-    //    return new SubscriptionPlanMetadata
-    //    {
-    //        Code = SubscriptionPlanMetadataHelper.NormalizeCode(metadata?.Code, targetRole, plan.Name),
-    //        TargetRole = SubscriptionPlanMetadataHelper.NormalizeTargetRole(targetRole),
-    //        Features = SubscriptionPlanMetadataHelper.NormalizeFeatures(features),
-    //        Benefits = benefits
-    //    };
-    //}
+   
 
     private static string serializeFeaturesForStorage(IEnumerable<string> features) =>
         JsonSerializer.Serialize(SubscriptionPlanMetadataHelper.NormalizeFeatures(features));
