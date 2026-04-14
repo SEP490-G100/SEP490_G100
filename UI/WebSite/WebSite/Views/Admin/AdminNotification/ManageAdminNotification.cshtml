@@ -47,14 +47,14 @@
                 <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">search</span>
                 <input name="search" type="text" value="@currentSearch"
                        placeholder="Search by title or content..."
-                       class="search-input pl-9 w-full border border-gray-200 rounded-xl px-4 py-2 font-medium"
+                       class="search-input search-input--with-icon w-full border border-gray-200 rounded-xl px-4 py-2 font-medium"
                        onkeydown="if(event.key==='Enter'){this.form.submit();}" />
             </div>
 
             <div class="relative">
                 <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">toggle_on</span>
                 <select name="isDeleted" onchange="this.form.submit()"
-                        class="search-input md:w-44 !pl-9 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
+                        class="search-input search-input--with-icon md:w-44 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
                     <option value="">All Statuses</option>
                     <option value="false" selected="@(currentDeleted == false ? "selected" : null)">Active</option>
                     <option value="true" selected="@(currentDeleted == true ? "selected" : null)">Inactive</option>

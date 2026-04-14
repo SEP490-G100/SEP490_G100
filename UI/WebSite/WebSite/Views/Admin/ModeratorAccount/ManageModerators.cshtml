@@ -44,7 +44,7 @@
                        type="text"
                        value="@currentSearch"
                        placeholder="Search by name or email..."
-                       class="search-input pl-9 w-full border border-gray-200 rounded-xl px-4 py-2 font-medium"
+                       class="search-input search-input--with-icon w-full border border-gray-200 rounded-xl px-4 py-2 font-medium"
                        onkeydown="if(event.key==='Enter'){this.form.submit();}" />
             </div>
 
@@ -52,7 +52,7 @@
                 <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">toggle_on</span>
                 <select name="status"
                         onchange="this.form.submit()"
-                        class="search-input md:w-44 !pl-9 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
+                        class="search-input search-input--with-icon md:w-44 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
                     <option value="">All Statuses</option>
                     <option value="1" selected="@(currentStatus == "1" ? "selected" : null)">Active</option>
                     <option value="0" selected="@(currentStatus == "0" ? "selected" : null)">Inactive</option>

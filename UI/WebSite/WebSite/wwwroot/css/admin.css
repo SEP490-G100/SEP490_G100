@@ -242,6 +242,10 @@
     box-shadow: 0 0 0 3px rgba(249,115,22,0.12);
 }
 
+.search-input.search-input--with-icon {
+    padding-left: 2.4rem;
+}
+
 textarea.search-input.subscription-feature-input {
     height: 22rem;
     min-height: 22rem;
