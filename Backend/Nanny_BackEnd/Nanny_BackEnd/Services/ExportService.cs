@@ -54,7 +54,7 @@ public class ExportService
         usersSheet.Cell(1, 6).Value = "Status";
         usersSheet.Cell(1, 7).Value = "Roles";
         usersSheet.Cell(1, 8).Value = "CreatedAt";
-        
+
         var usersSheetHeaderRow = usersSheet.Row(1);
         usersSheetHeaderRow.Style.Font.Bold = true;
         usersSheetHeaderRow.Style.Fill.BackgroundColor = XLColor.LightGray;
@@ -129,12 +129,7 @@ public class ExportService
             subSheet.Cell(subRow, 3).Value = s.SubscriptionPlan?.Name;
             subSheet.Cell(subRow, 4).Value = s.StartDate.ToString("yyyy-MM-dd");
             subSheet.Cell(subRow, 5).Value = s.EndDate.ToString("yyyy-MM-dd");
-            subSheet.Cell(subRow, 6).Value = s.Status switch
-            {
-                (int)UserSubscriptionStatus.Active    => "Active",
-                (int)UserSubscriptionStatus.Cancelled => "Cancelled",
-                _                                     => "Expired"
-            };
+            subSheet.Cell(subRow, 6).Value = s.Status == 1 ? "Active" : "Expired/Inactive";
             subRow++;
         }
         subSheet.Columns().AdjustToContents();
@@ -144,7 +139,6 @@ public class ExportService
         workbook.SaveAs(stream);
         return stream.ToArray();
     }
-
     private static string GetUserStatusString(int status) => status switch
     {
         0 => "Pending",
@@ -156,11 +150,11 @@ public class ExportService
 
     private static string GetTxStatusString(int status) => status switch
     {
-        (int)TransactionStatus.Pending       => "Pending",
-        (int)TransactionStatus.Completed     => "Completed",
-        (int)TransactionStatus.Failed        => "Failed",
-        (int)TransactionStatus.WaitingReview => "Waiting Review",
-        _                                    => "Unknown"
+        0 => "Pending",
+        1 => "Completed",
+        2 => "Failed",
+        3 => "Refunded",
+        _ => "Unknown"
     };
 
     private static string GetTxTypeString(int type) => type switch
