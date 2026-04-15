@@ -100,44 +100,7 @@
                 }
             </div>
 
-            @* <div class="sub-benefit-compare">
-                <article class="sub-benefit-item">
-                    <span class="sub-benefit-plan">Free</span>
-                    @if (Model.IsParent)
-                    {
-                        <h4>@Model.FreeBenefits.MonthlyJobPostLimit bai dang</h4>
-                        <p>Goi mac dinh de bat dau nhanh cho phu huynh.</p>
-                    }
-                    else if (Model.IsNanny)
-                    {
-                        <h4>@Model.FreeBenefits.MonthlyApplicationLimit luot ung tuyen</h4>
-                        <p>Goi mac dinh de bat dau nhanh cho bao mau.</p>
-                    }
-                </article>
-
-                @foreach (var plan in Model.Plans)
-                {
-                    var isCurrentBenefitPlan = Model.CurrentSubscription?.Plan?.Code == plan.Code && Model.HasActiveSubscription;
-                    var isHighestPricePlan = Model.Plans.Count > 0 && plan.Id == Model.Plans.OrderByDescending(p => p.Price).ThenByDescending(p => p.DurationDays).First().Id;
-                    <article class="sub-benefit-item @(isCurrentBenefitPlan ? "sub-benefit-item--current" : (isHighestPricePlan ? "sub-benefit-item--accent" : "sub-benefit-item--paid"))">
-                        <span class="sub-benefit-plan">@plan.Name</span>
-                        @if (Model.IsParent)
-                        {
-                            <h4>@(plan.Benefits.MonthlyJobPostLimit > 0 ? $"{plan.Benefits.MonthlyJobPostLimit} bai dang" : "Goi tra phi")</h4>
-                            <p>
-                                @(plan.Benefits.ListingDurationDays > 0 ? $"{plan.Benefits.ListingDurationDays} ngay hien thi" : $"{plan.DurationDays} ngay su dung")
-                                - @(plan.Benefits.SearchPriority ? "co uu tien tim kiem" : "khong uu tien tim kiem")
-                            </p>
-                        }
-                        else if (Model.IsNanny)
-                        {
-                            <h4>@(plan.Benefits.MonthlyApplicationLimit > 0 ? $"{plan.Benefits.MonthlyApplicationLimit} luot ung tuyen" : "Goi tra phi")</h4>
-                            <p>@(plan.Benefits.SearchPriority ? "Ho so duoc uu tien hien thi." : "Ho so co them quyen loi so voi goi Free.")</p>
-                        }
-                    </article>
-                }
-            </div> *@
-
+            
             <div class="sub-grid">
                 <article class="plan-card free-card">
                     <div class="plan-top">
