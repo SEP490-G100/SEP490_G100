@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebSite.Models;
+using WebSite.Models.Admin;
 
 namespace WebSite.Controllers;
 
@@ -99,111 +100,6 @@ public class AdminController : Controller
         var token = HttpContext.Session.GetString("AccessToken");
         if (!string.IsNullOrEmpty(token))
             req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-    }
-
-    // ════════════════════════════════════════════════════
-    // SUBSCRIPTION PLAN MANAGEMENT
-    // ════════════════════════════════════════════════════
-
-    [HttpGet]
-    public async Task<IActionResult> ManagePlans()
-    {
-        var req = new HttpRequestMessage(HttpMethod.Get, "/api/admin/subscription-plans");
-        AttachToken(req);
-        try
-        {
-            var response = await _http.SendAsync(req);
-            var json     = await response.Content.ReadAsStringAsync();
-            var result   = JsonSerializer.Deserialize<ApiResult<List<AdminPlanDto>>>(json, JsonOpts);
-            return View("~/Views/Admin/ManagePlans.cshtml", result?.Data ?? new List<AdminPlanDto>());
-        }
-        catch
-        {
-            TempData["Error"] = "Không thể tải danh sách gói subscription.";
-            return View("~/Views/Admin/ManagePlans.cshtml", new List<AdminPlanDto>());
-        }
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> CreatePlan(AdminPlanDto model)
-    {
-        var features = (model.FeaturesRaw ?? string.Empty)
-            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .ToList();
-
-        var payload = JsonSerializer.Serialize(new
-        {
-            name        = model.Name?.Trim(),
-            description = model.Description?.Trim(),
-            price       = model.Price,
-            durationDays= model.DurationDays,
-            features,
-            isActive    = model.IsActive,
-            sortOrder   = model.SortOrder
-        });
-        var req = new HttpRequestMessage(HttpMethod.Post, "/api/admin/subscription-plans")
-        {
-            Content = new StringContent(payload, Encoding.UTF8, "application/json")
-        };
-        AttachToken(req);
-        try
-        {
-            var response = await _http.SendAsync(req);
-            var result   = JsonSerializer.Deserialize<ApiResult>(await response.Content.ReadAsStringAsync(), JsonOpts);
-            TempData[result?.Success == true ? "Success" : "Error"] = result?.Message ?? "Thao tác thất bại.";
-        }
-        catch (Exception ex) { TempData["Error"] = $"Lỗi kết nối: {ex.Message}"; }
-        return RedirectToAction(nameof(ManagePlans));
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> EditPlan(Guid id, AdminPlanDto model)
-    {
-        var features = (model.FeaturesRaw ?? string.Empty)
-            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .ToList();
-
-        var payload = JsonSerializer.Serialize(new
-        {
-            name        = model.Name?.Trim(),
-            description = model.Description?.Trim(),
-            price       = model.Price,
-            durationDays= model.DurationDays,
-            features,
-            isActive    = model.IsActive,
-            sortOrder   = model.SortOrder
-        });
-        var req = new HttpRequestMessage(HttpMethod.Patch, $"/api/admin/subscription-plans/{id}")
-        {
-            Content = new StringContent(payload, Encoding.UTF8, "application/json")
-        };
-        AttachToken(req);
-        try
-        {
-            var response = await _http.SendAsync(req);
-            var result   = JsonSerializer.Deserialize<ApiResult>(await response.Content.ReadAsStringAsync(), JsonOpts);
-            TempData[result?.Success == true ? "Success" : "Error"] = result?.Message ?? "Thao tác thất bại.";
-        }
-        catch (Exception ex) { TempData["Error"] = $"Lỗi kết nối: {ex.Message}"; }
-        return RedirectToAction(nameof(ManagePlans));
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeletePlan(Guid id)
-    {
-        var req = new HttpRequestMessage(HttpMethod.Delete, $"/api/admin/subscription-plans/{id}");
-        AttachToken(req);
-        try
-        {
-            var response = await _http.SendAsync(req);
-            var result   = JsonSerializer.Deserialize<ApiResult>(await response.Content.ReadAsStringAsync(), JsonOpts);
-            TempData[result?.Success == true ? "Success" : "Error"] = result?.Message ?? "Thao tác thất bại.";
-        }
-        catch (Exception ex) { TempData["Error"] = $"Lỗi kết nối: {ex.Message}"; }
-        return RedirectToAction(nameof(ManagePlans));
     }
 }
 
