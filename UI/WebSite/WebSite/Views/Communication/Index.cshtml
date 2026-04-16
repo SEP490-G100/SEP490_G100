@@ -1137,120 +1137,13 @@
             const blockBtn = document.getElementById('btnBlockConv');
             const canUnblock = canCurrentUserUnblock();
 
-function closeReportModal() {
-    document.getElementById('reportModal').style.display = 'none';
-    pendingReportMsgId = null;
-}
-
-async function submitReport() {
-    const reason = document.getElementById('reportReason').value.trim();
-    if (!reason) { alert('Vui lòng nhập lý do báo cáo.'); return; }
-    try {
-        await fetch(`/Communication/ReportMessage/${pendingReportMsgId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getAntiForgery() },
-            body: JSON.stringify({ reason, evidence: document.getElementById('reportEvidence').value.trim() })
-        });
-        alert('✅ Báo cáo đã được gửi. Cảm ơn bạn đã giúp giữ gìn cộng đồng!');
-    } catch {}
-    closeReportModal();
-}
-
-// ════════════════════════════════════════════════════════════════════
-//  UTILS
-// ════════════════════════════════════════════════════════════════════
-function esc(v) {
-    return String(v ?? '')
-        .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;').replaceAll("'", '&#39;');
-}
-
-function fmtTime(v) {
-    if (!v) return '';
-    const d = new Date(v);
-    const now = new Date();
-    const diff = (now - d) / 1000;
-    if (diff < 60) return 'Vừa xong';
-    if (diff < 3600) return `${Math.floor(diff / 60)} phút`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)} giờ`;
-    return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
-}
-
-function fmtMsgTime(v) {
-    if (!v) return '';
-    return new Date(v).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-}
-
-function getAntiForgery() {
-    return document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
-}
-
-function resolveMessageIsMine(message) {
-    if (activeConvData?.otherUserId && message?.senderId) {
-        return String(message.senderId) !== String(activeConvData.otherUserId);
-    }
-    if (typeof message?.isMine === 'boolean') {
-        return message.isMine;
-    }
-    return false;
-}
-
-function applyMessageDeleted(messageId, conversationId) {
-    const bubble = document.querySelector(`#msg-${messageId} .msg-bubble`);
-    if (bubble) {
-        bubble.textContent = '[Tin nhắn đã bị xoá]';
-        bubble.classList.add('deleted');
-    }
-    if (conversationId) {
-        updateConversationPreview(
-            { conversationId, content: '[Tin nhắn đã bị xoá]', createdAt: new Date().toISOString() },
-            true
-        );
-    }
-}
-
-function renderHiringOfferCard(message, isMine) {
-    const hiringRecordId = message.attachmentUrl || '';
-    return `
-    <div class="hiring-offer-card" onclick="window.__openOfferDetail?.('${esc(hiringRecordId)}')" title="Bam de xem chi tiet de nghi viec lam">
-        <div class="hiring-offer-card__header">
-            <span class="material-icons-round" style="font-size:20px;">handshake</span>
-            <span>De nghi viec lam</span>
-        </div>
-        <div class="hiring-offer-card__body">
-            <p class="hiring-offer-card__label">
-                ${isMine ? 'Ban da gui de nghi thue nanny.' : 'Ban nhan duoc de nghi viec lam!'}
-            </p>
-            <p class="hiring-offer-card__hint">${isMine ? 'Bam de xem chi tiet hop dong.' : 'Bam de xem hop dong va phan hoi.'}</p>
-        </div>
-        <div class="hiring-offer-card__footer">
-            <span class="material-icons-round" style="font-size:16px;opacity:.8;">open_in_new</span>
-            Xem chi tiet hop dong
-        </div>
-    </div>`;
-}
-
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-//  SIGNALR
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-async function initSignalR() {
-    if (!apiBaseUrl || typeof signalR === 'undefined') return;
-    const token = '@ViewBag.AccessToken';
-    if (!token) return;
-
-    hubConnection = new signalR.HubConnectionBuilder()
-        .withUrl(`${apiBaseUrl}/hubs/chat`, { accessTokenFactory: () => token })
-        .withAutomaticReconnect()
-        .build();
-
-    hubConnection.on('ReceiveMessage', message => {
-        if (!message || !message.conversationId) return;
-        if (String(message.conversationId) === String(activeConvId)) {
-            const isMine = resolveMessageIsMine(message);
-            appendMessage({ ...message, isMine });
-        } else {
-            const isMine = typeof message.isMine === 'boolean' ? message.isMine : false;
-            updateConversationPreview(message, isMine);
+            banner.style.display = isBlocked ? 'block' : 'none';
+            inputArea.style.display = isBlocked ? 'none' : 'flex';
+            blockBtn.title = isBlocked ? (canUnblock ? 'Bỏ chặn' : 'Cuộc trò chuyện đang bị khóa') : 'Chặn';
+            blockBtn.querySelector('.material-icons-round').textContent = isBlocked ? 'lock_open' : 'block';
+            blockBtn.disabled = isBlocked && !canUnblock;
+            blockBtn.style.opacity = blockBtn.disabled ? '.55' : '1';
+            blockBtn.style.cursor = blockBtn.disabled ? 'not-allowed' : 'pointer';
         }
 
         // ════════════════════════════════════════════════════════════════════

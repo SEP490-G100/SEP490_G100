@@ -138,12 +138,12 @@
                                 <div class="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
                                 <span class="text-sm font-semibold text-gray-700">Active</span>
                             </label>
-                            <label class="flex items-center gap-2.5 px-4 py-3 rounded-2xl border-2 cursor-pointer transition-all @(Model.Status == 0 ? "border-red-400 bg-red-50" : "border-gray-200 bg-gray-50 hover:border-gray-300")"
+                            <label class="flex items-center gap-2.5 px-4 py-3 rounded-2xl border-2 cursor-pointer transition-all @(Model.Status == 2 ? "border-red-400 bg-red-50" : "border-gray-200 bg-gray-50 hover:border-gray-300")"
                                    id="label-inactive">
-                                <input type="radio" name="Status" value="0"
-                                       @(Model.Status == 0 ? "checked" : "")
+                                <input type="radio" name="Status" value="2"
+                                       @(Model.Status == 2 ? "checked" : "")
                                        class="accent-red-500"
-                                       onchange="updateStatusLabel(0)" />
+                                       onchange="updateStatusLabel(2)" />
                                 <div class="w-2.5 h-2.5 rounded-full bg-red-400"></div>
                                 <span class="text-sm font-semibold text-gray-700">Inactive</span>
                             </label>

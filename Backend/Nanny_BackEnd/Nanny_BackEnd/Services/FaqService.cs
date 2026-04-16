@@ -120,17 +120,6 @@ public class FaqService
         return (true, 200, "Cap nhat FAQ thanh cong.");
     }
 
-    public async Task<(bool Success, int StatusCode, string Message)> ModeratorDeleteFaqAsync(Guid id)
-    {
-        var faq = await _faqRepository.GetByIdAsync(id);
-        if (faq == null)
-            return (false, 404, "Khong tim thay FAQ.");
-
-        _faqRepository.SoftDelete(faq);
-        await _faqRepository.SaveChangesAsync();
-        return (true, 200, "Da xoa FAQ.");
-    }
-
     public async Task<(bool Success, int StatusCode, string Message, bool IsActive)> ModeratorToggleFaqStatusAsync(
         Guid id,
         Guid? updatedBy)
