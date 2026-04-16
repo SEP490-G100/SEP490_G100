@@ -135,6 +135,11 @@ public class NannyBasicInfoController : Controller
             vm.Latitude = existing.Latitude;
             vm.Longitude = existing.Longitude;
             vm.AvatarUrl = NormalizeAvatarUrl(existing.AvatarUrl);
+            ViewBag.ProfileCompletionPercentage = existing.ProfileCompletionPercentage;
+        }
+        else
+        {
+            ViewBag.ProfileCompletionPercentage = 0;
         }
 
         return View(vm);

@@ -42,6 +42,13 @@ public class PersonalProfileDto
     public List<NannySkillItemDto>? Skills { get; set; }
     public List<NannyAvailabilityItemDto>? Availabilities { get; set; }
     public List<NannyCertificateItemDto>? Certificates { get; set; }
+
+    /// <summary>
+    /// Phần trăm hoàn thiện hồ sơ được tính động.
+    /// Nanny: tối đa 90% từ fields hồ sơ + 10% từ verification (tổng 100%).
+    /// Parent: tính từ fields lên đến 100%.
+    /// </summary>
+    public int ProfileCompletionPercentage { get; set; }
 }
 
 public class NannySkillItemDto

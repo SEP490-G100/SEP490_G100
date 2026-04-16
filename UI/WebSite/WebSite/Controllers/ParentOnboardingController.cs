@@ -173,6 +173,11 @@ public class ParentOnboardingController : Controller
             vm.Latitude = existing.Latitude;
             vm.Longitude = existing.Longitude;
             vm.AvatarUrl = existing.AvatarUrl;
+            ViewBag.ProfileCompletionPercentage = existing.ProfileCompletionPercentage;
+        }
+        else
+        {
+            ViewBag.ProfileCompletionPercentage = 0;
         }
 
         return View(vm);
@@ -210,8 +215,10 @@ public class ParentOnboardingController : Controller
     }
 
     [HttpGet]
-    public IActionResult Step2Family()
+    public async Task<IActionResult> Step2Family()
     {
+        var existing = await LoadCurrentProfileAsync();
+        ViewBag.ProfileCompletionPercentage = existing?.ProfileCompletionPercentage ?? 0;
         return View(new ParentOnboardingWizardViewModel());
     }
 

@@ -65,6 +65,13 @@ namespace WebSite.Models.Profile
                 return age;
             }
         }
+
+        /// <summary>
+        /// Phần trăm hoàn thiện hồ sơ được tính từ backend.
+        /// Nanny: tối đa 90% hồ sơ + 10% verification.
+        /// Parent: tối đa 100% từ các trường hồ sơ.
+        /// </summary>
+        public int ProfileCompletionPercentage { get; set; }
     }
 
     public class NannySkillItemViewModel

@@ -523,22 +523,7 @@ public class SubscriptionService
         await _subscriptionRepo.saveChanges();
     }
 
-    //public async Task toggleAdminPlanStatus(Guid id, Guid adminUserId, bool isActive)
-    //{
-    //    var plan = await _subscriptionRepo.findAdminPlanByIdIncludingDeleted(id)
-    //        ?? throw new KeyNotFoundException("Khong tim thay goi subscription.");
-
-    //    var targetIsDeleted = !isActive;
-    //    if (plan.IsActive == isActive && plan.IsDeleted == targetIsDeleted)
-    //        return;
-
-    //    plan.IsActive = isActive;
-    //    plan.IsDeleted = targetIsDeleted;
-    //    plan.UpdatedAt = DateTime.UtcNow;
-    //    plan.UpdatedBy = adminUserId;
-    //    await _subscriptionRepo.saveChanges();
-    //}
-
+  
     private async Task<Transaction?> findReusablePendingTransaction(Guid userId, string planCode)
     {
         var nowUtc = DateTime.UtcNow;
@@ -840,46 +825,7 @@ public class SubscriptionService
         return true;
     }
 
-    //private async Task ensureAdminManagedPlans()
-    //{
-    //    var existingPlans = await _subscriptionRepo.getPlansByNamesIncludingDeleted(ManagedPlans.Select(p => p.Name));
-    //    var existingNames = existingPlans
-    //        .Select(p => p.Name)
-    //        .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-    //    var needsSave = false;
-    //    foreach (var definition in ManagedPlans)
-    //    {
-    //        if (existingNames.Contains(definition.Name))
-    //            continue;
-
-    //        _subscriptionRepo.addPlan(new SubscriptionPlan
-    //        {
-    //            Id = Guid.NewGuid(),
-    //            Name = definition.Name,
-    //            Description = definition.Description,
-    //            Price = definition.Price,
-    //            DurationDays = definition.DurationDays,
-    //            Features = SubscriptionPlanMetadataHelper.Serialize(new SubscriptionPlanMetadata
-    //            {
-    //                Code = definition.Code,
-    //                TargetRole = definition.TargetRole,
-    //                Features = definition.Features,
-    //                Benefits = definition.Benefits
-    //            }),
-    //            IsActive = true,
-    //            SortOrder = definition.SortOrder,
-    //            CreatedAt = DateTime.UtcNow,
-    //            CreatedBy = null,
-    //            IsDeleted = false
-    //        });
-    //        needsSave = true;
-    //    }
-
-    //    if (needsSave)
-    //        await _subscriptionRepo.saveChanges();
-    //}
-
+    
     private static void markTransactionFailed(Transaction transaction, DateTime nowUtc)
     {
         transaction.Status = 3;
@@ -983,90 +929,7 @@ public class SubscriptionService
         await _subscriptionRepo.saveChanges();
     }
 
-    //private async Task<List<SubscriptionPlan>> ensureManagedPlans()
-    //{
-    //    var existingPlans = await _subscriptionRepo.getPlansByNamesIncludingDeleted(ManagedPlans.Select(p => p.Name));
-    //    var planMap = existingPlans.ToDictionary(p => p.Name, StringComparer.OrdinalIgnoreCase);
-    //    var needsSave = false;
-
-    //    foreach (var definition in ManagedPlans)
-    //    {
-    //        if (!planMap.TryGetValue(definition.Name, out var plan))
-    //        {
-    //            plan = new SubscriptionPlan
-    //            {
-    //                Id = Guid.NewGuid(),
-    //                CreatedAt = DateTime.UtcNow,
-    //                IsDeleted = false
-    //            };
-    //            applyDefinition(plan, definition);
-    //            _subscriptionRepo.addPlan(plan);
-    //            existingPlans.Add(plan);
-    //            needsSave = true;
-    //            continue;
-    //        }
-
-    //        if (applyDefinition(plan, definition))
-    //            needsSave = true;
-    //    }
-
-    //    if (needsSave)
-    //        await _subscriptionRepo.saveChanges();
-
-    //    return existingPlans
-    //        .Where(p => !p.IsDeleted && p.IsActive)
-    //        .OrderBy(p => p.SortOrder)
-    //        .ThenBy(p => p.Price)
-    //        .ToList();
-    //}
-
-    //private static bool applyDefinition(SubscriptionPlan plan, ManagedPlanDefinition definition)
-    //{
-    //    var changed = false;
-
-    //    if (plan.Name != definition.Name)
-    //    {
-    //        plan.Name = definition.Name;
-    //        changed = true;
-    //    }
-
-    //    if (plan.Description != definition.Description)
-    //    {
-    //        plan.Description = definition.Description;
-    //        changed = true;
-    //    }
-
-    //    if (plan.Price != definition.Price)
-    //    {
-    //        plan.Price = definition.Price;
-    //        changed = true;
-    //    }
-
-    //    if (plan.DurationDays != definition.DurationDays)
-    //    {
-    //        plan.DurationDays = definition.DurationDays;
-    //        changed = true;
-    //    }
-
-    //    if (plan.SortOrder != definition.SortOrder)
-    //    {
-    //        plan.SortOrder = definition.SortOrder;
-    //        changed = true;
-    //    }
-
-    //    var features = JsonSerializer.Serialize(definition.Features);
-    //    if (plan.Features != features)
-    //    {
-    //        plan.Features = features;
-    //        changed = true;
-    //    }
-
-    //    if (changed)
-    //        plan.UpdatedAt = DateTime.UtcNow;
-
-    //    return changed;
-    //}
-
+   
     private static SubscriptionPlanResponse mapPlan(SubscriptionPlan plan)
     {
         var metadata = SubscriptionPlanMetadataHelper.TryParse(plan.Features);

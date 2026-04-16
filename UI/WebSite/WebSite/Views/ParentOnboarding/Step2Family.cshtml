@@ -1,6 +1,8 @@
 @model WebSite.Models.Profile.ParentOnboardingWizardViewModel
 @{
     ViewData["Title"] = "Parent - Gia dinh va con cai";
+    var pct = (int)(ViewBag.ProfileCompletionPercentage ?? 0);
+    var pctColor = pct >= 80 ? "#22c55e" : pct >= 50 ? "#f97316" : "#ef4444";
 }
 
 <div class="nm-flow-shell">
@@ -19,6 +21,28 @@
                         <span class="nm-progress-step">1</span>
                         <span class="nm-progress-line"></span>
                         <span class="nm-progress-step is-active">2</span>
+                    </div>
+                </div>
+
+                <!-- Wizard progress: Parent bước 2/2 -->
+                <div class="nm-wizard-bar-wrap">
+                    <div class="nm-wizard-bar-meta">
+                        <span class="nm-wizard-bar-meta__step">Bước 2 / 2 — Gia đình & trẻ</span>
+                        <span class="nm-wizard-bar-meta__pct">100%</span>
+                    </div>
+                    <div class="nm-wizard-bar-track">
+                        <div class="nm-wizard-bar-fill" style="--nm-pw:100%"></div>
+                    </div>
+                </div>
+
+                <!-- Độ hoàn thiện hồ sơ -->
+                <div style="margin-bottom:12px;padding:10px 14px;background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;">
+                    <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:4px;">
+                        <span style="color:#374151;">Độ hoàn thiện hồ sơ</span>
+                        <span id="nm-compl-pct" style="color:@pctColor">@pct%</span>
+                    </div>
+                    <div style="background:#e5e7eb;border-radius:999px;height:6px;overflow:hidden;">
+                        <div id="nm-compl-bar" style="height:6px;border-radius:999px;background:@pctColor;width:@(pct)%;"></div>
                     </div>
                 </div>
 
@@ -137,4 +161,28 @@ document.addEventListener('DOMContentLoaded', function () {
 
     checkboxes.forEach(cb => cb.addEventListener('change', updateHiddenInput));
 });
+</script>
+
+<script>
+(function () {
+    var srvPct = @pct;
+    function score() {
+        var s = 0;
+        var fd = document.getElementById('FamilyDescription'); if (fd && fd.value.trim()) s += 15;
+        var nc = document.getElementById('NumberOfChildren'); if (nc && nc.value) s += 10;
+        return s;
+    }
+    var base = Math.max(0, srvPct - score());
+    function col(p) { return p >= 80 ? '#22c55e' : p >= 50 ? '#f97316' : '#ef4444'; }
+    function refresh() {
+        var p = Math.min(Math.max(base + score(), 0), 100), c = col(p);
+        var pe = document.getElementById('nm-compl-pct'), be = document.getElementById('nm-compl-bar');
+        if (pe) { pe.textContent = p + '%'; pe.style.color = c; }
+        if (be) { be.style.width = p + '%'; be.style.background = c; }
+    }
+    ['FamilyDescription', 'NumberOfChildren'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) { el.addEventListener('input', refresh); el.addEventListener('change', refresh); }
+    });
+})();
 </script>

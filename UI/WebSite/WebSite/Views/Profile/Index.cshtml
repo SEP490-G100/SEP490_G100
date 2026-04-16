@@ -277,6 +277,39 @@
             </div>
 
             <div class="space-y-4">
+                @if (!isReadOnly)
+                {
+                    var pct = Model.ProfileCompletionPercentage;
+                    var pctColor = pct >= 80 ? "#22c55e" : pct >= 50 ? "#f97316" : "#ef4444";
+                    var pctLabel = pct >= 100 ? "Hồ sơ hoàn thiện!" : $"{pct}% hoàn thiện";
+                    string? pctHint = null;
+                    if (isNanny && pct < 100 && pct >= 90)
+                        pctHint = "Xác minh hồ sơ để đạt 100%";
+                    else if (pct < 90)
+                        pctHint = isNanny ? "Điền đầy đủ thông tin để đạt 90%, xác minh để đạt 100%" : "Điền đầy đủ thông tin để hoàn thiện hồ sơ";
+                    <div class="profile-card">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="!mb-0">Độ hoàn thiện hồ sơ</h3>
+                            <span class="text-sm font-extrabold" style="color:@pctColor">@pctLabel</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                            <div class="h-2.5 rounded-full transition-all duration-500"
+                                 style="width:@(pct)%;background-color:@pctColor"></div>
+                        </div>
+                        @if (isNanny)
+                        {
+                            <div class="mt-2 flex items-center justify-between text-xs text-slate-500">
+                                <span>Hồ sơ: @(Math.Min(pct, 90))%/90%</span>
+                                <span>Xác minh: @(pct >= 90 ? "10" : "0")%/10%</span>
+                            </div>
+                        }
+                        @if (pctHint != null)
+                        {
+                            <p class="mt-2 text-xs text-slate-500">@pctHint</p>
+                        }
+                    </div>
+                }
+
                 <div class="profile-card">
                     <h3>Thong tin lien he</h3>
                     <div class="grid grid-cols-1 gap-3">

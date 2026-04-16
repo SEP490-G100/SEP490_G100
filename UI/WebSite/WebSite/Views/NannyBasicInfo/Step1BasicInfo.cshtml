@@ -3,26 +3,24 @@
     ViewData["Title"] = "Nanny - Thong tin co ban";
 }
 
-<div class="nm-flow-shell nm-flow-shell--cool">
+<div class="nm-flow-shell nm-flow-shell--homepage">
     <div class="nm-flow-container">
         <div class="nm-flow-card">
             <div class="nm-flow-card__inner">
                 <div class="nm-flow-header">
                     <div class="nm-flow-header__content">
-                        <span class="nm-flow-badge nm-flow-badge--cool">Nanny onboarding</span>
+                        <span class="nm-flow-badge">Nanny onboarding</span>
                         <h1 class="nm-flow-title">Hoan thien ho so co ban</h1>
                         <p class="nm-flow-subtitle">
                             Day la thong tin nen ban dau de ho so nanny hien thi tot hon trong tim kiem va de parent nhan dien nhanh kha nang phu hop.
                         </p>
-                    </div>
-                    <div class="nm-flow-progress" aria-hidden="true">
-                        <span class="nm-progress-step is-active is-cool">1</span>
+                        <div class="nm-flow-divider" aria-hidden="true"></div>
                     </div>
                 </div>
 
                 <div asp-validation-summary="ModelOnly" class="nm-alert"></div>
 
-                <form asp-action="Step1BasicInfo" method="post" enctype="multipart/form-data" data-nm-unified-skip="true">
+                <form asp-action="Step1BasicInfo" method="post" enctype="multipart/form-data">
                     @Html.AntiForgeryToken()
 
                     <input type="hidden" asp-for="Latitude" id="Latitude" />
@@ -31,7 +29,7 @@
 
                     <div class="nm-form-grid">
                         <div class="nm-col-12">
-                            <div class="nm-section-card nm-section-card--cool">
+                            <div class="nm-section-card">
                                 <div class="nm-section-title">Thong tin ca nhan</div>
                                 <div class="nm-section-note">Anh dai dien, ngay sinh va dia chi se duoc dung de hoan thien ho so nghe nghiep o cac buoc tiep theo.</div>
 
@@ -115,7 +113,7 @@
 
                     <div class="nm-flow-actions">
                         <a href="@Url.Action("Index", "Home")" class="nm-btn nm-btn--ghost">Bo qua</a>
-                        <button type="submit" name="direction" value="next" class="nm-btn nm-btn--primary nm-btn--cool">Tiep tuc</button>
+                        <button type="submit" name="direction" value="next" class="nm-btn nm-btn--primary">Tiep tuc</button>
                     </div>
                 </form>
             </div>

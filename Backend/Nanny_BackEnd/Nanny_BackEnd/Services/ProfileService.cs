@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Nanny_BackEnd.DTOs.Profile;
+using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
 
@@ -224,6 +225,17 @@ public class ProfileService
             }
         }
 
+        // Tính phần trăm hoàn thiện hồ sơ động
+        int profileCompletionPercentage = 0;
+        if (isNanny)
+            profileCompletionPercentage = ComputeNannyCompletion(
+                user, bio, yearsOfExperience, educationLevel,
+                expectedSalaryMin, expectedSalaryMax, maxTravelDistance,
+                verificationStatusCode, skills, availabilities);
+        else if (isParent)
+            profileCompletionPercentage = ComputeParentCompletion(
+                user, familyDescription, numberOfChildren, children);
+
         return new PersonalProfileDto
         {
             UserId = user.Id,
@@ -263,7 +275,8 @@ public class ProfileService
             TotalReviews = totalReviews,
             Skills = skills,
             Availabilities = availabilities,
-            Certificates = certificates
+            Certificates = certificates,
+            ProfileCompletionPercentage = profileCompletionPercentage
         };
     }
 
@@ -398,6 +411,29 @@ public class ProfileService
         }
 
         await _userRepo.SaveChangesAsync();
+
+        // Cập nhật ProfileCompleteness vào DB sau khi save
+        if (isNanny)
+        {
+            var np = await _nannyProfileRepo.FindByUserIdAsync(userId);
+            if (np != null)
+            {
+                var freshSkills = await _nannySkillRepo.GetByNannyProfileIdAsync(np.Id);
+                var freshAvail = await _nannyAvailabilityRepo.GetByNannyProfileIdAsync(np.Id);
+                var skillDtos = freshSkills
+                    .Select(s => new NannySkillItemDto { SkillId = s.SkillId })
+                    .ToList();
+                var availDtos = freshAvail
+                    .Select(a => new NannyAvailabilityItemDto { DayOfWeek = a.DayOfWeek, TimeSlot = a.TimeSlot, IsAvailable = a.IsAvailable })
+                    .ToList();
+
+                np.ProfileCompleteness = ComputeNannyCompletion(
+                    user, np.Bio, np.YearsOfExperience, np.EducationLevel,
+                    np.ExpectedSalaryMin, np.ExpectedSalaryMax, np.MaxTravelDistance,
+                    np.VerificationStatus, skillDtos, availDtos);
+                await _nannyProfileRepo.SaveChangesAsync();
+            }
+        }
 
         // Fire-and-forget: cập nhật embedding sau khi nanny sửa profile
         if (isNanny)
@@ -554,6 +590,90 @@ public class ProfileService
         CreatedAt = c.CreatedAt
     };
     
+    // ────────────────────────────────────────────────────────────────────
+    // Tính phần trăm hoàn thiện hồ sơ
+    // ────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Tính phần trăm hoàn thiện hồ sơ Nanny.
+    /// Tối đa 90% từ các trường hồ sơ + 10% nếu đã xác minh = 100% tổng.
+    /// Chi tiết trọng số:
+    ///   Basic (30): Avatar 5, HọTên 5, SĐT 5, NgàySinh 5, GioiTinh 5, Tỉnh/Quận 5
+    ///   Professional (40): Bio 15, KinhNghiem 5, HocVan 5, LuongMin 5, LuongMax 5, KcDiChuyen 5
+    ///   Skills (10), Availability (10)
+    ///   Verification bonus: +10 nếu Approved
+    /// </summary>
+    internal static int ComputeNannyCompletion(
+        User user,
+        string? bio,
+        int? yearsOfExperience,
+        int? educationLevel,
+        decimal? expectedSalaryMin,
+        decimal? expectedSalaryMax,
+        int? maxTravelDistance,
+        int? verificationStatusCode,
+        List<NannySkillItemDto>? skills,
+        List<NannyAvailabilityItemDto>? availabilities)
+    {
+        int score = 0;
+
+        // Basic info (30 điểm)
+        if (!string.IsNullOrWhiteSpace(user.AvatarUrl)) score += 5;
+        if (!string.IsNullOrWhiteSpace(user.FirstName) && !string.IsNullOrWhiteSpace(user.LastName)) score += 5;
+        if (!string.IsNullOrWhiteSpace(user.PhoneNumber)) score += 5;
+        if (user.DateOfBirth.HasValue) score += 5;
+        if (user.Gender.HasValue) score += 5;
+        if (!string.IsNullOrWhiteSpace(user.City) && !string.IsNullOrWhiteSpace(user.District)) score += 5;
+
+        // Professional info (40 điểm)
+        if (!string.IsNullOrWhiteSpace(bio)) score += 15;
+        if (yearsOfExperience.HasValue) score += 5;
+        if (educationLevel.HasValue) score += 5;
+        if (expectedSalaryMin.HasValue) score += 5;
+        if (expectedSalaryMax.HasValue) score += 5;
+        if (maxTravelDistance.HasValue) score += 5;
+
+        // Skills + Availability (20 điểm)
+        if (skills?.Any() == true) score += 10;
+        if (availabilities?.Any() == true) score += 10;
+
+        // Tối đa 90% từ hồ sơ, +10% nếu đã xác minh
+        int verificationBonus = verificationStatusCode == (int)VerificationStatus.Approved ? 10 : 0;
+        return Math.Min(score, 90) + verificationBonus;
+    }
+
+    /// <summary>
+    /// Tính phần trăm hoàn thiện hồ sơ Parent, tối đa 100%.
+    /// Chi tiết trọng số:
+    ///   Basic (50): Avatar 5, HọTên 5, SĐT 10, NgàySinh 5, GioiTinh 5, Tỉnh/Quận 10, DiaChi 5, PhuongXa 5
+    ///   Family (50): MoTaGiaDinh 15, SoTreEm 10, CoHoSoTreEm 25
+    /// </summary>
+    internal static int ComputeParentCompletion(
+        User user,
+        string? familyDescription,
+        int? numberOfChildren,
+        List<ChildProfileDto>? children)
+    {
+        int score = 0;
+
+        // Basic info (50 điểm)
+        if (!string.IsNullOrWhiteSpace(user.AvatarUrl)) score += 5;
+        if (!string.IsNullOrWhiteSpace(user.FirstName) && !string.IsNullOrWhiteSpace(user.LastName)) score += 5;
+        if (!string.IsNullOrWhiteSpace(user.PhoneNumber)) score += 10;
+        if (user.DateOfBirth.HasValue) score += 5;
+        if (user.Gender.HasValue) score += 5;
+        if (!string.IsNullOrWhiteSpace(user.City) && !string.IsNullOrWhiteSpace(user.District)) score += 10;
+        if (!string.IsNullOrWhiteSpace(user.Address)) score += 5;
+        if (!string.IsNullOrWhiteSpace(user.Ward)) score += 5;
+
+        // Family info (50 điểm)
+        if (!string.IsNullOrWhiteSpace(familyDescription)) score += 15;
+        if (numberOfChildren.HasValue) score += 10;
+        if (children?.Any() == true) score += 25;
+
+        return Math.Min(score, 100);
+    }
+
     // Background embedding helper
     private async Task EmbedNannyInBackgroundAsync(Guid nannyProfileId)
     {
