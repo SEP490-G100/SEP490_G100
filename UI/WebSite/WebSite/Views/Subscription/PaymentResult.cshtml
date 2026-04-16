@@ -12,7 +12,6 @@
     @{
         var isCancelled = Model.Cancelled;
         var isSuccess = Model.PaymentStatus?.SubscriptionActivated == true;
-        var isWaitingReview = !isCancelled && Model.PaymentStatus?.TransactionStatus == 5;
         var isFailed = !isCancelled && Model.PaymentStatus?.TransactionStatus == 3;
         var state = isCancelled ? "cancelled" : isSuccess ? "success" : isFailed ? "failed" : "pending";
         var statusLabel = Model.PaymentStatus?.TransactionStatusLabel ?? (isCancelled ? "Da huy" : "Cho thanh toan");
@@ -21,8 +20,6 @@
             ? "Ban da huy giao dich"
             : isSuccess
                 ? "Thanh toan thanh cong"
-                : isWaitingReview
-                    ? "Dang cho xet duyet"
                 : isFailed
                     ? "Thanh toan that bai"
                     : "Cho thanh toan";
@@ -30,11 +27,9 @@
             ? "Giao dich chua hoan tat. Ban co the quay lai trang subscription de tao giao dich moi."
             : isSuccess
                 ? "Goi subscription cua ban da duoc kich hoat va san sang su dung."
-                : isWaitingReview
-                    ? "He thong da ghi nhan ban da chuyen khoan va dang doi PayOS/callback doi soat giao dich."
                 : isFailed
                     ? "He thong doi soat callback noi bo khong thanh cong. Ban co the tao giao dich moi."
-                    : "Sau khi ban chuyen khoan, bam nut Toi da chuyen khoan de he thong chuyen sang trang thai dang cho xet duyet.";
+                    : "He thong se tu dong kiem tra ket qua thanh toan tu PayOS. Neu callback den cham, trang thai se duoc cap nhat tiep trong it giay.";
     }
 
     <section class="sub-result-hero">
@@ -77,13 +72,6 @@
         </div>
 
         <div class="sub-result-actions">
-            @if (!Model.Cancelled && !isSuccess && !isFailed && !isWaitingReview)
-            {
-                <form id="markTransferredForm" class="sub-result-inline-form">
-                    @Html.AntiForgeryToken()
-                    <button type="submit" id="markTransferredBtn" class="sub-primary-btn sub-result-btn">Toi da chuyen khoan</button>
-                </form>
-            }
             <a href="@Url.Action("Index", "Subscription")" class="sub-primary-btn sub-result-btn">Quay lai trang goi</a>
             <a href="@Url.Action("Index", "Home")" class="sub-secondary-btn sub-result-btn">Ve trang chu</a>
         </div>
@@ -105,9 +93,6 @@
                 const resultPlanText = document.getElementById('paymentResultPlanText');
                 const resultStatusBadge = document.getElementById('paymentResultStatusBadge');
                 const resultMetaCard = document.getElementById('paymentResultMetaCard');
-                const markTransferredForm = document.getElementById('markTransferredForm');
-                const markTransferredBtn = document.getElementById('markTransferredBtn');
-                const antiForgeryToken = markTransferredForm?.querySelector('input[name="__RequestVerificationToken"]')?.value;
 
                 let attempts = 0;
                 const maxAttempts = 40;
@@ -146,7 +131,6 @@
                         setVisualState('success');
                         if (resultTitle) resultTitle.textContent = 'Thanh toan thanh cong';
                         if (resultDescription) resultDescription.textContent = 'Goi subscription cua ban da duoc kich hoat.';
-                        if (markTransferredForm) markTransferredForm.style.display = 'none';
                         return true;
                     }
 
@@ -154,64 +138,14 @@
                         setVisualState('failed');
                         if (resultTitle) resultTitle.textContent = 'Thanh toan that bai';
                         if (resultDescription) resultDescription.textContent = 'He thong doi soat callback noi bo khong thanh cong.';
-                        if (markTransferredForm) markTransferredForm.style.display = 'none';
                         return true;
-                    }
-
-                    if (data.transactionStatus === 5) {
-                        setVisualState('pending');
-                        if (resultTitle) resultTitle.textContent = 'Dang cho xet duyet';
-                        if (resultDescription) resultDescription.textContent = 'He thong da ghi nhan ban da chuyen khoan va dang doi PayOS/callback doi soat.';
-                        if (markTransferredForm) markTransferredForm.style.display = 'none';
-                        return false;
                     }
 
                     setVisualState('pending');
                     if (resultTitle) resultTitle.textContent = 'Cho thanh toan';
-                    if (resultDescription) resultDescription.textContent = 'Sau khi ban chuyen khoan, bam nut Toi da chuyen khoan de gui yeu cau doi soat.';
+                    if (resultDescription) resultDescription.textContent = 'He thong se tu dong kiem tra ket qua thanh toan tu PayOS.';
                     return false;
                 };
-
-                markTransferredForm?.addEventListener('submit', async (event) => {
-                    event.preventDefault();
-                    if (!markTransferredBtn) return;
-
-                    markTransferredBtn.disabled = true;
-                    const oldLabel = markTransferredBtn.textContent;
-                    markTransferredBtn.textContent = 'Dang gui xac nhan...';
-
-                    try {
-                        const response = await fetch(`/Subscription/MarkTransferred?transactionId=${transactionId}`, {
-                            method: 'POST',
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest',
-                                ...(antiForgeryToken ? { 'RequestVerificationToken': antiForgeryToken } : {})
-                            },
-                            credentials: 'same-origin'
-                        });
-
-                        const result = await response.json();
-                        if (!result?.success) {
-                            alert(result?.message || 'Khong the ghi nhan xac nhan chuyen khoan.');
-                            return;
-                        }
-
-                        applyStatus({
-                            transactionStatus: result.data?.transactionStatus,
-                            transactionStatusLabel: result.data?.transactionStatusLabel,
-                            planName: '@planLabel',
-                            subscriptionActivated: false
-                        });
-
-                        attempts = 0;
-                        window.setTimeout(poll, 2500);
-                    } catch {
-                        alert('Khong the ghi nhan xac nhan chuyen khoan.');
-                    } finally {
-                        markTransferredBtn.disabled = false;
-                        markTransferredBtn.textContent = oldLabel;
-                    }
-                });
 
                 const poll = async () => {
                     attempts += 1;

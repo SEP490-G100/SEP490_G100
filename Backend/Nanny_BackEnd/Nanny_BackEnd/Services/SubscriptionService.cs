@@ -696,9 +696,6 @@ public class SubscriptionService
         if (transactionStatus == 3)
             return "FAILED";
 
-        if (transactionStatus == 5)
-            return "WAITING_REVIEW";
-
         if (string.Equals(providerStatus, "PAID", StringComparison.OrdinalIgnoreCase))
             return "SUCCESS";
 
@@ -1159,7 +1156,7 @@ public class SubscriptionService
     private static string getTransactionStatusLabel(int status) => status switch
     {
         1 => "Cho thanh toan",
-        5 => "Dang cho xet duyet",
+        5 => "Dang xu ly thanh toan",
         2 => "Thanh cong",
         3 => "That bai",
         4 => "Da hoan tien",

@@ -479,10 +479,6 @@
                         }
 
                         const data = result.data;
-                        if (data.status === 'WAITING_REVIEW') {
-                            window.location.href = `/Subscription/PaymentResult?transactionId=${data.transactionId}`;
-                            return;
-                        }
 
                         if (!data.qrCodeUrl && !data.checkoutUrl) {
                             notify('Khong tao duoc ma QR thanh toan.', 'error');
