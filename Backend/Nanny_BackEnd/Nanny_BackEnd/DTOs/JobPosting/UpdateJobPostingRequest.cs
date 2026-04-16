@@ -16,10 +16,10 @@ public class UpdateJobPostingRequest
     [Range(1, 3, ErrorMessage = "JobType phai la 1, 2, hoac 3.")]
     public int JobType { get; set; }
 
-    [Range(0, 100_000_000, ErrorMessage = "Luong toi thieu phai tu 0 den 100,000,000.")]
+    [Range(8_000_000, 50_000_000, ErrorMessage = "Luong toi thieu phai trong khoang 8.000.000 - 50.000.000 VND.")]
     public decimal? SalaryMin { get; set; }
 
-    [Range(0, 100_000_000, ErrorMessage = "Luong toi da phai tu 0 den 100,000,000.")]
+    [Range(8_000_000, 50_000_000, ErrorMessage = "Luong toi da phai trong khoang 8.000.000 - 50.000.000 VND.")]
     public decimal? SalaryMax { get; set; }
 
     public bool SalaryNegotiable { get; set; }

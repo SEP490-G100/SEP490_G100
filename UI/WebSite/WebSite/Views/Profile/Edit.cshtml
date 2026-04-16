@@ -101,12 +101,16 @@
                                     <div>
                                         <label class="form-label" for="ExpectedSalaryMin">Luong toi thieu</label>
                                         <input asp-for="ExpectedSalaryMin" id="ExpectedSalaryMin" type="text" inputmode="numeric" autocomplete="off" class="form-input" />
+                                        <span asp-validation-for="ExpectedSalaryMin" class="text-xs text-red-600 mt-1 block"></span>
                                     </div>
                                     <div>
                                         <label class="form-label" for="ExpectedSalaryMax">Luong toi da</label>
                                         <input asp-for="ExpectedSalaryMax" id="ExpectedSalaryMax" type="text" inputmode="numeric" autocomplete="off" class="form-input" />
+                                        <span asp-validation-for="ExpectedSalaryMax" class="text-xs text-red-600 mt-1 block"></span>
                                     </div>
                                 </div>
+                                <p id="salaryError" class="hidden text-xs text-red-600 mt-1"></p>
+                                <p class="text-xs text-slate-500">Luong hop le tu 8.000.000 den 50.000.000 VND.</p>
                                 <div>
                                     <label class="form-label" for="MaxTravelDistance">Khoang cach di chuyen toi da (km)</label>
                                     <input asp-for="MaxTravelDistance" id="MaxTravelDistance" type="number" min="0" class="form-input" />
@@ -247,6 +251,9 @@
                 document.getElementById("ExpectedSalaryMin"),
                 document.getElementById("ExpectedSalaryMax")
             ].filter(Boolean);
+            var salaryError = document.getElementById("salaryError");
+            var minSalaryAllowed = 8000000;
+            var maxSalaryAllowed = 50000000;
 
             function showAvatarError(msg) {
                 avatarErr.textContent = msg || "";
@@ -306,16 +313,55 @@
             salaryInputs.forEach(function (input) {
                 input.addEventListener("input", function () {
                     input.value = formatMoneyValue(input.value);
+                    validateSalaryRange();
                 });
 
                 input.addEventListener("blur", function () {
                     input.value = formatMoneyValue(input.value);
+                    validateSalaryRange();
                 });
 
                 if (input.value) {
                     input.value = formatMoneyValue(input.value);
                 }
             });
+
+            function parseSalaryInput(input) {
+                if (!input) return null;
+                var digits = getDigits(input.value);
+                return digits ? Number(digits) : null;
+            }
+
+            function showSalaryError(message) {
+                if (!salaryError) return;
+                salaryError.textContent = message || "";
+                salaryError.classList.toggle("hidden", !message);
+            }
+
+            function validateSalaryRange() {
+                if (!isNanny) return true;
+
+                var salaryMin = parseSalaryInput(document.getElementById("ExpectedSalaryMin"));
+                var salaryMax = parseSalaryInput(document.getElementById("ExpectedSalaryMax"));
+
+                if (salaryMin != null && (salaryMin < minSalaryAllowed || salaryMin > maxSalaryAllowed)) {
+                    showSalaryError("Luong toi thieu phai trong khoang 8.000.000 - 50.000.000 VND.");
+                    return false;
+                }
+
+                if (salaryMax != null && (salaryMax < minSalaryAllowed || salaryMax > maxSalaryAllowed)) {
+                    showSalaryError("Luong toi da phai trong khoang 8.000.000 - 50.000.000 VND.");
+                    return false;
+                }
+
+                if (salaryMin != null && salaryMax != null && salaryMin > salaryMax) {
+                    showSalaryError("Luong toi thieu khong duoc lon hon luong toi da.");
+                    return false;
+                }
+
+                showSalaryError("");
+                return true;
+            }
 
             function validateNannyDob() {
                 if (!isNanny) return true;
@@ -342,6 +388,11 @@
 
             form.addEventListener("submit", function (e) {
                 if (!validateNannyDob()) {
+                    e.preventDefault();
+                    return;
+                }
+
+                if (!validateSalaryRange()) {
                     e.preventDefault();
                     return;
                 }

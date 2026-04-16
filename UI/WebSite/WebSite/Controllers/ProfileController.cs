@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebSite.Models.Profile;
+using WebSite.Validation;
 
 namespace WebSite.Controllers;
 
@@ -323,6 +324,23 @@ public class ProfileController : Controller
 public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
 {
     ApplyRolesToEditModel(model);
+
+    if (model.IsNanny)
+    {
+        foreach (var error in SalaryValidationRules.Validate(
+                     model.ExpectedSalaryMin,
+                     model.ExpectedSalaryMax,
+                     nameof(model.ExpectedSalaryMin),
+                     nameof(model.ExpectedSalaryMax)))
+        {
+            var memberNames = error.MemberNames?.Any() == true
+                ? error.MemberNames
+                : new[] { string.Empty };
+
+            foreach (var memberName in memberNames)
+                ModelState.AddModelError(memberName, error.ErrorMessage ?? "Luong khong hop le.");
+        }
+    }
 
     if (model.AvatarFile != null && model.AvatarFile.Length > 0)
     {

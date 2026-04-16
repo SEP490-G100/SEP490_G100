@@ -1489,9 +1489,21 @@ function getCreatePayload() {
 }
 
 function validatePayload(payload) {
+  const minimumSalary = 8000000;
+  const maximumSalary = 50000000;
   if (!payload.title || payload.title.length < 5) return 'Tieu de bai dang phai tu 5 ky tu tro len.';
   if (!payload.description || payload.description.length < 10) return 'Mo ta chi tiet phai tu 10 ky tu tro len.';
   if (!payload.childProfileId) return 'Vui long chon tre tu Child Profile.';
+  if (!payload.salaryNegotiable && payload.salaryMin == null) return 'Vui long nhap luong toi thieu trong khoang 8.000.000 - 50.000.000 VND hoac bat thuong luong.';
+  if (payload.salaryMin != null && (!Number.isFinite(payload.salaryMin) || payload.salaryMin < minimumSalary || payload.salaryMin > maximumSalary)) {
+    return 'Luong toi thieu phai trong khoang 8.000.000 - 50.000.000 VND.';
+  }
+  if (payload.salaryMax != null && (!Number.isFinite(payload.salaryMax) || payload.salaryMax < minimumSalary || payload.salaryMax > maximumSalary)) {
+    return 'Luong toi da phai trong khoang 8.000.000 - 50.000.000 VND.';
+  }
+  if (payload.salaryMin != null && payload.salaryMax != null && payload.salaryMin > payload.salaryMax) {
+    return 'Luong toi thieu khong duoc lon hon luong toi da.';
+  }
   if (!payload.location || payload.location.length < 3) return 'Vui long nhap dia chi chi tiet.';
   if (!payload.city) return 'Vui long nhap thanh pho.';
   if (!payload.district) return 'Vui long nhap phuong/xa.';

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.SignalR;
 using WebSite.Models;
 using WebSite.Hubs;
 using WebSite.Models.Nanny;
+using WebSite.Validation;
 
 namespace WebSite.Controllers;
 
@@ -431,6 +432,22 @@ public class NannyController : Controller
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Profile(NannyProfileViewModel model)
     {
+        foreach (var error in SalaryValidationRules.Validate(
+                     model.ExpectedSalaryMin,
+                     model.ExpectedSalaryMax,
+                     nameof(model.ExpectedSalaryMin),
+                     nameof(model.ExpectedSalaryMax),
+                     "Muc luong toi thieu",
+                     "Muc luong toi da"))
+        {
+            var memberNames = error.MemberNames?.Any() == true
+                ? error.MemberNames
+                : new[] { string.Empty };
+
+            foreach (var memberName in memberNames)
+                ModelState.AddModelError(memberName, error.ErrorMessage ?? "Luong khong hop le.");
+        }
+
         if (!ModelState.IsValid) return View(model);
 
         SetAuthHeader();

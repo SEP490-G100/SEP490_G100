@@ -75,6 +75,9 @@
                                 <label class="form-label">Luong toi da</label>
                                 <input type="text" id="ef-salMax" inputmode="numeric" class="form-input" placeholder="VD: 3.000.000" />
                             </div>
+                            <div class="md:col-span-2 text-xs font-semibold text-slate-500">
+                                Luong hop le tu 8.000.000 den 50.000.000 VND.
+                            </div>
                             <div class="md:col-span-2">
                                 <label class="form-label">Tuy chon luong</label>
                                 <label class="negotiable-field negotiable-field-large">
@@ -707,6 +710,8 @@ function focusInvalidField(fieldId) {
 }
 
 function validateEditPayload(payload) {
+    const minimumSalary = 8000000;
+    const maximumSalary = 50000000;
     const title = String(payload?.title ?? '').trim();
     if (!title || title.length < 5 || title.length > 200) {
         return { message: 'Tieu de bai dang phai tu 5 den 200 ky tu.', fieldId: 'ef-title' };
@@ -747,11 +752,14 @@ function validateEditPayload(payload) {
 
     const salaryMin = payload?.salaryMin;
     const salaryMax = payload?.salaryMax;
-    if (salaryMin != null && (!Number.isFinite(salaryMin) || salaryMin < 0 || salaryMin > 100000000)) {
-        return { message: 'Luong toi thieu phai tu 0 den 100,000,000.', fieldId: 'ef-salMin' };
+    if (!payload?.salaryNegotiable && salaryMin == null) {
+        return { message: 'Vui long nhap luong toi thieu trong khoang 8.000.000 - 50.000.000 VND hoac bat thuong luong.', fieldId: 'ef-salMin' };
     }
-    if (salaryMax != null && (!Number.isFinite(salaryMax) || salaryMax < 0 || salaryMax > 100000000)) {
-        return { message: 'Luong toi da phai tu 0 den 100,000,000.', fieldId: 'ef-salMax' };
+    if (salaryMin != null && (!Number.isFinite(salaryMin) || salaryMin < minimumSalary || salaryMin > maximumSalary)) {
+        return { message: 'Luong toi thieu phai trong khoang 8.000.000 - 50.000.000 VND.', fieldId: 'ef-salMin' };
+    }
+    if (salaryMax != null && (!Number.isFinite(salaryMax) || salaryMax < minimumSalary || salaryMax > maximumSalary)) {
+        return { message: 'Luong toi da phai trong khoang 8.000.000 - 50.000.000 VND.', fieldId: 'ef-salMax' };
     }
     if (salaryMin != null && salaryMax != null && Number(salaryMin) > Number(salaryMax)) {
         return { message: 'Luong toi thieu khong duoc lon hon luong toi da.', fieldId: 'ef-salMin' };

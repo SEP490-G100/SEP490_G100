@@ -136,6 +136,13 @@ public class JobService
             ?? throw new KeyNotFoundException("Khong tim thay ho so phu huynh.");
 
         validateAgeRange(req.MinNannyAge, req.MaxNannyAge);
+        var salaryValidationError = SalaryValidationRules.GetFirstError(
+            req.SalaryMin,
+            req.SalaryMax,
+            "Luong toi thieu",
+            "Luong toi da");
+        if (!string.IsNullOrWhiteSpace(salaryValidationError))
+            throw new InvalidOperationException(salaryValidationError);
         var selectedChild = resolveSelectedChild(parentProfile, req.ChildProfileId);
 
         var hasActiveParentSubscription = await _subscriptionService.hasActiveParentSubscription(parentProfileId);
@@ -237,6 +244,13 @@ public class JobService
             throw new UnauthorizedAccessException("Ban khong co quyen chinh sua tin dang nay.");
 
         validateAgeRange(req.MinNannyAge, req.MaxNannyAge);
+        var salaryValidationError = SalaryValidationRules.GetFirstError(
+            req.SalaryMin,
+            req.SalaryMax,
+            "Luong toi thieu",
+            "Luong toi da");
+        if (!string.IsNullOrWhiteSpace(salaryValidationError))
+            throw new InvalidOperationException(salaryValidationError);
         var selectedChild = resolveSelectedChild(parentProfile, req.ChildProfileId);
 
         if (!req.SalaryNegotiable && req.SalaryMin == null)

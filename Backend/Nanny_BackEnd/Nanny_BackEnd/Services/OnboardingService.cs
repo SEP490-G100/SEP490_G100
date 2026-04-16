@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
 using Nanny_BackEnd.DTOs.Profile;
+using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
 using Nanny_BackEnd.Enums;
@@ -182,6 +183,14 @@ public class OnboardingService
 
     public async Task<NannyProfile> UpdateNannyProfileAsync(Guid userId, UpdateNannyProfileRequest request)
     {
+        var salaryValidationError = SalaryValidationRules.GetFirstError(
+            request.ExpectedSalaryMin,
+            request.ExpectedSalaryMax,
+            "Muc luong toi thieu",
+            "Muc luong toi da");
+        if (!string.IsNullOrWhiteSpace(salaryValidationError))
+            throw new InvalidOperationException(salaryValidationError);
+
         var profile = await _nannyProfileRepo.FindByUserIdAsync(userId);
         if (profile == null)
         {
@@ -309,4 +318,3 @@ public class OnboardingService
             CreatedBy = userId
         };
 }
-

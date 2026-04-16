@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Nanny_BackEnd.DTOs.Profile;
 using Nanny_BackEnd.Enums;
+using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
 
@@ -289,6 +290,14 @@ public class ProfileService
         var isNanny = roles.Any(r => r.Equals("nanny", StringComparison.OrdinalIgnoreCase));
         if (isNanny)
         {
+            var salaryValidationError = SalaryValidationRules.GetFirstError(
+                request.ExpectedSalaryMin,
+                request.ExpectedSalaryMax,
+                "Luong toi thieu",
+                "Luong toi da");
+            if (!string.IsNullOrWhiteSpace(salaryValidationError))
+                throw new InvalidOperationException(salaryValidationError);
+
             var dobToValidate = request.DateOfBirth ?? user.DateOfBirth;
             if (!dobToValidate.HasValue)
                 throw new InvalidOperationException("Nanny pháº£i nháº­p ngÃ ,áy sinh.");
