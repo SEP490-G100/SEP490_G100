@@ -42,6 +42,7 @@ public class PersonalProfileDto
     public List<NannySkillItemDto>? Skills { get; set; }
     public List<NannyAvailabilityItemDto>? Availabilities { get; set; }
     public List<NannyCertificateItemDto>? Certificates { get; set; }
+    public bool HasHealthCertificate { get; set; }
 }
 
 public class NannySkillItemDto

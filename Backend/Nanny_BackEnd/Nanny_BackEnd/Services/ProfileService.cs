@@ -17,6 +17,7 @@ public class ProfileService
     private readonly NannySkillRepository _nannySkillRepo;
     private readonly NannyCertificateRepository _nannyCertificateRepo;
     private readonly NannyAvailabilityRepository _nannyAvailabilityRepo;
+    private readonly VerificationRequestRepository _verificationRequestRepo;
     private readonly IWebHostEnvironment _env;
     private readonly GeocodingService _geo;
     private readonly IServiceScopeFactory _scopeFactory;
@@ -30,6 +31,7 @@ public class ProfileService
         NannySkillRepository nannySkillRepo,
         NannyCertificateRepository nannyCertificateRepo,
         NannyAvailabilityRepository nannyAvailabilityRepo,
+        VerificationRequestRepository verificationRequestRepo,
         IWebHostEnvironment env,
         GeocodingService geo,
         IServiceScopeFactory scopeFactory,
@@ -42,6 +44,7 @@ public class ProfileService
         _nannySkillRepo = nannySkillRepo;
         _nannyCertificateRepo = nannyCertificateRepo;
         _nannyAvailabilityRepo = nannyAvailabilityRepo;
+        _verificationRequestRepo = verificationRequestRepo;
         _env = env;
         _geo = geo;
         _scopeFactory = scopeFactory;
@@ -162,6 +165,7 @@ public class ProfileService
         List<NannySkillItemDto>? skills = null;
         List<NannyAvailabilityItemDto>? availabilities = null;
         List<NannyCertificateItemDto>? certificates = null;
+        var hasHealthCertificate = false;
 
         if (isNanny)
         {
@@ -219,6 +223,11 @@ public class ProfileService
                         VerificationStatus = c.VerificationStatus
                     })
                     .ToList();
+
+                var verificationRequests = await _verificationRequestRepo.GetRequestsByNannyProfileAsync(nannyProfile.Id);
+                hasHealthCertificate = verificationRequests
+                    .SelectMany(r => r.VerificationDocuments)
+                    .Any(d => d.DocumentType == (int)Enums.VerificationDocumentType.HealthCertificate && !d.IsDeleted);
             }
             else
             {
@@ -307,7 +316,8 @@ public class ProfileService
             TotalReviews = totalReviews,
             Skills = skills,
             Availabilities = availabilities,
-            Certificates = certificates
+            Certificates = certificates,
+            HasHealthCertificate = hasHealthCertificate
         };
     }
 

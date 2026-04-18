@@ -41,6 +41,7 @@ namespace WebSite.Models.Profile
         public int? MaxTravelDistance { get; set; }
         public string? VerificationStatus { get; set; }
         public int? VerificationStatusCode { get; set; }
+        public bool HasHealthCertificate { get; set; }
         public decimal? AverageRating { get; set; }
         public int? TotalReviews { get; set; }
         public List<NannySkillItemViewModel>? Skills { get; set; }

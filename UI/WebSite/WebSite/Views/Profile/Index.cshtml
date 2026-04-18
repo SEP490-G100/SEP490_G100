@@ -29,7 +29,7 @@
     var currentProfileUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
     var verificationCode = Model.VerificationStatusCode ?? 0;
     var isIdentityVerified = verificationCode == 2;
-    var hasUploadedHealthDocument = verificationCode != 0;
+    var hasUploadedHealthDocument = Model.HasHealthCertificate;
     var areaText = string.Join(", ", new[] { Model.Ward, Model.District, Model.City }.Where(v => !string.IsNullOrWhiteSpace(v)));
     var displayEmail = string.IsNullOrWhiteSpace(Model.Email) ? "Chua cap nhat" : Model.Email;
     var isReadonlyNannyView = isReadOnly && isNanny;
@@ -217,7 +217,18 @@
                             </div>
                             <div class="profile-detail-item">
                                 <div class="label">Xac minh</div>
-                                <div class="value">@VerificationText(Model.VerificationStatusCode)</div>
+                                <div class="value @(isIdentityVerified ? "text-green-600 font-semibold" : "")">
+                                    @if (isIdentityVerified)
+                                    {
+                                        <span class="inline-flex items-center gap-1">
+                                            <span class="material-icons-round" style="font-size:15px;vertical-align:middle">verified</span>@VerificationText(Model.VerificationStatusCode)
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        @VerificationText(Model.VerificationStatusCode)
+                                    }
+                                </div>
                             </div>
                             <div class="profile-detail-item">
                                 <div class="label">Rating trung binh</div>
@@ -321,6 +332,29 @@
             </div>
 
             <div class="space-y-4">
+                @if (isReadOnly && isNanny && (isIdentityVerified || hasUploadedHealthDocument))
+                {
+                    <div class="profile-card">
+                        <h3>Độ uy tín</h3>
+                        <div class="space-y-2 mt-1">
+                            @if (isIdentityVerified)
+                            {
+                                <div class="flex items-center gap-2 rounded-xl px-3 py-2.5 bg-green-50 border border-green-200">
+                                    <span class="material-icons-round text-green-600" style="font-size:18px">verified</span>
+                                    <span class="text-sm font-semibold text-green-700">Đã xác minh danh tính</span>
+                                </div>
+                            }
+                            @if (hasUploadedHealthDocument)
+                            {
+                                <div class="flex items-center gap-2 rounded-xl px-3 py-2.5 bg-green-50 border border-green-200">
+                                    <span class="material-icons-round text-green-600" style="font-size:18px">health_and_safety</span>
+                                    <span class="text-sm font-semibold text-green-700">Đã upload giấy khám sức khỏe</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
                 @if (!isReadOnly && isNanny)
                 {
                     <div class="profile-status-card @(isIdentityVerified ? "is-complete" : "is-pending")">
