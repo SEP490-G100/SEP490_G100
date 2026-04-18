@@ -104,38 +104,7 @@ public class UserService
         return (true, dto, null);
     }
 
-    /// <summary>
-    /// Update Status and PhoneNumber of a Nanny/Parent account.
-    /// Blocks update if the target is a Moderator or Admin.
-    /// </summary>
-    public async Task<(bool Success, int StatusCode, string Message)> UpdateAccountAsync(Guid id, UpdateAccountRequest request)
-    {
-        var user = await _userRepo.GetUserWithRolesAsync(id);
-        if (user == null)
-            return (false, 404, "Không tìm thấy tài khoản.");
-
-        if (await _userRepo.HasRolesAsync(id, ExcludedRoles))
-            return (false, 403, "Không có quyền cập nhật tài khoản Moderator/Admin.");
-
-        if (request.Status != 0 && request.Status != 1)
-            return (false, 400, "Status không hợp lệ. Chỉ chấp nhận 0 (Inactive) hoặc 1 (Active).");
-
-        if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
-        {
-            var phone = request.PhoneNumber.Trim();
-            if (!Regex.IsMatch(phone, @"^\d{10,11}$"))
-                return (false, 400, "Số điện thoại phải là chuỗi số từ 10 đến 11 chữ số.");
-            request.PhoneNumber = phone;
-        }
-
-        user.Status      = request.Status;
-        user.PhoneNumber = string.IsNullOrWhiteSpace(request.PhoneNumber) ? null : request.PhoneNumber;
-        user.UpdatedAt   = DateTime.UtcNow;
-
-        await _userRepo.saveChanges();
-
-        return (true, 200, "Cập nhật tài khoản thành công.");
-    }
+   
 
     /// <summary>
     /// Update only the Status of a user account.
@@ -289,45 +258,6 @@ public class UserService
         return (true, 200, "Tạo tài khoản Moderator thành công.", new { newUser.Id });
     }
 
-    /// <summary>Update a Moderator's info (name, phone, status).</summary>
-    public async Task<(bool Success, int StatusCode, string Message)> UpdateModeratorAsync(
-        Guid id, UpdateModeratorRequest request)
-    {
-        var user = await _userRepo.GetUserByIdAndRoleAsync(id, ModeratorRole);
-        if (user == null)
-            return (false, 404, "Không tìm thấy Moderator.");
+  
 
-        if (!string.IsNullOrWhiteSpace(request.PhoneNumber) &&
-            !Regex.IsMatch(request.PhoneNumber.Trim(), @"^\d{10,11}$"))
-            return (false, 400, "Số điện thoại phải là 10-11 chữ số.");
-
-        if (request.Status != 0 && request.Status != 1)
-            return (false, 400, "Status không hợp lệ.");
-
-        user.FirstName   = request.FirstName.Trim();
-        user.LastName    = request.LastName.Trim();
-        user.PhoneNumber = string.IsNullOrWhiteSpace(request.PhoneNumber) ? null : request.PhoneNumber.Trim();
-        user.Status      = request.Status;
-        user.UpdatedAt   = DateTime.UtcNow;
-
-        await _userRepo.saveChanges();
-        return (true, 200, "Cập nhật Moderator thành công.");
-    }
-
-    /// <summary>Hard-delete a Moderator account (removes from Users + UserRoles tables).</summary>
-    public async Task<(bool Success, int StatusCode, string Message)> DeleteModeratorAsync(Guid id)
-    {
-        var user = await _userRepo.GetUserWithRolesAsync(id);
-        if (user == null)
-            return (false, 404, "Không tìm thấy tài khoản.");
-
-        var roles = user.UserRoles.Where(ur => !ur.IsDeleted).Select(ur => ur.Role.Name).ToList();
-        if (!roles.Contains(ModeratorRole))
-            return (false, 403, "Tài khoản này không phải Moderator.");
-
-        await _userRepo.HardDeleteUserAsync(id);
-        await _userRepo.saveChanges();
-
-        return (true, 200, "Đã xoá tài khoản Moderator.");
-    }
 }

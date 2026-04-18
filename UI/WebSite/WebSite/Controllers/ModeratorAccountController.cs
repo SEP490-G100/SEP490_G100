@@ -54,7 +54,7 @@ public class ModeratorAccountController : Controller
     public async Task<IActionResult> ToggleStatus(Guid id, int newStatus)
     {
         var body = JsonSerializer.Serialize(new { status = newStatus });
-        var request = new HttpRequestMessage(HttpMethod.Patch, $"/api/Moderator/moderator-update-account-status/{id}/status")
+        var request = new HttpRequestMessage(HttpMethod.Patch, $"/api/Moderator/moderator-toggle-account-status/{id}/status")
         {
             Content = new StringContent(body, Encoding.UTF8, "application/json")
         };
@@ -116,7 +116,7 @@ public class ModeratorAccountController : Controller
     public async Task<IActionResult> ViewAccountDetail(Guid id, ViewAccountDetailRequest model)
     {
         var body = JsonSerializer.Serialize(new { status = model.Status });
-        var request = new HttpRequestMessage(HttpMethod.Patch, $"/api/Moderator/moderator-update-account-status/{id}/status")
+        var request = new HttpRequestMessage(HttpMethod.Patch, $"/api/Moderator/moderator-toggle-account-status/{id}/status")
         {
             Content = new StringContent(body, Encoding.UTF8, "application/json")
         };

@@ -171,7 +171,8 @@ public class ModeratorFaqController : Controller
         {
             question = model.Question.Trim(),
             answer = model.Answer.Trim(),
-            isActive = model.IsActive
+            isActive = model.IsActive,
+            isDeleted = !model.IsActive
         });
         var token = HttpContext.Session.GetString("AccessToken");
         var request = new HttpRequestMessage(HttpMethod.Put, $"/api/Faq/{id}")

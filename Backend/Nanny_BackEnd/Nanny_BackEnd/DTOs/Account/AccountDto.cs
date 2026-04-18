@@ -14,7 +14,7 @@ public class AccountDto
     public string? City { get; set; }
     public string? District { get; set; }
     public string? Ward { get; set; }
-    public int Status { get; set; }           // 0 = Inactive, 1 = Active
+    public int Status { get; set; }           // 1 = Active, 2 = Inactive, 3 = Pending, 4 = Banned
     public bool EmailConfirmed { get; set; }
     public DateTime CreatedAt { get; set; }
     public Guid? CreatedBy { get; set; }
@@ -35,15 +35,10 @@ public class AccountListResponse
 
 public class UpdateAccountStatusRequest
 {
-    public int Status { get; set; }   // 0 = Inactive, 1 = Active
+    public int Status { get; set; }   // 1 = Active, 2 = Inactive, 3 = Pending, 4 = Banned
 }
 
-/// <summary>Moderator dùng để cập nhật thông tin account</summary>
-public class UpdateAccountRequest
-{
-    public int Status { get; set; }
-    public string? PhoneNumber { get; set; }
-}
+
 
 /// <summary>Admin tạo tài khoản Moderator mới</summary>
 public class CreateModeratorRequest
@@ -53,13 +48,4 @@ public class CreateModeratorRequest
     public string FirstName { get; set; } = null!;
     public string LastName { get; set; } = null!;
     public string? PhoneNumber { get; set; }
-}
-
-/// <summary>Admin cập nhật thông tin Moderator</summary>
-public class UpdateModeratorRequest
-{
-    public string FirstName { get; set; } = null!;
-    public string LastName { get; set; } = null!;
-    public string? PhoneNumber { get; set; }
-    public int Status { get; set; }
 }

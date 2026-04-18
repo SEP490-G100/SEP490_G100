@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebSite.Models.Profile;
+using WebSite.Services;
 
 namespace WebSite.Controllers;
 
@@ -14,12 +15,14 @@ public class ProfileController : Controller
 {
     private readonly HttpClient _http;
     private readonly string _apiBaseUrl;
+    private readonly IAzureBlobStorageService _blobStorageService;
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
 
-    public ProfileController(IHttpClientFactory httpFactory, IConfiguration config)
+    public ProfileController(IHttpClientFactory httpFactory, IConfiguration config, IAzureBlobStorageService blobStorageService)
     {
         _http = httpFactory.CreateClient("BackendApi");
         _apiBaseUrl = (config["ApiSettings:BaseUrl"] ?? "").TrimEnd('/');
+        _blobStorageService = blobStorageService;
     }
 
     // Helper method to get token from session
@@ -397,18 +400,15 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
 
         if (model.AvatarFile != null && model.AvatarFile.Length > 0)
         {
-            using var form = new MultipartFormDataContent();
-            var streamContent = new StreamContent(model.AvatarFile.OpenReadStream());
-            streamContent.Headers.ContentType = new MediaTypeHeaderValue(model.AvatarFile.ContentType);
-            form.Add(streamContent, "file", model.AvatarFile.FileName);
-
-            var uploadRes = await _http.PostAsync("/api/profile/upload-avatar", form);
-            if (uploadRes.IsSuccessStatusCode)
+            try
             {
-                var uploadJson = await uploadRes.Content.ReadAsStringAsync();
-                var uploadResult = JsonSerializer.Deserialize<ApiResultDto>(uploadJson, JsonOpts);
-                if (uploadResult?.Success == true && uploadResult.Data != null)
-                    model.AvatarUrl = uploadResult.Data.ToString();
+                model.AvatarUrl = await _blobStorageService.UploadUserAvatarAsync(model.AvatarFile);
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError(nameof(model.AvatarFile), $"Khong the upload avatar: {ex.Message}");
+                await PopulateAvailableSkillsAsync(model);
+                return View(model);
             }
         }
 

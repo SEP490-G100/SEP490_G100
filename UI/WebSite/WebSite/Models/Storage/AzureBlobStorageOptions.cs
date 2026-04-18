@@ -1,4 +1,4 @@
-namespace WebSite.Models.Storage;
+﻿namespace WebSite.Models.Storage;
 
 public class AzureBlobStorageOptions
 {
@@ -8,4 +8,6 @@ public class AzureBlobStorageOptions
     public string VerificationContainerName { get; set; } = "verification-documents";
     public string BlogMediaContainerName { get; set; } = "blog-media";
     public string ReportMediaContainerName { get; set; } = "report-media";
+    public string UserAvatarContainerName { get; set; } = "user-avatar";
 }
+
