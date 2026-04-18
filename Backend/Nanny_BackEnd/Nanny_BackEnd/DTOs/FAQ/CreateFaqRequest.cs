@@ -34,5 +34,8 @@ public class UpdateFaqRequest
 
     [JsonPropertyName("isActive")]
     public bool IsActive { get; set; } = true;
+
+    [JsonPropertyName("isDeleted")]
+    public bool IsDeleted { get; set; } = false;
     // SortOrder is read-only, not updatable by client
 }

@@ -66,11 +66,5 @@ public class FaqRepository
             .Select(f => (int?)f.SortOrder)
             .MaxAsync() ?? 0;
 
-    public void SoftDelete(Faq faq)
-    {
-        faq.IsDeleted = true;
-        faq.IsActive = false;
-    }
-
     public async Task SaveChangesAsync() => await _db.SaveChangesAsync();
 }

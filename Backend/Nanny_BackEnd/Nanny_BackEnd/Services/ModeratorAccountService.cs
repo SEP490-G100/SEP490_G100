@@ -93,23 +93,24 @@ public class ModeratorAccountService
         return (true, dto, null);
     }
 
-    public async Task<(bool Success, int StatusCode, string Message, object? Data)> ModeratorUpdateAccountStatusAsync(
+    public async Task<(bool Success, int StatusCode, string Message, object? Data)> ModeratorToggleAccountStatusAsync(
         Guid id,
         UpdateAccountStatusRequest request)
     {
-        if (request.Status != 0 && request.Status != 1)
-            return (false, 400, "Status khong hop le. Chi chap nhan 0 (Active) hoac 1 (Inactive).", null);
+        if (request.Status is not (1 or 2))
+            return (false, 400, "Status khong hop le. Chi chap nhan 1 (Active) hoac 2 (Inactive).", null);
 
         var user = await _moderatorAccountRepository.FindByIdAsync(id);
         if (user == null)
             return (false, 404, "Khong tim thay tai khoan.", null);
 
         user.Status = request.Status;
+        user.IsDeleted = request.Status == 2;
         user.UpdatedAt = DateTime.UtcNow;
 
         await _moderatorAccountRepository.SaveChangesAsync();
 
-        var message = request.Status == 0
+        var message = request.Status == 1
             ? "Da kich hoat tai khoan."
             : "Da vo hieu hoa tai khoan.";
 
