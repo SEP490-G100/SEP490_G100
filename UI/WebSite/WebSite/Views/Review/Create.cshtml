@@ -46,6 +46,14 @@
 
         @* Form *@
         <form asp-action="Create" method="post">
+            @* Lỗi chung từ server (vd: đã đánh giá rồi, hết token, ...) *@
+            @if (!ViewData.ModelState.IsValid && ViewData.ModelState[""] is { } rootState && rootState.Errors.Count > 0)
+            {
+                <div class="mb-4 rounded-xl border px-4 py-3 text-sm font-medium"
+                     style="background:#fef2f2; border-color:#fecaca; color:#b91c1c;">
+                    @rootState.Errors[0].ErrorMessage
+                </div>
+            }
             <input type="hidden" asp-for="HiringRecordId" />
             <input type="hidden" asp-for="NannyName" />
             <input type="hidden" asp-for="NannyAvatarUrl" />
@@ -89,7 +97,8 @@
             @* Actions *@
             <div class="flex gap-3">
                 <button type="submit"
-                        class="flex-1 bg-rose-500 hover:bg-rose-600 text-white font-semibold py-3 rounded-xl transition-colors">
+                        class="flex-1 text-white font-semibold py-3 rounded-xl transition-colors"
+                        style="background: linear-gradient(135deg, #f97316, #ea580c);">
                     Gửi đánh giá
                 </button>
                 <a href="/Review/History"

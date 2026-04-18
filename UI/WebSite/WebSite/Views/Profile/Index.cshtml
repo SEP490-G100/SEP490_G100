@@ -248,24 +248,50 @@
                     </div>
 
                     <div class="profile-card">
-                        <h3>Feedback va review</h3>
-                        <p class="text-sm text-slate-500 mb-3">Mau UI review. Chua ket noi du lieu backend.</p>
-                        <div class="feedback-list">
-                            <div class="feedback-item">
-                                <div class="feedback-meta">
-                                    <span class="feedback-name">Parent - Nguyen Minh</span>
-                                    <span class="feedback-star">★★★★★</span>
-                                </div>
-                                <p class="text-sm text-slate-600">Nanny dung gio, giao tiep nhe nhang va cham be rat can than.</p>
+                        <h3>
+                            Đánh giá
+                            @if (Model.ReviewTotalCount > 0)
+                            {
+                                <span class="text-sm font-normal text-slate-500 ml-1">(@Model.ReviewTotalCount nhận xét)</span>
+                            }
+                        </h3>
+                        @if (!Model.Reviews.Any())
+                        {
+                            <p class="text-sm text-slate-500">Chưa có đánh giá nào.</p>
+                        }
+                        else
+                        {
+                            <div class="feedback-list">
+                                @foreach (var r in Model.Reviews)
+                                {
+                                    <div class="feedback-item">
+                                        <div class="feedback-meta">
+                                            <div class="flex items-center gap-2">
+                                                @if (!string.IsNullOrWhiteSpace(r.ReviewerAvatarUrl))
+                                                {
+                                                    <img src="@r.ReviewerAvatarUrl" class="w-7 h-7 rounded-full object-cover" alt="avatar" />
+                                                }
+                                                <span class="feedback-name">@r.ReviewerName</span>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <span class="feedback-star text-orange-400">@r.Stars</span>
+                                                <span class="text-xs text-slate-400">@r.CreatedAt.ToString("dd/MM/yyyy")</span>
+                                            </div>
+                                        </div>
+                                        @if (!string.IsNullOrWhiteSpace(r.Comment))
+                                        {
+                                            <p class="text-sm text-slate-600 mt-1">@r.Comment</p>
+                                        }
+                                    </div>
+                                }
                             </div>
-                            <div class="feedback-item">
-                                <div class="feedback-meta">
-                                    <span class="feedback-name">Parent - Tran Hien</span>
-                                    <span class="feedback-star">★★★★☆</span>
-                                </div>
-                                <p class="text-sm text-slate-600">Thai do tot va linh hoat lich lam viec. Gia dinh hai long.</p>
-                            </div>
-                        </div>
+                            @if (Model.ReviewTotalCount > Model.Reviews.Count)
+                            {
+                                <p class="text-sm text-slate-400 mt-2 text-center">
+                                    Hiển thị @Model.Reviews.Count / @Model.ReviewTotalCount đánh giá
+                                </p>
+                            }
+                        }
                     </div>
 
                 }

@@ -10,6 +10,16 @@ public class ReviewDto
     public DateTime CreatedAt { get; set; }
 }
 
+public class MyReviewDto
+{
+    public Guid Id { get; set; }
+    public int Rating { get; set; }
+    public string? Comment { get; set; }
+    public string NannyName { get; set; } = "";
+    public string? NannyAvatarUrl { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
 public class ReviewListResponse
 {
     public List<ReviewDto> Items { get; set; } = [];

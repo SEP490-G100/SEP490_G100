@@ -46,6 +46,18 @@
                     </div>
                     <p id="signedAt" class="mt-2 text-sm font-semibold text-slate-600"></p>
                     <p id="jobMeta" class="mt-1 text-sm text-slate-600"></p>
+
+                    @* Action row: chi hien voi Parent *@
+                    <div id="parentActionRow" class="hidden mt-4 flex flex-wrap items-center gap-3">
+                        <button type="button" id="completeBtn"
+                                class="hidden inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-all"
+                                style="background: linear-gradient(135deg, #22c55e, #16a34a);">
+                            <span class="material-icons-round text-base">check_circle</span>
+                            Hoan thanh hop dong
+                        </button>
+                        <p id="pendingNote" class="hidden text-sm font-semibold text-amber-600"></p>
+                        <p id="completeError" class="hidden w-full text-sm font-semibold text-rose-600"></p>
+                    </div>
                 </div>
 
                 <div class="rounded-2xl border border-orange-100 bg-orange-50/30 p-4">
@@ -93,17 +105,17 @@
     <script>
         (() => {
             const contractId = '@Model.ContractId';
+            const isParent = @(User.IsInRole("Parent") ? "true" : "false");
+
             const loadState = document.getElementById('detailLoadState');
             const detailContent = document.getElementById('detailContent');
+            const parentActionRow = document.getElementById('parentActionRow');
+            const completeBtn = document.getElementById('completeBtn');
+            const pendingNote = document.getElementById('pendingNote');
+            const completeError = document.getElementById('completeError');
 
             const fmtDate = (value) => value ? new Date(value).toLocaleString('vi-VN') : 'Chua xac dinh';
             const fmtDateOnly = (value) => value ? new Date(value + 'T00:00:00').toLocaleDateString('vi-VN') : 'Chua xac dinh';
-            const esc = (value) => String(value ?? '')
-                .replaceAll('&', '&amp;')
-                .replaceAll('<', '&lt;')
-                .replaceAll('>', '&gt;')
-                .replaceAll('"', '&quot;')
-                .replaceAll("'", '&#39;');
 
             const hiringStatusText = (status) => {
                 if (status === 1) return 'Dang hoat dong';
@@ -114,11 +126,40 @@
                 return 'Khong xac dinh';
             };
 
+            let currentHiringRecordId = null;
+
+            const renderParentActions = (hiringStatus) => {
+                console.log('[Contract Detail] isParent:', isParent, '| hiringRecordId:', currentHiringRecordId, '| hiringStatus:', hiringStatus);
+
+                if (!isParent || !currentHiringRecordId) return;
+
+                parentActionRow.classList.remove('hidden');
+
+                // Reset tat ca truoc
+                completeBtn.classList.add('hidden');
+                pendingNote.classList.add('hidden');
+                completeError.classList.add('hidden');
+
+                if (hiringStatus === 1) {
+                    // Active: Parent co the hoan thanh hop dong
+                    completeBtn.classList.remove('hidden');
+                } else if (hiringStatus === 0) {
+                    // Pending: nanny chua xac nhan, hien ghi chu
+                    pendingNote.textContent = '⏳ Dang cho nanny xac nhan. Nut "Hoan thanh" se hien sau khi nanny chap nhan hop dong.';
+                    pendingNote.classList.remove('hidden');
+                } else {
+                    // Declined / Cancelled: an toan bo row
+                    parentActionRow.classList.add('hidden');
+                }
+            };
+
             fetch(`/Contract/Api/Detail/${contractId}`, { credentials: 'include' })
                 .then(async (res) => {
                     const json = await res.json();
                     if (!res.ok || !json?.success) throw new Error(json?.message || 'Khong tai duoc hop dong.');
                     const d = json.data || {};
+
+                    currentHiringRecordId = d.hiringRecordId;
 
                     document.getElementById('parentName').textContent = d.parentName || '-';
                     document.getElementById('parentPhone').textContent = `SDT: ${d.parentPhone || '-'}`;
@@ -130,7 +171,8 @@
                     document.getElementById('nannyEmail').textContent = `Email: ${d.nannyEmail || '-'}`;
                     document.getElementById('nannyAddress').textContent = `Dia chi: ${d.nannyAddress || '-'}`;
 
-                    document.getElementById('hiringStatus').textContent = hiringStatusText(Number(d.hiringStatus));
+                    const hs = Number(d.hiringStatus);
+                    document.getElementById('hiringStatus').textContent = hiringStatusText(hs);
                     document.getElementById('signStatus').textContent = (d.signedByParent && d.signedByNanny) ? 'Da ky 2 ben' : 'Cho ky hoan tat';
                     document.getElementById('signedAt').textContent = `Ngay ky: ${fmtDate(d.signedAt)}`;
                     const isDirectContactHire = String(d.jobTitle || '').toLowerCase() === 'thue nanny truc tiep';
@@ -141,6 +183,8 @@
 
                     document.getElementById('contractContent').innerHTML = d.contractContent || '<p>Chua co noi dung hop dong.</p>';
 
+                    renderParentActions(hs);
+
                     loadState.classList.add('hidden');
                     detailContent.classList.remove('hidden');
                 })
@@ -149,6 +193,38 @@
                     loadState.textContent = `Khong tai duoc hop dong: ${err.message || 'Unknown error'}`;
                     detailContent.classList.add('hidden');
                 });
+
+            // Xu ly nut "Hoan thanh hop dong"
+            completeBtn?.addEventListener('click', async () => {
+                if (!currentHiringRecordId) return;
+
+                completeBtn.disabled = true;
+                completeBtn.textContent = 'Dang xu ly...';
+                completeError.classList.add('hidden');
+
+                try {
+                    const res = await fetch(`/Hiring/Records/${currentHiringRecordId}/Complete`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include'
+                    });
+                    const json = await res.json();
+
+                    if (!json.success) {
+                        completeError.textContent = json.message || 'Co loi xay ra.';
+                        completeError.classList.remove('hidden');
+                        return;
+                    }
+
+                    window.location.href = `/Contract/Detail?hiringRecordId=${currentHiringRecordId}`;
+                } catch {
+                    completeError.textContent = 'Loi ket noi. Vui long thu lai.';
+                    completeError.classList.remove('hidden');
+                } finally {
+                    completeBtn.disabled = false;
+                    completeBtn.innerHTML = '<span class="material-icons-round text-base">check_circle</span> Hoan thanh hop dong';
+                }
+            });
         })();
     </script>
 }

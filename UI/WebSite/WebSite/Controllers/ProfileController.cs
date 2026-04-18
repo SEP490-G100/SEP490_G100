@@ -130,6 +130,9 @@ public class ProfileController : Controller
             if (profile != null)
                 profile.AvatarUrl = NormalizeAvatarUrl(profile.AvatarUrl);
 
+            if (profile?.IsNanny == true)
+                await LoadNannyReviewsAsync(profile, profile.UserId);
+
             return View(profile ?? BuildProfileFromClaims());
         }
         catch (Exception ex)
@@ -175,6 +178,11 @@ public class ProfileController : Controller
 
             profile.AvatarUrl = NormalizeAvatarUrl(profile.AvatarUrl);
             profile.IsReadOnlyView = true;
+
+            // Load reviews nếu là nanny
+            if (profile.IsNanny)
+                await LoadNannyReviewsAsync(profile, userId);
+
             var hasHiringContext =
                 User.IsInRole("Parent")
                 && profile.IsNanny
@@ -196,10 +204,9 @@ public class ProfileController : Controller
                 && profile.ContactNannyProfileId.HasValue
                 && profile.ContactNannyProfileId.Value != Guid.Empty)
             {
-                var acceptedContact = await TryGetAcceptedContactRequestAsync(profile.ContactNannyProfileId.Value);
-                isContactAccepted = acceptedContact.IsAccepted;
-                if (!resolvedContactRequestId.HasValue || resolvedContactRequestId == Guid.Empty)
-                    resolvedContactRequestId = acceptedContact.ContactRequestId;
+                var (accepted, foundRequestId) = await IsContactAcceptedAsync(profile.ContactNannyProfileId.Value);
+                isContactAccepted = accepted;
+                resolvedContactRequestId ??= foundRequestId;
             }
 
             ViewBag.HasHiringContext = hasHiringContext;
@@ -217,7 +224,33 @@ public class ProfileController : Controller
         }
     }
 
-    private async Task<(bool IsAccepted, Guid? ContactRequestId)> TryGetAcceptedContactRequestAsync(Guid nannyProfileId)
+    private async Task LoadNannyReviewsAsync(PersonalProfileViewModel profile, Guid nannyUserId)
+    {
+        try
+        {
+            var resp = await _http.GetAsync($"/api/reviews/nanny/{nannyUserId}?page=1&pageSize=10");
+            if (!resp.IsSuccessStatusCode) return;
+
+            var json = await resp.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            if (!root.TryGetProperty("data", out var data)) return;
+
+            if (data.TryGetProperty("items", out var items))
+                profile.Reviews = JsonSerializer.Deserialize<List<ReviewItemViewModel>>(
+                    items.GetRawText(), JsonOpts) ?? [];
+
+            if (data.TryGetProperty("totalCount", out var totalEl) && totalEl.TryGetInt32(out var total))
+                profile.ReviewTotalCount = total;
+        }
+        catch
+        {
+            // silent — review failure should not block profile load
+        }
+    }
+
+    private async Task<(bool Accepted, Guid? ContactRequestId)> IsContactAcceptedAsync(Guid nannyProfileId)
     {
         var response = await _http.GetAsync("/api/nannies/contact-requests/sent");
         if (!response.IsSuccessStatusCode)
@@ -252,19 +285,15 @@ public class ProfileController : Controller
             if (!requestEl.TryGetProperty("status", out var statusEl) || statusEl.ValueKind != JsonValueKind.Number)
                 return (false, null);
 
-            var isAccepted = statusEl.TryGetInt32(out var status) && status == 1;
-            if (!isAccepted)
+            if (!statusEl.TryGetInt32(out var status) || status != 1)
                 return (false, null);
 
-            if (requestEl.TryGetProperty("id", out var requestIdEl)
-                && requestIdEl.ValueKind == JsonValueKind.String
-                && Guid.TryParse(requestIdEl.GetString(), out var requestId)
-                && requestId != Guid.Empty)
-            {
-                return (true, requestId);
-            }
+            Guid? requestId = null;
+            if (requestEl.TryGetProperty("id", out var idEl) && idEl.ValueKind == JsonValueKind.String)
+                if (Guid.TryParse(idEl.GetString(), out var parsedId))
+                    requestId = parsedId;
 
-            return (true, null);
+            return (true, requestId);
         }
 
         return (false, null);
