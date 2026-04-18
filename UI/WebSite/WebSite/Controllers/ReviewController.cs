@@ -26,29 +26,44 @@ public class ReviewController : Controller
             : null;
     }
 
-    // GET /Review/Create/{hiringRecordId}
+    // GET /Review/Create?hiringRecordId={id}
     [HttpGet]
     public async Task<IActionResult> Create(Guid hiringRecordId)
     {
+        if (hiringRecordId == Guid.Empty)
+            return RedirectToAction(nameof(History));
+
         SetAuthHeader();
 
-        var resp = await _http.GetAsync("/api/reviews/reviewable");
+        // Lay thong tin hiring record de hien thi form
+        var resp = await _http.GetAsync($"/api/hiring/records/{hiringRecordId}");
         if (!resp.IsSuccessStatusCode)
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction(nameof(History));
 
         var json = await resp.Content.ReadAsStringAsync();
-        var result = JsonSerializer.Deserialize<ApiResult<List<ReviewableHiringRecordViewModel>>>(json, JsonOpts);
-        var record = result?.Data?.FirstOrDefault(r => r.HiringRecordId == hiringRecordId);
-        if (record is null)
-            return NotFound();
+        var result = JsonSerializer.Deserialize<HiringRecordApiResult>(json, JsonOpts);
+        var d = result?.Data;
+        if (d is null)
+            return RedirectToAction(nameof(History));
+
+        // Chi cho phep review khi hop dong da hoan thanh (Status = 4)
+        if (d.Status != 4)
+        {
+            TempData["Error"] = "Chi co the danh gia sau khi hop dong hoan thanh.";
+            return RedirectToAction(nameof(History));
+        }
+
+        DateOnly.TryParse(d.StartDate, out var startDate);
+        DateOnly.TryParse(d.EndDate,   out var endDateParsed);
+        DateOnly? endDate = string.IsNullOrEmpty(d.EndDate) ? null : endDateParsed;
 
         var vm = new CreateReviewViewModel
         {
             HiringRecordId = hiringRecordId,
-            NannyName = record.NannyName,
-            NannyAvatarUrl = record.NannyAvatarUrl,
-            StartDate = record.StartDate,
-            EndDate = record.EndDate,
+            NannyName      = d.NannyName ?? "",
+            NannyAvatarUrl = null,
+            StartDate      = startDate,
+            EndDate        = endDate,
         };
         return View(vm);
     }
@@ -77,7 +92,18 @@ public class ReviewController : Controller
             return RedirectToAction(nameof(History));
         }
 
-        ModelState.AddModelError("", "Không thể gửi đánh giá. Vui lòng thử lại.");
+        // Đọc thông báo lỗi từ backend để hiển thị đúng nguyên nhân
+        string errorMsg = "Không thể gửi đánh giá. Vui lòng thử lại.";
+        try
+        {
+            var errJson = await resp.Content.ReadAsStringAsync();
+            var errObj  = JsonSerializer.Deserialize<JsonElement>(errJson);
+            if (errObj.TryGetProperty("message", out var msg) && msg.GetString() is { Length: > 0 } m)
+                errorMsg = m;
+        }
+        catch { /* bỏ qua nếu body không phải JSON */ }
+
+        ModelState.AddModelError("", errorMsg);
         return View(model);
     }
 
@@ -87,20 +113,43 @@ public class ReviewController : Controller
     {
         SetAuthHeader();
         var reviewable = new List<ReviewableHiringRecordViewModel>();
+        var submitted = new List<SubmittedReviewViewModel>();
 
-        var resp = await _http.GetAsync("/api/reviews/reviewable");
-        if (resp.IsSuccessStatusCode)
+        var reviewableResp = await _http.GetAsync("/api/reviews/reviewable");
+        if (reviewableResp.IsSuccessStatusCode)
         {
-            var json = await resp.Content.ReadAsStringAsync();
+            var json = await reviewableResp.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<ApiResult<List<ReviewableHiringRecordViewModel>>>(json, JsonOpts);
             reviewable = result?.Data ?? [];
         }
 
-        return View(new ReviewHistoryViewModel { Reviewable = reviewable });
+        var mineResp = await _http.GetAsync("/api/reviews/mine");
+        if (mineResp.IsSuccessStatusCode)
+        {
+            var json = await mineResp.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult<List<SubmittedReviewViewModel>>>(json, JsonOpts);
+            submitted = result?.Data ?? [];
+        }
+
+        return View(new ReviewHistoryViewModel { Reviewable = reviewable, Submitted = submitted });
     }
 
     private sealed class ApiResult<T>
     {
         public T? Data { get; set; }
+    }
+
+    // DTO noi bo: map response cua GET /api/hiring/records/{id}
+    private sealed class HiringRecordApiResult
+    {
+        public HiringRecordData? Data { get; set; }
+    }
+
+    private sealed class HiringRecordData
+    {
+        public string NannyName { get; set; } = "";
+        public int Status { get; set; }
+        public string StartDate { get; set; } = "";   // nhan duoi dang string "yyyy-MM-dd"
+        public string? EndDate { get; set; }
     }
 }

@@ -76,6 +76,15 @@ public class HiringController : Controller
             JsonContent(body)));
     }
 
+    [HttpPost("Records/{hiringRecordId:guid}/Complete")]
+    public async Task<IActionResult> Complete(Guid hiringRecordId)
+    {
+        SetBearerToken();
+        return await Proxy(() => _http.PostAsync(
+            $"/api/hiring/records/{hiringRecordId}/complete",
+            EmptyJson()));
+    }
+
     [HttpGet("Templates")]
     public async Task<IActionResult> Templates()
     {

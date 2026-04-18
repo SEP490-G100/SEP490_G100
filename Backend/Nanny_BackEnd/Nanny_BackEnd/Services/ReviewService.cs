@@ -108,6 +108,21 @@ public class ReviewService
         }).ToList();
     }
 
+    /// <summary>Lấy tất cả đánh giá mà Parent đã gửi.</summary>
+    public async Task<List<MyReviewDto>> GetMyReviewsAsync(Guid reviewerUserId)
+    {
+        var reviews = await _reviewRepo.GetByReviewerAsync(reviewerUserId);
+        return reviews.Select(r => new MyReviewDto
+        {
+            Id = r.Id,
+            Rating = r.Rating,
+            Comment = r.Comment,
+            NannyName = $"{r.RevieweeUser.FirstName} {r.RevieweeUser.LastName}".Trim(),
+            NannyAvatarUrl = r.RevieweeUser.AvatarUrl,
+            CreatedAt = r.CreatedAt,
+        }).ToList();
+    }
+
     private static ReviewDto MapToDto(Review review, User reviewer) => new()
     {
         Id = review.Id,

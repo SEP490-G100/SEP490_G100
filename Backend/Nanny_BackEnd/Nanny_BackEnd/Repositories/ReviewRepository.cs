@@ -40,6 +40,13 @@ public class ReviewRepository
             .Select(r => (double?)r.Rating)
             .AverageAsync();
 
+    public async Task<List<Review>> GetByReviewerAsync(Guid reviewerUserId)
+        => await _db.Reviews
+            .Where(r => r.ReviewerUserId == reviewerUserId && !r.IsDeleted)
+            .Include(r => r.RevieweeUser)
+            .OrderByDescending(r => r.CreatedAt)
+            .ToListAsync();
+
     public void Add(Review review) => _db.Reviews.Add(review);
 
     public async Task SaveChangesAsync() => await _db.SaveChangesAsync();

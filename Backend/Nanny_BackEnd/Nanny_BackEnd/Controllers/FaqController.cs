@@ -25,7 +25,7 @@ public class FaqController : ControllerBase
         [FromQuery] bool? isActive = null,
         [FromQuery] string? category = null,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+        [FromQuery] int pageSize = 3)
     {
         var result = await _faqService.ModeratorViewFaqListAsync(search, isActive, category, page, pageSize);
         return Ok(new { success = true, data = result });
@@ -69,18 +69,6 @@ public class FaqController : ControllerBase
     {
         var userId = getCurrentUserId();
         var result = await _faqService.ModeratorUpdateFaqAsync(id, request, userId);
-
-        if (!result.Success)
-            return StatusCode(result.StatusCode, new { success = false, message = result.Message });
-
-        return Ok(new { success = true, message = result.Message });
-    }
-
-    // DELETE /api/Faq/{id}
-    [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> ModeratorDeleteFaq(Guid id)
-    {
-        var result = await _faqService.ModeratorDeleteFaqAsync(id);
 
         if (!result.Success)
             return StatusCode(result.StatusCode, new { success = false, message = result.Message });

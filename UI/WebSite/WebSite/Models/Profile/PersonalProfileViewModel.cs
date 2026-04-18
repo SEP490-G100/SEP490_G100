@@ -46,6 +46,8 @@ namespace WebSite.Models.Profile
         public List<NannySkillItemViewModel>? Skills { get; set; }
         public List<NannyAvailabilityItemViewModel>? Availabilities { get; set; }
         public List<NannyCertificateItemViewModel>? Certificates { get; set; }
+        public List<ReviewItemViewModel> Reviews { get; set; } = new();
+        public int ReviewTotalCount { get; set; }
 
         public string VerificationStatusLabel =>
             string.IsNullOrWhiteSpace(VerificationStatus) ? "Chưa được xác thực" : VerificationStatus!;
@@ -65,6 +67,17 @@ namespace WebSite.Models.Profile
                 return age;
             }
         }
+    }
+
+    public class ReviewItemViewModel
+    {
+        public Guid Id { get; set; }
+        public int Rating { get; set; }
+        public string? Comment { get; set; }
+        public string ReviewerName { get; set; } = "";
+        public string? ReviewerAvatarUrl { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public string Stars => new string('★', Rating) + new string('☆', 5 - Rating);
     }
 
     public class NannySkillItemViewModel

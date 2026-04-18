@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebSite.Models;
 using WebSite.Models.Profile;
+using WebSite.Services;
 
 namespace WebSite.Controllers;
 
@@ -13,11 +14,13 @@ public class ParentOnboardingController : Controller
 
 
     private readonly HttpClient _http;
+    private readonly IAzureBlobStorageService _blobStorageService;
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
 
-    public ParentOnboardingController(IHttpClientFactory httpFactory)
+    public ParentOnboardingController(IHttpClientFactory httpFactory, IAzureBlobStorageService blobStorageService)
     {
         _http = httpFactory.CreateClient("BackendApi");
+        _blobStorageService = blobStorageService;
     }
 
     private string? GetToken() => HttpContext.Session.GetString("AccessToken");
@@ -52,20 +55,13 @@ public class ParentOnboardingController : Controller
         // 1. Upload Avatar if present
         if (model.AvatarFile != null && model.AvatarFile.Length > 0)
         {
-            using var content = new MultipartFormDataContent();
-            var streamContent = new StreamContent(model.AvatarFile.OpenReadStream());
-            streamContent.Headers.ContentType = new MediaTypeHeaderValue(model.AvatarFile.ContentType);
-            content.Add(streamContent, "file", model.AvatarFile.FileName);
-
-            var uploadRes = await _http.PostAsync("/api/profile/upload-avatar", content);
-            if (uploadRes.IsSuccessStatusCode)
+            try
             {
-                var uploadJson = await uploadRes.Content.ReadAsStringAsync();
-                var uploadResult = JsonSerializer.Deserialize<ApiResultDto>(uploadJson, JsonOpts);
-                if (uploadResult?.Success == true && uploadResult.Data != null)
-                {
-                    model.AvatarUrl = uploadResult.Data.ToString();
-                }
+                model.AvatarUrl = await _blobStorageService.UploadUserAvatarAsync(model.AvatarFile);
+            }
+            catch
+            {
+                return false;
             }
         }
 

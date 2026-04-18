@@ -142,7 +142,6 @@
             showErr(validate());
         });
 
-        input.addEventListener('blur', function () {
             input.value = formatCurrencyInput(input.value);
             syncHiddenValues();
             showErr(validate());
