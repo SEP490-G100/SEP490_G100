@@ -1,4 +1,5 @@
 using Nanny_BackEnd.DTOs.Hiring;
+using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
@@ -548,6 +549,44 @@ public class HiringService
         hiringRecord.UpdatedBy = nannyUserId;
         contract.UpdatedAt = now;
         contract.UpdatedBy = nannyUserId;
+
+        await _repo.SaveChangesAsync();
+    }
+
+    public async Task CompleteHiringAsync(Guid hiringRecordId, Guid parentUserId)
+    {
+        var hiringRecord = await _repo.GetHiringRecordByIdAsync(hiringRecordId)
+            ?? throw new KeyNotFoundException("Khong tim thay hop dong.");
+
+        if (hiringRecord.ParentProfile?.UserId != parentUserId)
+            throw new UnauthorizedAccessException("Ban khong co quyen hoan thanh hop dong nay.");
+
+        if (hiringRecord.Status != (int)HiringRecordStatus.Active)
+            throw new InvalidOperationException("Chi co the hoan thanh hop dong dang hoat dong.");
+
+        var now = DateTime.UtcNow;
+        hiringRecord.Status = (int)HiringRecordStatus.Completed;
+        hiringRecord.UpdatedAt = now;
+        hiringRecord.UpdatedBy = parentUserId;
+
+        var nannyUserId = hiringRecord.NannyProfile?.UserId;
+        if (nannyUserId.HasValue && nannyUserId.Value != Guid.Empty)
+        {
+            _repo.AddNotification(new Notification
+            {
+                Id = Guid.NewGuid(),
+                UserId = nannyUserId.Value,
+                Title = "Hop dong da hoan thanh",
+                Content = $"{GetDisplayName(hiringRecord.ParentProfile?.User)} da xac nhan hop dong hoan thanh.",
+                Type = NotificationTypes.HiringCompleted,
+                IsRead = false,
+                RelatedEntityId = hiringRecord.Id,
+                RelatedEntityType = "HiringRecord",
+                CreatedAt = now,
+                CreatedBy = parentUserId,
+                IsDeleted = false
+            });
+        }
 
         await _repo.SaveChangesAsync();
     }

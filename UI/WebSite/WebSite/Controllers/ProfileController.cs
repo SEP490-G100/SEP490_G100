@@ -130,6 +130,9 @@ public class ProfileController : Controller
             if (profile != null)
                 profile.AvatarUrl = NormalizeAvatarUrl(profile.AvatarUrl);
 
+            if (profile?.IsNanny == true)
+                await LoadNannyReviewsAsync(profile, profile.UserId);
+
             return View(profile ?? BuildProfileFromClaims());
         }
         catch (Exception ex)
@@ -175,6 +178,11 @@ public class ProfileController : Controller
 
             profile.AvatarUrl = NormalizeAvatarUrl(profile.AvatarUrl);
             profile.IsReadOnlyView = true;
+
+            // Load reviews nếu là nanny
+            if (profile.IsNanny)
+                await LoadNannyReviewsAsync(profile, userId);
+
             var hasHiringContext =
                 User.IsInRole("Parent")
                 && profile.IsNanny
@@ -189,20 +197,23 @@ public class ProfileController : Controller
                 profile.ContactNannyProfileId = resolvedNannyProfileId;
 
             var isContactAccepted = false;
+            Guid? resolvedContactRequestId = contactRequestId;
             if (User.IsInRole("Parent")
                 && profile.IsNanny
                 && !hasHiringContext
                 && profile.ContactNannyProfileId.HasValue
                 && profile.ContactNannyProfileId.Value != Guid.Empty)
             {
-                isContactAccepted = await IsContactAcceptedAsync(profile.ContactNannyProfileId.Value);
+                var (accepted, foundRequestId) = await IsContactAcceptedAsync(profile.ContactNannyProfileId.Value);
+                isContactAccepted = accepted;
+                resolvedContactRequestId ??= foundRequestId;
             }
 
             ViewBag.HasHiringContext = hasHiringContext;
             ViewBag.IsContactAccepted = isContactAccepted;
             ViewBag.HiringJobPostingId = hasHiringContext ? jobPostingId!.Value.ToString() : "";
             ViewBag.HiringJobApplicationId = hasHiringContext ? jobApplicationId!.Value.ToString() : "";
-            ViewBag.ContactRequestId = contactRequestId?.ToString() ?? "";
+            ViewBag.ContactRequestId = resolvedContactRequestId?.ToString() ?? "";
             ViewBag.SuppressEngagementActions = suppressEngagementActions;
 
             return View("Index", profile);
@@ -213,24 +224,50 @@ public class ProfileController : Controller
         }
     }
 
-    private async Task<bool> IsContactAcceptedAsync(Guid nannyProfileId)
+    private async Task LoadNannyReviewsAsync(PersonalProfileViewModel profile, Guid nannyUserId)
+    {
+        try
+        {
+            var resp = await _http.GetAsync($"/api/reviews/nanny/{nannyUserId}?page=1&pageSize=10");
+            if (!resp.IsSuccessStatusCode) return;
+
+            var json = await resp.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            if (!root.TryGetProperty("data", out var data)) return;
+
+            if (data.TryGetProperty("items", out var items))
+                profile.Reviews = JsonSerializer.Deserialize<List<ReviewItemViewModel>>(
+                    items.GetRawText(), JsonOpts) ?? [];
+
+            if (data.TryGetProperty("totalCount", out var totalEl) && totalEl.TryGetInt32(out var total))
+                profile.ReviewTotalCount = total;
+        }
+        catch
+        {
+            // silent — review failure should not block profile load
+        }
+    }
+
+    private async Task<(bool Accepted, Guid? ContactRequestId)> IsContactAcceptedAsync(Guid nannyProfileId)
     {
         var response = await _http.GetAsync("/api/nannies/contact-requests/sent");
         if (!response.IsSuccessStatusCode)
-            return false;
+            return (false, null);
 
         var json = await response.Content.ReadAsStringAsync();
         if (string.IsNullOrWhiteSpace(json))
-            return false;
+            return (false, null);
 
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
         if (!root.TryGetProperty("success", out var successEl) || successEl.ValueKind != JsonValueKind.True)
-            return false;
+            return (false, null);
         if (!root.TryGetProperty("data", out var dataEl) || dataEl.ValueKind != JsonValueKind.Object)
-            return false;
+            return (false, null);
         if (!dataEl.TryGetProperty("requests", out var requestsEl) || requestsEl.ValueKind != JsonValueKind.Array)
-            return false;
+            return (false, null);
 
         foreach (var requestEl in requestsEl.EnumerateArray())
         {
@@ -246,12 +283,20 @@ public class ProfileController : Controller
                 continue;
 
             if (!requestEl.TryGetProperty("status", out var statusEl) || statusEl.ValueKind != JsonValueKind.Number)
-                return false;
+                return (false, null);
 
-            return statusEl.TryGetInt32(out var status) && status == 1;
+            if (!statusEl.TryGetInt32(out var status) || status != 1)
+                return (false, null);
+
+            Guid? requestId = null;
+            if (requestEl.TryGetProperty("id", out var idEl) && idEl.ValueKind == JsonValueKind.String)
+                if (Guid.TryParse(idEl.GetString(), out var parsedId))
+                    requestId = parsedId;
+
+            return (true, requestId);
         }
 
-        return false;
+        return (false, null);
     }
 
     // Edit personal information

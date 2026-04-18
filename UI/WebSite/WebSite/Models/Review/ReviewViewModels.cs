@@ -28,7 +28,19 @@ public class ReviewableHiringRecordViewModel
     public DateOnly? EndDate { get; set; }
 }
 
+public class SubmittedReviewViewModel
+{
+    public Guid Id { get; set; }
+    public int Rating { get; set; }
+    public string? Comment { get; set; }
+    public string NannyName { get; set; } = "";
+    public string? NannyAvatarUrl { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public string Stars => new string('★', Rating) + new string('☆', 5 - Rating);
+}
+
 public class ReviewHistoryViewModel
 {
     public List<ReviewableHiringRecordViewModel> Reviewable { get; set; } = [];
+    public List<SubmittedReviewViewModel> Submitted { get; set; } = [];
 }

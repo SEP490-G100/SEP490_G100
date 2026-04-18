@@ -48,6 +48,18 @@ public class ReviewController : ControllerBase
         return Ok(Success(result, result.Count));
     }
 
+    /// <summary>GET /api/reviews/mine — lấy tất cả đánh giá parent đã gửi</summary>
+    [Authorize]
+    [HttpGet("mine")]
+    public async Task<IActionResult> GetMine()
+    {
+        var userId = getCurrentUserId();
+        if (!userId.HasValue) return Unauthorized(Fail("Chưa đăng nhập."));
+
+        var result = await _reviewSvc.GetMyReviewsAsync(userId.Value);
+        return Ok(Success(result, result.Count));
+    }
+
     /// <summary>POST /api/reviews — parent tạo đánh giá</summary>
     [Authorize]
     [HttpPost]
