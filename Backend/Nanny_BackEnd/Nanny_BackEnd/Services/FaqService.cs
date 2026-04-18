@@ -112,7 +112,11 @@ public class FaqService
 
         faq.Question = request.Question.Trim();
         faq.Answer = request.Answer.Trim();
-        faq.IsActive = request.IsActive;
+
+        // Keep IsActive/IsDeleted consistent: if either indicates deactivation, mark as deleted/inactive.
+        var shouldDeactivate = request.IsDeleted || !request.IsActive;
+        faq.IsActive = !shouldDeactivate;
+        faq.IsDeleted = shouldDeactivate;
         faq.UpdatedAt = DateTime.UtcNow;
         faq.UpdatedBy = updatedBy;
 
