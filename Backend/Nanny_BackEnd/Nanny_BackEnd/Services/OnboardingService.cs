@@ -112,15 +112,7 @@ public class OnboardingService
                 return finalStatus;
             }
 
-            var children = await _childRepo.GetByParentProfileIdAsync(parentProfile.Id);
-            if (children.Count == 0)
-            {
-                finalStatus.RequiresOnboarding = true;
-                finalStatus.NextStep = "ParentChildren";
-                return finalStatus;
-            }
-
-            // Parent đã đủ thông tin
+            // Parent đã đủ thông tin (children là tùy chọn, không bắt buộc để hoàn thành onboarding)
             finalStatus.RequiresOnboarding = false;
             finalStatus.NextStep = "Completed";
             return finalStatus;

@@ -1,6 +1,6 @@
 @model WebSite.Models.Profile.PersonalProfileViewModel
 @{
-    ViewData["Title"] = "Ho so ca nhan";
+    ViewData["Title"] = "Hồ sơ cá nhân";
     var avatar = string.IsNullOrWhiteSpace(Model.AvatarUrl) ? null : Model.AvatarUrl.Trim();
     var isNanny = Model.IsNanny;
     var isParent = Model.IsParent;
@@ -31,13 +31,13 @@
     var isIdentityVerified = verificationCode == 2;
     var hasUploadedHealthDocument = Model.HasHealthCertificate;
     var areaText = string.Join(", ", new[] { Model.Ward, Model.District, Model.City }.Where(v => !string.IsNullOrWhiteSpace(v)));
-    var displayEmail = string.IsNullOrWhiteSpace(Model.Email) ? "Chua cap nhat" : Model.Email;
+    var displayEmail = string.IsNullOrWhiteSpace(Model.Email) ? "Chưa cập nhật" : Model.Email;
     var isReadonlyNannyView = isReadOnly && isNanny;
 
     string MaskPhone(string? phone)
     {
         if (string.IsNullOrWhiteSpace(phone))
-            return "Chua cap nhat";
+            return "Chưa cập nhật";
 
         var digits = new string(phone.Where(char.IsDigit).ToArray());
         if (digits.Length < 7)
@@ -48,32 +48,32 @@
 
     string EducationLabel(int? level) => level switch
     {
-        0 => "Trung hoc",
-        1 => "Cao dang",
-        2 => "Dai hoc",
-        3 => "Thac si",
-        4 => "Khac",
-        _ => "Chua cap nhat"
+        0 => "Trung học",
+        1 => "Cao đẳng",
+        2 => "Đại học",
+        3 => "Thạc sĩ",
+        4 => "Khác",
+        _ => "Chưa cập nhật"
     };
 
     string VerificationText(int? code) => code switch
     {
-        1 => "Dang cho duyet xac minh",
-        2 => "Da duoc xac minh",
-        _ => "Chua xac minh"
+        1 => "Đang chờ duyệt xác minh",
+        2 => "Đã được xác minh",
+        _ => "Chưa xác minh"
     };
 
     string ChildAgeGroupLabel(byte? ageGroup) => ageGroup switch
     {
-        0 => "0 - 1 tuoi",
-        1 => "1 - 3 tuoi",
-        2 => "3 - 5 tuoi",
-        3 => "6 - 12 tuoi",
-        _ => "Chua cap nhat"
+        0 => "0 - 1 tuổi",
+        1 => "1 - 3 tuổi",
+        2 => "3 - 5 tuổi",
+        3 => "6 - 12 tuổi",
+        _ => "Chưa cập nhật"
     };
 
     var dayColumns = new[] { (1, "T2"), (2, "T3"), (3, "T4"), (4, "T5"), (5, "T6"), (6, "T7"), (0, "CN") };
-    var slotRows = new[] { (0, "Sang"), (1, "Chieu"), (2, "Toi"), (3, "Dem") };
+    var slotRows = new[] { (0, "Sáng"), (1, "Chiều"), (2, "Tối"), (3, "Đêm") };
     bool IsAvailable(int day, int slot) => Model.Availabilities?.Any(a => a.DayOfWeek == day && a.TimeSlot == slot && a.IsAvailable) == true;
 }
 
@@ -107,8 +107,8 @@
                 </div>
                 <div class="mt-2 flex items-center gap-2 flex-wrap text-sm text-slate-500 font-semibold">
                     <span class="profile-role-chip">@(isNanny ? "Nanny" : "Parent")</span>
-                    <span>@(!string.IsNullOrWhiteSpace(Model.City) ? Model.City : "Viet Nam")</span>
-                    <span>@(Model.Age?.ToString() ?? "--") tuoi</span>
+                    <span>@(!string.IsNullOrWhiteSpace(Model.City) ? Model.City : "Việt Nam")</span>
+                    <span>@(Model.Age?.ToString() ?? "--") tuổi</span>
                     @if (isNanny)
                     {
                         <span class="text-orange-600">Rating @rating.ToString("0.##") (@(Model.TotalReviews ?? 0))</span>
@@ -127,7 +127,7 @@
             @if (canEditProfile)
             {
                 <a href="@Url.Action("Edit", "Profile")" class="profile-primary-btn">
-                    Chinh sua ho so
+                    Chỉnh sửa hồ sơ
                 </a>
             }
             else if (canShowAnyAction || canComplainProfile)
@@ -139,7 +139,7 @@
                                 id="favoriteNannyBtn"
                                 data-favorite="false"
                                 aria-pressed="false"
-                                title="Luu nanny yeu thich"
+                                title="Lưu nanny yêu thích"
                                 class="profile-favorite-btn inline-flex items-center justify-center h-10 w-10 rounded-full border border-orange-200 bg-white text-orange-500 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-orange-300 hover:bg-orange-50 hover:shadow-md">
                             <span class="material-icons-round text-[20px]">favorite_border</span>
                         </button>
@@ -151,7 +151,7 @@
                                 id="contactRequestBtn"
                                 data-nanny-profile-id="@(Model.ContactNannyProfileId?.ToString() ?? string.Empty)"
                                 class="profile-primary-btn">
-                            Gui request contact
+                            Gửi request contact
                         </button>
                     }
 
@@ -159,7 +159,7 @@
                     {
                         <button type="button"
                                 id="complainProfileBtn"
-                                title="Phan nan ho so"
+                                title="Phản nàn hồ sơ"
                                 class="inline-flex items-center justify-center h-10 w-10 rounded-full border border-rose-200 bg-white text-rose-500 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-rose-300 hover:bg-rose-50 hover:shadow-md">
                             <span class="material-icons-round text-[20px]">flag</span>
                         </button>
@@ -171,14 +171,14 @@
                                 id="messageNannyBtn"
                                 data-user-id="@Model.UserId"
                                 class="profile-primary-btn">
-                            Nhan tin
+                            Nhắn tin
                         </button>
                     }
 
                     @if (canHireInHiringFlow || canHireInContactFlow)
                     {
                         <button type="button" id="hireNannyBtn" class="profile-primary-btn">
-                            Thue
+                            Thuê
                         </button>
                     }
                 </div>
@@ -188,35 +188,35 @@
         <div class="profile-grid">
             <div class="space-y-4">
                 <div class="profile-card">
-                    <h3>@(isNanny ? "Gioi thieu ban than" : "Mo ta gia dinh")</h3>
+                    <h3>@(isNanny ? "Giới thiệu bản thân" : "Mô tả gia đình")</h3>
                     <p class="text-sm text-slate-600 leading-7">
-                        @((isNanny ? Model.Bio : Model.FamilyDescription) ?? "Chua co thong tin cap nhat.")
+                        @((isNanny ? Model.Bio : Model.FamilyDescription) ?? "Chưa có thông tin cập nhật.")
                     </p>
                 </div>
 
                 @if (isNanny)
                 {
                     <div class="profile-card profile-card-soft">
-                        <h3>Thong tin nanny</h3>
+                        <h3>Thông tin nanny</h3>
                         <div class="profile-detail-grid">
                             <div class="profile-detail-item">
-                                <div class="label">Kinh nghiem</div>
-                                <div class="value">@((Model.YearsOfExperience?.ToString()) ?? "0") nam</div>
+                                <div class="label">Kinh nghiệm</div>
+                                <div class="value">@((Model.YearsOfExperience?.ToString()) ?? "0") năm</div>
                             </div>
                             <div class="profile-detail-item">
-                                <div class="label">Hoc van</div>
+                                <div class="label">Học vấn</div>
                                 <div class="value">@EducationLabel(Model.EducationLevel)</div>
                             </div>
                             <div class="profile-detail-item">
-                                <div class="label">Luong mong muon</div>
+                                <div class="label">Lương mong muốn</div>
                                 <div class="value">@((Model.ExpectedSalaryMin?.ToString("0")) ?? "0") - @((Model.ExpectedSalaryMax?.ToString("0")) ?? "0") VND</div>
                             </div>
                             <div class="profile-detail-item">
-                                <div class="label">Ban kinh di chuyen</div>
+                                <div class="label">Bán kính di chuyển</div>
                                 <div class="value">@((Model.MaxTravelDistance?.ToString()) ?? "0") km</div>
                             </div>
                             <div class="profile-detail-item">
-                                <div class="label">Xac minh</div>
+                                <div class="label">Xác minh</div>
                                 <div class="value @(isIdentityVerified ? "text-green-600 font-semibold" : "")">
                                     @if (isIdentityVerified)
                                     {
@@ -231,14 +231,14 @@
                                 </div>
                             </div>
                             <div class="profile-detail-item">
-                                <div class="label">Rating trung binh</div>
+                                <div class="label">Rating trung bình</div>
                                 <div class="value">@rating.ToString("0.##")</div>
                             </div>
                         </div>
                     </div>
 
                     <div class="profile-card">
-                        <h3>Ky nang</h3>
+                        <h3>Kỹ năng</h3>
                         @if (Model.Skills != null && Model.Skills.Any())
                         {
                             <div class="skill-chip-wrap">
@@ -250,12 +250,12 @@
                         }
                         else
                         {
-                            <p class="text-sm text-slate-500">Chua co ky nang nao.</p>
+                            <p class="text-sm text-slate-500">Chưa có kỹ năng nào.</p>
                         }
                     </div>
 
                     <div class="profile-card">
-                        <h3>Lich lam viec</h3>
+                        <h3>Lịch làm việc</h3>
                         <div class="schedule-grid schedule-grid--readonly">
                             <div></div>
                             @foreach (var day in dayColumns)
@@ -326,7 +326,7 @@
                 }
 
                 <div class="profile-card">
-                    <h3>Khu vuc hoat dong</h3>
+                    <h3>Khu vực hoạt động</h3>
                     <div id="map" class="profile-map"></div>
                 </div>
             </div>
@@ -359,8 +359,8 @@
                 {
                     <div class="profile-status-card @(isIdentityVerified ? "is-complete" : "is-pending")">
                         <div class="profile-status-head">
-                            <h3 class="!mb-0">Xac minh danh tinh</h3>
-                            <span class="profile-status-pill">@(isIdentityVerified ? "Da xac minh" : "Chua xac minh")</span>
+                            <h3 class="!mb-0">Xác minh danh tính</h3>
+                            <span class="profile-status-pill">@(isIdentityVerified ? "Đã xác minh" : "Chưa xác minh")</span>
                         </div>
                         <p class="profile-status-desc">
                             @(isIdentityVerified
@@ -379,8 +379,8 @@
 
                     <div class="profile-status-card @(hasUploadedHealthDocument ? "is-complete" : "is-pending")">
                         <div class="profile-status-head">
-                            <h3 class="!mb-0">Giay suc khoe</h3>
-                            <span class="profile-status-pill">@(hasUploadedHealthDocument ? "Da upload" : "Chua upload")</span>
+                            <h3 class="!mb-0">Giấy sức khỏe</h3>
+                            <span class="profile-status-pill">@(hasUploadedHealthDocument ? "Đã upload" : "Chưa upload")</span>
                         </div>
                         <p class="profile-status-desc">
                             @(hasUploadedHealthDocument
@@ -394,23 +394,23 @@
                 }
 
                 <div class="profile-card">
-                    <h3>Thong tin lien he</h3>
+                    <h3>Thông tin liên hệ</h3>
                     <div class="grid grid-cols-1 gap-3">
                         <div class="profile-detail-item">
                             <div class="label">Email</div>
                             <div class="value break-all">@displayEmail</div>
                         </div>
                         <div class="profile-detail-item">
-                            <div class="label">Dien thoai</div>
-                            <div class="value @(isReadonlyNannyView ? "phone-obscured" : "")">@(isReadonlyNannyView ? MaskPhone(Model.PhoneNumber) : (string.IsNullOrWhiteSpace(Model.PhoneNumber) ? "Chua cap nhat" : Model.PhoneNumber))</div>
+                            <div class="label">Điện thoại</div>
+                            <div class="value @(isReadonlyNannyView ? "phone-obscured" : "")">@(isReadonlyNannyView ? MaskPhone(Model.PhoneNumber) : (string.IsNullOrWhiteSpace(Model.PhoneNumber) ? "Chưa cập nhật" : Model.PhoneNumber))</div>
                         </div>
                         <div class="profile-detail-item">
-                            <div class="label">Dia chi</div>
-                            <div class="value">@(!string.IsNullOrWhiteSpace(Model.Address) ? Model.Address : "Chua cap nhat")</div>
+                            <div class="label">Địa chỉ</div>
+                            <div class="value">@(!string.IsNullOrWhiteSpace(Model.Address) ? Model.Address : "Chưa cập nhật")</div>
                         </div>
                         <div class="profile-detail-item">
-                            <div class="label">Khu vuc</div>
-                            <div class="value">@(string.IsNullOrWhiteSpace(areaText) ? "Chua cap nhat" : areaText)</div>
+                            <div class="label">Khu vực</div>
+                            <div class="value">@(string.IsNullOrWhiteSpace(areaText) ? "Chưa cập nhật" : areaText)</div>
                         </div>
                     </div>
                 </div>
@@ -418,7 +418,7 @@
                 @if (isNanny)
                 {
                     <div class="profile-card">
-                        <h3>Chung chi</h3>
+                        <h3>Chứng chỉ</h3>
                         @if (Model.Certificates != null && Model.Certificates.Any())
                         {
                             <div class="space-y-2">
@@ -432,7 +432,7 @@
                                         }
                                         @if (!string.IsNullOrWhiteSpace(cert.CertificateUrl))
                                         {
-                                            <a href="@cert.CertificateUrl" target="_blank" class="text-xs font-semibold text-orange-600 hover:underline mt-2 inline-block">Xem chung chi</a>
+                                            <a href="@cert.CertificateUrl" target="_blank" class="text-xs font-semibold text-orange-600 hover:underline mt-2 inline-block">Xem chứng chỉ</a>
                                         }
                                     </div>
                                 }
@@ -440,10 +440,10 @@
                         }
                         else
                         {
-                            <p class="text-sm text-slate-500 mb-2">Chua co chung chi.</p>
+                            <p class="text-sm text-slate-500 mb-2">Chưa có chứng chỉ.</p>
                             @if (canEditProfile)
                             {
-                                <a href="@Url.Action("Verify", "Profile")" class="text-sm font-semibold text-orange-600 hover:underline">Them chung chi</a>
+                                <a href="@Url.Action("Verify", "Profile")" class="text-sm font-semibold text-orange-600 hover:underline">Thêm chứng chỉ</a>
                             }
                             }
                     </div>
@@ -453,31 +453,31 @@
                 {
                     <div class="profile-card profile-card-soft">
                         <div class="flex items-center justify-between gap-2 mb-3">
-                            <h3 class="!mb-0">Thong tin tre</h3>
+                            <h3 class="!mb-0">Thông tin trẻ em</h3>
                             @if (!isReadOnly)
                             {
                                 <a href="@Url.Action("Children", "Profile")"
                                    class="inline-flex items-center justify-center px-4 py-2 rounded-full border border-orange-200 bg-white text-orange-700 text-xs font-bold hover:bg-orange-50">
-                                    Edit Child Profile
+                                    Quản lý hồ sơ trẻ
                                 </a>
                             }
                         </div>
                         <div class="profile-detail-grid">
                             <div class="profile-detail-item">
-                                <div class="label">So luong tre</div>
+                                <div class="label">Số lượng trẻ</div>
                                 <div class="value">@(Model.NumberOfChildren?.ToString() ?? "--")</div>
                             </div>
                             <div class="profile-detail-item">
-                                <div class="label">Nhom tuoi</div>
+                                <div class="label">Nhóm tuổi</div>
                                 <div class="value">@ChildAgeGroupLabel(Model.ChildAgeGroup)</div>
                             </div>
                             <div class="profile-detail-item">
-                                <div class="label">Nhu cau dac biet</div>
-                                <div class="value">@(string.IsNullOrWhiteSpace(Model.SpecialNeeds) ? "Khong co" : Model.SpecialNeeds)</div>
+                                <div class="label">Nhu cầu đặc biệt</div>
+                                <div class="value">@(string.IsNullOrWhiteSpace(Model.SpecialNeeds) ? "Không có" : Model.SpecialNeeds)</div>
                             </div>
                             <div class="profile-detail-item">
-                                <div class="label">Ghi chu</div>
-                                <div class="value">@(string.IsNullOrWhiteSpace(Model.Notes) ? "Khong co" : Model.Notes)</div>
+                                <div class="label">Ghi chú</div>
+                                <div class="value">@(string.IsNullOrWhiteSpace(Model.Notes) ? "Không có" : Model.Notes)</div>
                             </div>
                         </div>
                     </div>
@@ -493,8 +493,8 @@
         <div class="nmodal-box bg-white rounded-2xl w-full max-w-xl shadow-2xl relative">
             <div class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
                 <div>
-                    <h2 class="text-lg font-bold text-gray-900">Gui phan nan ho so</h2>
-                    <p class="text-xs text-gray-400 font-semibold mt-0.5">Ho so: @Model.FirstName @Model.LastName</p>
+                    <h2 class="text-lg font-bold text-gray-900">Gửi phản nàn hồ sơ</h2>
+                    <p class="text-xs text-gray-400 font-semibold mt-0.5">Hồ sơ: @Model.FirstName @Model.LastName</p>
                 </div>
                 <button type="button" onclick="closeProfileComplainModal()" class="text-gray-300 hover:text-gray-700 material-icons-round text-2xl transition-colors">close</button>
             </div>
@@ -511,8 +511,8 @@
                     <textarea id="profileComplainEvidence" name="Evidence" rows="3" class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400" placeholder="Mo ta, hinh anh, video lien quan..."></textarea>
                 </div>
                 <div class="flex gap-2">
-                    <button type="button" onclick="closeProfileComplainModal()" class="modal-btn modal-btn-secondary w-full">Huy</button>
-                    <button id="profileComplainSubmitBtn" type="submit" class="modal-btn modal-btn-primary w-full">Gui phan nan</button>
+                    <button type="button" onclick="closeProfileComplainModal()" class="modal-btn modal-btn-secondary w-full">Hủy</button>
+                    <button id="profileComplainSubmitBtn" type="submit" class="modal-btn modal-btn-primary w-full">Gửi phản nàn</button>
                 </div>
             </form>
         </div>
@@ -532,7 +532,7 @@
                 function renderFavoriteState(isFavorite) {
                     favoriteBtn.dataset.favorite = isFavorite ? 'true' : 'false';
                     favoriteBtn.setAttribute('aria-pressed', isFavorite ? 'true' : 'false');
-                    favoriteBtn.title = isFavorite ? 'Da luu nanny yeu thich' : 'Luu nanny yeu thich';
+                    favoriteBtn.title = isFavorite ? 'Đã lưu nanny yêu thích' : 'Lưu nanny yêu thích';
                     favoriteBtn.classList.toggle('bg-orange-500', isFavorite);
                     favoriteBtn.classList.toggle('text-white', isFavorite);
                     favoriteBtn.classList.toggle('border-orange-500', isFavorite);
@@ -567,7 +567,7 @@
                     var nannyProfileId = requestBtn.getAttribute('data-nanny-profile-id');
                     if (!nannyProfileId) {
                         if (typeof window.showToast === 'function') {
-                            window.showToast('Khong tim thay nanny profile de gui request contact.', { type: 'warning' });
+                            window.showToast('Không tìm thấy nanny profile để gửi request contact.', { type: 'warning' });
                         }
                         return;
                     }
@@ -590,7 +590,7 @@
                         var json = await response.json();
                         if (!response.ok || !json?.success) {
                             if (typeof window.showToast === 'function') {
-                                window.showToast(json?.message || 'Khong the gui request contact.', { type: 'error' });
+                                window.showToast(json?.message || 'Không thể gửi request contact.', { type: 'error' });
                             }
                             return;
                         }
@@ -602,7 +602,7 @@
                         setTimeout(function () { window.location.reload(); }, 700);
                     } catch {
                         if (typeof window.showToast === 'function') {
-                            window.showToast('Khong the gui request contact.', { type: 'error' });
+                            window.showToast('Không thể gửi request contact.', { type: 'error' });
                         }
                     } finally {
                         requestBtn.disabled = false;
@@ -665,7 +665,7 @@
                     }
                     if (!hasHiringContext) {
                         if (typeof window.showToast === 'function') {
-                            window.showToast('Khong tim thay Contact Request hop le de tao hiring record.', { type: 'warning' });
+                            window.showToast('Không tìm thấy Contact Request hợp lệ để tạo hiring record.', { type: 'warning' });
                         }
                     }
                 });
@@ -772,7 +772,7 @@
                             'Vui long chon it nhat mot anh.');
                         resolve(urls[0]);
                     } catch (error) {
-                        reject({ message: (error && error.message) || 'Khong the upload anh.' });
+                        reject({ message: (error && error.message) || 'Không thể upload ảnh.' });
                     }
                 });
             }
@@ -794,7 +794,7 @@
                         if (isImage) callback(url, { alt: file.name || 'image' });
                         else callback(url, { source2: '', poster: '' });
                     } catch (error) {
-                        notifyProfileToast((error && error.message) || 'Khong the upload media.', 'error');
+                        notifyProfileToast((error && error.message) || 'Không thể upload media.', 'error');
                     }
                 });
             }
@@ -847,7 +847,7 @@
                 isSubmittingProfileComplain = false;
                 if (complainSubmitBtn) {
                     complainSubmitBtn.disabled = false;
-                    complainSubmitBtn.textContent = 'Gui phan nan';
+                    complainSubmitBtn.textContent = 'Gửi phản nàn';
                 }
                 complainModal.classList.add('show');
             }
@@ -857,7 +857,7 @@
                 isSubmittingProfileComplain = false;
                 if (complainSubmitBtn) {
                     complainSubmitBtn.disabled = false;
-                    complainSubmitBtn.textContent = 'Gui phan nan';
+                    complainSubmitBtn.textContent = 'Gửi phản nàn';
                 }
             };
 
@@ -871,7 +871,7 @@
                     var complainedUserId = complainedUserIdInput ? String(complainedUserIdInput.value || '').trim() : '';
                     if (!complainedUserId) {
                         event.preventDefault();
-                        notifyProfileToast('Khong tim thay ho so can phan nan.', 'error');
+                        notifyProfileToast('Không tìm thấy hồ sơ cần phản nàn.', 'error');
                         return;
                     }
 

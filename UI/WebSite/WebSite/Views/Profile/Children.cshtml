@@ -3,129 +3,253 @@
 @model List<ChildProfileViewModel>
 
 @{
-    ViewData["Title"] = "Quan ly con em";
+    ViewData["Title"] = "Quản lý con em";
 }
 
-<div class="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50/30 to-white dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-6xl mx-auto">
-        <div class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <span class="section-label">Gia dinh</span>
-                <h1 class="text-4xl font-bold text-gray-900 dark:text-white mt-3" style="font-family:'Quicksand',sans-serif">
-                    Quan ly <span class="gradient-text">con em</span>
-                </h1>
-                <div class="section-divider left mt-4"></div>
+<div class="page-shell">
+    <div class="page-card" style="max-width:940px;">
+
+        @* ── breadcrumb ── *@
+        <div class="page-breadcrumb">
+            <a href="@Url.Action("Index","Profile")" class="page-bc-link">
+                <span class="material-icons-round" style="font-size:14px;">person</span>Hồ sơ
+            </a>
+            <span class="material-icons-round page-bc-sep">chevron_right</span>
+            <span class="page-bc-current">Quản lý con em</span>
+        </div>
+
+        @* ── page header ── *@
+        <div class="page-header">
+            <div style="display:flex; align-items:center; gap:14px;">
+                <div class="page-header-icon">
+                    <span class="material-icons-round" style="font-size:26px;">child_care</span>
+                </div>
+                <div>
+                    <p class="page-header-label">Gia đình</p>
+                    <h1 class="page-header-title">Quản lý con em</h1>
+                    @if (Model?.Count > 0)
+                    {
+                        <p class="page-header-sub">@Model.Count hồ sơ đã được thêm</p>
+                    }
+                </div>
             </div>
-            <a href="@Url.Action("AddChild", "Profile")"
-               class="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold rounded-2xl transition-all duration-300 shadow-glow hover:shadow-xl w-full sm:w-auto">
-                <span class="material-icons-round">add_circle</span>
-                Them con em
+            <a href="@Url.Action("AddChild", "Profile")" class="btn-primary">
+                <span class="material-icons-round" style="font-size:17px;">add</span>
+                Thêm con em
             </a>
         </div>
 
-        @if (Model?.Count > 0)
-        {
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                @foreach (var child in Model)
-                {
-                    <div class="bg-white/80 dark:bg-card-dark/80 rounded-3xl p-6 lg:p-8 shadow-soft border border-gray-100/80 dark:border-gray-800/50 backdrop-blur-md hover:shadow-lg transition-all duration-300 group">
-                        <div class="flex items-start justify-between mb-6 pb-4 border-b border-gray-100 dark:border-gray-800">
-                            <div class="flex items-center gap-3">
-                                <div class="w-12 h-12 bg-orange-100 dark:bg-orange-950/30 rounded-2xl flex items-center justify-center text-orange-600 dark:text-orange-400">
-                                    <span class="material-icons-round text-2xl">child_care</span>
+        @* ── content ── *@
+        <div class="page-body">
+            @if (Model?.Count > 0)
+            {
+                <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px;">
+                    @{ int childIdx = 0; }
+                    @foreach (var child in Model)
+                    {
+                        childIdx++;
+                        <div class="cl-card">
+                            <div class="cl-card-header">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <div class="cl-avatar">
+                                        <span class="material-icons-round" style="font-size:20px;">child_care</span>
+                                    </div>
+                                    <div>
+                                        <div style="font-size:15px; font-weight:700; color:#1a1a1a; font-family:'Quicksand',sans-serif;">Hồ sơ trẻ #@childIdx</div>
+                                        <div style="font-size:11px; color:#f97316; margin-top:1px; font-weight:600;">Thêm ngày @child.CreatedAt.ToString("dd/MM/yyyy")</div>
+                                    </div>
                                 </div>
-                                <h3 class="text-2xl font-bold text-gray-900 dark:text-white" style="font-family:'Quicksand',sans-serif">
-                                    Ho so con
-                                </h3>
-                            </div>
-                            <div class="flex gap-2">
-                                <a href="@Url.Action("EditChild", "Profile", new { childId = child.Id })"
-                                   class="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors shadow-sm">
-                                    <span class="material-icons-round text-xl">edit</span>
-                                </a>
-                                <form method="post" action="@Url.Action("DeleteChild", "Profile")"
-                                      style="display:inline"
-                                      onsubmit="return confirm('Ban chac chan muon xoa con em nay?')">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="childId" value="@child.Id">
-                                    <button type="submit" class="p-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors shadow-sm">
-                                        <span class="material-icons-round text-xl">delete</span>
+                                <div class="cl-menu-wrap">
+                                    <button class="cl-menu-btn" onclick="toggleMenu(this)" type="button">
+                                        <span class="material-icons-round" style="font-size:20px;">more_vert</span>
                                     </button>
-                                </form>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="p-4 bg-gray-50/50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700">
-                                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 pointer-events-none">Nhom tuoi</p>
-                                <p class="font-bold text-gray-900 dark:text-white">
-                                    @Html.Raw(child.ChildAgeGroup.HasValue ? WebSite.Helpers.EnumDisplayHelper.GetDisplayName(child.ChildAgeGroup.Value) : "<span class=\"text-gray-400 font-medium italic\">--</span>")
-                                </p>
-                            </div>
-
-                            <div class="p-4 bg-gray-50/50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700">
-                                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 pointer-events-none">Ngay tao</p>
-                                <p class="font-bold text-gray-900 dark:text-white">@child.CreatedAt.ToString("dd/MM/yyyy")</p>
-                            </div>
-                        </div>
-
-                        @if (!string.IsNullOrEmpty(child.Characteristic))
-                        {
-                            <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800/50">
-                                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pointer-events-none">Dac diem tinh cach</p>
-                                <div class="bg-orange-50 dark:bg-orange-950/20 border border-orange-100 dark:border-orange-900/30 rounded-2xl p-4">
-                                    <p class="text-sm font-medium text-orange-800 dark:text-orange-300 italic leading-relaxed">"@child.Characteristic"</p>
+                                    <div class="cl-menu-dropdown">
+                                        <a href="@Url.Action("EditChild", "Profile", new { childId = child.Id })" class="cl-menu-item">
+                                            <span class="material-icons-round" style="font-size:15px; color:#6b7280;">edit</span>
+                                            Chỉnh sửa
+                                        </a>
+                                        <form method="post" action="@Url.Action("DeleteChild", "Profile")" onsubmit="return confirm('Bạn chắc chắn muốn xóa hồ sơ này?')" style="margin:0;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="childId" value="@child.Id">
+                                            <button type="submit" class="cl-menu-item cl-menu-item--danger" style="width:100%; text-align:left; background:none; border:none; cursor:pointer; font-family:inherit;">
+                                                <span class="material-icons-round" style="font-size:15px;">delete_outline</span>
+                                                Xóa hồ sơ
+                                            </button>
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
-                        }
-
-                        @if (!string.IsNullOrEmpty(child.SpecialNeeds))
-                        {
-                            <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800/50">
-                                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pointer-events-none">Nhu cau dac biet</p>
-                                <div class="bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 rounded-2xl p-4">
-                                    <p class="text-sm font-medium text-blue-800 dark:text-blue-300 italic leading-relaxed">"@child.SpecialNeeds"</p>
+                            <div class="cl-card-body">
+                                <div class="cl-info-row">
+                                    <span style="font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#9ca3af;">Nhóm tuổi</span>
+                                    <span style="font-size:14px; font-weight:600; color:#1a1a1a; margin-top:3px;">
+                                        @Html.Raw(child.ChildAgeGroup.HasValue
+                                            ? WebSite.Helpers.EnumDisplayHelper.GetDisplayName(child.ChildAgeGroup.Value)
+                                            : "<span style=\"color:#9ca3af;font-style:italic;font-weight:400;\">Chưa cập nhật</span>")
+                                    </span>
                                 </div>
+                                @if (!string.IsNullOrEmpty(child.Characteristic))
+                                {
+                                    <div class="cl-tag-block" style="background:#fff7ed; border:1px solid #fed7aa;">
+                                        <div style="font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#c2410c; margin-bottom:4px;">Đặc điểm tính cách</div>
+                                        <p style="font-size:13px; color:#92400e; font-style:italic; margin:0; line-height:1.5;">"@child.Characteristic"</p>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(child.SpecialNeeds))
+                                {
+                                    <div class="cl-tag-block" style="background:#eff6ff; border:1px solid #bfdbfe;">
+                                        <div style="font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#1d4ed8; margin-bottom:4px;">Nhu cầu đặc biệt</div>
+                                        <p style="font-size:13px; color:#1e40af; font-style:italic; margin:0; line-height:1.5;">"@child.SpecialNeeds"</p>
+                                    </div>
+                                }
                             </div>
-                        }
-                    </div>
-                }
-            </div>
-        }
-        else
-        {
-            <div class="bg-white/80 dark:bg-card-dark/80 rounded-3xl p-12 shadow-soft border border-gray-100/80 dark:border-gray-800/50 backdrop-blur-md text-center max-w-2xl mx-auto">
-                <div class="w-24 h-24 bg-orange-50 dark:bg-orange-900/20 rounded-full flex items-center justify-center mx-auto mb-6 text-5xl">
-                    +
+                        </div>
+                    }
                 </div>
-                <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2" style="font-family:'Quicksand',sans-serif">Chua co thong tin con em</h3>
-                <p class="text-gray-500 dark:text-gray-400 mb-8 max-w-sm mx-auto">Hay bat dau bang cach them thong tin con em de chung toi goi y bao mau phu hop nhat.</p>
-                <a href="@Url.Action("AddChild", "Profile")"
-                   class="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold rounded-2xl transition-all duration-300 shadow-glow hover:shadow-xl">
-                    <span class="material-icons-round text-lg">add_circle</span>
-                    <span>Them con em ngay</span>
+            }
+            else
+            {
+                <div class="cl-empty-wrap">
+                    <div class="cl-empty-inner">
+                        <div class="cl-empty-icon-ring">
+                            <span class="material-icons-round" style="font-size:36px; color:#f97316;">child_care</span>
+                        </div>
+                        <h3 style="font-size:18px; font-weight:700; color:#1a1a1a; margin:0 0 8px; font-family:'Quicksand',sans-serif;">Chưa có hồ sơ trẻ em</h3>
+                        <p style="font-size:14px; color:#6b7280; line-height:1.6; margin:0 0 24px; max-width:300px;">Hãy bắt đầu bằng cách thêm thông tin con em để chúng tôi gợi ý bảo mẫu phù hợp nhất.</p>
+                        <a href="@Url.Action("AddChild", "Profile")" class="btn-primary">
+                            <span class="material-icons-round" style="font-size:17px;">add</span>
+                            Thêm con em ngay
+                        </a>
+                    </div>
+                    <div class="cl-empty-hint-row">
+                        <div class="cl-empty-hint"><span class="material-icons-round" style="font-size:16px;">search</span>Tìm bảo mẫu phù hợp</div>
+                        <div class="cl-empty-sep"></div>
+                        <div class="cl-empty-hint"><span class="material-icons-round" style="font-size:16px;">verified</span>Kết nối an toàn</div>
+                        <div class="cl-empty-sep"></div>
+                        <div class="cl-empty-hint"><span class="material-icons-round" style="font-size:16px;">schedule</span>Linh hoạt thời gian</div>
+                    </div>
+                </div>
+            }
+
+            <div style="margin-top:32px; text-align:center;">
+                <a href="@Url.Action("Index", "Profile")" class="btn-ghost">
+                    <span class="material-icons-round" style="font-size:16px;">arrow_back</span>
+                    Quay lại hồ sơ
                 </a>
             </div>
-        }
-
-        <div class="mt-12 text-center">
-            <a href="@Url.Action("Index", "Profile")"
-               class="inline-flex items-center gap-2 px-6 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 font-bold rounded-2xl transition-all duration-300 hover:border-primary hover:text-primary shadow-sm">
-                <span class="material-icons-round text-lg">arrow_back</span>
-                <span>Quay lai ho so</span>
-            </a>
         </div>
     </div>
 </div>
 
 <style>
-    .shadow-soft { box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05); }
-    .shadow-glow { box-shadow: 0 10px 25px -5px rgba(249, 115, 22, 0.4); }
-    .bg-card-dark { background-color: #111827; }
-    .gradient-text {
-        background: linear-gradient(135deg, #EA580C 0%, #F97316 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-weight: 700;
+    /* ── Shared shell ── */
+    .page-shell { background:#faf9f7; min-height:100vh; padding:40px 16px 60px; }
+    .page-card {
+        margin: 0 auto;
+        background: #fff;
+        border-radius: 24px;
+        border: 1px solid #e8e8e8;
+        box-shadow: 0 2px 16px rgba(0,0,0,.05);
+        overflow: hidden;
+    }
+    .page-breadcrumb {
+        display: flex; align-items: center; gap: 5px;
+        padding: 16px 28px 0;
+        font-size: 12px; color: #9ca3af;
+    }
+    .page-bc-link {
+        display: flex; align-items: center; gap: 4px;
+        color: #9ca3af; text-decoration: none;
+        transition: color .15s;
+    }
+    .page-bc-link:hover { color: #f97316; }
+    .page-bc-sep { font-size: 14px !important; }
+    .page-bc-current { color: #f97316; font-weight: 600; }
+
+    .page-header {
+        display: flex; align-items: center; justify-content: space-between;
+        flex-wrap: wrap; gap: 16px;
+        padding: 20px 28px 20px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .page-header-icon {
+        width: 48px; height: 48px; border-radius: 14px;
+        background: linear-gradient(135deg, #fff7ed, #ffedd5);
+        border: 1.5px solid #fed7aa;
+        display: flex; align-items: center; justify-content: center;
+        color: #f97316; flex-shrink: 0;
+    }
+    .page-header-label { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #f97316; margin: 0 0 3px; }
+    .page-header-title { font-size: 24px; font-weight: 800; color: #1a1a1a; margin: 0; font-family: 'Quicksand', sans-serif; }
+    .page-header-sub { font-size: 12px; color: #9ca3af; margin: 3px 0 0; }
+
+    .page-body { padding: 24px 28px 28px; }
+
+    /* ── Shared buttons ── */
+    .btn-primary {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 10px 20px;
+        background: #f97316; color: #fff;
+        font-size: 14px; font-weight: 700;
+        border-radius: 10px; text-decoration: none; border: none; cursor: pointer;
+        transition: background .15s, transform .15s; white-space: nowrap;
+    }
+    .btn-primary:hover { background: #ea580c; transform: translateY(-1px); color: #fff; }
+    .btn-ghost {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 9px 18px;
+        background: #fff; color: #6b7280;
+        font-size: 13px; font-weight: 600;
+        border-radius: 10px; border: 1px solid #e5e7eb; text-decoration: none;
+        transition: all .15s;
+    }
+    .btn-ghost:hover { background: #f9fafb; border-color: #d1d5db; color: #374151; }
+
+    /* ── Child cards ── */
+    .cl-card { background: #fff; border-radius: 14px; border: 1px solid #ebebeb; box-shadow: 0 1px 6px rgba(0,0,0,.04); overflow: hidden; transition: box-shadow .2s, transform .2s; }
+    .cl-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,.09); transform: translateY(-1px); }
+    .cl-card-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 14px 12px; border-bottom: 1px solid #f5f5f5; background: #fffbf7; }
+    .cl-avatar { width: 40px; height: 40px; border-radius: 11px; background: #f97316; color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .cl-card-body { padding: 14px; display: flex; flex-direction: column; gap: 9px; }
+    .cl-info-row { display: flex; flex-direction: column; padding: 9px 11px; background: #fafafa; border-radius: 9px; border: 1px solid #f0f0f0; }
+    .cl-tag-block { border-radius: 9px; padding: 9px 11px; }
+
+    /* ── 3-dot menu ── */
+    .cl-menu-wrap { position: relative; }
+    .cl-menu-btn { width: 32px; height: 32px; border-radius: 8px; background: transparent; border: none; cursor: pointer; color: #9ca3af; display: flex; align-items: center; justify-content: center; transition: background .12s; }
+    .cl-menu-btn:hover { background: #f5f5f5; color: #374151; }
+    .cl-menu-dropdown { display: none; position: absolute; right: 0; top: calc(100% + 4px); background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; min-width: 155px; box-shadow: 0 8px 24px rgba(0,0,0,.12); z-index: 50; overflow: hidden; }
+    .cl-menu-dropdown.open { display: block; }
+    .cl-menu-item { display: flex; align-items: center; gap: 8px; padding: 10px 13px; font-size: 13px; font-weight: 500; color: #374151; text-decoration: none; transition: background .1s; }
+    .cl-menu-item:hover { background: #f9fafb; }
+    .cl-menu-item--danger { color: #e11d48 !important; }
+    .cl-menu-item--danger:hover { background: #fff1f2 !important; }
+
+    /* ── Empty state ── */
+    .cl-empty-wrap { max-width: 480px; margin: 0 auto; background: #fff; border-radius: 18px; border: 2px dashed #fed7aa; overflow: hidden; }
+    .cl-empty-inner { padding: 44px 28px 32px; text-align: center; }
+    .cl-empty-icon-ring { width: 68px; height: 68px; border-radius: 50%; background: #fff7ed; border: 2px solid #fed7aa; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+    .cl-empty-hint-row { display: flex; align-items: center; justify-content: center; padding: 13px 20px; background: #fff7ed; border-top: 1px dashed #fed7aa; }
+    .cl-empty-hint { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: #92400e; padding: 0 14px; }
+    .cl-empty-sep { width: 1px; height: 18px; background: #fdba74; }
+
+    @@media (max-width: 640px) {
+        .page-header { padding: 16px 18px; }
+        .page-body { padding: 18px; }
+        .page-breadcrumb { padding: 14px 18px 0; }
     }
 </style>
+
+<script>
+    function toggleMenu(btn) {
+        const dropdown = btn.nextElementSibling;
+        const isOpen = dropdown.classList.contains('open');
+        document.querySelectorAll('.cl-menu-dropdown.open').forEach(d => d.classList.remove('open'));
+        if (!isOpen) dropdown.classList.add('open');
+    }
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('.cl-menu-wrap')) {
+            document.querySelectorAll('.cl-menu-dropdown.open').forEach(d => d.classList.remove('open'));
+        }
+    });
+</script>
