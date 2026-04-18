@@ -116,25 +116,25 @@
     var minSalaryAllowed = 8000000;
     var maxSalaryAllowed = 50000000;
 
-        function onlyDigits(value) {
-            return String(value || '').replace(/\D/g, '');
-        }
+    function onlyDigits(value) {
+        return String(value || '').replace(/\D/g, '');
+    }
 
-        function formatCurrencyInput(value) {
-            var digits = onlyDigits(value);
-            if (!digits) return '';
-            return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-        }
+    function formatCurrencyInput(value) {
+        var digits = onlyDigits(value);
+        if (!digits) return '';
+        return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
 
-        function parseCurrencyValue(value) {
-            var digits = onlyDigits(value);
-            return digits ? Number(digits) : null;
-        }
+    function parseCurrencyValue(value) {
+        var digits = onlyDigits(value);
+        return digits ? Number(digits) : null;
+    }
 
-        function bindCurrencyInput(input) {
-            if (!input) return;
+    function bindCurrencyInput(input) {
+        if (!input) return;
 
-            input.value = formatCurrencyInput(input.value);
+        input.value = formatCurrencyInput(input.value);
 
             input.addEventListener('input', function () {
                 input.value = formatCurrencyInput(input.value);
@@ -165,8 +165,8 @@
         return '';
     }
 
-        bindCurrencyInput(minEl);
-        bindCurrencyInput(maxEl);
+    bindCurrencyInput(minEl);
+    bindCurrencyInput(maxEl);
 
         function syncHiddenValues() {
             if (minHiddenEl) minHiddenEl.value = onlyDigits(minEl ? minEl.value : '');
@@ -176,19 +176,19 @@
     syncHiddenValues();
     showErr(validate());
 
-        if (form) {
-            form.addEventListener('submit', function (e) {
-                var msg = validate();
-                showErr(msg);
-                if (msg) {
-                    e.preventDefault();
-                    return;
-                }
+    if (form) {
+        form.addEventListener('submit', function (e) {
+            var msg = validate();
+            showErr(msg);
+            if (msg) {
+                e.preventDefault();
+                return;
+            }
 
-                syncHiddenValues();
-            });
-        }
-    })();
+            syncHiddenValues();
+        });
+    }
+})();
 </script>
 
 <partial name="~/Views/Hiring/_HireModal.cshtml" />
