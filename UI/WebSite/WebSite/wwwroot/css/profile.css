@@ -152,6 +152,12 @@
     color: #1f2937;
 }
 
+.profile-detail-item .value.phone-obscured {
+    letter-spacing: .08em;
+    filter: blur(1px);
+    user-select: none;
+}
+
 .skill-chip-wrap {
     display: flex;
     flex-wrap: wrap;
@@ -411,6 +417,92 @@
     background: #fff7ed;
     border-color: #fed7aa;
     color: #c2410c;
+}
+
+.profile-status-card {
+    border: 1px solid #fecaca;
+    border-radius: 20px;
+    padding: 16px;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, .05);
+}
+
+.profile-status-card.is-pending {
+    background: linear-gradient(180deg, #fff5f5 0%, #fff 100%);
+    border-color: #fecaca;
+}
+
+.profile-status-card.is-complete {
+    background: linear-gradient(180deg, #f0fdf4 0%, #fff 100%);
+    border-color: #86efac;
+}
+
+.profile-status-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.profile-status-pill {
+    display: inline-flex;
+    align-items: center;
+    min-height: 26px;
+    padding: 0 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    border: 1px solid transparent;
+}
+
+.profile-status-card.is-pending .profile-status-pill {
+    background: #fee2e2;
+    color: #b91c1c;
+    border-color: #fecaca;
+}
+
+.profile-status-card.is-complete .profile-status-pill {
+    background: #dcfce7;
+    color: #15803d;
+    border-color: #86efac;
+}
+
+.profile-status-desc {
+    margin: 0 0 12px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #475569;
+}
+
+.profile-status-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid #f97316;
+    background: linear-gradient(135deg, #fb923c, #f97316);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 800;
+    transition: .18s ease;
+}
+
+.profile-status-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(249, 115, 22, .2);
+}
+
+.profile-status-btn.is-disabled,
+.profile-status-btn.is-coming-soon {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+    color: #64748b;
+    pointer-events: none;
+    box-shadow: none;
 }
 
 @media (max-width: 992px) {

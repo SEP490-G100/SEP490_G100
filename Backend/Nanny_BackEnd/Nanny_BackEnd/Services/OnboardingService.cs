@@ -216,9 +216,6 @@ public class OnboardingService
 
         await _nannyProfileRepo.SaveChangesAsync();
 
-        // Cập nhật ProfileCompleteness
-        await RefreshNannyCompletenessAsync(userId, profile);
-
         return profile;
     }
 
@@ -244,9 +241,6 @@ public class OnboardingService
 
         _nannySkillRepo.AddRange(newSkills);
         await _nannySkillRepo.SaveChangesAsync();
-
-        // Cập nhật ProfileCompleteness
-        await RefreshNannyCompletenessAsync(userId, profile);
     }
 
     public async Task UpdateNannyAvailabilityAsync(Guid userId, UpdateNannyAvailabilityRequest request)
@@ -278,32 +272,6 @@ public class OnboardingService
             _nannyAvailabilityRepo.AddRange(items);
 
         await _nannyAvailabilityRepo.SaveChangesAsync();
-
-        // Cập nhật ProfileCompleteness sau bước availability
-        await RefreshNannyCompletenessAsync(userId, profile);
-    }
-
-    private async Task RefreshNannyCompletenessAsync(Guid userId, NannyProfile profile)
-    {
-        var user = await _userRepo.FindByIdAsync(userId);
-        if (user == null) return;
-
-        var skills = await _nannySkillRepo.GetByNannyProfileIdAsync(profile.Id);
-        var avail = await _nannyAvailabilityRepo.GetByNannyProfileIdAsync(profile.Id);
-
-        var skillDtos = skills
-            .Select(s => new NannySkillItemDto { SkillId = s.SkillId })
-            .ToList();
-        var availDtos = avail
-            .Select(a => new NannyAvailabilityItemDto { DayOfWeek = a.DayOfWeek, TimeSlot = a.TimeSlot, IsAvailable = a.IsAvailable })
-            .ToList();
-
-        profile.ProfileCompleteness = ProfileService.ComputeNannyCompletion(
-            user, profile.Bio, profile.YearsOfExperience, profile.EducationLevel,
-            profile.ExpectedSalaryMin, profile.ExpectedSalaryMax, profile.MaxTravelDistance,
-            profile.VerificationStatus, skillDtos, availDtos);
-
-        await _nannyProfileRepo.SaveChangesAsync();
     }
 
     private static NannyAvailability CreateAvailability(Guid nannyProfileId, int dayOfWeek, int timeSlot, Guid userId, DateTime now) =>

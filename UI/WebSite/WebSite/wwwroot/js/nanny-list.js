@@ -20,126 +20,126 @@ window.currentNannyDetailUserId = null;
 const NANNY_DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 const NANNY_TIME_LABELS = ['Morning', 'Afternoon', 'Evening', 'Night'];
 const NANNY_FALLBACK_PROVINCES = [
-    'Thành phố Hà Nội',
-    'Tỉnh Cao Bằng',
-    'Tỉnh Tuyên Quang',
-    'Tỉnh Điện Biên',
-    'Tỉnh Lai Châu',
-    'Tỉnh Sơn La',
-    'Tỉnh Lào Cai',
-    'Tỉnh Thái Nguyên',
-    'Tỉnh Lạng Sơn',
-    'Tỉnh Quảng Ninh',
-    'Tỉnh Bắc Ninh',
-    'Tỉnh Phú Thọ',
-    'Thành phố Hải Phòng',
-    'Tỉnh Hưng Yên',
-    'Tỉnh Ninh Bình',
-    'Tỉnh Thanh Hóa',
-    'Tỉnh Nghệ An',
-    'Tỉnh Hà Tĩnh',
-    'Tỉnh Quảng Trị',
-    'Thành phố Huế',
-    'Thành phố Đà Nẵng',
-    'Tỉnh Quảng Ngãi',
-    'Tỉnh Gia Lai',
-    'Tỉnh Khánh Hòa',
-    'Tỉnh Đắk Lắk',
-    'Tỉnh Lâm Đồng',
-    'Tỉnh Đồng Nai',
-    'Thành phố Hồ Chí Minh',
-    'Tỉnh Tây Ninh',
-    'Tỉnh Đồng Tháp',
-    'Tỉnh Vĩnh Long',
-    'Tỉnh An Giang',
-    'Thành phố Cần Thơ',
-    'Tỉnh Cà Mau'
+    'ThÃ nh phá»‘ HÃ  Ná»™i',
+    'Tá»‰nh Cao Báº±ng',
+    'Tá»‰nh TuyÃªn Quang',
+    'Tá»‰nh Äiá»‡n BiÃªn',
+    'Tá»‰nh Lai ChÃ¢u',
+    'Tá»‰nh SÆ¡n La',
+    'Tá»‰nh LÃ o Cai',
+    'Tá»‰nh ThÃ¡i NguyÃªn',
+    'Tá»‰nh Láº¡ng SÆ¡n',
+    'Tá»‰nh Quáº£ng Ninh',
+    'Tá»‰nh Báº¯c Ninh',
+    'Tá»‰nh PhÃº Thá»',
+    'ThÃ nh phá»‘ Háº£i PhÃ²ng',
+    'Tá»‰nh HÆ°ng YÃªn',
+    'Tá»‰nh Ninh BÃ¬nh',
+    'Tá»‰nh Thanh HÃ³a',
+    'Tá»‰nh Nghá»‡ An',
+    'Tá»‰nh HÃ  TÄ©nh',
+    'Tá»‰nh Quáº£ng Trá»‹',
+    'ThÃ nh phá»‘ Huáº¿',
+    'ThÃ nh phá»‘ ÄÃ  Náºµng',
+    'Tá»‰nh Quáº£ng NgÃ£i',
+    'Tá»‰nh Gia Lai',
+    'Tá»‰nh KhÃ¡nh HÃ²a',
+    'Tá»‰nh Äáº¯k Láº¯k',
+    'Tá»‰nh LÃ¢m Äá»“ng',
+    'Tá»‰nh Äá»“ng Nai',
+    'ThÃ nh phá»‘ Há»“ ChÃ­ Minh',
+    'Tá»‰nh TÃ¢y Ninh',
+    'Tá»‰nh Äá»“ng ThÃ¡p',
+    'Tá»‰nh VÄ©nh Long',
+    'Tá»‰nh An Giang',
+    'ThÃ nh phá»‘ Cáº§n ThÆ¡',
+    'Tá»‰nh CÃ  Mau'
 ];
 const NANNY_FALLBACK_DISTRICTS_BY_CITY = {
   'ho chi minh': [
-    'Quận 1', 'Quận 3', 'Quận 4', 'Quận 5', 'Quận 6', 'Quận 7', 'Quận 8',
-    'Quận 10', 'Quận 11', 'Quận 12', 'Quận Bình Thạnh', 'Quận Gò Vấp',
-    'Quận Phú Nhuận', 'Quận Tân Bình', 'Quận Tân Phú', 'Thành phố Thủ Đức',
-    'Huyện Bình Chánh', 'Huyện Cần Giờ', 'Huyện Củ Chi', 'Huyện Hóc Môn', 'Huyện Nhà Bè'
+    'Quáº­n 1', 'Quáº­n 3', 'Quáº­n 4', 'Quáº­n 5', 'Quáº­n 6', 'Quáº­n 7', 'Quáº­n 8',
+    'Quáº­n 10', 'Quáº­n 11', 'Quáº­n 12', 'Quáº­n BÃ¬nh Tháº¡nh', 'Quáº­n GÃ² Váº¥p',
+    'Quáº­n PhÃº Nhuáº­n', 'Quáº­n TÃ¢n BÃ¬nh', 'Quáº­n TÃ¢n PhÃº', 'ThÃ nh phá»‘ Thá»§ Äá»©c',
+    'Huyá»‡n BÃ¬nh ChÃ¡nh', 'Huyá»‡n Cáº§n Giá»', 'Huyá»‡n Cá»§ Chi', 'Huyá»‡n HÃ³c MÃ´n', 'Huyá»‡n NhÃ  BÃ¨'
   ],
     'ha noi': [
-        'Phường Hoàn Kiếm',
-        'Phường Cửa Nam',
-        'Phường Ba Đình',
-        'Phường Ngọc Hà',
-        'Phường Giảng Võ',
-        'Phường Kim Mã',
-        'Phường Đống Đa',
-        'Phường Ô Chợ Dừa',
-        'Phường Văn Miếu - Quốc Tử Giám',
-        'Phường Kim Liên',
-        'Phường Láng',
-        'Phường Ô Chợ Dừa',
-        'Phường Hai Bà Trưng',
-        'Phường Bạch Mai',
-        'Phường Vĩnh Tuy',
-        'Phường Thanh Nhàn',
-        'Phường Hoàng Mai',
-        'Phường Tương Mai',
-        'Phường Định Công',
-        'Phường Hoàng Liệt',
-        'Phường Yên Sở',
-        'Phường Thanh Xuân',
-        'Phường Khương Đình',
-        'Phường Phương Liệt',
-        'Phường Hạ Đình',
-        'Phường Cầu Giấy',
-        'Phường Nghĩa Đô',
-        'Phường Yên Hòa',
-        'Phường Tây Hồ',
-        'Phường Phú Thượng',
-        'Phường Đông Ngạc',
-        'Phường Thượng Cát',
-        'Phường Xuân Đỉnh',
-        'Phường Từ Liêm',
-        'Phường Tây Tựu',
-        'Phường Đại Mỗ',
-        'Phường Long Biên',
-        'Phường Bồ Đề',
-        'Phường Việt Hưng',
-        'Phường Phúc Lợi',
-        'Phường Hà Đông',
-        'Phường Dương Nội',
-        'Phường Yên Nghĩa',
-        'Phường Phú Lương',
-        'Phường Kiến Hưng',
-        'Phường Thanh Liệt',
-        'Phường Sơn Tây',
-        'Phường Tùng Thiện',
+        'PhÆ°á»ng HoÃ n Kiáº¿m',
+        'PhÆ°á»ng Cá»­a Nam',
+        'PhÆ°á»ng Ba ÄÃ¬nh',
+        'PhÆ°á»ng Ngá»c HÃ ',
+        'PhÆ°á»ng Giáº£ng VÃµ',
+        'PhÆ°á»ng Kim MÃ£',
+        'PhÆ°á»ng Äá»‘ng Äa',
+        'PhÆ°á»ng Ã” Chá»£ Dá»«a',
+        'PhÆ°á»ng VÄƒn Miáº¿u - Quá»‘c Tá»­ GiÃ¡m',
+        'PhÆ°á»ng Kim LiÃªn',
+        'PhÆ°á»ng LÃ¡ng',
+        'PhÆ°á»ng Ã” Chá»£ Dá»«a',
+        'PhÆ°á»ng Hai BÃ  TrÆ°ng',
+        'PhÆ°á»ng Báº¡ch Mai',
+        'PhÆ°á»ng VÄ©nh Tuy',
+        'PhÆ°á»ng Thanh NhÃ n',
+        'PhÆ°á»ng HoÃ ng Mai',
+        'PhÆ°á»ng TÆ°Æ¡ng Mai',
+        'PhÆ°á»ng Äá»‹nh CÃ´ng',
+        'PhÆ°á»ng HoÃ ng Liá»‡t',
+        'PhÆ°á»ng YÃªn Sá»Ÿ',
+        'PhÆ°á»ng Thanh XuÃ¢n',
+        'PhÆ°á»ng KhÆ°Æ¡ng ÄÃ¬nh',
+        'PhÆ°á»ng PhÆ°Æ¡ng Liá»‡t',
+        'PhÆ°á»ng Háº¡ ÄÃ¬nh',
+        'PhÆ°á»ng Cáº§u Giáº¥y',
+        'PhÆ°á»ng NghÄ©a ÄÃ´',
+        'PhÆ°á»ng YÃªn HÃ²a',
+        'PhÆ°á»ng TÃ¢y Há»“',
+        'PhÆ°á»ng PhÃº ThÆ°á»£ng',
+        'PhÆ°á»ng ÄÃ´ng Ngáº¡c',
+        'PhÆ°á»ng ThÆ°á»£ng CÃ¡t',
+        'PhÆ°á»ng XuÃ¢n Äá»‰nh',
+        'PhÆ°á»ng Tá»« LiÃªm',
+        'PhÆ°á»ng TÃ¢y Tá»±u',
+        'PhÆ°á»ng Äáº¡i Má»—',
+        'PhÆ°á»ng Long BiÃªn',
+        'PhÆ°á»ng Bá»“ Äá»',
+        'PhÆ°á»ng Viá»‡t HÆ°ng',
+        'PhÆ°á»ng PhÃºc Lá»£i',
+        'PhÆ°á»ng HÃ  ÄÃ´ng',
+        'PhÆ°á»ng DÆ°Æ¡ng Ná»™i',
+        'PhÆ°á»ng YÃªn NghÄ©a',
+        'PhÆ°á»ng PhÃº LÆ°Æ¡ng',
+        'PhÆ°á»ng Kiáº¿n HÆ°ng',
+        'PhÆ°á»ng Thanh Liá»‡t',
+        'PhÆ°á»ng SÆ¡n TÃ¢y',
+        'PhÆ°á»ng TÃ¹ng Thiá»‡n',
 
-        'Xã Thanh Trì',
-        'Xã Đại Thanh',
-        'Xã Nam Phù',
-        'Xã Ngọc Hồi',
-        'Xã Thượng Phúc',
-        'Xã Thường Tín',
-        'Xã Chương Dương',
-        'Xã Hồng Vân',
-        'Xã Phú Xuyên',
-        'Xã Phượng Dực',
-        'Xã Chuyên Mỹ',
-        'Xã Vân Đình',
-        'Xã Quảng Bị',
-        'Xã Quốc Oai',
-        'Xã Hưng Đạo',
-        'Xã Kiều Phú',
-        'Xã Phú Cát',
-        'Xã Hoài Đức',
-        'Xã Dương Hòa',
-        'Xã Sơn Đồng',
-        'Xã An Khánh',
-        'Xã Đan Phượng',
-        'Xã Tiến Thắng'
+        'XÃ£ Thanh TrÃ¬',
+        'XÃ£ Äáº¡i Thanh',
+        'XÃ£ Nam PhÃ¹',
+        'XÃ£ Ngá»c Há»“i',
+        'XÃ£ ThÆ°á»£ng PhÃºc',
+        'XÃ£ ThÆ°á»ng TÃ­n',
+        'XÃ£ ChÆ°Æ¡ng DÆ°Æ¡ng',
+        'XÃ£ Há»“ng VÃ¢n',
+        'XÃ£ PhÃº XuyÃªn',
+        'XÃ£ PhÆ°á»£ng Dá»±c',
+        'XÃ£ ChuyÃªn Má»¹',
+        'XÃ£ VÃ¢n ÄÃ¬nh',
+        'XÃ£ Quáº£ng Bá»‹',
+        'XÃ£ Quá»‘c Oai',
+        'XÃ£ HÆ°ng Äáº¡o',
+        'XÃ£ Kiá»u PhÃº',
+        'XÃ£ PhÃº CÃ¡t',
+        'XÃ£ HoÃ i Äá»©c',
+        'XÃ£ DÆ°Æ¡ng HÃ²a',
+        'XÃ£ SÆ¡n Äá»“ng',
+        'XÃ£ An KhÃ¡nh',
+        'XÃ£ Äan PhÆ°á»£ng',
+        'XÃ£ Tiáº¿n Tháº¯ng'
     ],
-  'da nang': ['Quận Hải Châu', 'Quận Thanh Khê', 'Quận Sơn Trà', 'Quận Ngũ Hành Sơn', 'Quận Liên Chiểu', 'Huyện Hòa Vang'],
-  'can tho': ['Quận Ninh Kiều', 'Quận Bình Thủy', 'Quận Cái Răng', 'Quận Ô Môn', 'Quận Thốt Nốt'],
-  'hai phong': ['Quận Hồng Bàng', 'Quận Ngô Quyền', 'Quận Lê Chân', 'Quận Hải An', 'Quận Kiến An', 'Quận Dương Kinh', 'Quận Đồ Sơn'],
-  'hue': ['Quận Phú Xuân', 'Quận Thuận Hóa', 'Thị xã Hương Thủy', 'Thị xã Hương Trà']
+  'da nang': ['Quáº­n Háº£i ChÃ¢u', 'Quáº­n Thanh KhÃª', 'Quáº­n SÆ¡n TrÃ ', 'Quáº­n NgÅ© HÃ nh SÆ¡n', 'Quáº­n LiÃªn Chiá»ƒu', 'Huyá»‡n HÃ²a Vang'],
+  'can tho': ['Quáº­n Ninh Kiá»u', 'Quáº­n BÃ¬nh Thá»§y', 'Quáº­n CÃ¡i RÄƒng', 'Quáº­n Ã” MÃ´n', 'Quáº­n Thá»‘t Ná»‘t'],
+  'hai phong': ['Quáº­n Há»“ng BÃ ng', 'Quáº­n NgÃ´ Quyá»n', 'Quáº­n LÃª ChÃ¢n', 'Quáº­n Háº£i An', 'Quáº­n Kiáº¿n An', 'Quáº­n DÆ°Æ¡ng Kinh', 'Quáº­n Äá»“ SÆ¡n'],
+  'hue': ['Quáº­n PhÃº XuÃ¢n', 'Quáº­n Thuáº­n HÃ³a', 'Thá»‹ xÃ£ HÆ°Æ¡ng Thá»§y', 'Thá»‹ xÃ£ HÆ°Æ¡ng TrÃ ']
 };
 
 const NANNY_GEO_DEFAULT = { lat: 16.047, lng: 108.206, zoom: 6 };
@@ -192,15 +192,15 @@ function isFiniteCoordinate(value) {
 
 function formatCurrency(value) {
   const amount = Number(value);
-  if (!Number.isFinite(amount) || amount <= 0) return 'Thỏa thuận';
+  if (!Number.isFinite(amount) || amount <= 0) return 'Thá»a thuáº­n';
   return new Intl.NumberFormat('vi-VN').format(amount) + ' VND';
 }
 
 function formatSalary(min, max) {
   if (min && max) return `${formatCurrency(min)} - ${formatCurrency(max)}`;
-  if (min) return `Từ ${formatCurrency(min)}`;
-  if (max) return `Đến ${formatCurrency(max)}`;
-  return 'Thỏa thuận';
+  if (min) return `Tá»« ${formatCurrency(min)}`;
+  if (max) return `Äáº¿n ${formatCurrency(max)}`;
+  return 'Thá»a thuáº­n';
 }
 
 function getNannyPlanLabel(profile) {
@@ -773,8 +773,8 @@ function syncSelectPickerText() {
 }
 
 function attachSkillAndVerificationAutocomplete() {
-  attachSelectPicker('skill', 'nannySkillId', 'nannySkillText', 'Tất cả kỹ năng');
-  attachSelectPicker('verification', 'nannyVerification', 'nannyVerificationText', 'Tất cả trạng thái');
+  attachSelectPicker('skill', 'nannySkillId', 'nannySkillText', 'Táº¥t cáº£ ká»¹ nÄƒng');
+  attachSelectPicker('verification', 'nannyVerification', 'nannyVerificationText', 'Táº¥t cáº£ tráº¡ng thÃ¡i');
 }
 
 function getNannyScheduleFilterKey(dayOfWeek, timeSlot) {
@@ -832,7 +832,7 @@ function applyNannyScheduleFilter(items) {
 function loadLocationData() {
   if (nannyLocationPromise) return nannyLocationPromise;
 
-  // Attach autocomplete ngay, để người dùng vẫn chọn được khi API ngoài chậm/lỗi.
+  // Attach autocomplete ngay, Ä‘á»ƒ ngÆ°á»i dÃ¹ng váº«n chá»n Ä‘Æ°á»£c khi API ngoÃ i cháº­m/lá»—i.
   attachLocationAutocomplete();
 
   nannyLocationPromise = fetch('https://provinces.open-api.vn/api/v2/?depth=2')
@@ -989,15 +989,15 @@ function renderNannyCards(items, options = {}) {
   const count = document.getElementById('nannyResultCount');
   if (!list || !count) return;
 
-  count.textContent = `${items.length} hồ sơ`;
+  count.textContent = `${items.length} há»“ sÆ¡`;
   clearNannyMarkers();
 
   if (!items.length) {
     list.innerHTML = `
       <div class="nanny-empty">
         <span class="material-icons-round">search_off</span>
-        <h3>Không tìm thấy hồ sơ phù hợp</h3>
-        <p>Thử thay đổi từ khóa, khu vực hoặc kỹ năng để mở rộng kết quả.</p>
+        <h3>KhÃ´ng tÃ¬m tháº¥y há»“ sÆ¡ phÃ¹ há»£p</h3>
+        <p>Thá»­ thay Ä‘á»•i tá»« khÃ³a, khu vá»±c hoáº·c ká»¹ nÄƒng Ä‘á»ƒ má»Ÿ rá»™ng káº¿t quáº£.</p>
       </div>`;
     return;
   }
@@ -1012,8 +1012,8 @@ function renderNannyCards(items, options = {}) {
         <div class="nanny-card__body">
           <div class="nanny-card__head">
             <div>
-              <h3>${escapeHtml(profile.fullName || 'Bảo mẫu')}</h3>
-              <p>${escapeHtml([profile.district, profile.city].filter(Boolean).join(', ') || 'Chưa cập nhật khu vực')}</p>
+              <h3>${escapeHtml(profile.fullName || 'Báº£o máº«u')}</h3>
+              <p>${escapeHtml([profile.district, profile.city].filter(Boolean).join(', ') || 'ChÆ°a cáº­p nháº­t khu vá»±c')}</p>
             </div>
             <div class="nanny-card__head-actions">
               <span class="nanny-card__salary">${escapeHtml(formatSalary(profile.expectedSalaryMin, profile.expectedSalaryMax))}</span>
@@ -1028,17 +1028,17 @@ function renderNannyCards(items, options = {}) {
                 </button>` : ''}
             </div>
           </div>
-          <p class="nanny-card__bio">${escapeHtml(profile.bio || 'Hồ sơ chưa có mô tả giới thiệu.')}</p>
+          <p class="nanny-card__bio">${escapeHtml(profile.bio || 'Há»“ sÆ¡ chÆ°a cÃ³ mÃ´ táº£ giá»›i thiá»‡u.')}</p>
           <div class="nanny-card__meta">
             ${renderNannyBenefitPills(profile)}
-            <span class="nanny-pill nanny-pill--orange">${escapeHtml(profile.verificationStatusLabel || 'Chưa xác minh')}</span>
-            <span class="nanny-pill">${profile.age ? `${profile.age} tuổi` : 'Chưa rõ tuổi'}</span>
-            <span class="nanny-pill">${profile.yearsOfExperience ? `${profile.yearsOfExperience} năm KN` : 'Chưa rõ KN'}</span>
+            <span class="nanny-pill nanny-pill--orange">${escapeHtml(profile.verificationStatusLabel || 'ChÆ°a xÃ¡c minh')}</span>
+            <span class="nanny-pill">${profile.age ? `${profile.age} tuá»•i` : 'ChÆ°a rÃµ tuá»•i'}</span>
+            <span class="nanny-pill">${profile.yearsOfExperience ? `${profile.yearsOfExperience} nÄƒm KN` : 'ChÆ°a rÃµ KN'}</span>
           </div>
           <div class="nanny-card__skills">
             ${topSkills.length
               ? topSkills.map((skill) => `<span class="nanny-skill-chip">${escapeHtml(skill.skillName || '')}</span>`).join('')
-              : '<span class="nanny-card__muted">Chưa có kỹ năng nổi bật</span>'}
+              : '<span class="nanny-card__muted">ChÆ°a cÃ³ ká»¹ nÄƒng ná»•i báº­t</span>'}
           </div>
         </div>
       </article>`;
@@ -1221,24 +1221,23 @@ async function openNannyDetail(id) {
     if (!detail) return;
 
     document.getElementById('nd-avatar').src = detail.avatarUrl || '/img/nanny-logo.jpg';
-    document.getElementById('nd-name').textContent = detail.fullName || 'Bảo mẫu';
+    document.getElementById('nd-name').textContent = detail.fullName || 'Báº£o máº«u';
     const publicLocation = formatPublicLocation(detail);
     document.getElementById('nd-location').textContent = publicLocation || 'Chua cap nhat khu vuc';
-    document.getElementById('nd-verify').textContent = detail.verificationStatusLabel || 'Đang cập nhật';
-    document.getElementById('nd-bio').textContent = detail.bio || 'Hồ sơ chưa có mô tả.';
+    document.getElementById('nd-verify').textContent = detail.verificationStatusLabel || 'Äang cáº­p nháº­t';
+    document.getElementById('nd-bio').textContent = detail.bio || 'Há»“ sÆ¡ chÆ°a cÃ³ mÃ´ táº£.';
     document.getElementById('nd-phone').textContent = isParentRole() ? 'Gui request contact de trao doi truc tiep voi nanny' : 'Thong tin lien he chi hien sau khi da ket noi';
     document.getElementById('nd-address').textContent = publicLocation || 'Chua cap nhat';
-    document.getElementById('nd-travel').textContent = detail.maxTravelDistance ? `${detail.maxTravelDistance} km` : 'Chưa cập nhật';
-    document.getElementById('nd-completeness').textContent = `${detail.profileCompleteness || 0}%`;
-    document.getElementById('nd-age').textContent = detail.age ? `${detail.age} tuổi` : 'Chưa rõ tuổi';
-    document.getElementById('nd-exp').textContent = detail.yearsOfExperience ? `${detail.yearsOfExperience} năm kinh nghiệm` : 'Chưa rõ kinh nghiệm';
-    document.getElementById('nd-education').textContent = detail.educationLevelLabel || 'Chưa cập nhật học vấn';
+    document.getElementById('nd-travel').textContent = detail.maxTravelDistance ? `${detail.maxTravelDistance} km` : 'ChÆ°a cáº­p nháº­t';
+    document.getElementById('nd-age').textContent = detail.age ? `${detail.age} tuá»•i` : 'ChÆ°a rÃµ tuá»•i';
+    document.getElementById('nd-exp').textContent = detail.yearsOfExperience ? `${detail.yearsOfExperience} nÄƒm kinh nghiá»‡m` : 'ChÆ°a rÃµ kinh nghiá»‡m';
+    document.getElementById('nd-education').textContent = detail.educationLevelLabel || 'ChÆ°a cáº­p nháº­t há»c váº¥n';
     document.getElementById('nd-salary').textContent = formatSalary(detail.expectedSalaryMin, detail.expectedSalaryMax);
     const planChip = document.getElementById('nd-plan');
     if (planChip) {
       const planLabel = getNannyPlanLabel(detail);
       const planText = detail.searchPriority
-        ? `${planLabel || 'Ho so noi bat'} • Uu tien hien thi`
+        ? `${planLabel || 'Ho so noi bat'} â€¢ Uu tien hien thi`
         : detail.featuredBadge
           ? (planLabel || 'Ho so noi bat')
           : '';
@@ -1253,7 +1252,7 @@ async function openNannyDetail(id) {
             ${escapeHtml(skill.skillName || '')}
             ${skill.proficiencyLevelLabel ? `<small>${escapeHtml(skill.proficiencyLevelLabel)}</small>` : ''}
           </span>`).join('')
-      : '<span class="nanny-card__muted">Chưa có kỹ năng được khai báo.</span>';
+      : '<span class="nanny-card__muted">ChÆ°a cÃ³ ká»¹ nÄƒng Ä‘Æ°á»£c khai bÃ¡o.</span>';
 
     currentNannyDetailId = detail.id || id;
     currentNannyDetailUserId = detail.userId || null;

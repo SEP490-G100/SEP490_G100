@@ -34,28 +34,6 @@ public class NannyController : Controller
         else
             _http.DefaultRequestHeaders.Authorization = null;
     }
-
-    /// <summary>
-    /// Lấy phần trăm hoàn thiện hồ sơ từ /api/profile và đặt vào ViewBag.
-    /// </summary>
-    private async Task SetProfileCompletionViewBagAsync()
-    {
-        try
-        {
-            SetAuthHeader();
-            var response = await _http.GetAsync("/api/profile");
-            if (!response.IsSuccessStatusCode) { ViewBag.ProfileCompletionPercentage = 0; return; }
-            var json = await response.Content.ReadAsStringAsync();
-            using var doc = System.Text.Json.JsonDocument.Parse(json);
-            if (doc.RootElement.TryGetProperty("data", out var data) &&
-                data.TryGetProperty("profileCompletionPercentage", out var pctEl))
-                ViewBag.ProfileCompletionPercentage = pctEl.GetInt32();
-            else
-                ViewBag.ProfileCompletionPercentage = 0;
-        }
-        catch { ViewBag.ProfileCompletionPercentage = 0; }
-    }
-
     [AllowAnonymous]
     [HttpGet]
     public async Task<IActionResult> List()
@@ -423,9 +401,8 @@ public class NannyController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Profile()
+    public IActionResult Profile()
     {
-        await SetProfileCompletionViewBagAsync();
         return View(new NannyProfileViewModel());
     }
 
@@ -494,7 +471,6 @@ public class NannyController : Controller
         }
 
         vm.SelectedSkills.Add(new NannySkillSelectionViewModel());
-        await SetProfileCompletionViewBagAsync();
         return View(vm);
     }
     [HttpPost, ValidateAntiForgeryToken]
@@ -521,9 +497,8 @@ public class NannyController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Availability()
+    public IActionResult Availability()
     {
-        await SetProfileCompletionViewBagAsync();
         return View(new NannyAvailabilityViewModel());
     }
 
@@ -734,3 +709,5 @@ public class NannyController : Controller
         public string? ResponseMessage { get; set; }
     }
 }
+
+

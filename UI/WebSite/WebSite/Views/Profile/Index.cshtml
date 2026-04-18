@@ -27,6 +27,24 @@
      : Guid.Empty;
     var canComplainProfile = isReadOnly && !isModeratorViewer && Model.UserId != Guid.Empty && Model.UserId != currentUserId;
     var currentProfileUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
+    var verificationCode = Model.VerificationStatusCode ?? 0;
+    var isIdentityVerified = verificationCode == 2;
+    var hasUploadedHealthDocument = verificationCode != 0;
+    var areaText = string.Join(", ", new[] { Model.Ward, Model.District, Model.City }.Where(v => !string.IsNullOrWhiteSpace(v)));
+    var displayEmail = string.IsNullOrWhiteSpace(Model.Email) ? "Chua cap nhat" : Model.Email;
+    var isReadonlyNannyView = isReadOnly && isNanny;
+
+    string MaskPhone(string? phone)
+    {
+        if (string.IsNullOrWhiteSpace(phone))
+            return "Chua cap nhat";
+
+        var digits = new string(phone.Where(char.IsDigit).ToArray());
+        if (digits.Length < 7)
+            return "••••••";
+
+        return $"{digits[..2]}•••••{digits[^2..]}";
+    }
 
     string EducationLabel(int? level) => level switch
     {
@@ -277,36 +295,41 @@
             </div>
 
             <div class="space-y-4">
-                @if (!isReadOnly)
+                @if (!isReadOnly && isNanny)
                 {
-                    var pct = Model.ProfileCompletionPercentage;
-                    var pctColor = pct >= 80 ? "#22c55e" : pct >= 50 ? "#f97316" : "#ef4444";
-                    var pctLabel = pct >= 100 ? "Hồ sơ hoàn thiện!" : $"{pct}% hoàn thiện";
-                    string? pctHint = null;
-                    if (isNanny && pct < 100 && pct >= 90)
-                        pctHint = "Xác minh hồ sơ để đạt 100%";
-                    else if (pct < 90)
-                        pctHint = isNanny ? "Điền đầy đủ thông tin để đạt 90%, xác minh để đạt 100%" : "Điền đầy đủ thông tin để hoàn thiện hồ sơ";
-                    <div class="profile-card">
-                        <div class="flex items-center justify-between mb-2">
-                            <h3 class="!mb-0">Độ hoàn thiện hồ sơ</h3>
-                            <span class="text-sm font-extrabold" style="color:@pctColor">@pctLabel</span>
+                    <div class="profile-status-card @(isIdentityVerified ? "is-complete" : "is-pending")">
+                        <div class="profile-status-head">
+                            <h3 class="!mb-0">Xac minh danh tinh</h3>
+                            <span class="profile-status-pill">@(isIdentityVerified ? "Da xac minh" : "Chua xac minh")</span>
                         </div>
-                        <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                            <div class="h-2.5 rounded-full transition-all duration-500"
-                                 style="width:@(pct)%;background-color:@pctColor"></div>
+                        <p class="profile-status-desc">
+                            @(isIdentityVerified
+                                ? "Thong tin danh tinh da duoc xac minh."
+                                : "Ban can xac minh danh tinh de tang do tin cay ho so.")
+                        </p>
+                        @if (isIdentityVerified)
+                        {
+                            <button type="button" class="profile-status-btn is-disabled" disabled>Da hoan thanh</button>
+                        }
+                        else
+                        {
+                            <a href="/NannyVerificationRequest/verifyNanny" class="profile-status-btn">Xac minh ngay</a>
+                        }
+                    </div>
+
+                    <div class="profile-status-card @(hasUploadedHealthDocument ? "is-complete" : "is-pending")">
+                        <div class="profile-status-head">
+                            <h3 class="!mb-0">Giay suc khoe</h3>
+                            <span class="profile-status-pill">@(hasUploadedHealthDocument ? "Da upload" : "Chua upload")</span>
                         </div>
-                        @if (isNanny)
-                        {
-                            <div class="mt-2 flex items-center justify-between text-xs text-slate-500">
-                                <span>Hồ sơ: @(Math.Min(pct, 90))%/90%</span>
-                                <span>Xác minh: @(pct >= 90 ? "10" : "0")%/10%</span>
-                            </div>
-                        }
-                        @if (pctHint != null)
-                        {
-                            <p class="mt-2 text-xs text-slate-500">@pctHint</p>
-                        }
+                        <p class="profile-status-desc">
+                            @(hasUploadedHealthDocument
+                                ? "Ban da upload giay suc khoe."
+                                : "Ban chua upload giay suc khoe.")
+                        </p>
+                        <button type="button" class="profile-status-btn @(hasUploadedHealthDocument ? "is-disabled" : "is-coming-soon")" disabled>
+                            @(hasUploadedHealthDocument ? "Da hoan thanh" : "Sap mo")
+                        </button>
                     </div>
                 }
 
@@ -315,11 +338,11 @@
                     <div class="grid grid-cols-1 gap-3">
                         <div class="profile-detail-item">
                             <div class="label">Email</div>
-                            <div class="value break-all">@Model.Email</div>
+                            <div class="value break-all">@displayEmail</div>
                         </div>
                         <div class="profile-detail-item">
                             <div class="label">Dien thoai</div>
-                            <div class="value">@(string.IsNullOrWhiteSpace(Model.PhoneNumber) ? "Chua cap nhat" : Model.PhoneNumber)</div>
+                            <div class="value @(isReadonlyNannyView ? "phone-obscured" : "")">@(isReadonlyNannyView ? MaskPhone(Model.PhoneNumber) : (string.IsNullOrWhiteSpace(Model.PhoneNumber) ? "Chua cap nhat" : Model.PhoneNumber))</div>
                         </div>
                         <div class="profile-detail-item">
                             <div class="label">Dia chi</div>
@@ -327,7 +350,7 @@
                         </div>
                         <div class="profile-detail-item">
                             <div class="label">Khu vuc</div>
-                            <div class="value">@string.Join(", ", new[] { Model.Ward, Model.District, Model.City }.Where(v => !string.IsNullOrWhiteSpace(v)))</div>
+                            <div class="value">@(string.IsNullOrWhiteSpace(areaText) ? "Chua cap nhat" : areaText)</div>
                         </div>
                     </div>
                 </div>
@@ -866,4 +889,3 @@
 {
     <partial name="~/Views/Hiring/_HireModal.cshtml" />
 }
-

@@ -31,14 +31,6 @@ namespace WebSite.Models.Profile
         public int? MaxTravelDistance { get; set; }
         public List<Guid> SelectedSkillIds { get; set; } = new();
         public List<SelectableSkillViewModel> AvailableSkills { get; set; } = new();
-
-        /// <summary>
-        /// Phần trăm hoàn thiện hồ sơ tính từ backend.
-        /// Nanny: tối đa 90% hồ sơ + 10% verification.
-        /// Parent: tối đa 100%.
-        /// </summary>
-        public int ProfileCompletionPercentage { get; set; }
-
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
             if (!IsNanny)

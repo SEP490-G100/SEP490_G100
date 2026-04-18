@@ -186,7 +186,6 @@ public class NannyService
             Address = nanny.User.Address,
             Ward = nanny.User.Ward,
             MaxTravelDistance = nanny.MaxTravelDistance,
-            ProfileCompleteness = nanny.ProfileCompleteness,
             VerifiedAt = nanny.VerifiedAt,
             Latitude = listItem.Latitude,
             Longitude = listItem.Longitude
