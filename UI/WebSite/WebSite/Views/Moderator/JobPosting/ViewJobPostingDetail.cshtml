@@ -1,0 +1,420 @@
+@model WebSite.Models.Search.JobPostingDetailResponse
+@{
+    Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
+    ViewData["Title"] = "Job Posting Detail";
+
+    var locationLabel = string.Join(", ", new[] { Model.Location, Model.District, Model.City }
+        .Where(value => !string.IsNullOrWhiteSpace(value)));
+    var hasSpecialNeeds = !string.IsNullOrWhiteSpace(Model.SpecialNeeds);
+    var hasSkills = Model.Skills.Any();
+    var hasSchedule = Model.ScheduleSlots.Any();
+    var dayLabels = new[] { "Mo", "Tu", "We", "Th", "Fr", "Sa", "Su" };
+    var rowLabels = new[] { "Morning", "Afternoon", "Evening", "Night" };
+    var moderationBadgeClass = Model.ModerationStatus switch
+    {
+        0 => "badge badge-pending px-3 py-1.5 text-sm",
+        1 => "badge badge-inactive px-3 py-1.5 text-sm",
+        2 => "badge badge-active px-3 py-1.5 text-sm",
+        _ => "badge badge-pending px-3 py-1.5 text-sm"
+    };
+}
+
+<div class="flex items-center gap-2 text-sm text-gray-400 mb-6 fade-in-up">
+    <a href="/Moderator/ManageJobPosting" class="hover:text-orange-500 transition-colors font-semibold">Job Postings</a>
+    <span class="material-icons-round text-base">chevron_right</span>
+    <span class="text-gray-600 font-semibold">@Model.Title</span>
+</div>
+
+<div class="content-card p-6 sm:p-7 mb-6 fade-in-up overflow-hidden" style="background:linear-gradient(135deg,#EFF6FF 0%,#F8FAFC 45%,#FFFFFF 100%); border:1px solid #BFDBFE;">
+    <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+        <div class="min-w-0">
+            <p class="text-xs font-semibold uppercase tracking-[0.25em] text-blue-500">Parent Job Posting</p>
+            <h1 class="text-2xl sm:text-3xl font-black text-gray-900 mt-2 break-words">@Model.Title</h1>
+            <p class="text-sm text-gray-500 mt-2">Posted by <span class="font-semibold text-gray-700">@Model.ParentName</span></p>
+
+            <div class="flex flex-wrap gap-2 mt-4">
+                <span class="badge @Model.StatusClass px-3 py-1.5 text-sm">@Model.StatusLabel</span>
+                <span class="@moderationBadgeClass">@Model.ModerationStatusLabel</span>
+                @if (Model.FeaturedBadge)
+                {
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200 px-3 py-1.5 text-xs font-semibold">
+                        <span class="material-icons-round text-sm">workspace_premium</span>
+                        Featured
+                    </span>
+                }
+                @if (Model.SearchPriority)
+                {
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-violet-50 text-violet-600 border border-violet-200 px-3 py-1.5 text-xs font-semibold">
+                        <span class="material-icons-round text-sm">bolt</span>
+                        Search Priority
+                    </span>
+                }
+            </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3 lg:justify-end lg:self-start">
+            <div class="rounded-2xl bg-white/90 border border-blue-100 px-4 py-3 min-w-[180px]">
+                <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Created</p>
+                <p class="font-bold text-gray-800 mt-1">@Model.CreatedAt.ToString("MMM dd, yyyy HH:mm")</p>
+            </div>
+            <div class="rounded-2xl bg-white/90 border border-blue-100 px-4 py-3 min-w-[180px]">
+                <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Applications</p>
+                <p class="font-bold text-gray-800 mt-1">@Model.ApplicationCount</p>
+            </div>
+            <a href="/Moderator/ManageJobPosting" class="btn-outline self-start">
+                <span class="material-icons-round text-base">arrow_back</span>
+                Back to List
+            </a>
+        </div>
+    </div>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="mb-5 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 fade-in-up">
+        <span class="material-icons-round text-base">error_outline</span>
+        @TempData["Error"]
+    </div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="mb-5 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 fade-in-up">
+        <span class="material-icons-round text-base">check_circle_outline</span>
+        @TempData["Success"]
+    </div>
+}
+
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-5">
+    <div class="xl:col-span-4 space-y-5">
+        <div class="content-card p-5 fade-in-up">
+            <div class="flex items-center gap-2 mb-4">
+                <span class="material-icons-round text-blue-500 text-lg">dashboard</span>
+                <h2 class="font-bold text-gray-900">Posting Summary</h2>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-3 text-sm">
+                <div class="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                    <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Salary</p>
+                    <p class="font-semibold text-gray-700 mt-1">@Model.SalaryLabel</p>
+                </div>
+                <div class="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                    <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Children</p>
+                    <p class="font-semibold text-gray-700 mt-1">@(Model.NumberOfChildren?.ToString() ?? "-")</p>
+                </div>
+                <div class="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                    <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Preferred Nanny Age</p>
+                    <p class="font-semibold text-gray-700 mt-1">@Model.AgeRangeLabel</p>
+                </div>
+                <div class="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                    <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Birth Type</p>
+                    <p class="font-semibold text-gray-700 mt-1">@(Model.BirthTypeLabel ?? "-")</p>
+                </div>
+                <div class="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                    <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Published</p>
+                    <p class="font-semibold text-gray-700 mt-1">@(Model.PublishedAt?.ToString("MMM dd, yyyy HH:mm") ?? "-")</p>
+                </div>
+                <div class="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                    <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Expires</p>
+                    <p class="font-semibold text-gray-700 mt-1">@(Model.ExpiresAt?.ToString("MMM dd, yyyy HH:mm") ?? "-")</p>
+                </div>
+            </div>
+
+            <div class="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 mt-3">
+                <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Location</p>
+                <p class="font-semibold text-gray-700 mt-1 break-words">@(string.IsNullOrWhiteSpace(locationLabel) ? "-" : locationLabel)</p>
+            </div>
+
+            @if (Model.ModeratedAt.HasValue || !string.IsNullOrWhiteSpace(Model.ModerationNote))
+            {
+                <div class="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 mt-3">
+                    <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Moderation</p>
+                    <p class="font-semibold text-gray-700 mt-1">@(Model.ModeratedAt?.ToString("MMM dd, yyyy HH:mm") ?? "Not reviewed yet")</p>
+                    @if (!string.IsNullOrWhiteSpace(Model.ModerationNote))
+                    {
+                        <p class="text-sm text-gray-600 mt-2 leading-6">@Model.ModerationNote</p>
+                    }
+                </div>
+            }
+        </div>
+
+        @if (hasSkills)
+        {
+            <div class="content-card p-5 fade-in-up">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="material-icons-round text-blue-500 text-lg">psychology</span>
+                    <h2 class="font-bold text-gray-900">Required Skills</h2>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    @foreach (var skill in Model.Skills)
+                    {
+                        <span class="inline-flex items-center rounded-full bg-blue-50 border border-blue-200 px-3 py-2 text-sm font-semibold text-blue-700">@skill</span>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="xl:col-span-8 space-y-5">
+        <div class="content-card p-5 fade-in-up">
+            <div class="flex items-center gap-2 mb-4">
+                <span class="material-icons-round text-blue-500 text-lg">description</span>
+                <h2 class="font-bold text-gray-900">Job Description</h2>
+            </div>
+            <p class="text-sm leading-7 text-gray-600 whitespace-pre-line">@Model.Description</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div class="content-card p-5 fade-in-up">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="material-icons-round text-blue-500 text-lg">family_restroom</span>
+                    <h2 class="font-bold text-gray-900">Child Care Notes</h2>
+                </div>
+                <div class="space-y-3">
+                    <div class="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                        <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Characteristic</p>
+                        <p class="font-semibold text-gray-700 mt-1">@(Model.Characteristic ?? "-")</p>
+                    </div>
+                    <div class="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                        <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Special Needs</p>
+                        <p class="font-semibold text-gray-700 mt-1">@(hasSpecialNeeds ? Model.SpecialNeeds : "-")</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-card p-5 fade-in-up">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="material-icons-round text-blue-500 text-lg">schedule</span>
+                    <h2 class="font-bold text-gray-900">Schedule Slots</h2>
+                </div>
+                @if (!hasSchedule)
+                {
+                    <div class="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-10 text-center text-sm text-gray-400">
+                        No schedule slots provided.
+                    </div>
+                }
+                else
+                {
+                    var selectedSet = new HashSet<string>(
+                        Model.ScheduleSlots.Select(slot => $"{slot.DayOfWeek}-{slot.TimeSlot}")
+                    );
+
+                    <div class="schedule-grid-card">
+                        <div class="schedule-grid schedule-grid--readonly">
+                            <div></div>
+                            @foreach (var dayLabel in dayLabels)
+                            {
+                                <div class="schedule-col-label">@dayLabel</div>
+                            }
+
+                            @for (var timeSlot = 0; timeSlot < rowLabels.Length; timeSlot++)
+                            {
+                                <div class="schedule-row-label">@rowLabels[timeSlot]</div>
+                                @for (var dayOfWeek = 0; dayOfWeek < dayLabels.Length; dayOfWeek++)
+                                {
+                                    var active = selectedSet.Contains($"{dayOfWeek}-{timeSlot}");
+                                    <div class="schedule-cell @(active ? "active" : "")" aria-hidden="true">
+                                        <span class="schedule-check">@(active ? Html.Raw("&#10003;") : Html.Raw(""))</span>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="content-card p-6 fade-in-up">
+            <div class="flex items-center gap-2 mb-5">
+                <span class="material-icons-round text-blue-500 text-lg">gavel</span>
+                <h2 class="font-bold text-gray-900">Moderator Decision</h2>
+            </div>
+
+            <form asp-action="ReviewJobPosting" method="post" onsubmit="return validateJobPostingReviewForm()">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <input type="hidden" id="jobPostingAction" name="action" value="" />
+                <input type="hidden" name="parentUserId" value="@Model.ParentUserId" />
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+                    <button type="button"
+                            id="jobPostingApproveBtn"
+                            onclick="selectJobPostingAction(2)"
+                            class="w-full flex items-center justify-center gap-2 px-5 py-4 rounded-2xl font-bold text-white text-sm transition-all hover:scale-[1.01] active:scale-[0.99]"
+                            style="background:linear-gradient(135deg,#10B981,#059669); box-shadow:0 4px 14px rgba(16,185,129,0.35);">
+                        <span class="material-icons-round text-lg">check_circle</span>
+                        <span class="job-posting-action-label">Approve Application</span>
+                    </button>
+
+                    <button type="button"
+                            id="jobPostingRejectBtn"
+                            onclick="selectJobPostingAction(1)"
+                            class="w-full flex items-center justify-center gap-2 px-5 py-4 rounded-2xl font-bold text-sm text-white transition-all hover:scale-[1.01] active:scale-[0.99]"
+                            style="background:linear-gradient(135deg,#EF4444,#DC2626); box-shadow:0 4px 14px rgba(239,68,68,0.35);">
+                        <span class="material-icons-round text-lg">cancel</span>
+                        <span class="job-posting-action-label">Reject Application</span>
+                    </button>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-2 tracking-wider">Internal Note / Feedback</label>
+                    <textarea id="jobPostingNote" name="note" rows="4" placeholder="Enter moderation feedback for the parent..."
+                              class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none resize-none transition-all">@Model.ModerationNote</textarea>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <a href="/Moderator/ManageJobPosting" class="btn-outline justify-center">Cancel</a>
+                    <button type="submit" class="btn-primary justify-center shadow-lg shadow-blue-500/20">Submit Review</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .schedule-grid-card {
+        border: 1px solid #fed7aa;
+        border-radius: 28px;
+        padding: 1.5rem 1rem;
+        background: linear-gradient(180deg, #ffffff 0%, #fffaf5 100%);
+        overflow-x: auto;
+    }
+
+    .schedule-grid {
+        min-width: 560px;
+        display: grid;
+        grid-template-columns: 140px repeat(7, minmax(52px, 1fr));
+        gap: 1rem 0.85rem;
+        align-items: center;
+    }
+
+    .schedule-col-label {
+        text-align: center;
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: #334155;
+    }
+
+    .schedule-row-label {
+        font-size: 1rem;
+        font-weight: 800;
+        color: #334155;
+        white-space: nowrap;
+    }
+
+    .schedule-cell {
+        width: 52px;
+        height: 52px;
+        margin: 0 auto;
+        border-radius: 999px;
+        border: 2px solid #dbe4f0;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 18px rgba(148, 163, 184, 0.08);
+    }
+
+    .schedule-cell.active {
+        border-color: #f97316;
+        background: linear-gradient(180deg, #fb923c 0%, #f97316 100%);
+        box-shadow: 0 16px 28px rgba(249, 115, 22, 0.28);
+    }
+
+    .schedule-check {
+        font-size: 1.6rem;
+        line-height: 1;
+        font-weight: 800;
+        color: transparent;
+    }
+
+    .schedule-cell.active .schedule-check {
+        color: #ffffff;
+    }
+
+    @@media (max-width: 640px) {
+        .schedule-grid-card {
+            padding: 1rem 0.85rem;
+        }
+
+        .schedule-grid {
+            min-width: 510px;
+            grid-template-columns: 118px repeat(7, minmax(44px, 1fr));
+            gap: 0.75rem 0.6rem;
+        }
+
+        .schedule-col-label,
+        .schedule-row-label {
+            font-size: 0.95rem;
+        }
+
+        .schedule-cell {
+            width: 44px;
+            height: 44px;
+        }
+
+        .schedule-check {
+            font-size: 1.35rem;
+        }
+    }
+</style>
+
+@section Scripts {
+<script>
+    function selectJobPostingAction(action) {
+        document.getElementById('jobPostingAction').value = action;
+
+        var approveBtn = document.getElementById('jobPostingApproveBtn');
+        var rejectBtn = document.getElementById('jobPostingRejectBtn');
+
+        approveBtn.classList.remove('ring-4', 'ring-emerald-200', 'scale-[1.02]');
+        rejectBtn.classList.remove('ring-4', 'ring-red-200', 'scale-[1.02]');
+
+        approveBtn.style.opacity = '0.72';
+        approveBtn.style.filter = 'saturate(0.9)';
+        approveBtn.style.boxShadow = '0 4px 14px rgba(16,185,129,0.18)';
+        approveBtn.querySelector('.job-posting-action-label').style.fontWeight = '700';
+
+        rejectBtn.style.opacity = '0.72';
+        rejectBtn.style.filter = 'saturate(0.9)';
+        rejectBtn.style.boxShadow = '0 4px 14px rgba(239,68,68,0.18)';
+        rejectBtn.querySelector('.job-posting-action-label').style.fontWeight = '700';
+
+        if (action === 2) {
+            approveBtn.classList.add('ring-4', 'ring-emerald-200', 'scale-[1.02]');
+            approveBtn.style.opacity = '1';
+            approveBtn.style.filter = 'none';
+            approveBtn.style.boxShadow = '0 10px 28px rgba(16,185,129,0.38)';
+            approveBtn.querySelector('.job-posting-action-label').style.fontWeight = '900';
+        } else if (action === 1) {
+            rejectBtn.classList.add('ring-4', 'ring-red-200', 'scale-[1.02]');
+            rejectBtn.style.opacity = '1';
+            rejectBtn.style.filter = 'none';
+            rejectBtn.style.boxShadow = '0 10px 28px rgba(239,68,68,0.38)';
+            rejectBtn.querySelector('.job-posting-action-label').style.fontWeight = '900';
+        }
+    }
+
+    function validateJobPostingReviewForm() {
+        var action = document.getElementById('jobPostingAction').value;
+        var note = document.getElementById('jobPostingNote').value.trim();
+
+        if (!action) {
+            if (typeof window.showToast === 'function') {
+                window.showToast('Please choose Approve or Reject before submitting.', { type: 'warning' });
+            }
+            return false;
+        }
+
+        if (action === '1' && !note) {
+            if (typeof window.showToast === 'function') {
+                window.showToast('Please provide a rejection reason before submitting.', { type: 'warning' });
+            }
+            return false;
+        }
+
+        return confirm(action === '2'
+            ? 'Approve this job posting?'
+            : 'Reject this job posting with the provided reason?');
+    }
+</script>
+}

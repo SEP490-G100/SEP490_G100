@@ -1,4 +1,5 @@
 using Nanny_BackEnd.DTOs.Communication;
+using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
 
@@ -7,8 +8,21 @@ namespace Nanny_BackEnd.Services;
 public class CommunicationService
 {
     private readonly CommunicationRepository _repo;
+    private readonly NotificationService _notificationService;
+    private readonly UserRepository _userRepo;
+    private readonly ReportService _reportService;
 
-    public CommunicationService(CommunicationRepository repo) => _repo = repo;
+    public CommunicationService(
+        CommunicationRepository repo,
+        NotificationService notificationService,
+        UserRepository userRepo,
+        ReportService reportService)
+    {
+        _repo = repo;
+        _notificationService = notificationService;
+        _userRepo = userRepo;
+        _reportService = reportService;
+    }
 
     // ─── Lấy danh sách hội thoại ─────────────────────────────────────────────
 
@@ -149,6 +163,26 @@ public class CommunicationService
         // Load lại message với SenderUser
         var saved = await _repo.GetMessageByIdAsync(message.Id) ?? message;
         saved.SenderUser = myParticipant.User ?? new User { Id = senderId, FirstName = "Nguoi", LastName = "Dung", Email = "" };
+
+        var participants = await _repo.GetParticipantsByConversationIdAsync(dto.ConversationId);
+        var moderatorRecipientIds = new List<Guid>();
+        foreach (var participant in participants.Where(p => p.UserId != senderId))
+        {
+            if (await _userRepo.HasRolesAsync(participant.UserId, ["Moderator"]))
+                moderatorRecipientIds.Add(participant.UserId);
+        }
+
+        if (moderatorRecipientIds.Count > 0)
+        {
+            await _notificationService.createNotificationForUsers(
+                moderatorRecipientIds,
+                "Co tin nhan moi gui toi moderator",
+                $"{getDisplayName(saved.SenderUser)} vua gui mot tin nhan moi can moderator phan hoi.",
+                NotificationTypes.MessageToModerator,
+                dto.ConversationId,
+                "Conversation",
+                senderId);
+        }
 
         return mapMessage(saved, senderId);
     }

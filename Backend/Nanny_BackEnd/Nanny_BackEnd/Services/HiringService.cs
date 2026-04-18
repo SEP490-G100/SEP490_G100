@@ -484,6 +484,19 @@ public class HiringService
                 jobPosting.UpdatedBy = nannyUserId;
             }
 
+            if (jobPosting != null && jobApp != null)
+            {
+                var otherPendingApplications = await _repo.GetOtherPendingApplicantsAsync(jobPosting.Id, jobApp.Id);
+                foreach (var pendingApplication in otherPendingApplications)
+                {
+                    pendingApplication.Status = 2;
+                    pendingApplication.RejectionReason = "Vi tri da duoc nanny khac chap nhan offer.";
+                    pendingApplication.ReviewedAt = now;
+                    pendingApplication.UpdatedAt = now;
+                    pendingApplication.UpdatedBy = nannyUserId;
+                }
+            }
+
             if (parentUserId != Guid.Empty)
             {
                 _repo.AddNotification(new Notification

@@ -1,0 +1,237 @@
+@model WebSite.Models.FAQ.CreateFaqRequest
+@{
+    Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
+    ViewData["Title"] = "Create FAQ";
+    var questionError = ViewData.ModelState[nameof(Model.Question)]?.Errors.Count > 0
+        ? ViewData.ModelState[nameof(Model.Question)]?.Errors[0].ErrorMessage
+        : null;
+    var answerError = ViewData.ModelState[nameof(Model.Answer)]?.Errors.Count > 0
+        ? ViewData.ModelState[nameof(Model.Answer)]?.Errors[0].ErrorMessage
+        : null;
+    var categoryError = ViewData.ModelState[nameof(Model.Category)]?.Errors.Count > 0
+        ? ViewData.ModelState[nameof(Model.Category)]?.Errors[0].ErrorMessage
+        : null;
+}
+
+<!-- PAGE HEADER -->
+<div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
+    <div>
+        <span class="section-label">📋 Content Management</span>
+        <h1 class="page-title mt-2">Create <span class="gradient-text">FAQ</span></h1>
+        <p class="page-subtitle">Add a new frequently asked question to the system.</p>
+    </div>
+    <a href="/Moderator/ManageFAQ" class="btn-outline flex-shrink-0">
+        <span class="material-icons-round text-base">arrow_back</span>
+        Back to FAQs
+    </a>
+</div>
+
+<form method="post" action="/Moderator/CreateFAQ" id="faqForm" novalidate>
+    @Html.AntiForgeryToken()
+
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+
+        <!-- LEFT — Input fields -->
+        <div class="xl:col-span-2 space-y-5">
+
+            <!-- FAQ Content -->
+            <div class="content-card p-0 fade-in-up">
+                <div class="card-header">
+                    <div class="flex items-center gap-2">
+                        <span class="material-icons-round text-orange-400">help_outline</span>
+                        <h2>FAQ Content <span class="text-xs text-red-500 font-semibold ml-1">* bắt buộc</span></h2>
+                    </div>
+                </div>
+                <div class="p-5 space-y-4">
+
+                    <!-- Question -->
+                    <div class="field-group">
+                        <label class="field-label">Question <span class="text-red-400">*</span></label>
+                        <div class="relative">
+                            <span class="material-icons-round absolute left-3 top-3 text-gray-300 text-base pointer-events-none">help_outline</span>
+                            <textarea id="questionInput" name="Question" rows="3"
+                                      placeholder="e.g. How do I find a nanny on NannyMatch?"
+                                      class="search-input !pl-9 w-full resize-none @(!string.IsNullOrWhiteSpace(questionError) ? "!border-red-400" : "")">@Model.Question</textarea>
+                        </div>
+                        <p id="questionError" class="text-xs text-red-500 mt-0.5 flex items-center gap-1 @((string.IsNullOrWhiteSpace(questionError) ? "hidden" : ""))">
+                            <span class="material-icons-round text-xs">error</span>
+                            @(questionError ?? "Question khong duoc de trong.")
+                        </p>
+                    </div>
+
+                    <!-- Answer -->
+                    <div class="field-group">
+                        <label class="field-label">Answer <span class="text-red-400">*</span></label>
+                        <div class="relative">
+                            <span class="material-icons-round absolute left-3 top-3 text-gray-300 text-base pointer-events-none">chat_bubble_outline</span>
+                            <textarea id="answerInput" name="Answer" rows="6"
+                                      placeholder="Provide a clear and helpful answer..."
+                                      class="search-input !pl-9 w-full resize-y @(!string.IsNullOrWhiteSpace(answerError) ? "!border-red-400" : "")">@Model.Answer</textarea>
+                        </div>
+                        <p id="answerError" class="text-xs text-red-500 mt-0.5 flex items-center gap-1 @((string.IsNullOrWhiteSpace(answerError) ? "hidden" : ""))">
+                            <span class="material-icons-round text-xs">error</span>
+                            @(answerError ?? "Answer khong duoc de trong.")
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Additional Settings -->
+            <div class="content-card p-0 fade-in-up" style="animation-delay:.05s;">
+                <div class="card-header">
+                    <div class="flex items-center gap-2">
+                        <span class="material-icons-round text-orange-400">tune</span>
+                        <h2>Additional Settings</h2>
+                    </div>
+                </div>
+                <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                    <!-- Category -->
+                    <div class="field-group">
+                        <label class="field-label">Category <span class="text-red-400">*</span></label>
+                        <div class="relative">
+                            <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-base pointer-events-none">label_outline</span>
+                            <input id="categoryInput" name="Category" type="text" value="@Model.Category"
+                                   placeholder="e.g. Payment, Booking, Account"
+                                   class="search-input !pl-9 w-full @(!string.IsNullOrWhiteSpace(categoryError) ? "!border-red-400" : "")" />
+                        </div>
+                        <p id="categoryError" class="text-xs text-red-500 mt-0.5 flex items-center gap-1 @((string.IsNullOrWhiteSpace(categoryError) ? "hidden" : ""))">
+                            <span class="material-icons-round text-xs">error</span>
+                            @(categoryError ?? "Category khong duoc de trong.")
+                        </p>
+                    </div>
+
+                    <!-- Sort Order — read-only, auto-assigned -->
+                    <div class="field-group">
+                        <label class="field-label">Sort Order</label>
+                        <div class="field-readonly cursor-not-allowed opacity-60">
+                            <span class="material-icons-round text-gray-300 text-base">sort</span>
+                            <span class="text-sm text-gray-500 italic">Auto-assigned by system (max + 1)</span>
+                        </div>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="field-group sm:col-span-2">
+                        <label class="field-label">Status</label>
+                        <div class="flex gap-3">
+                            <label class="flex items-center gap-2.5 px-4 py-3 rounded-2xl border-2 cursor-pointer transition-all border-emerald-400 bg-emerald-50"
+                                   id="label-active">
+                                <input type="radio" name="IsActive" value="true" checked class="accent-emerald-500"
+                                       onchange="updateStatusLabel(true)" />
+                                <div class="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
+                                <span class="text-sm font-semibold text-gray-700">Active</span>
+                            </label>
+                            <label class="flex items-center gap-2.5 px-4 py-3 rounded-2xl border-2 cursor-pointer transition-all border-gray-200 bg-gray-50 hover:border-gray-300"
+                                   id="label-inactive">
+                                <input type="radio" name="IsActive" value="false" class="accent-gray-500"
+                                       onchange="updateStatusLabel(false)" />
+                                <div class="w-2.5 h-2.5 rounded-full bg-gray-400"></div>
+                                <span class="text-sm font-semibold text-gray-700">Inactive</span>
+                            </label>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT — Summary + Actions -->
+        <div class="space-y-5">
+            <div class="content-card p-6 text-center fade-in-up" style="animation-delay:.08s;">
+                <div class="w-20 h-20 rounded-full bg-orange-50 flex items-center justify-center text-orange-300 ring-4 ring-orange-50 mb-4 mx-auto" style="border:2px dashed #FED7AA;">
+                    <span class="material-icons-round text-3xl">help_outline</span>
+                </div>
+                <h3 class="font-bold text-gray-900 text-lg">New FAQ Entry</h3>
+                <p class="text-sm text-gray-400 mt-0.5">Fill out the question and answer</p>
+                <div class="flex flex-wrap gap-1.5 justify-center mt-3">
+                    <span class="badge badge-active">FAQ</span>
+                </div>
+            </div>
+
+            <div class="content-card p-4 space-y-2.5 fade-in-up" style="animation-delay:.12s;">
+                <button type="button" onclick="submitFaqForm()" class="btn-primary w-full justify-center">
+                    <span class="material-icons-round text-base">save</span>
+                    Create FAQ
+                </button>
+                <a href="/Moderator/ManageFAQ" class="btn-outline w-full justify-center">
+                    <span class="material-icons-round text-base">close</span>
+                    Cancel
+                </a>
+            </div>
+
+            <div class="bg-orange-50 border border-orange-100 rounded-2xl p-4 flex gap-3 fade-in-up" style="animation-delay:.15s;">
+                <span class="material-icons-round text-orange-400 text-xl flex-shrink-0">info</span>
+                <p class="text-xs text-orange-800 leading-relaxed">
+                    FAQ entries set to <strong class="text-orange-900">Active</strong> will be immediately visible to users.<br/>
+                    <strong>Sort Order</strong> is automatically assigned (current max + 1).
+                </p>
+            </div>
+        </div>
+
+    </div>
+</form>
+
+<style>
+.field-group { display:flex; flex-direction:column; gap:.4rem; }
+.field-label { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#9CA3AF; }
+.field-readonly {
+    display:flex; align-items:center; gap:.5rem;
+    background:#F9FAFB; border:1px solid #F3F4F6;
+    border-radius:.85rem; padding:.6rem .9rem;
+    font-size:.875rem; color:#374151; min-height:2.6rem;
+}
+</style>
+
+@section Scripts {
+<script>
+function setFieldError(inputId, errorId, hasError) {
+    var el  = document.getElementById(inputId);
+    var err = document.getElementById(errorId);
+    if (hasError) {
+        el.classList.add('border-red-400','!border-red-400');
+        err.classList.remove('hidden');
+    } else {
+        el.classList.remove('border-red-400','!border-red-400');
+        err.classList.add('hidden');
+    }
+}
+
+function submitFaqForm() {
+    var q = (document.getElementById('questionInput').value || '').trim();
+    var a = (document.getElementById('answerInput').value  || '').trim();
+    var c = (document.getElementById('categoryInput').value || '').trim();
+
+    setFieldError('questionInput', 'questionError', !q);
+    setFieldError('answerInput',   'answerError',   !a);
+    setFieldError('categoryInput', 'categoryError', !c);
+
+    if (!q || !a || !c) {
+        return;
+    }
+
+    document.getElementById('faqForm').submit();
+}
+
+// Clear error on input
+['questionInput','answerInput','categoryInput'].forEach(function(id) {
+    document.getElementById(id).addEventListener('input', function() {
+        var errMap = { questionInput:'questionError', answerInput:'answerError', categoryInput:'categoryError' };
+        if (this.value.trim()) setFieldError(id, errMap[id], false);
+    });
+});
+
+function updateStatusLabel(isActive) {
+    var la = document.getElementById('label-active');
+    var li = document.getElementById('label-inactive');
+    if (isActive) {
+        la.className = la.className.replace('border-gray-200 bg-gray-50 hover:border-gray-300','border-emerald-400 bg-emerald-50');
+        li.className = li.className.replace('border-emerald-400 bg-emerald-50','border-gray-200 bg-gray-50 hover:border-gray-300');
+    } else {
+        li.className = li.className.replace('border-gray-200 bg-gray-50 hover:border-gray-300','border-gray-400 bg-gray-100');
+        la.className = la.className.replace('border-emerald-400 bg-emerald-50','border-gray-200 bg-gray-50 hover:border-gray-300');
+    }
+}
+</script>
+}

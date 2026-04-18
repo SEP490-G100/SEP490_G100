@@ -207,6 +207,13 @@ public class JobService
             job.Id,
             "JobPosting",
             null);
+        await _notificationService.createNotificationForModerators(
+            "Co bai dang moi can duyet",
+            $"Phu huynh {getDisplayName(parentProfile.User)} vua gui bai dang \"{job.Title}\" de moderator xem xet.",
+            NotificationTypes.JobPostingReviewRequired,
+            job.Id,
+            "JobPosting",
+            parentProfile.UserId);
 
         // Fire-and-forget: tạo embedding cho job mới
         _ = EmbedJobInBackgroundAsync(job.Id);
@@ -301,6 +308,7 @@ public class JobService
         job.ModerationNote = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
         job.ModeratedAt = nowUtc;
         job.ModeratedBy = moderatorUserId;
+        job.UpdatedBy = moderatorUserId;
         job.PublishedAt = approved && job.Status == (int)JobPostingStatus.Public ? nowUtc : null;
         job.ClosedAt = approved
             ? (job.Status == (int)JobPostingStatus.Hidden ? nowUtc : null)
@@ -466,6 +474,13 @@ public class JobService
             throw new InvalidOperationException("Do tuoi toi thieu khong duoc lon hon do tuoi toi da cua bao mau.");
     }
 
+    private static string getDisplayName(User? user)
+    {
+        if (user == null) return "Phu huynh";
+        var fullName = $"{user.FirstName} {user.LastName}".Trim();
+        return string.IsNullOrWhiteSpace(fullName) ? user.Email : fullName;
+    }
+
     private static SearchJobResponse mapToListItem(
         JobPosting job,
         double? nannyLat = null,
@@ -543,6 +558,7 @@ public class JobService
         {
             Id = job.Id,
             ParentProfileId = job.ParentProfileId,
+            ParentUserId = job.ParentProfile?.UserId ?? Guid.Empty,
             ChildProfileId = job.ChildProfileId,
             ParentName = $"{job.ParentProfile?.User?.FirstName} {job.ParentProfile?.User?.LastName}".Trim(),
             Title = job.Title,
@@ -692,6 +708,7 @@ public class JobService
         job.ModerationNote = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
         job.ModeratedAt = nowUtc;
         job.ModeratedBy = moderatorUserId;
+        job.UpdatedBy = moderatorUserId;
 
         if (moderationStatus == (int)JobPostingModerationStatus.Approved)
         {
@@ -722,6 +739,36 @@ public class JobService
                 title,
                 content,
                 notifType,
+                job.Id,
+                "JobPosting",
+                moderatorUserId);
+        }
+    }
+
+    public async Task DeactivateJobAsync(Guid jobId, Guid moderatorUserId)
+    {
+        var job = await _jobRepo.viewDetailPosting(jobId)
+            ?? throw new KeyNotFoundException("Khong tim thay tin dang hoac tin da bi xoa.");
+
+        if (job.IsDeleted)
+            return;
+
+        var nowUtc = DateTime.UtcNow;
+        job.IsDeleted = true;
+        job.Status = (int)JobPostingStatus.Hidden;
+        job.ClosedAt = nowUtc;
+        job.UpdatedAt = nowUtc;
+        job.UpdatedBy = moderatorUserId;
+
+        await _jobRepo.saveChanges();
+
+        if (job.ParentProfile != null)
+        {
+            await _notificationService.createNotification(
+                job.ParentProfile.UserId,
+                "Bai dang da bi vo hieu hoa",
+                $"Bai dang \"{job.Title}\" da bi moderator vo hieu hoa.",
+                NotificationTypes.JobPostingRejected,
                 job.Id,
                 "JobPosting",
                 moderatorUserId);

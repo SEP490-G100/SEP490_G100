@@ -13,8 +13,6 @@ public class VerificationRequestRepository
         _db = db;
     }
 
-    public IQueryable<VerificationRequest> GetQuery() => _db.VerificationRequests.AsQueryable();
-
     public async Task<(List<VerificationRequest> Items, int TotalCount)> GetListAsync(
         int? status,
         string? search,
@@ -24,6 +22,7 @@ public class VerificationRequestRepository
         var query = _db.VerificationRequests
             .Include(v => v.NannyProfile)
                 .ThenInclude(np => np.User)
+            .Include(v => v.ReviewedByNavigation)
             .Where(v => !v.IsDeleted)
             .AsQueryable();
 
@@ -55,6 +54,12 @@ public class VerificationRequestRepository
         return await _db.VerificationRequests
             .Include(v => v.NannyProfile)
                 .ThenInclude(np => np.User)
+            .Include(v => v.ReviewedByNavigation)
+            .Include(v => v.NannyProfile)
+                .ThenInclude(np => np.NannySkills.Where(ns => !ns.IsDeleted))
+                    .ThenInclude(ns => ns.Skill)
+            .Include(v => v.NannyProfile)
+                .ThenInclude(np => np.NannyCertificates.Where(c => !c.IsDeleted))
             .Include(v => v.VerificationDocuments.Where(d => !d.IsDeleted))
             .FirstOrDefaultAsync(v => v.Id == id && !v.IsDeleted);
     }
@@ -74,6 +79,9 @@ public class VerificationRequestRepository
     public async Task<List<VerificationRequest>> GetRequestsByNannyProfileAsync(Guid nannyProfileId)
     {
         return await _db.VerificationRequests
+            .Include(v => v.NannyProfile)
+                .ThenInclude(np => np.User)
+            .Include(v => v.ReviewedByNavigation)
             .Include(v => v.VerificationDocuments.Where(d => !d.IsDeleted))
             .Where(v => v.NannyProfileId == nannyProfileId && !v.IsDeleted)
             .OrderByDescending(v => v.CreatedAt)

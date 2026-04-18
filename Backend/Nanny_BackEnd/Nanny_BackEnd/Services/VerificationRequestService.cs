@@ -1,178 +1,174 @@
 using Nanny_BackEnd.DTOs.Verification;
+using Nanny_BackEnd.Enums;
+using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Repositories;
 
 namespace Nanny_BackEnd.Services;
 
 public class VerificationRequestService
 {
-    private readonly VerificationRequestRepository _repo;
+    private readonly VerificationRequestRepository _nannyVerificationRequestRepo;
     private readonly Microsoft.AspNetCore.Hosting.IWebHostEnvironment _env;
+    private readonly NotificationService _notificationService;
 
-    public VerificationRequestService(VerificationRequestRepository repo, Microsoft.AspNetCore.Hosting.IWebHostEnvironment env)
+    public VerificationRequestService(
+        VerificationRequestRepository nannyVerificationRequestRepo,
+        Microsoft.AspNetCore.Hosting.IWebHostEnvironment env,
+        NotificationService notificationService)
     {
-        _repo = repo;
+        _nannyVerificationRequestRepo = nannyVerificationRequestRepo;
         _env = env;
+        _notificationService = notificationService;
     }
-
-    public async Task<VerificationRequestListResponse> GetListAsync(
-        int? status,
-        string? search,
-        int page,
-        int pageSize)
+    //Nanny view own verification request list
+    public async Task<VerificationRequestListResponse> NannyGetVerificationRequestListAsync(Guid userId, int? status, int page, int pageSize)
     {
         if (page < 1) page = 1;
         if (pageSize < 1 || pageSize > 100) pageSize = 3;
 
-        var (items, totalCount) = await _repo.GetListAsync(status, search, page, pageSize);
-
-        var dtos = items.Select(v => new VerificationRequestListDto
+        var profile = await _nannyVerificationRequestRepo.GetNannyProfileByUserIdAsync(userId);
+        if (profile == null)
         {
-            Id             = v.Id,
-            NannyProfileId = v.NannyProfileId,
-            Status         = v.Status,
-            CreatedAt      = v.CreatedAt,
-            ReviewedAt     = v.ReviewedAt,
-            NannyUserId    = v.NannyProfile.UserId,
-            NannyFirstName = v.NannyProfile.User.FirstName,
-            NannyLastName  = v.NannyProfile.User.LastName,
-            NannyEmail     = v.NannyProfile.User.Email,
-            NannyAvatarUrl = v.NannyProfile.User.AvatarUrl,
-            NannyCity      = v.NannyProfile.User.City
-        }).ToList();
+            return new VerificationRequestListResponse
+            {
+                Items = new List<VerificationRequestListDto>(),
+                TotalCount = 0,
+                Page = page,
+                PageSize = pageSize
+            };
+        }
+
+        var requests = await _nannyVerificationRequestRepo.GetRequestsByNannyProfileAsync(profile.Id);
+        var filteredRequests = status.HasValue
+            ? requests.Where(request => request.Status == status.Value)
+            : requests.AsEnumerable();
+
+        var totalCount = filteredRequests.Count();
+        var pageItems = filteredRequests
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(MapListDto)
+            .ToList();
 
         return new VerificationRequestListResponse
         {
-            Items      = dtos,
+            Items = pageItems,
             TotalCount = totalCount,
-            Page       = page,
-            PageSize   = pageSize
+            Page = page,
+            PageSize = pageSize
         };
     }
 
-    public async Task<(bool Success, VerificationRequestDetailDto? Data, string? Message)> GetDetailAsync(Guid id)
+    // Nanny view own verification request detail
+    public async Task<(bool Success, VerificationRequestDetailDto? Data, string? Message)> NannyViewVerificationRequestDetailAsync(Guid userId, Guid id)
     {
-        var v = await _repo.GetByIdAsync(id);
-
-        if (v == null)
-            return (false, null, "Không tìm thấy yêu cầu xác minh.");
-
-        var dto = new VerificationRequestDetailDto
-        {
-            Id                 = v.Id,
-            NannyProfileId     = v.NannyProfileId,
-            Status             = v.Status,
-            RejectionReason    = v.RejectionReason,
-            CreatedAt          = v.CreatedAt,
-            ReviewedAt         = v.ReviewedAt,
-            ReviewedBy         = v.ReviewedBy,
-
-            NannyUserId        = v.NannyProfile.UserId,
-            NannyFirstName     = v.NannyProfile.User.FirstName,
-            NannyLastName      = v.NannyProfile.User.LastName,
-            NannyEmail         = v.NannyProfile.User.Email,
-            NannyPhoneNumber   = v.NannyProfile.User.PhoneNumber,
-            NannyAvatarUrl     = v.NannyProfile.User.AvatarUrl,
-            NannyCity          = v.NannyProfile.User.City,
-            NannyAddress       = v.NannyProfile.User.Address,
-            NannyDistrict      = v.NannyProfile.User.District,
-            NannyWard          = v.NannyProfile.User.Ward,
-            NannyGender        = v.NannyProfile.User.Gender,
-            NannyDateOfBirth   = v.NannyProfile.User.DateOfBirth,
-
-            Bio                = v.NannyProfile.Bio,
-            YearsOfExperience  = v.NannyProfile.YearsOfExperience,
-            EducationLevel     = (int?) v.NannyProfile.EducationLevel,
-            VerificationStatus = (int) v.NannyProfile.VerificationStatus,
-            ExpectedSalaryMin  = v.NannyProfile.ExpectedSalaryMin,
-            ExpectedSalaryMax  = v.NannyProfile.ExpectedSalaryMax,
-            SalaryType         = v.NannyProfile.SalaryType,
-            MaxTravelDistance  = v.NannyProfile.MaxTravelDistance,
-
-            Documents = v.VerificationDocuments.Select(d => new VerificationDocumentDto
-            {
-                Id           = d.Id,
-                DocumentType = d.DocumentType,
-                DocumentUrl  = d.DocumentUrl,
-                FileName     = d.FileName,
-                FileSize     = d.FileSize
-            }).ToList()
-        };
-
-        return (true, dto, null);
-    }
-
-    public async Task<(bool Success, int StatusCode, string Message)> ReviewAsync(Guid id, ReviewVerificationRequest request)
-    {
-        // Action: 2 = Approved, 3 = Rejected
-        if (request.Action != (int)Enums.NannyVerificationRequestStatus.Approved && request.Action != (int)Enums.NannyVerificationRequestStatus.Rejected)
-            return (false, 400, "Action không hợp lệ. Chỉ chấp nhận 2 (Approve) hoặc 3 (Reject).");
-
-        if (request.Action == (int)Enums.NannyVerificationRequestStatus.Rejected && string.IsNullOrWhiteSpace(request.RejectionReason))
-            return (false, 400, "Lý do từ chối (RejectionReason) là bắt buộc khi từ chối yêu cầu.");
-
-        var v = await _repo.GetByIdAsync(id);
-
-        if (v == null)
-            return (false, 404, "Không tìm thấy yêu cầu xác minh.");
-
-        if (v.Status != (int)Enums.NannyVerificationRequestStatus.Pending)
-            return (false, 409, "Yêu cầu này đã được xử lý trước đó.");
-
-        // Update VerificationRequest
-        v.Status          = request.Action;     // 2 = Approved, 3 = Rejected
-        v.ReviewedBy      = request.ReviewedBy;
-        v.ReviewedAt      = DateTime.UtcNow;
-        v.RejectionReason = request.Action == (int)Enums.NannyVerificationRequestStatus.Rejected ? request.RejectionReason?.Trim() : null;
-        v.UpdatedAt       = DateTime.UtcNow;
-
-        // Sync NannyProfile.VerificationStatus accordingly
-        var nannyProfile = await _repo.GetNannyProfileAsync(v.NannyProfileId);
-        if (nannyProfile != null)
-        {
-            nannyProfile.VerificationStatus = (int)(Enums.NannyVerificationRequestStatus)request.Action; // 1=Approved, 2=Rejected
-            nannyProfile.VerifiedAt = request.Action == (int)Enums.NannyVerificationRequestStatus.Approved ? DateTime.UtcNow : null;
-            nannyProfile.VerifiedBy = request.Action == (int)Enums.NannyVerificationRequestStatus.Approved ? request.ReviewedBy : null;
-            nannyProfile.UpdatedAt  = DateTime.UtcNow;
-        }
-
-        await _repo.SaveChangesAsync();
-
-        var message = request.Action == (int)Enums.NannyVerificationRequestStatus.Approved ? "Đã duyệt yêu cầu xác minh." : "Đã từ chối yêu cầu xác minh.";
-        return (true, 200, message);
-    }
-
-    public async Task<List<VerificationRequestListDto>> GetNannyRequestsAsync(Guid userId)
-    {
-        var profile = await _repo.GetNannyProfileByUserIdAsync(userId);
-        if (profile == null) return new List<VerificationRequestListDto>();
-
-        var requests = await _repo.GetRequestsByNannyProfileAsync(profile.Id);
-        
-        return requests.Select(v => new VerificationRequestListDto
-        {
-            Id = v.Id,
-            NannyProfileId = v.NannyProfileId,
-            Status = v.Status,
-            CreatedAt = v.CreatedAt,
-            ReviewedAt = v.ReviewedAt
-            // Ignoring deep NannyProfile/User mappings here since Nanny only sees their own requests
-        }).ToList();
-    }
-
-    public async Task<(bool Success, string Message)> SubmitRequestAsync(Guid userId, SubmitVerificationRequestDto request)
-    {
-        var profile = await _repo.GetNannyProfileByUserIdAsync(userId);
+        var profile = await _nannyVerificationRequestRepo.GetNannyProfileByUserIdAsync(userId);
         if (profile == null)
-            return (false, "Không tìm thấy hồ sơ Nanny.");
-
-        // Check if there's already a pending request
-        var existingRequests = await _repo.GetRequestsByNannyProfileAsync(profile.Id);
-        if (existingRequests.Any(r => r.Status == (int)Enums.NannyVerificationRequestStatus.Pending))
         {
-            return (false, "Bạn đã có một yêu cầu xác minh đang chờ duyệt.");
+            return (false, null, "Khong tim thay ho so Nanny.");
         }
 
-        var verificationReq = new Nanny_BackEnd.Models.VerificationRequest
+        var request = await _nannyVerificationRequestRepo.GetByIdAsync(id);
+        if (request == null || request.NannyProfileId != profile.Id)
+        {
+            return (false, null, "Khong tim thay yeu cau xac minh.");
+        }
+
+        return (true, MapDetailDto(request), null);
+    }
+    private static VerificationRequestDetailDto MapDetailDto(Nanny_BackEnd.Models.VerificationRequest request)
+    {
+        return new VerificationRequestDetailDto
+        {
+            Id = request.Id,
+            NannyProfileId = request.NannyProfileId,
+            Status = request.Status,
+            RejectionReason = request.RejectionReason,
+            CreatedAt = request.CreatedAt,
+            ReviewedAt = request.ReviewedAt,
+            ReviewedBy = request.ReviewedBy,
+            ReviewedByName = request.ReviewedByNavigation == null
+                ? null
+                : $"{request.ReviewedByNavigation.FirstName} {request.ReviewedByNavigation.LastName}".Trim(),
+            NannyUserId = request.NannyProfile.UserId,
+            NannyFirstName = request.NannyProfile.User.FirstName,
+            NannyLastName = request.NannyProfile.User.LastName,
+            NannyEmail = request.NannyProfile.User.Email,
+            NannyPhoneNumber = request.NannyProfile.User.PhoneNumber,
+            NannyAvatarUrl = request.NannyProfile.User.AvatarUrl,
+            NannyCity = request.NannyProfile.User.City,
+            NannyAddress = request.NannyProfile.User.Address,
+            NannyDistrict = request.NannyProfile.User.District,
+            NannyWard = request.NannyProfile.User.Ward,
+            NannyGender = request.NannyProfile.User.Gender,
+            NannyDateOfBirth = request.NannyProfile.User.DateOfBirth,
+            Bio = request.NannyProfile.Bio,
+            YearsOfExperience = request.NannyProfile.YearsOfExperience,
+            EducationLevel = (int?)request.NannyProfile.EducationLevel,
+            VerificationStatus = (int)request.NannyProfile.VerificationStatus,
+            ExpectedSalaryMin = request.NannyProfile.ExpectedSalaryMin,
+            ExpectedSalaryMax = request.NannyProfile.ExpectedSalaryMax,
+            SalaryType = request.NannyProfile.SalaryType,
+            MaxTravelDistance = request.NannyProfile.MaxTravelDistance,
+            Skills = request.NannyProfile.NannySkills
+                .Where(skill => !skill.IsDeleted)
+                .OrderBy(skill => skill.Skill.Category)
+                .ThenBy(skill => skill.Skill.Name)
+                .Select(skill => new VerificationSkillDto
+                {
+                    Id = skill.Id,
+                    SkillId = skill.SkillId,
+                    SkillName = skill.Skill.Name,
+                    SkillCategory = skill.Skill.Category,
+                    ProficiencyLevel = skill.ProficiencyLevel
+                }).ToList(),
+            Certificates = request.NannyProfile.NannyCertificates
+                .Where(certificate => !certificate.IsDeleted)
+                .OrderByDescending(certificate => certificate.IssueDate)
+                .ThenBy(certificate => certificate.Name)
+                .Select(certificate => new VerificationCertificateDto
+                {
+                    Id = certificate.Id,
+                    Name = certificate.Name,
+                    IssuingOrganization = certificate.IssuingOrganization,
+                    IssueDate = certificate.IssueDate,
+                    ExpiryDate = certificate.ExpiryDate,
+                    CertificateUrl = certificate.CertificateUrl,
+                    VerificationStatus = certificate.VerificationStatus
+                }).ToList(),
+            Documents = request.VerificationDocuments
+                .Select(document => new VerificationDocumentDto
+                {
+                    Id = document.Id,
+                    DocumentType = document.DocumentType,
+                    DocumentUrl = document.DocumentUrl,
+                    FileName = document.FileName,
+                    FileSize = document.FileSize
+                }).ToList()
+        };
+    }
+
+    // Nanny submit new verification request
+    public async Task<(bool Success, string Message)> NannySubmitVerificationRequestAsync(Guid userId, SubmitVerificationRequestDto request)
+    {
+        var profile = await _nannyVerificationRequestRepo.GetNannyProfileByUserIdAsync(userId);
+        if (profile == null)
+        {
+            return (false, "Khong tim thay ho so Nanny.");
+        }
+
+        var existingRequests = await _nannyVerificationRequestRepo.GetRequestsByNannyProfileAsync(profile.Id);
+        if (existingRequests.Any(existingRequest => existingRequest.Status == (int)Enums.NannyVerificationRequestStatus.Pending))
+        {
+            return (false, "Ban da co mot yeu cau xac minh dang cho duyet.");
+        }
+
+        if (request.Documents == null || !request.Documents.Any())
+        {
+            return (false, "Ban phai tai len it nhat mot tai lieu.");
+        }
+
+        var verificationRequest = new Nanny_BackEnd.Models.VerificationRequest
         {
             Id = Guid.NewGuid(),
             NannyProfileId = profile.Id,
@@ -181,29 +177,66 @@ public class VerificationRequestService
             CreatedBy = userId
         };
 
-        if (request.Documents == null || !request.Documents.Any())
+        foreach (var document in request.Documents)
         {
-            return (false, "Bạn phải tải lên ít nhất một tài liệu.");
-        }
+            var documentType = Enum.IsDefined(typeof(VerificationDocumentType), document.DocumentType)
+                ? document.DocumentType
+                : (int)VerificationDocumentType.IdentityCard;
 
-        foreach (var doc in request.Documents)
-        {
-            verificationReq.VerificationDocuments.Add(new Nanny_BackEnd.Models.VerificationDocument
+            verificationRequest.VerificationDocuments.Add(new Nanny_BackEnd.Models.VerificationDocument
             {
                 Id = Guid.NewGuid(),
-                VerificationRequestId = verificationReq.Id,
-                DocumentType = 1, // DocumentType is 1 as requested
-                DocumentUrl = doc.DocumentUrl,
-                FileName = doc.FileName,
-                FileSize = doc.FileSize,
+                VerificationRequestId = verificationRequest.Id,
+                DocumentType = documentType,
+                DocumentUrl = document.DocumentUrl,
+                FileName = document.FileName,
+                FileSize = document.FileSize,
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = userId
             });
         }
 
-        _repo.AddRequest(verificationReq);
-        await _repo.SaveChangesAsync();
+        _nannyVerificationRequestRepo.AddRequest(verificationRequest);
 
-        return (true, "Gửi yêu cầu xác minh thành công.");
+        profile.VerificationStatus = (int)VerificationStatus.Pending;
+        profile.VerifiedAt = DateTime.UtcNow;
+        profile.VerifiedBy = null;
+        profile.UpdatedAt = DateTime.UtcNow;
+        profile.UpdatedBy = userId;
+
+        await _nannyVerificationRequestRepo.SaveChangesAsync();
+
+        await _notificationService.createNotificationForModerators(
+            "Co yeu cau xac minh moi",
+            "Mot nanny vua gui yeu cau xac minh moi va dang cho moderator xem xet.",
+            NotificationTypes.VerificationRequestSubmitted,
+            verificationRequest.Id,
+            "VerificationRequest",
+            userId);
+
+        return (true, "Gui yeu cau xac minh thanh cong.");
+    }
+
+    private static VerificationRequestListDto MapListDto(Nanny_BackEnd.Models.VerificationRequest request)
+    {
+        return new VerificationRequestListDto
+        {
+            Id = request.Id,
+            NannyProfileId = request.NannyProfileId,
+            Status = request.Status,
+            CreatedAt = request.CreatedAt,
+            ReviewedAt = request.ReviewedAt,
+            ReviewedBy = request.ReviewedBy,
+            ReviewedByName = request.ReviewedByNavigation == null
+                ? null
+                : $"{request.ReviewedByNavigation.FirstName} {request.ReviewedByNavigation.LastName}".Trim(),
+            RejectionReason = request.RejectionReason,
+            NannyUserId = request.NannyProfile.UserId,
+            NannyFirstName = request.NannyProfile.User.FirstName,
+            NannyLastName = request.NannyProfile.User.LastName,
+            NannyEmail = request.NannyProfile.User.Email,
+            NannyAvatarUrl = request.NannyProfile.User.AvatarUrl,
+            NannyCity = request.NannyProfile.User.City
+        };
     }
 }

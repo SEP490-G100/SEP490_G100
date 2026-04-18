@@ -2,14 +2,19 @@
 @{
     Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
     ViewData["Title"] = "Blog Category Detail";
+    var nameError = ViewData.ModelState["Name"]?.Errors.Count > 0
+        ? ViewData.ModelState["Name"]?.Errors[0].ErrorMessage
+        : null;
+    var slugError = ViewData.ModelState["Slug"]?.Errors.Count > 0
+        ? ViewData.ModelState["Slug"]?.Errors[0].ErrorMessage
+        : null;
 }
 
-<!-- PAGE HEADER -->
 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
     <div>
-        <span class="section-label">📂 Content Management</span>
+        <span class="section-label">Content Management</span>
         <h1 class="page-title mt-2">Blog Category <span class="gradient-text">Detail & Edit</span></h1>
-        <p class="page-subtitle">Update category name and slug.</p>
+        <p class="page-subtitle">Update category name. The slug will be generated automatically from the name.</p>
     </div>
     <a href="/Moderator/ManageBlogCategory" class="btn-outline flex-shrink-0">
         <span class="material-icons-round text-base">arrow_back</span>
@@ -17,36 +22,11 @@
     </a>
 </div>
 
-<!-- Global error -->
-<div id="globalError" class="hidden mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2">
-    <span class="material-icons-round text-base">error_outline</span>
-    <span id="globalErrorMsg"></span>
-</div>
-
-@if (TempData["Error"] != null)
-{
-    <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2">
-        <span class="material-icons-round text-base">error_outline</span>
-        @TempData["Error"]
-    </div>
-}
-@if (TempData["Success"] != null)
-{
-    <div class="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2">
-        <span class="material-icons-round text-base">check_circle_outline</span>
-        @TempData["Success"]
-    </div>
-}
-
 <form method="post" action="/Moderator/ViewBlogCategoryDetail/@Model.Id" id="catEditForm" novalidate>
     @Html.AntiForgeryToken()
 
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-
-        <!-- LEFT — Fields -->
         <div class="xl:col-span-2 space-y-5">
-
-            <!-- Read-only Info -->
             <div class="content-card p-0 fade-in-up">
                 <div class="card-header">
                     <div class="flex items-center gap-2">
@@ -95,69 +75,61 @@
                 </div>
             </div>
 
-            <!-- Editable Content -->
             <div class="content-card p-0 fade-in-up" style="animation-delay:.05s;">
                 <div class="card-header">
                     <div class="flex items-center gap-2">
                         <span class="material-icons-round text-blue-400">edit</span>
-                        <h2>Edit Content <span class="text-xs text-green-500 font-semibold ml-1">✏️ editable</span></h2>
+                        <h2>Edit Content <span class="text-xs text-green-500 font-semibold ml-1">editable</span></h2>
                     </div>
                 </div>
                 <div class="p-5 space-y-4">
-
-                    <!-- Name -->
                     <div class="field-group">
                         <label class="field-label">
                             Name <span class="text-red-400">*</span>
-                            <span class="text-blue-400 text-[10px] ml-1">✏️ editable</span>
+                            <span class="text-blue-400 text-[10px] ml-1">editable</span>
                         </label>
                         <div class="relative">
                             <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-base pointer-events-none">label</span>
                             <input id="nameInput" name="Name" type="text"
                                    value="@Model.Name"
                                    placeholder="e.g. Parenting Tips"
-                                   class="search-input !pl-9 w-full" />
+                                   class="search-input !pl-9 w-full @(!string.IsNullOrWhiteSpace(nameError) ? "!border-red-400" : "")" />
                         </div>
-                        <p id="nameError" class="hidden text-xs text-red-500 mt-0.5 flex items-center gap-1">
+                        <p id="nameError" class="text-xs text-red-500 mt-0.5 flex items-center gap-1 @((string.IsNullOrWhiteSpace(nameError) ? "hidden" : ""))">
                             <span class="material-icons-round text-xs">error</span>
-                            Name không được để trống.
+                            @(nameError ?? "Name is required.")
                         </p>
                     </div>
 
-                    <!-- Slug -->
                     <div class="field-group">
                         <label class="field-label">
                             Slug <span class="text-red-400">*</span>
-                            <span class="text-blue-400 text-[10px] ml-1">✏️ editable</span>
+                            <span class="text-gray-400 text-[10px] ml-1">auto-generated from name</span>
                         </label>
                         <div class="relative">
                             <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-base pointer-events-none">link</span>
                             <input id="slugInput" name="Slug" type="text"
                                    value="@Model.Slug"
                                    placeholder="e.g. parenting-tips"
-                                   class="search-input !pl-9 w-full" />
+                                   class="search-input !pl-9 w-full bg-gray-50 text-gray-500 @(!string.IsNullOrWhiteSpace(slugError) ? "!border-red-400" : "")"
+                                   readonly />
                         </div>
-                        <p id="slugError" class="hidden text-xs text-red-500 mt-0.5 flex items-center gap-1">
+                        <p id="slugError" class="text-xs text-red-500 mt-0.5 flex items-center gap-1 @((string.IsNullOrWhiteSpace(slugError) ? "hidden" : ""))">
                             <span class="material-icons-round text-xs">error</span>
-                            Slug không được để trống.
+                            @(slugError ?? "Slug is required.")
                         </p>
                     </div>
-
                 </div>
             </div>
-
         </div>
 
-        <!-- RIGHT — Summary + Actions -->
         <div class="space-y-5">
-
-            <!-- Summary card -->
             <div class="content-card p-6 text-center fade-in-up" style="animation-delay:.08s;">
                 <div class="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-4 ring-4 ring-blue-100">
                     <span class="material-icons-round text-3xl text-blue-400">category</span>
                 </div>
-                <h3 class="font-bold text-gray-900 text-sm leading-tight px-2">@Model.Name</h3>
-                <p class="text-xs text-gray-400 mt-1 font-mono">@Model.Slug</p>
+                <h3 id="summaryName" class="font-bold text-gray-900 text-sm leading-tight px-2">@Model.Name</h3>
+                <p id="summarySlug" class="text-xs text-gray-400 mt-1 font-mono">@Model.Slug</p>
                 <div class="mt-3 pt-3 border-t border-gray-100">
                     <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-50 text-orange-500 border border-orange-100">
                         @Model.BlogCount blog@(Model.BlogCount == 1 ? "" : "s")
@@ -165,7 +137,6 @@
                 </div>
             </div>
 
-            <!-- Stat card -->
             <div class="content-card p-4 space-y-3 fade-in-up" style="animation-delay:.1s;">
                 <div>
                     <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-0.5">Sort Order</p>
@@ -177,7 +148,6 @@
                 </div>
             </div>
 
-            <!-- Actions -->
             <div class="content-card p-4 space-y-2.5 fade-in-up" style="animation-delay:.15s;">
                 <button type="button" onclick="submitEditForm()" class="btn-primary w-full justify-center">
                     <span class="material-icons-round text-base">save</span>
@@ -187,35 +157,10 @@
                     <span class="material-icons-round text-base">close</span>
                     Cancel
                 </a>
-                <hr class="border-gray-100 my-1" />
-                <button type="button" onclick="confirmDelete('@Model.Id')" class="btn-danger w-full justify-center">
-                    <span class="material-icons-round text-base">delete_forever</span>
-                    Delete Category
-                </button>
             </div>
-
         </div>
     </div>
 </form>
-
-<!-- DELETE MODAL -->
-<div id="deleteModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeModal('deleteModal')">
-    <div class="modal-box">
-        <div class="flex items-center gap-3 mb-4">
-            <div class="w-12 h-12 rounded-2xl flex items-center justify-center" style="background:#FEE2E2;">
-                <span class="material-icons-round text-2xl" style="color:#EF4444;">delete_forever</span>
-            </div>
-            <div>
-                <h3 class="text-lg font-bold text-gray-900">Delete Blog Category</h3>
-                <p class="text-sm text-gray-400">This action cannot be undone</p>
-            </div>
-        </div>
-        <p class="text-sm text-gray-600 mb-6 bg-gray-50 rounded-2xl p-4 border border-gray-100 leading-relaxed">
-            Are you sure you want to delete category <strong>@Model.Name</strong>? It will be soft-deleted and hidden from users.
-        </p>
-        <div id="deleteFormContainer" class="flex gap-2"></div>
-    </div>
-</div>
 
 <style>
 .field-group { display:flex; flex-direction:column; gap:.4rem; }
@@ -226,25 +171,44 @@
     border-radius:.85rem; padding:.6rem .9rem;
     font-size:.875rem; color:#374151; min-height:2.6rem;
 }
-.btn-danger {
-    display:inline-flex; align-items:center; gap:.4rem;
-    padding:.55rem 1.1rem; border-radius:.85rem;
-    font-size:.85rem; font-weight:700; cursor:pointer; transition:all .15s;
-    background:#FEE2E2; color:#EF4444; border:1.5px solid #FECACA;
-}
-.btn-danger:hover { background:#FCA5A5; border-color:#F87171; }
 </style>
 
 @section Scripts {
 <script>
+function slugify(text) {
+    return (text || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/đ/g, 'd')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .replace(/-{2,}/g, '-');
+}
+
+function syncSlugFromName() {
+    var name = document.getElementById('nameInput').value || '';
+    var slug = slugify(name);
+    document.getElementById('slugInput').value = slug;
+    document.getElementById('summaryName').textContent = name.trim() || '@Model.Name';
+    document.getElementById('summarySlug').textContent = slug || '@Model.Slug';
+}
+
 function setErr(inputId, errId, hasError) {
-    var el  = document.getElementById(inputId);
+    var el = document.getElementById(inputId);
     var err = document.getElementById(errId);
-    if (hasError) { el.classList.add('!border-red-400'); err.classList.remove('hidden'); }
-    else          { el.classList.remove('!border-red-400'); err.classList.add('hidden'); }
+    if (hasError) {
+        el.classList.add('!border-red-400');
+        err.classList.remove('hidden');
+    } else {
+        el.classList.remove('!border-red-400');
+        err.classList.add('hidden');
+    }
 }
 
 function submitEditForm() {
+    syncSlugFromName();
+
     var name = (document.getElementById('nameInput').value || '').trim();
     var slug = (document.getElementById('slugInput').value || '').trim();
 
@@ -252,34 +216,22 @@ function submitEditForm() {
     setErr('slugInput', 'slugError', !slug);
 
     if (!name || !slug) {
-        var parts = [];
-        if (!name) parts.push('Name');
-        if (!slug) parts.push('Slug');
-        document.getElementById('globalErrorMsg').textContent = parts.join(' và ') + ' không được để trống.';
-        document.getElementById('globalError').classList.remove('hidden');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
     }
-    document.getElementById('globalError').classList.add('hidden');
+
     document.getElementById('catEditForm').submit();
 }
 
-['nameInput','slugInput'].forEach(function(id) {
-    document.getElementById(id).addEventListener('input', function() {
-        if (this.value.trim()) setErr(id, id === 'nameInput' ? 'nameError' : 'slugError', false);
-    });
+document.getElementById('nameInput').addEventListener('input', function() {
+    syncSlugFromName();
+    if (this.value.trim()) {
+        setErr('nameInput', 'nameError', false);
+    }
+    if (document.getElementById('slugInput').value.trim()) {
+        setErr('slugInput', 'slugError', false);
+    }
 });
 
-function confirmDelete(id) {
-    document.getElementById('deleteFormContainer').innerHTML =
-        '<button onclick="closeModal(\'deleteModal\')" class="btn-outline flex-1 justify-center">Cancel</button>' +
-        '<form method="post" action="/Moderator/DeleteBlogCategory" class="flex-1 flex">' +
-        '@Html.AntiForgeryToken()'.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&') +
-        '<input type="hidden" name="id" value="' + id + '" />' +
-        '<button type="submit" class="btn-danger w-full justify-center">Confirm Delete</button>' +
-        '</form>';
-    document.getElementById('deleteModal').classList.remove('hidden');
-}
-function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+syncSlugFromName();
 </script>
 }

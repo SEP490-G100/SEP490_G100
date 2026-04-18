@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -22,7 +23,9 @@ public class SearchController : Controller
     private readonly IHubContext<NotificationHub> _notificationHub;
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
 
-    public SearchController(IHttpClientFactory httpFactory, IHubContext<NotificationHub> notificationHub)
+    public SearchController(
+        IHttpClientFactory httpFactory,
+        IHubContext<NotificationHub> notificationHub)
     {
         _http = httpFactory.CreateClient("BackendApi");
         _notificationHub = notificationHub;
@@ -192,6 +195,28 @@ public class SearchController : Controller
         try
         {
             var response = await _http.PostAsJsonAsync("/api/job-postings", body);
+            if (response.IsSuccessStatusCode)
+            {
+                await _notificationHub.Clients.Group("role:Moderator").SendAsync("notification:new", new
+                {
+                    type = "job-posting-review-required",
+                    title = "Co bai dang moi can duyet",
+                    message = "Mot parent vua tao job posting moi dang cho moderator duyet.",
+                    toastType = "info"
+                });
+
+                var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (!string.IsNullOrWhiteSpace(currentUserId))
+                {
+                    await _notificationHub.Clients.Group($"user:{currentUserId}").SendAsync("notification:new", new
+                    {
+                        type = "job-posting-pending",
+                        title = "Bai dang da duoc tao",
+                        message = "Bai dang cua ban dang cho moderator duyet.",
+                        toastType = "success"
+                    });
+                }
+            }
             return await ProxyApiResponse(response);
         }
         catch (Exception ex)

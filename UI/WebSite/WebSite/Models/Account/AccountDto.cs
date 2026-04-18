@@ -40,7 +40,7 @@ public class AccountListResponse
     public int TotalPages => TotalCount == 0 ? 1 : (int)Math.Ceiling((double)TotalCount / PageSize);
 }
 
-public class EditAccountRequest
+public class ViewAccountDetailRequest
 {
     public int Status { get; set; }
     public string? PhoneNumber { get; set; }

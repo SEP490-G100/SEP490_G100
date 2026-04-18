@@ -71,6 +71,18 @@ public class BlogListResponse
     public int TotalPages => (int)Math.Ceiling(TotalCount / (double)Math.Max(PageSize, 1));
 }
 
+public class BlogCategoryOptionDto
+{
+    [JsonPropertyName("id")]
+    public Guid Id { get; set; }
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = null!;
+
+    [JsonPropertyName("slug")]
+    public string Slug { get; set; } = null!;
+}
+
 public class CreateBlogRequest
 {
     [JsonPropertyName("title")]
