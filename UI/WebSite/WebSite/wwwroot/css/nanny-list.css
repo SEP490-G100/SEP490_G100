@@ -402,6 +402,11 @@
     color: #c2410c;
 }
 
+.nanny-chip.hidden,
+.nanny-pill.hidden {
+    display: none !important;
+}
+
 .nanny-card__muted {
     color: #94a3b8;
     font-size: .82rem;
