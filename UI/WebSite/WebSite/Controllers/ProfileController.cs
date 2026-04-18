@@ -345,8 +345,8 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
     if (model.AvatarFile != null && model.AvatarFile.Length > 0)
     {
         var ext = Path.GetExtension(model.AvatarFile.FileName)?.ToLowerInvariant();
-        if (ext != ".jpg" && ext != ".png")
-            ModelState.AddModelError(nameof(model.AvatarFile), "Chi cho phep anh .jpg hoac .png.");
+        if (ext != ".jpg" && ext != ".jpeg" && ext != ".png")
+            ModelState.AddModelError(nameof(model.AvatarFile), "Chi cho phep anh .jpg, .jpeg hoac .png.");
     }
 
     if (User.IsInRole("Nanny") && !model.DateOfBirth.HasValue)
@@ -358,8 +358,8 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
         var today = DateOnly.FromDateTime(DateTime.Today);
         var age = today.Year - model.DateOfBirth.Value.Year;
         if (model.DateOfBirth.Value > today.AddYears(-age)) age--;
-        if (age < 18)
-            ModelState.AddModelError(nameof(model.DateOfBirth), "Nanny phai tu 18 tuoi tro len.");
+        if (age <= 30)
+            ModelState.AddModelError(nameof(model.DateOfBirth), "Nanny phai lon hon 30 tuoi.");
     }
 
     if (!ModelState.IsValid)

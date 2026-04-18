@@ -92,9 +92,35 @@ public class ProfileService
         return await BuildProfileDtoAsync(userId);
     }
 
-    public async Task<PersonalProfileDto> GetPublicProfileAsync(Guid userId)
+    public async Task<PersonalProfileDto> GetPublicProfileAsync(Guid requesterUserId, Guid targetUserId)
     {
-        return await BuildProfileDtoAsync(userId);
+        var profile = await BuildProfileDtoAsync(targetUserId);
+
+        if (requesterUserId == targetUserId)
+            return profile;
+
+        // Hide personally identifiable details when viewing another user's profile.
+        profile.Email = string.Empty;
+        profile.PhoneNumber = null;
+        profile.DateOfBirth = null;
+        profile.Address = null;
+        profile.Ward = null;
+        profile.Latitude = null;
+        profile.Longitude = null;
+
+        var isTargetParent = profile.Roles.Any(r => r.Equals("parent", StringComparison.OrdinalIgnoreCase));
+        if (isTargetParent)
+        {
+            profile.FamilyDescription = null;
+            profile.NumberOfChildren = null;
+            profile.Children = null;
+            profile.SpecialNeeds = null;
+            profile.Notes = null;
+            profile.Characteristic = null;
+            profile.ChildAgeGroup = null;
+        }
+
+        return profile;
     }
 
     private async Task<PersonalProfileDto> BuildProfileDtoAsync(Guid userId)
@@ -306,8 +332,8 @@ public class ProfileService
             var dob = dobToValidate.Value;
             var age = today.Year - dob.Year;
             if (dob > today.AddYears(-age)) age--;
-            if (age < 18)
-                throw new InvalidOperationException("Nanny phải đủ 18 tuổi trở lên.");
+            if (age <= 30)
+                throw new InvalidOperationException("Nanny phai lon hon 30 tuoi.");
         }
 
         // Map required core fields
@@ -522,8 +548,13 @@ public class ProfileService
     public async Task<ChildProfileDto> CreateChildProfileAsync(Guid userId, CreateChildProfileRequest request)
     {
         var roles = await _userRepo.GetRolesAsync(userId);
-        if (!roles.Any(r => r.ToLower() == "parent"))
+        if (!roles.Any(r => r.Equals("parent", StringComparison.OrdinalIgnoreCase)))
             throw new UnauthorizedAccessException("Chá»‰ dÃ nh cho Parent.");
+
+        var normalizedSpecialNeeds = NormalizeOptionalText(request.SpecialNeeds, 1000, "Nhu cầu đặc biệt");
+        var normalizedNotes = NormalizeOptionalText(request.Notes, 1000, "Ghi chú");
+        var normalizedCharacteristic = NormalizeOptionalText(request.Characteristic, 1000, "Đặc điểm tính cách");
+        var childAgeGroup = ValidateAndGetChildAgeGroup(request.ChildAgeGroup);
 
         var parentProfile = await _parentRepo.FindByUserIdAsync(userId);
         if (parentProfile == null)
@@ -537,10 +568,10 @@ public class ProfileService
         {
             Id = Guid.NewGuid(),
             ParentProfileId = parentProfile.Id,
-            SpecialNeeds = request.SpecialNeeds,
-            Notes = request.Notes,
-            Characteristic = request.Characteristic,
-            ChildAgeGroup = (byte)request.ChildAgeGroup,
+            SpecialNeeds = normalizedSpecialNeeds,
+            Notes = normalizedNotes,
+            Characteristic = normalizedCharacteristic,
+            ChildAgeGroup = childAgeGroup,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = userId
         };
@@ -553,16 +584,25 @@ public class ProfileService
 
     public async Task<ChildProfileDto> UpdateChildProfileAsync(Guid userId, Guid childId, UpdateChildProfileRequest request)
     {
+        var roles = await _userRepo.GetRolesAsync(userId);
+        if (!roles.Any(r => r.Equals("parent", StringComparison.OrdinalIgnoreCase)))
+            throw new UnauthorizedAccessException("Chá»‰ dÃ nh cho Parent.");
+
+        var normalizedSpecialNeeds = NormalizeOptionalText(request.SpecialNeeds, 1000, "Nhu cầu đặc biệt");
+        var normalizedNotes = NormalizeOptionalText(request.Notes, 1000, "Ghi chú");
+        var normalizedCharacteristic = NormalizeOptionalText(request.Characteristic, 1000, "Đặc điểm tính cách");
+        var childAgeGroup = ValidateAndGetChildAgeGroup(request.ChildAgeGroup);
+
         var parentProfile = await _parentRepo.FindByUserIdAsync(userId)
             ?? throw new InvalidOperationException("KhÃ´ng tÃ¬m tháº¥y há»“ sÆ¡ Parent.");
 
         var child = await _childRepo.FindByIdAndParentAsync(childId, parentProfile.Id)
             ?? throw new InvalidOperationException("KhÃ´ng tÃ¬m tháº¥y con hoáº·c khÃ´ng cÃ³ quyá»n.");
 
-        child.SpecialNeeds = request.SpecialNeeds;
-        child.Notes = request.Notes;
-        child.Characteristic = request.Characteristic;
-        child.ChildAgeGroup = (byte)request.ChildAgeGroup;
+        child.SpecialNeeds = normalizedSpecialNeeds;
+        child.Notes = normalizedNotes;
+        child.Characteristic = normalizedCharacteristic;
+        child.ChildAgeGroup = childAgeGroup;
         child.UpdatedAt = DateTime.UtcNow;
         child.UpdatedBy = userId;
 
@@ -574,6 +614,10 @@ public class ProfileService
 
     public async Task DeleteChildProfileAsync(Guid userId, Guid childId)
     {
+        var roles = await _userRepo.GetRolesAsync(userId);
+        if (!roles.Any(r => r.Equals("parent", StringComparison.OrdinalIgnoreCase)))
+            throw new UnauthorizedAccessException("Chá»‰ dÃ nh cho Parent.");
+
         var parentProfile = await _parentRepo.FindByUserIdAsync(userId)
             ?? throw new InvalidOperationException("KhÃ´ng tÃ¬m tháº¥y há»“ sÆ¡ Parent.");
 
@@ -598,6 +642,26 @@ public class ProfileService
         ChildAgeGroup = (byte?)c.ChildAgeGroup,
         CreatedAt = c.CreatedAt
     };
+
+    private static byte ValidateAndGetChildAgeGroup(ChildAgeGroup? childAgeGroup)
+    {
+        if (!childAgeGroup.HasValue || !Enum.IsDefined(typeof(ChildAgeGroup), childAgeGroup.Value))
+            throw new InvalidOperationException("Nhóm tuổi của trẻ không hợp lệ.");
+
+        return (byte)childAgeGroup.Value;
+    }
+
+    private static string? NormalizeOptionalText(string? value, int maxLength, string fieldName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        var normalized = value.Trim();
+        if (normalized.Length > maxLength)
+            throw new InvalidOperationException($"{fieldName} không được vượt quá {maxLength} ký tự.");
+
+        return normalized;
+    }
     
     // ────────────────────────────────────────────────────────────────────
     // Tính phần trăm hoàn thiện hồ sơ

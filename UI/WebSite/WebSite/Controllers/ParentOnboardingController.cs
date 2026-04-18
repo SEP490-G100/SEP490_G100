@@ -257,8 +257,8 @@ public class ParentOnboardingController : Controller
             var childSuccess = await CreateChildAsync(model);
             if (!childSuccess)
             {
-                // Có thể API trả về 500 do DB schema mismatch, cứ cho user qua buớc này
-                // (Chấp nhận fail ở bước thêm child để user có thể vào được Homepage)
+                ModelState.AddModelError(string.Empty, "Tao ho so con that bai. Vui long kiem tra thong tin va thu lai.");
+                return View(model);
             }
 
             return RedirectToAction("Index", "Home");
@@ -267,3 +267,4 @@ public class ParentOnboardingController : Controller
         return View(model);
     }
 }
+

@@ -3,17 +3,15 @@
 @model CreateChildProfileViewModel
 
 @{
-    ViewData["Title"] = "Thêm con em";
+    ViewData["Title"] = "Them con em";
 }
-
 
 <div class="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50/30 to-white dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-3xl mx-auto">
-        <!-- Header -->
         <div class="mb-8 text-center sm:text-left">
-            <span class="section-label mx-auto sm:mx-0">👶 Gia đình mở rộng</span>
+            <span class="section-label mx-auto sm:mx-0">Gia dinh mo rong</span>
             <h1 class="text-4xl font-bold text-gray-900 dark:text-white mt-3" style="font-family:'Quicksand',sans-serif">
-                Thêm <span class="gradient-text">con em</span> mới
+                Them <span class="gradient-text">con em</span> moi
             </h1>
             <div class="section-divider left mx-auto sm:mx-0 mt-4"></div>
         </div>
@@ -22,97 +20,80 @@
             <form method="post" class="space-y-8" data-nm-unified-skip="true">
                 @Html.AntiForgeryToken()
 
-                <!-- Basic Information -->
                 <div class="space-y-6">
                     <h3 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3" style="font-family:'Quicksand',sans-serif">
                         <div class="w-10 h-10 bg-orange-100 dark:bg-orange-950/30 rounded-xl flex items-center justify-center text-orange-600 dark:text-orange-400">
                             <span class="material-icons-round">person</span>
                         </div>
-                        Thông tin cơ bản
+                        Thong tin co ban
                     </h3>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <!-- Child Age Group -->
                         <div class="space-y-2">
                             <label for="ChildAgeGroup" class="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-widest ml-1 pointer-events-none">
-                                🎂 Nhóm tuổi
+                                Nhom tuoi
                             </label>
                             <select class="w-full px-5 py-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none text-gray-900 dark:text-white font-medium"
                                     id="ChildAgeGroup" name="ChildAgeGroup">
-                                <option value="">-- Chọn nhóm tuổi --</option>
-                                <option value="1">Em bé (0-1 tuổi)</option>
-                                <option value="2">Toddler (1-3 tuổi)</option>
-                                <option value="3">Mầm non (3-5 tuổi)</option>
-                                <option value="4">Học sinh tiểu học (6-12 tuổi)</option>
+                                <option value="">-- Chon nhom tuoi --</option>
+                                <option value="0">Em be (0-1 tuoi)</option>
+                                <option value="1">Toddler (1-3 tuoi)</option>
+                                <option value="2">Mam non (3-5 tuoi)</option>
+                                <option value="3">Hoc sinh tieu hoc (6-12 tuoi)</option>
                             </select>
                             @Html.ValidationMessageFor(m => m.ChildAgeGroup, "", new { @class = "text-red-500 text-sm font-medium mt-1 ml-1" })
                         </div>
                     </div>
                 </div>
 
-                <!-- Health & Special Information -->
                 <div class="pt-8 border-t border-gray-100 dark:border-gray-800 space-y-8">
                     <h3 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3" style="font-family:'Quicksand',sans-serif">
                         <div class="w-10 h-10 bg-blue-100 dark:bg-blue-950/30 rounded-xl flex items-center justify-center text-blue-600 dark:text-blue-400">
                             <span class="material-icons-round">health_and_safety</span>
                         </div>
-                        Thông tin chi tiết
+                        Thong tin chi tiet
                     </h3>
 
                     <div class="grid grid-cols-1 gap-8">
-                        <!-- Special Needs -->
                         <div class="space-y-2">
                             <label for="SpecialNeeds" class="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-widest ml-1 pointer-events-none">
-                                🎯 Nhu cầu đặc biệt (nếu có)
+                                Nhu cau dac biet (neu co)
                             </label>
                             <textarea class="w-full px-5 py-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none text-gray-900 dark:text-white font-medium resize-none shadow-sm"
-                                      id="SpecialNeeds" name="SpecialNeeds" rows="3" placeholder="Mô tả các nhu cầu đặc biệt nếu có...">@Model.SpecialNeeds</textarea>
+                                      id="SpecialNeeds" name="SpecialNeeds" rows="3" placeholder="Mo ta nhu cau dac biet neu co...">@Model.SpecialNeeds</textarea>
                             @Html.ValidationMessageFor(m => m.SpecialNeeds, "", new { @class = "text-red-500 text-sm font-medium mt-1 ml-1" })
                         </div>
 
-                        <!-- Characteristic -->
                         <div class="space-y-2">
                             <label for="Characteristic" class="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-widest ml-1 pointer-events-none">
-                                ✨ Đặc điểm tính cách
+                                Dac diem tinh cach
                             </label>
                             <textarea class="w-full px-5 py-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none text-gray-900 dark:text-white font-medium resize-none shadow-sm"
-                                      id="Characteristic" name="Characteristic" rows="3" placeholder="Mô tả đặc điểm tính cách của con...">@Model.Characteristic</textarea>
+                                      id="Characteristic" name="Characteristic" rows="3" placeholder="Mo ta dac diem tinh cach cua con...">@Model.Characteristic</textarea>
                             @Html.ValidationMessageFor(m => m.Characteristic, "", new { @class = "text-red-500 text-sm font-medium mt-1 ml-1" })
                         </div>
 
-                        <!-- Notes -->
                         <div class="space-y-2">
                             <label for="Notes" class="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-widest ml-1 pointer-events-none">
-                                📝 Ghi chú thêm
+                                Ghi chu them
                             </label>
                             <textarea class="w-full px-5 py-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none text-gray-900 dark:text-white font-medium resize-none shadow-sm"
-                                      id="Notes" name="Notes" rows="4" placeholder="Các thông tin thêm về con em...">@Model.Notes</textarea>
+                                      id="Notes" name="Notes" rows="4" placeholder="Cac thong tin them ve con em...">@Model.Notes</textarea>
                             @Html.ValidationMessageFor(m => m.Notes, "", new { @class = "text-red-500 text-sm font-medium mt-1 ml-1" })
                         </div>
                     </div>
-
-                    <!-- Characteristic -->
-                    <div>
-                        <label for="Characteristic" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                            ✨ Đặc điểm tính cách
-                        </label>
-                        <textarea class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none"
-                                  id="Characteristic" name="Characteristic" rows="3" placeholder="Mô tả đặc điểm tính cách của con...">@Model.Characteristic</textarea>
-                        @Html.ValidationMessageFor(m => m.Characteristic, "", new { @class = "text-red-500 text-sm mt-1" })
-                    </div>
                 </div>
 
-                <!-- Action Buttons -->
                 <div class="pt-8 flex flex-col sm:flex-row gap-4">
-                    <button type="submit" 
+                    <button type="submit"
                             class="flex-1 flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold rounded-2xl transition-all duration-300 shadow-glow hover:shadow-xl">
                         <span class="material-icons-round">add_circle</span>
-                        Thêm con em
+                        Them con em
                     </button>
-                    <a href="@Url.Action("Children", "Profile")" 
+                    <a href="@Url.Action("Children", "Profile")"
                        class="flex-1 flex items-center justify-center gap-2 px-8 py-4 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-bold rounded-2xl transition-all duration-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-transparent hover:border-gray-300 dark:hover:border-gray-600">
                         <span class="material-icons-round">close</span>
-                        Hủy bỏ
+                        Huy bo
                     </a>
                 </div>
             </form>
@@ -124,7 +105,7 @@
     .shadow-soft { box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05); }
     .shadow-glow { box-shadow: 0 10px 25px -5px rgba(249, 115, 22, 0.4); }
     .bg-card-dark { background-color: #111827; }
-    .gradient-text { 
+    .gradient-text {
         background: linear-gradient(135deg, #EA580C 0%, #F97316 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;

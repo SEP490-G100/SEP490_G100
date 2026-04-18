@@ -3,43 +3,39 @@
 @model List<ChildProfileViewModel>
 
 @{
-    ViewData["Title"] = "Quản lý con em";
+    ViewData["Title"] = "Quan ly con em";
 }
-
 
 <div class="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50/30 to-white dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-6xl mx-auto">
-        <!-- Header -->
         <div class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-                <span class="section-label">👨‍👩‍👧‍👦 Gia đình</span>
+                <span class="section-label">Gia dinh</span>
                 <h1 class="text-4xl font-bold text-gray-900 dark:text-white mt-3" style="font-family:'Quicksand',sans-serif">
-                    Quản lý <span class="gradient-text">con em</span>
+                    Quan ly <span class="gradient-text">con em</span>
                 </h1>
                 <div class="section-divider left mt-4"></div>
             </div>
-            <a href="@Url.Action("AddChild", "Profile")" 
+            <a href="@Url.Action("AddChild", "Profile")"
                class="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold rounded-2xl transition-all duration-300 shadow-glow hover:shadow-xl w-full sm:w-auto">
                 <span class="material-icons-round">add_circle</span>
-                Thêm con em
+                Them con em
             </a>
         </div>
 
         @if (Model?.Count > 0)
         {
-            <!-- Children Grid -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 @foreach (var child in Model)
                 {
                     <div class="bg-white/80 dark:bg-card-dark/80 rounded-3xl p-6 lg:p-8 shadow-soft border border-gray-100/80 dark:border-gray-800/50 backdrop-blur-md hover:shadow-lg transition-all duration-300 group">
-                        <!-- Child Header -->
                         <div class="flex items-start justify-between mb-6 pb-4 border-b border-gray-100 dark:border-gray-800">
                             <div class="flex items-center gap-3">
                                 <div class="w-12 h-12 bg-orange-100 dark:bg-orange-950/30 rounded-2xl flex items-center justify-center text-orange-600 dark:text-orange-400">
                                     <span class="material-icons-round text-2xl">child_care</span>
                                 </div>
                                 <h3 class="text-2xl font-bold text-gray-900 dark:text-white" style="font-family:'Quicksand',sans-serif">
-                                    Hồ sơ con
+                                    Ho so con
                                 </h3>
                             </div>
                             <div class="flex gap-2">
@@ -47,9 +43,9 @@
                                    class="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors shadow-sm">
                                     <span class="material-icons-round text-xl">edit</span>
                                 </a>
-                                <form method="post" action="@Url.Action("DeleteChild", "Profile")" 
-                                      style="display:inline" 
-                                      onsubmit="return confirm('Bạn chắc chắn muốn xóa con em này?')">
+                                <form method="post" action="@Url.Action("DeleteChild", "Profile")"
+                                      style="display:inline"
+                                      onsubmit="return confirm('Ban chac chan muon xoa con em nay?')">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="childId" value="@child.Id">
                                     <button type="submit" class="p-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors shadow-sm">
@@ -59,39 +55,34 @@
                             </div>
                         </div>
 
-                        <!-- Child Details Grid -->
                         <div class="grid grid-cols-2 gap-4">
-                            <!-- Age Group -->
                             <div class="p-4 bg-gray-50/50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700">
-                                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 pointer-events-none">👶 Nhóm tuổi</p>
+                                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 pointer-events-none">Nhom tuoi</p>
                                 <p class="font-bold text-gray-900 dark:text-white">
                                     @Html.Raw(child.ChildAgeGroup.HasValue ? WebSite.Helpers.EnumDisplayHelper.GetDisplayName(child.ChildAgeGroup.Value) : "<span class=\"text-gray-400 font-medium italic\">--</span>")
                                 </p>
                             </div>
 
-                            <!-- Created Date -->
                             <div class="p-4 bg-gray-50/50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700">
-                                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 pointer-events-none">📅 Ngày tạo</p>
+                                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 pointer-events-none">Ngay tao</p>
                                 <p class="font-bold text-gray-900 dark:text-white">@child.CreatedAt.ToString("dd/MM/yyyy")</p>
                             </div>
                         </div>
 
-                        <!-- Characteristic -->
                         @if (!string.IsNullOrEmpty(child.Characteristic))
                         {
                             <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800/50">
-                                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pointer-events-none">✨ Đặc điểm tính cách</p>
+                                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pointer-events-none">Dac diem tinh cach</p>
                                 <div class="bg-orange-50 dark:bg-orange-950/20 border border-orange-100 dark:border-orange-900/30 rounded-2xl p-4">
                                     <p class="text-sm font-medium text-orange-800 dark:text-orange-300 italic leading-relaxed">"@child.Characteristic"</p>
                                 </div>
                             </div>
                         }
 
-                        <!-- Special Needs -->
                         @if (!string.IsNullOrEmpty(child.SpecialNeeds))
                         {
                             <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800/50">
-                                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pointer-events-none">🎯 Nhu cầu đặc biệt</p>
+                                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pointer-events-none">Nhu cau dac biet</p>
                                 <div class="bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 rounded-2xl p-4">
                                     <p class="text-sm font-medium text-blue-800 dark:text-blue-300 italic leading-relaxed">"@child.SpecialNeeds"</p>
                                 </div>
@@ -103,27 +94,25 @@
         }
         else
         {
-            <!-- Empty State -->
             <div class="bg-white/80 dark:bg-card-dark/80 rounded-3xl p-12 shadow-soft border border-gray-100/80 dark:border-gray-800/50 backdrop-blur-md text-center max-w-2xl mx-auto">
                 <div class="w-24 h-24 bg-orange-50 dark:bg-orange-900/20 rounded-full flex items-center justify-center mx-auto mb-6 text-5xl">
-                    👶
+                    +
                 </div>
-                <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2" style="font-family:'Quicksand',sans-serif">Chưa có thông tin con em</h3>
-                <p class="text-gray-500 dark:text-gray-400 mb-8 max-w-sm mx-auto">Hãy bắt đầu bằng cách thêm thông tin con em để chúng tôi gợi ý bảo mẫu phù hợp nhất.</p>
-                <a href="@Url.Action("AddChild", "Profile")" 
+                <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2" style="font-family:'Quicksand',sans-serif">Chua co thong tin con em</h3>
+                <p class="text-gray-500 dark:text-gray-400 mb-8 max-w-sm mx-auto">Hay bat dau bang cach them thong tin con em de chung toi goi y bao mau phu hop nhat.</p>
+                <a href="@Url.Action("AddChild", "Profile")"
                    class="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold rounded-2xl transition-all duration-300 shadow-glow hover:shadow-xl">
                     <span class="material-icons-round text-lg">add_circle</span>
-                    <span>Thêm con em ngay</span>
+                    <span>Them con em ngay</span>
                 </a>
             </div>
         }
 
-        <!-- Back Button -->
         <div class="mt-12 text-center">
-            <a href="@Url.Action("Index", "Profile")" 
+            <a href="@Url.Action("Index", "Profile")"
                class="inline-flex items-center gap-2 px-6 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 font-bold rounded-2xl transition-all duration-300 hover:border-primary hover:text-primary shadow-sm">
                 <span class="material-icons-round text-lg">arrow_back</span>
-                <span>Quay lại hồ sơ</span>
+                <span>Quay lai ho so</span>
             </a>
         </div>
     </div>
@@ -133,57 +122,10 @@
     .shadow-soft { box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05); }
     .shadow-glow { box-shadow: 0 10px 25px -5px rgba(249, 115, 22, 0.4); }
     .bg-card-dark { background-color: #111827; }
-    .gradient-text { 
+    .gradient-text {
         background: linear-gradient(135deg, #EA580C 0%, #F97316 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         font-weight: 700;
-    }
-</style>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<style>
-    .card {
-        border-radius: 8px;
-        border: none;
-    }
-
-    .card-header {
-        border-radius: 8px 8px 0 0;
-        padding: 1.25rem;
-    }
-
-    .card-body {
-        padding: 1.5rem;
-    }
-
-    .card-footer {
-        border-top: 1px solid #e0e0e0;
-        padding: 1rem 1.5rem;
-        border-radius: 0 0 8px 8px;
-    }
-
-    .table-hover tbody tr:hover {
-        background-color: #f8f9fa;
-    }
-
-    .btn {
-        border-radius: 5px;
-        padding: 0.375rem 0.75rem;
-        font-size: 0.875rem;
-    }
-
-    .badge {
-        padding: 0.35em 0.65em;
-    }
-
-    .alert {
-        border-radius: 5px;
-        border: none;
     }
 </style>
