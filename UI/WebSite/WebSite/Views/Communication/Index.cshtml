@@ -1,4 +1,4 @@
-@{
+﻿@{
     ViewData["Title"] = "Tin nhắn";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
@@ -1136,14 +1136,15 @@
             const inputArea = document.getElementById('chatInputArea');
             const blockBtn = document.getElementById('btnBlockConv');
             const canUnblock = canCurrentUserUnblock();
-
-            banner.style.display = isBlocked ? 'block' : 'none';
-            inputArea.style.display = isBlocked ? 'none' : 'flex';
-            blockBtn.title = isBlocked ? (canUnblock ? 'Bỏ chặn' : 'Cuộc trò chuyện đang bị khóa') : 'Chặn';
-            blockBtn.querySelector('.material-icons-round').textContent = isBlocked ? 'lock_open' : 'block';
-            blockBtn.disabled = isBlocked && !canUnblock;
-            blockBtn.style.opacity = blockBtn.disabled ? '.55' : '1';
-            blockBtn.style.cursor = blockBtn.disabled ? 'not-allowed' : 'pointer';
+            if (isBlocked) {
+                if (banner) banner.style.display = 'flex';
+                if (inputArea) inputArea.style.display = 'none';
+                if (blockBtn) { blockBtn.textContent = canUnblock ? 'Mở khóa' : 'Đã bị khóa'; blockBtn.disabled = !canUnblock; }
+            } else {
+                if (banner) banner.style.display = 'none';
+                if (inputArea) inputArea.style.display = 'flex';
+                if (blockBtn) { blockBtn.textContent = 'Khóa hội thoại'; blockBtn.disabled = false; }
+            }
         }
 
         // ════════════════════════════════════════════════════════════════════
@@ -1287,9 +1288,9 @@
             </div>`;
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ════════════════════════════════════════════════════════════════════
         //  SIGNALR
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ════════════════════════════════════════════════════════════════════
         async function initSignalR() {
             if (!apiBaseUrl || typeof signalR === 'undefined') return;
             const token = '@ViewBag.AccessToken';

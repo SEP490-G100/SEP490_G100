@@ -216,7 +216,7 @@
                         return;
                     }
 
-                    window.location.href = `/Contract/Detail?hiringRecordId=${currentHiringRecordId}`;
+                    window.location.href = `/Contract/Detail/${contractId}`;
                 } catch {
                     completeError.textContent = 'Loi ket noi. Vui long thu lai.';
                     completeError.classList.remove('hidden');
