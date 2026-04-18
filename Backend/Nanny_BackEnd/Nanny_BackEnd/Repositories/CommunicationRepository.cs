@@ -80,7 +80,6 @@ public class CommunicationRepository
     public void AddMessage(Message message) => _db.Messages.Add(message);
 
     // ─── Report ───────────────────────────────────────────────────────────────
-
     public void AddReport(Report report) => _db.Reports.Add(report);
 
     // ─── Persist ──────────────────────────────────────────────────────────────

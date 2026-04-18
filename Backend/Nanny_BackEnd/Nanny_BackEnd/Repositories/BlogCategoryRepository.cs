@@ -10,7 +10,7 @@ public class BlogCategoryRepository
     public BlogCategoryRepository(Sep490NannyDbContext db) => _db = db;
 
     /// <summary>Paginated list with optional isDeleted filter.</summary>
-    public async Task<(List<BlogCategory> Items, int TotalCount)> GetPagedAsync(
+    public async Task<(List<BlogCategory> Items, int TotalCount)> GetBlogCategoryListAsync(
         string? search, int page, int pageSize, bool? isDeleted = null)
     {
         // If filter given, apply it. Otherwise show all.

@@ -1,0 +1,266 @@
+@model WebSite.Models.Account.AccountListResponse
+@{
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+    ViewData["Title"] = "Manage Moderators";
+
+    var currentSearch = ViewBag.Search as string ?? "";
+    var currentStatus = ViewBag.Status as string ?? "";
+    var currentPage = Model?.Page ?? 1;
+    var totalPages = Model?.TotalPages ?? 1;
+    var pageSize = Model?.PageSize ?? 3;
+    var accounts = Model?.Items ?? new List<WebSite.Models.Account.AccountDto>();
+    var preservedQuery = Context.Request.Query
+        .Where(q =>
+            !string.Equals(q.Key, "toastType", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(q.Key, "toastMessage", StringComparison.OrdinalIgnoreCase))
+        .SelectMany(q => q.Value, (q, value) =>
+            $"{Uri.EscapeDataString(q.Key)}={Uri.EscapeDataString(value ?? string.Empty)}");
+    var currentUrl = preservedQuery.Any()
+        ? $"{Context.Request.Path}?{string.Join("&", preservedQuery)}"
+        : Context.Request.Path.ToString();
+}
+
+<div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
+    <div>
+        <h1 class="page-title mt-2">
+            Manage <span class="gradient-text">Moderators</span>
+        </h1>
+        <p class="page-subtitle">Create, update or deactivate moderator accounts in the system.</p>
+    </div>
+    <div class="flex gap-2 flex-shrink-0">
+        <a href="/Admin/CreateModerator" class="btn-primary">
+            <span class="material-icons-round text-base">person_add</span>
+            New Moderator
+        </a>
+    </div>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 fade-in-up">
+        <span class="material-icons-round text-base">error_outline</span>
+        @TempData["Error"]
+    </div>
+}
+
+<form method="get" action="/Admin/ManageModerators" id="filterForm">
+    <div class="content-card p-4 mb-5 fade-in-up" style="animation-delay:.05s;">
+        <div class="flex flex-col md:flex-row gap-3">
+            <div class="relative flex-1">
+                <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">search</span>
+                <input name="search"
+                       type="text"
+                       value="@currentSearch"
+                       placeholder="Search by name or email..."
+                       class="search-input search-input--with-icon w-full border border-gray-200 rounded-xl px-4 py-2 font-medium"
+                       onkeydown="if(event.key==='Enter'){this.form.submit();}" />
+            </div>
+
+            <div class="relative">
+                <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">toggle_on</span>
+                <select name="status"
+                        onchange="this.form.submit()"
+                        class="search-input search-input--with-icon md:w-44 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
+                    <option value="">All Statuses</option>
+                    <option value="1" selected="@(currentStatus == "1" ? "selected" : null)">Active</option>
+                    <option value="0" selected="@(currentStatus == "0" ? "selected" : null)">Inactive</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn-primary flex-shrink-0 flex items-center gap-1">
+                <span class="material-icons-round text-base">search</span>
+                Search
+            </button>
+        </div>
+    </div>
+</form>
+
+<div class="content-card overflow-hidden fade-in-up" style="animation-delay:.1s;">
+    <div class="card-header">
+        <span class="text-sm text-gray-500">
+            Showing <span class="font-bold text-gray-800">@accounts.Count</span>
+            of <span class="font-bold text-gray-800">@(Model?.TotalCount ?? 0)</span> moderators
+        </span>
+        <div class="flex items-center gap-4 text-xs text-gray-400">
+            <div class="flex items-center gap-1.5">
+                <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-emerald-100"></div>Active
+            </div>
+            <div class="flex items-center gap-1.5">
+                <div class="w-2.5 h-2.5 rounded-full bg-red-400 ring-2 ring-red-100"></div>Inactive
+            </div>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full mod-table">
+            <thead>
+                <tr>
+                    <th class="text-left">#</th>
+                    <th class="text-left">User</th>
+                    <th class="text-left">Email</th>
+                    <th class="text-left">Phone</th>
+                    <th class="text-left">Joined</th>
+                    <th class="text-left">Status</th>
+                    <th class="text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!accounts.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="text-center py-16 text-gray-400">
+                            <span class="material-icons-round text-5xl mb-3 block text-gray-200">search_off</span>
+                            <p class="font-semibold text-gray-400">No moderators found matching your criteria.</p>
+                            <p class="text-xs text-gray-300 mt-1">Try adjusting your filters above.</p>
+                        </td>
+                    </tr>
+                }
+                @{ int rowNum = ((currentPage - 1) * pageSize) + 1; }
+                @foreach (var acc in accounts)
+                {
+                    var statusBadge = acc.Status == 1 ? "badge-active" : "badge-inactive";
+                    var statusLabel = acc.Status == 1 ? "Active" : "Inactive";
+                    var avatarColors = new[] { "#F97316", "#EA580C", "#F59E0B", "#FBBF24", "#FCD34D" };
+                    var avatarBg = avatarColors[Math.Abs(acc.Id.GetHashCode()) % avatarColors.Length];
+
+                    <tr class="account-row" id="row-@acc.Id">
+                        <td class="text-gray-300 text-xs font-mono">@rowNum</td>
+                        <td>
+                            <div class="flex items-center gap-3">
+                                <div class="user-avatar" style="background:@avatarBg;">@acc.FirstName.Substring(0, 1).ToUpper()</div>
+                                <div>
+                                    <span class="font-bold text-gray-800">@acc.FullName</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-gray-500 text-sm">@acc.Email</td>
+                        <td class="text-gray-500 text-sm">@(acc.PhoneNumber ?? "-")</td>
+                        <td class="text-gray-500 text-xs">@acc.CreatedAt.ToString("MMM dd, yyyy")</td>
+                        <td>
+                            <div class="flex items-center gap-1.5" id="status-cell-@acc.Id">
+                                <div class="w-2 h-2 rounded-full @(acc.Status == 1 ? "bg-emerald-400 ring-2 ring-emerald-100" : "bg-red-400 ring-2 ring-red-100")"></div>
+                                <span class="badge @statusBadge">@statusLabel</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="flex items-center justify-center gap-1.5">
+                                <a href="/Admin/EditModerator/@acc.Id"
+                                   title="View Detail"
+                                   class="w-8 h-8 rounded-xl hover:bg-blue-50 hover:text-blue-600 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-blue-200">
+                                    <span class="material-icons-round text-base">visibility</span>
+                                </a>
+
+                                <button type="button"
+                                        onclick="openToggleModeratorModal('@acc.Id', @(acc.Status == 1 ? 0 : 1))"
+                                        title="@(acc.Status == 1 ? "Deactivate" : "Activate")"
+                                        class="w-8 h-8 rounded-xl @(acc.Status == 1 ? "hover:bg-red-50 hover:text-red-500 hover:border-red-200" : "hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200") flex items-center justify-center text-gray-300 transition-all border border-gray-100">
+                                    <span class="material-icons-round text-base">@(acc.Status == 1 ? "block" : "check_circle_outline")</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    rowNum++;
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="flex items-center justify-between px-6 py-4 border-t border-gray-50">
+        <span class="text-sm text-gray-400">
+            Page <span class="font-bold text-gray-600">@currentPage</span> of <span class="font-bold text-gray-600">@totalPages</span>
+        </span>
+        <div class="flex gap-1.5">
+            @if (currentPage > 1)
+            {
+                <a href="?search=@currentSearch&status=@currentStatus&page=@(currentPage - 1)" class="page-btn">
+                    <span class="material-icons-round text-sm">chevron_left</span>
+                </a>
+            }
+            else
+            {
+                <button class="page-btn opacity-30 cursor-not-allowed" disabled>
+                    <span class="material-icons-round text-sm">chevron_left</span>
+                </button>
+            }
+            @for (int p = Math.Max(1, currentPage - 2); p <= Math.Min(totalPages, currentPage + 2); p++)
+            {
+                <a href="?search=@currentSearch&status=@currentStatus&page=@p" class="page-btn @(p == currentPage ? "active" : "")">@p</a>
+            }
+            @if (currentPage < totalPages)
+            {
+                <a href="?search=@currentSearch&status=@currentStatus&page=@(currentPage + 1)" class="page-btn">
+                    <span class="material-icons-round text-sm">chevron_right</span>
+                </a>
+            }
+            else
+            {
+                <button class="page-btn opacity-30 cursor-not-allowed" disabled>
+                    <span class="material-icons-round text-sm">chevron_right</span>
+                </button>
+            }
+        </div>
+    </div>
+</div>
+
+<div id="toggleModeratorModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeToggleModeratorModal()">
+    <div class="modal-box">
+        <div class="flex items-center gap-3 mb-4">
+            <div id="toggleModeratorIconBg" class="w-12 h-12 rounded-2xl flex items-center justify-center">
+                <span id="toggleModeratorIcon" class="material-icons-round text-2xl"></span>
+            </div>
+            <div>
+                <h3 id="toggleModeratorTitle" class="text-lg font-bold text-gray-900"></h3>
+                <p id="toggleModeratorSubtitle" class="text-sm text-gray-400"></p>
+            </div>
+        </div>
+        <p id="toggleModeratorMessage" class="text-sm text-gray-600 mb-6 bg-gray-50 rounded-2xl p-4 border border-gray-100 leading-relaxed"></p>
+        <div id="toggleModeratorFormContainer" class="flex gap-2"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <form id="toggleModeratorCsrfForm" style="display:none;">@Html.AntiForgeryToken()</form>
+    <script>
+        function openToggleModeratorModal(id, status) {
+            const activate = Number(status) === 1;
+            document.getElementById('toggleModeratorTitle').textContent = activate ? 'Kích hoạt tài khoản' : 'Vô hiệu hóa tài khoản';
+            document.getElementById('toggleModeratorSubtitle').textContent = activate ? 'Cho phép tài khoản hoạt động trở lại' : 'Tạm ngừng quyền truy cập của tài khoản';
+            document.getElementById('toggleModeratorMessage').textContent = activate
+                ? 'Bạn có chắc muốn kích hoạt tài khoản này không?'
+                : 'Bạn có chắc muốn vô hiệu hóa tài khoản này không?';
+
+            const iconBg = document.getElementById('toggleModeratorIconBg');
+            const icon = document.getElementById('toggleModeratorIcon');
+            iconBg.style.background = activate ? '#D1FAE5' : '#FEE2E2';
+            icon.style.color = activate ? '#10B981' : '#EF4444';
+            icon.textContent = activate ? 'check_circle_outline' : 'block';
+
+            const token = document.querySelector('#toggleModeratorCsrfForm input[name="__RequestVerificationToken"]').value;
+            const returnUrl = '@(currentUrl.Replace("'", "\\'"))';
+            const btnClass = activate ? 'btn-success' : 'btn-danger';
+            const btnText = activate ? 'Confirm Activate' : 'Confirm Deactivate';
+
+            document.getElementById('toggleModeratorFormContainer').innerHTML =
+                '<button type="button" onclick="closeToggleModeratorModal()" class="btn-outline flex-1 justify-center">Cancel</button>' +
+                '<form method="post" action="/Admin/ToggleModeratorStatus" class="flex-1 flex">' +
+                '<input name="__RequestVerificationToken" type="hidden" value="' + token + '" />' +
+                '<input type="hidden" name="id" value="' + id + '" />' +
+                '<input type="hidden" name="status" value="' + status + '" />' +
+                '<input type="hidden" name="returnUrl" value="' + returnUrl + '" />' +
+                '<button type="submit" class="' + btnClass + ' w-full justify-center">' + btnText + '</button>' +
+                '</form>';
+
+            document.getElementById('toggleModeratorModal').classList.remove('hidden');
+        }
+
+        function closeToggleModeratorModal() {
+            document.getElementById('toggleModeratorModal').classList.add('hidden');
+        }
+    </script>
+    <style>
+        .btn-danger { display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.1rem;border-radius:.85rem;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .15s;background:#FEE2E2;color:#EF4444;border:1.5px solid #FECACA; }
+        .btn-danger:hover { background:#FCA5A5;border-color:#F87171; }
+        .btn-success { display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.1rem;border-radius:.85rem;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .15s;background:#D1FAE5;color:#10B981;border:1.5px solid #A7F3D0; }
+        .btn-success:hover { background:#A7F3D0;border-color:#6EE7B7; }
+    </style>
+}

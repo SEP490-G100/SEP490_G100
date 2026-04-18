@@ -352,6 +352,10 @@
     backdrop-filter: blur(6px);
 }
 
+.modal-backdrop.hidden {
+    display: none;
+}
+
 .modal-box {
     background: #fff;
     border-radius: 1.5rem;
@@ -473,4 +477,369 @@
     color: #111827;
     line-height: 1;
     font-family: 'Quicksand', sans-serif;
+}
+
+/* ============================================================
+   NOTIFICATION BELL PANEL
+   ============================================================ */
+.nm-icon-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 16px;
+    border: 1px solid rgba(251, 146, 60, .16);
+    background: rgba(255,255,255,.88);
+    color: #6b7280;
+    transition: all .2s ease;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, .06);
+}
+
+.nm-icon-btn:hover {
+    color: #ea580c;
+    background: #fff7ed;
+    transform: translateY(-1px);
+}
+
+.nm-badge-dot {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 16px rgba(249,115,22,.26);
+}
+
+.nm-badge-dot.hidden {
+    display: none !important;
+}
+
+.nm-panel {
+    position: absolute;
+    right: -4px;
+    top: calc(100% + 14px);
+    width: min(450px, calc(100vw - 24px));
+    background:
+        radial-gradient(circle at top right, rgba(249, 115, 22, .16), transparent 38%),
+        linear-gradient(180deg, rgba(255, 255, 255, .98), rgba(255, 250, 244, .98));
+    border: 1px solid rgba(251, 146, 60, .24);
+    border-radius: 24px;
+    box-shadow: 0 24px 56px rgba(15, 23, 42, .16);
+    backdrop-filter: blur(8px);
+    overflow: hidden;
+}
+
+.nm-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 18px 18px 14px;
+    border-bottom: 1px solid rgba(251, 146, 60, .16);
+    background: linear-gradient(180deg, #ffffff 0%, #fff7ed 100%);
+}
+
+.nm-panel-title {
+    font-size: 19px;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.2;
+}
+
+.nm-panel-subtitle {
+    margin-top: 3px;
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.35;
+}
+
+.nm-panel-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.nm-panel-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 0 13px;
+    border-radius: 999px;
+    border: 1px solid #fed7aa;
+    background: #fff7ed;
+    color: #c2410c;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .01em;
+    transition: all .2s ease;
+}
+
+.nm-panel-link:hover {
+    border-color: #fdba74;
+    background: #ffedd5;
+    color: #9a3412;
+    transform: translateY(-1px);
+}
+
+.nm-panel-link--ghost {
+    border-color: rgba(148, 163, 184, .32);
+    background: #fff;
+    color: #475569;
+}
+
+.nm-panel-link--ghost:hover {
+    border-color: rgba(251, 146, 60, .45);
+    background: #fff7ed;
+    color: #9a3412;
+}
+
+.nm-notification-list {
+    max-height: 440px;
+    overflow: auto;
+    padding: 12px;
+    background: linear-gradient(180deg, #ffffff 0%, #fffaf4 100%);
+}
+
+.nm-notification-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.nm-notification-list::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, .42);
+    border-radius: 999px;
+}
+
+.nm-notification-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 14px 14px 13px;
+    border-radius: 18px;
+    border: 1px solid rgba(148, 163, 184, .24);
+    background: rgba(255, 255, 255, .94);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, .06);
+    transition: all .2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.nm-notification-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, #fb923c, #f97316);
+    opacity: 0;
+    transition: opacity .2s ease;
+}
+
+.nm-notification-item + .nm-notification-item {
+    margin-top: 10px;
+}
+
+.nm-notification-item:hover {
+    border-color: #fdba74;
+    background: #fffaf4;
+    transform: translateY(-1px);
+    box-shadow: 0 14px 30px rgba(249, 115, 22, .16);
+}
+
+.nm-notification-item.unread {
+    border-color: rgba(249, 115, 22, .4);
+    background: linear-gradient(180deg, #fff7ed 0%, #ffffff 100%);
+}
+
+.nm-notification-item.unread::before {
+    opacity: 1;
+}
+
+.nm-notification-item-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 5px;
+}
+
+.nm-notification-unread-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: #f97316;
+    box-shadow: 0 0 0 4px rgba(249, 115, 22, .18);
+    flex-shrink: 0;
+}
+
+.nm-notification-item-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: #111827;
+    line-height: 1.45;
+}
+
+.nm-notification-item-body {
+    font-size: 13px;
+    line-height: 1.55;
+    color: #475569;
+    margin-bottom: 8px;
+}
+
+.nm-notification-item-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 7px;
+}
+
+.nm-notification-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 22px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    color: #c2410c;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.nm-notification-sender {
+    display: inline-flex;
+    align-items: center;
+    min-height: 22px;
+    padding: 0 9px;
+    border-radius: 999px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 700;
+}
+
+.nm-notification-item-time {
+    font-size: 12px;
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+.nm-empty-state {
+    padding: 34px 18px 36px;
+    text-align: center;
+    color: #6b7280;
+}
+
+.nm-empty-state .material-icons-round {
+    font-size: 32px;
+    color: #fb923c;
+    margin-bottom: 10px;
+}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+.nm-toast-root {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 12050;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.nm-toast {
+    width: min(420px, calc(100vw - 24px));
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 9px;
+    padding: 12px 14px;
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 18px 36px rgba(15, 23, 42, 0.2);
+    color: #fff;
+    transform: translateY(12px) scale(0.98);
+    opacity: 0;
+    transition: opacity 0.22s ease, transform 0.22s ease;
+    pointer-events: auto;
+    backdrop-filter: blur(6px);
+}
+
+.nm-toast.show {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.nm-toast__icon {
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.78);
+    color: rgba(15, 23, 42, 0.68);
+}
+
+.nm-toast__text {
+    font-size: 13px;
+    line-height: 1.45;
+    font-weight: 800;
+    word-break: break-word;
+}
+
+.nm-toast__close {
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    border: none;
+    background: rgba(255, 255, 255, 0.22);
+    color: #fff;
+    cursor: pointer;
+    font-size: 17px;
+    transition: background 0.18s ease, transform 0.18s ease;
+}
+
+.nm-toast__close:hover {
+    background: rgba(255, 255, 255, 0.35);
+    transform: scale(1.03);
+}
+
+.nm-toast--info {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.94), rgba(30, 41, 59, 0.94));
+}
+
+.nm-toast--success {
+    background: linear-gradient(135deg, #0f8c67, #10946d);
+}
+
+.nm-toast--warning {
+    background: linear-gradient(135deg, #c56a09, #ea580c);
+}
+
+.nm-toast--error {
+    background: linear-gradient(135deg, #c22525, #dc2626);
 }

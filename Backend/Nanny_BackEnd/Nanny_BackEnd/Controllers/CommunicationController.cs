@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Nanny_BackEnd.DTOs.Communication;
+using Nanny_BackEnd.DTOs.Report;
+using Nanny_BackEnd.Exceptions;
 using Nanny_BackEnd.Hubs;
 using Nanny_BackEnd.Services;
 
@@ -113,6 +115,8 @@ public class CommunicationController : ControllerBase
     [HttpPost("messages/{id:guid}/report")]
     public async Task<IActionResult> ReportMessage(Guid id, [FromBody] ReportMessageDto dto)
     {
+        if (!ModelState.IsValid) return BadRequest(fail("Du lieu bao cao khong hop le."));
+
         var userId = getCurrentUserId();
         if (!userId.HasValue) return Unauthorized(fail("Khong xac dinh duoc nguoi dung."));
 
@@ -122,6 +126,18 @@ public class CommunicationController : ControllerBase
             return Ok(new { success = true, message = "Bao cao da duoc gui. Chung toi se kiem tra trong thoi gian som nhat." });
         }
         catch (KeyNotFoundException ex) { return NotFound(fail(ex.Message)); }
+        catch (RateLimitExceededException ex)
+        {
+            Response.Headers.RetryAfter = ex.RetryAfterSeconds.ToString();
+            return StatusCode(429, new
+            {
+                success = false,
+                code = ex.Code,
+                message = ex.Message,
+                retryAfterSeconds = ex.RetryAfterSeconds,
+                cooldownUntilUtc = ex.CooldownUntilUtc
+            });
+        }
         catch (InvalidOperationException ex) { return BadRequest(fail(ex.Message)); }
     }
 

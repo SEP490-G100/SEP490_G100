@@ -1,5 +1,9 @@
+@using System.Linq
+@using System.Security.Claims
 @{
-    var canRespondOffer = User.IsInRole("Nanny");
+    var canRespondOffer = User?.Claims?.Any(c =>
+        c.Type == ClaimTypes.Role &&
+        string.Equals(c.Value, "Nanny", StringComparison.OrdinalIgnoreCase)) == true;
 }
 
 <div id="offerDetailModal"
@@ -32,9 +36,10 @@
                 Tu choi
             </button>
             <button type="button" id="offerAcceptBtn" onclick="window.__respondOffer?.('accept')"
-                    class="inline-flex items-center justify-center gap-2 min-h-[42px] px-6 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-400 text-white font-bold hover:from-emerald-600 hover:to-emerald-500 transition-all shadow-lg shadow-emerald-200">
+                    class="inline-flex items-center justify-center gap-2 min-h-[42px] px-6 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-400 text-white font-bold hover:from-emerald-600 hover:to-emerald-500 transition-all shadow-lg shadow-emerald-200"
+                    style="background:#10b981;color:#fff;border:1px solid #10b981;">
                 <span class="material-icons-round text-base">check_circle</span>
-                Chấp nhận
+                Dong y
             </button>
         </div>
     </div>
@@ -60,6 +65,12 @@
     };
 
     const fmtDate = (value) => value ? new Date(value + 'T00:00:00').toLocaleDateString('vi-VN') : 'Chua xac dinh';
+    const escHtml = (value) => String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 
     window.__openOfferDetail = async (id) => {
         hiringRecordId = id;
@@ -97,7 +108,7 @@
                 ${d.contractContent ? `
                 <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Noi dung hop dong</p>
-                    <pre class="text-xs text-slate-600 whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto">${d.contractContent}</pre>
+                    <pre class="text-xs text-slate-600 whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto">${escHtml(d.contractContent)}</pre>
                 </div>` : ''}`;
 
             const canRespondOffer = @((canRespondOffer) ? "true" : "false");

@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Json;
@@ -458,7 +458,8 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
 }
 
     [HttpGet]
-    public IActionResult Verify() => Redirect("/verification");
+    public IActionResult Verify() =>
+        RedirectToAction("NannyGetVerificationRequestList", "NannyVerificationRequest");
 
     [NonAction]
     public async Task<IActionResult> Verify(CreateCertificateViewModel model)

@@ -90,7 +90,7 @@
         function onGoogleSignIn(response) {
             var form = document.createElement('form');
             form.method = 'POST';
-            form.action = '@Url.Action("GoogleLogin")';
+            form.action = '@Url.Action("GoogleLogin", new { returnUrl = ViewBag.ReturnUrl })';
             var token = document.createElement('input');
             token.type = 'hidden'; token.name = 'idToken'; token.value = response.credential;
             var antiForgery = document.querySelector('input[name="__RequestVerificationToken"]');

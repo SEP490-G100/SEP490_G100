@@ -12,7 +12,6 @@ public class JobRepository
 
     public JobRepository(Sep490NannyDbContext db) => _db = db;
 
-    public IQueryable<JobPosting> GetQuery() => _db.JobPostings.AsQueryable();
     public async Task<List<JobPosting>> searchJobPosting(
         SearchJobRequest filters,
         Guid? currentUserId = null,
@@ -283,4 +282,5 @@ public class JobRepository
     }
 
     public async Task saveChanges() => await _db.SaveChangesAsync();
+
 }

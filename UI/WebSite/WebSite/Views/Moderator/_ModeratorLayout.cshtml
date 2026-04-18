@@ -7,8 +7,10 @@
     <link href="~/css/tailwind.generated.css" rel="stylesheet" asp-append-version="true" />
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
-    <link href="~/css/moderator.css" rel="stylesheet" />
+    <link href="~/css/moderator.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/unified-dropdown.css" rel="stylesheet" asp-append-version="true" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    @await RenderSectionAsync("Head", required: false)
 </head>
 <body class="font-display bg-gray-50 text-gray-800" style="font-family:'Quicksand',sans-serif;">
 
@@ -47,7 +49,7 @@
                 </a>
 
                 <a href="/Moderator/ManageNannyVerification"
-                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() == "NannyVerification" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
+                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() is "ManageNannyVerification" or "ViewNannyVerificationDetail" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">verified_user</span>
                     <span class="sidebar-text">Manage Nanny Verification Requests</span>
                 </a>
@@ -59,10 +61,10 @@
                     <span class="material-icons-round text-xl flex-shrink-0">work</span>
                     <span class="sidebar-text">Manage Job Postings</span>
                 </a>
-                <a href="/Moderator/ManageReport"
-                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() == "ViewReports" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
+                <a href="/Moderator/ManageComplaint"
+                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() is "ManageComplaint" or "ViewComplaintDetail" or "ViewComplainedJobPostingDetail" or "ViewComplainedProfileDetail" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">flag</span>
-                    <span class="sidebar-text">Reports</span>
+                    <span class="sidebar-text">Complaints</span>
                 </a>
 
                 <p class="sidebar-text px-2 text-[10px] uppercase tracking-widest text-gray-500 mt-5 mb-2 font-semibold">Content</p>
@@ -132,10 +134,34 @@
                     </div>
 
                     <div class="flex items-center gap-3">
-                        <button class="relative w-9 h-9 rounded-xl hover:bg-orange-50 flex items-center justify-center text-gray-400 hover:text-orange-500 transition-all">
-                            <span class="material-icons-round">notifications_none</span>
-                            <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
-                        </button>
+                        <div class="relative" id="notificationDropdown">
+                            <button type="button"
+                                    id="notificationToggle"
+                                    class="nm-icon-btn"
+                                    aria-label="Thong bao">
+                                <span class="material-icons-round text-[20px]">notifications</span>
+                                <span id="notificationBadge" class="nm-badge-dot hidden"></span>
+                            </button>
+
+                            <div id="notificationMenu" class="nm-panel hidden">
+                                <div class="nm-panel-header">
+                                    <div>
+                                        <p class="nm-panel-title">Thông báo</p>
+                                        <p class="nm-panel-subtitle">Nhắc nhở và cập nhật quan trọng</p>
+                                    </div>
+                                    <div class="nm-panel-actions">
+                                        <a href="/Notification/Center" class="nm-panel-link nm-panel-link--ghost">Xem tất cả</a>
+                                        <button type="button" id="markAllNotificationsRead" class="nm-panel-link">Đánh dấu đã đọc</button>
+                                    </div>
+                                </div>
+                                <div id="notificationList" class="nm-notification-list">
+                                    <div class="nm-empty-state">
+                                        <span class="material-icons-round">notifications_none</span>
+                                        <p class="text-sm font-semibold text-gray-700">Đang tải thông báo...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <div class="flex items-center gap-2 pl-3 border-l border-gray-100">
                             <div class="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
                                 @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value?.Substring(0, 1).ToUpper() ?? "M")
@@ -176,6 +202,282 @@
                 sidebar.classList.remove('collapsed');
             }
         }
+
+        (() => {
+            const notificationDropdown = document.getElementById('notificationDropdown');
+            const notificationToggle = document.getElementById('notificationToggle');
+            const notificationMenu = document.getElementById('notificationMenu');
+            const notificationBadge = document.getElementById('notificationBadge');
+            const notificationList = document.getElementById('notificationList');
+            const markAllButton = document.getElementById('markAllNotificationsRead');
+
+            if (!notificationDropdown || !notificationToggle || !notificationMenu || !notificationBadge || !notificationList || !markAllButton) {
+                return;
+            }
+
+            const UI_TEXT = {
+                bellLabel: 'Thông báo',
+                panelTitle: 'Thông báo',
+                panelSubtitle: 'Nhắc nhở và cập nhật quan trọng',
+                markAll: 'Đánh dấu đã đọc',
+                viewAll: 'Xem tất cả',
+                loading: 'Đang tải thông báo...',
+                empty: 'Bạn chưa có thông báo nào.',
+                fallbackTitle: 'Thông báo mới',
+                fallbackBody: 'Bạn có thông báo mới từ hệ thống.',
+                fallbackType: 'Thông báo',
+                senderPrefix: 'Từ',
+                loadError: 'Không thể tải thông báo lúc này.'
+            };
+
+            notificationToggle.setAttribute('aria-label', UI_TEXT.bellLabel);
+
+            const titleEl = notificationMenu.querySelector('.nm-panel-title');
+            const subtitleEl = notificationMenu.querySelector('.nm-panel-subtitle');
+            const emptyEl = notificationMenu.querySelector('.nm-empty-state p');
+            titleEl && (titleEl.textContent = UI_TEXT.panelTitle);
+            subtitleEl && (subtitleEl.textContent = UI_TEXT.panelSubtitle);
+            emptyEl && (emptyEl.textContent = UI_TEXT.loading);
+            markAllButton.textContent = UI_TEXT.markAll;
+
+            const escapeHtml = (value) => String(value ?? '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
+
+            const formatTime = (value) => {
+                if (!value) return '';
+                const date = new Date(value);
+                if (Number.isNaN(date.getTime())) return '';
+                return new Intl.DateTimeFormat('vi-VN', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }).format(date);
+            };
+
+            const normalizeText = (value) => String(value ?? '')
+                .trim()
+                .toLowerCase()
+                .replace(/\s+/g, ' ');
+
+            const shouldShowTypeChip = (item) => {
+                const typeLabel = normalizeText(item?.typeLabel);
+                const title = normalizeText(item?.title);
+                if (!typeLabel) return false;
+                if (typeLabel.includes('moderator')) return true;
+                return typeLabel !== title;
+            };
+
+            const buildNotificationMeta = (item) => {
+                const parts = [];
+                if (shouldShowTypeChip(item)) {
+                    parts.push(`<span class="nm-notification-chip">${escapeHtml(item.typeLabel || UI_TEXT.fallbackType)}</span>`);
+                }
+
+                const sender = String(item?.senderLabel || '').trim();
+                if (sender) {
+                    parts.push(`<span class="nm-notification-sender">${UI_TEXT.senderPrefix} ${escapeHtml(sender)}</span>`);
+                }
+
+                if (!parts.length) return '';
+                return `<div class="nm-notification-item-meta">${parts.join('')}</div>`;
+            };
+
+            const renderEmpty = (message) => {
+                notificationList.innerHTML = `
+                    <div class="nm-empty-state">
+                        <span class="material-icons-round">notifications_none</span>
+                        <p class="text-sm font-semibold text-gray-700">${escapeHtml(message)}</p>
+                    </div>`;
+            };
+
+            const updateBadge = (count) => {
+                if (!count || count <= 0) {
+                    notificationBadge.textContent = '';
+                    notificationBadge.classList.add('hidden');
+                    return;
+                }
+
+                notificationBadge.textContent = count > 99 ? '99+' : String(count);
+                notificationBadge.classList.remove('hidden');
+            };
+
+            const loadUnreadCount = async () => {
+                try {
+                    const response = await fetch('/Notification/UnreadCount', { credentials: 'same-origin' });
+                    const result = await response.json();
+                    updateBadge(result?.data?.unreadCount ?? 0);
+                } catch {
+                    updateBadge(0);
+                }
+            };
+
+            const loadNotifications = async () => {
+                try {
+                    const response = await fetch('/Notification/My?page=1&pageSize=6', { credentials: 'same-origin' });
+                    const result = await response.json();
+                    const items = result?.data ?? [];
+                    const unreadCount = result?.unreadCount ?? 0;
+                    updateBadge(unreadCount);
+
+                    if (!items.length) {
+                        renderEmpty(UI_TEXT.empty);
+                        return;
+                    }
+
+                    notificationList.innerHTML = items.map(item => `
+                        <button type="button"
+                                class="nm-notification-item ${item.isRead ? '' : 'unread'}"
+                                data-id="${escapeHtml(item.id)}"
+                                data-url="${escapeHtml(item.actionUrl || '')}">
+                            <div class="nm-notification-item-title-row">
+                                <div class="nm-notification-item-title">${escapeHtml(item.title || UI_TEXT.fallbackTitle)}</div>
+                                ${item.isRead ? '' : '<span class="nm-notification-unread-dot" aria-hidden="true"></span>'}
+                            </div>
+                            ${buildNotificationMeta(item)}
+                            <div class="nm-notification-item-body">${escapeHtml(item.content || UI_TEXT.fallbackBody)}</div>
+                            <div class="nm-notification-item-time">${escapeHtml(formatTime(item.createdAt))}</div>
+                        </button>
+                    `).join('');
+                } catch {
+                    renderEmpty(UI_TEXT.loadError);
+                }
+            };
+
+            const getRealtimeToastConfig = (payload) => {
+                if (!payload) return null;
+
+                const type = String(payload.type || '').trim().toLowerCase();
+                const message = payload.message || payload.title;
+                if (message) {
+                    return {
+                        message,
+                        type: payload.toastType || 'info'
+                    };
+                }
+
+                switch (type) {
+                    case 'verification-request-submitted':
+                        return { message: 'Co yeu cau xac minh moi dang cho duyet.', type: 'info' };
+                    case 'job-posting-review-required':
+                        return { message: 'Co bai dang moi dang cho moderator duyet.', type: 'info' };
+                    case 'complain-submitted':
+                        return { message: 'Co bao cao moi can xu ly.', type: 'warning' };
+                    case 'system-warning':
+                        return { message: 'Co canh bao he thong can xu ly.', type: 'warning' };
+                    default:
+                        return null;
+                }
+            };
+
+            notificationToggle.addEventListener('click', async () => {
+                notificationMenu.classList.toggle('hidden');
+                if (!notificationMenu.classList.contains('hidden')) {
+                    await loadNotifications();
+                }
+            });
+
+            notificationList.addEventListener('click', async (event) => {
+                const item = event.target.closest('.nm-notification-item[data-id]');
+                if (!item) return;
+
+                const actionUrl = item.dataset.url;
+
+                try {
+                    await fetch(`/Notification/MarkRead/${item.dataset.id}`, {
+                        method: 'POST',
+                        credentials: 'same-origin'
+                    });
+                } catch {
+                }
+
+                item.classList.remove('unread');
+                await loadUnreadCount();
+
+                window.location.href = actionUrl
+                    ? actionUrl
+                    : `/Notification/Center?notificationId=${encodeURIComponent(item.dataset.id)}`;
+            });
+
+            markAllButton.addEventListener('click', async () => {
+                try {
+                    await fetch('/Notification/MarkAllRead', {
+                        method: 'POST',
+                        credentials: 'same-origin'
+                    });
+                } catch {
+                }
+
+                await loadNotifications();
+            });
+
+            window.addEventListener('nm:notifications-refresh', async () => {
+                await loadUnreadCount();
+                if (!notificationMenu.classList.contains('hidden')) {
+                    await loadNotifications();
+                }
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!notificationDropdown.contains(e.target)) {
+                    notificationMenu.classList.add('hidden');
+                }
+            });
+
+            const connectNotificationRealtime = async () => {
+                if (!window.signalR) return;
+
+                const connection = new signalR.HubConnectionBuilder()
+                    .withUrl('/hubs/notifications')
+                    .withAutomaticReconnect()
+                    .build();
+
+                connection.on('notification:new', async (payload) => {
+                    const toastConfig = getRealtimeToastConfig(payload);
+                    if (toastConfig && typeof window.showToast === 'function') {
+                        window.showToast(toastConfig.message, { type: toastConfig.type });
+                    }
+                    window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
+                });
+
+                connection.onreconnected(() => {
+                    window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
+                });
+
+                try {
+                    await connection.start();
+                } catch {
+                }
+            };
+
+            loadUnreadCount();
+            connectNotificationRealtime();
+        })();
+    </script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        (() => {
+            const params = new URLSearchParams(window.location.search);
+            const toastMessage = params.get('toastMessage');
+            const toastType = params.get('toastType') || 'info';
+
+            if (!toastMessage || typeof window.showToast !== 'function') {
+                return;
+            }
+
+            window.showToast(toastMessage, { type: toastType });
+            params.delete('toastMessage');
+            params.delete('toastType');
+
+            const nextQuery = params.toString();
+            const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ''}${window.location.hash || ''}`;
+            window.history.replaceState({}, document.title, nextUrl);
+        })();
     </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
