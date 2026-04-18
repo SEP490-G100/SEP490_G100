@@ -14,7 +14,7 @@ public class AccountDto
     public string? City { get; set; }
     public string? District { get; set; }
     public string? Ward { get; set; }
-    public int Status { get; set; }           // 0 = Inactive, 1 = Active
+    public int Status { get; set; }           // 1 = Active, 2 = Inactive, 3 = Pending, 4 = Banned
     public bool EmailConfirmed { get; set; }
     public DateTime CreatedAt { get; set; }
     public Guid? CreatedBy { get; set; }

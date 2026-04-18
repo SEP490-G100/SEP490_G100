@@ -17,7 +17,7 @@ public class ModeratorAccountController : ControllerBase
         _moderatorAccountService = moderatorAccountService;
     }
 
-    // GET /api/Moderator/moderator-view-account-list?role=Nanny&status=0&search=lan&page=1&pageSize=3
+    // GET /api/Moderator/moderator-view-account-list?role=Nanny&status=2&search=lan&page=1&pageSize=3
     [HttpGet("moderator-view-account-list")]
     public async Task<IActionResult> ModeratorViewAccountList(
         [FromQuery] string? role = null,
@@ -42,11 +42,11 @@ public class ModeratorAccountController : ControllerBase
         return Ok(new { success = true, data = result.Data });
     }
 
-    // PATCH /api/Moderator/moderator-update-account-status/{id}/status
-    [HttpPatch("moderator-update-account-status/{id:guid}/status")]
-    public async Task<IActionResult> ModeratorUpdateAccountStatus(Guid id, [FromBody] UpdateAccountStatusRequest request)
+    // PATCH /api/Moderator/moderator-toggle-account-status/{id}/status
+    [HttpPatch("moderator-toggle-account-status/{id:guid}/status")]
+    public async Task<IActionResult> ModeratorToggleAccountStatus(Guid id, [FromBody] UpdateAccountStatusRequest request)
     {
-        var result = await _moderatorAccountService.ModeratorUpdateAccountStatusAsync(id, request);
+        var result = await _moderatorAccountService.ModeratorToggleAccountStatusAsync(id, request);
 
         if (!result.Success)
             return StatusCode(result.StatusCode, new { success = false, message = result.Message });

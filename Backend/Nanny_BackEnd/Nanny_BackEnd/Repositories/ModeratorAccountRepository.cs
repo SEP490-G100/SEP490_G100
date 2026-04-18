@@ -23,7 +23,6 @@ public class ModeratorAccountRepository
         string[] allowedRoles)
     {
         var query = _db.Users
-            .Where(u => !u.IsDeleted)
             .Where(u => u.UserRoles.Any(ur => !ur.IsDeleted && !excludedRoles.Contains(ur.Role.Name)))
             .AsQueryable();
 
@@ -61,10 +60,10 @@ public class ModeratorAccountRepository
         await _db.Users
             .Include(u => u.UserRoles)
             .ThenInclude(ur => ur.Role)
-            .FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
+            .FirstOrDefaultAsync(u => u.Id == id);
 
     public async Task<User?> FindByIdAsync(Guid id) =>
-        await _db.Users.FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
+        await _db.Users.FirstOrDefaultAsync(u => u.Id == id);
 
     public async Task SaveChangesAsync() =>
         await _db.SaveChangesAsync();

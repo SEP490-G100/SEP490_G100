@@ -68,7 +68,7 @@
                         class="search-input md:w-44 !pl-9 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
                     <option value="">All Statuses</option>
                     <option value="1" selected="@(currentStatus == "1" ? "selected" : null)">Active</option>
-                    <option value="0" selected="@(currentStatus == "0" ? "selected" : null)">Inactive</option>
+                    <option value="2" selected="@(currentStatus == "2" ? "selected" : null)">Inactive</option>
                 </select>
             </div>
 
@@ -190,7 +190,7 @@
                                 @if (acc.Status == 1)
                                 {
                                     <button id="toggle-btn-@acc.Id"
-                                            onclick="toggleStatus('@acc.Id', '@acc.FullName', 0)" title="Deactivate"
+                                            onclick="toggleStatus('@acc.Id', '@acc.FullName', 2)" title="Deactivate"
                                             class="w-8 h-8 rounded-xl hover:bg-red-50 hover:text-red-500 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-red-200">
                                         <span class="material-icons-round text-base">block</span>
                                     </button>
@@ -358,7 +358,7 @@
         var message = document.getElementById('toggleMessage');
         var btn = document.getElementById('toggleConfirmBtn');
 
-        if (newStatus === 0) {
+        if (newStatus === 2) {
             iconBg.style.background = '#FEE2E2';
             icon.style.color = '#EF4444';
             icon.textContent = 'block';
@@ -427,7 +427,7 @@
                 if (toggleBtn) {
                     if (newStatus === 1) {
                         // Đã Active → hiển thị nút Deactivate
-                        toggleBtn.setAttribute('onclick', "toggleStatus('" + id + "', '" + name + "', 0)");
+                        toggleBtn.setAttribute('onclick', "toggleStatus('" + id + "', '" + name + "', 2)");
                         toggleBtn.setAttribute('title', 'Deactivate');
                         toggleBtn.className = 'w-8 h-8 rounded-xl hover:bg-red-50 hover:text-red-500 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-red-200';
                         toggleBtn.querySelector('span').textContent = 'block';

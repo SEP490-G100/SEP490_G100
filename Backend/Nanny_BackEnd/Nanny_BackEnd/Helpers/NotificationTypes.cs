@@ -26,6 +26,7 @@ public static class NotificationTypes
     public const int HiringOffer = 15;
     public const int HiringAccepted = 16;
     public const int HiringDeclined = 17;
+    public const int HiringCompleted = 18;
     public const int ModeratorBroadcast = 99;
 
     public static string getLabel(int type) => type switch
@@ -54,6 +55,7 @@ public static class NotificationTypes
         HiringOffer => "De nghi viec lam",
         HiringAccepted => "De nghi viec lam da duoc chap nhan",
         HiringDeclined => "De nghi viec lam bi tu choi",
+        HiringCompleted => "Hop dong da hoan thanh",
         ModeratorBroadcast => "Thong bao tu Moderator",
         _ => "Thong bao he thong"
     };

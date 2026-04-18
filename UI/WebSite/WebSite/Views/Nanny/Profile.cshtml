@@ -116,31 +116,31 @@
     var minSalaryAllowed = 8000000;
     var maxSalaryAllowed = 50000000;
 
-    function onlyDigits(value) {
-        return String(value || '').replace(/\D/g, '');
-    }
+        function onlyDigits(value) {
+            return String(value || '').replace(/\D/g, '');
+        }
 
-    function formatCurrencyInput(value) {
-        var digits = onlyDigits(value);
-        if (!digits) return '';
-        return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    }
+        function formatCurrencyInput(value) {
+            var digits = onlyDigits(value);
+            if (!digits) return '';
+            return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        }
 
-    function parseCurrencyValue(value) {
-        var digits = onlyDigits(value);
-        return digits ? Number(digits) : null;
-    }
+        function parseCurrencyValue(value) {
+            var digits = onlyDigits(value);
+            return digits ? Number(digits) : null;
+        }
 
-    function bindCurrencyInput(input) {
-        if (!input) return;
+        function bindCurrencyInput(input) {
+            if (!input) return;
 
-        input.value = formatCurrencyInput(input.value);
-
-        input.addEventListener('input', function () {
             input.value = formatCurrencyInput(input.value);
-            syncHiddenValues();
-            showErr(validate());
-        });
+
+            input.addEventListener('input', function () {
+                input.value = formatCurrencyInput(input.value);
+                syncHiddenValues();
+                showErr(validate());
+            });
 
         input.addEventListener('blur', function () {
             input.value = formatCurrencyInput(input.value);
@@ -149,15 +149,15 @@
         });
     }
 
-    function showErr(msg) {
-        if (!errEl) return;
-        errEl.textContent = msg || '';
-        errEl.classList.toggle('hidden', !msg);
-    }
+        function showErr(msg) {
+            if (!errEl) return;
+            errEl.textContent = msg || '';
+            errEl.classList.toggle('hidden', !msg);
+        }
 
-    function validate() {
-        var min = minEl ? parseCurrencyValue(minEl.value) : null;
-        var max = maxEl ? parseCurrencyValue(maxEl.value) : null;
+        function validate() {
+            var min = minEl ? parseCurrencyValue(minEl.value) : null;
+            var max = maxEl ? parseCurrencyValue(maxEl.value) : null;
 
         if (min != null && (min < minSalaryAllowed || min > maxSalaryAllowed)) return 'Muc luong toi thieu phai trong khoang 8.000.000 - 50.000.000 VND.';
         if (max != null && (max < minSalaryAllowed || max > maxSalaryAllowed)) return 'Muc luong toi da phai trong khoang 8.000.000 - 50.000.000 VND.';
@@ -165,30 +165,30 @@
         return '';
     }
 
-    bindCurrencyInput(minEl);
-    bindCurrencyInput(maxEl);
+        bindCurrencyInput(minEl);
+        bindCurrencyInput(maxEl);
 
-    function syncHiddenValues() {
-        if (minHiddenEl) minHiddenEl.value = onlyDigits(minEl ? minEl.value : '');
-        if (maxHiddenEl) maxHiddenEl.value = onlyDigits(maxEl ? maxEl.value : '');
-    }
+        function syncHiddenValues() {
+            if (minHiddenEl) minHiddenEl.value = onlyDigits(minEl ? minEl.value : '');
+            if (maxHiddenEl) maxHiddenEl.value = onlyDigits(maxEl ? maxEl.value : '');
+        }
 
     syncHiddenValues();
     showErr(validate());
 
-    if (form) {
-        form.addEventListener('submit', function (e) {
-            var msg = validate();
-            showErr(msg);
-            if (msg) {
-                e.preventDefault();
-                return;
-            }
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                var msg = validate();
+                showErr(msg);
+                if (msg) {
+                    e.preventDefault();
+                    return;
+                }
 
-            syncHiddenValues();
-        });
-    }
-})();
+                syncHiddenValues();
+            });
+        }
+    })();
 </script>
 
 <partial name="~/Views/Hiring/_HireModal.cshtml" />
