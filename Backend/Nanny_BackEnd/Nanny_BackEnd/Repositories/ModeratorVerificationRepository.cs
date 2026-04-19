@@ -15,6 +15,7 @@ public class ModeratorVerificationRepository
 
     public async Task<(List<VerificationRequest> Items, int TotalCount)> GetListAsync(
         int? status,
+        int? requestType,
         string? search,
         int page,
         int pageSize)
@@ -23,11 +24,15 @@ public class ModeratorVerificationRepository
             .Include(v => v.NannyProfile)
                 .ThenInclude(np => np.User)
             .Include(v => v.ReviewedByNavigation)
+            .Include(v => v.VerificationDocuments.Where(d => !d.IsDeleted))
             .Where(v => !v.IsDeleted)
             .AsQueryable();
 
         if (status.HasValue)
             query = query.Where(v => v.Status == status.Value);
+
+        if (requestType.HasValue)
+            query = query.Where(v => v.RequestType == requestType.Value);
 
         if (!string.IsNullOrWhiteSpace(search))
         {

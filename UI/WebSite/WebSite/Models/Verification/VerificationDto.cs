@@ -15,6 +15,9 @@ public class VerificationRequestListDto
 {
     public Guid     Id              { get; set; }
     public Guid     NannyProfileId  { get; set; }
+    public int      RequestType     { get; set; }
+    public List<int> DocumentTypes  { get; set; } = new();
+    public DateTime? ExpiryDate     { get; set; }
     public int      Status          { get; set; }   // 1=Pending, 2=Approved, 3=Rejected
     public DateTime CreatedAt       { get; set; }
     public DateTime? ReviewedAt     { get; set; }
@@ -30,14 +33,17 @@ public class VerificationRequestListDto
     public string? NannyCity      { get; set; }
 
     public string FullName    => $"{NannyFirstName} {NannyLastName}".Trim();
-    public string StatusLabel => Status switch { 2 => "Approved", 3 => "Rejected", _ => "Pending" };
+    public string StatusLabel => Status switch { 2 => "Da duyet", 3 => "Da tu choi", _ => "Dang cho" };
     public string StatusClass => Status switch { 2 => "badge-active", 3 => "badge-inactive", _ => "badge-pending" };
+    public string RequestTypeLabel => RequestType == 2 ? "Giay kham suc khoe" : "Ho so xac minh";
+    public string ExpiryDateLabel => ExpiryDate.HasValue ? ExpiryDate.Value.ToString("dd/MM/yyyy") : "-";
 }
 
 public class VerificationRequestDetailDto
 {
     public Guid     Id              { get; set; }
     public Guid     NannyProfileId  { get; set; }
+    public int      RequestType     { get; set; }
     public int      Status          { get; set; }
     public string?  RejectionReason { get; set; }
     public DateTime CreatedAt       { get; set; }
@@ -71,16 +77,17 @@ public class VerificationRequestDetailDto
     public List<VerificationDocumentDto> Documents { get; set; } = new();
 
     public string FullName    => $"{NannyFirstName} {NannyLastName}".Trim();
-    public string StatusLabel => Status switch { 2 => "Approved", 3 => "Rejected", _ => "Pending" };
+    public string StatusLabel => Status switch { 2 => "Da duyet", 3 => "Da tu choi", _ => "Dang cho" };
     public string StatusClass => Status switch { 2 => "badge-active", 3 => "badge-inactive", _ => "badge-pending" };
+    public string RequestTypeLabel => RequestType == 2 ? "Giay kham suc khoe" : "Ho so xac minh";
     public string EducationLabel => EducationLevel switch
     {
-        0 => "No formal education",
-        1 => "High School",
-        2 => "Associate Degree",
-        3 => "Bachelor's Degree",
-        4 => "Master's Degree",
-        _ => "Other"
+        0 => "Khong chinh quy",
+        1 => "Trung hoc pho thong",
+        2 => "Cao dang",
+        3 => "Dai hoc",
+        4 => "Thac si",
+        _ => "Khac"
     };
 }
 
@@ -94,10 +101,10 @@ public class VerificationSkillDto
 
     public string ProficiencyLabel => ProficiencyLevel switch
     {
-        1 => "Basic",
-        2 => "Intermediate",
-        3 => "Advanced",
-        _ => "Not specified"
+        1 => "Co ban",
+        2 => "Trung binh",
+        3 => "Nang cao",
+        _ => "Chua xac dinh"
     };
 }
 
@@ -113,10 +120,10 @@ public class VerificationCertificateDto
 
     public string VerificationStatusLabel => VerificationStatus switch
     {
-        1 => "Pending",
-        2 => "Approved",
-        3 => "Rejected",
-        _ => "Not submitted"
+        1 => "Dang cho",
+        2 => "Da duyet",
+        3 => "Da tu choi",
+        _ => "Chua gui"
     };
 
     public string VerificationStatusClass => VerificationStatus switch
@@ -135,13 +142,14 @@ public class VerificationDocumentDto
     public string  DocumentUrl  { get; set; } = "";
     public string  FileName     { get; set; } = "";
     public int?    FileSize     { get; set; }
+    public DateTime? ExpiryDate { get; set; }
 
     public string TypeLabel => DocumentType switch
     {
-        (int)VerificationDocumentType.IdentityCard => "National ID",
-        (int)VerificationDocumentType.DegreeCertificate => "Degree / Certificate",
-        (int)VerificationDocumentType.HealthCertificate => "Health Certificate",
-        _ => "Document"
+        (int)VerificationDocumentType.IdentityCard => "Can cuoc cong dan",
+        (int)VerificationDocumentType.DegreeCertificate => "Bang cap / Chung chi",
+        (int)VerificationDocumentType.HealthCertificate => "Giay kham suc khoe",
+        _ => "Tai lieu"
     };
 
     public string TypeIcon => DocumentType switch

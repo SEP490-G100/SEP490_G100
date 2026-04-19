@@ -9,6 +9,8 @@ public partial class VerificationRequest
 
     public Guid NannyProfileId { get; set; }
 
+    public int RequestType { get; set; }
+
     public int Status { get; set; }
 
     public Guid? ReviewedBy { get; set; }

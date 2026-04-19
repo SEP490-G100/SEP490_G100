@@ -27,5 +27,7 @@ public partial class VerificationDocument
 
     public bool IsDeleted { get; set; }
 
+    public DateTime? ExpiryDate { get; set; }
+
     public virtual VerificationRequest VerificationRequest { get; set; } = null!;
 }
