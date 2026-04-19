@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace WebSite.Controllers;
 
 /// <summary>
-/// Proxy gá»£i Ã½ Ä‘á»‹a chá»‰ (gá»i Backend API) Ä‘á»ƒ trÃ¬nh duyá»‡t gá»i cÃ¹ng origin.
+/// Proxy gợi ý địa chỉ (gọi Backend API) để trình duyệt gọi cùng origin.
 /// </summary>
 [Authorize]
 [Route("[controller]")]
@@ -28,9 +28,7 @@ public class AddressController : Controller
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
     }
 
-    /// <summary>
-    /// Gá»£i Ã½ Ä‘á»‹a Ä‘iá»ƒm táº¡i Viá»‡t Nam. Tráº£ vá» JSON: [{ displayName, latitude, longitude, city, district, ward }].
-    /// </summary>
+
     [AllowAnonymous]
     [HttpGet("Suggest")]
     public async Task<IActionResult> Suggest([FromQuery] string? q, [FromQuery] int limit = 8)
