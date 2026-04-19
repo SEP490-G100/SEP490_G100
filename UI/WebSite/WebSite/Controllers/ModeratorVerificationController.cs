@@ -56,7 +56,7 @@ public class ModeratorVerificationController : Controller
         }
         catch
         {
-            TempData["Error"] = "Khong the tai danh sach xac minh.";
+            TempData["Error"] = "Không thể tải danh sách xác minh.";
             return View(
                 "~/Views/Moderator/NannyVerification/ManageNannyVerification.cshtml",
                 new VerificationRequestListResponse());
@@ -81,7 +81,7 @@ public class ModeratorVerificationController : Controller
 
             if (result?.Success != true || result.Data == null)
             {
-                TempData["Error"] = "Khong tim thay yeu cau xac minh.";
+                TempData["Error"] = "Không tìm thấy yêu cầu xác minh.";
                 return RedirectToAction(nameof(ManageNannyVerification));
             }
 
@@ -89,7 +89,7 @@ public class ModeratorVerificationController : Controller
         }
         catch
         {
-            TempData["Error"] = "Loi ket noi den API.";
+            TempData["Error"] = "Lỗi kết nối đến API.";
             return RedirectToAction(nameof(ManageNannyVerification));
         }
     }

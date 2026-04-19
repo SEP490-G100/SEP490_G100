@@ -73,7 +73,9 @@ public static class SubscriptionPlanMetadataHelper
     }
 
     public static string NormalizeTargetRole(string? targetRole) =>
-        string.Equals(targetRole, "Nanny", StringComparison.OrdinalIgnoreCase) ? "Nanny" : "Parent";
+        string.Equals(targetRole, "Nanny", StringComparison.OrdinalIgnoreCase) ? "Nanny" :
+        string.Equals(targetRole, "Parent", StringComparison.OrdinalIgnoreCase) ? "Parent" :
+        "Unknown";
 
     public static string NormalizeCode(string? code, string? targetRole, string? fallbackName)
     {

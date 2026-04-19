@@ -16,10 +16,10 @@ public class CreateJobPostingRequest
     [Range(1, 3, ErrorMessage = "JobType phai la 1 (FullTime), 2 (PartTime), hoac 3 (Overnight).")]
     public int JobType { get; set; }
 
-    [Range(0, 100_000_000, ErrorMessage = "Luong toi thieu phai tu 0 den 100,000,000.")]
+    [Range(8_000_000, 50_000_000, ErrorMessage = "Luong toi thieu phai trong khoang 8.000.000 - 50.000.000 VND.")]
     public decimal? SalaryMin { get; set; }
 
-    [Range(0, 100_000_000, ErrorMessage = "Luong toi da phai tu 0 den 100,000,000.")]
+    [Range(8_000_000, 50_000_000, ErrorMessage = "Luong toi da phai trong khoang 8.000.000 - 50.000.000 VND.")]
     public decimal? SalaryMax { get; set; }
 
     public bool SalaryNegotiable { get; set; }
@@ -28,6 +28,7 @@ public class CreateJobPostingRequest
     public int? NumberOfChildren { get; set; }
 
     public Guid? ChildProfileId { get; set; }
+    public List<Guid> ChildProfileIds { get; set; } = [];
 
     [StringLength(300, ErrorMessage = "Dia chi toi da 300 ky tu.")]
     public string? Location { get; set; }

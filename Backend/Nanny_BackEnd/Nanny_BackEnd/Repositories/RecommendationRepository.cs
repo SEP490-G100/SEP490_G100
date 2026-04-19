@@ -2,6 +2,7 @@ using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
 using Nanny_BackEnd.DTOs.Recommendation;
+using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 
 namespace Nanny_BackEnd.Repositories;
@@ -256,6 +257,8 @@ public class RecommendationRepository
     {
         var j = await _db.JobPostings
             .Include(x => x.ChildProfile)
+            .Include(x => x.ParentProfile)
+                .ThenInclude(parent => parent.ChildProfiles.Where(child => !child.IsDeleted))
             .Include(x => x.JobRequirements.Where(r => !r.IsDeleted))
                 .ThenInclude(r => r.Skill)
             .FirstOrDefaultAsync(x => x.Id == jobId && !x.IsDeleted);
@@ -264,29 +267,10 @@ public class RecommendationRepository
 
         var (embedding, updatedAt) = await LoadJobEmbeddingWithTimestampAsync(jobId);
 
-        return new JobReadModelDto
-        {
-            JobId = j.Id,
-            Title = j.Title,
-            ChildAgeGroup = j.ChildProfile?.ChildAgeGroup,
-            NumberOfChildren = j.NumberOfChildren,
-            Description = j.Description,
-            Characteristic = j.ChildProfile?.Characteristic,
-            SpecialNeeds = j.ChildProfile?.SpecialNeeds,
-            RequiredSkillNames = j.JobRequirements.Select(r => r.Skill.Name).ToList(),
-            RequiredSkillIds = j.JobRequirements.Where(r => r.IsRequired).Select(r => r.SkillId).ToList(),
-            SalaryMin = j.SalaryMin,
-            SalaryMax = j.SalaryMax,
-            SalaryNegotiable = j.SalaryNegotiable,
-            MinNannyAge = j.MinNannyAge,
-            MaxNannyAge = j.MaxNannyAge,
-            Latitude = j.Latitude,
-            Longitude = j.Longitude,
-            City = j.City,
-            District = j.District,
-            Embedding = embedding,
-            EmbeddingUpdatedAt = updatedAt
-        };
+        var model = mapJobReadModel(j);
+        model.Embedding = embedding;
+        model.EmbeddingUpdatedAt = updatedAt;
+        return model;
     }
 
     public async Task<List<NannyReadModelDto>> GetAllNannyReadModelsAsync()
@@ -324,34 +308,14 @@ public class RecommendationRepository
     {
         var jobs = await _db.JobPostings
             .Include(j => j.ChildProfile)
+            .Include(j => j.ParentProfile)
+                .ThenInclude(parent => parent.ChildProfiles.Where(child => !child.IsDeleted))
             .Include(j => j.JobRequirements.Where(r => !r.IsDeleted))
                 .ThenInclude(r => r.Skill)
             .Where(j => !j.IsDeleted)
             .ToListAsync();
 
-        return jobs.Select(j => new JobReadModelDto
-        {
-            JobId = j.Id,
-            Title = j.Title,
-            ChildAgeGroup = j.ChildProfile?.ChildAgeGroup,
-            NumberOfChildren = j.NumberOfChildren,
-            Description = j.Description,
-            Characteristic = j.ChildProfile?.Characteristic,
-            SpecialNeeds = j.ChildProfile?.SpecialNeeds,
-            RequiredSkillNames = j.JobRequirements.Select(r => r.Skill.Name).ToList(),
-            RequiredSkillIds = j.JobRequirements.Where(r => r.IsRequired).Select(r => r.SkillId).ToList(),
-            SalaryMin = j.SalaryMin,
-            SalaryMax = j.SalaryMax,
-            SalaryNegotiable = j.SalaryNegotiable,
-            MinNannyAge = j.MinNannyAge,
-            MaxNannyAge = j.MaxNannyAge,
-            Latitude = j.Latitude,
-            Longitude = j.Longitude,
-            City = j.City,
-            District = j.District,
-            Embedding = null,
-            EmbeddingUpdatedAt = null
-        }).ToList();
+        return jobs.Select(mapJobReadModel).ToList();
     }
 
     public async Task<List<NannyReadModelDto>> GetPendingEmbedNanniesAsync()
@@ -395,34 +359,49 @@ public class RecommendationRepository
 
         var jobs = await _db.JobPostings
             .Include(j => j.ChildProfile)
+            .Include(j => j.ParentProfile)
+                .ThenInclude(parent => parent.ChildProfiles.Where(child => !child.IsDeleted))
             .Include(j => j.JobRequirements.Where(r => !r.IsDeleted))
                 .ThenInclude(r => r.Skill)
             .Where(j => pendingIds.Contains(j.Id))
             .ToListAsync();
 
-        return jobs.Select(j => new JobReadModelDto
+        return jobs.Select(mapJobReadModel).ToList();
+    }
+
+    private static JobReadModelDto mapJobReadModel(JobPosting job)
+    {
+        var selectedChildren = ChildProfileSnapshotHelper.ResolveChildren(
+            job.ParentProfile,
+            job.ChildProfileId ?? job.ChildProfile?.Id,
+            job.NumberOfChildren);
+        var childSnapshot = ChildProfileSnapshotHelper.BuildSnapshot(
+            selectedChildren,
+            job.ParentProfile?.FamilyDescription);
+
+        return new JobReadModelDto
         {
-            JobId = j.Id,
-            Title = j.Title,
-            ChildAgeGroup = j.ChildProfile?.ChildAgeGroup,
-            NumberOfChildren = j.NumberOfChildren,
-            Description = j.Description,
-            Characteristic = j.ChildProfile?.Characteristic,
-            SpecialNeeds = j.ChildProfile?.SpecialNeeds,
-            RequiredSkillNames = j.JobRequirements.Select(r => r.Skill.Name).ToList(),
-            RequiredSkillIds = j.JobRequirements.Where(r => r.IsRequired).Select(r => r.SkillId).ToList(),
-            SalaryMin = j.SalaryMin,
-            SalaryMax = j.SalaryMax,
-            SalaryNegotiable = j.SalaryNegotiable,
-            MinNannyAge = j.MinNannyAge,
-            MaxNannyAge = j.MaxNannyAge,
-            Latitude = j.Latitude,
-            Longitude = j.Longitude,
-            City = j.City,
-            District = j.District,
+            JobId = job.Id,
+            Title = job.Title,
+            ChildAgeGroup = childSnapshot.BirthType.HasValue ? (byte?)childSnapshot.BirthType.Value : null,
+            NumberOfChildren = job.NumberOfChildren,
+            Description = job.Description,
+            Characteristic = childSnapshot.Characteristic,
+            SpecialNeeds = childSnapshot.SpecialNeeds,
+            RequiredSkillNames = job.JobRequirements.Select(requirement => requirement.Skill.Name).ToList(),
+            RequiredSkillIds = job.JobRequirements.Where(requirement => requirement.IsRequired).Select(requirement => requirement.SkillId).ToList(),
+            SalaryMin = job.SalaryMin,
+            SalaryMax = job.SalaryMax,
+            SalaryNegotiable = job.SalaryNegotiable,
+            MinNannyAge = job.MinNannyAge,
+            MaxNannyAge = job.MaxNannyAge,
+            Latitude = job.Latitude,
+            Longitude = job.Longitude,
+            City = job.City,
+            District = job.District,
             Embedding = null,
             EmbeddingUpdatedAt = null
-        }).ToList();
+        };
     }
 
     // Embedding persistence (raw SQL — EF Core ignores these columns)
@@ -532,3 +511,6 @@ public class RecommendationRepository
         cmd.Parameters.Add(p);
     }
 }
+
+
+

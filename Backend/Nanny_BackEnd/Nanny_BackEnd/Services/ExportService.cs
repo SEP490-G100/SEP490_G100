@@ -54,7 +54,7 @@ public class ExportService
         usersSheet.Cell(1, 6).Value = "Status";
         usersSheet.Cell(1, 7).Value = "Roles";
         usersSheet.Cell(1, 8).Value = "CreatedAt";
-        
+
         var usersSheetHeaderRow = usersSheet.Row(1);
         usersSheetHeaderRow.Style.Font.Bold = true;
         usersSheetHeaderRow.Style.Fill.BackgroundColor = XLColor.LightGray;
@@ -139,7 +139,6 @@ public class ExportService
         workbook.SaveAs(stream);
         return stream.ToArray();
     }
-
     private static string GetUserStatusString(int status) => status switch
     {
         0 => "Pending",

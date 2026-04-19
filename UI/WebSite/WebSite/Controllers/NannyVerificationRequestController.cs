@@ -113,6 +113,8 @@ public class NannyVerificationRequestController : Controller
     }
 
     [HttpGet("NannySubmitVerificationRequest")]
+    [HttpGet("verifyNanny")]
+    [HttpGet("vetifyNanny")]
     public async Task<IActionResult> NannySubmitVerificationRequest()
     {
         var model = new SubmitVerificationRequestViewModel();

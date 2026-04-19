@@ -1,8 +1,10 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Http;
+using WebSite.Validation;
 
 namespace WebSite.Models.Profile
 {
-    public class EditPersonalInfoViewModel
+    public class EditPersonalInfoViewModel : IValidatableObject
     {
         public string FirstName { get; set; } = null!;
         public string LastName { get; set; } = null!;
@@ -29,6 +31,20 @@ namespace WebSite.Models.Profile
         public int? MaxTravelDistance { get; set; }
         public List<Guid> SelectedSkillIds { get; set; } = new();
         public List<SelectableSkillViewModel> AvailableSkills { get; set; } = new();
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (!IsNanny)
+                yield break;
+
+            foreach (var error in SalaryValidationRules.Validate(
+                         ExpectedSalaryMin,
+                         ExpectedSalaryMax,
+                         nameof(ExpectedSalaryMin),
+                         nameof(ExpectedSalaryMax)))
+            {
+                yield return error;
+            }
+        }
     }
 
     public class SelectableSkillViewModel

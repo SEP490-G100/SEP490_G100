@@ -2,7 +2,7 @@
 @model WebSite.Models.Blog.BlogListResponse
 @{
     Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
-    ViewData["Title"] = "Manage Blogs";
+    ViewData["Title"] = "Quản lý Blog";
     var currentSearch    = ViewBag.Search    as string ?? "";
     var currentStatus    = ViewBag.Status    as string ?? "";
     var currentIsDeleted = ViewBag.IsDeleted as string ?? "";
@@ -11,9 +11,9 @@
     var blogs            = Model?.Items       ?? new List<WebSite.Models.Blog.BlogDto>();
 
     string StatusLabel(BlogStatus s) => s switch {
-        BlogStatus.Published => "Published",
-        BlogStatus.Archived  => "Archived",
-        _                    => "Draft"
+        BlogStatus.Published => "Đã xuất bản",
+        BlogStatus.Archived  => "Đã lưu trữ",
+        _                    => "Bản nháp"
     };
 
     string StatusBadge(BlogStatus s) => s switch {
@@ -27,13 +27,13 @@
 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
     <div>
         <h1 class="page-title mt-2">
-            Manage <span class="gradient-text">Blogs</span>
+            Quản lý <span class="gradient-text">Blog</span>
         </h1>
-        <p class="page-subtitle">Create, update or manage blog articles.</p>
+        <p class="page-subtitle">Thêm mới, cập nhật hoặc quản lý các bài viết blog.</p>
     </div>
     <a href="/Moderator/CreateBlog" class="btn-primary flex-shrink-0">
         <span class="material-icons-round text-base">add_circle_outline</span>
-        Add New Blog
+        Thêm Blog mới
     </a>
 </div>
 
@@ -61,7 +61,7 @@
             <div class="relative flex-1">
                 <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">search</span>
                 <input name="search" type="text" value="@currentSearch"
-                       placeholder="Search by title or slug..."
+                       placeholder="Tìm theo tiêu đề hoặc đường dẫn..."
                        class="search-input pl-9 w-full border border-gray-200 rounded-xl px-4 py-2 font-medium"
                        onkeydown="if(event.key==='Enter'){this.form.submit();}" />
             </div>
@@ -70,10 +70,10 @@
                 <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">flag</span>
                 <select name="status" onchange="this.form.submit()"
                         class="search-input md:w-40 !pl-9 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
-                    <option value="">All Status</option>
-                    <option value="@((int)BlogStatus.Draft)" selected="@(currentStatus == ((int)BlogStatus.Draft).ToString() ? "selected" : null)">Draft</option>
-                    <option value="@((int)BlogStatus.Published)" selected="@(currentStatus == ((int)BlogStatus.Published).ToString() ? "selected" : null)">Published</option>
-                    <option value="@((int)BlogStatus.Archived)" selected="@(currentStatus == ((int)BlogStatus.Archived).ToString() ? "selected" : null)">Archived</option>
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="@((int)BlogStatus.Draft)" selected="@(currentStatus == ((int)BlogStatus.Draft).ToString() ? "selected" : null)">Bản nháp</option>
+                    <option value="@((int)BlogStatus.Published)" selected="@(currentStatus == ((int)BlogStatus.Published).ToString() ? "selected" : null)">Đã xuất bản</option>
+                    <option value="@((int)BlogStatus.Archived)" selected="@(currentStatus == ((int)BlogStatus.Archived).ToString() ? "selected" : null)">Đã lưu trữ</option>
                 </select>
             </div>
             <!-- Category Filter -->
@@ -81,7 +81,7 @@
                 <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">category</span>
                 <select name="categoryId" onchange="this.form.submit()"
                         class="search-input md:w-48 !pl-9 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
-                    <option value="">All Categories</option>
+                    <option value="">Tất cả danh mục</option>
                     @if (ViewBag.Categories != null)
                     {
                         foreach (var c in ViewBag.Categories as List<WebSite.Models.Blog.BlogCategoryOption>)
@@ -103,14 +103,14 @@
                 <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">toggle_on</span>
                 <select name="isDeleted" onchange="this.form.submit()"
                         class="search-input md:w-40 !pl-9 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
-                    <option value="">All</option>
-                    <option value="false" selected="@(currentIsDeleted == "false" ? "selected" : null)">Active</option>
-                    <option value="true"  selected="@(currentIsDeleted == "true"  ? "selected" : null)">Inactive</option>
+                    <option value="">Tất cả hiển thị</option>
+                    <option value="false" selected="@(currentIsDeleted == "false" ? "selected" : null)">Hoạt động</option>
+                    <option value="true"  selected="@(currentIsDeleted == "true"  ? "selected" : null)">Đã ẩn</option>
                 </select>
             </div>
             <button type="submit" class="btn-primary flex-shrink-0 flex items-center gap-1">
                 <span class="material-icons-round text-base">search</span>
-                Search
+                Tìm kiếm
             </button>
         </div>
     </div>
@@ -120,8 +120,8 @@
 <div class="content-card overflow-hidden fade-in-up" style="animation-delay:.1s;">
     <div class="card-header">
         <span class="text-sm text-gray-500">
-            Showing <span class="font-bold text-gray-800">@blogs.Count</span>
-            of <span class="font-bold text-gray-800">@(Model?.TotalCount ?? 0)</span> blogs
+            Hiển thị <span class="font-bold text-gray-800">@blogs.Count</span>
+            trên <span class="font-bold text-gray-800">@(Model?.TotalCount ?? 0)</span> bài viết
         </span>
     </div>
 
@@ -130,13 +130,13 @@
             <thead>
                 <tr>
                     <th class="text-left">#</th>
-                    <th class="text-left">Title</th>
-                    <th class="text-left">Category</th>
-                    <th class="text-center">Status</th>
-                    <th class="text-center">Views</th>
-                    <th class="text-center">Active</th>
-                    <th class="text-left">Created</th>
-                    <th class="text-center">Actions</th>
+                    <th class="text-left">Tiêu đề</th>
+                    <th class="text-left">Danh mục</th>
+                    <th class="text-center">Trạng thái</th>
+                    <th class="text-center">Lượt xem</th>
+                    <th class="text-center">Hoạt động</th>
+                    <th class="text-left">Ngày tạo</th>
+                    <th class="text-center">Hành động</th>
                 </tr>
             </thead>
             <tbody>
@@ -145,8 +145,8 @@
                     <tr>
                         <td colspan="8" class="text-center py-16 text-gray-400">
                             <span class="material-icons-round text-5xl mb-3 block text-gray-200">article</span>
-                            <p class="font-semibold text-gray-400">No blogs found.</p>
-                            <p class="text-xs text-gray-300 mt-1">Try adjusting your filters or create a new blog.</p>
+                            <p class="font-semibold text-gray-400">Không tìm thấy bài viết nào.</p>
+                            <p class="text-xs text-gray-300 mt-1">Vui lòng thử lại với bộ lọc khác hoặc tạo bài viết mới.</p>
                         </td>
                     </tr>
                 }
@@ -195,28 +195,28 @@
                         <td class="text-center">
                             <div class="flex items-center justify-center gap-1.5">
                                 <div class="w-2 h-2 rounded-full @(blog.IsDeleted ? "bg-red-400 ring-2 ring-red-100" : "bg-emerald-400 ring-2 ring-emerald-100")"></div>
-                                <span class="badge @(blog.IsDeleted ? "badge-inactive" : "badge-active")">@(blog.IsDeleted ? "Inactive" : "Active")</span>
+                                <span class="badge @(blog.IsDeleted ? "badge-inactive" : "badge-active")">@(blog.IsDeleted ? "Đã ẩn" : "Hoạt động")</span>
                             </div>
                         </td>
-                        <td class="text-gray-500 text-xs">@blog.CreatedAt.ToString("MMM dd, yyyy")</td>
+                        <td class="text-gray-500 text-xs">@blog.CreatedAt.ToString("dd/MM/yyyy")</td>
                         <td>
                             <div class="flex items-center justify-center gap-1.5">
                                 <!-- Edit -->
-                                <a href="/Moderator/ViewBlogDetail/@blog.Id" title="View &amp; Edit"
+                                <a href="/Moderator/ViewBlogDetail/@blog.Id" title="Xem &amp; Sửa"
                                    class="w-8 h-8 rounded-xl hover:bg-blue-50 hover:text-blue-600 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-blue-200">
                                     <span class="material-icons-round text-base">edit</span>
                                 </a>
                                 <!-- Toggle Active/Inactive -->
                                 @if (!blog.IsDeleted)
                                 {
-                                    <button onclick="confirmToggle('@blog.Id', '@shortTitleEsc', false)" title="Deactivate"
+                                    <button onclick="confirmToggle('@blog.Id', '@shortTitleEsc', false)" title="Vô hiệu hóa"
                                             class="w-8 h-8 rounded-xl hover:bg-red-50 hover:text-red-500 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-red-200">
                                         <span class="material-icons-round text-base">block</span>
                                     </button>
                                 }
                                 else
                                 {
-                                    <button onclick="confirmToggle('@blog.Id', '@shortTitleEsc', true)" title="Activate"
+                                    <button onclick="confirmToggle('@blog.Id', '@shortTitleEsc', true)" title="Kích hoạt"
                                             class="w-8 h-8 rounded-xl hover:bg-emerald-50 hover:text-emerald-600 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-emerald-200">
                                         <span class="material-icons-round text-base">check_circle_outline</span>
                                     </button>
@@ -233,7 +233,7 @@
     <!-- Pagination -->
     <div class="flex items-center justify-between px-6 py-4 border-t border-gray-50">
         <span class="text-sm text-gray-400">
-            Page <span class="font-bold text-gray-600">@currentPage</span> of <span class="font-bold text-gray-600">@totalPages</span>
+            Trang <span class="font-bold text-gray-600">@currentPage</span> / <span class="font-bold text-gray-600">@totalPages</span>
         </span>
         <div class="flex gap-1.5">
             @if (currentPage > 1)
@@ -289,11 +289,11 @@
 <form id="csrfForm" style="display:none;">@Html.AntiForgeryToken()</form>
 <script>
 function confirmToggle(id, name, activate) {
-    document.getElementById('toggleTitle').textContent = activate ? 'Activate Blog' : 'Deactivate Blog';
-    document.getElementById('toggleSubtitle').textContent = activate ? 'Make blog visible to readers' : 'Hide blog temporarily';
+    document.getElementById('toggleTitle').textContent = activate ? 'Kích hoạt bài viết' : 'Vô hiệu hóa bài viết';
+    document.getElementById('toggleSubtitle').textContent = activate ? 'Hiển thị bài viết với người đọc' : 'Tạm thời ẩn bài viết này';
     document.getElementById('toggleMessage').innerHTML = (activate
-        ? 'Are you sure you want to activate: <strong>' + name + '</strong>?'
-        : 'Are you sure you want to deactivate: <strong>' + name + '</strong>?');
+        ? 'Bạn có chắc chắn muốn kích hoạt: <strong>' + name + '</strong>?'
+        : 'Bạn có chắc chắn muốn vô hiệu hóa: <strong>' + name + '</strong>?');
 
     var iconBg = document.getElementById('toggleIconBg');
     var icon   = document.getElementById('toggleIcon');
@@ -302,11 +302,11 @@ function confirmToggle(id, name, activate) {
     icon.textContent        = activate ? 'check_circle_outline' : 'block';
 
     var btnClass = activate ? 'btn-success' : 'btn-danger';
-    var btnText  = activate ? 'Confirm Activate' : 'Confirm Deactivate';
+    var btnText  = activate ? 'Xác nhận Kích hoạt' : 'Xác nhận Vô hiệu hóa';
     var token = document.querySelector('#csrfForm input[name="__RequestVerificationToken"]').value;
 
     document.getElementById('toggleFormContainer').innerHTML =
-        '<button onclick="closeModal(\'toggleModal\')" class="btn-outline flex-1 justify-center">Cancel</button>' +
+        '<button onclick="closeModal(\'toggleModal\')" class="btn-outline flex-1 justify-center">Hủy</button>' +
         '<form method="post" action="/Moderator/ToggleBlogStatus" class="flex-1 flex">' +
         '<input name="__RequestVerificationToken" type="hidden" value="' + token + '" />' +
         '<input type="hidden" name="id" value="' + id + '" />' +

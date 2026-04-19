@@ -1,9 +1,10 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Options;
 using Nanny_BackEnd.DTOs.Subscription;
+using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
@@ -522,22 +523,7 @@ public class SubscriptionService
         await _subscriptionRepo.saveChanges();
     }
 
-    //public async Task toggleAdminPlanStatus(Guid id, Guid adminUserId, bool isActive)
-    //{
-    //    var plan = await _subscriptionRepo.findAdminPlanByIdIncludingDeleted(id)
-    //        ?? throw new KeyNotFoundException("Khong tim thay goi subscription.");
-
-    //    var targetIsDeleted = !isActive;
-    //    if (plan.IsActive == isActive && plan.IsDeleted == targetIsDeleted)
-    //        return;
-
-    //    plan.IsActive = isActive;
-    //    plan.IsDeleted = targetIsDeleted;
-    //    plan.UpdatedAt = DateTime.UtcNow;
-    //    plan.UpdatedBy = adminUserId;
-    //    await _subscriptionRepo.saveChanges();
-    //}
-
+  
     private async Task<Transaction?> findReusablePendingTransaction(Guid userId, string planCode)
     {
         var nowUtc = DateTime.UtcNow;
@@ -695,9 +681,6 @@ public class SubscriptionService
         if (transactionStatus == 3)
             return "FAILED";
 
-        if (transactionStatus == 5)
-            return "WAITING_REVIEW";
-
         if (string.Equals(providerStatus, "PAID", StringComparison.OrdinalIgnoreCase))
             return "SUCCESS";
 
@@ -842,46 +825,7 @@ public class SubscriptionService
         return true;
     }
 
-    //private async Task ensureAdminManagedPlans()
-    //{
-    //    var existingPlans = await _subscriptionRepo.getPlansByNamesIncludingDeleted(ManagedPlans.Select(p => p.Name));
-    //    var existingNames = existingPlans
-    //        .Select(p => p.Name)
-    //        .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-    //    var needsSave = false;
-    //    foreach (var definition in ManagedPlans)
-    //    {
-    //        if (existingNames.Contains(definition.Name))
-    //            continue;
-
-    //        _subscriptionRepo.addPlan(new SubscriptionPlan
-    //        {
-    //            Id = Guid.NewGuid(),
-    //            Name = definition.Name,
-    //            Description = definition.Description,
-    //            Price = definition.Price,
-    //            DurationDays = definition.DurationDays,
-    //            Features = SubscriptionPlanMetadataHelper.Serialize(new SubscriptionPlanMetadata
-    //            {
-    //                Code = definition.Code,
-    //                TargetRole = definition.TargetRole,
-    //                Features = definition.Features,
-    //                Benefits = definition.Benefits
-    //            }),
-    //            IsActive = true,
-    //            SortOrder = definition.SortOrder,
-    //            CreatedAt = DateTime.UtcNow,
-    //            CreatedBy = null,
-    //            IsDeleted = false
-    //        });
-    //        needsSave = true;
-    //    }
-
-    //    if (needsSave)
-    //        await _subscriptionRepo.saveChanges();
-    //}
-
+    
     private static void markTransactionFailed(Transaction transaction, DateTime nowUtc)
     {
         transaction.Status = 3;
@@ -985,98 +929,35 @@ public class SubscriptionService
         await _subscriptionRepo.saveChanges();
     }
 
-    //private async Task<List<SubscriptionPlan>> ensureManagedPlans()
-    //{
-    //    var existingPlans = await _subscriptionRepo.getPlansByNamesIncludingDeleted(ManagedPlans.Select(p => p.Name));
-    //    var planMap = existingPlans.ToDictionary(p => p.Name, StringComparer.OrdinalIgnoreCase);
-    //    var needsSave = false;
-
-    //    foreach (var definition in ManagedPlans)
-    //    {
-    //        if (!planMap.TryGetValue(definition.Name, out var plan))
-    //        {
-    //            plan = new SubscriptionPlan
-    //            {
-    //                Id = Guid.NewGuid(),
-    //                CreatedAt = DateTime.UtcNow,
-    //                IsDeleted = false
-    //            };
-    //            applyDefinition(plan, definition);
-    //            _subscriptionRepo.addPlan(plan);
-    //            existingPlans.Add(plan);
-    //            needsSave = true;
-    //            continue;
-    //        }
-
-    //        if (applyDefinition(plan, definition))
-    //            needsSave = true;
-    //    }
-
-    //    if (needsSave)
-    //        await _subscriptionRepo.saveChanges();
-
-    //    return existingPlans
-    //        .Where(p => !p.IsDeleted && p.IsActive)
-    //        .OrderBy(p => p.SortOrder)
-    //        .ThenBy(p => p.Price)
-    //        .ToList();
-    //}
-
-    //private static bool applyDefinition(SubscriptionPlan plan, ManagedPlanDefinition definition)
-    //{
-    //    var changed = false;
-
-    //    if (plan.Name != definition.Name)
-    //    {
-    //        plan.Name = definition.Name;
-    //        changed = true;
-    //    }
-
-    //    if (plan.Description != definition.Description)
-    //    {
-    //        plan.Description = definition.Description;
-    //        changed = true;
-    //    }
-
-    //    if (plan.Price != definition.Price)
-    //    {
-    //        plan.Price = definition.Price;
-    //        changed = true;
-    //    }
-
-    //    if (plan.DurationDays != definition.DurationDays)
-    //    {
-    //        plan.DurationDays = definition.DurationDays;
-    //        changed = true;
-    //    }
-
-    //    if (plan.SortOrder != definition.SortOrder)
-    //    {
-    //        plan.SortOrder = definition.SortOrder;
-    //        changed = true;
-    //    }
-
-    //    var features = JsonSerializer.Serialize(definition.Features);
-    //    if (plan.Features != features)
-    //    {
-    //        plan.Features = features;
-    //        changed = true;
-    //    }
-
-    //    if (changed)
-    //        plan.UpdatedAt = DateTime.UtcNow;
-
-    //    return changed;
-    //}
-
+   
     private static SubscriptionPlanResponse mapPlan(SubscriptionPlan plan)
     {
-        var features = splitFeatures(plan.Features);
-        var targetRole = inferTargetRole(plan, features);
+        var metadata = SubscriptionPlanMetadataHelper.TryParse(plan.Features);
+        var hasStructuredMetadata = !string.IsNullOrWhiteSpace(plan.Features) &&
+                                    plan.Features.TrimStart().StartsWith("{", StringComparison.Ordinal);
+
+        var features = metadata?.Features?.Count > 0
+            ? SubscriptionPlanMetadataHelper.NormalizeFeatures(metadata.Features)
+            : hasStructuredMetadata
+                ? []
+                : splitFeatures(plan.Features);
+
+        var targetRole = hasStructuredMetadata && !string.IsNullOrWhiteSpace(metadata?.TargetRole)
+            ? SubscriptionPlanMetadataHelper.NormalizeTargetRole(metadata!.TargetRole)
+            : inferTargetRole(plan, features);
+
+        var code = hasStructuredMetadata && !string.IsNullOrWhiteSpace(metadata?.Code)
+            ? metadata!.Code
+            : buildPlanCode(plan);
+
+        var benefits = hasStructuredMetadata && metadata?.Benefits != null
+            ? metadata.Benefits
+            : inferBenefits(plan, targetRole, features);
+
         return new SubscriptionPlanResponse
         {
             Id = plan.Id,
-            Code = buildPlanCode(plan),
+            Code = code,
             TargetRole = targetRole,
             Name = plan.Name,
             Description = plan.Description,
@@ -1084,7 +965,7 @@ public class SubscriptionService
             DurationDays = plan.DurationDays,
             Features = features,
             SortOrder = plan.SortOrder,
-            Benefits = inferBenefits(plan, targetRole, features)
+            Benefits = benefits
         };
     }
 
@@ -1129,16 +1010,16 @@ public class SubscriptionService
 
     private static string getSubscriptionStatusLabel(int status) => status switch
     {
-        1 => "Dang hoat dong",
-        2 => "Da huy",
-        3 => "Het han",
+        (int)UserSubscriptionStatus.Active    => "Dang hoat dong",
+        (int)UserSubscriptionStatus.Cancelled => "Da huy",
+        (int)UserSubscriptionStatus.Inactive  => "Het han",
         _ => "Khong xac dinh"
     };
 
     private static string getTransactionStatusLabel(int status) => status switch
     {
         1 => "Cho thanh toan",
-        5 => "Dang cho xet duyet",
+        5 => "Dang xu ly thanh toan",
         2 => "Thanh cong",
         3 => "That bai",
         4 => "Da hoan tien",
@@ -1199,40 +1080,7 @@ public class SubscriptionService
         return int.TryParse(parts[2], out var orderCode) ? orderCode : null;
     }
 
-    //private static SubscriptionPlanMetadata resolveAdminPlanMetadata(SubscriptionPlan plan)
-    //{
-    //    var metadata = SubscriptionPlanMetadataHelper.TryParse(plan.Features);
-    //    var definition = getManagedPlanDefinition(plan.Name);
-    //    var targetRole = metadata?.TargetRole;
-    //    if (string.IsNullOrWhiteSpace(targetRole))
-    //        targetRole = definition?.TargetRole ?? "Parent";
-
-    //    var features = metadata?.Features.Count > 0
-    //        ? metadata.Features
-    //        : definition?.Features ?? splitFeatures(plan.Features);
-
-    //    var benefits = metadata?.Benefits;
-    //    if (benefits == null || (
-    //        benefits.MonthlyJobPostLimit == 0 &&
-    //        benefits.MonthlyApplicationLimit == 0 &&
-    //        !benefits.FeaturedBadge &&
-    //        !benefits.SearchPriority &&
-    //        benefits.ListingDurationDays == 0))
-    //    {
-    //        benefits = definition?.Benefits
-    //            ?? (string.Equals(targetRole, "Nanny", StringComparison.OrdinalIgnoreCase)
-    //                ? SubscriptionBenefitResponse.FreeNanny
-    //                : SubscriptionBenefitResponse.FreeParent);
-    //    }
-
-    //    return new SubscriptionPlanMetadata
-    //    {
-    //        Code = SubscriptionPlanMetadataHelper.NormalizeCode(metadata?.Code, targetRole, plan.Name),
-    //        TargetRole = SubscriptionPlanMetadataHelper.NormalizeTargetRole(targetRole),
-    //        Features = SubscriptionPlanMetadataHelper.NormalizeFeatures(features),
-    //        Benefits = benefits
-    //    };
-    //}
+   
 
     private static string serializeFeaturesForStorage(IEnumerable<string> features) =>
         JsonSerializer.Serialize(SubscriptionPlanMetadataHelper.NormalizeFeatures(features));

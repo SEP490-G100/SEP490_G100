@@ -1,145 +1,145 @@
-@using WebSite.Controllers
 @using WebSite.Models.Profile
 @model List<ChildProfileViewModel>
 
 @{
-    ViewData["Title"] = "Quản lý con em";
+    ViewData["Title"] = "Quan ly con em";
+    var childCount = Model?.Count ?? 0;
+    var declaredChildrenCount = 0;
+    if (ViewBag.DeclaredChildrenCount is int declaredCountFromBag)
+    {
+        declaredChildrenCount = declaredCountFromBag;
+    }
+    var displayChildrenCount = Math.Max(childCount, declaredChildrenCount);
 }
 
-
-<div class="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50/30 to-white dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-6xl mx-auto">
-        <!-- Header -->
-        <div class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <span class="section-label">👨‍👩‍👧‍👦 Gia đình</span>
-                <h1 class="text-4xl font-bold text-gray-900 dark:text-white mt-3" style="font-family:'Quicksand',sans-serif">
-                    Quản lý <span class="gradient-text">con em</span>
-                </h1>
-                <div class="section-divider left mt-4"></div>
+<div class="child-page">
+    <div class="child-shell">
+        <div class="child-surface">
+            <div class="child-breadcrumb">
+                <a href="@Url.Action("Index", "Profile")" class="child-breadcrumb__link">
+                    <span class="material-icons-round">person</span>
+                    Ho so
+                </a>
+                <span class="material-icons-round child-breadcrumb__sep">chevron_right</span>
+                <span class="child-breadcrumb__current">Quan ly con em</span>
             </div>
-            <a href="@Url.Action("AddChild", "Profile")" 
-               class="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold rounded-2xl transition-all duration-300 shadow-glow hover:shadow-xl w-full sm:w-auto">
-                <span class="material-icons-round">add_circle</span>
-                Thêm con em
-            </a>
-        </div>
 
-        @if (Model?.Count > 0)
-        {
-            <!-- Children Grid -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                @foreach (var child in Model)
+            <div class="child-hero">
+                <div class="child-hero__left">
+                    <div class="child-hero__icon">
+                        <span class="material-icons-round">child_care</span>
+                    </div>
+                    <div>
+                        <p class="child-hero__eyebrow">Gia dinh</p>
+                        <h1 class="child-hero__title">Quan ly con em</h1>
+                        <p class="child-hero__subtitle">Cap nhat thong tin cua be de he thong goi y nanny phu hop hon.</p>
+                    </div>
+                </div>
+                <div class="child-hero__right">
+                    <span class="child-chip">@displayChildrenCount tre</span>
+                    <a href="@Url.Action("AddChild", "Profile")" class="child-btn child-btn--primary">
+                        <span class="material-icons-round">add</span>
+                        Them con em
+                    </a>
+                </div>
+            </div>
+
+            <div class="child-content">
+                @if (childCount > 0)
                 {
-                    <div class="bg-white/80 dark:bg-card-dark/80 rounded-3xl p-6 lg:p-8 shadow-soft border border-gray-100/80 dark:border-gray-800/50 backdrop-blur-md hover:shadow-lg transition-all duration-300 group">
-                        <!-- Child Header -->
-                        <div class="flex items-start justify-between mb-6 pb-4 border-b border-gray-100 dark:border-gray-800">
-                            <div class="flex items-center gap-3">
-                                <div class="w-12 h-12 bg-orange-100 dark:bg-orange-950/30 rounded-2xl flex items-center justify-center text-orange-600 dark:text-orange-400">
-                                    <span class="material-icons-round text-2xl">child_care</span>
-                                </div>
-                                <h3 class="text-2xl font-bold text-gray-900 dark:text-white" style="font-family:'Quicksand',sans-serif">
-                                    Hồ sơ con
-                                </h3>
-                            </div>
-                            <div class="flex gap-2">
-                                <a href="@Url.Action("EditChild", "Profile", new { childId = child.Id })"
-                                   class="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors shadow-sm">
-                                    <span class="material-icons-round text-xl">edit</span>
-                                </a>
-                                <form method="post" action="@Url.Action("DeleteChild", "Profile")" 
-                                      style="display:inline" 
-                                      onsubmit="return confirm('Bạn chắc chắn muốn xóa con em này?')">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="childId" value="@child.Id">
-                                    <button type="submit" class="p-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors shadow-sm">
-                                        <span class="material-icons-round text-xl">delete</span>
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-
-                        <!-- Child Details Grid -->
-                        <div class="grid grid-cols-2 gap-4">
-                            <!-- Age Group -->
-                            <div class="p-4 bg-gray-50/50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700">
-                                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 pointer-events-none">👶 Nhóm tuổi</p>
-                                <p class="font-bold text-gray-900 dark:text-white">
-                                    @Html.Raw(child.ChildAgeGroup.HasValue ? WebSite.Helpers.EnumDisplayHelper.GetDisplayName(child.ChildAgeGroup.Value) : "<span class=\"text-gray-400 font-medium italic\">--</span>")
-                                </p>
-                            </div>
-
-                            <!-- Created Date -->
-                            <div class="p-4 bg-gray-50/50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700">
-                                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 pointer-events-none">📅 Ngày tạo</p>
-                                <p class="font-bold text-gray-900 dark:text-white">@child.CreatedAt.ToString("dd/MM/yyyy")</p>
-                            </div>
-                        </div>
-
-                        <!-- Characteristic -->
-                        @if (!string.IsNullOrEmpty(child.Characteristic))
+                    <div class="child-grid">
+                        @{ int childIdx = 0; }
+                        @foreach (var child in Model ?? new List<ChildProfileViewModel>())
                         {
-                            <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800/50">
-                                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pointer-events-none">✨ Đặc điểm tính cách</p>
-                                <div class="bg-orange-50 dark:bg-orange-950/20 border border-orange-100 dark:border-orange-900/30 rounded-2xl p-4">
-                                    <p class="text-sm font-medium text-orange-800 dark:text-orange-300 italic leading-relaxed">"@child.Characteristic"</p>
+                            childIdx++;
+                            <article class="child-card">
+                                <div class="child-card__head">
+                                    <div class="child-card__meta">
+                                        <div class="child-avatar">
+                                            <span class="material-icons-round">child_care</span>
+                                        </div>
+                                        <div>
+                                            <h2>Ho so tre #@childIdx</h2>
+                                            <p>Tao ngay @child.CreatedAt.ToString("dd/MM/yyyy")</p>
+                                        </div>
+                                    </div>
+                                    <div class="child-menu">
+                                        <button class="child-menu__trigger" onclick="toggleChildMenu(this)" type="button" aria-label="Mo tuy chon">
+                                            <span class="material-icons-round">more_vert</span>
+                                        </button>
+                                        <div class="child-menu__panel">
+                                            <a href="@Url.Action("EditChild", "Profile", new { childId = child.Id })" class="child-menu__item">
+                                                <span class="material-icons-round">edit</span>
+                                                Chinh sua
+                                            </a>
+                                            <form method="post" action="@Url.Action("DeleteChild", "Profile")" onsubmit="return confirm('Ban chac chan muon xoa ho so nay?')">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="childId" value="@child.Id" />
+                                                <button type="submit" class="child-menu__item child-menu__item--danger">
+                                                    <span class="material-icons-round">delete_outline</span>
+                                                    Xoa ho so
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        }
 
-                        <!-- Special Needs -->
-                        @if (!string.IsNullOrEmpty(child.SpecialNeeds))
-                        {
-                            <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800/50">
-                                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pointer-events-none">🎯 Nhu cầu đặc biệt</p>
-                                <div class="bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 rounded-2xl p-4">
-                                    <p class="text-sm font-medium text-blue-800 dark:text-blue-300 italic leading-relaxed">"@child.SpecialNeeds"</p>
+                                <div class="child-card__body">
+                                    <div class="child-kv">
+                                        <span class="child-kv__label">Nhom tuoi</span>
+                                        <span class="child-kv__value">
+                                            @(child.ChildAgeGroup.HasValue
+                                                ? WebSite.Helpers.EnumDisplayHelper.GetDisplayName(child.ChildAgeGroup.Value)
+                                                : "Chua cap nhat")
+                                        </span>
+                                    </div>
+
+                                    @if (!string.IsNullOrWhiteSpace(child.Characteristic))
+                                    {
+                                        <div class="child-note child-note--orange">
+                                            <span>Tinh cach</span>
+                                            <p>@child.Characteristic</p>
+                                        </div>
+                                    }
+
+                                    @if (!string.IsNullOrWhiteSpace(child.SpecialNeeds))
+                                    {
+                                        <div class="child-note child-note--blue">
+                                            <span>Nhu cau dac biet</span>
+                                            <p>@child.SpecialNeeds</p>
+                                        </div>
+                                    }
                                 </div>
-                            </div>
+                            </article>
                         }
                     </div>
                 }
-            </div>
-        }
-        else
-        {
-            <!-- Empty State -->
-            <div class="bg-white/80 dark:bg-card-dark/80 rounded-3xl p-12 shadow-soft border border-gray-100/80 dark:border-gray-800/50 backdrop-blur-md text-center max-w-2xl mx-auto">
-                <div class="w-24 h-24 bg-orange-50 dark:bg-orange-900/20 rounded-full flex items-center justify-center mx-auto mb-6 text-5xl">
-                    👶
-                </div>
-                <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2" style="font-family:'Quicksand',sans-serif">Chưa có thông tin con em</h3>
-                <p class="text-gray-500 dark:text-gray-400 mb-8 max-w-sm mx-auto">Hãy bắt đầu bằng cách thêm thông tin con em để chúng tôi gợi ý bảo mẫu phù hợp nhất.</p>
-                <a href="@Url.Action("AddChild", "Profile")" 
-                   class="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold rounded-2xl transition-all duration-300 shadow-glow hover:shadow-xl">
-                    <span class="material-icons-round text-lg">add_circle</span>
-                    <span>Thêm con em ngay</span>
-                </a>
-            </div>
-        }
+                else
+                {
+                    <section class="child-empty">
+                        <div class="child-empty__icon">
+                            <span class="material-icons-round">child_care</span>
+                        </div>
+                        <h3>Chua co ho so tre em</h3>
+                        @if (declaredChildrenCount > 0)
+                        {
+                            <p>Ban da khai bao <strong>@declaredChildrenCount tre</strong> trong ho so, nhung chua tao ho so chi tiet cho tung tre.</p>
+                        }
+                        else
+                        {
+                            <p>Bat dau bang cach them thong tin con em de he thong de xuat nanny phu hop hon.</p>
+                        }
+                        <a href="@Url.Action("AddChild", "Profile")" class="child-btn child-btn--primary">
+                            <span class="material-icons-round">add_circle</span>
+                            Them con em ngay
+                        </a>
+                    </section>
+                }
 
-        <!-- Back Button -->
-        <div class="mt-12 text-center">
-            <a href="@Url.Action("Index", "Profile")" 
-               class="inline-flex items-center gap-2 px-6 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 font-bold rounded-2xl transition-all duration-300 hover:border-primary hover:text-primary shadow-sm">
-                <span class="material-icons-round text-lg">arrow_back</span>
-                <span>Quay lại hồ sơ</span>
-            </a>
-        </div>
-    </div>
-</div>
-
-<style>
-    .shadow-soft { box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05); }
-    .shadow-glow { box-shadow: 0 10px 25px -5px rgba(249, 115, 22, 0.4); }
-    .bg-card-dark { background-color: #111827; }
-    .gradient-text { 
-        background: linear-gradient(135deg, #EA580C 0%, #F97316 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-weight: 700;
-    }
-</style>
+                <div class="child-footer-actions">
+                    <a href="@Url.Action("Index", "Profile")" class="child-btn child-btn--ghost">
+                        <span class="material-icons-round">arrow_back</span>
+                        Quay lai ho so
                     </a>
                 </div>
             </div>
@@ -148,42 +148,485 @@
 </div>
 
 <style>
-    .card {
-        border-radius: 8px;
-        border: none;
+    .child-page {
+        min-height: calc(100vh - 72px);
+        padding: 28px 16px 56px;
+        background:
+            radial-gradient(circle at top right, rgba(255, 237, 213, .42), transparent 35%),
+            linear-gradient(180deg, #faf9f7 0%, #f8fafc 100%);
     }
 
-    .card-header {
-        border-radius: 8px 8px 0 0;
-        padding: 1.25rem;
+    .child-shell {
+        max-width: 980px;
+        margin: 0 auto;
     }
 
-    .card-body {
-        padding: 1.5rem;
+    .child-surface {
+        border: 1px solid #e2e8f0;
+        border-radius: 28px;
+        background: #fff;
+        box-shadow: 0 24px 56px rgba(15, 23, 42, .08);
+        overflow: hidden;
     }
 
-    .card-footer {
-        border-top: 1px solid #e0e0e0;
-        padding: 1rem 1.5rem;
-        border-radius: 0 0 8px 8px;
+    .child-breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 18px 24px 0;
+        font-size: 12px;
+        color: #94a3b8;
     }
 
-    .table-hover tbody tr:hover {
-        background-color: #f8f9fa;
+    .child-breadcrumb__link {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        text-decoration: none;
+        color: #94a3b8;
+        transition: color .15s ease;
     }
 
-    .btn {
-        border-radius: 5px;
-        padding: 0.375rem 0.75rem;
-        font-size: 0.875rem;
+    .child-breadcrumb__link:hover {
+        color: #f97316;
     }
 
-    .badge {
-        padding: 0.35em 0.65em;
+    .child-breadcrumb .material-icons-round {
+        font-size: 14px;
     }
 
-    .alert {
-        border-radius: 5px;
-        border: none;
+    .child-breadcrumb__current {
+        color: #f97316;
+        font-weight: 700;
+    }
+
+    .child-breadcrumb__sep {
+        font-size: 14px !important;
+    }
+
+    .child-hero {
+        margin: 14px 24px 0;
+        padding: 18px;
+        border-radius: 20px;
+        border: 1px solid #fed7aa;
+        background: linear-gradient(145deg, #ffffff 0%, #fff7ed 100%);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        flex-wrap: wrap;
+    }
+
+    .child-hero__left {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        min-width: 260px;
+    }
+
+    .child-hero__icon {
+        width: 54px;
+        height: 54px;
+        border-radius: 16px;
+        border: 1px solid #fed7aa;
+        background: #fff;
+        color: #f97316;
+        display: grid;
+        place-items: center;
+        box-shadow: 0 10px 24px rgba(249, 115, 22, .16);
+        flex-shrink: 0;
+    }
+
+    .child-hero__icon .material-icons-round {
+        font-size: 28px;
+    }
+
+    .child-hero__eyebrow {
+        margin: 0;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+        color: #f97316;
+    }
+
+    .child-hero__title {
+        margin: 4px 0 0;
+        font-size: 26px;
+        line-height: 1.15;
+        font-weight: 800;
+        color: #0f172a;
+        font-family: 'Quicksand', sans-serif;
+    }
+
+    .child-hero__subtitle {
+        margin: 6px 0 0;
+        font-size: 13px;
+        color: #64748b;
+    }
+
+    .child-hero__right {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .child-chip {
+        display: inline-flex;
+        align-items: center;
+        min-height: 34px;
+        padding: 0 12px;
+        border-radius: 999px;
+        border: 1px solid #fdba74;
+        background: #fff;
+        color: #c2410c;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+    }
+
+    .child-content {
+        padding: 24px;
+    }
+
+    .child-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 14px;
+    }
+
+    .child-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 18px;
+        background: #fff;
+        box-shadow: 0 10px 22px rgba(15, 23, 42, .05);
+        overflow: hidden;
+        transition: transform .2s ease, box-shadow .2s ease;
+    }
+
+    .child-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 16px 30px rgba(15, 23, 42, .08);
+    }
+
+    .child-card__head {
+        padding: 12px;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        background: linear-gradient(180deg, #ffffff, #fffaf4);
+    }
+
+    .child-card__meta {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .child-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: #f97316;
+        color: #fff;
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+    }
+
+    .child-avatar .material-icons-round {
+        font-size: 21px;
+    }
+
+    .child-card__meta h2 {
+        margin: 0;
+        font-size: 15px;
+        color: #0f172a;
+        font-weight: 700;
+        font-family: 'Quicksand', sans-serif;
+    }
+
+    .child-card__meta p {
+        margin: 2px 0 0;
+        font-size: 11px;
+        color: #f97316;
+        font-weight: 600;
+    }
+
+    .child-card__body {
+        padding: 12px;
+        display: grid;
+        gap: 10px;
+    }
+
+    .child-kv {
+        padding: 10px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #f8fafc;
+        display: grid;
+        gap: 4px;
+    }
+
+    .child-kv__label {
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .05em;
+        text-transform: uppercase;
+        color: #94a3b8;
+    }
+
+    .child-kv__value {
+        font-size: 14px;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .child-note {
+        border-radius: 12px;
+        border: 1px solid;
+        padding: 10px 12px;
+        display: grid;
+        gap: 4px;
+    }
+
+    .child-note span {
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .05em;
+        text-transform: uppercase;
+    }
+
+    .child-note p {
+        margin: 0;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+    .child-note--orange {
+        border-color: #fed7aa;
+        background: #fff7ed;
+    }
+
+    .child-note--orange span,
+    .child-note--orange p {
+        color: #9a3412;
+    }
+
+    .child-note--blue {
+        border-color: #bfdbfe;
+        background: #eff6ff;
+    }
+
+    .child-note--blue span,
+    .child-note--blue p {
+        color: #1e3a8a;
+    }
+
+    .child-menu {
+        position: relative;
+    }
+
+    .child-menu__trigger {
+        width: 34px;
+        height: 34px;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        background: #fff;
+        color: #64748b;
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        transition: .15s ease;
+    }
+
+    .child-menu__trigger:hover {
+        background: #f8fafc;
+        color: #0f172a;
+    }
+
+    .child-menu__panel {
+        display: none;
+        position: absolute;
+        right: 0;
+        top: calc(100% + 5px);
+        min-width: 170px;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: 0 14px 30px rgba(15, 23, 42, .14);
+        z-index: 25;
+        overflow: hidden;
+    }
+
+    .child-menu__panel.is-open {
+        display: block;
+    }
+
+    .child-menu__item {
+        width: 100%;
+        padding: 10px 12px;
+        border: 0;
+        background: #fff;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: #334155;
+        cursor: pointer;
+        text-align: left;
+    }
+
+    .child-menu__item:hover {
+        background: #f8fafc;
+    }
+
+    .child-menu__item .material-icons-round {
+        font-size: 16px;
+    }
+
+    .child-menu__item--danger,
+    .child-menu__item--danger .material-icons-round {
+        color: #e11d48;
+    }
+
+    .child-menu__item--danger:hover {
+        background: #fff1f2;
+    }
+
+    .child-empty {
+        max-width: 520px;
+        margin: 6px auto 0;
+        border: 2px dashed #fed7aa;
+        border-radius: 20px;
+        background: #fff;
+        padding: 30px 24px;
+        text-align: center;
+    }
+
+    .child-empty__icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        border: 2px solid #fed7aa;
+        background: #fff7ed;
+        margin: 0 auto 14px;
+        display: grid;
+        place-items: center;
+        color: #f97316;
+    }
+
+    .child-empty__icon .material-icons-round {
+        font-size: 36px;
+    }
+
+    .child-empty h3 {
+        margin: 0;
+        font-size: 20px;
+        color: #0f172a;
+        font-family: 'Quicksand', sans-serif;
+        font-weight: 800;
+    }
+
+    .child-empty p {
+        margin: 8px auto 20px;
+        max-width: 360px;
+        font-size: 14px;
+        line-height: 1.6;
+        color: #64748b;
+    }
+
+    .child-footer-actions {
+        margin-top: 24px;
+        display: flex;
+        justify-content: center;
+    }
+
+    .child-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 42px;
+        padding: 0 16px;
+        border-radius: 12px;
+        border: 1px solid transparent;
+        font-size: 14px;
+        font-weight: 700;
+        text-decoration: none;
+        transition: .18s ease;
+        cursor: pointer;
+    }
+
+    .child-btn .material-icons-round {
+        font-size: 18px;
+    }
+
+    .child-btn--primary {
+        background: linear-gradient(135deg, #f97316, #ea580c);
+        border-color: #f97316;
+        color: #fff;
+        box-shadow: 0 12px 24px rgba(249, 115, 22, .24);
+    }
+
+    .child-btn--primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 16px 30px rgba(249, 115, 22, .3);
+        color: #fff;
+    }
+
+    .child-btn--ghost {
+        background: #fff;
+        border-color: #dbe3ec;
+        color: #475569;
+    }
+
+    .child-btn--ghost:hover {
+        border-color: #cbd5e1;
+        background: #f8fafc;
+        color: #1f2937;
+    }
+
+    @@media (max-width: 768px) {
+        .child-page {
+            padding-top: 18px;
+        }
+
+        .child-breadcrumb,
+        .child-content {
+            padding-left: 16px;
+            padding-right: 16px;
+        }
+
+        .child-hero {
+            margin: 12px 16px 0;
+            padding: 14px;
+        }
+
+        .child-hero__title {
+            font-size: 22px;
+        }
     }
 </style>
+
+<script>
+    function toggleChildMenu(button) {
+        const panel = button.nextElementSibling;
+        const isOpen = panel.classList.contains('is-open');
+        document.querySelectorAll('.child-menu__panel.is-open').forEach(item => item.classList.remove('is-open'));
+        if (!isOpen) {
+            panel.classList.add('is-open');
+        }
+    }
+
+    document.addEventListener('click', function (event) {
+        if (!event.target.closest('.child-menu')) {
+            document.querySelectorAll('.child-menu__panel.is-open').forEach(item => item.classList.remove('is-open'));
+        }
+    });
+</script>

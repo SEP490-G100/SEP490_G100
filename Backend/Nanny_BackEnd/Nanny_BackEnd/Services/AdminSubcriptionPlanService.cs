@@ -136,7 +136,7 @@ public class AdminSubcriptionPlanService
             Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
             Price = request.Price,
             DurationDays = request.DurationDays,
-            Features = SerializeFeaturesForStorage(request.Features),
+            Features = SerializeFullMetadata(request),
             CanUseRecommendation = request.CanUseRecommendation,
             IsActive = true,
             SortOrder = nextSortOrder,
@@ -171,7 +171,7 @@ public class AdminSubcriptionPlanService
         plan.Price = request.Price;
         plan.DurationDays = request.DurationDays;
         plan.SortOrder = request.SortOrder;
-        plan.Features = SerializeFeaturesForStorage(request.Features);
+        plan.Features = SerializeFullMetadata(request);
         plan.CanUseRecommendation = request.CanUseRecommendation;
         plan.UpdatedAt = DateTime.UtcNow;
         plan.UpdatedBy = adminUserId;
@@ -198,8 +198,27 @@ public class AdminSubcriptionPlanService
         await _adminSubcriptionPlanRepository.SaveChangesAsync();
     }
 
-    private static string SerializeFeaturesForStorage(IEnumerable<string> features) =>
-        JsonSerializer.Serialize(SubscriptionPlanMetadataHelper.NormalizeFeatures(features));
+    private static string SerializeFullMetadata(AdminSubscriptionPlanUpsertRequest request)
+    {
+        var normalizedRole = SubscriptionPlanMetadataHelper.NormalizeTargetRole(request.TargetRole);
+        var normalizedFeatures = SubscriptionPlanMetadataHelper.NormalizeFeatures(request.Features);
+        var metadata = new SubscriptionPlanMetadata
+        {
+            Code = SubscriptionPlanMetadataHelper.NormalizeCode(null, normalizedRole, request.Name),
+            TargetRole = normalizedRole,
+            Features = normalizedFeatures,
+            Benefits = new SubscriptionBenefitResponse
+            {
+                MonthlyJobPostLimit = request.Benefits.MonthlyJobPostLimit,
+                MonthlyApplicationLimit = request.Benefits.MonthlyApplicationLimit,
+                FeaturedBadge = request.Benefits.FeaturedBadge,
+                SearchPriority = request.Benefits.SearchPriority,
+                ListingDurationDays = request.Benefits.ListingDurationDays,
+                CanUseRecommendation = request.CanUseRecommendation
+            }
+        };
+        return SubscriptionPlanMetadataHelper.Serialize(metadata);
+    }
 
     private static void ValidateAdminPlanRequest(AdminSubscriptionPlanUpsertRequest request)
     {

@@ -128,6 +128,8 @@ public class ModeratorJobService
     private static SearchJobResponse mapToListItem(JobPosting job)
     {
         var entitlement = getJobEntitlement(job);
+        var selectedChildren = getSelectedChildrenForJob(job);
+        var childResponses = mapChildResponses(selectedChildren);
         var childSnapshot = getChildSnapshot(job);
 
         return new SearchJobResponse
@@ -163,6 +165,7 @@ public class ModeratorJobService
                     TimeSlot = r.TimeSlot
                 })
                 .ToList(),
+            Children = childResponses,
             NumberOfChildren = job.NumberOfChildren,
             Latitude = (double?)job.Latitude,
             Longitude = (double?)job.Longitude,
@@ -180,6 +183,8 @@ public class ModeratorJobService
     private static JobPostingDetailResponse mapToDetail(JobPosting job)
     {
         var entitlement = getJobEntitlement(job);
+        var selectedChildren = getSelectedChildrenForJob(job);
+        var childResponses = mapChildResponses(selectedChildren);
         var childSnapshot = getChildSnapshot(job);
 
         return new JobPostingDetailResponse
@@ -216,6 +221,7 @@ public class ModeratorJobService
                     TimeSlot = r.TimeSlot
                 })
                 .ToList(),
+            Children = childResponses,
             Latitude = (double?)job.Latitude,
             Longitude = (double?)job.Longitude,
             Status = job.Status,
@@ -243,17 +249,37 @@ public class ModeratorJobService
 
     private static (string? Characteristic, int? BirthType, string? SpecialNeeds) getChildSnapshot(JobPosting job)
     {
-        var selectedChild = job.ChildProfile
-            ?? job.ParentProfile?.ChildProfiles
-                .Where(c => !c.IsDeleted)
-                .OrderBy(c => c.CreatedAt)
-                .FirstOrDefault();
+        var selectedChildren = getSelectedChildrenForJob(job);
+        var childSnapshot = ChildProfileSnapshotHelper.BuildSnapshot(
+            selectedChildren,
+            job.ParentProfile?.FamilyDescription);
 
-        return (
-            selectedChild?.Characteristic ?? job.ParentProfile?.FamilyDescription,
-            (int?)selectedChild?.ChildAgeGroup,
-            selectedChild?.SpecialNeeds
-        );
+        return (childSnapshot.Characteristic, childSnapshot.BirthType, childSnapshot.SpecialNeeds);
+    }
+
+    private static List<ChildProfile> getSelectedChildrenForJob(JobPosting job)
+    {
+        return ChildProfileSnapshotHelper.ResolveChildren(
+            job.ParentProfile,
+            job.ChildProfileId ?? job.ChildProfile?.Id,
+            job.NumberOfChildren);
+    }
+
+    private static List<JobPostingPrefillChildResponse> mapChildResponses(List<ChildProfile> children)
+    {
+        return children
+            .Select((child, index) => new JobPostingPrefillChildResponse
+            {
+                Id = child.Id,
+                Label = $"Be {index + 1}",
+                Characteristic = child.Characteristic,
+                BirthType = child.ChildAgeGroup,
+                BirthTypeLabel = child.ChildAgeGroup.HasValue
+                    ? EnumDisplayHelper.GetDisplayName((ChildAgeGroup)child.ChildAgeGroup.Value)
+                    : null,
+                SpecialNeeds = child.SpecialNeeds
+            })
+            .ToList();
     }
 
     private static (string? PlanCode, SubscriptionBenefitResponse Benefits) getJobEntitlement(JobPosting job)

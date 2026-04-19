@@ -2,25 +2,25 @@
 @using System.Text.Json
 @{
     Layout = "~/Views/Admin/_AdminLayout.cshtml";
-    ViewData["Title"] = "Dashboard";
+    ViewData["Title"] = "Trang Chủ";
 
     var totalOperationalQueue = Model.PendingVerifications + Model.PendingJobPostings + Model.PendingReports;
 }
 
 <div class="mb-7 fade-in-up flex flex-col sm:flex-row sm:items-end justify-between gap-4">
     <div>
-        <span class="section-label">System Overview</span>
+        <span class="section-label">Tổng Quan Hệ Thống</span>
         <h1 class="page-title mt-2">
-            Welcome, <span class="gradient-text">Admin</span>!
+            Xin chào, <span class="gradient-text">Admin</span>!
         </h1>
-        <p class="page-subtitle">Track revenue, growth, subscriptions, and platform operations from one command view.</p>
+        <p class="page-subtitle">Theo dõi doanh thu, tăng trưởng, đăng ký và hoạt động nền tảng từ một bảng điều khiển duy nhất.</p>
     </div>
 
     <div>
         <a href="/Admin/ExportData"
            class="inline-flex items-center gap-2 bg-gradient-to-r from-orange-400 to-orange-500 text-white px-5 py-2.5 rounded-xl font-semibold shadow-lg shadow-orange-500/30 hover:shadow-orange-500/40 hover:-translate-y-0.5 transition-all">
             <span class="material-icons-round text-xl">download</span>
-            Export System Data
+            Xuất Dữ Liệu Hệ Thống
         </a>
     </div>
 </div>
@@ -31,10 +31,10 @@
             <div class="icon-badge" style="background:linear-gradient(135deg,#FFF7ED,#FED7AA);">
                 <span class="material-icons-round text-orange-500 text-2xl">payments</span>
             </div>
-            <span class="badge badge-active">Revenue</span>
+            <span class="badge badge-active">Doanh Thu</span>
         </div>
         <div class="stat-number mb-0.5">@Model.TotalRevenue.ToString("N0")<span class="text-sm text-gray-400 font-normal ml-1">VND</span></div>
-        <div class="text-sm text-gray-500 font-semibold">Total Revenue</div>
+        <div class="text-sm text-gray-500 font-semibold">Tổng Doanh Thu</div>
     </div>
 
     <div class="stat-card p-5 fade-in-up fade-in-up-delay-2">
@@ -42,11 +42,11 @@
             <div class="icon-badge" style="background:linear-gradient(135deg,#ECFDF5,#D1FAE5);">
                 <span class="material-icons-round text-emerald-500 text-2xl">people</span>
             </div>
-            <span class="badge badge-active">Users</span>
+            <span class="badge badge-active">Người Dùng</span>
         </div>
         <div class="stat-number mb-0.5 text-emerald-600">@Model.TotalUsers.ToString("N0")</div>
-        <div class="text-sm text-gray-500 font-semibold mb-3">Total Users</div>
-        <div class="text-xs text-gray-400">Active: @Model.ActiveUsers.ToString("N0") | Inactive: @Model.InactiveUsers.ToString("N0")</div>
+        <div class="text-sm text-gray-500 font-semibold mb-3">Tổng Người Dùng</div>
+        <div class="text-xs text-gray-400">Hoạt động: @Model.ActiveUsers.ToString("N0") | Vô hiệu: @Model.InactiveUsers.ToString("N0")</div>
     </div>
 
     <div class="stat-card p-5 fade-in-up fade-in-up-delay-3">
@@ -54,11 +54,11 @@
             <div class="icon-badge" style="background:linear-gradient(135deg,#EDE9FE,#DDD6FE);">
                 <span class="material-icons-round text-violet-500 text-2xl">card_membership</span>
             </div>
-            <span class="badge badge-pending">Subscriptions</span>
+            <span class="badge badge-pending">Đăng Ký</span>
         </div>
         <div class="stat-number mb-0.5">@Model.TotalSubscriptions.ToString("N0")</div>
-        <div class="text-sm text-gray-500 font-semibold mb-3">Total Subscriptions</div>
-        <div class="text-xs text-gray-400">Active: @Model.ActiveSubs.ToString("N0") | Expired: @Model.ExpiredSubs.ToString("N0")</div>
+        <div class="text-sm text-gray-500 font-semibold mb-3">Tổng Đăng Ký</div>
+        <div class="text-xs text-gray-400">Hoạt động: @Model.ActiveSubs.ToString("N0") | Hết hạn: @Model.ExpiredSubs.ToString("N0")</div>
     </div>
 
     <div class="stat-card p-5 fade-in-up fade-in-up-delay-4">
@@ -66,11 +66,11 @@
             <div class="icon-badge" style="background:linear-gradient(135deg,#FEF3C7,#FDE68A);">
                 <span class="material-icons-round text-amber-500 text-2xl">pending_actions</span>
             </div>
-            <span class="badge badge-pending">Ops Queue</span>
+            <span class="badge badge-pending">Hàng Chờ</span>
         </div>
         <div class="stat-number mb-0.5 text-amber-600">@totalOperationalQueue.ToString("N0")</div>
-        <div class="text-sm text-gray-500 font-semibold mb-3">Operational Queue</div>
-        <div class="text-xs text-gray-400">@Model.PendingVerifications verifications, @Model.PendingJobPostings jobs, @Model.PendingReports reports</div>
+        <div class="text-sm text-gray-500 font-semibold mb-3">Hàng Đợi Vận Hành</div>
+        <div class="text-xs text-gray-400">@Model.PendingVerifications xác minh, @Model.PendingJobPostings việc làm, @Model.PendingReports báo cáo chờ</div>
     </div>
 </div>
 
@@ -78,13 +78,13 @@
     <div class="xl:col-span-2 content-card p-6 fade-in-up">
         <div class="flex items-center justify-between mb-5 gap-3">
             <div>
-                <h2 class="font-bold text-gray-900">Revenue Trend</h2>
-                <p class="text-sm text-gray-400">Revenue performance for the selected period.</p>
+                <h2 class="font-bold text-gray-900">Xu Hướng Doanh Thu</h2>
+                <p class="text-sm text-gray-400">Hiệu suất doanh thu theo kỳ đã chọn.</p>
             </div>
             <div class="inline-flex rounded-xl border border-orange-100 bg-orange-50 p-1">
-                <button type="button" class="revenue-range-btn px-3 py-1.5 text-xs font-bold rounded-lg bg-white text-orange-500 shadow-sm" data-range="7">7 Days</button>
-                <button type="button" class="revenue-range-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500" data-range="30">30 Days</button>
-                <button type="button" class="revenue-range-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500" data-range="12">12 Months</button>
+                <button type="button" class="revenue-range-btn px-3 py-1.5 text-xs font-bold rounded-lg bg-white text-orange-500 shadow-sm" data-range="7">7 Ngày</button>
+                <button type="button" class="revenue-range-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500" data-range="30">30 Ngày</button>
+                <button type="button" class="revenue-range-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500" data-range="12">12 Tháng</button>
             </div>
         </div>
         <div class="h-[340px]">
@@ -95,8 +95,8 @@
     <div class="content-card p-6 fade-in-up">
         <div class="flex items-center justify-between mb-5">
             <div>
-                <h2 class="font-bold text-gray-900">User Composition</h2>
-                <p class="text-sm text-gray-400">Current mix of parents, nannies, and moderators.</p>
+                <h2 class="font-bold text-gray-900">Cơ Cấu Người Dùng</h2>
+                <p class="text-sm text-gray-400">Tỷ lệ phụ huynh, người giữ trẻ và kiểm duyệt viên hiện tại.</p>
             </div>
             <span class="section-label text-[10px] px-2 py-0.5">Live</span>
         </div>
@@ -110,13 +110,13 @@
     <div class="xl:col-span-2 content-card p-6 fade-in-up">
         <div class="flex items-center justify-between mb-5 gap-3">
             <div>
-                <h2 class="font-bold text-gray-900">New Users Over Time</h2>
-                <p class="text-sm text-gray-400">User growth for the selected period.</p>
+                <h2 class="font-bold text-gray-900">Người Dùng Mới Theo Thời Gian</h2>
+                <p class="text-sm text-gray-400">Tăng trưởng người dùng theo kỳ đã chọn.</p>
             </div>
             <div class="inline-flex rounded-xl border border-orange-100 bg-orange-50 p-1">
-                <button type="button" class="user-growth-range-btn px-3 py-1.5 text-xs font-bold rounded-lg bg-white text-orange-500 shadow-sm" data-range="7">7 Days</button>
-                <button type="button" class="user-growth-range-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500" data-range="30">30 Days</button>
-                <button type="button" class="user-growth-range-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500" data-range="12">12 Months</button>
+                <button type="button" class="user-growth-range-btn px-3 py-1.5 text-xs font-bold rounded-lg bg-white text-orange-500 shadow-sm" data-range="7">7 Ngày</button>
+                <button type="button" class="user-growth-range-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500" data-range="30">30 Ngày</button>
+                <button type="button" class="user-growth-range-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500" data-range="12">12 Tháng</button>
             </div>
         </div>
         <div class="h-[320px]">
@@ -127,8 +127,8 @@
     <div class="content-card p-6 fade-in-up">
         <div class="flex items-center justify-between mb-5">
             <div>
-                <h2 class="font-bold text-gray-900">Account Status</h2>
-                <p class="text-sm text-gray-400">How many accounts are active versus inactive.</p>
+                <h2 class="font-bold text-gray-900">Trạng Thái Tài Khoản</h2>
+                <p class="text-sm text-gray-400">Số lượng tài khoản đang hoạt động và vô hiệu hóa.</p>
             </div>
             <span class="section-label text-[10px] px-2 py-0.5">Live</span>
         </div>
@@ -142,13 +142,13 @@
     <div class="xl:col-span-2 content-card p-6 fade-in-up">
         <div class="flex items-center justify-between mb-5 gap-3">
             <div>
-                <h2 class="font-bold text-gray-900">Subscription Growth</h2>
-                <p class="text-sm text-gray-400">Subscription volume for the selected period.</p>
+                <h2 class="font-bold text-gray-900">Tăng Trưởng Đăng Ký</h2>
+                <p class="text-sm text-gray-400">Số lượng đăng ký theo kỳ đã chọn.</p>
             </div>
             <div class="inline-flex rounded-xl border border-orange-100 bg-orange-50 p-1">
-                <button type="button" class="subscription-range-btn px-3 py-1.5 text-xs font-bold rounded-lg bg-white text-orange-500 shadow-sm" data-range="7">7 Days</button>
-                <button type="button" class="subscription-range-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500" data-range="30">30 Days</button>
-                <button type="button" class="subscription-range-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500" data-range="12">12 Months</button>
+                <button type="button" class="subscription-range-btn px-3 py-1.5 text-xs font-bold rounded-lg bg-white text-orange-500 shadow-sm" data-range="7">7 Ngày</button>
+                <button type="button" class="subscription-range-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500" data-range="30">30 Ngày</button>
+                <button type="button" class="subscription-range-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500" data-range="12">12 Tháng</button>
             </div>
         </div>
         <div class="h-[320px]">
@@ -159,8 +159,8 @@
     <div class="content-card p-6 fade-in-up">
         <div class="flex items-center justify-between mb-5">
             <div>
-                <h2 class="font-bold text-gray-900">Subscription Health</h2>
-                <p class="text-sm text-gray-400">Active versus expired subscriptions.</p>
+                <h2 class="font-bold text-gray-900">Tình Trạng Đăng Ký</h2>
+                <p class="text-sm text-gray-400">Đăng ký đang hoạt động so với hết hạn.</p>
             </div>
             <span class="section-label text-[10px] px-2 py-0.5">Live</span>
         </div>
@@ -174,13 +174,13 @@
     <div class="xl:col-span-2 content-card p-6 fade-in-up">
         <div class="flex items-center justify-between mb-5 gap-3">
             <div>
-                <h2 class="font-bold text-gray-900">Operational Queue</h2>
-                <p class="text-sm text-gray-400">Pending moderation workload for the selected period.</p>
+                <h2 class="font-bold text-gray-900">Hàng Đợi Vận Hành</h2>
+                <p class="text-sm text-gray-400">Khối lượng kiểm duyệt đang chờ theo kỳ đã chọn.</p>
             </div>
             <div class="inline-flex rounded-xl border border-orange-100 bg-orange-50 p-1">
-                <button type="button" class="operations-range-btn px-3 py-1.5 text-xs font-bold rounded-lg bg-white text-orange-500 shadow-sm" data-range="7">7 Days</button>
-                <button type="button" class="operations-range-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500" data-range="30">30 Days</button>
-                <button type="button" class="operations-range-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500" data-range="12">12 Months</button>
+                <button type="button" class="operations-range-btn px-3 py-1.5 text-xs font-bold rounded-lg bg-white text-orange-500 shadow-sm" data-range="7">7 Ngày</button>
+                <button type="button" class="operations-range-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500" data-range="30">30 Ngày</button>
+                <button type="button" class="operations-range-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500" data-range="12">12 Tháng</button>
             </div>
         </div>
         <div class="h-[320px]">
@@ -190,7 +190,7 @@
 
     <div class="content-card p-0 fade-in-up">
         <div class="card-header">
-            <h2>Quick Actions</h2>
+            <h2>Thao Tác Nhanh</h2>
         </div>
         <div class="p-4 space-y-2.5">
             <a href="/Admin/ManageModerators"
@@ -199,8 +199,8 @@
                     <span class="material-icons-round text-orange-500 text-lg">manage_accounts</span>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-bold text-gray-700">Manage Moderators</p>
-                    <p class="text-xs text-gray-400">@Model.TotalModerators moderator accounts</p>
+                    <p class="text-sm font-bold text-gray-700">Quản Lý Kiểm Duyệt Viên</p>
+                    <p class="text-xs text-gray-400">@Model.TotalModerators tài khoản kiểm duyệt</p>
                 </div>
                 <span class="material-icons-round text-gray-300 text-base">arrow_forward_ios</span>
             </a>
@@ -211,8 +211,8 @@
                     <span class="material-icons-round text-emerald-500 text-lg">person_add</span>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-bold text-gray-700">Create Moderator</p>
-                    <p class="text-xs text-gray-400">Add a new moderator account</p>
+                    <p class="text-sm font-bold text-gray-700">Tạo Kiểm Duyệt Viên</p>
+                    <p class="text-xs text-gray-400">Thêm tài khoản kiểm duyệt mới</p>
                 </div>
                 <span class="material-icons-round text-gray-300 text-base">arrow_forward_ios</span>
             </a>
@@ -223,8 +223,8 @@
                     <span class="material-icons-round text-violet-500 text-lg">download</span>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-bold text-gray-700">Export Data</p>
-                    <p class="text-xs text-gray-400">Download current system snapshot</p>
+                    <p class="text-sm font-bold text-gray-700">Xuất Dữ Liệu</p>
+                    <p class="text-xs text-gray-400">Tải xuống ảnh chụp hệ thống hiện tại</p>
                 </div>
                 <span class="material-icons-round text-gray-300 text-base">arrow_forward_ios</span>
             </a>
@@ -234,14 +234,14 @@
 
 <div class="content-card overflow-hidden fade-in-up" style="animation-delay:.1s;">
     <div class="card-header">
-        <h2>Recent Transactions</h2>
+        <h2>Giao Dịch Gần Đây</h2>
     </div>
 
     @if (!Model.RecentTransactions.Any())
     {
         <div class="px-6 py-12 text-center text-gray-400 text-sm">
             <span class="material-icons-round text-4xl mb-2 block text-gray-200">receipt_long</span>
-            No transactions yet.
+            Chưa có giao dịch nào.
         </div>
     }
     else
@@ -317,7 +317,7 @@
             labels: queueRange.Timeline.map(item => item.Label),
             datasets: [
                 {
-                    label: 'Pending Verifications',
+                    label: 'Xác Minh Chờ',
                     data: queueRange.Timeline.map(item => item.PendingVerifications),
                     borderColor: '#F59E0B',
                     backgroundColor: 'rgba(245, 158, 11, 0.12)',
@@ -329,7 +329,7 @@
                     fill: false
                 },
                 {
-                    label: 'Pending Job Postings',
+                    label: 'Việc Làm Chờ',
                     data: queueRange.Timeline.map(item => item.PendingJobPostings),
                     borderColor: '#8B5CF6',
                     backgroundColor: 'rgba(139, 92, 246, 0.12)',
@@ -341,7 +341,7 @@
                     fill: false
                 },
                 {
-                    label: 'Pending Reports',
+                    label: 'Báo Cáo Chờ',
                     data: queueRange.Timeline.map(item => item.PendingReports),
                     borderColor: '#EF4444',
                     backgroundColor: 'rgba(239, 68, 68, 0.12)',
@@ -363,7 +363,7 @@
                 data: {
                     labels: revenue7.map(item => item.Label),
                     datasets: [{
-                        label: 'Revenue',
+                        label: 'Doanh Thu',
                         data: revenue7.map(item => item.Revenue),
                         borderColor: '#F97316',
                         backgroundColor: 'rgba(249, 115, 22, 0.16)',
@@ -420,7 +420,7 @@
             new Chart(compositionCanvas, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Parents', 'Nannies', 'Moderators'],
+                    labels: ['Phụ Huynh', 'Người Giữ Trẻ', 'Kiểm Duyệt Viên'],
                     datasets: [{
                         data: userComposition,
                         backgroundColor: ['#8B5CF6', '#3B82F6', '#F97316'],
@@ -447,7 +447,7 @@
                 data: {
                     labels: userGrowth7.map(item => item.Label),
                     datasets: [{
-                        label: 'New Users',
+                        label: 'Người Dùng Mới',
                         data: userGrowth7.map(item => item.NewUsers),
                         borderColor: '#10B981',
                         backgroundColor: 'rgba(16, 185, 129, 0.14)',
@@ -510,7 +510,7 @@
             new Chart(statusCanvas, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Active', 'Inactive'],
+                    labels: ['Hoạt Động', 'Vô Hiệu Hóa'],
                     datasets: [{
                         data: userStatus,
                         backgroundColor: ['#10B981', '#EF4444'],
@@ -537,7 +537,7 @@
                 data: {
                     labels: subscription7.map(item => item.Label),
                     datasets: [{
-                        label: 'Subscriptions',
+                        label: 'Đăng Ký',
                         data: subscription7.map(item => item.Count),
                         borderColor: '#8B5CF6',
                         backgroundColor: 'rgba(139, 92, 246, 0.14)',
@@ -595,7 +595,7 @@
             new Chart(subscriptionHealthCanvas, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Active', 'Expired'],
+                    labels: ['Hoạt Động', 'Hết Hạn'],
                     datasets: [{
                         data: subscriptionHealth,
                         backgroundColor: ['#10B981', '#CBD5E1'],

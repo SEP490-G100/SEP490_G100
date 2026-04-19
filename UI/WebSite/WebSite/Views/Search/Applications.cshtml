@@ -1,5 +1,5 @@
 @{
-    ViewData["Title"] = "Lich su ung tuyen - NannyMatch";
+    ViewData["Title"] = "Lịch sử ứng tuyển - NannyMatch";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
@@ -323,15 +323,15 @@
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <p class="text-xs font-extrabold uppercase tracking-[0.24em] text-orange-500">Nanny zone</p>
-                        <h1 class="app-page-title mt-2 text-3xl font-bold text-slate-900">Lich su ung tuyen</h1>
+                        <h1 class="app-page-title mt-2 text-3xl font-bold text-slate-900">Lịch sử ứng tuyển</h1>
                         <p class="mt-2 text-sm leading-6 text-slate-500 max-w-2xl">
-                            Theo doi cac don da gui cho Parent, xem trang thai va huy don khi don dang cho duyet.
+                            Theo dõi các đơn đã gửi cho Phụ huynh, xem trạng thái và hủy đơn khi đơn đang chờ duyệt.
                         </p>
                     </div>
                     <div class="app-header-actions flex items-center gap-3">
                         <a href="/Search"
                            class="inline-flex items-center justify-center min-h-[48px] px-5 rounded-2xl border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 transition-all">
-                            Quay lai tim bai
+                            Quay lại tìm bài
                         </a>
                     </div>
                 </div>
@@ -341,17 +341,17 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <div class="app-stat-card app-stat-card--total">
                         <span class="material-icons-round app-stat-icon">stacked_bar_chart</span>
-                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Tong don</p>
+                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Tổng đơn</p>
                         <p id="applicationTotalCount" class="mt-2 text-3xl font-extrabold text-slate-900">0</p>
                     </div>
                     <div class="app-stat-card app-stat-card--pending">
                         <span class="material-icons-round app-stat-icon">hourglass_top</span>
-                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-amber-500">Dang cho duyet</p>
+                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-amber-500">Đang chờ duyệt</p>
                         <p id="applicationPendingCount" class="mt-2 text-3xl font-extrabold text-amber-700">0</p>
                     </div>
                     <div class="app-stat-card app-stat-card--withdrawn">
                         <span class="material-icons-round app-stat-icon">do_not_disturb_on</span>
-                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-rose-500">Da huy</p>
+                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-rose-500">Đã hủy</p>
                         <p id="applicationWithdrawnCount" class="mt-2 text-3xl font-extrabold text-rose-600">0</p>
                     </div>
                 </div>
@@ -385,9 +385,9 @@
         };
 
         const formatDateTime = (value) => {
-            if (!value) return 'Chua cap nhat';
+            if (!value) return 'Chưa cập nhật';
             const date = new Date(value);
-            if (Number.isNaN(date.getTime())) return 'Chua cap nhat';
+            if (Number.isNaN(date.getTime())) return 'Chưa cập nhật';
             return new Intl.DateTimeFormat('vi-VN', {
                 day: '2-digit',
                 month: '2-digit',
@@ -399,7 +399,7 @@
 
         const formatLocation = (item) => {
             const parts = [item?.location, item?.district, item?.city].filter(Boolean);
-            return parts.length ? parts.join(', ') : 'Chua cap nhat dia diem';
+            return parts.length ? parts.join(', ') : 'Chưa cập nhật địa điểm';
         };
 
         const getStatusMeta = (status) => {
@@ -452,7 +452,7 @@
         async function withdrawApplication(applicationId) {
             if (!applicationId) return;
 
-            const confirmed = window.confirm('Ban chac chan muon huy don ung tuyen nay?');
+            const confirmed = window.confirm('Bạn chắc chắn muốn hủy đơn ứng tuyển này?');
             if (!confirmed) return;
 
             try {
@@ -462,14 +462,14 @@
                 });
                 const json = await response.json();
                 if (!json?.success) {
-                    notify(json?.message || 'Khong the huy don ung tuyen.', 'error');
+                    notify(json?.message || 'Không thể hủy đơn ứng tuyển.', 'error');
                     return;
                 }
 
-                notify(json?.message || 'Da huy don ung tuyen.', 'success');
+                notify(json?.message || 'Đã hủy đơn ứng tuyển.', 'success');
                 await loadApplications();
             } catch {
-                notify('Loi ket noi server.', 'error');
+                notify('Lỗi kết nối server.', 'error');
             }
         }
 
@@ -478,8 +478,8 @@
                 listEl.innerHTML = `
                     <div class="app-empty-state">
                         <span class="material-icons-round text-[34px] text-orange-300">assignment</span>
-                        <h3 class="mt-3 text-lg font-bold text-slate-900">Ban chua ung tuyen bai dang nao</h3>
-                        <p class="mt-2 text-sm text-slate-500">Khi ban apply, lich su se hien thi tai day.</p>
+                        <h3 class="mt-3 text-lg font-bold text-slate-900">Bạn chưa ứng tuyển bài đăng nào</h3>
+                        <p class="mt-2 text-sm text-slate-500">Khi bạn apply, lịch sử sẽ hiển thị tại đây.</p>
                     </div>`;
                 return;
             }
@@ -490,36 +490,36 @@
                     <article class="app-item-card ${statusMeta.cardClass}">
                         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                             <div class="min-w-0">
-                                <h2 class="text-lg font-extrabold text-slate-900 break-words">${escapeHtml(item.jobTitle || 'Tin dang')}</h2>
-                                <p class="mt-1 text-sm font-semibold text-slate-500">Parent: ${escapeHtml(item.parentName || 'Chua cap nhat')}</p>
+                                <h2 class="text-lg font-extrabold text-slate-900 break-words">${escapeHtml(item.jobTitle || 'Tin đăng')}</h2>
+                                <p class="mt-1 text-sm font-semibold text-slate-500">Phụ huynh: ${escapeHtml(item.parentName || 'Chưa cập nhật')}</p>
                                 <p class="mt-2 text-sm font-semibold text-orange-600">${escapeHtml(formatLocation(item))}</p>
                             </div>
                             <div class="app-actions flex flex-wrap items-center gap-2">
                                 <span class="app-status-chip ${statusMeta.chipClass}">
                                     <span class="material-icons-round">${statusMeta.icon}</span>
-                                    ${escapeHtml(item.statusLabel || 'Dang cap nhat')}
+                                    ${escapeHtml(item.statusLabel || 'Đang cập nhật')}
                                 </span>
                                 ${item.canWithdraw ? `
                                     <button type="button"
                                             onclick="window.__withdrawApplication('${escapeHtml(item.id)}')"
                                             class="app-action-btn">
                                         <span class="material-icons-round">remove_circle</span>
-                                        Huy don
+                                        Hủy đơn
                                     </button>` : ''}
                             </div>
                         </div>
 
                         <div class="app-timeline">
                             <div class="app-time-card">
-                                <p class="app-time-label">Ngay gui don</p>
+                                <p class="app-time-label">Ngày gửi đơn</p>
                                 <p class="app-time-value">${escapeHtml(formatDateTime(item.appliedAt))}</p>
                             </div>
                             <div class="app-time-card">
-                                <p class="app-time-label">Ngay duyet</p>
+                                <p class="app-time-label">Ngày duyệt</p>
                                 <p class="app-time-value">${escapeHtml(formatDateTime(item.reviewedAt))}</p>
                             </div>
                             <div class="app-time-card">
-                                <p class="app-time-label">Ngay huy</p>
+                                <p class="app-time-label">Ngày hủy</p>
                                 <p class="app-time-value">${escapeHtml(formatDateTime(item.withdrawnAt))}</p>
                             </div>
                         </div>
@@ -535,7 +535,7 @@
                 const json = await response.json();
 
                 if (!json?.success) {
-                    notify(json?.message || 'Khong tai duoc lich su ung tuyen.', 'error');
+                    notify(json?.message || 'Không tải được lịch sử ứng tuyển.', 'error');
                 }
 
                 const items = Array.isArray(json?.data) ? json.data : [];
@@ -550,7 +550,7 @@
             } catch {
                 listEl.innerHTML = `
                     <div class="rounded-3xl border border-red-100 bg-red-50 px-6 py-10 text-center text-red-600">
-                        Khong tai duoc lich su ung tuyen.
+                        Không tải được lịch sử ứng tuyển.
                     </div>`;
             } finally {
                 window.setTimeout(() => {

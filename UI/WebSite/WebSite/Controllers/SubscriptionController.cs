@@ -56,19 +56,6 @@ public class SubscriptionController : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        if (string.Equals(result.Data?.Status, "WAITING_REVIEW", StringComparison.OrdinalIgnoreCase))
-        {
-            if (isAjaxRequest())
-                return Json(new
-                {
-                    success = true,
-                    message = "Giao dich dang cho xet duyet.",
-                    data = result.Data
-                });
-
-            return RedirectToAction(nameof(PaymentResult), new { transactionId = result.Data!.TransactionId });
-        }
-
         if (string.IsNullOrWhiteSpace(result.Data?.QrCodeUrl) &&
             string.IsNullOrWhiteSpace(result.Data?.CheckoutUrl))
         {

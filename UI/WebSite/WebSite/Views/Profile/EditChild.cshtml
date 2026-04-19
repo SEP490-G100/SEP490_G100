@@ -4,117 +4,119 @@
 
 @{
     ViewData["Title"] = "Chỉnh sửa thông tin con em";
+    var ageGroupLabels = new Dictionary<int, string> {
+        { 0, "Em bé (0–1 tuổi)" },
+        { 1, "Toddler (1–3 tuổi)" },
+        { 2, "Mầm non (3–5 tuổi)" },
+        { 3, "Học sinh tiểu học (6–12 tuổi)" }
+    };
+    var currentAge = Model.ChildAgeGroup.HasValue ? (int)Model.ChildAgeGroup.Value : -1;
+    var currentAgeLabel = currentAge >= 0 && ageGroupLabels.ContainsKey(currentAge) ? ageGroupLabels[currentAge] : "";
 }
 
+<div class="min-h-screen" style="background:#faf9f7; padding:36px 16px 60px;">
+    <div style="max-width:660px; margin:0 auto;">
 
-<div class="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50/30 to-white dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-3xl mx-auto">
-        <!-- Header -->
-        <div class="mb-8 text-center sm:text-left">
-            <span class="section-label mx-auto sm:mx-0">✏️ Chỉnh sửa</span>
-            <h1 class="text-4xl font-bold text-gray-900 dark:text-white mt-3" style="font-family:'Quicksand',sans-serif">
-                Cập nhật <span class="gradient-text">thông tin con em</span>
-            </h1>
-            <div class="section-divider left mx-auto sm:mx-0 mt-4"></div>
+        @* breadcrumb *@
+        <div style="display:flex; align-items:center; gap:6px; margin-bottom:24px; font-size:13px; color:#9ca3af;">
+            <a href="@Url.Action("Index","Profile")" style="color:#9ca3af; text-decoration:none; display:flex; align-items:center; gap:4px; transition:color .15s;" onmouseover="this.style.color='#f97316'" onmouseout="this.style.color='#9ca3af'">
+                <span class="material-icons-round" style="font-size:15px;">person</span>Hồ sơ
+            </a>
+            <span class="material-icons-round" style="font-size:14px;">chevron_right</span>
+            <a href="@Url.Action("Children","Profile")" style="color:#9ca3af; text-decoration:none; transition:color .15s;" onmouseover="this.style.color='#f97316'" onmouseout="this.style.color='#9ca3af'">Quản lý con em</a>
+            <span class="material-icons-round" style="font-size:14px;">chevron_right</span>
+            <span style="color:#f97316; font-weight:600;">Chỉnh sửa</span>
         </div>
 
-        <div class="bg-white/80 dark:bg-card-dark/80 rounded-3xl p-6 lg:p-10 shadow-soft border border-gray-100/80 dark:border-gray-800/50 backdrop-blur-md">
-            <form method="post" class="space-y-8">
+        @* page header *@
+        <div style="display:flex; align-items:center; gap:16px; margin-bottom:24px;">
+            <div style="width:52px; height:52px; border-radius:16px; background:linear-gradient(135deg,#fff7ed,#ffedd5); border:1.5px solid #fed7aa; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <span class="material-icons-round" style="font-size:28px; color:#f97316;">edit_note</span>
+            </div>
+            <div>
+                <p style="font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#f97316; margin:0 0 4px;">Chỉnh sửa</p>
+                <h1 style="font-size:24px; font-weight:800; color:#1a1a1a; margin:0; font-family:'Quicksand',sans-serif;">Cập nhật thông tin con em</h1>
+            </div>
+        </div>
+
+        <div style="background:#fff; border-radius:20px; border:1px solid #ebebeb; box-shadow:0 2px 12px rgba(0,0,0,.05); overflow:hidden;">
+            <form method="post">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="Id" value="@Model.Id">
 
-                <!-- Basic Information -->
-                <div class="space-y-6">
-                    <h3 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3" style="font-family:'Quicksand',sans-serif">
-                        <div class="w-10 h-10 bg-orange-100 dark:bg-orange-950/30 rounded-xl flex items-center justify-center text-orange-600 dark:text-orange-400">
-                            <span class="material-icons-round">person</span>
+                <div style="padding:28px 28px 24px;">
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px;">
+                        <div style="width:36px; height:36px; border-radius:10px; background:#fff7ed; display:flex; align-items:center; justify-content:center;">
+                            <span class="material-icons-round" style="font-size:20px; color:#f97316;">child_care</span>
                         </div>
-                        Thông tin cơ bản
-                    </h3>
+                        <div>
+                            <div style="font-size:15px; font-weight:700; color:#1a1a1a; font-family:'Quicksand',sans-serif;">Thông tin cơ bản</div>
+                            <div style="font-size:12px; color:#9ca3af;">Nhóm độ tuổi của trẻ</div>
+                        </div>
+                    </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <!-- Child Age Group -->
-                        <div class="space-y-2">
-                            <label for="ChildAgeGroup" class="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-widest ml-1 pointer-events-none">
-                                🎂 Nhóm tuổi
-                            </label>
-                            <select class="w-full px-5 py-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none text-gray-900 dark:text-white font-medium"
-                                    id="ChildAgeGroup" name="ChildAgeGroup">
-                                <option value="">-- Chọn nhóm tuổi --</option>
-                                <option value="1" selected="@(Model.ChildAgeGroup == WebSite.Enums.ChildAgeGroup.Baby)">Em bé (0-1 tuổi)</option>
-                                <option value="2" selected="@(Model.ChildAgeGroup == WebSite.Enums.ChildAgeGroup.Toddler)">Toddler (1-3 tuổi)</option>
-                                <option value="3" selected="@(Model.ChildAgeGroup == WebSite.Enums.ChildAgeGroup.Preschooler)">Mầm non (3-5 tuổi)</option>
-                                <option value="4" selected="@(Model.ChildAgeGroup == WebSite.Enums.ChildAgeGroup.Gradeschooler)">Học sinh tiểu học (6-12 tuổi)</option>
-                            </select>
-                            @Html.ValidationMessageFor(m => m.ChildAgeGroup, "", new { @class = "text-red-500 text-sm font-medium mt-1 ml-1" })
+                    <div class="cf-field">
+                        <label class="cf-label">Nhóm tuổi</label>
+                        <div class="cf-dropdown" id="dd_ageGroup">
+                            <input type="hidden" name="ChildAgeGroup" id="ChildAgeGroup" value="@(currentAge >= 0 ? currentAge.ToString() : "")">
+                            <div class="cf-dropdown-trigger" onclick="toggleDropdown('dd_ageGroup')">
+                                <span class="cf-dropdown-text @(currentAge < 0 ? "cf-dropdown-placeholder" : "")">
+                                    @(currentAgeLabel != "" ? currentAgeLabel : "-- Chọn nhóm tuổi --")
+                                </span>
+                                <span class="material-icons-round cf-dropdown-arrow">expand_more</span>
+                            </div>
+                            <div class="cf-dropdown-menu">
+                                <div class="cf-dropdown-option @(currentAge == 0 ? "selected" : "")" data-value="0" onclick="selectOption('dd_ageGroup','0','Em bé (0–1 tuổi)')">Em bé (0–1 tuổi)</div>
+                                <div class="cf-dropdown-option @(currentAge == 1 ? "selected" : "")" data-value="1" onclick="selectOption('dd_ageGroup','1','Toddler (1–3 tuổi)')">Toddler (1–3 tuổi)</div>
+                                <div class="cf-dropdown-option @(currentAge == 2 ? "selected" : "")" data-value="2" onclick="selectOption('dd_ageGroup','2','Mầm non (3–5 tuổi)')">Mầm non (3–5 tuổi)</div>
+                                <div class="cf-dropdown-option @(currentAge == 3 ? "selected" : "")" data-value="3" onclick="selectOption('dd_ageGroup','3','Học sinh tiểu học (6–12 tuổi)')">Học sinh tiểu học (6–12 tuổi)</div>
+                            </div>
                         </div>
+                        @Html.ValidationMessageFor(m => m.ChildAgeGroup, "", new { @class = "cf-error" })
                     </div>
                 </div>
 
-                <!-- Health & Special Information -->
-                <div class="pt-8 border-t border-gray-100 dark:border-gray-800 space-y-8">
-                    <h3 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3" style="font-family:'Quicksand',sans-serif">
-                        <div class="w-10 h-10 bg-blue-100 dark:bg-blue-950/30 rounded-xl flex items-center justify-center text-blue-600 dark:text-blue-400">
-                            <span class="material-icons-round">health_and_safety</span>
-                        </div>
-                        Thông tin chi tiết
-                    </h3>
+                <div style="height:1px; background:#f5f5f5;"></div>
 
-                    <div class="grid grid-cols-1 gap-8">
-                        <!-- Special Needs -->
-                        <div class="space-y-2">
-                            <label for="SpecialNeeds" class="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-widest ml-1 pointer-events-none">
-                                🎯 Nhu cầu đặc biệt (nếu có)
-                            </label>
-                            <textarea class="w-full px-5 py-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none text-gray-900 dark:text-white font-medium resize-none shadow-sm"
-                                      id="SpecialNeeds" name="SpecialNeeds" rows="3" placeholder="Mô tả các nhu cầu đặc biệt nếu có...">@Model.SpecialNeeds</textarea>
-                            @Html.ValidationMessageFor(m => m.SpecialNeeds, "", new { @class = "text-red-500 text-sm font-medium mt-1 ml-1" })
+                <div style="padding:24px 28px; background:#fbfcff;">
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px;">
+                        <div style="width:36px; height:36px; border-radius:10px; background:#eff6ff; display:flex; align-items:center; justify-content:center;">
+                            <span class="material-icons-round" style="font-size:20px; color:#3b82f6;">health_and_safety</span>
                         </div>
-
-                        <!-- Characteristic -->
-                        <div class="space-y-2">
-                            <label for="Characteristic" class="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-widest ml-1 pointer-events-none">
-                                ✨ Đặc điểm tính cách
-                            </label>
-                            <textarea class="w-full px-5 py-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none text-gray-900 dark:text-white font-medium resize-none shadow-sm"
-                                      id="Characteristic" name="Characteristic" rows="3" placeholder="Mô tả đặc điểm tính cách của con...">@Model.Characteristic</textarea>
-                            @Html.ValidationMessageFor(m => m.Characteristic, "", new { @class = "text-red-500 text-sm font-medium mt-1 ml-1" })
-                        </div>
-
-                        <!-- Notes -->
-                        <div class="space-y-2">
-                            <label for="Notes" class="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-widest ml-1 pointer-events-none">
-                                📝 Ghi chú thêm
-                            </label>
-                            <textarea class="w-full px-5 py-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all outline-none text-gray-900 dark:text-white font-medium resize-none shadow-sm"
-                                      id="Notes" name="Notes" rows="4" placeholder="Các thông tin thêm về con em...">@Model.Notes</textarea>
-                            @Html.ValidationMessageFor(m => m.Notes, "", new { @class = "text-red-500 text-sm font-medium mt-1 ml-1" })
+                        <div>
+                            <div style="font-size:15px; font-weight:700; color:#1a1a1a; font-family:'Quicksand',sans-serif;">Thông tin chi tiết</div>
+                            <div style="font-size:12px; color:#9ca3af;">Đặc điểm và nhu cầu của trẻ</div>
                         </div>
                     </div>
 
-                    <!-- Characteristic -->
-                    <div>
-                        <label for="Characteristic" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                            ✨ Đặc điểm tính cách
-                        </label>
-                        <textarea class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none"
-                                  id="Characteristic" name="Characteristic" rows="3" placeholder="Mô tả đặc điểm tính cách của con...">@Model.Characteristic</textarea>
-                        @Html.ValidationMessageFor(m => m.Characteristic, "", new { @class = "text-red-500 text-sm mt-1" })
+                    <div class="cf-field">
+                        <label class="cf-label" for="SpecialNeeds">Nhu cầu đặc biệt <span class="cf-label-opt">(nếu có)</span></label>
+                        <textarea class="cf-textarea" id="SpecialNeeds" name="SpecialNeeds" rows="3"
+                                  placeholder="Mô tả các nhu cầu đặc biệt nếu có...">@Model.SpecialNeeds</textarea>
+                        @Html.ValidationMessageFor(m => m.SpecialNeeds, "", new { @class = "cf-error" })
+                    </div>
+
+                    <div class="cf-field">
+                        <label class="cf-label" for="Characteristic">Đặc điểm tính cách</label>
+                        <textarea class="cf-textarea" id="Characteristic" name="Characteristic" rows="3"
+                                  placeholder="Mô tả đặc điểm tính cách của con...">@Model.Characteristic</textarea>
+                        @Html.ValidationMessageFor(m => m.Characteristic, "", new { @class = "cf-error" })
+                    </div>
+
+                    <div class="cf-field" style="margin-bottom:0;">
+                        <label class="cf-label" for="Notes">Ghi chú thêm <span class="cf-label-opt">(tùy chọn)</span></label>
+                        <textarea class="cf-textarea" id="Notes" name="Notes" rows="3"
+                                  placeholder="Các thông tin thêm về con em...">@Model.Notes</textarea>
+                        @Html.ValidationMessageFor(m => m.Notes, "", new { @class = "cf-error" })
                     </div>
                 </div>
 
-                <!-- Action Buttons -->
-                <div class="pt-8 flex flex-col sm:flex-row gap-4">
-                    <button type="submit" 
-                            class="flex-1 flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold rounded-2xl transition-all duration-300 shadow-glow hover:shadow-xl">
-                        <span class="material-icons-round">save</span>
+                <div style="padding:18px 28px; display:flex; gap:10px; border-top:1px solid #f5f5f5;">
+                    <button type="submit" class="cf-btn-primary">
+                        <span class="material-icons-round" style="font-size:18px;">save</span>
                         Lưu thay đổi
                     </button>
-                    <a href="@Url.Action("Children", "Profile")" 
-                       class="flex-1 flex items-center justify-center gap-2 px-8 py-4 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-bold rounded-2xl transition-all duration-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-transparent hover:border-gray-300 dark:hover:border-gray-600">
-                        <span class="material-icons-round">close</span>
-                        Hủy bỏ
-                    </a>
+                    <a href="@Url.Action("Children", "Profile")" class="cf-btn-secondary">Hủy</a>
                 </div>
             </form>
         </div>
@@ -122,32 +124,118 @@
 </div>
 
 <style>
-    .shadow-soft { box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05); }
-    .shadow-glow { box-shadow: 0 10px 25px -5px rgba(249, 115, 22, 0.4); }
-    .bg-card-dark { background-color: #111827; }
-    .gradient-text { 
-        background: linear-gradient(135deg, #EA580C 0%, #F97316 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-weight: 700;
+    .cf-field { margin-bottom: 18px; }
+    .cf-label {
+        display: block;
+        font-size: 12px; font-weight: 700;
+        letter-spacing: .07em; text-transform: uppercase;
+        color: #374151; margin-bottom: 7px;
     }
+    .cf-label-opt { font-weight: 400; color: #9ca3af; text-transform: none; letter-spacing: 0; font-size: 11px; }
+
+    .cf-dropdown { position: relative; }
+    .cf-dropdown-trigger {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 0 16px;
+        min-height: 50px;
+        background: #fff;
+        border: 1.5px solid #fdba74;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: border-color .15s, box-shadow .15s;
+        user-select: none;
+    }
+    .cf-dropdown-trigger:hover { border-color: #f97316; }
+    .cf-dropdown.open .cf-dropdown-trigger {
+        border-color: #f97316;
+        box-shadow: 0 0 0 3px rgba(249,115,22,.12);
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+    .cf-dropdown-text { font-size: 15px; font-weight: 600; color: #111827; }
+    .cf-dropdown-placeholder { color: #9ca3af; font-weight: 400; }
+    .cf-dropdown-arrow {
+        font-size: 20px !important; color: #f97316;
+        transition: transform .2s; flex-shrink: 0;
+    }
+    .cf-dropdown.open .cf-dropdown-arrow { transform: rotate(180deg); }
+
+    .cf-dropdown-menu {
+        display: none; position: absolute; left: 0; right: 0; top: 100%;
+        background: #fff;
+        border: 1.5px solid #f97316; border-top: none;
+        border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0,0,0,.10);
+        z-index: 100; overflow: hidden;
+    }
+    .cf-dropdown.open .cf-dropdown-menu { display: block; }
+
+    .cf-dropdown-option {
+        padding: 12px 16px;
+        font-size: 14px; font-weight: 500; color: #374151;
+        cursor: pointer; transition: background .1s;
+        border-bottom: 1px solid #fef3e6;
+    }
+    .cf-dropdown-option:last-child { border-bottom: none; }
+    .cf-dropdown-option:hover { background: #fff7ed; color: #ea580c; }
+    .cf-dropdown-option.selected { background: #fff7ed; color: #ea580c; font-weight: 700; }
+
+    .cf-textarea {
+        width: 100%; display: block;
+        padding: 12px 14px;
+        background: #fff; border: 1.5px solid #e5e7eb;
+        border-radius: 12px;
+        font-size: 14px; color: #111827;
+        resize: none; outline: none;
+        transition: border-color .15s, box-shadow .15s;
+        line-height: 1.6;
+    }
+    .cf-textarea::placeholder { color: #9ca3af; }
+    .cf-textarea:hover { border-color: #fdba74; }
+    .cf-textarea:focus { border-color: #f97316; box-shadow: 0 0 0 3px rgba(249,115,22,.10); }
+
+    .cf-error { display: block; font-size: 12px; color: #dc2626; font-weight: 500; margin-top: 4px; }
+
+    .cf-btn-primary {
+        flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px;
+        padding: 12px 20px;
+        background: #f97316; color: #fff;
+        font-size: 15px; font-weight: 700;
+        border-radius: 12px; border: none; cursor: pointer;
+        transition: background .15s, transform .15s;
+    }
+    .cf-btn-primary:hover { background: #ea580c; transform: translateY(-1px); }
+
+    .cf-btn-secondary {
+        padding: 12px 20px;
+        background: #fff; color: #6b7280;
+        font-size: 15px; font-weight: 600;
+        border-radius: 12px; border: 1.5px solid #e5e7eb;
+        text-decoration: none; display: flex; align-items: center;
+        transition: all .15s;
+    }
+    .cf-btn-secondary:hover { background: #f9fafb; border-color: #d1d5db; color: #374151; }
 </style>
-        padding: 0.5rem 0.75rem;
-    }
 
-    .form-control:focus,
-    .form-select:focus {
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+<script>
+    function toggleDropdown(id) {
+        const dd = document.getElementById(id);
+        const isOpen = dd.classList.contains('open');
+        document.querySelectorAll('.cf-dropdown.open').forEach(d => d.classList.remove('open'));
+        if (!isOpen) dd.classList.add('open');
     }
-
-    .btn {
-        border-radius: 5px;
-        padding: 0.5rem 1rem;
+    function selectOption(ddId, value, label) {
+        const dd = document.getElementById(ddId);
+        dd.querySelector('input[type=hidden]').value = value;
+        const textEl = dd.querySelector('.cf-dropdown-text');
+        textEl.textContent = label;
+        textEl.classList.remove('cf-dropdown-placeholder');
+        dd.querySelectorAll('.cf-dropdown-option').forEach(o => o.classList.toggle('selected', o.dataset.value === value));
+        dd.classList.remove('open');
     }
-
-    .text-danger {
-        font-size: 0.875rem;
-        margin-top: 0.25rem;
-    }
-</style>
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.cf-dropdown')) {
+            document.querySelectorAll('.cf-dropdown.open').forEach(d => d.classList.remove('open'));
+        }
+    });
+</script>

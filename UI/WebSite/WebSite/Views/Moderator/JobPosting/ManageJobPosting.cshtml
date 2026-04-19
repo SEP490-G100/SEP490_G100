@@ -1,8 +1,7 @@
 @using WebSite.Controllers
 @model  WebSite.Models.Search.JobPostingListResponse
 @{
-    Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
-    ViewData["Title"] = "Job Posting Management";
+    ViewData["Title"] = "Quản lý bài đăng việc";
 
     var currentSearch = ViewBag.Search as string ?? "";
     var currentStatus = ViewBag.Status as string ?? "";
@@ -15,15 +14,13 @@
 <!-- PAGE HEADER -->
 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
     <div>
-        <span class="section-label">Job Posting Management</span>
+        <span class="section-label">Quản lý bài đăng việc</span>
         <h1 class="page-title mt-2">
-            Parent <span class="gradient-text">Job Postings</span>
+            Bài đăng việc của <span class="gradient-text">Phụ huynh</span>
         </h1>
-        <p class="page-subtitle">Review parent submissions and open each posting in a dedicated detail page before making a decision.</p>
+        <p class="page-subtitle">Xem xét các bài đăng và mở chi tiết để duyệt hoặc từ chối.</p>
     </div>
-    <div class="flex gap-2 text-sm">
-        <span class="badge badge-pending px-3 py-1.5">@(Model?.TotalCount ?? 0) Total</span>
-    </div>
+        <span class="badge badge-pending px-3 py-1.5">Tổng số @(Model?.TotalCount ?? 0)</span>
 </div>
 
 <!-- Alert messages -->
@@ -52,8 +49,7 @@
             <!-- Search -->
             <div class="relative flex-1">
                 <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">search</span>
-                <input name="search" type="text" value="@currentSearch"
-                       placeholder="Search by title or parent..."
+                       placeholder="Tìm theo tiêu đề hoặc phụ huynh..."
                        class="search-input pl-9 w-full border border-gray-200 rounded-xl px-4 py-2 font-medium"
                        onkeydown="if(event.key==='Enter'){this.form.submit();}" />
             </div>
@@ -63,9 +59,9 @@
                 <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">visibility</span>
                 <select name="status" onchange="this.form.submit()"
                         class="search-input md:w-36 !pl-9 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
-                    <option value="">All Statuses</option>
-                    <option value="1" selected="@(currentStatus == "1" ? "selected" : null)">Public</option>
-                    <option value="2" selected="@(currentStatus == "2" ? "selected" : null)">Hidden</option>
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="1" selected="@(currentStatus == "1" ? "selected" : null)">Công khai</option>
+                    <option value="2" selected="@(currentStatus == "2" ? "selected" : null)">Đã ẩn</option>
                 </select>
             </div>
 
@@ -74,17 +70,17 @@
                 <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">gavel</span>
                 <select name="moderationStatus" onchange="this.form.submit()"
                         class="search-input md:w-44 !pl-9 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
-                    <option value="">All Moderation</option>
-                    <option value="0" selected="@(currentModStatus == "0" ? "selected" : null)">Pending</option>
-                    <option value="1" selected="@(currentModStatus == "1" ? "selected" : null)">Rejected</option>
-                    <option value="2" selected="@(currentModStatus == "2" ? "selected" : null)">Approved</option>
+                    <option value="">Tất cả kiểm duyệt</option>
+                    <option value="0" selected="@(currentModStatus == "0" ? "selected" : null)">Đang chờ</option>
+                    <option value="1" selected="@(currentModStatus == "1" ? "selected" : null)">Đã từ chối</option>
+                    <option value="2" selected="@(currentModStatus == "2" ? "selected" : null)">Đã duyệt</option>
                 </select>
             </div>
 
             <!-- Submit -->
             <button type="submit" class="btn-primary flex-shrink-0 flex items-center gap-1">
                 <span class="material-icons-round text-base">search</span>
-                Search
+                Tìm kiếm
             </button>
         </div>
     </div>
@@ -95,8 +91,8 @@
 
     <div class="card-header">
         <span class="text-sm text-gray-500">
-            Showing <span class="font-bold text-gray-800">@items.Count</span>
-            of <span class="font-bold text-gray-800">@(Model?.TotalCount ?? 0)</span> jobs
+            Hiển thị <span class="font-bold text-gray-800">@items.Count</span>
+            trên <span class="font-bold text-gray-800">@(Model?.TotalCount ?? 0)</span> bài đăng
         </span>
     </div>
 
@@ -105,11 +101,11 @@
             <thead>
                 <tr>
                     <th class="text-left">#</th>
-                    <th class="text-left">Job Info</th>
-                    <th class="text-left">Parent</th>
-                    <th class="text-left">Status</th>
-                    <th class="text-left">Moderation</th>
-                    <th class="text-center">Actions</th>
+                    <th class="text-left">Thông tin bài đăng</th>
+                    <th class="text-left">Phụ huynh</th>
+                    <th class="text-left">Trạng thái</th>
+                    <th class="text-left">Kiểm duyệt</th>
+                    <th class="text-center">Hành động</th>
                 </tr>
             </thead>
             <tbody>
@@ -118,8 +114,8 @@
                     <tr>
                         <td colspan="6" class="text-center py-16 text-gray-400">
                             <span class="material-icons-round text-5xl mb-3 block text-gray-200">work_outline</span>
-                            <p class="font-semibold text-gray-400">No job postings found.</p>
-                            <p class="text-xs text-gray-300 mt-1">Try adjusting the filter above.</p>
+                            <p class="font-semibold text-gray-400">Không tìm thấy bài đăng việc.</p>
+                            <p class="text-xs text-gray-300 mt-1">Thử điều chỉnh bộ lọc.</p>
                         </td>
                     </tr>
                 }
@@ -133,10 +129,10 @@
                         _ => "badge badge-pending px-3 py-1.5"
                     };
                     var modLabel = item.ModerationStatus switch {
-                        0 => "Pending",
-                        1 => "Rejected",
-                        2 => "Approved",
-                        _ => "Unknown"
+                        0 => "Đang chờ",
+                        1 => "Đã từ chối",
+                        2 => "Đã duyệt",
+                        _ => "Không xác định"
                     };
 
                     <tr class="account-row">
@@ -150,7 +146,7 @@
                                     {
                                         <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2.5 py-1 text-[10px] font-semibold text-amber-600">
                                             <span class="material-icons-round text-xs">workspace_premium</span>
-                                            Featured
+                                            Nổi bật
                                         </span>
                                     }
                                 </div>
@@ -159,17 +155,17 @@
                         <td>
                             <div class="flex flex-col">
                                 <span class="text-gray-700 text-sm font-semibold">@item.ParentName</span>
-                                <span class="text-xs text-gray-400">@(string.IsNullOrWhiteSpace(item.City) ? "No city" : item.City)</span>
+                                <span class="text-xs text-gray-400">@(string.IsNullOrWhiteSpace(item.City) ? "Chưa có thành phố" : item.City)</span>
                             </div>
                         </td>
                         <td>
                             @if (item.Status == 1)
                             {
-                                <span class="inline-flex items-center rounded-full bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1.5 text-xs font-semibold">Public</span>
+                                <span class="inline-flex items-center rounded-full bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1.5 text-xs font-semibold">Công khai</span>
                             }
                             else
                             {
-                                <span class="inline-flex items-center rounded-full bg-gray-100 text-gray-600 border border-gray-200 px-3 py-1.5 text-xs font-semibold">Hidden</span>
+                                <span class="inline-flex items-center rounded-full bg-gray-100 text-gray-600 border border-gray-200 px-3 py-1.5 text-xs font-semibold">Đã ẩn</span>
                             }
                         </td>
                         <td>
@@ -180,7 +176,7 @@
                                 <a href="/Moderator/ViewJobPostingDetail/@item.Id"
                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-orange-50 text-orange-600 border border-orange-200 hover:bg-orange-100 transition-all">
                                     <span class="material-icons-round text-sm">visibility</span>
-                                    Review
+                                    Xem xét
                                 </a>
                             </div>
                         </td>
@@ -194,8 +190,8 @@
     <!-- Pagination -->
     <div class="flex items-center justify-between px-6 py-4 border-t border-gray-50">
         <span class="text-sm text-gray-400">
-            Page <span class="font-bold text-gray-600">@currentPage</span>
-            of <span class="font-bold text-gray-600">@totalPages</span>
+            Trang <span class="font-bold text-gray-600">@currentPage</span>
+            / <span class="font-bold text-gray-600">@totalPages</span>
         </span>
         <div class="flex gap-1.5">
             @if (currentPage > 1)

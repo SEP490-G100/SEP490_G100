@@ -1,8 +1,8 @@
 @model WebSite.Models.FAQ.FaqDto
 @{
     Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
-    ViewData["Title"] = "FAQ Detail";
-    var statusLabel = Model.IsActive ? "Active" : "Inactive";
+    ViewData["Title"] = "Chi tiết FAQ";
+    var statusLabel = Model.IsActive ? "Hoạt động" : "Đã ẩn";
     var questionError = ViewData.ModelState["Question"]?.Errors.Count > 0
         ? ViewData.ModelState["Question"]?.Errors[0].ErrorMessage
         : null;
@@ -14,13 +14,13 @@
 <!-- PAGE HEADER -->
 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
     <div>
-        <span class="section-label">📋 Content Management</span>
-        <h1 class="page-title mt-2">FAQ <span class="gradient-text">Detail &amp; Edit</span></h1>
-        <p class="page-subtitle">View and update FAQ question and answer.</p>
+        <span class="section-label">📋 Quản lý nội dung</span>
+        <h1 class="page-title mt-2">FAQ <span class="gradient-text">Chi tiết & Sửa</span></h1>
+        <p class="page-subtitle">Xem thông tin chi tiết và cập nhật câu hỏi, câu trả lời FAQ.</p>
     </div>
     <a href="/Moderator/ManageFAQ" class="btn-outline flex-shrink-0">
         <span class="material-icons-round text-base">arrow_back</span>
-        Back to FAQs
+        Quay lại danh sách
     </a>
 </div>
 
@@ -37,51 +37,51 @@
                 <div class="card-header">
                     <div class="flex items-center gap-2">
                         <span class="material-icons-round text-orange-400">info</span>
-                        <h2>FAQ Info <span class="text-xs text-gray-400 font-normal ml-1">(read-only)</span></h2>
+                        <h2>Thông tin FAQ <span class="text-xs text-gray-400 font-normal ml-1">(chỉ xem)</span></h2>
                     </div>
                 </div>
                 <div class="p-5 space-y-3">
                     <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
                         <div class="field-group sm:col-span-2">
-                            <label class="field-label">FAQ ID</label>
+                            <label class="field-label">Mã FAQ</label>
                             <div class="field-readonly font-mono text-xs break-all">@Model.Id</div>
                         </div>
                         <div class="field-group">
-                            <label class="field-label">Category</label>
+                            <label class="field-label">Danh mục</label>
                             <div class="field-readonly">
                                 <span class="material-icons-round text-gray-300 text-base">label_outline</span>
                                 @(string.IsNullOrEmpty(Model.Category) ? "—" : Model.Category)
                             </div>
                         </div>
                         <div class="field-group">
-                            <label class="field-label">Sort Order</label>
+                            <label class="field-label">Thứ tự hiển thị</label>
                             <div class="field-readonly">
                                 <span class="material-icons-round text-gray-300 text-base">sort</span>
                                 <span class="font-semibold text-gray-700">@Model.SortOrder</span>
-                                <span class="text-xs text-gray-300 ml-1">(read-only)</span>
+                                <span class="text-xs text-gray-300 ml-1">(chỉ xem)</span>
                             </div>
                         </div>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div class="field-group">
-                            <label class="field-label">View Count</label>
+                            <label class="field-label">Lượt xem</label>
                             <div class="field-readonly">
                                 <span class="material-icons-round text-gray-300 text-base">visibility</span>
                                 <span class="font-semibold text-gray-700">@Model.ViewCount</span>
                             </div>
                         </div>
                         <div class="field-group">
-                            <label class="field-label">Created At</label>
+                            <label class="field-label">Ngày tạo</label>
                             <div class="field-readonly text-xs">
                                 <span class="material-icons-round text-gray-300 text-base">calendar_today</span>
-                                @Model.CreatedAt.ToString("dd MMM yyyy, HH:mm")
+                                @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")
                             </div>
                         </div>
                         <div class="field-group">
-                            <label class="field-label">Last Updated</label>
+                            <label class="field-label">Cập nhật lần cuối</label>
                             <div class="field-readonly text-xs">
                                 <span class="material-icons-round text-gray-300 text-base">update</span>
-                                @(Model.UpdatedAt.HasValue ? Model.UpdatedAt.Value.ToString("dd MMM yyyy, HH:mm") : "Never")
+                                @(Model.UpdatedAt.HasValue ? Model.UpdatedAt.Value.ToString("dd/MM/yyyy HH:mm") : "Chưa từng")
                             </div>
                         </div>
                     </div>
@@ -93,7 +93,7 @@
                 <div class="card-header">
                     <div class="flex items-center gap-2">
                         <span class="material-icons-round text-orange-400">edit</span>
-                        <h2>Edit Content <span class="text-xs text-green-500 font-semibold ml-1">✏️ editable</span></h2>
+                        <h2>Sửa đổi nội dung <span class="text-xs text-green-500 font-semibold ml-1">✏️ có thể sửa</span></h2>
                     </div>
                 </div>
                 <div class="p-5 space-y-4">
@@ -101,43 +101,43 @@
                     <!-- Question -->
                     <div class="field-group">
                         <label class="field-label">
-                            Question <span class="text-red-400">*</span>
-                            <span class="text-orange-400 text-[10px] ml-1">✏️ editable</span>
+                            Câu hỏi <span class="text-red-400">*</span>
+                            <span class="text-orange-400 text-[10px] ml-1">✏️ có thể sửa</span>
                         </label>
                         <div class="relative">
                             <span class="material-icons-round absolute left-3 top-3 text-gray-300 text-base pointer-events-none">help_outline</span>
                             <textarea id="questionInput" name="Question" rows="3"
-                                      placeholder="Enter the question..."
+                                      placeholder="Hãy nhập câu hỏi..."
                                       class="search-input !pl-9 w-full resize-none @(!string.IsNullOrWhiteSpace(questionError) ? "!border-red-400" : "")">@Model.Question</textarea>
                         </div>
                         <p id="questionError" class="text-xs text-red-500 mt-0.5 flex items-center gap-1 @((string.IsNullOrWhiteSpace(questionError) ? "hidden" : ""))">
                             <span class="material-icons-round text-xs">error</span>
-                            @(questionError ?? "Question khong duoc de trong.")
+                            @(questionError ?? "Câu hỏi không được để trống.")
                         </p>
                     </div>
 
                     <!-- Answer -->
                     <div class="field-group">
                         <label class="field-label">
-                            Answer <span class="text-red-400">*</span>
-                            <span class="text-orange-400 text-[10px] ml-1">✏️ editable</span>
+                            Câu trả lời <span class="text-red-400">*</span>
+                            <span class="text-orange-400 text-[10px] ml-1">✏️ có thể sửa</span>
                         </label>
                         <div class="relative">
                             <span class="material-icons-round absolute left-3 top-3 text-gray-300 text-base pointer-events-none">chat_bubble_outline</span>
                             <textarea id="answerInput" name="Answer" rows="7"
-                                      placeholder="Enter the answer..."
+                                      placeholder="Hãy nhập nội dung trả lời..."
                                       class="search-input !pl-9 w-full resize-y @(!string.IsNullOrWhiteSpace(answerError) ? "!border-red-400" : "")">@Model.Answer</textarea>
                         </div>
                         <p id="answerError" class="text-xs text-red-500 mt-0.5 flex items-center gap-1 @((string.IsNullOrWhiteSpace(answerError) ? "hidden" : ""))">
                             <span class="material-icons-round text-xs">error</span>
-                            @(answerError ?? "Answer khong duoc de trong.")
+                            @(answerError ?? "Câu trả lời không được để trống.")
                         </p>
                     </div>
 
                     <!-- Status -->
                     <div class="field-group">
                         <label class="field-label">
-                            Status <span class="text-orange-400 text-[10px] ml-1">✏️ editable</span>
+                            Trạng thái <span class="text-orange-400 text-[10px] ml-1">✏️ chọn</span>
                         </label>
                         <div class="flex gap-3">
                             <label class="flex items-center gap-2.5 px-4 py-3 rounded-2xl border-2 cursor-pointer transition-all @(Model.IsActive ? "border-emerald-400 bg-emerald-50" : "border-gray-200 bg-gray-50 hover:border-gray-300")"
@@ -146,7 +146,7 @@
                                        @(Model.IsActive ? "checked" : "") class="accent-emerald-500"
                                        onchange="updateStatusLabel(true)" />
                                 <div class="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
-                                <span class="text-sm font-semibold text-gray-700">Active</span>
+                                <span class="text-sm font-semibold text-gray-700">Hoạt động</span>
                             </label>
                             <label class="flex items-center gap-2.5 px-4 py-3 rounded-2xl border-2 cursor-pointer transition-all @(!Model.IsActive ? "border-gray-400 bg-gray-100" : "border-gray-200 bg-gray-50 hover:border-gray-300")"
                                    id="label-inactive">
@@ -154,7 +154,7 @@
                                        @(!Model.IsActive ? "checked" : "") class="accent-gray-500"
                                        onchange="updateStatusLabel(false)" />
                                 <div class="w-2.5 h-2.5 rounded-full bg-gray-400"></div>
-                                <span class="text-sm font-semibold text-gray-700">Inactive</span>
+                                <span class="text-sm font-semibold text-gray-700">Đã ẩn</span>
                             </label>
                         </div>
                     </div>
@@ -194,16 +194,16 @@
             <!-- Audit Info -->
             <div class="content-card p-4 space-y-3 fade-in-up" style="animation-delay:.1s;">
                 <div>
-                    <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-0.5">View Count</p>
+                    <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-0.5">Lượt xem</p>
                     <p class="text-2xl font-bold text-gray-800">@Model.ViewCount</p>
                 </div>
                 <div>
-                    <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-0.5">Sort Order</p>
-                    <p class="text-lg font-bold text-gray-700">@Model.SortOrder <span class="text-xs text-gray-400 font-normal">(not editable)</span></p>
+                    <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-0.5">Thứ tự ưu tiên hiển thị</p>
+                    <p class="text-lg font-bold text-gray-700">@Model.SortOrder <span class="text-xs text-gray-400 font-normal">(không thể sửa)</span></p>
                 </div>
                 <div>
-                    <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-0.5">Created</p>
-                    <p class="text-sm text-gray-600">@Model.CreatedAt.ToString("dd MMM yyyy, HH:mm")</p>
+                    <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-0.5">Ngày tạo</p>
+                    <p class="text-sm text-gray-600">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</p>
                 </div>
             </div>
 
@@ -211,11 +211,11 @@
             <div class="content-card p-4 space-y-2.5 fade-in-up" style="animation-delay:.15s;">
                 <button type="button" onclick="submitEditForm()" class="btn-primary w-full justify-center">
                     <span class="material-icons-round text-base">save</span>
-                    Save Changes
+                    Lưu thay đổi
                 </button>
                 <a href="/Moderator/ManageFAQ" class="btn-outline w-full justify-center">
                     <span class="material-icons-round text-base">close</span>
-                    Cancel
+                    Hủy
                 </a>
             </div>
 
@@ -280,13 +280,13 @@ function updateStatusLabel(isActive) {
     if (isActive) {
         display.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold bg-emerald-50 text-emerald-700 border border-emerald-200';
         dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
-        text.textContent = 'Active';
+        text.textContent = 'Hoạt động';
         la.className = la.className.replace('border-gray-200 bg-gray-50 hover:border-gray-300','border-emerald-400 bg-emerald-50');
         li.className = li.className.replace('border-gray-400 bg-gray-100','border-gray-200 bg-gray-50 hover:border-gray-300');
     } else {
         display.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold bg-gray-100 text-gray-600 border border-gray-200';
         dot.className = 'w-2 h-2 rounded-full bg-gray-400';
-        text.textContent = 'Inactive';
+        text.textContent = 'Đã ẩn';
         li.className = li.className.replace('border-gray-200 bg-gray-50 hover:border-gray-300','border-gray-400 bg-gray-100');
         la.className = la.className.replace('border-emerald-400 bg-emerald-50','border-gray-200 bg-gray-50 hover:border-gray-300');
     }
