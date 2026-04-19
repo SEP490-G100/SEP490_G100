@@ -22,11 +22,12 @@ public class ModeratorVerificationController : ControllerBase
     [HttpGet("moderator-view-verification-list")]
     public async Task<IActionResult> ModeratorViewVerificationList(
         [FromQuery] int? status = null,
+        [FromQuery] int? requestType = null,
         [FromQuery] string? search = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 3)
     {
-        var response = await _moderatorVerificationService.ModeratorViewVerificationListAsync(status, search, page, pageSize);
+        var response = await _moderatorVerificationService.ModeratorViewVerificationListAsync(status, requestType, search, page, pageSize);
         return Ok(new { success = true, data = response });
     }
 
@@ -47,7 +48,7 @@ public class ModeratorVerificationController : ControllerBase
     {
         var moderatorId = GetCurrentUserId();
         if (!moderatorId.HasValue)
-            return Unauthorized(new { success = false, message = "Khong xac dinh duoc moderator." });
+            return Unauthorized(new { success = false, message = "Không xác định được moderator." });
 
         var result = await _moderatorVerificationService.ModeratorReviewVerificationAsync(id, moderatorId.Value, request);
         if (!result.Success)

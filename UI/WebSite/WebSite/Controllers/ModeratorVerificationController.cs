@@ -28,13 +28,15 @@ public class ModeratorVerificationController : Controller
 
     // GET /Moderator/ManageNannyVerification
     [HttpGet("ManageNannyVerification")]
-    public async Task<IActionResult> ManageNannyVerification(string? search = null, int? status = null, int page = 1)
+    public async Task<IActionResult> ManageNannyVerification(string? search = null, int? status = null, int? requestType = null, int page = 1)
     {
         ViewBag.Search = search;
         ViewBag.Status = status;
+        ViewBag.RequestType = requestType;
 
         var qs = new List<string> { $"page={page}", "pageSize=3" };
         if (status.HasValue) qs.Add($"status={status.Value}");
+        if (requestType.HasValue) qs.Add($"requestType={requestType.Value}");
         if (!string.IsNullOrWhiteSpace(search)) qs.Add($"search={Uri.EscapeDataString(search)}");
 
         var token = HttpContext.Session.GetString("AccessToken");
@@ -131,26 +133,26 @@ public class ModeratorVerificationController : Controller
                     await _notificationHub.Clients.Group($"user:{nannyUserId.Value}").SendAsync("notification:new", new
                     {
                         type = action == 2 ? "verification-approved" : "verification-rejected",
-                        title = action == 2 ? "Y?u c?u xác minh da được chap thuan" : "Y?u c?u xác minh da bi từ chối",
+                        title = action == 2 ? "Yêu cầu xác minh đã được chấp thuận" : "Yêu cầu xác minh đã bị từ chối",
                         message = action == 2
-                            ? "Y?u c?u xác minh cua ban da được chap thuan."
-                            : "Y?u c?u xác minh cua ban da bi từ chối.",
+                            ? "Yêu cầu xác minh của bạn đã được chấp thuận."
+                            : "Yêu cầu xác minh của bạn đã bị từ chối.",
                         toastType = action == 2 ? "success" : "warning"
                     });
                 }
 
                 var listUrl = Url.Action(nameof(ManageNannyVerification), "ModeratorVerification")
                               ?? "/Moderator/ManageNannyVerification";
-                var toastMessage = Uri.EscapeDataString("Bạn đã xử lí yêu cầu xác minh thành công");
+                var toastMessage = Uri.EscapeDataString("Bạn đã xử lý yêu cầu xác minh thành công");
                 return Redirect($"{listUrl}?toastType=success&toastMessage={toastMessage}");
             }
 
-            TempData["Error"] = result?.Message ?? "Xu ly thất bại.";
+            TempData["Error"] = result?.Message ?? "Xử lý thất bại.";
             return RedirectToAction(nameof(ManageNannyVerification));
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"L?i kết nối: {ex.Message}";
+            TempData["Error"] = $"Lỗi kết nối: {ex.Message}";
             return RedirectToAction(nameof(ManageNannyVerification));
         }
     }

@@ -7,6 +7,9 @@ public class VerificationRequestListDto
 {
     public Guid Id { get; set; }
     public Guid NannyProfileId { get; set; }
+    public int RequestType { get; set; }           // 1=ProfileVerification, 2=HealthCertificate
+    public List<int> DocumentTypes { get; set; } = new();
+    public DateTime? ExpiryDate { get; set; }
     public int Status { get; set; }                // 1=Pending, 2=Approved, 3=Rejected
     public DateTime CreatedAt { get; set; }
     public DateTime? ReviewedAt { get; set; }
@@ -28,6 +31,7 @@ public class VerificationRequestDetailDto
 {
     public Guid Id { get; set; }
     public Guid NannyProfileId { get; set; }
+    public int RequestType { get; set; }
     public int Status { get; set; }
     public string? RejectionReason { get; set; }
     public DateTime CreatedAt { get; set; }
@@ -93,6 +97,7 @@ public class VerificationDocumentDto
     public string DocumentUrl { get; set; } = null!;
     public string FileName { get; set; } = null!;
     public int? FileSize { get; set; }
+    public DateTime? ExpiryDate { get; set; }
 }
 
 /// <summary>Paginated list response</summary>
@@ -121,6 +126,8 @@ public class ReviewVerificationRequest
 /// <summary>Request body for a Nanny to submit verification documents</summary>
 public class SubmitVerificationRequestDto
 {
+    public int RequestType { get; set; }
+    public DateTime? HealthCertificateExpiryDate { get; set; }
     public List<UploadedVerificationDocumentDto> Documents { get; set; } = new();
 }
 
@@ -130,4 +137,5 @@ public class UploadedVerificationDocumentDto
     public string DocumentUrl { get; set; } = null!;
     public string FileName { get; set; } = null!;
     public int FileSize { get; set; }
+    public DateTime? ExpiryDate { get; set; }
 }

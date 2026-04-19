@@ -1,4 +1,4 @@
-(() => {
+﻿(() => {
   const SKIP_SELECT_CLASSES = new Set([
     'form-select-native-hidden',
     'nanny-filter--native'
@@ -281,7 +281,7 @@
   const domObserver = new MutationObserver((records) => {
     for (const record of records) {
       record.addedNodes.forEach((node) => {
-        if (!(nođ instanceof HTMLElement)) return;
+        if (!(node instanceof HTMLElement)) return;
         if (node.matches?.('select, input[list]')) {
           initUnifiedDropdowns(node.parentElement || node);
           return;

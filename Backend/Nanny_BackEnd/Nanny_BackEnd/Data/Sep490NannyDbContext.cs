@@ -850,6 +850,7 @@ public partial class Sep490NannyDbContext : DbContext
 
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())");
+            entity.Property(e => e.RequestType).HasDefaultValue(1);
             entity.Property(e => e.RejectionReason).HasMaxLength(1000);
 
             entity.HasOne(d => d.NannyProfile).WithMany(p => p.VerificationRequests)
