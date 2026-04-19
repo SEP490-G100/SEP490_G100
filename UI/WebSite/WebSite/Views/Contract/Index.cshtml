@@ -114,7 +114,7 @@
                 }
 
                 container.innerHTML = list.map((item) => {
-                    const isDirectContactHire = String(item.jobTitle || '').toLowerCase() === 'thue nanny truc tiep';
+                    const isDirectContactHire = String(item.jobTitle || '').toLowerCase() === 'thuê nanny truc tiếp';
                     const titleText = isDirectContactHire ? 'Hợp đồng từ contact request' : (item.jobTitle || 'Công việc');
                     const signBadge = item.signedByParent && item.signedByNanny
                         ? '<span class="contract-badge active">Đã ký 2 bên</span>'

@@ -2,7 +2,7 @@
 @model CreateChildProfileViewModel
 
 @{
-    ViewData["Title"] = "Them con em";
+    ViewData["Title"] = "Thêm con em";
 }
 
 <div class="child-page">
@@ -11,12 +11,12 @@
             <div class="child-breadcrumb">
                 <a href="@Url.Action("Index", "Profile")" class="child-breadcrumb__link">
                     <span class="material-icons-round">person</span>
-                    Ho so
+                    Hồ sơ
                 </a>
                 <span class="material-icons-round child-breadcrumb__sep">chevron_right</span>
-                <a href="@Url.Action("Children", "Profile")" class="child-breadcrumb__link">Quan ly con em</a>
+                <a href="@Url.Action("Children", "Profile")" class="child-breadcrumb__link">Quản lý con em</a>
                 <span class="material-icons-round child-breadcrumb__sep">chevron_right</span>
-                <span class="child-breadcrumb__current">Them moi</span>
+                <span class="child-breadcrumb__current">Thêm mới</span>
             </div>
 
             <div class="child-hero">
@@ -25,13 +25,13 @@
                         <span class="material-icons-round">child_care</span>
                     </div>
                     <div>
-                        <p class="child-hero__eyebrow">Gia dinh</p>
-                        <h1 class="child-hero__title">Them con em moi</h1>
-                        <p class="child-hero__subtitle">Dien thong tin co ban de nang cao do chinh xac khi goi y nanny.</p>
+                        <p class="child-hero__eyebrow">Gia đình</p>
+                        <h1 class="child-hero__title">Thêm con em mới</h1>
+                        <p class="child-hero__subtitle">Điền thông tin cơ bản để nâng cao độ chính xác khi gợi ý nanny.</p>
                     </div>
                 </div>
                 <div class="child-hero__right">
-                    <span class="child-chip">Buoc bo sung</span>
+                    <span class="child-chip">Bước bổ sung</span>
                 </div>
             </div>
 
@@ -46,15 +46,15 @@
                                 <span class="material-icons-round">child_care</span>
                             </div>
                             <div>
-                                <h2>Thong tin co ban</h2>
-                                <p>Nhom do tuoi cua tre</p>
+                                <h2>Thông tin cơ bản</h2>
+                                <p>Nhóm độ tuổi của trẻ</p>
                             </div>
                         </div>
 
                         <div class="child-field">
-                            <label asp-for="ChildAgeGroup" class="child-field__label">Nhom tuoi</label>
+                            <label asp-for="ChildAgeGroup" class="child-field__label">Nhóm tuổi</label>
                             <select asp-for="ChildAgeGroup" asp-items="Html.GetEnumSelectList<WebSite.Enums.ChildAgeGroup>()" class="child-input">
-                                <option value="">-- Chon nhom tuoi --</option>
+                                <option value="">-- Chọn nhóm tuổi --</option>
                             </select>
                             @Html.ValidationMessageFor(m => m.ChildAgeGroup, "", new { @class = "child-field__error" })
                         </div>
@@ -66,26 +66,26 @@
                                 <span class="material-icons-round">health_and_safety</span>
                             </div>
                             <div>
-                                <h2>Thong tin chi tiet</h2>
-                                <p>Tinh cach va nhu cau cua tre (co the bo qua)</p>
+                                <h2>Thông tin chi tiết</h2>
+                                <p>Tính cách và nhu cầu của trẻ (có thể bỏ qua)</p>
                             </div>
                         </div>
 
                         <div class="child-field">
-                            <label asp-for="SpecialNeeds" class="child-field__label">Nhu cau dac biet</label>
-                            <textarea asp-for="SpecialNeeds" rows="3" class="child-textarea" placeholder="Mo ta cac nhu cau dac biet neu co..."></textarea>
+                            <label asp-for="SpecialNeeds" class="child-field__label">Nhu cầu đặc biệt</label>
+                            <textarea asp-for="SpecialNeeds" rows="3" class="child-textarea" placeholder="Mô tả các nhu cầu đặc biệt nếu có..."></textarea>
                             @Html.ValidationMessageFor(m => m.SpecialNeeds, "", new { @class = "child-field__error" })
                         </div>
 
                         <div class="child-field">
-                            <label asp-for="Characteristic" class="child-field__label">Dac diem tinh cach</label>
-                            <textarea asp-for="Characteristic" rows="3" class="child-textarea" placeholder="Mo ta tinh cach cua con..."></textarea>
+                            <label asp-for="Characteristic" class="child-field__label">Đặc điểm tính cách</label>
+                            <textarea asp-for="Characteristic" rows="3" class="child-textarea" placeholder="Mô tả tính cách của con..."></textarea>
                             @Html.ValidationMessageFor(m => m.Characteristic, "", new { @class = "child-field__error" })
                         </div>
 
                         <div class="child-field child-field--last">
-                            <label asp-for="Notes" class="child-field__label">Ghi chu them</label>
-                            <textarea asp-for="Notes" rows="3" class="child-textarea" placeholder="Cac thong tin bo sung khac..."></textarea>
+                            <label asp-for="Notes" class="child-field__label">Ghi chú thêm</label>
+                            <textarea asp-for="Notes" rows="3" class="child-textarea" placeholder="Các thông tin bổ sung khác..."></textarea>
                             @Html.ValidationMessageFor(m => m.Notes, "", new { @class = "child-field__error" })
                         </div>
                     </section>
@@ -93,9 +93,9 @@
                     <div class="child-form__actions">
                         <button type="submit" class="child-btn child-btn--primary">
                             <span class="material-icons-round">add_circle</span>
-                            Luu ho so con em
+                            Lưu hồ sơ con em
                         </button>
-                        <a href="@Url.Action("Children", "Profile")" class="child-btn child-btn--ghost">Huy</a>
+                        <a href="@Url.Action("Children", "Profile")" class="child-btn child-btn--ghost">Hủy</a>
                     </div>
                 </form>
             </div>

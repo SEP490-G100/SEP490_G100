@@ -1,4 +1,4 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Json;
@@ -53,9 +53,102 @@ public class ProfileController : Controller
     {
         if (string.IsNullOrWhiteSpace(url)) return url;
         if (Uri.TryCreate(url, UriKind.Absolute, out _)) return url;
+        if (url.StartsWith("~/", StringComparison.Ordinal))
+            url = url[1..];
         if (url.StartsWith("/") && !string.IsNullOrWhiteSpace(_apiBaseUrl))
             return _apiBaseUrl + url;
+        if (!string.IsNullOrWhiteSpace(_apiBaseUrl))
+            return _apiBaseUrl + "/" + url.TrimStart('/');
         return url;
+    }
+
+    private static TModel? DeserializeApiData<TModel>(ApiResultDto? apiResult) where TModel : class
+    {
+        if (apiResult?.Success != true || apiResult.Data == null)
+            return null;
+
+        if (apiResult.Data is JsonElement element)
+        {
+            if (element.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+                return null;
+
+            return JsonSerializer.Deserialize<TModel>(element.GetRawText(), JsonOpts);
+        }
+
+        return JsonSerializer.Deserialize<TModel>(
+            JsonSerializer.Serialize(apiResult.Data), JsonOpts);
+    }
+
+    private static bool TryGetNamedPropertyRecursive(
+        JsonElement root,
+        IReadOnlyCollection<string> propertyNames,
+        out JsonElement matchedValue)
+    {
+        var queue = new Queue<JsonElement>();
+        queue.Enqueue(root);
+
+        while (queue.Count > 0)
+        {
+            var current = queue.Dequeue();
+            if (current.ValueKind == JsonValueKind.Object)
+            {
+                foreach (var property in current.EnumerateObject())
+                {
+                    if (propertyNames.Any(name => property.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        matchedValue = property.Value;
+                        return true;
+                    }
+
+                    if (property.Value.ValueKind is JsonValueKind.Object or JsonValueKind.Array)
+                        queue.Enqueue(property.Value);
+                }
+            }
+            else if (current.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in current.EnumerateArray())
+                {
+                    if (item.ValueKind is JsonValueKind.Object or JsonValueKind.Array)
+                        queue.Enqueue(item);
+                }
+            }
+        }
+
+        matchedValue = default;
+        return false;
+    }
+
+    private static string? ExtractStringFromJson(JsonElement root, params string[] propertyNames)
+    {
+        if (!TryGetNamedPropertyRecursive(root, propertyNames, out var valueElement))
+            return null;
+
+        if (valueElement.ValueKind != JsonValueKind.String)
+            return null;
+
+        var value = valueElement.GetString();
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private static DateOnly? ExtractDateOnlyFromJson(JsonElement root, params string[] propertyNames)
+    {
+        if (!TryGetNamedPropertyRecursive(root, propertyNames, out var valueElement))
+            return null;
+
+        if (valueElement.ValueKind != JsonValueKind.String)
+            return null;
+
+        var raw = valueElement.GetString();
+        if (string.IsNullOrWhiteSpace(raw))
+            return null;
+
+        if (DateOnly.TryParse(raw, out var dateOnly))
+            return dateOnly;
+
+        if (DateTime.TryParse(raw, out var dateTime))
+            return DateOnly.FromDateTime(dateTime);
+
+        return null;
     }
 
     private EditPersonalInfoViewModel BuildEditProfileFromClaims()
@@ -106,7 +199,7 @@ public class ProfileController : Controller
             var token = GetTokenFromSession();
             if (string.IsNullOrEmpty(token))
             {
-                ViewBag.Warning = "Phiên đăng nhập đã hết hạn, đang hiển thị thông tin cơ bản từ cookie.";
+                ViewBag.Warning = "PhiÃªn Ä‘Äƒng nháº­p Ä‘Ã£ háº¿t háº¡n, Ä‘ang hiá»ƒn thá»‹ thÃ´ng tin cÆ¡ báº£n tá»« cookie.";
                 return View(BuildProfileFromClaims());
             }
 
@@ -115,7 +208,7 @@ public class ProfileController : Controller
             var response = await _http.GetAsync("/api/profile");
             if (!response.IsSuccessStatusCode)
             {
-                ViewBag.Warning = "Không thể tải hồ sơ từ API, đang hiển thị thông tin cơ bản từ cookie.";
+                ViewBag.Warning = "KhÃ´ng thá»ƒ táº£i há»“ sÆ¡ tá»« API, Ä‘ang hiá»ƒn thá»‹ thÃ´ng tin cÆ¡ báº£n tá»« cookie.";
                 return View(BuildProfileFromClaims());
             }
 
@@ -124,12 +217,11 @@ public class ProfileController : Controller
 
             if (apiResult == null || !apiResult.Success)
             {
-                ViewBag.Warning = "Không thể tải toàn bộ hồ sơ, đang hiển thị thông tin cơ bản từ cookie.";
+                ViewBag.Warning = "KhÃ´ng thá»ƒ táº£i toÃ n bá»™ há»“ sÆ¡, Ä‘ang hiá»ƒn thá»‹ thÃ´ng tin cÆ¡ báº£n tá»« cookie.";
                 return View(BuildProfileFromClaims());
             }
 
-            var profile = JsonSerializer.Deserialize<PersonalProfileViewModel>(
-                JsonSerializer.Serialize(apiResult.Data), JsonOpts);
+            var profile = DeserializeApiData<PersonalProfileViewModel>(apiResult);
 
             if (profile != null)
                 profile.AvatarUrl = NormalizeAvatarUrl(profile.AvatarUrl);
@@ -141,7 +233,7 @@ public class ProfileController : Controller
         }
         catch (Exception ex)
         {
-            TempData["Error"] = "Lỗi tải thông tin: " + ex.Message;
+            TempData["Error"] = "Lá»—i táº£i thÃ´ng tin: " + ex.Message;
             return View(BuildProfileFromClaims());
         }
     }
@@ -163,8 +255,8 @@ public class ProfileController : Controller
             var token = GetTokenFromSession();
             if (string.IsNullOrEmpty(token))
             {
-                TempData["Error"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
-                return RedirectToAction("Login", "Auth");
+                TempData["Error"] = "PhiÃªn Ä‘Äƒng nháº­p Ä‘Ã£ háº¿t háº¡n. Vui lÃ²ng Ä‘Äƒng nháº­p láº¡i.";
+                return RedirectToAction("đăng nhập", "Auth");
             }
 
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -177,8 +269,7 @@ public class ProfileController : Controller
             if (apiResult == null || !apiResult.Success)
                 return RedirectToAction(nameof(Index));
 
-            var profile = JsonSerializer.Deserialize<PersonalProfileViewModel>(
-                JsonSerializer.Serialize(apiResult.Data), JsonOpts) ?? BuildProfileFromClaims();
+            var profile = DeserializeApiData<PersonalProfileViewModel>(apiResult) ?? BuildProfileFromClaims();
 
             profile.AvatarUrl = NormalizeAvatarUrl(profile.AvatarUrl);
             profile.IsReadOnlyView = true;
@@ -250,7 +341,7 @@ public class ProfileController : Controller
         }
         catch
         {
-            // silent — review failure should not block profile load
+            // silent â€” review failure should not block profile load
         }
     }
 
@@ -312,32 +403,63 @@ public class ProfileController : Controller
             var token = GetTokenFromSession();
             if (string.IsNullOrEmpty(token))
             {
-                TempData["Error"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
-                return RedirectToAction("Login", "Auth");
+                TempData["Error"] = "PhiÃªn Ä‘Äƒng nháº­p Ä‘Ã£ háº¿t háº¡n. Vui lÃ²ng Ä‘Äƒng nháº­p láº¡i.";
+                return RedirectToAction("đăng nhập", "Auth");
             }
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             var response = await _http.GetAsync("/api/profile");
             if (!response.IsSuccessStatusCode)
-                return RedirectToAction("Login", "Auth");
+                return RedirectToAction("đăng nhập", "Auth");
 
             var content = await response.Content.ReadAsStringAsync();
             var apiResult = JsonSerializer.Deserialize<ApiResultDto>(content, JsonOpts);
-            EditPersonalInfoViewModel? profile = null;
-            if (apiResult?.Success == true && apiResult.Data is JsonElement profileData && profileData.ValueKind == JsonValueKind.Object)
+            var profileData = DeserializeApiData<PersonalProfileViewModel>(apiResult);
+            var profile = profileData == null
+                ? null
+                : new EditPersonalInfoViewModel
+                {
+                    FirstName = profileData.FirstName ?? string.Empty,
+                    LastName = profileData.LastName ?? string.Empty,
+                    PhoneNumber = profileData.PhoneNumber,
+                    AvatarUrl = profileData.AvatarUrl,
+                    DateOfBirth = profileData.DateOfBirth,
+                    Gender = profileData.Gender,
+                    Address = profileData.Address,
+                    City = profileData.City,
+                    District = profileData.District,
+                    Ward = profileData.Ward,
+                    Latitude = profileData.Latitude,
+                    Longitude = profileData.Longitude,
+                    Roles = profileData.Roles ?? new List<string>(),
+                    Bio = profileData.Bio,
+                    YearsOfExperience = profileData.YearsOfExperience,
+                    EducationLevel = profileData.EducationLevel,
+                    ExpectedSalaryMin = profileData.ExpectedSalaryMin,
+                    ExpectedSalaryMax = profileData.ExpectedSalaryMax,
+                    MaxTravelDistance = profileData.MaxTravelDistance
+                };
+
+            if (apiResult?.Data is JsonElement dataRoot)
             {
-                profile = JsonSerializer.Deserialize<EditPersonalInfoViewModel>(profileData.GetRawText(), JsonOpts);
-            }
-            else if (apiResult?.Success == true && apiResult.Data != null)
-            {
-                profile = JsonSerializer.Deserialize<EditPersonalInfoViewModel>(
-                    JsonSerializer.Serialize(apiResult.Data), JsonOpts);
+                profile ??= new EditPersonalInfoViewModel();
+                profile.AvatarUrl ??= ExtractStringFromJson(dataRoot, "avatarUrl", "avatar", "profileImageUrl");
+                profile.PhoneNumber ??= ExtractStringFromJson(dataRoot, "phoneNumber", "phone", "phoneNo");
+                profile.DateOfBirth ??= ExtractDateOnlyFromJson(dataRoot, "dateOfBirth", "dob", "birthDate");
+
+                if (string.IsNullOrWhiteSpace(profile.FirstName))
+                    profile.FirstName = ExtractStringFromJson(dataRoot, "firstName", "givenName") ?? "";
+                if (string.IsNullOrWhiteSpace(profile.LastName))
+                    profile.LastName = ExtractStringFromJson(dataRoot, "lastName", "surname", "familyName") ?? "";
             }
 
             if (profile != null)
                 profile.AvatarUrl = NormalizeAvatarUrl(profile.AvatarUrl);
 
             var vm = profile ?? BuildEditProfileFromClaims();
+            if (vm.Roles.Count == 0)
+                ApplyRolesToEditModel(vm);
+
             if (apiResult?.Data is JsonElement root &&
                 root.TryGetProperty("skills", out var skillsElement) &&
                 skillsElement.ValueKind == JsonValueKind.Array)
@@ -353,7 +475,7 @@ public class ProfileController : Controller
         }
         catch (Exception ex)
         {
-            TempData["Error"] = "Lỗi tải thông tin: " + ex.Message;
+            TempData["Error"] = "Lá»—i táº£i thÃ´ng tin: " + ex.Message;
             return RedirectToAction("Index");
         }
     }
@@ -377,7 +499,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
                 : new[] { string.Empty };
 
             foreach (var memberName in memberNames)
-                ModelState.AddModelError(memberName, error.ErrorMessage ?? "Luong khong hop le.");
+                ModelState.AddModelError(memberName, error.ErrorMessage ?? "Luong không hop le.");
         }
     }
 
@@ -391,12 +513,12 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
     var today = DateOnly.FromDateTime(DateTime.Today);
     if (model.DateOfBirth.HasValue && model.DateOfBirth.Value > today)
     {
-        ModelState.AddModelError(nameof(model.DateOfBirth), "Ngay sinh khong duoc lon hon ngay hien tai.");
+        ModelState.AddModelError(nameof(model.DateOfBirth), "Ngày sinh không được lon hon ngay hiện tại.");
     }
 
     if (User.IsInRole("Nanny") && !model.DateOfBirth.HasValue)
     {
-        ModelState.AddModelError(nameof(model.DateOfBirth), "Vui long chon ngay sinh.");
+        ModelState.AddModelError(nameof(model.DateOfBirth), "Vui lòng chon ngay sinh.");
     }
     else if (User.IsInRole("Nanny") && model.DateOfBirth.HasValue)
     {
@@ -422,8 +544,8 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
         var token = GetTokenFromSession();
         if (string.IsNullOrEmpty(token))
         {
-            TempData["Error"] = "Session expired. Please log in again.";
-            return RedirectToAction("Login", "Auth");
+            TempData["Error"] = "Phi?n đăng nhập ?? h?t h?n. Vui lòng đăng nhập l?i.";
+            return RedirectToAction("đăng nhập", "Auth");
         }
 
         _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -436,7 +558,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError(nameof(model.AvatarFile), $"Khong the upload avatar: {ex.Message}");
+                ModelState.AddModelError(nameof(model.AvatarFile), $"Không th? upload avatar: {ex.Message}");
                 await PopulateAvailableSkillsAsync(model);
                 return View(model);
             }
@@ -471,7 +593,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
 
         if (apiResult == null || !apiResult.Success)
         {
-            ModelState.AddModelError("", apiResult?.Message ?? "Cap nhat that bai.");
+            ModelState.AddModelError("", apiResult?.Message ?? "C?p nh?t thất bại.");
             await PopulateAvailableSkillsAsync(model);
             return View(model);
         }
@@ -481,7 +603,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
     }
     catch (Exception ex)
     {
-        TempData["Error"] = "Lỗi khi cập nhật: " + ex.Message;
+        TempData["Error"] = "Lá»—i khi cáº­p nháº­t: " + ex.Message;
         await PopulateAvailableSkillsAsync(model);
         return View(model);
     }
@@ -496,7 +618,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
     {
         var token = GetTokenFromSession();
         if (string.IsNullOrEmpty(token))
-            return RedirectToAction("Login", "Auth");
+            return RedirectToAction("đăng nhập", "Auth");
 
         _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var response = await _http.PostAsJsonAsync("/api/profile/certificates", new
@@ -510,7 +632,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
         var apiResult = JsonSerializer.Deserialize<ApiResultDto>(content, JsonOpts);
         if (apiResult == null || !apiResult.Success)
         {
-            TempData["Error"] = apiResult?.Message ?? "Không thể thêm chứng chỉ.";
+            TempData["Error"] = apiResult?.Message ?? "KhÃ´ng thá»ƒ thÃªm chá»©ng chá»‰.";
             return RedirectToAction(nameof(Verify));
         }
 
@@ -527,8 +649,8 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
             var token = GetTokenFromSession();
             if (string.IsNullOrEmpty(token))
             {
-                TempData["Error"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
-                return RedirectToAction("Login", "Auth");
+                TempData["Error"] = "PhiÃªn Ä‘Äƒng nháº­p Ä‘Ã£ háº¿t háº¡n. Vui lÃ²ng Ä‘Äƒng nháº­p láº¡i.";
+                return RedirectToAction("đăng nhập", "Auth");
             }
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -576,7 +698,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
         }
         catch (Exception ex)
         {
-            TempData["Error"] = "Lỗi khi tải danh sách trẻ em: " + ex.Message;
+            TempData["Error"] = "Lá»—i khi táº£i danh sÃ¡ch tráº» em: " + ex.Message;
             return RedirectToAction("Index");
         }
     }
@@ -600,8 +722,8 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
             var token = GetTokenFromSession();
             if (string.IsNullOrEmpty(token))
             {
-                TempData["Error"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
-                return RedirectToAction("Login", "Auth");
+                TempData["Error"] = "PhiÃªn Ä‘Äƒng nháº­p Ä‘Ã£ háº¿t háº¡n. Vui lÃ²ng Ä‘Äƒng nháº­p láº¡i.";
+                return RedirectToAction("đăng nhập", "Auth");
             }
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -620,7 +742,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
         }
         catch (Exception ex)
         {
-            TempData["Error"] = "Lỗi khi thêm trẻ em: " + ex.Message;
+            TempData["Error"] = "Lá»—i khi thÃªm tráº» em: " + ex.Message;
             return View(model);
         }
     }
@@ -634,8 +756,8 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
             var token = GetTokenFromSession();
             if (string.IsNullOrEmpty(token))
             {
-                TempData["Error"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
-                return RedirectToAction("Login", "Auth");
+                TempData["Error"] = "PhiÃªn Ä‘Äƒng nháº­p Ä‘Ã£ háº¿t háº¡n. Vui lÃ²ng Ä‘Äƒng nháº­p láº¡i.";
+                return RedirectToAction("đăng nhập", "Auth");
             }
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -666,7 +788,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
         }
         catch (Exception ex)
         {
-            TempData["Error"] = "Lỗi khi tải thông tin trẻ em: " + ex.Message;
+            TempData["Error"] = "Lá»—i khi táº£i thÃ´ng tin tráº» em: " + ex.Message;
             return RedirectToAction("Children");
         }
     }
@@ -683,8 +805,8 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
             var token = GetTokenFromSession();
             if (string.IsNullOrEmpty(token))
             {
-                TempData["Error"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
-                return RedirectToAction("Login", "Auth");
+                TempData["Error"] = "PhiÃªn Ä‘Äƒng nháº­p Ä‘Ã£ háº¿t háº¡n. Vui lÃ²ng Ä‘Äƒng nháº­p láº¡i.";
+                return RedirectToAction("đăng nhập", "Auth");
             }
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -702,7 +824,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
 
             if (apiResult == null || !apiResult.Success)
             {
-                ModelState.AddModelError("", apiResult?.Message ?? "Cập nhật thất bại.");
+                ModelState.AddModelError("", apiResult?.Message ?? "Cáº­p nháº­t tháº¥t báº¡i.");
                 return View(model);
             }
 
@@ -711,7 +833,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
         }
         catch (Exception ex)
         {
-            TempData["Error"] = "Lỗi khi cập nhật: " + ex.Message;
+            TempData["Error"] = "Lá»—i khi cáº­p nháº­t: " + ex.Message;
             return View(model);
         }
     }
@@ -726,8 +848,8 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
             var token = GetTokenFromSession();
             if (string.IsNullOrEmpty(token))
             {
-                TempData["Error"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
-                return RedirectToAction("Login", "Auth");
+                TempData["Error"] = "PhiÃªn Ä‘Äƒng nháº­p Ä‘Ã£ háº¿t háº¡n. Vui lÃ²ng Ä‘Äƒng nháº­p láº¡i.";
+                return RedirectToAction("đăng nhập", "Auth");
             }
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -746,7 +868,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
         }
         catch (Exception ex)
         {
-            TempData["Error"] = "Lỗi khi xóa: " + ex.Message;
+            TempData["Error"] = "Lá»—i khi xÃ³a: " + ex.Message;
             return RedirectToAction("Children");
         }
     }
@@ -775,3 +897,4 @@ public class CreateCertificateViewModel
     public string? IssuingOrganization { get; set; }
     public string? CertificateUrl { get; set; }
 }
+

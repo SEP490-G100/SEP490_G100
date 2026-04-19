@@ -2,7 +2,7 @@
 @model List<ChildProfileViewModel>
 
 @{
-    ViewData["Title"] = "Quan ly con em";
+    ViewData["Title"] = "Quản lý con em";
     var childCount = Model?.Count ?? 0;
     var declaredChildrenCount = 0;
     if (ViewBag.DeclaredChildrenCount is int declaredCountFromBag)
@@ -18,10 +18,10 @@
             <div class="child-breadcrumb">
                 <a href="@Url.Action("Index", "Profile")" class="child-breadcrumb__link">
                     <span class="material-icons-round">person</span>
-                    Ho so
+                    Hồ sơ
                 </a>
                 <span class="material-icons-round child-breadcrumb__sep">chevron_right</span>
-                <span class="child-breadcrumb__current">Quan ly con em</span>
+                <span class="child-breadcrumb__current">Quản lý con em</span>
             </div>
 
             <div class="child-hero">
@@ -30,16 +30,16 @@
                         <span class="material-icons-round">child_care</span>
                     </div>
                     <div>
-                        <p class="child-hero__eyebrow">Gia dinh</p>
-                        <h1 class="child-hero__title">Quan ly con em</h1>
-                        <p class="child-hero__subtitle">Cap nhat thong tin cua be de he thong goi y nanny phu hop hon.</p>
+                        <p class="child-hero__eyebrow">Gia đình</p>
+                        <h1 class="child-hero__title">Quản lý con em</h1>
+                        <p class="child-hero__subtitle">Cập nhật thông tin của bé để hệ thống gợi ý nanny phù hợp hơn.</p>
                     </div>
                 </div>
                 <div class="child-hero__right">
-                    <span class="child-chip">@displayChildrenCount tre</span>
+                    <span class="child-chip">@displayChildrenCount trẻ</span>
                     <a href="@Url.Action("AddChild", "Profile")" class="child-btn child-btn--primary">
                         <span class="material-icons-round">add</span>
-                        Them con em
+                        Thêm con em
                     </a>
                 </div>
             </div>
@@ -59,25 +59,25 @@
                                             <span class="material-icons-round">child_care</span>
                                         </div>
                                         <div>
-                                            <h2>Ho so tre #@childIdx</h2>
-                                            <p>Tao ngay @child.CreatedAt.ToString("dd/MM/yyyy")</p>
+                                            <h2>Hồ sơ trẻ #@childIdx</h2>
+                                            <p>Tạo ngày @child.CreatedAt.ToString("dd/MM/yyyy")</p>
                                         </div>
                                     </div>
                                     <div class="child-menu">
-                                        <button class="child-menu__trigger" onclick="toggleChildMenu(this)" type="button" aria-label="Mo tuy chon">
+                                        <button class="child-menu__trigger" onclick="toggleChildMenu(this)" type="button" aria-label="Mở tùy chọn">
                                             <span class="material-icons-round">more_vert</span>
                                         </button>
                                         <div class="child-menu__panel">
                                             <a href="@Url.Action("EditChild", "Profile", new { childId = child.Id })" class="child-menu__item">
                                                 <span class="material-icons-round">edit</span>
-                                                Chinh sua
+                                                Chỉnh sửa
                                             </a>
-                                            <form method="post" action="@Url.Action("DeleteChild", "Profile")" onsubmit="return confirm('Ban chac chan muon xoa ho so nay?')">
+                                            <form method="post" action="@Url.Action("DeleteChild", "Profile")" onsubmit="return confirm('Bạn chắc chắn muốn xóa hồ sơ này?')">
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="childId" value="@child.Id" />
                                                 <button type="submit" class="child-menu__item child-menu__item--danger">
                                                     <span class="material-icons-round">delete_outline</span>
-                                                    Xoa ho so
+                                                    Xóa hồ sơ
                                                 </button>
                                             </form>
                                         </div>
@@ -86,18 +86,18 @@
 
                                 <div class="child-card__body">
                                     <div class="child-kv">
-                                        <span class="child-kv__label">Nhom tuoi</span>
+                                        <span class="child-kv__label">Nhóm tuổi</span>
                                         <span class="child-kv__value">
                                             @(child.ChildAgeGroup.HasValue
                                                 ? WebSite.Helpers.EnumDisplayHelper.GetDisplayName(child.ChildAgeGroup.Value)
-                                                : "Chua cap nhat")
+                                                : "Chưa cập nhật")
                                         </span>
                                     </div>
 
                                     @if (!string.IsNullOrWhiteSpace(child.Characteristic))
                                     {
                                         <div class="child-note child-note--orange">
-                                            <span>Tinh cach</span>
+                                            <span>Tính cách</span>
                                             <p>@child.Characteristic</p>
                                         </div>
                                     }
@@ -105,7 +105,7 @@
                                     @if (!string.IsNullOrWhiteSpace(child.SpecialNeeds))
                                     {
                                         <div class="child-note child-note--blue">
-                                            <span>Nhu cau dac biet</span>
+                                            <span>Nhu cầu đặc biệt</span>
                                             <p>@child.SpecialNeeds</p>
                                         </div>
                                     }
@@ -120,18 +120,18 @@
                         <div class="child-empty__icon">
                             <span class="material-icons-round">child_care</span>
                         </div>
-                        <h3>Chua co ho so tre em</h3>
+                        <h3>Chưa có hồ sơ trẻ em</h3>
                         @if (declaredChildrenCount > 0)
                         {
-                            <p>Ban da khai bao <strong>@declaredChildrenCount tre</strong> trong ho so, nhung chua tao ho so chi tiet cho tung tre.</p>
+                            <p>Bạn đã khai báo <strong>@declaredChildrenCount trẻ</strong> trong hồ sơ, nhưng chưa tạo hồ sơ chi tiết cho từng trẻ.</p>
                         }
                         else
                         {
-                            <p>Bat dau bang cach them thong tin con em de he thong de xuat nanny phu hop hon.</p>
+                            <p>Bắt đầu bằng cách thêm thông tin con em để hệ thống đề xuất nanny phù hợp hơn.</p>
                         }
                         <a href="@Url.Action("AddChild", "Profile")" class="child-btn child-btn--primary">
                             <span class="material-icons-round">add_circle</span>
-                            Them con em ngay
+                            Thêm con em ngay
                         </a>
                     </section>
                 }
@@ -139,7 +139,7 @@
                 <div class="child-footer-actions">
                     <a href="@Url.Action("Index", "Profile")" class="child-btn child-btn--ghost">
                         <span class="material-icons-round">arrow_back</span>
-                        Quay lai ho so
+                        Quay lại hồ sơ
                     </a>
                 </div>
             </div>

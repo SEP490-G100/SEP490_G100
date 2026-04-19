@@ -1,5 +1,5 @@
 @{
-    ViewData["Title"] = "Lich su bai dang - NannyMatch";
+    ViewData["Title"] = "Lich su bai Đang - NannyMatch";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
@@ -384,16 +384,16 @@
             <div class="px-6 py-6 sm:px-8 border-b border-orange-100 bg-[radial-gradient(circle_at_top_right,rgba(255,237,213,.85),transparent_28%),linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <p class="text-xs font-extrabold uppercase tracking-[0.24em] text-orange-500">Bai dang cua toi</p>
-                        <h1 class="mt-2 text-3xl font-bold text-slate-900">Lich su bai dang</h1>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.24em] text-orange-500">Bai Đang cua toi</p>
+                        <h1 class="mt-2 text-3xl font-bold text-slate-900">Lich su bài đăng</h1>
                         <p class="mt-2 text-sm leading-6 text-slate-500 max-w-2xl">
-                            Theo doi trang thai duyet, ghi chu cua moderator va toan bo thong tin cua cac bai dang ban da tao.
+                            Theo dõi trạng thái duyệt, ghi chú của moderator và toàn bộ thông tin của các bài đăng bạn đã tạo.
                         </p>
                     </div>
                     <div class="flex items-center gap-3">
                         <a href="/Search"
                            class="inline-flex items-center justify-center min-h-[48px] px-5 rounded-2xl border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 transition-all">
-                            Quay lai tim bai
+                            Quay lại tìm bài
                         </a>
                     </div>
                 </div>
@@ -402,22 +402,22 @@
             <div class="px-6 py-6 sm:px-8">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <div class="history-stat-card history-stat-card--total">
-                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Tong bai dang</p>
+                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Tong bài đăng</p>
                         <p id="historyTotalCount" class="mt-2 text-3xl font-extrabold text-slate-900">0</p>
                     </div>
                     <div class="history-stat-card history-stat-card--pending">
-                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-amber-500">Dang cho duyet</p>
+                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-amber-500">Đang chờ duyệt</p>
                         <p id="historyPendingCount" class="mt-2 text-3xl font-extrabold text-amber-700">0</p>
                     </div>
                     <div class="history-stat-card history-stat-card--public">
-                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-orange-500">Dang hien thi</p>
+                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-orange-500">Dang hiển thị</p>
                         <p id="historyPublishedCount" class="mt-2 text-3xl font-extrabold text-orange-600">0</p>
                     </div>
                 </div>
 
                 <div id="historyPageBody" class="space-y-5">
                     <div class="rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center text-slate-500">
-                        Dang tai lich su bai dang...
+                        Dang tai lich su bài đăng...
                     </div>
                 </div>
             </div>
@@ -436,9 +436,9 @@
             <div class="sticky top-0 z-20 px-6 py-5 border-b border-slate-100 bg-[linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
                 <div class="flex items-start gap-4 pr-12">
                     <div>
-                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-orange-500">Request ung tuyen</p>
-                        <h3 id="jobAppModalTitle" class="mt-2 text-xl font-bold text-slate-900">Chi tiet request</h3>
-                        <p id="jobAppModalSubTitle" class="mt-2 text-sm text-slate-500">Xem thong tin va duyet request tu Nanny.</p>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-orange-500">Request ứng tuyển</p>
+                        <h3 id="jobAppModalTitle" class="mt-2 text-xl font-bold text-slate-900">Chi tiết request</h3>
+                        <p id="jobAppModalSubTitle" class="mt-2 text-sm text-slate-500">Xem thông tin và duyệt request từ Nanny.</p>
                     </div>
                 </div>
             </div>
@@ -451,7 +451,7 @@
                         <p id="jobAppNannyLocation" class="mt-1 text-sm text-slate-500">-</p>
                     </div>
                     <div class="rounded-2xl border border-slate-100 bg-slate-50 p-3">
-                        <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Trang thai request</p>
+                        <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Trạng thái request</p>
                         <div id="jobAppStatusWrap" class="mt-2"></div>
                         <p id="jobAppAppliedAt" class="mt-2 text-sm text-slate-500">-</p>
                     </div>
@@ -459,7 +459,7 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                     <div class="rounded-2xl border border-slate-100 bg-white p-3">
-                        <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">So dien thoai</p>
+                        <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Số điện thoại</p>
                         <p id="jobAppPhone" class="mt-2 font-bold text-slate-900">-</p>
                     </div>
                     <div class="rounded-2xl border border-slate-100 bg-white p-3">
@@ -471,17 +471,17 @@
                         <p id="jobAppSalary" class="mt-2 font-bold text-slate-900">-</p>
                     </div>
                     <div class="rounded-2xl border border-slate-100 bg-white p-3">
-                        <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Ly do tu choi</p>
-                        <p id="jobAppRejectReasonDisplay" class="mt-2 text-slate-600">Chua co.</p>
+                        <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Ly do từ chối</p>
+                        <p id="jobAppRejectReasonDisplay" class="mt-2 text-slate-600">Chưa co.</p>
                     </div>
                 </div>
 
                 <div id="jobAppRejectReasonWrap" class="history-review-note p-4">
-                    <label for="jobAppRejectReason" class="block text-sm font-bold text-amber-700">Ly do tu choi (bat buoc khi Reject)</label>
+                    <label for="jobAppRejectReason" class="block text-sm font-bold text-amber-700">Ly do từ chối (bắt buộc khi Reject)</label>
                     <textarea id="jobAppRejectReason"
                               rows="3"
                               class="mt-2 w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none"
-                              placeholder="Nhap ly do parent tu choi request..."></textarea>
+                              placeholder="Nhap lý do parent từ chối request..."></textarea>
                 </div>
             </div>
 
@@ -492,7 +492,7 @@
                    rel="noopener"
                    class="hidden inline-flex items-center justify-center gap-2 min-h-[42px] px-5 rounded-xl border border-orange-200 bg-orange-50 text-orange-600 font-bold hover:bg-orange-100 transition-all">
                     <span class="material-icons-round text-base">visibility</span>
-                    Xem chi tiet ho so Nanny
+                    Xem chi tiết profile Nanny
                 </a>
 
                 <div class="ml-auto flex flex-wrap items-center justify-end gap-3">
@@ -513,7 +513,7 @@
                             onclick="window.__submitJobApplicationReview?.(2)"
                             class="inline-flex items-center justify-center gap-2 min-h-[42px] px-5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 font-bold hover:bg-rose-100 transition-all">
                         <span class="material-icons-round text-base">cancel</span>
-                        Tu choi
+                        Từ chối
                     </button>
                 </div>
             </div>
@@ -527,14 +527,14 @@
     (() => {
         const HISTORY_TOAST_KEY = 'nm:historyToast';
         const moderationLabels = {
-            0: 'Dang cho duyet',
-            1: 'Da bi tu choi',
+            0: 'Đang chờ duyệt',
+            1: 'Đã bị từ chối',
             2: 'Cong khai'
         };
 
         const postStatusLabels = {
             1: 'Cong khai',
-            2: 'An bai dang'
+            2: 'An bài đăng'
         };
         const moderationBadgeClasses = {
             0: 'history-badge history-badge--pending',
@@ -567,10 +567,10 @@
         let isSubmittingReview = false;
 
         const applicationStatusLabels = {
-            0: 'Dang cho duyet',
+            0: 'Đang chờ duyệt',
             1: 'Dang xem xet',
-            2: 'Da duoc chon',
-            3: 'Da bi tu choi',
+            2: 'Đã được chọn',
+            3: 'Đã bị từ chối',
             4: 'Da huy'
         };
         const applicationBadgeClasses = {
@@ -621,30 +621,30 @@
                 const createdAt = Number(parsed?.createdAt || 0);
                 if (!createdAt || Date.now() - createdAt > 60000) return;
 
-                showHistoryToast(parsed?.message || 'Cap nhat bai dang thanh cong.', parsed?.type || 'success');
+                showHistoryToast(parsed?.message || 'Cập nhật bài đăng thành công.', parsed?.type || 'success');
             } catch {
                 // Ignore invalid storage payloads.
             }
         };
 
-        const formatSalary = (value) => value ? `${(Number(value) / 1000).toFixed(0)}k/gio` : 'Khong xac dinh';
+        const formatSalary = (value) => value ? `${(Number(value) / 1000).toFixed(0)}k/gio` : 'Không xác định';
         const formatSalaryRange = (min, max) => {
             if (min && max) return `${formatSalary(min)} - ${formatSalary(max)}`;
             if (min) return `Tu ${formatSalary(min)}`;
             if (max) return `Den ${formatSalary(max)}`;
-            return 'Khong xac dinh';
+            return 'Không xác định';
         };
 
         const formatAgeRange = (min, max) => {
             if (min && max) return `${min} - ${max} tuoi`;
             if (min) return `Tu ${min} tuoi`;
             if (max) return `Den ${max} tuoi`;
-            return 'Khong yeu cau';
+            return 'Không yêu cầu';
         };
 
         const renderScheduleGrid = (slots) => {
             if (!Array.isArray(slots) || !slots.length) {
-                return '<span class="text-sm text-slate-400">Chua chon lich cu the.</span>';
+                return '<span class="text-sm text-slate-400">Chưa chon lich cu the.</span>';
             }
 
             const selectedSet = new Set(slots.map((slot) => `${slot.dayOfWeek}-${slot.timeSlot}`));
@@ -670,9 +670,9 @@
         };
 
         const formatDateTime = (value) => {
-            if (!value) return 'Chua cap nhat';
+            if (!value) return 'Chưa cập nhật';
             const parsed = new Date(value);
-            if (Number.isNaN(parsed.getTime())) return 'Chua cap nhat';
+            if (Number.isNaN(parsed.getTime())) return 'Chưa cập nhật';
             return parsed.toLocaleString('vi-VN', {
                 year: 'numeric',
                 month: '2-digit',
@@ -684,7 +684,7 @@
 
         const renderApplicationBadge = (status) => `
             <span class="${applicationBadgeClasses[Number(status)] || 'history-app-badge history-app-badge--pending'}">
-                ${escapeHtml(applicationStatusLabels[status] || 'Dang cap nhat')}
+                ${escapeHtml(applicationStatusLabels[status] || 'Đang cập nhật')}
             </span>`;
 
         const getNameInitial = (fullName) => {
@@ -707,7 +707,7 @@
                 <span class="history-request-metric">Tong: ${total}</span>
                 <span class="history-request-metric">Pending: ${pending}</span>
                 <span class="history-request-metric">Chap nhan: ${approved}</span>
-                <span class="history-request-metric">Tu choi: ${rejected}</span>`;
+                <span class="history-request-metric">Từ chối: ${rejected}</span>`;
         };
 
         const updateApplicationSummary = (jobId, applications) => {
@@ -716,14 +716,14 @@
             renderRequestMetrics(jobId, applications);
 
             if (!applications.length) {
-                summaryEl.textContent = 'Chua co request ung tuyen nao.';
+                summaryEl.textContent = 'Chưa co request ứng tuyển nao.';
                 return;
             }
 
             const pendingCount = applications.filter((item) => Number(item.status) === 0).length;
             summaryEl.textContent = pendingCount > 0
-                ? `Co ${pendingCount} request dang cho duyet trong tong so ${applications.length} request.`
-                : `Tat ca ${applications.length} request da duoc xu ly.`;
+                ? `Co ${pendingCount} request Đang chờ duyệt trong tong so ${applications.length} request.`
+                : `Tất cả ${applications.length} request đã được xử lý.`;
         };
 
         const renderApplicationList = (jobId, applications) => {
@@ -733,7 +733,7 @@
             if (!applications.length) {
                 listEl.innerHTML = `
                     <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
-                        Chua co request ung tuyen cho bai dang nay.
+                        Chưa co request ứng tuyển cho bai Đang nay.
                     </div>`;
                 updateApplicationSummary(jobId, applications);
                 return;
@@ -752,19 +752,19 @@
                                     </span>
                                     <div>
                                         <p class="text-sm font-extrabold text-slate-900">${escapeHtml(item?.nanny?.fullName || 'Nanny')}</p>
-                                        <p class="mt-1 text-xs text-slate-500">${escapeHtml([item?.nanny?.district, item?.nanny?.city].filter(Boolean).join(', ') || 'Chua cap nhat khu vuc')}</p>
+                                        <p class="mt-1 text-xs text-slate-500">${escapeHtml([item?.nanny?.district, item?.nanny?.city].filter(Boolean).join(', ') || 'Chưa cập nhật khu vực')}</p>
                                     </div>
                                 </div>
                                 ${renderApplicationBadge(item.status)}
                             </div>
                             <div class="history-request-info-grid text-xs text-slate-600">
                                 <div class="history-request-info">
-                                    <p class="font-bold text-slate-500">Ngay ung tuyen</p>
+                                    <p class="font-bold text-slate-500">Ngay ứng tuyển</p>
                                     <p class="mt-1 font-semibold text-slate-700">${escapeHtml(formatDateTime(item.appliedAt))}</p>
                                 </div>
                                 <div class="history-request-info">
                                     <p class="font-bold text-slate-500">Kinh nghiem</p>
-                                    <p class="mt-1 font-semibold text-slate-700">${item?.nanny?.yearsOfExperience ? `${item.nanny.yearsOfExperience} nam` : 'Chua cap nhat'}</p>
+                                    <p class="mt-1 font-semibold text-slate-700">${item?.nanny?.yearsOfExperience ? `${item.nanny.yearsOfExperience} nam` : 'Chưa cập nhật'}</p>
                                 </div>
                                 <div class="history-request-info">
                                     <p class="font-bold text-slate-500">Luong mong muon</p>
@@ -784,7 +784,7 @@
                                 <button type="button"
                                         onclick="window.__openJobApplicationDetail?.('${escapeHtml(jobId)}','${escapeHtml(item.id)}')"
                                         class="inline-flex items-center justify-center min-h-[36px] px-3 rounded-lg border border-orange-200 bg-orange-50 text-orange-600 text-xs font-bold hover:bg-orange-100 transition-all">
-                                    Xem chi tiet request
+                                    Xem chi tiết request
                                 </button>
                             </div>
                         </article>`).join('')}
@@ -816,12 +816,12 @@
             }
 
             if (shouldRenderList) {
-                setRequestLoadingState(jobId, 'Dang tai request ung tuyen...');
+                setRequestLoadingState(jobId, 'Dang tai request ứng tuyển...');
             }
             try {
                 const response = await fetch(`/Hiring/${encodeURIComponent(jobId)}/Applicants`, { credentials: 'same-origin' });
                 const json = await response.json();
-                if (!json?.success) throw new Error(json?.message || 'Khong tai duoc request.');
+                if (!json?.success) throw new Error(json?.message || 'Không tải được request.');
 
                 const raw = Array.isArray(json?.data) ? json.data : [];
                 const applications = raw.map((item) => ({
@@ -848,10 +848,10 @@
                 return applications;
             } catch (error) {
                 if (shouldRenderList) {
-                    setRequestLoadingState(jobId, 'Khong tai duoc request ung tuyen.');
+                    setRequestLoadingState(jobId, 'Không tải được yêu cầu ứng tuyển.');
                 }
                 if (!silent) {
-                    showHistoryToast(error?.message || 'Khong tai duoc request ung tuyen.', 'error');
+                    showHistoryToast(error?.message || 'Không tải được yêu cầu ứng tuyển.', 'error');
                 }
                 return [];
             }
@@ -942,7 +942,7 @@
 
             const application = (applications || []).find((item) => String(item.id).toLowerCase() === String(applicationId).toLowerCase());
             if (!application) {
-                showHistoryToast('Khong tim thay request can xem.', 'warning');
+                showHistoryToast('Không tìm thấy request cần xem.', 'warning');
                 return;
             }
 
@@ -950,18 +950,18 @@
             const canReview = Number(application.status) === 0;
             activeReviewContext = { jobId, applicationId };
 
-            document.getElementById('jobAppModalTitle').textContent = job?.title || 'Chi tiet request';
+            document.getElementById('jobAppModalTitle').textContent = job?.title || 'Chi tiết request';
             document.getElementById('jobAppModalSubTitle').textContent = canReview
-                ? 'Request dang cho duyet. Ban co the chap nhan hoac tu choi.'
-                : 'Request nay da duoc xu ly. Ban dang xem lai chi tiet.';
+                ? 'Request Đang chờ duyệt. Ban co the chap nhan hoac từ chối.'
+                : 'Request này đã được xử lý. Bạn đang xem lại chi tiết.';
             document.getElementById('jobAppNannyName').textContent = application?.nanny?.fullName || 'Nanny';
-            document.getElementById('jobAppNannyLocation').textContent = [application?.nanny?.district, application?.nanny?.city].filter(Boolean).join(', ') || 'Chua cap nhat khu vuc';
+            document.getElementById('jobAppNannyLocation').textContent = [application?.nanny?.district, application?.nanny?.city].filter(Boolean).join(', ') || 'Chưa cập nhật khu vực';
             document.getElementById('jobAppStatusWrap').innerHTML = renderApplicationBadge(application.status);
-            document.getElementById('jobAppAppliedAt').textContent = `Ngay ung tuyen: ${formatDateTime(application.appliedAt)}`;
-            document.getElementById('jobAppPhone').textContent = application?.nanny?.phoneNumber || 'Chua cap nhat';
-            document.getElementById('jobAppExperience').textContent = application?.nanny?.yearsOfExperience ? `${application.nanny.yearsOfExperience} nam` : 'Chua cap nhat';
+            document.getElementById('jobAppAppliedAt').textContent = `Ngay ứng tuyển: ${formatDateTime(application.appliedAt)}`;
+            document.getElementById('jobAppPhone').textContent = application?.nanny?.phoneNumber || 'Chưa cập nhật';
+            document.getElementById('jobAppExperience').textContent = application?.nanny?.yearsOfExperience ? `${application.nanny.yearsOfExperience} nam` : 'Chưa cập nhật';
             document.getElementById('jobAppSalary').textContent = formatSalaryRange(application?.nanny?.expectedSalaryMin, application?.nanny?.expectedSalaryMax);
-            document.getElementById('jobAppRejectReasonDisplay').textContent = application?.rejectionReason || 'Chua co.';
+            document.getElementById('jobAppRejectReasonDisplay').textContent = application?.rejectionReason || 'Chưa co.';
 
             const viewProfileBtn = document.getElementById('jobAppViewProfileBtn');
             if (viewProfileBtn) {
@@ -969,10 +969,10 @@
                 if (userId) {
                     if (Number(application.status) === 1) {
                         viewProfileBtn.setAttribute('href', `/Profile/ViewUser?userId=${encodeURIComponent(userId)}&jobPostingId=${encodeURIComponent(jobId)}&jobApplicationId=${encodeURIComponent(application.id)}&source=history`);
-                        viewProfileBtn.innerHTML = '<span class="material-icons-round text-base">handshake</span> Xem ho so &amp; Thue Nanny';
+                        viewProfileBtn.innerHTML = '<span class="material-icons-round text-base">handshake</span> Xem profile &amp; Thue Nanny';
                     } else {
                         viewProfileBtn.setAttribute('href', `/Profile/ViewUser?userId=${encodeURIComponent(userId)}&source=history`);
-                        viewProfileBtn.innerHTML = '<span class="material-icons-round text-base">visibility</span> Xem chi tiet ho so Nanny';
+                        viewProfileBtn.innerHTML = '<span class="material-icons-round text-base">visibility</span> Xem chi tiết profile Nanny';
                     }
                     viewProfileBtn.classList.remove('hidden');
                 } else {
@@ -995,12 +995,12 @@
             const reasonInput = document.getElementById('jobAppRejectReason');
             const rejectionReason = reasonInput?.value.trim() || '';
             if (Number(action) === 2 && !rejectionReason) {
-                showHistoryToast('Vui long nhap ly do khi Reject request.', 'warning');
+                showHistoryToast('Vui lòng nhập lý do khi Reject request.', 'warning');
                 reasonInput?.focus();
                 return;
             }
             if (Number(action) === 2 && rejectionReason.length < 8) {
-                showHistoryToast('Ly do tu choi can toi thieu 8 ky tu.', 'warning');
+                showHistoryToast('Lý do từ chối cần tối thiểu 8 ký tự.', 'warning');
                 reasonInput?.focus();
                 return;
             }
@@ -1024,18 +1024,18 @@
 
                 const json = await response.json();
                 if (!json?.success) {
-                    showHistoryToast(json?.message || 'Khong the xu ly request ung tuyen.', 'error');
+                    showHistoryToast(json?.message || 'Không thể xử lý yêu cầu ứng tuyển.', 'error');
                     setReviewButtonState(true, false);
                     isSubmittingReview = false;
                     return;
                 }
 
-                showHistoryToast(json?.message || 'Cap nhat request ung tuyen thanh cong.', 'success');
+                showHistoryToast(json?.message || 'Cập nhật request ứng tuyển thành công.', 'success');
                 await loadJobApplications(jobId, true);
                 window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
                 closeJobApplicationDetailModal();
             } catch {
-                showHistoryToast('Khong the xu ly request ung tuyen.', 'error');
+                showHistoryToast('Không thể xử lý yêu cầu ứng tuyển.', 'error');
                 setReviewButtonState(true, false);
                 isSubmittingReview = false;
             }
@@ -1065,15 +1065,15 @@
                     body.innerHTML = `
                         <div class="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-6 py-14 text-center">
                             <span class="material-icons-round text-[34px] text-orange-300">history</span>
-                            <h3 class="mt-3 text-lg font-bold text-slate-900">Ban chua co bai dang nao</h3>
-                            <p class="mt-2 text-sm text-slate-500">Khi ban tao bai dang dau tien, lich su se hien o day.</p>
+                            <h3 class="mt-3 text-lg font-bold text-slate-900">Ban chưa co bai Đang nao</h3>
+                            <p class="mt-2 text-sm text-slate-500">Khi ban tao bai Đang dau tien, lich su se hien o day.</p>
                         </div>`;
                     return;
                 }
 
                 body.innerHTML = jobs.map((job) => {
-                    const moderationLabel = moderationLabels[job.moderationStatus] || 'Dang cap nhat';
-                    const postStatusLabel = postStatusLabels[job.status] || 'Dang cap nhat';
+                    const moderationLabel = moderationLabels[job.moderationStatus] || 'Đang cập nhật';
+                    const postStatusLabel = postStatusLabels[job.status] || 'Đang cập nhật';
                     const showPostStatusBadge = String(moderationLabel).trim().toLowerCase() !== String(postStatusLabel).trim().toLowerCase();
 
                     return `
@@ -1088,7 +1088,7 @@
                                             ? `<span class="${postStatusBadgeClasses[Number(job.status)] || 'history-badge history-badge--hidden'}">${escapeHtml(postStatusLabel)}</span>`
                                             : ''}
                                     </div>
-                                    <p class="mt-2 text-sm text-slate-500">${escapeHtml([job.location, job.district, job.city].filter(Boolean).join(', ') || 'Chua cap nhat dia diem')}</p>
+                                    <p class="mt-2 text-sm text-slate-500">${escapeHtml([job.location, job.district, job.city].filter(Boolean).join(', ') || 'Chưa cập nhật đa điểm')}</p>
                                 </div>
                                 <div class="flex items-center gap-3">
                                     <div class="history-salary-badge">
@@ -1097,7 +1097,7 @@
                                     ${[0, 2].includes(Number(job.moderationStatus)) ? `
                                         <a href="/Search/Edit/${job.id}"
                                            class="inline-flex items-center justify-center min-h-[40px] px-4 rounded-xl border border-orange-200 bg-white text-orange-600 text-sm font-bold hover:bg-orange-50 transition-all">
-                                            Chinh sua
+                                            Chỉnh sửa
                                         </a>` : ''}
                                 </div>
                             </div>
@@ -1106,15 +1106,15 @@
                         <div class="px-6 py-5 grid grid-cols-1 xl:grid-cols-[1.15fr_.85fr] gap-5">
                             <div class="space-y-4">
                                 <div>
-                                    <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Mo ta</p>
+                                    <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Mô tả</p>
                                     <div class="history-description-box">
-                                        <p class="text-sm leading-6 text-slate-600">${escapeHtml(job.description || 'Khong co mo ta chi tiet.')}</p>
+                                        <p class="text-sm leading-6 text-slate-600">${escapeHtml(job.description || 'Không có m? t? chi tiết.')}</p>
                                     </div>
                                 </div>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div class="rounded-3xl border border-slate-100 bg-slate-50 px-4 py-4">
                                         <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">So tre</p>
-                                        <p class="mt-2 text-base font-extrabold text-slate-900">${job.numberOfChildren ? `${job.numberOfChildren} be` : 'Chua cap nhat'}</p>
+                                        <p class="mt-2 text-base font-extrabold text-slate-900">${job.numberOfChildren ? `${job.numberOfChildren} be` : 'Chưa cập nhật'}</p>
                                     </div>
                                     <div class="rounded-3xl border border-slate-100 bg-slate-50 px-4 py-4">
                                         <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Do tuoi nanny</p>
@@ -1128,10 +1128,10 @@
                             </div>
 
                             <div class="history-approval-panel ${approvalPanelToneClasses[Number(job.moderationStatus)] || 'history-approval-panel--pending'} rounded-3xl border border-orange-100 bg-orange-50/40 px-5 py-4">
-                                <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-orange-500">Chi tiet duyet bai</p>
+                                <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-orange-500">Chi tiết duyệt bài</p>
                                 <div class="mt-4 space-y-3 text-sm text-slate-600">
                                     <div class="flex items-start justify-between gap-4">
-                                        <span class="font-bold text-slate-500">Trang thai</span>
+                                        <span class="font-bold text-slate-500">Trạng thái</span>
                                         <span class="${moderationBadgeClasses[Number(job.moderationStatus)] || 'history-badge history-badge--pending'}">${escapeHtml(moderationLabel)}</span>
                                     </div>
                                     ${showPostStatusBadge ? `
@@ -1140,17 +1140,17 @@
                                             <span class="${postStatusBadgeClasses[Number(job.status)] || 'history-badge history-badge--hidden'}">${escapeHtml(postStatusLabel)}</span>
                                         </div>` : ''}
                                     <div>
-                                        <p class="font-bold text-slate-500 mb-2">Ghi chu moderator</p>
+                                        <p class="font-bold text-slate-500 mb-2">Ghi chú moderator</p>
                                         <div class="history-note-box text-sm leading-6 text-slate-600">
-                                            ${escapeHtml(job.moderationNote || 'Chua co ghi chu tu moderator.')}
+                                            ${escapeHtml(job.moderationNote || 'Chưa co ghi chu tu moderator.')}
                                         </div>
                                     </div>
                                     <div>
-                                        <p class="font-bold text-slate-500 mb-2">Ky nang yeu cau</p>
+                                        <p class="font-bold text-slate-500 mb-2">Ky nang yư cư</p>
                                         <div class="flex flex-wrap gap-2">
                                             ${(job.skills && job.skills.length)
                                                 ? job.skills.map((skill) => `<span class="history-skill-chip">${escapeHtml(skill)}</span>`).join('')
-                                                : '<span class="text-sm text-slate-400">Chua co ky nang yeu cau.</span>'}
+                                                : '<span class="text-sm text-slate-400">Chưa có kỹ năng yêu cầu.</span>'}
                                         </div>
                                     </div>
                                 </div>
@@ -1162,12 +1162,12 @@
                                 <div class="history-request-head">
                                     <div>
                                         <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Request tu nanny</p>
-                                        <p id="historyRequestSummary-${escapeHtml(job.id)}" class="mt-2 text-sm text-slate-500">Dang tai so luong request ung tuyen...</p>
+                                        <p id="historyRequestSummary-${escapeHtml(job.id)}" class="mt-2 text-sm text-slate-500">Dang tai so luong request ứng tuyển...</p>
                                         <div id="historyRequestMetrics-${escapeHtml(job.id)}" class="history-request-metrics">
                                             <span class="history-request-metric">Tong: ...</span>
                                             <span class="history-request-metric">Pending: ...</span>
                                             <span class="history-request-metric">Chap nhan: ...</span>
-                                            <span class="history-request-metric">Tu choi: ...</span>
+                                            <span class="history-request-metric">Từ chối: ...</span>
                                         </div>
                                     </div>
                                     <button id="historyRequestToggle-${escapeHtml(job.id)}"
@@ -1200,7 +1200,7 @@
             } catch {
                 body.innerHTML = `
                     <div class="rounded-3xl border border-red-100 bg-red-50 px-6 py-10 text-center text-red-600">
-                        Khong tai duoc lich su bai dang.
+                        Không tải được lịch sử bài đăng.
                     </div>`;
             }
         }
@@ -1225,11 +1225,11 @@
                 const json = await res.json();
                 if (!json?.success) throw new Error(json?.message || 'Co loi xay ra.');
 
-                showHistoryToast('Da dong y ung vien. Vao ho so de thue chinh thuc.', 'success');
+                showHistoryToast('Da dong y ung vien. Vao profile ?? thuê chinh thuc.', 'success');
                 applicationCache.delete(jobPostingId);
                 await loadJobApplications(jobPostingId, true);
             } catch (err) {
-                showHistoryToast(err?.message || 'Khong the dong y ung vien.', 'error');
+                showHistoryToast(err?.message || 'Không th? dong y ung vien.', 'error');
                 btn.disabled = false;
                 btn.innerHTML = oldHtml;
             }

@@ -1,6 +1,6 @@
-@model WebSite.Models.Profile.NannyBasicInfoWizardViewModel
+﻿@model WebSite.Models.Profile.NannyBasicInfoWizardViewModel
 @{
-    ViewData["Title"] = "Nanny - Thong tin co ban";
+    ViewData["Title"] = "Nanny - Thông tin cơ bản";
 }
 
 <div class="nm-flow-shell nm-flow-shell--homepage">
@@ -10,9 +10,9 @@
                 <div class="nm-flow-header">
                     <div class="nm-flow-header__content">
                         <span class="nm-flow-badge">Nanny onboarding</span>
-                        <h1 class="nm-flow-title">Hoan thien ho so co ban</h1>
+                        <h1 class="nm-flow-title">Hoan thien profile cơ bản</h1>
                         <p class="nm-flow-subtitle">
-                            Day la thong tin nen ban dau de ho so nanny hien thi tot hon trong tim kiem va de parent nhan dien nhanh kha nang phu hop.
+                            Day la thong tin nen ban dau ?? profile nanny hiển thị tot hon trong tim kiem va ?? parent nhan dien nhanh kha nang phu hop.
                         </p>
                         <div class="nm-flow-divider" aria-hidden="true"></div>
                     </div>
@@ -30,23 +30,23 @@
                     <div class="nm-form-grid">
                         <div class="nm-col-12">
                             <div class="nm-section-card">
-                                <div class="nm-section-title">Thong tin ca nhan</div>
-                                <div class="nm-section-note">Anh dai dien, ngay sinh va dia chi se duoc dung de hoan thien ho so nghe nghiep o cac buoc tiep theo.</div>
+                                <div class="nm-section-title">Thông tin cá nhân</div>
+                                <div class="nm-section-note">Ảnh đại diện, ngày sinh và địa chỉ sẽ được dùng để hoàn thiện hồ sơ nghề nghiệp ở các bước tiếp theo.</div>
 
                                 <div class="nm-form-grid">
                                     <div class="nm-col-12">
                                         <div class="nm-field">
-                                            <label asp-for="FullName" class="nm-label">Ho va ten <span class="required">*</span></label>
-                                            <input asp-for="FullName" class="nm-input" placeholder="Nguyen Thi A" />
+                                            <label asp-for="FullName" class="nm-label">Họ và tên <span class="required">*</span></label>
+                                            <input asp-for="FullName" class="nm-input" placeholder="Nguyễn Thị A" />
                                             <span asp-validation-for="FullName" class="nm-error"></span>
                                         </div>
                                     </div>
 
                                     <div class="nm-col-12">
                                         <div class="nm-field">
-                                            <label asp-for="AvatarFile" class="nm-label">Anh dai dien</label>
+                                            <label asp-for="AvatarFile" class="nm-label">Ảnh đại diện</label>
                                             <input type="file" asp-for="AvatarFile" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="nm-file" />
-                                            <div class="nm-field-hint">Nen dung anh ro mat, dung dinh dang .jpg, .jpeg, .png.</div>
+                                            <div class="nm-field-hint">Nên dùng ảnh rõ mặt, đúng định dạng .jpg, .jpeg, .png.</div>
                                             <div id="avatarUploadError" class="nm-error hidden"></div>
                                             <div class="mt-3">
                                                 <img id="avatarPreview" class="nm-avatar-preview hidden" alt="Avatar preview" />
@@ -57,30 +57,30 @@
 
                                     <div class="nm-col-6">
                                         <div class="nm-field">
-                                            <label asp-for="PhoneNumber" class="nm-label">So dien thoai</label>
+                                            <label asp-for="PhoneNumber" class="nm-label">Số điện thoại</label>
                                             <input asp-for="PhoneNumber" class="nm-input" placeholder="+84901234567" />
-                                            <div class="nm-field-hint">Nhap 9-15 chu so, co the bat dau bang dau +.</div>
+                                            <div class="nm-field-hint">Nhập 9-15 chữ số, có thể bắt đầu bằng dấu +.</div>
                                             <span asp-validation-for="PhoneNumber" class="nm-error"></span>
                                         </div>
                                     </div>
 
                                     <div class="nm-col-6">
                                         <div class="nm-field">
-                                            <label asp-for="DateOfBirth" class="nm-label">Ngay sinh <span class="required">*</span></label>
-                                            <input asp-for="DateOfBirth" type="date" class="nm-input" max="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                                            <label asp-for="DateOfBirth" class="nm-label">Ngày sinh <span class="required">*</span></label>
+                                            <input asp-for="DateOfBirth" asp-format="{0:yyyy-MM-dd}" type="date" class="nm-input" max="@DateTime.Today.ToString("yyyy-MM-dd")" />
                                             <span asp-validation-for="DateOfBirth" class="nm-error"></span>
-                                            <div id="dateOfBirthClientError" class="nm-error hidden">Ngay sinh khong duoc lon hon ngay hien tai.</div>
+                                            <div id="dateOfBirthClientError" class="nm-error hidden">Ngày sinh không được lớn hơn ngày hiện tại.</div>
                                         </div>
                                     </div>
 
                                     <div class="nm-col-6">
                                         <div class="nm-field">
-                                            <label asp-for="Gender" class="nm-label">Gioi tinh <span class="required">*</span></label>
+                                            <label asp-for="Gender" class="nm-label">Giới tính <span class="required">*</span></label>
                                             <select asp-for="Gender" class="nm-select">
-                                                <option value="">Chon gioi tinh</option>
+                                                <option value="">Chọn giới tính</option>
                                                 <option value="0">Nam</option>
-                                                <option value="1">Nu</option>
-                                                <option value="2">Khac</option>
+                                                <option value="1">Nữ</option>
+                                                <option value="2">Khác</option>
                                             </select>
                                             <span asp-validation-for="Gender" class="nm-error"></span>
                                         </div>
@@ -88,17 +88,17 @@
 
                                     <div class="nm-col-12">
                                         <div class="nm-field">
-                                            <label asp-for="Address" class="nm-label">Dia chi chi tiet <span class="required">*</span></label>
-                                            <input asp-for="Address" id="Address" class="nm-input" placeholder="So nha, ten duong..." />
+                                            <label asp-for="Address" class="nm-label">Địa chỉ chi tiết <span class="required">*</span></label>
+                                            <input asp-for="Address" id="Address" class="nm-input" placeholder="Số nhà, tên đường..." />
                                             <span asp-validation-for="Address" class="nm-error"></span>
                                         </div>
                                     </div>
 
                                     <div class="nm-col-6">
                                         <div class="nm-field">
-                                            <label asp-for="City" class="nm-label">Tinh / Thanh pho <span class="required">*</span></label>
+                                            <label asp-for="City" class="nm-label">Tỉnh / Thành phố <span class="required">*</span></label>
                                             <select asp-for="City" id="City" class="nm-select">
-                                                <option value="">Chon tinh / thanh</option>
+                                                <option value="">Chọn tỉnh / thành</option>
                                             </select>
                                             <span asp-validation-for="City" class="nm-error"></span>
                                         </div>
@@ -106,9 +106,9 @@
 
                                     <div class="nm-col-6">
                                         <div class="nm-field">
-                                            <label asp-for="District" class="nm-label">Quan / Huyen / Phuong <span class="required">*</span></label>
+                                            <label asp-for="District" class="nm-label">Quận / Huyện / Phường <span class="required">*</span></label>
                                             <select asp-for="District" id="District" class="nm-select">
-                                                <option value="">Chon khu vuc</option>
+                                                <option value="">Chọn khu vực</option>
                                             </select>
                                             <span asp-validation-for="District" class="nm-error"></span>
                                         </div>
@@ -121,8 +121,8 @@
                     </div>
 
                     <div class="nm-flow-actions">
-                        <a href="@Url.Action("Index", "Home")" class="nm-btn nm-btn--ghost">Bo qua</a>
-                        <button type="submit" name="direction" value="next" class="nm-btn nm-btn--primary">Tiep tuc</button>
+                        <a href="@Url.Action("Index", "Home")" class="nm-btn nm-btn--ghost">Bỏ qua</a>
+                        <button type="submit" name="direction" value="next" class="nm-btn nm-btn--primary">Tiếp tục</button>
                     </div>
                 </form>
             </div>
@@ -183,7 +183,7 @@
 
             if (!isAllowedImage(file)) {
                 avatarInput.value = '';
-                showAvatarError('Chi cho phep upload anh .png, .jpg, .jpeg.');
+                showAvatarError('Chỉ cho phép upload ảnh .png, .jpg, .jpeg.');
                 if (currentAvatarUrl) setPreview(currentAvatarUrl);
                 return;
             }
@@ -216,7 +216,7 @@
             }
 
             if (dateOfBirthInput.value > todayStr) {
-                dateOfBirthInput.setCustomValidity('Ngay sinh khong duoc lon hon ngay hien tai.');
+                dateOfBirthInput.setCustomValidity('Ngày sinh không được lớn hơn ngày hiện tại.');
                 if (dateOfBirthClientError) dateOfBirthClientError.classList.remove('hidden');
                 return false;
             }
@@ -264,7 +264,7 @@
         .catch(function () {
             provinces = [];
             setAddressSelectState(true);
-            showAddressLoadError('Khong tai duoc danh sach tinh thanh. Vui long thu lai sau.');
+            showAddressLoadError('Không tải được danh sách tỉnh thành. Vui lòng thử lại sau.');
         });
 
     function setAddressSelectState(disabled) {
@@ -283,7 +283,7 @@
             .toLowerCase()
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '')
-            .replace(/đ/g, 'd')
+            .replace(/Ä‘/g, 'd')
             .trim();
     }
 
@@ -313,7 +313,7 @@
     }
 
     function onCityChange(callback) {
-        districtSelect.innerHTML = '<option value="">Chon khu vuc</option>';
+        districtSelect.innerHTML = '<option value="">Chọn khu vực</option>';
 
         var selectedCity = normalizeText(citySelect.value);
         var selected = provinces.find(function (p) { return normalizeText(p.name) === selectedCity; });
@@ -377,3 +377,5 @@
     }
 })();
 </script>
+
+

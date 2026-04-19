@@ -1,5 +1,5 @@
 @{
-    ViewData["Title"] = "Chinh sua bai dang - NannyMatch";
+    ViewData["Title"] = "Chỉnh sửa bài đăng - NannyMatch";
     Layout = "~/Views/Shared/_Layout.cshtml";
     var jobId = (Guid)(ViewBag.JobId ?? Guid.Empty);
     var skillOptions = ViewBag.SkillOptions as IEnumerable<WebSite.Models.Search.JobSkillOption>
@@ -16,16 +16,16 @@
             <div class="px-6 py-6 sm:px-8 border-b border-orange-100 bg-[radial-gradient(circle_at_top_right,rgba(255,237,213,.85),transparent_28%),linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <p class="text-xs font-extrabold uppercase tracking-[0.24em] text-orange-500">Cap nhat bai dang</p>
-                        <h1 class="mt-2 text-3xl font-bold text-slate-900">Chinh sua bai dang</h1>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.24em] text-orange-500">Cập nhật bài đăng</p>
+                        <h1 class="mt-2 text-3xl font-bold text-slate-900">Chỉnh sửa bài đăng</h1>
                         <p class="mt-2 text-sm leading-6 text-slate-500 max-w-2xl">
-                            Khi luu thay doi, bai dang cong khai se quay ve trang thai cho moderator duyet lai.
+                            Khi lưu thay đổi, bài đăng công khai sẽ quay về trạng thái chờ moderator duyệt lại.
                         </p>
                     </div>
                     <div class="flex items-center gap-3">
                         <a href="/Search/History"
                            class="inline-flex items-center justify-center min-h-[48px] px-5 rounded-2xl border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 transition-all">
-                            Quay lai lich su
+                            Quay lại lịch sử
                         </a>
                     </div>
                 </div>
@@ -41,76 +41,76 @@
                     <div class="section-card">
                         <div class="section-heading">
                             <div>
-                                <p class="section-title">Thong tin co ban</p>
-                                <p class="section-caption">Cap nhat noi dung, luong, dia diem va do tuoi nanny mong muon.</p>
+                                <p class="section-title">Thông tin cơ bản</p>
+                                <p class="section-caption">Cập nhật nội dung, lương, địa điểm và độ tuổi nanny mong muốn.</p>
                             </div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="md:col-span-2">
-                                <label class="form-label">Tieu de bai dang</label>
+                                <label class="form-label">Tiêu đề bài đăng</label>
                                 <input type="text" id="ef-title" class="form-input" required />
                             </div>
                             <div class="md:col-span-2">
-                                <label class="form-label">Mo ta chi tiet</label>
+                                <label class="form-label">Mô tả chi tiết</label>
                                 <textarea id="ef-desc" class="form-input resize-none" rows="3" required></textarea>
                             </div>
                             <div>
-                                <label class="form-label">Loai cong viec</label>
-                                <input type="text" id="ef-typeText" class="form-input form-select-picker-input" autocomplete="off" placeholder="Chon loai cong viec" />
+                                <label class="form-label">Loại công việc</label>
+                                <input type="text" id="ef-typeText" class="form-input form-select-picker-input" autocomplete="off" placeholder="Chọn loại công việc" />
                                 <select id="ef-type" class="form-input form-select-native-hidden">
                                     <option value="1">Full-time</option>
                                     <option value="2">Part-time</option>
-                                    <option value="3">Qua dem</option>
+                                    <option value="3">Qua đêm</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="form-label">So tre can cham</label>
+                                <label class="form-label">Số trẻ cần chăm</label>
                                 <input type="number" id="ef-children" class="form-input bg-gray-50" min="1" max="10" readonly />
                             </div>
                             <div>
-                                <label class="form-label">Luong toi thieu</label>
+                                <label class="form-label">Lương tối thiểu</label>
                                 <input type="text" id="ef-salMin" inputmode="numeric" class="form-input" placeholder="VD: 1.000.000" />
                             </div>
                             <div>
-                                <label class="form-label">Luong toi da</label>
+                                <label class="form-label">Lương tối đa</label>
                                 <input type="text" id="ef-salMax" inputmode="numeric" class="form-input" placeholder="VD: 3.000.000" />
                             </div>
                             <div class="md:col-span-2 text-xs font-semibold text-slate-500">
-                                Luong hop le tu 8.000.000 den 50.000.000 VND.
+                                Lương hợp lệ từ 8.000.000 đến 50.000.000 VND.
                             </div>
                             <div class="md:col-span-2">
-                                <label class="form-label">Tuy chon luong</label>
+                                <label class="form-label">Tùy chọn lương</label>
                                 <label class="negotiable-field negotiable-field-large">
                                     <input type="checkbox" id="ef-negotiable" class="rounded accent-orange-500" />
-                                    <span class="negotiable-title">Luong thuong luong</span>
-                                    <span class="negotiable-caption">Bat neu ban muon trao doi muc luong truc tiep voi nanny.</span>
+                                    <span class="negotiable-title">Lương thương lượng</span>
+                                    <span class="negotiable-caption">Bật nếu bạn muốn trao đổi mức lương trực tiếp với nanny.</span>
                                 </label>
                             </div>
                             <div class="md:col-span-2">
-                                <label class="form-label">Dia chi chi tiet</label>
+                                <label class="form-label">Địa chỉ chi tiết</label>
                                 <input type="text" id="ef-location" class="form-input" />
                             </div>
                             <div>
-                                <label class="form-label">Thanh pho</label>
-                                <input type="text" id="ef-city" class="form-input form-select-picker-input" autocomplete="off" placeholder="Nhap hoac chon thanh pho" />
+                                <label class="form-label">Thành phố</label>
+                                <input type="text" id="ef-city" class="form-input form-select-picker-input" autocomplete="off" placeholder="Nhập hoặc chọn thành phố" />
                             </div>
                             <div>
-                                <label class="form-label">Phuong/Xa</label>
-                                <input type="text" id="ef-district" class="form-input form-select-picker-input" autocomplete="off" placeholder="Nhap hoac chon phuong/xa" />
+                                <label class="form-label">Phường/Xã</label>
+                                <input type="text" id="ef-district" class="form-input form-select-picker-input" autocomplete="off" placeholder="Nhập hoặc chọn phường/xã" />
                             </div>
                             <div>
-                                <label class="form-label">Do tuoi bao mau tu</label>
+                                <label class="form-label">Độ tuổi bảo mẫu từ</label>
                                 <input type="number" id="ef-minAge" class="form-input" min="18" max="80" />
                             </div>
                             <div>
-                                <label class="form-label">Do tuoi bao mau den</label>
+                                <label class="form-label">Độ tuổi bảo mẫu đến</label>
                                 <input type="number" id="ef-maxAge" class="form-input" min="18" max="80" />
                             </div>
                             <div>
-                                <label class="form-label">Trang thai bai dang</label>
+                                <label class="form-label">Trạng thái bài đăng</label>
                                 <div class="status-toggle" id="ef-statusToggle">
-                                    <button type="button" class="status-option active" data-status="1">Cong khai</button>
-                                    <button type="button" class="status-option" data-status="2">An bai dang</button>
+                                    <button type="button" class="status-option active" data-status="1">Công khai</button>
+                                    <button type="button" class="status-option" data-status="2">Ẩn bài đăng</button>
                                 </div>
                             </div>
                         </div>
@@ -119,8 +119,8 @@
                     <div class="section-card schedule-card">
                         <div class="schedule-header">
                             <div>
-                                <p class="section-title">Lich ngay muon tuyen</p>
-                                <p class="section-caption">Cap nhat cac buoi can nanny ho tro trong tuan.</p>
+                                <p class="section-title">Lịch ngày muốn tuyển</p>
+                                <p class="section-caption">Cập nhật các buổi cần nanny hỗ trợ trong tuần.</p>
                             </div>
                         </div>
                         <div id="ef-schedule" class="schedule-grid"></div>
@@ -129,26 +129,26 @@
                     <div class="section-card section-card-soft">
                         <div class="section-heading">
                             <div>
-                                <p class="section-title">Thong tin tu profile Parent</p>
-                                <p class="section-caption">Chon lai be neu can, he thong se cap nhat thong tin Child Profile tuong ung.</p>
+                                <p class="section-title">Thông tin từ hồ sơ phụ huynh</p>
+                                <p class="section-caption">Chọn lại bé nếu cần, hệ thống sẽ cập nhật thông tin Hồ sơ trẻ tương ứng.</p>
                             </div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div class="md:col-span-2">
-                                <label class="form-label">Chon tre</label>
-                                <input type="text" id="ef-childProfileText" class="form-input form-select-picker-input" autocomplete="off" placeholder="Chon tre" />
+                                <label class="form-label">Chọn trẻ</label>
+                                <input type="text" id="ef-childProfileText" class="form-input form-select-picker-input" autocomplete="off" placeholder="Chọn trẻ" />
                                 <select id="ef-childProfileId" class="form-input form-select-native-hidden"></select>
                             </div>
                             <div>
-                                <label class="form-label">Dac diem</label>
+                                <label class="form-label">Đặc điểm</label>
                                 <textarea id="ef-characteristic" class="form-input resize-none bg-white/80" rows="2" readonly></textarea>
                             </div>
                             <div>
-                                <label class="form-label">Nhom tuoi cua be</label>
+                                <label class="form-label">Nhóm tuổi của bé</label>
                                 <input type="text" id="ef-birthType" class="form-input bg-white/80" readonly />
                             </div>
                             <div class="md:col-span-2">
-                                <label class="form-label">Nhu cau dac biet</label>
+                                <label class="form-label">Nhu cầu đặc biệt</label>
                                 <textarea id="ef-specialNeeds" class="form-input resize-none bg-white/80" rows="2" readonly></textarea>
                             </div>
                         </div>
@@ -157,14 +157,14 @@
                     <div class="section-card section-card-plain">
                         <div class="section-heading">
                             <div>
-                                <p class="section-title">Ky nang yeu cau</p>
-                                <p class="section-caption">Cap nhat bo ky nang bang danh sach skill co san trong he thong.</p>
+                                <p class="section-title">Kỹ năng yêu cầu</p>
+                                <p class="section-caption">Cập nhật bộ kỹ năng bằng danh sách skill có sẵn trong hệ thống.</p>
                             </div>
                         </div>
                         <div class="flex gap-2 items-center">
-                            <input type="text" id="ef-skillSelectText" class="form-input form-select-picker-input" autocomplete="off" placeholder="Chon ky nang can yeu cau" />
+                            <input type="text" id="ef-skillSelectText" class="form-input form-select-picker-input" autocomplete="off" placeholder="Chọn kỹ năng cần yêu cầu" />
                             <select id="ef-skillSelect" class="form-input form-select-native-hidden">
-                                <option value="">Chon ky nang can yeu cau</option>
+                                <option value="">Chọn kỹ năng cần yêu cầu</option>
                                 @foreach (var skill in skillOptions)
                                 {
                                     <option value="@skill.SkillName">@skill.SkillName@(string.IsNullOrWhiteSpace(skill.Category) ? "" : $" - {skill.Category}")</option>
@@ -581,9 +581,9 @@ function syncSelectPickerTexts() {
 }
 
 function attachEditSelectPickers() {
-    attachSelectPicker('ef', 'typePicker', 'ef-type', 'ef-typeText', 'Chon loai cong viec');
-    attachSelectPicker('ef', 'childPicker', 'ef-childProfileId', 'ef-childProfileText', 'Chon tre', () => setProfileFields(getSelectedChild()));
-    attachSelectPicker('ef', 'skillPicker', 'ef-skillSelect', 'ef-skillSelectText', 'Chon ky nang can yeu cau');
+    attachSelectPicker('ef', 'typePicker', 'ef-type', 'ef-typeText', 'Chọn loại công việc');
+    attachSelectPicker('ef', 'childPicker', 'ef-childProfileId', 'ef-childProfileText', 'Chọn trẻ', () => setProfileFields(getSelectedChild()));
+    attachSelectPicker('ef', 'skillPicker', 'ef-skillSelect', 'ef-skillSelectText', 'Chọn kỹ năng cần yêu cầu');
 }
 
 function showNotice(message, kind) {
@@ -714,16 +714,16 @@ function validateEditPayload(payload) {
     const maximumSalary = 50000000;
     const title = String(payload?.title ?? '').trim();
     if (!title || title.length < 5 || title.length > 200) {
-        return { message: 'Tieu de bai dang phai tu 5 den 200 ky tu.', fieldId: 'ef-title' };
+        return { message: 'Tiêu đề bài đăng phải từ 5 đến 200 ký tự.', fieldId: 'ef-title' };
     }
 
     const description = String(payload?.description ?? '').trim();
     if (!description || description.length < 10 || description.length > 3000) {
-        return { message: 'Mo ta chi tiet phai tu 10 den 3000 ky tu.', fieldId: 'ef-desc' };
+        return { message: 'Mô tả chi tiết phải từ 10 đến 3000 ký tự.', fieldId: 'ef-desc' };
     }
 
     if (![1, 2, 3].includes(Number(payload?.jobType))) {
-        return { message: 'Loai cong viec khong hop le.', fieldId: 'ef-typeText' };
+        return { message: 'Loai cong viec không hop le.', fieldId: 'ef-typeText' };
     }
 
     const children = Number(payload?.numberOfChildren || 0);
@@ -732,64 +732,64 @@ function validateEditPayload(payload) {
     }
 
     if (!payload?.childProfileId) {
-        return { message: 'Vui long chon tre tu Child Profile.', fieldId: 'ef-childProfileText' };
+        return { message: 'Vui lòng chọn tre tu Hồ sơ trẻ.', fieldId: 'ef-childProfileText' };
     }
 
     const location = String(payload?.location ?? '').trim();
     if (!location || location.length < 3 || location.length > 300) {
-        return { message: 'Dia chi chi tiet phai tu 3 den 300 ky tu.', fieldId: 'ef-location' };
+        return { message: 'Địa chỉ chi tiết phải từ 3 đến 300 ký tự.', fieldId: 'ef-location' };
     }
 
     const city = String(payload?.city ?? '').trim();
     if (!city || city.length > 100) {
-        return { message: 'Thanh pho la bat buoc va toi da 100 ky tu.', fieldId: 'ef-city' };
+        return { message: 'Thành phố là bắt buộc và tối đa 100 ký tự.', fieldId: 'ef-city' };
     }
 
     const district = String(payload?.district ?? '').trim();
     if (!district || district.length > 100) {
-        return { message: 'Phuong/Xa la bat buoc va toi da 100 ky tu.', fieldId: 'ef-district' };
+        return { message: 'Phường/Xã là bắt buộc và tối đa 100 ký tự.', fieldId: 'ef-district' };
     }
 
     const salaryMin = payload?.salaryMin;
     const salaryMax = payload?.salaryMax;
     if (!payload?.salaryNegotiable && salaryMin == null) {
-        return { message: 'Vui long nhap luong toi thieu trong khoang 8.000.000 - 50.000.000 VND hoac bat thuong luong.', fieldId: 'ef-salMin' };
+        return { message: 'Vui lòng nhập luong toi thiếu trong khoang 8.000.000 - 50.000.000 VND hoac bat thuong luong.', fieldId: 'ef-salMin' };
     }
     if (salaryMin != null && (!Number.isFinite(salaryMin) || salaryMin < minimumSalary || salaryMin > maximumSalary)) {
-        return { message: 'Luong toi thieu phai trong khoang 8.000.000 - 50.000.000 VND.', fieldId: 'ef-salMin' };
+        return { message: 'Luong toi thiếu phai trong khoang 8.000.000 - 50.000.000 VND.', fieldId: 'ef-salMin' };
     }
     if (salaryMax != null && (!Number.isFinite(salaryMax) || salaryMax < minimumSalary || salaryMax > maximumSalary)) {
         return { message: 'Luong toi da phai trong khoang 8.000.000 - 50.000.000 VND.', fieldId: 'ef-salMax' };
     }
     if (salaryMin != null && salaryMax != null && Number(salaryMin) > Number(salaryMax)) {
-        return { message: 'Luong toi thieu khong duoc lon hon luong toi da.', fieldId: 'ef-salMin' };
+        return { message: 'Lương tối thiểu không được lớn hơn lương tối đa.', fieldId: 'ef-salMin' };
     }
 
     const minAge = payload?.minNannyAge;
     const maxAge = payload?.maxNannyAge;
     if (minAge != null && (!Number.isFinite(minAge) || minAge < 18 || minAge > 80)) {
-        return { message: 'Do tuoi bao mau tu phai trong khoang 18-80.', fieldId: 'ef-minAge' };
+        return { message: 'Độ tuổi bảo mẫu từ phai trong khoang 18-80.', fieldId: 'ef-minAge' };
     }
     if (maxAge != null && (!Number.isFinite(maxAge) || maxAge < 18 || maxAge > 80)) {
-        return { message: 'Do tuoi bao mau den phai trong khoang 18-80.', fieldId: 'ef-maxAge' };
+        return { message: 'Độ tuổi bảo mẫu đến phai trong khoang 18-80.', fieldId: 'ef-maxAge' };
     }
     if (minAge != null && maxAge != null && Number(minAge) > Number(maxAge)) {
-        return { message: 'Do tuoi tu khong duoc lon hon do tuoi den.', fieldId: 'ef-minAge' };
+        return { message: 'Độ tuổi từ không được lớn hơn độ tuổi đến.', fieldId: 'ef-minAge' };
     }
 
     if (!Array.isArray(payload?.skills) || payload.skills.length < 1) {
-        return { message: 'Vui long chon it nhat 1 ky nang.', fieldId: 'ef-skillSelectText' };
+        return { message: 'Vui lòng chọn it nhất 1 kỹ năng.', fieldId: 'ef-skillSelectText' };
     }
     if (payload.skills.length > 20) {
-        return { message: 'Toi da 20 ky nang cho moi bai dang.', fieldId: 'ef-skillSelectText' };
+        return { message: 'Toi da 20 kỹ năng cho mới bài đăng.', fieldId: 'ef-skillSelectText' };
     }
 
     if (!Array.isArray(payload?.scheduleSlots) || payload.scheduleSlots.length < 1) {
-        return { message: 'Vui long chon it nhat 1 khung lich.', fieldId: 'ef-schedule' };
+        return { message: 'Vui lòng chọn it nhất 1 khung lich.', fieldId: 'ef-schedule' };
     }
 
     if (![1, 2].includes(Number(payload?.status))) {
-        return { message: 'Trang thai bai dang khong hop le.', fieldId: 'ef-statusToggle' };
+        return { message: 'Trạng thái bài đăng không hợp lệ.', fieldId: 'ef-statusToggle' };
     }
 
     return null;
@@ -814,7 +814,7 @@ function updateSubmitState() {
         submitLabel.textContent = isSubmittingEdit ? 'Dang luu...' : 'Luu thay doi';
     }
     submitBtn.title = disabled && !isSubmittingEdit
-        ? 'Khong co thay doi de luu'
+        ? 'Không có thay doi ?? luu'
         : '';
 }
 
@@ -834,7 +834,7 @@ function renderChildren(selectedChildId) {
     if (!select) return;
     select.innerHTML = editChildren.length
         ? editChildren.map(child => `<option value="${escapeHtml(child.id)}">${escapeHtml(child.label)}</option>`).join('')
-        : '<option value="">Chua co Child Profile</option>';
+        : '<option value="">Chưa có Profile trẻ</option>';
     if (selectedChildId) select.value = selectedChildId;
     syncSelectPickerTexts();
     setProfileFields(getSelectedChild());
@@ -878,9 +878,9 @@ async function loadEditPage() {
         setProfileFields(getSelectedChild());
 
         if (Number(job.moderationStatus) === 0) {
-            showNotice('Bai dang nay dang cho moderator duyet. Ban van co the chinh sua va luu lai.', 'warn');
+            showNotice('Bài đăng này đang chờ moderator duyệt. Bạn vẫn có thể chỉnh sửa và lưu lại.', 'warn');
         } else if (Number(job.moderationStatus) === 2) {
-            showNotice('Neu ban chinh sua bai dang cong khai va luu lai, bai dang se quay ve trang thai cho duyet.', 'info');
+            showNotice('Nếu bạn chỉnh sửa bài đăng công khai và lưu lại, bài đăng sẽ quay về trạng thái chờ duyệt.', 'info');
         }
         currentModerationStatus = Number(job.moderationStatus);
 
@@ -888,7 +888,7 @@ async function loadEditPage() {
         hasLoadedEditData = true;
         updateSubmitState();
     } catch {
-        showToast('Khong tai duoc thong tin bai dang', 'error');
+        showToast('Không tải được thông tin bài đăng', 'error');
         hasLoadedEditData = false;
         updateSubmitState();
     }
@@ -918,7 +918,7 @@ document.getElementById('editPageForm')?.addEventListener('submit', async (event
     event.preventDefault();
     if (!hasLoadedEditData) return;
     if (!isFormDirty()) {
-        showToast('Chua co thay doi de luu.', 'info');
+        showToast('Chưa co thay doi ?? luu.', 'info');
         updateSubmitState();
         return;
     }
@@ -927,7 +927,7 @@ document.getElementById('editPageForm')?.addEventListener('submit', async (event
     if (validSkills.length !== editSkills.length) {
         editSkills = validSkills;
         renderSkillCollection();
-        showToast('Mot so ky nang cu khong con hoat dong, he thong da bo qua de ban luu duoc bai dang.', 'warning');
+        showToast('Một số kỹ năng cũ không còn hoạt động, hệ thống đã bỏ qua để bạn lưu được bài đăng.', 'warning');
     }
 
     const payload = {
@@ -978,7 +978,7 @@ document.getElementById('editPageForm')?.addEventListener('submit', async (event
             json = await res.json();
         } else {
             const text = await res.text();
-            json = { success: false, message: text || 'Phan hoi khong hop le tu server.' };
+            json = { success: false, message: text || 'Phan hoi không hop le tu server.' };
         }
 
         const payloadResult = json?.raw && typeof json.raw === 'object' ? json.raw : json;
@@ -987,21 +987,21 @@ document.getElementById('editPageForm')?.addEventListener('submit', async (event
             const firstError = json?.errors && typeof json.errors === 'object'
                 ? Object.values(json.errors).flat().find(Boolean)
                 : null;
-            showToast(firstError || payloadResult?.message || json?.message || 'Cap nhat that bai', 'error');
+            showToast(firstError || payloadResult?.message || json?.message || 'Cập nhật thất bại', 'error');
             return;
         }
 
         const successMessage = currentModerationStatus === 0
-            ? 'Da cap nhat bai dang dang cho duyet.'
-            : (payloadResult?.message || 'Cap nhat thanh cong. Bai dang da duoc gui moderator duyet lai');
+            ? 'Da cập nhật bai Đang Đang chờ duyệt.'
+            : (payloadResult?.message || 'Cập nhật thành công. Bài đăng đã được gửi moderator duyệt lại');
         pushHistoryToast(successMessage, 'success');
         shouldKeepDisabledForRedirect = true;
         redirectToHistory(JOB_ID);
     } catch (error) {
         if (error?.name === 'AbortError') {
-            showToast('Het thoi gian cho luu thay doi. Vui long thu lai.', 'error');
+            showToast('Het thời gian cho luu thay doi. Vui lòng thử lại.', 'error');
         } else {
-            showToast('Loi ket noi server', 'error');
+            showToast('Lỗi kết nối server', 'error');
         }
     } finally {
         if (!shouldKeepDisabledForRedirect) {

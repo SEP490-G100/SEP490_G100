@@ -1,7 +1,7 @@
 @model WebSite.Models.Verification.VerificationRequestDetailDto
 @{
     Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
-    ViewData["Title"] = "Chi tiết hồ sơ";
+    ViewData["Title"] = "Chi tiết profile";
 
     var avatarColors = new[] { "#F97316", "#3B82F6", "#8B5CF6", "#10B981", "#F59E0B", "#EF4444", "#EC4899", "#6366F1" };
     var avatarBg = avatarColors[Math.Abs(Model.NannyUserId.GetHashCode()) % avatarColors.Length];
@@ -89,7 +89,7 @@
         <div class="content-card p-5 fade-in-up">
             <div class="flex items-center gap-2 mb-4">
                 <span class="material-icons-round text-orange-500 text-lg">person</span>
-                <h2 class="font-bold text-gray-900">Tổng quan hồ sơ</h2>
+                <h2 class="font-bold text-gray-900">Tổng quan profile</h2>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-3 text-sm">

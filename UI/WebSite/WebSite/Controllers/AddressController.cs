@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace WebSite.Controllers;
 
 /// <summary>
-/// Proxy gợi ý địa chỉ (gọi Backend API) để trình duyệt gọi cùng origin.
+/// Proxy gá»£i Ã½ Ä‘á»‹a chá»‰ (gá»i Backend API) Ä‘á»ƒ trÃ¬nh duyá»‡t gá»i cÃ¹ng origin.
 /// </summary>
 [Authorize]
 [Route("[controller]")]
@@ -29,7 +29,7 @@ public class AddressController : Controller
     }
 
     /// <summary>
-    /// Gợi ý địa điểm tại Việt Nam. Trả về JSON: [{ displayName, latitude, longitude, city, district, ward }].
+    /// Gá»£i Ã½ Ä‘á»‹a Ä‘iá»ƒm táº¡i Viá»‡t Nam. Tráº£ vá» JSON: [{ displayName, latitude, longitude, city, district, ward }].
     /// </summary>
     [AllowAnonymous]
     [HttpGet("Suggest")]
@@ -132,3 +132,4 @@ public class AddressController : Controller
         return Content(json, "application/json", System.Text.Encoding.UTF8);
     }
 }
+

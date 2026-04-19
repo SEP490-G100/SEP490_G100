@@ -1,4 +1,4 @@
-﻿
+
 (function () {
     const HOME_LOADER_SESSION_KEY = 'nm:home-loader-shown';
 
@@ -24,7 +24,7 @@
     const steps = [
         { pct: 15, msg: 'Đang khởi động...', tip: '💡 Mẹo: <span>Tìm Nanny đã xác minh gần bạn chỉ trong 30 giây.</span>' },
         { pct: 35, msg: 'Kết nối cơ sở dữ liệu...', tip: '🌟 <span>Hơn 10,000 gia đình đã tin dùng NannyMatch!</span>' },
-        { pct: 55, msg: 'Tải hồ sơ người trông trẻ...', tip: '🔒 <span>Tất cả Nanny đều được kiểm tra lý lịch kỹ càng.</span>' },
+        { pct: 55, msg: 'Tải profile người trông trẻ...', tip: '🔒 <span>Tất cả Nanny đều được kiểm tra lý lịch kỹ càng.</span>' },
         { pct: 72, msg: 'Đồng bộ lịch trình...', tip: '📅 <span>Đặt lịch linh hoạt: theo giờ, ngày hoặc dài hạn.</span>' },
         { pct: 88, msg: 'Khởi tạo giao diện...', tip: '💳 <span>Thanh toán an toàn, hoàn tiền nếu không hài lòng.</span>' },
         { pct: 100, msg: 'Hoàn tất! Chào mừng bạn 🎉', tip: '🏠 <span>NannyMatch — Yên tâm giao con, an lòng cha mẹ.</span>' },
@@ -56,7 +56,7 @@
             // Giảm từ 300-700ms xuống 150-350ms → nhanh hơn ~2x
             setTimeout(advance, Math.random() * 200 + 150);
         } else {
-            // Hoàn tất → Fade Out nhanh hơn
+            // Hoàn tất → Fađ Out nhanh hơn
             setTimeout(function () {
                 loader.classList.add('exit-fade');
                 setTimeout(function () {

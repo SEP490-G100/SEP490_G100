@@ -175,7 +175,7 @@
                         <div class="field-group sm:col-span-2">
                             <label class="field-label">Bài đăng</label>
                             <div class="field-readonly flex-wrap justify-between">
-                                <span class="text-sm text-gray-700">@(string.IsNullOrWhiteSpace(detail.JobPostingTitle) ? "Bai dang" : detail.JobPostingTitle)</span>
+                                <span class="text-sm text-gray-700">@(string.IsNullOrWhiteSpace(detail.JobPostingTitle) ? "Bài đăng" : detail.JobPostingTitle)</span>
                                 <a href="@Url.Action("ViewComplainedJobPostingDetail", "ModeratorComplain", new { jobPostingId = detail.ReportedEntityId, complaintId = detail.Id })"
                                    class="inline-flex items-center gap-1 rounded-lg border border-orange-200 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-700 hover:bg-orange-100 transition-colors">
                                     <span class="material-icons-round text-sm">visibility</span>

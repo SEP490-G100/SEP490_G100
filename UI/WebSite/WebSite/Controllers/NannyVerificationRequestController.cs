@@ -1,4 +1,4 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Azure;
@@ -94,7 +94,7 @@ public class NannyVerificationRequestController : Controller
             return RedirectToAction(nameof(NannyGetVerificationRequestList), new
             {
                 toastType = "error",
-                toastMessage = "Khong tim thay chi tiet yeu cau xac minh."
+                toastMessage = "Không t?m th?y chi tiết yêu cầu xác minh."
             });
         }
 
@@ -105,7 +105,7 @@ public class NannyVerificationRequestController : Controller
             return RedirectToAction(nameof(NannyGetVerificationRequestList), new
             {
                 toastType = "error",
-                toastMessage = apiResult?.Message ?? "Khong tim thay chi tiet yeu cau xac minh."
+                toastMessage = apiResult?.Message ?? "Không t?m th?y chi tiết yêu cầu xác minh."
             });
         }
 
@@ -123,7 +123,7 @@ public class NannyVerificationRequestController : Controller
             return RedirectToAction("Index", "Profile", new
             {
                 toastType = "error",
-                toastMessage = "Vui long cap nhat ho so ca nhan truoc khi gui yeu cau."
+                toastMessage = "Vui lòng cập nhật profile cá nhân truoc khi gui yêu cầu."
             });
         }
 
@@ -139,7 +139,7 @@ public class NannyVerificationRequestController : Controller
             return RedirectToAction("Index", "Profile", new
             {
                 toastType = "error",
-                toastMessage = "Vui long cap nhat ho so ca nhan truoc khi gui yeu cau."
+                toastMessage = "Vui lòng cập nhật profile cá nhân truoc khi gui yêu cầu."
             });
         }
 
@@ -186,7 +186,7 @@ public class NannyVerificationRequestController : Controller
             return RedirectToAction(nameof(NannySubmitVerificationRequest), new
             {
                 toastType = "error",
-                toastMessage = "Khong the upload tai lieu len Azure Blob Storage. Vui long thu lai sau."
+                toastMessage = "Không th? upload tai lieu len Azure Blob Storage. Vui lòng thử lại sau."
             });
         }
 
@@ -205,7 +205,7 @@ public class NannyVerificationRequestController : Controller
             return RedirectToAction(nameof(NannySubmitVerificationRequest), new
             {
                 toastType = "error",
-                toastMessage = "Loi he thong tu server. Vui long thu lai sau."
+                toastMessage = "L?i he thong tu server. Vui lòng thử lại sau."
             });
         }
 
@@ -214,22 +214,22 @@ public class NannyVerificationRequestController : Controller
             return RedirectToAction(nameof(NannySubmitVerificationRequest), new
             {
                 toastType = "error",
-                toastMessage = result?.Message ?? "Gui yeu cau that bai."
+                toastMessage = result?.Message ?? "Gui yêu cầu thất bại."
             });
         }
 
         await _notificationHub.Clients.Group("role:Moderator").SendAsync("notification:new", new
         {
             type = "verification-request-submitted",
-            title = "Co yeu cau xac minh moi",
-            message = "Mot nanny vua gui yeu cau xac minh moi.",
+            title = "Co yêu cầu xác minh mới",
+            message = "Mot nanny vua gui yêu cầu xác minh mới.",
             toastType = "info"
         });
 
         return RedirectToAction(nameof(NannyGetVerificationRequestList), new
         {
             toastType = "success",
-            toastMessage = "Ban da gui yeu cau xac minh thanh cong."
+            toastMessage = "Ban da gui yêu cầu xác minh thành công."
         });
     }
 
@@ -280,13 +280,13 @@ public class NannyVerificationRequestController : Controller
         {
             if (!IsSupportedDocument(file))
             {
-                ModelState.AddModelError(fieldName, "Ban phai upload file dinh dang anh hoac pdf.");
+                ModelState.AddModelError(fieldName, "Ban phai upload file dinh ?ang anh hoac pdf.");
                 return;
             }
 
             if (file.Length > MaxDocumentSizeInBytes)
             {
-                ModelState.AddModelError(fieldName, "Ban chi duoc upload file kich thuoc toi da 5mb.");
+                ModelState.AddModelError(fieldName, "Ban chi được upload file kich thuoc toi da 5mb.");
                 return;
             }
         }
@@ -334,3 +334,4 @@ public class NannyVerificationRequestController : Controller
         }
     }
 }
+

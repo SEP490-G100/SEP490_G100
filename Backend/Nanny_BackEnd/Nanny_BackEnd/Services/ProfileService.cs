@@ -335,7 +335,7 @@ public class ProfileService
         if (dob > today.AddYears(-age))
             age--;
 
-        return age > 0 ? age : null;
+        return age >= 0 ? age : null;
     }
 
     public async Task<PersonalProfileDto> UpdatePersonalInfoAsync(Guid userId, UpdatePersonalInfoRequest request)

@@ -1,4 +1,4 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Text.Json;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.AspNetCore.Authorization;
@@ -101,7 +101,7 @@ public class NannyController : Controller
     public async Task<IActionResult> ToggleFavorite(Guid id)
     {
         if (!IsParentRole())
-            return StatusCode(403, new { success = false, message = "Ban khong co quyen yeu thich nanny." });
+            return StatusCode(403, new { success = false, message = "Ban không co quyen yêu thích nanny." });
 
         SetAuthHeader();
         try
@@ -115,8 +115,8 @@ public class NannyController : Controller
             {
                 await _notificationHub.Clients.User(nannyUserId.ToString()).SendAsync("notification:new", new
                 {
-                    title = "Ho so cua ban vua duoc yeu thich",
-                    message = "Co mot phu huynh vua tim ho so cua ban.",
+                    title = "Profile cua ban vua được yêu thích",
+                    message = "Co mot phu huynh vua tim profile cua ban.",
                     type = "nanny-profile-favorited",
                     relatedId = id
                 });
@@ -145,7 +145,7 @@ public class NannyController : Controller
     public async Task<IActionResult> FavoriteData([FromQuery] int page = 1, [FromQuery] int pageSize = 12)
     {
         if (!IsParentRole())
-            return StatusCode(403, new { success = false, message = "Ban khong co quyen xem danh sach nanny yeu thich." });
+            return StatusCode(403, new { success = false, message = "Ban không co quyen xem danh s?ch nanny yêu thích." });
 
         page = page < 1 ? 1 : page;
         pageSize = pageSize < 1 ? 12 : Math.Min(pageSize, 50);
@@ -168,10 +168,10 @@ public class NannyController : Controller
     public async Task<IActionResult> SendContactRequest([FromBody] SendContactRequestViewModel request)
     {
         if (!IsParentRole())
-            return StatusCode(403, new { success = false, message = "Ban khong co quyen gui request contact." });
+            return StatusCode(403, new { success = false, message = "Ban không co quyen gui yêu cầu liên hệ." });
 
         if (request == null || request.NannyProfileId == Guid.Empty)
-            return BadRequest(new { success = false, message = "Du lieu request contact khong hop le." });
+            return BadRequest(new { success = false, message = "D? li?u yêu cầu liên hệ không hop le." });
 
         SetAuthHeader();
         try
@@ -188,8 +188,8 @@ public class NannyController : Controller
                 {
                     await _notificationHub.Clients.User(nannyUserId.ToString()).SendAsync("notification:new", new
                     {
-                        title = "Ban vua nhan duoc request contact",
-                        message = "Co phu huynh vua gui request contact cho ho so cua ban.",
+                        title = "Ban vua nhan được yêu cầu liên hệ",
+                        message = "Co phu huynh vua gui yêu cầu liên hệ cho profile cua ban.",
                         type = "contact-request-received",
                         relatedId = requestId
                     });
@@ -199,8 +199,8 @@ public class NannyController : Controller
                 {
                     await _notificationHub.Clients.User(parentUserId.ToString()).SendAsync("notification:new", new
                     {
-                        title = "Ban da gui request contact",
-                        message = "Request contact da duoc gui thanh cong.",
+                        title = "Ban da gui yêu cầu liên hệ",
+                        message = "Yêu cầu liên hệ da được gui thành công.",
                         type = "contact-request-submitted",
                         relatedId = requestId
                     });
@@ -235,7 +235,7 @@ public class NannyController : Controller
     public async Task<IActionResult> SentContactRequestsData([FromQuery] int? status = null)
     {
         if (!IsParentRole())
-            return StatusCode(403, new { success = false, message = "Ban khong co quyen xem lich su request contact." });
+            return StatusCode(403, new { success = false, message = "Ban không co quyen xem lich su yêu cầu liên hệ." });
 
         SetAuthHeader();
         try
@@ -261,10 +261,10 @@ public class NannyController : Controller
     public async Task<IActionResult> ContactRequestDetailData(Guid requestId)
     {
         if (!IsParentRole())
-            return StatusCode(403, new { success = false, message = "Ban khong co quyen xem chi tiet request contact." });
+            return StatusCode(403, new { success = false, message = "Ban không co quyen xem chi tiết yêu cầu liên hệ." });
 
         if (requestId == Guid.Empty)
-            return BadRequest(new { success = false, message = "Request id khong hop le." });
+            return BadRequest(new { success = false, message = "Request id không hop le." });
 
         SetAuthHeader();
         try
@@ -299,7 +299,7 @@ public class NannyController : Controller
     public async Task<IActionResult> ReceivedContactRequestsData([FromQuery] int? status = null)
     {
         if (!IsNannyRole())
-            return StatusCode(403, new { success = false, message = "Ban khong co quyen xem request contact da nhan." });
+            return StatusCode(403, new { success = false, message = "Ban không co quyen xem yêu cầu liên hệ da nhan." });
 
         SetAuthHeader();
         try
@@ -325,10 +325,10 @@ public class NannyController : Controller
     public async Task<IActionResult> ReceivedContactRequestDetailData(Guid requestId)
     {
         if (!IsNannyRole())
-            return StatusCode(403, new { success = false, message = "Ban khong co quyen xem chi tiet request contact." });
+            return StatusCode(403, new { success = false, message = "Ban không co quyen xem chi tiết yêu cầu liên hệ." });
 
         if (requestId == Guid.Empty)
-            return BadRequest(new { success = false, message = "Request id khong hop le." });
+            return BadRequest(new { success = false, message = "Request id không hop le." });
 
         SetAuthHeader();
         try
@@ -353,10 +353,10 @@ public class NannyController : Controller
     public async Task<IActionResult> ReviewReceivedContactRequest(Guid requestId, [FromBody] ReviewContactRequestViewModel request)
     {
         if (!IsNannyRole())
-            return StatusCode(403, new { success = false, message = "Ban khong co quyen xu ly request contact." });
+            return StatusCode(403, new { success = false, message = "Ban không co quyen xu ly yêu cầu liên hệ." });
 
         if (requestId == Guid.Empty || request == null)
-            return BadRequest(new { success = false, message = "Du lieu xu ly request contact khong hop le." });
+            return BadRequest(new { success = false, message = "D? li?u xu ly yêu cầu liên hệ không hop le." });
 
         SetAuthHeader();
         try
@@ -376,10 +376,10 @@ public class NannyController : Controller
                     var approved = status == 1;
                     await _notificationHub.Clients.User(parentUserId.ToString()).SendAsync("notification:new", new
                     {
-                        title = approved ? "Request contact da duoc chap nhan" : "Request contact bi tu choi",
+                        title = approved ? "Yêu cầu liên hệ da được chap nhan" : "Yêu cầu liên hệ bi từ chối",
                         message = approved
-                            ? "Nanny da chap nhan request contact cua ban."
-                            : "Nanny da tu choi request contact cua ban.",
+                            ? "Nanny da chap nhan yêu cầu liên hệ cua ban."
+                            : "Nanny da từ chối yêu cầu liên hệ cua ban.",
                         type = approved ? "contact-request-accepted" : "contact-request-rejected",
                         relatedId = parsedRequestId == Guid.Empty ? requestId : parsedRequestId
                     });
@@ -414,7 +414,7 @@ public class NannyController : Controller
                      model.ExpectedSalaryMax,
                      nameof(model.ExpectedSalaryMin),
                      nameof(model.ExpectedSalaryMax),
-                     "Muc luong toi thieu",
+                     "Muc luong toi thiếu",
                      "Muc luong toi da"))
         {
             var memberNames = error.MemberNames?.Any() == true
@@ -422,7 +422,7 @@ public class NannyController : Controller
                 : new[] { string.Empty };
 
             foreach (var memberName in memberNames)
-                ModelState.AddModelError(memberName, error.ErrorMessage ?? "Luong khong hop le.");
+                ModelState.AddModelError(memberName, error.ErrorMessage ?? "Luong không hop le.");
         }
 
         if (!ModelState.IsValid) return View(model);
@@ -442,7 +442,7 @@ public class NannyController : Controller
         var apiResult = JsonSerializer.Deserialize<ApiResultDto>(json, JsonOpts);
         if (apiResult == null || !apiResult.Success)
         {
-            ModelState.AddModelError("", apiResult?.Message ?? "Cập nhật thất bại.");
+            ModelState.AddModelError("", apiResult?.Message ?? "Cáº­p nháº­t tháº¥t báº¡i.");
             return View(model);
         }
 
@@ -489,7 +489,7 @@ public class NannyController : Controller
         var apiResult = JsonSerializer.Deserialize<ApiResultDto>(json, JsonOpts);
         if (apiResult == null || !apiResult.Success)
         {
-            ModelState.AddModelError("", apiResult?.Message ?? "Cập nhật thất bại.");
+            ModelState.AddModelError("", apiResult?.Message ?? "Cáº­p nháº­t tháº¥t báº¡i.");
             return View(model);
         }
 
@@ -523,7 +523,7 @@ public class NannyController : Controller
         var apiResult = JsonSerializer.Deserialize<ApiResultDto>(json, JsonOpts);
         if (apiResult == null || !apiResult.Success)
         {
-            ModelState.AddModelError("", apiResult?.Message ?? "Cập nhật thất bại.");
+            ModelState.AddModelError("", apiResult?.Message ?? "Cáº­p nháº­t tháº¥t báº¡i.");
             return View(model);
         }
 
@@ -709,5 +709,6 @@ public class NannyController : Controller
         public string? ResponseMessage { get; set; }
     }
 }
+
 
 

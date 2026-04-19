@@ -17,7 +17,7 @@
     <div class="flex h-screen overflow-hidden">
 
         <!-- ===== SIDEBAR ===== -->
-        <aside id="sidebar" class="mod-sidebar fixed inset-y-0 left-0 z-40 flex flex-col bg-gradient-to-b from-gray-900 via-gray-900 to-gray-950 text-white transition-all duration-300 overflow-hidden"
+        <asiđ id="sidebar" class="mod-sidebar fixed inset-y-0 left-0 z-40 flex flex-col bg-gradient-to-b from-gray-900 via-gray-900 to-gray-950 text-white transition-all duration-300 overflow-hidden"
                style="width: 260px;">
 
             <!-- Brand -->
@@ -363,11 +363,11 @@
 
                 switch (type) {
                     case 'verification-request-submitted':
-                        return { message: 'Co yeu cau xac minh moi dang cho duyet.', type: 'info' };
+                        return { message: 'Co yư cư xác minh mới Đang chờ duyệt.', type: 'info' };
                     case 'job-posting-review-required':
-                        return { message: 'Co bai dang moi dang cho moderator duyet.', type: 'info' };
+                        return { message: 'Có bài đăng mới đang chờ moderator duyệt.', type: 'info' };
                     case 'complain-submitted':
-                        return { message: 'Co bao cao moi can xu ly.', type: 'warning' };
+                        return { message: 'Co bao cao mới can xu ly.', type: 'warning' };
                     case 'system-warning':
                         return { message: 'Co canh bao he thong can xu ly.', type: 'warning' };
                     default:

@@ -117,12 +117,12 @@ public class ModeratorFaqController : Controller
                 });
             }
 
-            ModelState.AddModelError(nameof(model.Question), result?.Message ?? "Tao FAQ that bai.");
+            ModelState.AddModelError(nameof(model.Question), result?.Message ?? "Tao FAQ thất bại.");
             return View("~/Views/Moderator/FAQ/CreateFAQ.cshtml", model);
         }
         catch (Exception ex)
         {
-            ModelState.AddModelError(nameof(model.Question), $"Loi ket noi: {ex.Message}");
+            ModelState.AddModelError(nameof(model.Question), $"L?i kết nối: {ex.Message}");
             return View("~/Views/Moderator/FAQ/CreateFAQ.cshtml", model);
         }
     }
@@ -196,11 +196,11 @@ public class ModeratorFaqController : Controller
                 });
             }
 
-            ModelState.AddModelError(nameof(model.Question), result?.Message ?? "Cap nhat FAQ that bai.");
+            ModelState.AddModelError(nameof(model.Question), result?.Message ?? "C?p nh?t FAQ thất bại.");
         }
         catch (Exception ex)
         {
-            ModelState.AddModelError(nameof(model.Question), $"Loi ket noi: {ex.Message}");
+            ModelState.AddModelError(nameof(model.Question), $"L?i kết nối: {ex.Message}");
         }
 
         var failedVm = await BuildFaqDetailViewModelForInvalidPost(id, model);
@@ -225,7 +225,7 @@ public class ModeratorFaqController : Controller
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = $"Loi ket noi: {ex.Message}" });
+            return Json(new { success = false, message = $"L?i kết nối: {ex.Message}" });
         }
     }
 

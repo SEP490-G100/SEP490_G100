@@ -1,4 +1,4 @@
-namespace WebSite.Models.Profile
+﻿namespace WebSite.Models.Profile
 {
     public class ParentOnboardingWizardViewModel
     {
@@ -30,3 +30,4 @@ namespace WebSite.Models.Profile
         public string? ChildNotes { get; set; }
     }
 }
+
