@@ -28,6 +28,7 @@ public class UpdateJobPostingRequest
     public int? NumberOfChildren { get; set; }
 
     public Guid? ChildProfileId { get; set; }
+    public List<Guid> ChildProfileIds { get; set; } = [];
 
     [StringLength(300)]
     public string? Location { get; set; }

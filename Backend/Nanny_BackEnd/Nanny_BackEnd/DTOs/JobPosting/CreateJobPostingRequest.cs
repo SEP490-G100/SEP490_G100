@@ -28,6 +28,7 @@ public class CreateJobPostingRequest
     public int? NumberOfChildren { get; set; }
 
     public Guid? ChildProfileId { get; set; }
+    public List<Guid> ChildProfileIds { get; set; } = [];
 
     [StringLength(300, ErrorMessage = "Dia chi toi da 300 ky tu.")]
     public string? Location { get; set; }

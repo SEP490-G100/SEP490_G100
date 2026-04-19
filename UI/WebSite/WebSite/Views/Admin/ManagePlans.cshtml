@@ -1,15 +1,15 @@
 @model List<WebSite.Models.Admin.AdminPlanDto>
 @{
     Layout = "~/Views/Admin/_AdminLayout.cshtml";
-    ViewData["Title"] = "Manage Subscription Plans";
+    ViewData["Title"] = "Quản Lý Gói Dịch Vụ";
 }
 
 <!-- PAGE HEADER -->
 <div class="mb-7 fade-in-up flex flex-col sm:flex-row sm:items-end justify-between gap-4">
     <div>
-        <span class="section-label">Subscription</span>
+        <span class="section-label">Gói Dịch Vụ</span>
         <h1 class="page-title mt-2">
-            Manage <span class="gradient-text">Plans</span>
+            Quản Lý <span class="gradient-text">Gói</span>
         </h1>
         <p class="page-subtitle">Tạo, chỉnh sửa và xóa các gói subscription.</p>
     </div>
@@ -56,10 +56,10 @@
                         <th class="px-5 py-3 text-left">Tên gói</th>
                         <th class="px-5 py-3 text-left">Giá</th>
                         <th class="px-5 py-3 text-left">Thời hạn</th>
-                        <th class="px-5 py-3 text-left">Features</th>
-                        <th class="px-5 py-3 text-center">User đang dùng</th>
-                        <th class="px-5 py-3 text-center">Trạng thái</th>
-                        <th class="px-5 py-3 text-center">Thao tác</th>
+                        <th class="px-5 py-3 text-left">Tính Năng</th>
+                        <th class="px-5 py-3 text-center">Người Dùng</th>
+                        <th class="px-5 py-3 text-center">Trạng Thái</th>
+                        <th class="px-5 py-3 text-center">Thao Tác</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-50">
@@ -97,11 +97,11 @@
                             <td class="px-5 py-3.5 text-center">
                                 @if (plan.IsActive)
                                 {
-                                    <span class="badge badge-active">Active</span>
+                                    <span class="badge badge-active">Hoạt Động</span>
                                 }
                                 else
                                 {
-                                    <span class="badge badge-inactive">Inactive</span>
+                                    <span class="badge badge-inactive">Vô Hiệu Hóa</span>
                                 }
                             </td>
                             <td class="px-5 py-3.5 text-center">
@@ -183,7 +183,7 @@
                     </div>
                 </div>
                 <div>
-                    <label class="text-sm font-semibold text-gray-600">Features (mỗi dòng 1 tính năng)</label>
+                    <label class="text-sm font-semibold text-gray-600">Tính Năng (mỗi dòng một tính năng)</label>
                     <textarea id="editFeatures" name="FeaturesRaw" rows="4"
                               class="mt-1 w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 resize-none"></textarea>
                 </div>
@@ -192,7 +192,7 @@
                     <label for="editIsActive" class="text-sm font-semibold text-gray-600">Kích hoạt (hiển thị cho người dùng)</label>
                 </div>
                 <div>
-                    <label class="text-sm font-semibold text-gray-600">Sort Order</label>
+                    <label class="text-sm font-semibold text-gray-600">Thứ Tự Hiển Thị</label>
                     <input id="editSortOrder" name="SortOrder" type="number" min="0" class="mt-1 w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
                 </div>
             </div>
@@ -231,7 +231,7 @@
             </div>
         </div>
         <div>
-            <label class="text-sm font-semibold text-gray-600">Features (mỗi dòng 1 tính năng)</label>
+            <label class="text-sm font-semibold text-gray-600">Tính Năng (mỗi dòng một tính năng)</label>
             <textarea name="FeaturesRaw" rows="4"
                       class="mt-1 w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 resize-none"
                       placeholder="Badge noi bat&#10;Uu tien tim kiem&#10;Dang toi da 5 bai/thang"></textarea>

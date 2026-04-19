@@ -106,7 +106,7 @@ public class ProfileController : Controller
             var token = GetTokenFromSession();
             if (string.IsNullOrEmpty(token))
             {
-                ViewBag.Warning = "PhiÃƒÂªn Ã„â€˜Ã„Æ’ng nhÃ¡ÂºÂ­p Ã„â€˜ÃƒÂ£ hÃ¡ÂºÂ¿t hÃ¡ÂºÂ¡n, Ã„â€˜ang hiÃ¡Â»Æ’n thÃ¡Â»â€¹ thÃƒÂ´ng tin cÃ†Â¡ bÃ¡ÂºÂ£n tÃ¡Â»Â« cookie.";
+                ViewBag.Warning = "Phiên đăng nhập đã hết hạn, đang hiển thị thông tin cơ bản từ cookie.";
                 return View(BuildProfileFromClaims());
             }
 
@@ -115,7 +115,7 @@ public class ProfileController : Controller
             var response = await _http.GetAsync("/api/profile");
             if (!response.IsSuccessStatusCode)
             {
-                ViewBag.Warning = "Could not load profile from API, showing basic info from cookie.";
+                ViewBag.Warning = "Không thể tải hồ sơ từ API, đang hiển thị thông tin cơ bản từ cookie.";
                 return View(BuildProfileFromClaims());
             }
 
@@ -124,7 +124,7 @@ public class ProfileController : Controller
 
             if (apiResult == null || !apiResult.Success)
             {
-                ViewBag.Warning = "Could not load full profile, showing basic info from cookie.";
+                ViewBag.Warning = "Không thể tải toàn bộ hồ sơ, đang hiển thị thông tin cơ bản từ cookie.";
                 return View(BuildProfileFromClaims());
             }
 
@@ -141,7 +141,7 @@ public class ProfileController : Controller
         }
         catch (Exception ex)
         {
-            TempData["Error"] = "Error loading profile: " + ex.Message;
+            TempData["Error"] = "Lỗi tải thông tin: " + ex.Message;
             return View(BuildProfileFromClaims());
         }
     }
@@ -163,7 +163,7 @@ public class ProfileController : Controller
             var token = GetTokenFromSession();
             if (string.IsNullOrEmpty(token))
             {
-                TempData["Error"] = "Session expired. Please log in again.";
+                TempData["Error"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
                 return RedirectToAction("Login", "Auth");
             }
 
@@ -312,7 +312,7 @@ public class ProfileController : Controller
             var token = GetTokenFromSession();
             if (string.IsNullOrEmpty(token))
             {
-                TempData["Error"] = "Session expired. Please log in again.";
+                TempData["Error"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
                 return RedirectToAction("Login", "Auth");
             }
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -323,9 +323,16 @@ public class ProfileController : Controller
 
             var content = await response.Content.ReadAsStringAsync();
             var apiResult = JsonSerializer.Deserialize<ApiResultDto>(content, JsonOpts);
-
-            var profile = JsonSerializer.Deserialize<EditPersonalInfoViewModel>(
-                JsonSerializer.Serialize(apiResult?.Data), JsonOpts);
+            EditPersonalInfoViewModel? profile = null;
+            if (apiResult?.Success == true && apiResult.Data is JsonElement profileData && profileData.ValueKind == JsonValueKind.Object)
+            {
+                profile = JsonSerializer.Deserialize<EditPersonalInfoViewModel>(profileData.GetRawText(), JsonOpts);
+            }
+            else if (apiResult?.Success == true && apiResult.Data != null)
+            {
+                profile = JsonSerializer.Deserialize<EditPersonalInfoViewModel>(
+                    JsonSerializer.Serialize(apiResult.Data), JsonOpts);
+            }
 
             if (profile != null)
                 profile.AvatarUrl = NormalizeAvatarUrl(profile.AvatarUrl);
@@ -346,7 +353,7 @@ public class ProfileController : Controller
         }
         catch (Exception ex)
         {
-            TempData["Error"] = "Error loading profile: " + ex.Message;
+            TempData["Error"] = "Lỗi tải thông tin: " + ex.Message;
             return RedirectToAction("Index");
         }
     }
@@ -381,13 +388,18 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
             ModelState.AddModelError(nameof(model.AvatarFile), "Chi cho phep anh .jpg, .jpeg hoac .png.");
     }
 
+    var today = DateOnly.FromDateTime(DateTime.Today);
+    if (model.DateOfBirth.HasValue && model.DateOfBirth.Value > today)
+    {
+        ModelState.AddModelError(nameof(model.DateOfBirth), "Ngay sinh khong duoc lon hon ngay hien tai.");
+    }
+
     if (User.IsInRole("Nanny") && !model.DateOfBirth.HasValue)
     {
         ModelState.AddModelError(nameof(model.DateOfBirth), "Vui long chon ngay sinh.");
     }
     else if (User.IsInRole("Nanny") && model.DateOfBirth.HasValue)
     {
-        var today = DateOnly.FromDateTime(DateTime.Today);
         var age = today.Year - model.DateOfBirth.Value.Year;
         if (model.DateOfBirth.Value > today.AddYears(-age)) age--;
         if (age <= 30)
@@ -464,12 +476,12 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
             return View(model);
         }
 
-        TempData["Success"] = "Cap nhat thong tin thanh cong.";
+        TempData["Success"] = "Cập nhật thông tin thành công.";
         return RedirectToAction("Edit");
     }
     catch (Exception ex)
     {
-        TempData["Error"] = "Loi khi cap nhat: " + ex.Message;
+        TempData["Error"] = "Lỗi khi cập nhật: " + ex.Message;
         await PopulateAvailableSkillsAsync(model);
         return View(model);
     }
@@ -498,7 +510,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
         var apiResult = JsonSerializer.Deserialize<ApiResultDto>(content, JsonOpts);
         if (apiResult == null || !apiResult.Success)
         {
-            TempData["Error"] = apiResult?.Message ?? "KhÃ´ng thá»ƒ thÃªm chá»©ng chá»‰.";
+            TempData["Error"] = apiResult?.Message ?? "Không thể thêm chứng chỉ.";
             return RedirectToAction(nameof(Verify));
         }
 
@@ -515,7 +527,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
             var token = GetTokenFromSession();
             if (string.IsNullOrEmpty(token))
             {
-                TempData["Error"] = "Session expired. Please log in again.";
+                TempData["Error"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
                 return RedirectToAction("Login", "Auth");
             }
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -523,7 +535,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
             var response = await _http.GetAsync("/api/profile/children");
             if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
             {
-                TempData["Error"] = "BÃ¡ÂºÂ¡n khÃƒÂ´ng cÃƒÂ³ quyÃ¡Â»Ân xem danh sÃƒÂ¡ch con em.";
+                TempData["Error"] = "Bạn không có quyền xem danh sách trẻ em.";
                 return RedirectToAction("Index");
             }
 
@@ -539,11 +551,32 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
                 children = JsonSerializer.Deserialize<List<ChildProfileViewModel>>(element.GetRawText(), JsonOpts) ?? new();
             }
 
+            // Profile may store numberOfChildren even when detailed child profiles are not created yet.
+            // We expose both numbers so UI can avoid showing an inconsistent "0" count.
+            int declaredChildrenCount = 0;
+            var profileResponse = await _http.GetAsync("/api/profile");
+            if (profileResponse.IsSuccessStatusCode)
+            {
+                var profileContent = await profileResponse.Content.ReadAsStringAsync();
+                var profileResult = JsonSerializer.Deserialize<ApiResultDto>(profileContent, JsonOpts);
+                if (profileResult?.Data is JsonElement profileData &&
+                    profileData.ValueKind == JsonValueKind.Object &&
+                    profileData.TryGetProperty("numberOfChildren", out var numberOfChildrenElement) &&
+                    numberOfChildrenElement.ValueKind == JsonValueKind.Number &&
+                    numberOfChildrenElement.TryGetInt32(out var parsedCount))
+                {
+                    declaredChildrenCount = Math.Max(parsedCount, 0);
+                }
+            }
+
+            ViewBag.DeclaredChildrenCount = declaredChildrenCount;
+            ViewBag.DisplayChildrenCount = Math.Max(children.Count, declaredChildrenCount);
+
             return View(children);
         }
         catch (Exception ex)
         {
-            TempData["Error"] = "LÃ¡Â»â€”i khi tÃ¡ÂºÂ£i danh sÃƒÂ¡ch con em: " + ex.Message;
+            TempData["Error"] = "Lỗi khi tải danh sách trẻ em: " + ex.Message;
             return RedirectToAction("Index");
         }
     }
@@ -567,7 +600,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
             var token = GetTokenFromSession();
             if (string.IsNullOrEmpty(token))
             {
-                TempData["Error"] = "Session expired. Please log in again.";
+                TempData["Error"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
                 return RedirectToAction("Login", "Auth");
             }
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -578,16 +611,16 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
 
             if (apiResult == null || !apiResult.Success)
             {
-                ModelState.AddModelError("", apiResult?.Message ?? "ThÃƒÂªm con em thÃ¡ÂºÂ¥t bÃ¡ÂºÂ¡i.");
+                ModelState.AddModelError("", apiResult?.Message ?? "Thêm trẻ em thất bại.");
                 return View(model);
             }
 
-            TempData["Success"] = "ThÃƒÂªm con em thÃƒÂ nh cÃƒÂ´ng.";
+            TempData["Success"] = "Thêm trẻ em thành công.";
             return RedirectToAction("Children");
         }
         catch (Exception ex)
         {
-            TempData["Error"] = "LÃ¡Â»â€”i khi thÃƒÂªm con em: " + ex.Message;
+            TempData["Error"] = "Lỗi khi thêm trẻ em: " + ex.Message;
             return View(model);
         }
     }
@@ -601,7 +634,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
             var token = GetTokenFromSession();
             if (string.IsNullOrEmpty(token))
             {
-                TempData["Error"] = "Session expired. Please log in again.";
+                TempData["Error"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
                 return RedirectToAction("Login", "Auth");
             }
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -633,7 +666,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
         }
         catch (Exception ex)
         {
-            TempData["Error"] = "LÃ¡Â»â€”i khi tÃ¡ÂºÂ£i thÃƒÂ´ng tin con em: " + ex.Message;
+            TempData["Error"] = "Lỗi khi tải thông tin trẻ em: " + ex.Message;
             return RedirectToAction("Children");
         }
     }
@@ -650,7 +683,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
             var token = GetTokenFromSession();
             if (string.IsNullOrEmpty(token))
             {
-                TempData["Error"] = "Session expired. Please log in again.";
+                TempData["Error"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
                 return RedirectToAction("Login", "Auth");
             }
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -669,16 +702,16 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
 
             if (apiResult == null || !apiResult.Success)
             {
-                ModelState.AddModelError("", apiResult?.Message ?? "CÃ¡ÂºÂ­p nhÃ¡ÂºÂ­t thÃ¡ÂºÂ¥t bÃ¡ÂºÂ¡i.");
+                ModelState.AddModelError("", apiResult?.Message ?? "Cập nhật thất bại.");
                 return View(model);
             }
 
-            TempData["Success"] = "CÃ¡ÂºÂ­p nhÃ¡ÂºÂ­t thÃƒÂ´ng tin con em thÃƒÂ nh cÃƒÂ´ng.";
+            TempData["Success"] = "Cập nhật thông tin trẻ em thành công.";
             return RedirectToAction("Children");
         }
         catch (Exception ex)
         {
-            TempData["Error"] = "LÃ¡Â»â€”i khi cÃ¡ÂºÂ­p nhÃ¡ÂºÂ­t: " + ex.Message;
+            TempData["Error"] = "Lỗi khi cập nhật: " + ex.Message;
             return View(model);
         }
     }
@@ -693,7 +726,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
             var token = GetTokenFromSession();
             if (string.IsNullOrEmpty(token))
             {
-                TempData["Error"] = "Session expired. Please log in again.";
+                TempData["Error"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
                 return RedirectToAction("Login", "Auth");
             }
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -704,16 +737,16 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
 
             if (apiResult == null || !apiResult.Success)
             {
-                TempData["Error"] = apiResult?.Message ?? "XÃƒÂ³a thÃ¡ÂºÂ¥t bÃ¡ÂºÂ¡i.";
+                TempData["Error"] = apiResult?.Message ?? "Xóa thất bại.";
                 return RedirectToAction("Children");
             }
 
-            TempData["Success"] = "XÃƒÂ³a con em thÃƒÂ nh cÃƒÂ´ng.";
+            TempData["Success"] = "Xóa trẻ em thành công.";
             return RedirectToAction("Children");
         }
         catch (Exception ex)
         {
-            TempData["Error"] = "LÃ¡Â»â€”i khi xÃƒÂ³a: " + ex.Message;
+            TempData["Error"] = "Lỗi khi xóa: " + ex.Message;
             return RedirectToAction("Children");
         }
     }

@@ -12,6 +12,12 @@ namespace WebSite.Models.Profile
         public string? PhoneNumber { get; set; }
         public string? AvatarUrl { get; set; }
         public DateOnly? DateOfBirth { get; set; }
+        private int? _age;
+        public int? Age
+        {
+            get => _age ?? CalculateAge(DateOfBirth);
+            set => _age = value;
+        }
         public int? Gender { get; set; }
         public string? Address { get; set; }
         public string? City { get; set; }
@@ -56,17 +62,18 @@ namespace WebSite.Models.Profile
         public string AverageRatingLabel =>
             AverageRating.HasValue ? AverageRating.Value.ToString("0.##") : "0";
 
-        public int? Age
+        private static int? CalculateAge(DateOnly? dateOfBirth)
         {
-            get
-            {
-                if (!DateOfBirth.HasValue) return null;
-                var today = DateOnly.FromDateTime(DateTime.Today);
-                var dob = DateOfBirth.Value;
-                var age = today.Year - dob.Year;
-                if (dob > today.AddYears(-age)) age--;
-                return age;
-            }
+            if (!dateOfBirth.HasValue)
+                return null;
+
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var dob = dateOfBirth.Value;
+            var age = today.Year - dob.Year;
+            if (dob > today.AddYears(-age))
+                age--;
+
+            return age > 0 ? age : null;
         }
     }
 

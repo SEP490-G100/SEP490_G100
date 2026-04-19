@@ -32,7 +32,12 @@
     var hasUploadedHealthDocument = Model.HasHealthCertificate;
     var areaText = string.Join(", ", new[] { Model.Ward, Model.District, Model.City }.Where(v => !string.IsNullOrWhiteSpace(v)));
     var displayEmail = string.IsNullOrWhiteSpace(Model.Email) ? "Chưa cập nhật" : Model.Email;
-    var isReadonlyNannyView = isReadOnly && isNanny;
+    var createdChildProfilesCount = Model.Children?.Count ?? 0;
+    var declaredChildrenCount = Model.NumberOfChildren ?? (createdChildProfilesCount > 0 ? createdChildProfilesCount : 0);
+    var missingChildProfilesCount = Math.Max(declaredChildrenCount - createdChildProfilesCount, 0);
+    var childProfiles = (Model.Children ?? new List<WebSite.Models.Profile.ChildProfileViewModel>())
+        .Where(c => c != null)
+        .ToList();
 
     string MaskPhone(string? phone)
     {
@@ -71,6 +76,62 @@
         3 => "6 - 12 tuổi",
         _ => "Chưa cập nhật"
     };
+
+    IEnumerable<string> SplitSpecialNeeds(string? rawValue)
+    {
+        return (rawValue ?? string.Empty)
+            .Split(new[] { ',', ';', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(value => value.Trim())
+            .Where(value => !string.IsNullOrWhiteSpace(value));
+    }
+
+    string JoinDistinctValues(IEnumerable<string?> values, string separator)
+    {
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var ordered = new List<string>();
+
+        foreach (var item in values)
+        {
+            var normalized = item?.Trim();
+            if (string.IsNullOrWhiteSpace(normalized)) continue;
+            if (!seen.Add(normalized)) continue;
+            ordered.Add(normalized);
+        }
+
+        return ordered.Count == 0 ? string.Empty : string.Join(separator, ordered);
+    }
+
+    var childAgeGroupValues = childProfiles
+        .Where(c => c.ChildAgeGroup.HasValue)
+        .Select(c => (byte)c.ChildAgeGroup!.Value)
+        .Distinct()
+        .OrderBy(v => v)
+        .ToList();
+
+    var childAgeGroupSummary = childAgeGroupValues.Count switch
+    {
+        0 => ChildAgeGroupLabel(Model.ChildAgeGroup),
+        1 => ChildAgeGroupLabel(childAgeGroupValues[0]),
+        _ => string.Join(" / ", childAgeGroupValues.Select(v => ChildAgeGroupLabel(v)))
+    };
+
+    var childCharacteristicSummary = JoinDistinctValues(
+        childProfiles.Select(c => c.Characteristic),
+        "; ");
+    if (string.IsNullOrWhiteSpace(childCharacteristicSummary))
+        childCharacteristicSummary = string.IsNullOrWhiteSpace(Model.Characteristic) ? "Chưa cập nhật" : Model.Characteristic!;
+
+    var childSpecialNeedsSummary = JoinDistinctValues(
+        childProfiles.SelectMany(c => SplitSpecialNeeds(c.SpecialNeeds)),
+        ", ");
+    if (string.IsNullOrWhiteSpace(childSpecialNeedsSummary))
+        childSpecialNeedsSummary = string.IsNullOrWhiteSpace(Model.SpecialNeeds) ? "Không có" : Model.SpecialNeeds!;
+
+    var childNotesSummary = JoinDistinctValues(
+        childProfiles.Select(c => c.Notes),
+        "; ");
+    if (string.IsNullOrWhiteSpace(childNotesSummary))
+        childNotesSummary = string.IsNullOrWhiteSpace(Model.Notes) ? "Không có" : Model.Notes!;
 
     var dayColumns = new[] { (1, "T2"), (2, "T3"), (3, "T4"), (4, "T5"), (5, "T6"), (6, "T7"), (0, "CN") };
     var slotRows = new[] { (0, "Sáng"), (1, "Chiều"), (2, "Tối"), (3, "Đêm") };
@@ -402,7 +463,7 @@
                         </div>
                         <div class="profile-detail-item">
                             <div class="label">Điện thoại</div>
-                            <div class="value @(isReadonlyNannyView ? "phone-obscured" : "")">@(isReadonlyNannyView ? MaskPhone(Model.PhoneNumber) : (string.IsNullOrWhiteSpace(Model.PhoneNumber) ? "Chưa cập nhật" : Model.PhoneNumber))</div>
+                            <div class="value @(!string.IsNullOrWhiteSpace(Model.PhoneNumber) ? "phone-obscured" : "")">@MaskPhone(Model.PhoneNumber)</div>
                         </div>
                         <div class="profile-detail-item">
                             <div class="label">Địa chỉ</div>
@@ -464,22 +525,37 @@
                         </div>
                         <div class="profile-detail-grid">
                             <div class="profile-detail-item">
-                                <div class="label">Số lượng trẻ</div>
-                                <div class="value">@(Model.NumberOfChildren?.ToString() ?? "--")</div>
+                                <div class="label">Tong so tre (khai bao)</div>
+                                <div class="value">@(declaredChildrenCount > 0 ? declaredChildrenCount.ToString() : "--")</div>
                             </div>
                             <div class="profile-detail-item">
-                                <div class="label">Nhóm tuổi</div>
-                                <div class="value">@ChildAgeGroupLabel(Model.ChildAgeGroup)</div>
+                                <div class="label">Ho so tre da tao</div>
+                                <div class="value">@createdChildProfilesCount</div>
+                            </div>
+                            <div class="profile-detail-item">
+                                <div class="label">Nhom tuoi</div>
+                                <div class="value">@childAgeGroupSummary</div>
+                            </div>
+                            <div class="profile-detail-item">
+                                <div class="label">Tinh cach</div>
+                                <div class="value">@childCharacteristicSummary</div>
                             </div>
                             <div class="profile-detail-item">
                                 <div class="label">Nhu cầu đặc biệt</div>
-                                <div class="value">@(string.IsNullOrWhiteSpace(Model.SpecialNeeds) ? "Không có" : Model.SpecialNeeds)</div>
+                                <div class="value">@childSpecialNeedsSummary</div>
                             </div>
                             <div class="profile-detail-item">
-                                <div class="label">Ghi chú</div>
-                                <div class="value">@(string.IsNullOrWhiteSpace(Model.Notes) ? "Không có" : Model.Notes)</div>
+                                <div class="label">Ghi chu</div>
+                                <div class="value">@childNotesSummary</div>
                             </div>
                         </div>
+                        @if (missingChildProfilesCount > 0)
+                        {
+                            <p class="text-xs text-slate-500 mt-3">
+                                Con thieu <strong>@missingChildProfilesCount ho so tre</strong> so voi tong so tre da khai bao.
+                                Ban co the vao "Quan ly ho so tre" de bo sung.
+                            </p>
+                        }
                     </div>
                 }
             </div>
@@ -949,3 +1025,4 @@
 {
     <partial name="~/Views/Hiring/_HireModal.cshtml" />
 }
+

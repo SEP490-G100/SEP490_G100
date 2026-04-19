@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewData["Title"] = "Tin nhắn";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
@@ -1270,20 +1270,20 @@
         function renderHiringOfferCard(message, isMine) {
             const hiringRecordId = message.attachmentUrl || '';
             return `
-            <div class="hiring-offer-card" onclick="window.__openOfferDetail?.('${esc(hiringRecordId)}')" title="Bam de xem chi tiet de nghi viec lam">
+            <div class="hiring-offer-card" onclick="window.__openOfferDetail?.('${esc(hiringRecordId)}')" title="Bấm để xem chi tiết đề nghị việc làm">
                 <div class="hiring-offer-card__header">
                     <span class="material-icons-round" style="font-size:20px;">handshake</span>
-                    <span>De nghi viec lam</span>
+                    <span>Đề nghị việc làm</span>
                 </div>
                 <div class="hiring-offer-card__body">
                     <p class="hiring-offer-card__label">
-                        ${isMine ? 'Ban da gui de nghi thue nanny.' : 'Ban nhan duoc de nghi viec lam!'}
+                        ${isMine ? 'Bạn đã gửi đề nghị thuê bảo mẫu.' : 'Bạn nhận được đề nghị việc làm!'}
                     </p>
-                    <p class="hiring-offer-card__hint">${isMine ? 'Bam de xem chi tiet hop dong.' : 'Bam de xem hop dong va phan hoi.'}</p>
+                    <p class="hiring-offer-card__hint">${isMine ? 'Bấm để xem chi tiết hợp đồng.' : 'Bấm để xem hợp đồng và phản hồi.'}</p>
                 </div>
                 <div class="hiring-offer-card__footer">
                     <span class="material-icons-round" style="font-size:16px;opacity:.8;">open_in_new</span>
-                    Xem chi tiet hop dong
+                    Xem chi tiết hợp đồng
                 </div>
             </div>`;
         }

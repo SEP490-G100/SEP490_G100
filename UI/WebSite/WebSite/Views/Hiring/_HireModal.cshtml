@@ -7,34 +7,34 @@
                     class="absolute top-4 right-4 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 hover:text-slate-600 transition-colors">
                 <span class="material-icons-round text-base">close</span>
             </button>
-            <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-orange-500">Tuyen dung</p>
-            <h2 class="mt-1 text-xl font-bold text-slate-900">Thue Nanny</h2>
+            <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-orange-500">Tuyển dụng</p>
+            <h2 class="mt-1 text-xl font-bold text-slate-900">Thuê Bảo Mẫu</h2>
             <p id="hireModalNannyName" class="mt-1 text-sm text-slate-500"></p>
         </div>
 
         <div class="px-6 py-5 space-y-4">
             <div>
                 <label for="hireStartDate" class="block text-sm font-bold text-slate-700 mb-1">
-                    Ngay bat dau <span class="text-rose-500">*</span>
+                    Ngày bắt đầu <span class="text-rose-500">*</span>
                 </label>
                 <input type="date" id="hireStartDate" required
                        class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition" />
             </div>
 
             <div>
-                <label for="hireEndDate" class="block text-sm font-bold text-slate-700 mb-1">Ngay ket thuc</label>
+                <label for="hireEndDate" class="block text-sm font-bold text-slate-700 mb-1">Ngày kết thúc</label>
                 <input type="date" id="hireEndDate"
                        class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition" />
-                <p class="mt-1 text-xs text-slate-400">De trong neu chua xac dinh.</p>
+                <p class="mt-1 text-xs text-slate-400">Dể trống nếu chưa xác định.</p>
             </div>
 
             <div>
                 <label for="hireTemplateId" class="block text-sm font-bold text-slate-700 mb-1">
-                    Mau hop dong <span class="text-rose-500">*</span>
+                    Mẫu hợp đồng <span class="text-rose-500">*</span>
                 </label>
                 <select id="hireTemplateId" required
                         class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition bg-white">
-                    <option value="">Dang tai mau hop dong...</option>
+                    <option value="">Đang tải mẫu hợp đồng...</option>
                 </select>
             </div>
 
@@ -44,12 +44,12 @@
         <div class="px-6 pb-6 flex items-center justify-end gap-3">
             <button type="button" onclick="window.__closeHireModal?.()"
                     class="inline-flex items-center justify-center min-h-[42px] px-5 rounded-xl border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 transition-all">
-                Huy
+                Hủy
             </button>
             <button type="button" id="hireConfirmBtn" onclick="window.__submitHiring?.()"
                     class="inline-flex items-center justify-center gap-2 min-h-[42px] px-6 rounded-xl bg-gradient-to-r from-orange-500 to-orange-400 text-white font-bold shadow-lg shadow-orange-200 hover:from-orange-600 hover:to-orange-500 transition-all">
                 <span class="material-icons-round text-base">handshake</span>
-                Xac nhan thue
+                Xác nhận thuê
             </button>
         </div>
     </div>
@@ -78,14 +78,14 @@
             const json = await res.json();
             const select = document.getElementById('hireTemplateId');
             if (json.success && Array.isArray(json.data) && json.data.length) {
-                select.innerHTML = '<option value="">-- Chon mau hop dong --</option>' +
+                select.innerHTML = '<option value="">-- Chọn mẫu hợp đồng --</option>' +
                     json.data.map(t => `<option value="${t.id}">${t.name} (v${t.version})</option>`).join('');
                 templatesLoaded = true;
             } else {
-                select.innerHTML = '<option value="">Khong co mau hop dong</option>';
+                select.innerHTML = '<option value="">Không có mẫu hợp đồng</option>';
             }
         } catch {
-            document.getElementById('hireTemplateId').innerHTML = '<option value="">Loi tai mau</option>';
+            document.getElementById('hireTemplateId').innerHTML = '<option value="">Lỗi tải mẫu</option>';
         }
     };
 
@@ -109,19 +109,19 @@
         const endDate = document.getElementById('hireEndDate').value;
         const contractTemplateId = document.getElementById('hireTemplateId').value;
 
-        if (!startDate) { setError('Vui long chon ngay bat dau.'); return; }
-        if (!contractTemplateId) { setError('Vui long chon mau hop dong.'); return; }
+        if (!startDate) { setError('Vui lòng chọn ngày bắt đầu.'); return; }
+        if (!contractTemplateId) { setError('Vui lòng chọn mẫu hợp đồng.'); return; }
         const today = new Date().toISOString().slice(0, 10);
-        if (startDate < today) { setError('Ngay bat dau khong duoc truoc ngay tao hop dong.'); return; }
+        if (startDate < today) { setError('Ngày bắt đầu không được trước ngày tạo hợp đồng.'); return; }
         if (endDate) {
             if (endDate <= startDate) {
-                setError('Ngay ket thuc phai lon hon ngay bat dau.');
+                setError('Ngày kết thúc phải lớn hơn ngày bắt đầu.');
                 return;
             }
         }
 
         confirmBtn.disabled = true;
-        confirmBtn.textContent = 'Dang xu ly...';
+        confirmBtn.textContent = 'Đang xử lý...';
         setError('');
 
         try {
@@ -140,7 +140,7 @@
             });
             const json = await res.json();
             if (!json.success) {
-                setError(json.message || 'Co loi xay ra.');
+                setError(json.message || 'Có lỗi xảy ra.');
                 return;
             }
 
@@ -149,10 +149,10 @@
                 window.location.href = `/Communication?conversationId=${json.data.conversationId}`;
             }
         } catch {
-            setError('Loi ket noi. Vui long thu lai.');
+            setError('Lỗi kết nối. Vui lòng thử lại.');
         } finally {
             confirmBtn.disabled = false;
-            confirmBtn.innerHTML = '<span class="material-icons-round text-base">handshake</span> Xac nhan thue';
+            confirmBtn.innerHTML = '<span class="material-icons-round text-base">handshake</span> Xác nhận thuê';
         }
     };
 })();

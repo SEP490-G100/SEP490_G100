@@ -10,6 +10,7 @@ public class PersonalProfileDto
     public string? PhoneNumber { get; set; }
     public string? AvatarUrl { get; set; }
     public DateOnly? DateOfBirth { get; set; }
+    public int? Age { get; set; }
     public int? Gender { get; set; }
     public string? Address { get; set; }
     public string? City { get; set; }

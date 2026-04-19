@@ -41,7 +41,7 @@ public class ModeratorAccountController : Controller
 
         if (result == null)
         {
-            TempData["Error"] = "Khong the tai danh sach tai khoan. Vui long thu lai.";
+            TempData["Error"] = "Không thể tải danh sách tài khoản. Vui lòng thử lại.";
             result = new AccountListResponse();
         }
 
@@ -97,7 +97,7 @@ public class ModeratorAccountController : Controller
             var result = JsonSerializer.Deserialize<ApiResult<AccountDto>>(json, JsonOpts);
             if (result?.Success != true || result.Data == null)
             {
-                TempData["Error"] = "Khong tim thay tai khoan.";
+                TempData["Error"] = "Không tìm thấy tài khoản.";
                 return RedirectToAction(nameof(ManageAccount));
             }
 
@@ -105,7 +105,7 @@ public class ModeratorAccountController : Controller
         }
         catch
         {
-            TempData["Error"] = "Loi ket noi den API.";
+            TempData["Error"] = "Lỗi kết nối đến API.";
             return RedirectToAction(nameof(ManageAccount));
         }
     }

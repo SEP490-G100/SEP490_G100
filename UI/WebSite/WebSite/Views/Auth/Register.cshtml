@@ -1,6 +1,6 @@
 @model WebSite.Models.Auth.RegisterViewModel
 @{
-    ViewData["Title"] = "Dang ky";
+    ViewData["Title"] = "Đăng Ký";
 }
 
 <div class="nm-flow-shell">
@@ -9,10 +9,10 @@
             <div class="nm-flow-card__inner">
                 <div class="nm-flow-header">
                     <div class="nm-flow-header__content">
-                        <span class="nm-flow-badge">Tai khoan moi</span>
-                        <h1 class="nm-flow-title">Tao tai khoan NannyMatch</h1>
+                        <span class="nm-flow-badge">Tài Khoản Mới</span>
+                        <h1 class="nm-flow-title">Tạo Tài Khoản NannyMatch</h1>
                         <p class="nm-flow-subtitle">
-                            Hoan tat tai khoan trong mot man hinh gon gon. Sau buoc nay he thong se dua ban vao luong nhap thong tin theo vai tro.
+                            Hoàn tất tài khoản trong một màn hình gọn gàng. Sau bước này hệ thống sẽ dẫn bạn vào luồng nhập thông tin theo vai trò.
                         </p>
                     </div>
                 </div>
@@ -33,21 +33,21 @@
                     <div class="nm-form-grid">
                         <div class="nm-col-12">
                             <div class="nm-section-card">
-                                <div class="nm-section-title">Thong tin tai khoan</div>
-                                <div class="nm-section-note">Nhap thong tin co ban de tao tai khoan. So dien thoai co the bo sung sau.</div>
+                                <div class="nm-section-title">Thông Tin Tài Khoản</div>
+                                <div class="nm-section-note">Nhập thông tin cơ bản để tạo tài khoản. Số điện thoại có thể bổ sung sau.</div>
 
                                 <div class="nm-form-grid">
                                     <div class="nm-col-6">
                                         <div class="nm-field">
-                                            <label asp-for="FirstName" class="nm-label">Ho <span class="required">*</span></label>
-                                            <input asp-for="FirstName" class="nm-input" placeholder="Nguyen" />
+                                            <label asp-for="FirstName" class="nm-label">Họ <span class="required">*</span></label>
+                                            <input asp-for="FirstName" class="nm-input" placeholder="Nguyễn" />
                                             <span asp-validation-for="FirstName" class="nm-error"></span>
                                         </div>
                                     </div>
 
                                     <div class="nm-col-6">
                                         <div class="nm-field">
-                                            <label asp-for="LastName" class="nm-label">Ten <span class="required">*</span></label>
+                                            <label asp-for="LastName" class="nm-label">Tên <span class="required">*</span></label>
                                             <input asp-for="LastName" class="nm-input" placeholder="An" />
                                             <span asp-validation-for="LastName" class="nm-error"></span>
                                         </div>
@@ -63,18 +63,18 @@
 
                                     <div class="nm-col-12">
                                         <div class="nm-field">
-                                            <label asp-for="PhoneNumber" class="nm-label">So dien thoai</label>
+                                            <label asp-for="PhoneNumber" class="nm-label">Số Điện Thoại</label>
                                             <input asp-for="PhoneNumber" type="tel" class="nm-input" placeholder="0901234567" />
-                                            <div class="nm-field-hint">Truong nay khong bat buoc, ban co the cap nhat sau trong ho so.</div>
+                                            <div class="nm-field-hint">Trường này không bắt buộc, bạn có thể cập nhật sau trong hồ sơ.</div>
                                         </div>
                                     </div>
 
                                     <div class="nm-col-6">
                                         <div class="nm-field">
-                                            <label asp-for="Password" class="nm-label">Mat khau <span class="required">*</span></label>
+                                            <label asp-for="Password" class="nm-label">Mật Khẩu <span class="required">*</span></label>
                                             <div class="nm-password-wrap">
-                                                <input asp-for="Password" type="text" id="regPassword" class="nm-input pwd-field" placeholder="Toi thieu 8 ky tu" />
-                                                <button type="button" onclick="togglePassword('regPassword', this)" class="nm-password-toggle" aria-label="Hien thi mat khau">
+                                                <input asp-for="Password" type="text" id="regPassword" class="nm-input pwd-field" placeholder="Tối thiểu 8 ký tự" />
+                                                <button type="button" onclick="togglePassword('regPassword', this)" class="nm-password-toggle" aria-label="Hiển thị mật khẩu">
                                                     <span class="material-icons-round text-xl">visibility_off</span>
                                                 </button>
                                             </div>
@@ -84,8 +84,8 @@
 
                                     <div class="nm-col-6">
                                         <div class="nm-field">
-                                            <label asp-for="ConfirmPassword" class="nm-label">Xac nhan mat khau <span class="required">*</span></label>
-                                            <input asp-for="ConfirmPassword" type="password" class="nm-input" placeholder="Nhap lai mat khau" />
+                                            <label asp-for="ConfirmPassword" class="nm-label">Xác Nhận Mật Khẩu <span class="required">*</span></label>
+                                            <input asp-for="ConfirmPassword" type="password" class="nm-input" placeholder="Nhập lại mật khẩu" />
                                             <span asp-validation-for="ConfirmPassword" class="nm-error"></span>
                                         </div>
                                     </div>
@@ -95,12 +95,12 @@
                     </div>
 
                     <div class="nm-flow-actions">
-                        <a asp-action="Login" class="nm-btn nm-btn--ghost">Da co tai khoan</a>
-                        <button type="submit" class="nm-btn nm-btn--primary">Dang ky</button>
+                        <a asp-action="Login" class="nm-btn nm-btn--ghost">Đã Có Tài Khoản</a>
+                        <button type="submit" class="nm-btn nm-btn--primary">Đăng Ký</button>
                     </div>
                 </form>
 
-                <div class="nm-divider"><span>Hoac</span></div>
+                <div class="nm-divider"><span>Hoặc</span></div>
 
                 <div id="g_id_onload"
                      data-client_id="@ViewBag.GoogleClientId"

@@ -97,18 +97,25 @@ public class JobService
     {
         var parentProfile = await _jobRepo.getParentProfileSnapshot(parentProfileId)
             ?? throw new KeyNotFoundException("Khong tim thay ho so phu huynh.");
-        var selectedChild = getSelectedChild(parentProfile, null);
+        var selectedChildren = ChildProfileSnapshotHelper.ResolveChildren(
+            parentProfile,
+            null,
+            parentProfile.NumberOfChildren ?? 1);
+        var selectedChild = selectedChildren.FirstOrDefault();
+        var childSnapshot = ChildProfileSnapshotHelper.BuildSnapshot(
+            selectedChildren,
+            parentProfile.FamilyDescription);
 
         return new JobPostingPrefillResponse
         {
             NumberOfChildren = parentProfile.NumberOfChildren ?? parentProfile.ChildProfiles.Count(c => !c.IsDeleted),
             SelectedChildProfileId = selectedChild?.Id,
-            Characteristic = selectedChild?.Characteristic ?? parentProfile.FamilyDescription,
-            BirthType = (int?)selectedChild?.ChildAgeGroup,
-            BirthTypeLabel = selectedChild?.ChildAgeGroup.HasValue == true
-                ? EnumDisplayHelper.GetDisplayName((ChildAgeGroup)selectedChild.ChildAgeGroup.Value)
+            Characteristic = childSnapshot.Characteristic,
+            BirthType = childSnapshot.BirthType,
+            BirthTypeLabel = childSnapshot.BirthType.HasValue
+                ? EnumDisplayHelper.GetDisplayName((ChildAgeGroup)childSnapshot.BirthType.Value)
                 : null,
-            SpecialNeeds = selectedChild?.SpecialNeeds,
+            SpecialNeeds = childSnapshot.SpecialNeeds,
             Skills = [],
             Children = parentProfile.ChildProfiles
                 .Where(c => !c.IsDeleted)
@@ -143,7 +150,8 @@ public class JobService
             "Luong toi da");
         if (!string.IsNullOrWhiteSpace(salaryValidationError))
             throw new InvalidOperationException(salaryValidationError);
-        var selectedChild = resolveSelectedChild(parentProfile, req.ChildProfileId);
+        var selectedChildren = resolveSelectedChildren(parentProfile, req.ChildProfileId, req.ChildProfileIds, req.NumberOfChildren);
+        var primaryChild = selectedChildren.FirstOrDefault();
 
         var hasActiveParentSubscription = await _subscriptionService.hasActiveParentSubscription(parentProfileId);
         if (!hasActiveParentSubscription)
@@ -166,7 +174,7 @@ public class JobService
         if (req.SalaryMin.HasValue && req.SalaryMax.HasValue && req.SalaryMin > req.SalaryMax)
             throw new InvalidOperationException("Luong toi thieu khong duoc lon hon luong toi da.");
 
-        var profileSnapshot = buildProfileSnapshot(parentProfile, selectedChild, req.NumberOfChildren);
+        var profileSnapshot = buildProfileSnapshot(parentProfile, selectedChildren, req.NumberOfChildren);
 
         decimal? lat = null;
         decimal? lng = null;
@@ -190,7 +198,7 @@ public class JobService
             SalaryType = 2,
             SalaryNegotiable = req.SalaryNegotiable,
             NumberOfChildren = profileSnapshot.NumberOfChildren,
-            ChildProfileId = selectedChild?.Id,
+            ChildProfileId = primaryChild?.Id,
             Location = req.Location?.Trim(),
             City = req.City?.Trim(),
             District = req.District?.Trim(),
@@ -251,7 +259,8 @@ public class JobService
             "Luong toi da");
         if (!string.IsNullOrWhiteSpace(salaryValidationError))
             throw new InvalidOperationException(salaryValidationError);
-        var selectedChild = resolveSelectedChild(parentProfile, req.ChildProfileId);
+        var selectedChildren = resolveSelectedChildren(parentProfile, req.ChildProfileId, req.ChildProfileIds, req.NumberOfChildren);
+        var primaryChild = selectedChildren.FirstOrDefault();
 
         if (!req.SalaryNegotiable && req.SalaryMin == null)
             throw new InvalidOperationException("Phai nhap muc luong toi thieu hoac chon 'Thuong luong'.");
@@ -271,7 +280,7 @@ public class JobService
             }
         }
 
-        var profileSnapshot = buildProfileSnapshot(parentProfile, selectedChild, req.NumberOfChildren);
+        var profileSnapshot = buildProfileSnapshot(parentProfile, selectedChildren, req.NumberOfChildren);
         var nowUtc = DateTime.UtcNow;
 
         job.Title = req.Title.Trim();
@@ -282,7 +291,7 @@ public class JobService
         job.SalaryType = 2;
         job.SalaryNegotiable = req.SalaryNegotiable;
         job.NumberOfChildren = profileSnapshot.NumberOfChildren;
-        job.ChildProfileId = selectedChild?.Id;
+        job.ChildProfileId = primaryChild?.Id;
         job.Location = req.Location?.Trim();
         job.City = req.City?.Trim();
         job.District = req.District?.Trim();
@@ -469,20 +478,19 @@ public class JobService
 
     private static (int? NumberOfChildren, string? Characteristic, int? BirthType, string? SpecialNeeds) buildProfileSnapshot(
         ParentProfile parentProfile,
-        ChildProfile? selectedChild,
+        List<ChildProfile> selectedChildren,
         int? requestedChildren)
     {
-        int? numberOfChildren = requestedChildren
-            ?? parentProfile.NumberOfChildren
-            ?? parentProfile.ChildProfiles.Count(c => !c.IsDeleted);
+        var childSnapshot = ChildProfileSnapshotHelper.BuildSnapshot(selectedChildren, parentProfile.FamilyDescription);
+        int? numberOfChildren = requestedChildren ?? selectedChildren.Count;
         if (!numberOfChildren.HasValue || numberOfChildren <= 0)
             numberOfChildren = 1;
 
         return (
             numberOfChildren,
-            selectedChild?.Characteristic ?? parentProfile.FamilyDescription,
-            (int?)selectedChild?.ChildAgeGroup,
-            selectedChild?.SpecialNeeds
+            childSnapshot.Characteristic,
+            childSnapshot.BirthType,
+            childSnapshot.SpecialNeeds
         );
     }
 
@@ -507,6 +515,8 @@ public class JobService
         HashSet<Guid>? favoriteJobIds = null)
     {
         var entitlement = getJobEntitlement(job);
+        var selectedChildren = getSelectedChildrenForJob(job);
+        var childResponses = mapChildResponses(selectedChildren);
         var childSnapshot = getChildSnapshot(job);
         double? distance = null;
         if (nannyLat.HasValue && nannyLng.HasValue && job.Latitude.HasValue && job.Longitude.HasValue)
@@ -553,6 +563,7 @@ public class JobService
                     TimeSlot = r.TimeSlot
                 })
                 .ToList(),
+            Children = childResponses,
             NumberOfChildren = job.NumberOfChildren,
             Latitude = (double?)job.Latitude,
             Longitude = (double?)job.Longitude,
@@ -571,6 +582,8 @@ public class JobService
     private static JobPostingDetailResponse mapToDetail(JobPosting job)
     {
         var entitlement = getJobEntitlement(job);
+        var selectedChildren = getSelectedChildrenForJob(job);
+        var childResponses = mapChildResponses(selectedChildren);
         var childSnapshot = getChildSnapshot(job);
         return new JobPostingDetailResponse
         {
@@ -606,6 +619,7 @@ public class JobService
                     TimeSlot = r.TimeSlot
                 })
                 .ToList(),
+            Children = childResponses,
             Latitude = (double?)job.Latitude,
             Longitude = (double?)job.Longitude,
             Status = job.Status,
@@ -633,39 +647,82 @@ public class JobService
 
     private static (string? Characteristic, int? BirthType, string? SpecialNeeds) getChildSnapshot(JobPosting job)
     {
-        var selectedChild = job.ChildProfile
-            ?? job.ParentProfile?.ChildProfiles
-                .Where(c => !c.IsDeleted)
-                .OrderBy(c => c.CreatedAt)
-                .FirstOrDefault();
+        var selectedChildren = getSelectedChildrenForJob(job);
+        var childSnapshot = ChildProfileSnapshotHelper.BuildSnapshot(
+            selectedChildren,
+            job.ParentProfile?.FamilyDescription);
 
-        return (
-            selectedChild?.Characteristic ?? job.ParentProfile?.FamilyDescription,
-            (int?)selectedChild?.ChildAgeGroup,
-            selectedChild?.SpecialNeeds
-        );
+        return (childSnapshot.Characteristic, childSnapshot.BirthType, childSnapshot.SpecialNeeds);
     }
 
-    private static ChildProfile? resolveSelectedChild(ParentProfile parentProfile, Guid? childProfileId)
+    private static List<ChildProfile> getSelectedChildrenForJob(JobPosting job)
     {
-        var selectedChild = getSelectedChild(parentProfile, childProfileId);
-        if (childProfileId.HasValue && selectedChild == null)
-            throw new InvalidOperationException("Tre duoc chon khong thuoc ho so phu huynh hien tai.");
-
-        return selectedChild;
+        return ChildProfileSnapshotHelper.ResolveChildren(
+            job.ParentProfile,
+            job.ChildProfileId ?? job.ChildProfile?.Id,
+            job.NumberOfChildren);
     }
 
-    private static ChildProfile? getSelectedChild(ParentProfile parentProfile, Guid? childProfileId)
+    private static List<JobPostingPrefillChildResponse> mapChildResponses(List<ChildProfile> children)
+    {
+        return children
+            .Select((child, index) => new JobPostingPrefillChildResponse
+            {
+                Id = child.Id,
+                Label = $"Be {index + 1}",
+                Characteristic = child.Characteristic,
+                BirthType = child.ChildAgeGroup,
+                BirthTypeLabel = child.ChildAgeGroup.HasValue
+                    ? EnumDisplayHelper.GetDisplayName((ChildAgeGroup)child.ChildAgeGroup.Value)
+                    : null,
+                SpecialNeeds = child.SpecialNeeds
+            })
+            .ToList();
+    }
+
+    private static List<ChildProfile> resolveSelectedChildren(
+        ParentProfile parentProfile,
+        Guid? primaryChildId,
+        List<Guid>? childProfileIds,
+        int? requestedChildren)
     {
         var children = parentProfile.ChildProfiles
             .Where(c => !c.IsDeleted)
             .OrderBy(c => c.CreatedAt)
             .ToList();
+        if (children.Count == 0)
+            throw new InvalidOperationException("Vui long tao it nhat 1 Child Profile truoc khi dang bai.");
 
-        if (childProfileId.HasValue)
-            return children.FirstOrDefault(child => child.Id == childProfileId.Value);
+        var explicitIds = (childProfileIds ?? [])
+            .Where(id => id != Guid.Empty)
+            .Distinct()
+            .ToList();
+        if (explicitIds.Count > 0)
+        {
+            if (requestedChildren.HasValue && requestedChildren.Value != explicitIds.Count)
+                throw new InvalidOperationException(
+                    "So luong tre khai bao phai trung voi danh sach Child Profile duoc chon.");
 
-        return children.FirstOrDefault();
+            if (explicitIds.Count > children.Count)
+                throw new InvalidOperationException(
+                    $"Ban da chon {explicitIds.Count} tre nhung hien chi co {children.Count} Child Profile.");
+
+            var childMap = children.ToDictionary(child => child.Id, child => child);
+            if (explicitIds.Any(id => !childMap.ContainsKey(id)))
+                throw new InvalidOperationException("Co Child Profile khong thuoc ho so phu huynh hien tai.");
+
+            return explicitIds.Select(id => childMap[id]).ToList();
+        }
+
+        var requestedCount = Math.Max(1, requestedChildren ?? 1);
+        if (requestedCount > children.Count)
+            throw new InvalidOperationException(
+                $"Ban da chon {requestedCount} tre nhung hien chi co {children.Count} Child Profile.");
+
+        if (primaryChildId.HasValue && children.All(child => child.Id != primaryChildId.Value))
+            throw new InvalidOperationException("Tre duoc chon khong thuoc ho so phu huynh hien tai.");
+
+        return ChildProfileSnapshotHelper.ResolveChildren(parentProfile, primaryChildId, requestedCount);
     }
 
     private static (string? PlanCode, SubscriptionBenefitResponse Benefits) getJobEntitlement(JobPosting job)

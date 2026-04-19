@@ -5,7 +5,10 @@
     ViewData["Title"] = "Chinh sua ho so";
     var avatarUrl = (Model.AvatarUrl ?? "").Trim();
     var isNanny = Model.IsNanny;
-    var dobMax = DateOnly.FromDateTime(DateTime.Today.AddYears(-31)).ToString("yyyy-MM-dd");
+    var dobMax = (isNanny
+        ? DateOnly.FromDateTime(DateTime.Today.AddYears(-31))
+        : DateOnly.FromDateTime(DateTime.Today))
+        .ToString("yyyy-MM-dd");
 }
 
 @section Head {

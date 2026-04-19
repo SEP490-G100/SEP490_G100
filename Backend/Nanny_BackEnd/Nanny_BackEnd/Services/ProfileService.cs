@@ -111,6 +111,7 @@ public class ProfileService
             profile.Email = string.Empty;
             profile.PhoneNumber = null;
             profile.DateOfBirth = null;
+            profile.Age = null;
             profile.Address = null;
             profile.Ward = null;
             profile.Latitude = null;
@@ -133,6 +134,7 @@ public class ProfileService
             profile.Email = string.Empty;
             profile.PhoneNumber = null;
             profile.DateOfBirth = null;
+            profile.Age = null;
             profile.Address = null;
             profile.Ward = null;
             profile.Latitude = null;
@@ -287,6 +289,7 @@ public class ProfileService
             PhoneNumber = user.PhoneNumber,
             AvatarUrl = user.AvatarUrl,
             DateOfBirth = user.DateOfBirth,
+            Age = CalculateAge(user.DateOfBirth),
             Gender = user.Gender,
             Address = user.Address,
             City = user.City,
@@ -321,6 +324,20 @@ public class ProfileService
         };
     }
 
+    private static int? CalculateAge(DateOnly? dateOfBirth)
+    {
+        if (!dateOfBirth.HasValue)
+            return null;
+
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var dob = dateOfBirth.Value;
+        var age = today.Year - dob.Year;
+        if (dob > today.AddYears(-age))
+            age--;
+
+        return age > 0 ? age : null;
+    }
+
     public async Task<PersonalProfileDto> UpdatePersonalInfoAsync(Guid userId, UpdatePersonalInfoRequest request)
     {
         var user = await _userRepo.FindByIdAsync(userId)
@@ -328,6 +345,11 @@ public class ProfileService
 
         var roles = await _userRepo.GetRolesAsync(userId);
         var isNanny = roles.Any(r => r.Equals("nanny", StringComparison.OrdinalIgnoreCase));
+        var today = DateOnly.FromDateTime(DateTime.Today);
+
+        if (request.DateOfBirth.HasValue && request.DateOfBirth.Value > today)
+            throw new InvalidOperationException("Ngay sinh khong duoc lon hon ngay hien tai.");
+
         if (isNanny)
         {
             var salaryValidationError = SalaryValidationRules.GetFirstError(
@@ -342,7 +364,6 @@ public class ProfileService
             if (!dobToValidate.HasValue)
                 throw new InvalidOperationException("Nanny pháº£i nháº­p ngÃ ,áy sinh.");
 
-            var today = DateOnly.FromDateTime(DateTime.Today);
             var dob = dobToValidate.Value;
             var age = today.Year - dob.Year;
             if (dob > today.AddYears(-age)) age--;
@@ -570,6 +591,8 @@ public class ProfileService
         _childRepo.Add(child);
         await _childRepo.SaveChangesAsync();
 
+        await EnsureDeclaredChildrenCountAtLeastCreatedAsync(parentProfile, userId);
+
         return MapToChildDto(child);
     }
 
@@ -653,6 +676,22 @@ public class ProfileService
 
         return normalized;
     }
+
+    private async Task EnsureDeclaredChildrenCountAtLeastCreatedAsync(ParentProfile parentProfile, Guid userId)
+    {
+        var activeChildrenCount = (await _childRepo.GetByParentProfileIdAsync(parentProfile.Id)).Count;
+        if (activeChildrenCount <= 0)
+            return;
+
+        if (!parentProfile.NumberOfChildren.HasValue || parentProfile.NumberOfChildren.Value < activeChildrenCount)
+        {
+            parentProfile.NumberOfChildren = activeChildrenCount;
+            parentProfile.UpdatedAt = DateTime.UtcNow;
+            parentProfile.UpdatedBy = userId;
+            await _parentRepo.SaveChangesAsync();
+        }
+    }
+
     // Background embedding helper
     private async Task EmbedNannyInBackgroundAsync(Guid nannyProfileId)
     {

@@ -1,7 +1,7 @@
 @model WebSite.Models.Admin.AdminNotificationListResponse
 @{
     Layout = "~/Views/Admin/_AdminLayout.cshtml";
-    ViewData["Title"] = "Manage Notifications";
+    ViewData["Title"] = "Quản Lý Thông Báo";
 
     var currentSearch = ViewBag.Search as string ?? "";
     var currentDeleted = ViewBag.IsDeleted as bool?;
@@ -23,13 +23,13 @@
 
 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
     <div>
-        <span class="section-label">Notification Management</span>
-        <h1 class="page-title mt-2">Manage <span class="gradient-text">Notifications</span></h1>
-        <p class="page-subtitle">Broadcast announcements to all users or specific roles, and review their availability.</p>
+        <span class="section-label">Quản Lý Thông Báo</span>
+        <h1 class="page-title mt-2">Quản Lý <span class="gradient-text">Thông Báo</span></h1>
+        <p class="page-subtitle">Gửi thông báo đến toàn bộ người dùng hoặc nhóm vai trò cụ thể, và kiểm tra trạng thái hiển thị của chúng.</p>
     </div>
     <a href="/Admin/CreateAdminNotification" class="btn-primary flex-shrink-0">
         <span class="material-icons-round text-base">add_circle</span>
-        Create New Notification
+        Tạo Thông Báo Mới
     </a>
 </div>
 
@@ -54,7 +54,7 @@
             <div class="relative flex-1">
                 <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">search</span>
                 <input name="search" type="text" value="@currentSearch"
-                       placeholder="Search by title or content..."
+                       placeholder="Tìm kiếm theo tiêu đề hoặc nội dung..."
                        class="search-input search-input--with-icon w-full border border-gray-200 rounded-xl px-4 py-2 font-medium"
                        onkeydown="if(event.key==='Enter'){this.form.submit();}" />
             </div>
@@ -63,15 +63,15 @@
                 <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">toggle_on</span>
                 <select name="isDeleted" onchange="this.form.submit()"
                         class="search-input search-input--with-icon md:w-44 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
-                    <option value="">All Statuses</option>
-                    <option value="false" selected="@(currentDeleted == false ? "selected" : null)">Active</option>
-                    <option value="true" selected="@(currentDeleted == true ? "selected" : null)">Inactive</option>
+                    <option value="">Tất Cả</option>
+                    <option value="false" selected="@(currentDeleted == false ? "selected" : null)">Hoạt Động</option>
+                    <option value="true" selected="@(currentDeleted == true ? "selected" : null)">Đã Vô Hiệu Hóa</option>
                 </select>
             </div>
 
             <button type="submit" class="btn-primary flex-shrink-0 flex items-center gap-1">
                 <span class="material-icons-round text-base">search</span>
-                Search
+                Tìm Kiếm
             </button>
         </div>
     </div>
@@ -80,15 +80,15 @@
 <div class="content-card overflow-hidden fade-in-up" style="animation-delay:.1s;">
     <div class="card-header">
         <span class="text-sm text-gray-500">
-            Showing <span class="font-bold text-gray-800">@notifications.Count</span>
-            of <span class="font-bold text-gray-800">@(Model?.TotalCount ?? 0)</span> notifications
+            Hiển thị <span class="font-bold text-gray-800">@notifications.Count</span>
+            trong số <span class="font-bold text-gray-800">@(Model?.TotalCount ?? 0)</span> thông báo
         </span>
         <div class="flex items-center gap-4 text-xs text-gray-400">
             <div class="flex items-center gap-1.5">
-                <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-emerald-100"></div>Active
+                <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-emerald-100"></div>Hoạt Động
             </div>
             <div class="flex items-center gap-1.5">
-                <div class="w-2.5 h-2.5 rounded-full bg-red-400 ring-2 ring-red-100"></div>Inactive
+                <div class="w-2.5 h-2.5 rounded-full bg-red-400 ring-2 ring-red-100"></div>Vô Hiệu Hóa
             </div>
         </div>
     </div>
@@ -98,12 +98,12 @@
             <thead>
                 <tr>
                     <th class="text-left">#</th>
-                    <th class="text-left">Notification</th>
-                    <th class="text-left">Target</th>
-                    <th class="text-left">Recipients</th>
-                    <th class="text-left">Created</th>
-                    <th class="text-left">Status</th>
-                    <th class="text-center">Actions</th>
+                    <th class="text-left">Thông Báo</th>
+                    <th class="text-left">Mục Tiêu</th>
+                    <th class="text-left">Người Nhận</th>
+                    <th class="text-left">Đã Tạo</th>
+                    <th class="text-left">Trạng Thái</th>
+                    <th class="text-center">Hành Động</th>
                 </tr>
             </thead>
             <tbody>
@@ -112,8 +112,8 @@
                     <tr>
                         <td colspan="7" class="text-center py-16 text-gray-400">
                             <span class="material-icons-round text-5xl mb-3 block text-gray-200">notifications_off</span>
-                            <p class="font-semibold text-gray-400">No admin notifications found.</p>
-                            <p class="text-xs text-gray-300 mt-1">Try adjusting the filters above or create a new broadcast.</p>
+                            <p class="font-semibold text-gray-400">Không tìm thấy thông báo nào.</p>
+                            <p class="text-xs text-gray-300 mt-1">Hãy thử điều chỉnh bộ lọc hoặc tạo một thông báo mới.</p>
                         </td>
                     </tr>
                 }
@@ -122,7 +122,7 @@
                 @foreach (var item in notifications)
                 {
                     var statusBadge = item.IsDeleted ? "badge-inactive" : "badge-active";
-                    var statusLabel = item.IsDeleted ? "Inactive" : "Active";
+                    var statusLabel = item.IsDeleted ? "Vô Hiệu Hóa" : "Hoạt Động";
                     var targetLabel = item.TargetType == "Role" ? item.TargetRole : "All Roles";
                     var targetBadge = item.TargetType == "Role"
                         ? (item.TargetRole == "Parent" ? "badge-parent" : item.TargetRole == "Nanny" ? "badge-nanny" : "badge-mod")
@@ -137,7 +137,7 @@
                             </div>
                         </td>
                         <td><span class="badge @targetBadge">@targetLabel</span></td>
-                        <td class="text-gray-500 text-sm">@item.RecipientCount user(s)</td>
+                        <td class="text-gray-500 text-sm">@item.RecipientCount người nhận</td>
                         <td class="text-gray-500 text-sm">@item.CreatedAt.ToString("MMM dd, yyyy")</td>
                         <td>
                             <div class="flex items-center gap-1.5">
@@ -155,7 +155,7 @@
 
                                 <button type="button"
                                         onclick="openToggleNotificationModal('@item.Id', @(!item.IsDeleted ? "true" : "false"))"
-                                        title="@(item.IsDeleted ? "Activate" : "Deactivate")"
+                                        title="@(item.IsDeleted ? "Kích Hoạt" : "Vô Hiệu Hóa")"
                                         class="w-8 h-8 rounded-xl @(item.IsDeleted ? "hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200" : "hover:bg-red-50 hover:text-red-500 hover:border-red-200") flex items-center justify-center text-gray-300 transition-all border border-gray-100">
                                     <span class="material-icons-round text-base">@(item.IsDeleted ? "check_circle_outline" : "block")</span>
                                 </button>
@@ -170,7 +170,7 @@
 
     <div class="flex items-center justify-between px-6 py-4 border-t border-gray-50">
         <span class="text-sm text-gray-400">
-            Page <span class="font-bold text-gray-600">@currentPage</span> of <span class="font-bold text-gray-600">@totalPages</span>
+            Trang <span class="font-bold text-gray-600">@currentPage</span> / <span class="font-bold text-gray-600">@totalPages</span>
         </span>
         <div class="flex gap-1.5">
             @if (currentPage > 1)
@@ -243,10 +243,10 @@
             const token = document.querySelector('#toggleNotificationCsrfForm input[name="__RequestVerificationToken"]').value;
             const returnUrl = '@(currentUrl.Replace("'", "\\'"))';
             const btnClass = activate ? 'btn-success' : 'btn-danger';
-            const btnText = activate ? 'Confirm Activate' : 'Confirm Deactivate';
+            const btnText = activate ? 'Xác Nhận Kích Hoạt' : 'Xác Nhận Vô Hiệu Hóa';
 
             document.getElementById('toggleNotificationFormContainer').innerHTML =
-                '<button type="button" onclick="closeToggleNotificationModal()" class="btn-outline flex-1 justify-center">Cancel</button>' +
+                '<button type="button" onclick="closeToggleNotificationModal()" class="btn-outline flex-1 justify-center">Hủy</button>' +
                 '<form method="post" action="/Admin/ToggleAdminNotificationStatus" class="flex-1 flex">' +
                 '<input name="__RequestVerificationToken" type="hidden" value="' + token + '" />' +
                 '<input type="hidden" name="id" value="' + id + '" />' +

@@ -47,7 +47,7 @@ public class AdminSubcriptionPlanController : Controller
         }
         catch
         {
-            TempData["Error"] = "Khong the tai danh sach subscription plan.";
+            TempData["Error"] = "Không thể tải danh sách gói dịch vụ.";
             return View("~/Views/Admin/SubscriptionPlan/ManageSubscriptionPlan.cshtml", new AdminSubscriptionPlanListResponse());
         }
     }
@@ -115,7 +115,7 @@ public class AdminSubcriptionPlanController : Controller
         }
         catch
         {
-            TempData["Error"] = "Loi ket noi den API.";
+            TempData["Error"] = "Lỗi kết nối đến API.";
             return RedirectToAction(nameof(ManageSubscriptionPlan));
         }
     }

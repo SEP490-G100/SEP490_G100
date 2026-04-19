@@ -153,6 +153,7 @@ public class AuthController : Controller
             {
                 model.FirstName,
                 model.LastName,
+                PhoneNumber = string.IsNullOrWhiteSpace(model.PhoneNumber) ? null : model.PhoneNumber.Trim(),
                 model.Email,
                 model.Password,
                 model.ConfirmPassword

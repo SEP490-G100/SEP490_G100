@@ -1,6 +1,6 @@
 @model WebSite.Models.Nanny.NannySkillsViewModel
 @{
-    ViewData["Title"] = "Create your profile";
+    ViewData["Title"] = "Tạo hồ sơ";
 }
 
 <div class="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50/30 to-white py-12 px-4 sm:px-6 lg:px-8">
@@ -11,7 +11,7 @@
 
         <div class="p-8">
             <div class="flex justify-between items-center mb-6">
-                <h1 class="text-lg font-bold text-slate-900">Create your profile</h1>
+                <h1 class="text-lg font-bold text-slate-900">Tạo hồ sơ của bạn</h1>
                 <button type="button" onclick="window.location.href='@Url.Action("Logout", "Auth")'" class="text-slate-400 hover:text-slate-700">×</button>
             </div>
 
@@ -22,7 +22,7 @@
                     <span class="text-4xl">✨</span>
                 </div>
                 <div class="text-sm text-orange-700 px-4 py-2 rounded-full bg-orange-50 border border-orange-100 font-semibold">
-                    What skills do you have?
+                    Bạn có những kỹ năng gì?
                 </div>
             </div>
 
@@ -30,13 +30,13 @@
                 @Html.AntiForgeryToken()
 
                 <div class="space-y-5">
-                    <p class="text-sm text-slate-500">Select your main skills and how experienced you are.</p>
+                    <p class="text-sm text-slate-500">Chọn kỹ năng chính của bạn và mức độ kinh nghiệm.</p>
 
                     @for (int i = 0; i < Model.SelectedSkills.Count; i++)
                     {
                         <div class="p-4 border border-orange-100 rounded-2xl bg-orange-50/40 mb-4">
                             <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-2">Skill</label>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Kỹ năng</label>
                                 <select asp-for="SelectedSkills[i].SkillId"
                                         class="w-full px-4 py-3 rounded-xl bg-white border border-orange-100 text-slate-800 focus:ring-2 focus:ring-orange-300">
                                     <option value="">-- Chọn kỹ năng --</option>
@@ -49,7 +49,7 @@
                             </div>
 
                             <div class="mt-4">
-                                <label class="block text-sm font-semibold text-slate-700 mb-2">Proficiency level</label>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Mức độ thành thạo</label>
                                 <select asp-for="SelectedSkills[i].ProficiencyLevel"
                                         class="w-full px-4 py-3 rounded-xl bg-white border border-orange-100 text-slate-800 focus:ring-2 focus:ring-orange-300">
                                     <option value="">-- Chọn trình độ --</option>
@@ -66,11 +66,11 @@
                 <div class="flex justify-between items-center mt-8">
                     <a href="@Url.Action("Profile", "Nanny")"
                        class="px-5 py-2 rounded-full border border-orange-200 text-orange-700 hover:bg-orange-50 text-sm font-semibold">
-                        Back
+                        Quay lại
                     </a>
                     <button type="submit"
                             class="px-6 py-2 rounded-full bg-orange-500 hover:bg-orange-600 text-white font-semibold text-sm transition-colors">
-                        Next
+                        Tiếp theo
                     </button>
                 </div>
             </form>
