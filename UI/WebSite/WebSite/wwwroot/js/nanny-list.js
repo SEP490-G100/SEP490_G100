@@ -1229,7 +1229,6 @@ async function openNannyDetail(id) {
     document.getElementById('nd-phone').textContent = isParentRole() ? 'Gui request contact de trao doi truc tiep voi nanny' : 'Thong tin lien he chi hien sau khi da ket noi';
     document.getElementById('nd-address').textContent = publicLocation || 'Chua cap nhat';
     document.getElementById('nd-travel').textContent = detail.maxTravelDistance ? `${detail.maxTravelDistance} km` : 'Chưa cập nhật';
-    document.getElementById('nd-completeness').textContent = `${detail.profileCompleteness || 0}%`;
     document.getElementById('nd-age').textContent = detail.age ? `${detail.age} tuổi` : 'Chưa rõ tuổi';
     document.getElementById('nd-exp').textContent = detail.yearsOfExperience ? `${detail.yearsOfExperience} năm kinh nghiệm` : 'Chưa rõ kinh nghiệm';
     document.getElementById('nd-education').textContent = detail.educationLevelLabel || 'Chưa cập nhật học vấn';

@@ -105,7 +105,7 @@ public class AdminAccountService
         Guid id,
         UpdateAccountStatusRequest request)
     {
-        if (request.Status is not (0 or 1))
+        if (request.Status is not (1 or 2))
             return (false, 400, "Status khong hop le.");
 
         var user = await _adminAccountRepository.GetModeratorAccountWithRolesAsync(id);
@@ -154,12 +154,18 @@ public class AdminAccountService
             return "Email la bat buoc.";
         if (!IsValidEmail(request.Email.Trim()))
             return "Email khong hop le.";
-        if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 8)
-            return "Mat khau phai co it nhat 8 ky tu.";
+        if (string.IsNullOrWhiteSpace(request.Password))
+            return "Mat khau la bat buoc.";
+        if (!IsStrongPassword(request.Password))
+            return "Mat khau phai co it nhat 8 ky tu, bao gom chu, so va it nhat 1 ky tu dac biet.";
         if (string.IsNullOrWhiteSpace(request.FirstName))
             return "FirstName la bat buoc.";
+        if (!IsValidName(request.FirstName.Trim()))
+            return "FirstName chi duoc chua chu cai.";
         if (string.IsNullOrWhiteSpace(request.LastName))
             return "LastName la bat buoc.";
+        if (!IsValidName(request.LastName.Trim()))
+            return "LastName chi duoc chua chu cai.";
 
         if (!string.IsNullOrWhiteSpace(request.PhoneNumber) && !IsValidPhone(request.PhoneNumber.Trim()))
             return "So dien thoai phai la 10-11 chu so.";
@@ -183,6 +189,12 @@ public class AdminAccountService
     private static bool IsValidPhone(string phoneNumber) =>
         Regex.IsMatch(phoneNumber, @"^\d{10,11}$");
 
+    private static bool IsStrongPassword(string password) =>
+        Regex.IsMatch(password, @"^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$");
+
+    private static bool IsValidName(string value) =>
+        Regex.IsMatch(value, @"^[\p{L}\s]+$");
+
     private static string? NormalizePhone(string? phoneNumber) =>
         string.IsNullOrWhiteSpace(phoneNumber) ? null : phoneNumber.Trim();
 
@@ -195,7 +207,7 @@ public class AdminAccountService
             return;
         }
 
-        user.Status = 0;
+        user.Status = 2;
         user.IsDeleted = true;
     }
 }

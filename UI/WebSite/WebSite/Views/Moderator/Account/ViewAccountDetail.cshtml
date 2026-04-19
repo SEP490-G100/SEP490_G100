@@ -1,27 +1,27 @@
 @model WebSite.Models.Account.AccountDto
 @{
     Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
-    ViewData["Title"] = "Account Detail";
+    ViewData["Title"] = "Chi tiết tài khoản";
 
     var avatarColors = new[] { "#F97316", "#3B82F6", "#8B5CF6", "#10B981", "#F59E0B" };
     var avatarBg = avatarColors[Math.Abs(Model.Id.GetHashCode()) % avatarColors.Length];
-    var statusLabel = Model.Status == 1 ? "Active" : "Inactive";
-    var genderLabel = Model.Gender switch { 1 => "Male", 2 => "Female", _ => "Not specified" };
+    var statusLabel = Model.Status == 1 ? "Hoạt động" : "Vô hiệu hóa";
+    var genderLabel = Model.Gender switch { 1 => "Nam", 2 => "Nữ", _ => "Chưa xác định" };
     var fullAddress = string.Join(", ", new[] { Model.Address, Model.Ward, Model.District, Model.City }
         .Where(s => !string.IsNullOrWhiteSpace(s)));
 }
 
 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
     <div>
-        <span class="section-label">Account Management</span>
+        <span class="section-label">Quản lý tài khoản</span>
         <h1 class="page-title mt-2">
-            Account <span class="gradient-text">Detail</span>
+            <span class="gradient-text">Chi tiết</span> Tài khoản
         </h1>
-        <p class="page-subtitle">View user information and manage account availability.</p>
+        <p class="page-subtitle">Xem thông tin người dùng và quản lý trạng thái tài khoản.</p>
     </div>
     <a href="/Moderator/ManageAccount" class="btn-outline flex-shrink-0">
         <span class="material-icons-round text-base">arrow_back</span>
-        Back to List
+        Quay lại danh sách
     </a>
 </div>
 
@@ -49,7 +49,7 @@
                 <div class="card-header">
                     <div class="flex items-center gap-2">
                         <span class="material-icons-round text-orange-400">person</span>
-                        <h2>Identity Information <span class="text-xs text-gray-400 font-normal ml-1">(read-only)</span></h2>
+                        <h2>Thông tin danh tính <span class="text-xs text-gray-400 font-normal ml-1">(chỉ xem)</span></h2>
                     </div>
                 </div>
                 <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -60,23 +60,23 @@
                             @Model.Email
                             @if (!Model.EmailConfirmed)
                             {
-                                <span class="ml-2 text-[10px] text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">Unverified</span>
+                                <span class="ml-2 text-[10px] text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">Chưa xác minh</span>
                             }
                         </div>
                     </div>
 
                     <div class="field-group">
-                        <label class="field-label">First Name</label>
+                        <label class="field-label">Tên</label>
                         <div class="field-readonly">@(string.IsNullOrWhiteSpace(Model.FirstName) ? "-" : Model.FirstName)</div>
                     </div>
 
                     <div class="field-group">
-                        <label class="field-label">Last Name</label>
+                        <label class="field-label">Họ</label>
                         <div class="field-readonly">@(string.IsNullOrWhiteSpace(Model.LastName) ? "-" : Model.LastName)</div>
                     </div>
 
                     <div class="field-group">
-                        <label class="field-label">Phone Number</label>
+                        <label class="field-label">Số điện thoại</label>
                         <div class="field-readonly">
                             <span class="material-icons-round text-gray-300 text-base">phone</span>
                             @(string.IsNullOrWhiteSpace(Model.PhoneNumber) ? "-" : Model.PhoneNumber)
@@ -84,7 +84,7 @@
                     </div>
 
                     <div class="field-group">
-                        <label class="field-label">Date of Birth</label>
+                        <label class="field-label">Ngày sinh</label>
                         <div class="field-readonly">
                             <span class="material-icons-round text-gray-300 text-base">cake</span>
                             @(Model.DateOfBirth.HasValue ? Model.DateOfBirth.Value.ToString("dd MMM yyyy") : "-")
@@ -92,7 +92,7 @@
                     </div>
 
                     <div class="field-group">
-                        <label class="field-label">Gender</label>
+                        <label class="field-label">Giới tính</label>
                         <div class="field-readonly">
                             <span class="material-icons-round text-gray-300 text-base">wc</span>
                             @genderLabel
@@ -100,7 +100,7 @@
                     </div>
 
                     <div class="field-group sm:col-span-2">
-                        <label class="field-label">Address</label>
+                        <label class="field-label">Địa chỉ</label>
                         <div class="field-readonly">
                             <span class="material-icons-round text-gray-300 text-base">location_on</span>
                             @(string.IsNullOrWhiteSpace(fullAddress) ? "-" : fullAddress)
@@ -113,12 +113,12 @@
                 <div class="card-header">
                     <div class="flex items-center gap-2">
                         <span class="material-icons-round text-orange-400">manage_accounts</span>
-                        <h2>Account Settings <span class="text-xs text-green-500 font-semibold ml-1">status only</span></h2>
+                        <h2>Cài đặt tài khoản <span class="text-xs text-green-500 font-semibold ml-1">chỉ trạng thái</span></h2>
                     </div>
                 </div>
                 <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="field-group">
-                        <label class="field-label">Role</label>
+                        <label class="field-label">Vai trò</label>
                         <div class="field-readonly">
                             <span class="material-icons-round text-gray-300 text-base">badge</span>
                             @foreach (var r in Model.Roles)
@@ -131,8 +131,8 @@
 
                     <div class="field-group sm:col-span-2">
                         <label class="field-label">
-                            Account Status
-                            <span class="text-orange-400 text-[10px] ml-1">editable</span>
+                            Trạng thái tài khoản
+                            <span class="text-orange-400 text-[10px] ml-1">có thể sửa</span>
                         </label>
                         <div class="flex gap-3">
                             <label class="flex items-center gap-2.5 px-4 py-3 rounded-2xl border-2 cursor-pointer transition-all @(Model.Status == 1 ? "border-emerald-400 bg-emerald-50" : "border-gray-200 bg-gray-50 hover:border-gray-300")"
@@ -142,16 +142,16 @@
                                        class="accent-emerald-500"
                                        onchange="updateStatusLabel(1)" />
                                 <div class="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
-                                <span class="text-sm font-semibold text-gray-700">Active</span>
+                                <span class="text-sm font-semibold text-gray-700">Hoạt động</span>
                             </label>
-                            <label class="flex items-center gap-2.5 px-4 py-3 rounded-2xl border-2 cursor-pointer transition-all @(Model.Status == 0 ? "border-red-400 bg-red-50" : "border-gray-200 bg-gray-50 hover:border-gray-300")"
+                            <label class="flex items-center gap-2.5 px-4 py-3 rounded-2xl border-2 cursor-pointer transition-all @(Model.Status == 2 ? "border-red-400 bg-red-50" : "border-gray-200 bg-gray-50 hover:border-gray-300")"
                                    id="label-inactive">
-                                <input type="radio" name="Status" value="0"
-                                       @(Model.Status == 0 ? "checked" : "")
+                                <input type="radio" name="Status" value="2"
+                                       @(Model.Status == 2 ? "checked" : "")
                                        class="accent-red-500"
-                                       onchange="updateStatusLabel(0)" />
+                                       onchange="updateStatusLabel(2)" />
                                 <div class="w-2.5 h-2.5 rounded-full bg-red-400"></div>
-                                <span class="text-sm font-semibold text-gray-700">Inactive</span>
+                                <span class="text-sm font-semibold text-gray-700">Vô hiệu hóa</span>
                             </label>
                         </div>
                     </div>
@@ -162,26 +162,26 @@
                 <div class="card-header">
                     <div class="flex items-center gap-2">
                         <span class="material-icons-round text-orange-400">history</span>
-                        <h2>Audit Information <span class="text-xs text-gray-400 font-normal ml-1">(read-only)</span></h2>
+                        <h2>Thông tin hệ thống <span class="text-xs text-gray-400 font-normal ml-1">(chỉ xem)</span></h2>
                     </div>
                 </div>
                 <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="field-group">
-                        <label class="field-label">Last Login</label>
+                        <label class="field-label">Đăng nhập lần cuối</label>
                         <div class="field-readonly">
                             <span class="material-icons-round text-gray-300 text-base">login</span>
-                            @(Model.LastLoginAt.HasValue ? Model.LastLoginAt.Value.ToString("dd MMM yyyy, HH:mm") : "Never")
+                            @(Model.LastLoginAt.HasValue ? Model.LastLoginAt.Value.ToString("dd MMM yyyy, HH:mm") : "Chưa từng")
                         </div>
                     </div>
                     <div class="field-group">
-                        <label class="field-label">Created At</label>
+                        <label class="field-label">Ngày tạo</label>
                         <div class="field-readonly">
                             <span class="material-icons-round text-gray-300 text-base">calendar_today</span>
                             @Model.CreatedAt.ToString("dd MMM yyyy, HH:mm")
                         </div>
                     </div>
                     <div class="field-group">
-                        <label class="field-label">Updated At</label>
+                        <label class="field-label">Ngày cập nhật</label>
                         <div class="field-readonly">
                             <span class="material-icons-round text-gray-300 text-base">update</span>
                             @(Model.UpdatedAt.HasValue ? Model.UpdatedAt.Value.ToString("dd MMM yyyy, HH:mm") : "-")
@@ -230,18 +230,18 @@
             </div>
 
             <div class="content-card p-4 fade-in-up" style="animation-delay:.12s;">
-                <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Account ID</p>
+                <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Mã tài khoản</p>
                 <p class="font-mono text-xs text-gray-600 break-all">@Model.Id</p>
             </div>
 
             <div class="content-card p-4 space-y-2.5 fade-in-up" style="animation-delay:.15s;">
                 <button type="submit" class="btn-primary w-full justify-center">
                     <span class="material-icons-round text-base">save</span>
-                    Save Status
+                    Lưu trạng thái
                 </button>
                 <a href="/Moderator/ManageAccount" class="btn-outline w-full justify-center">
                     <span class="material-icons-round text-base">close</span>
-                    Cancel
+                    Hủy bỏ
                 </a>
             </div>
         </div>
@@ -282,7 +282,7 @@ function updateStatusLabel(val) {
     if (val === 1) {
         display.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold bg-emerald-50 text-emerald-700 border border-emerald-200';
         dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
-        text.textContent = 'Active';
+        text.textContent = 'Hoạt động';
         if (avatarDot) avatarDot.className = avatarDot.className.replace('bg-red-400', 'bg-emerald-400');
 
         document.getElementById('label-active').className = document.getElementById('label-active').className.replace('border-gray-200 bg-gray-50 hover:border-gray-300', 'border-emerald-400 bg-emerald-50');
@@ -290,7 +290,7 @@ function updateStatusLabel(val) {
     } else {
         display.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold bg-red-50 text-red-700 border border-red-200';
         dot.className = 'w-2 h-2 rounded-full bg-red-400';
-        text.textContent = 'Inactive';
+        text.textContent = 'Vô hiệu hóa';
         if (avatarDot) avatarDot.className = avatarDot.className.replace('bg-emerald-400', 'bg-red-400');
 
         document.getElementById('label-inactive').className = document.getElementById('label-inactive').className.replace('border-gray-200 bg-gray-50 hover:border-gray-300', 'border-red-400 bg-red-50');

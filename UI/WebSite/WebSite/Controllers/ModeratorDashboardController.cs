@@ -40,7 +40,7 @@ public class ModeratorDashboardController : Controller
         }
         catch
         {
-            TempData["Error"] = "Khong the tai du lieu dashboard moderator.";
+            TempData["Error"] = "Không thể tải dữ liệu bảng điều khiển.";
         }
 
         var recent = await FetchAccountsAsync(page: 1, pageSize: 5);

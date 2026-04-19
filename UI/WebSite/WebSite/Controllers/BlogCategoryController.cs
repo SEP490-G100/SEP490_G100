@@ -46,7 +46,7 @@ public class BlogCategoryController : Controller
         {
             ViewBag.Search = search ?? "";
             ViewBag.IsDeleted = "";
-            TempData["Error"] = "Khong the tai danh sach danh muc.";
+            TempData["Error"] = "Không thể tải danh sách danh mục.";
             return View("~/Views/Moderator/BlogCategory/ManageBlogCategory.cshtml", new BlogCategoryListResponse { Page = page, PageSize = pageSize });
         }
     }
@@ -102,7 +102,7 @@ public class BlogCategoryController : Controller
         if (data != null)
             return View("~/Views/Moderator/BlogCategory/ViewBlogCategoryDetail.cshtml", data);
 
-        TempData["Error"] = "Khong tim thay danh muc.";
+        TempData["Error"] = "Không tìm thấy danh mục.";
         return RedirectToAction(nameof(ManageBlogCategory));
     }
 

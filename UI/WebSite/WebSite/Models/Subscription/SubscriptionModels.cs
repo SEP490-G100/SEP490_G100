@@ -18,6 +18,9 @@ public class SubscriptionBenefitViewModel
 
     [JsonPropertyName("listingDurationDays")]
     public int ListingDurationDays { get; set; }
+
+    [JsonPropertyName("canUseRecommendation")]
+    public bool CanUseRecommendation { get; set; }
 }
 
 public class SubscriptionPlanViewModel

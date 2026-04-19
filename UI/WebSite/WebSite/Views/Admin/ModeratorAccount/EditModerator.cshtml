@@ -1,10 +1,10 @@
 @model WebSite.Models.Account.AccountDto
 @{
     Layout = "~/Views/Admin/_AdminLayout.cshtml";
-    ViewData["Title"] = "Edit Moderator";
+    ViewData["Title"] = "Chỉnh Sửa Kiểm Duyệt Viên";
     var avatarColors = new[] { "#F97316","#EA580C","#F59E0B","#FBBF24","#FCD34D" };
     var avatarBg = avatarColors[Math.Abs(Model.Id.GetHashCode()) % avatarColors.Length];
-    var statusLabel = Model.Status == 1 ? "Active" : "Inactive";
+    var statusLabel = Model.Status == 1 ? "Hoạt Động" : "Vô Hiệu Hóa";
 }
 
 <!-- ====================================================
@@ -12,15 +12,15 @@
      ==================================================== -->
 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
     <div>
-        <span class="section-label">Admin Action</span>
+        <span class="section-label">Hành Động Quản Trị</span>
         <h1 class="page-title mt-2">
-            Edit <span class="gradient-text">Moderator</span>
+            Chỉnh Sửa <span class="gradient-text">Kiểm Duyệt Viên</span>
         </h1>
-        <p class="page-subtitle">View and update moderator account settings.</p>
+        <p class="page-subtitle">Xem và cập nhật cài đặt tài khoản kiểm duyệt viên.</p>
     </div>
     <a href="/Admin/ManageModerators" class="btn-outline flex-shrink-0">
         <span class="material-icons-round text-base">arrow_back</span>
-        Back to List
+        Quay Lại Danh Sách
     </a>
 </div>
 
@@ -54,7 +54,7 @@
                 <div class="card-header">
                     <div class="flex items-center gap-2">
                         <span class="material-icons-round text-orange-400">info</span>
-                        <h2>Account Info <span class="text-xs text-gray-400 font-normal ml-1">(read-only)</span></h2>
+                        <h2>Thông Tin Tài Khoản <span class="text-xs text-gray-400 font-normal ml-1">(chỉ xem)</span></h2>
                     </div>
                 </div>
                 <div class="p-5 space-y-3">
@@ -65,17 +65,17 @@
                             @Model.Email
                             @if (!Model.EmailConfirmed)
                             {
-                                <span class="ml-2 text-[10px] text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">Unverified</span>
+                                <span class="ml-2 text-[10px] text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">Chưa xác nhận</span>
                             }
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div class="field-group">
-                            <label class="field-label">Account ID</label>
+                            <label class="field-label">Mã Tài Khoản</label>
                             <div class="field-readonly font-mono text-xs break-all">@Model.Id</div>
                         </div>
                         <div class="field-group">
-                            <label class="field-label">Created At</label>
+                            <label class="field-label">Đã Tạo</label>
                             <div class="field-readonly text-xs">
                                 <span class="material-icons-round text-gray-300 text-base">calendar_today</span>
                                 @Model.CreatedAt.ToString("dd MMM yyyy, HH:mm")
@@ -90,21 +90,21 @@
                 <div class="card-header">
                     <div class="flex items-center gap-2">
                         <span class="material-icons-round text-orange-400">edit</span>
-                        <h2>Moderator Information <span class="text-xs text-gray-500 font-semibold ml-1">read-only</span></h2>
+                        <h2>Thông Tin Kiểm Duyệt Viên <span class="text-xs text-gray-500 font-semibold ml-1">chỉ xem</span></h2>
                     </div>
                 </div>
                 <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
 
                     <!-- First Name -->
                     <div class="field-group">
-                        <label class="field-label">First Name</label>
+                        <label class="field-label">Họ</label>
                         <input type="text" value="@Model.FirstName"
                                class="search-input w-full bg-gray-50 text-gray-500 cursor-not-allowed" readonly />
                     </div>
 
                     <!-- Last Name -->
                     <div class="field-group">
-                        <label class="field-label">Last Name</label>
+                        <label class="field-label">Tên</label>
                         <input type="text" value="@Model.LastName"
                                class="search-input w-full bg-gray-50 text-gray-500 cursor-not-allowed" readonly />
                     </div>
@@ -112,7 +112,7 @@
                     <!-- Phone -->
                     <div class="field-group sm:col-span-2">
                         <label class="field-label">
-                            Phone Number
+                            Số Điện Thoại
                         </label>
                         <div class="relative">
                             <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-base pointer-events-none">phone</span>
@@ -120,7 +120,7 @@
                                    value="@((string.IsNullOrWhiteSpace(Model.PhoneNumber) ? "N/A" : Model.PhoneNumber))"
                                    class="search-input !pl-9 w-full bg-gray-50 text-gray-500 cursor-not-allowed" readonly />
                         </div>
-                        <p class="text-xs text-gray-400 mt-1">Moderator can update phone number in personal profile.</p>
+                        <p class="text-xs text-gray-400 mt-1">Kiểm duyệt viên có thể cập nhật số điện thoại trong trang hồ sơ cá nhân.</p>
                     </div>
 
                     <!-- Status -->
@@ -138,12 +138,12 @@
                                 <div class="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
                                 <span class="text-sm font-semibold text-gray-700">Active</span>
                             </label>
-                            <label class="flex items-center gap-2.5 px-4 py-3 rounded-2xl border-2 cursor-pointer transition-all @(Model.Status == 0 ? "border-red-400 bg-red-50" : "border-gray-200 bg-gray-50 hover:border-gray-300")"
+                            <label class="flex items-center gap-2.5 px-4 py-3 rounded-2xl border-2 cursor-pointer transition-all @(Model.Status == 2 ? "border-red-400 bg-red-50" : "border-gray-200 bg-gray-50 hover:border-gray-300")"
                                    id="label-inactive">
-                                <input type="radio" name="Status" value="0"
-                                       @(Model.Status == 0 ? "checked" : "")
+                                <input type="radio" name="Status" value="2"
+                                       @(Model.Status == 2 ? "checked" : "")
                                        class="accent-red-500"
-                                       onchange="updateStatusLabel(0)" />
+                                       onchange="updateStatusLabel(2)" />
                                 <div class="w-2.5 h-2.5 rounded-full bg-red-400"></div>
                                 <span class="text-sm font-semibold text-gray-700">Inactive</span>
                             </label>
@@ -197,10 +197,10 @@
 
             <!-- Audit Info -->
             <div class="content-card p-4 fade-in-up" style="animation-delay:.12s;">
-                <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Last Login</p>
-                <p class="text-sm text-gray-600 mb-3">@(Model.LastLoginAt.HasValue ? Model.LastLoginAt.Value.ToString("dd MMM yyyy, HH:mm") : "Never")</p>
+                <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Đăng Nhập Lần Cuối</p>
+                <p class="text-sm text-gray-600 mb-3">@(Model.LastLoginAt.HasValue ? Model.LastLoginAt.Value.ToString("dd MMM yyyy, HH:mm") : "Chưa đăng nhập")</p>
 
-                <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Created At</p>
+                <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Đã Tạo</p>
                 <p class="text-sm text-gray-600">@Model.CreatedAt.ToString("dd MMM yyyy, HH:mm")</p>
             </div>
 
@@ -208,11 +208,11 @@
             <div class="content-card p-4 space-y-2.5 fade-in-up" style="animation-delay:.15s;">
                 <button type="submit" class="btn-primary w-full justify-center">
                     <span class="material-icons-round text-base">save</span>
-                    Save Changes
+                    Lưu Thay Đổi
                 </button>
                 <a href="/Admin/ManageModerators" class="btn-outline w-full justify-center">
                     <span class="material-icons-round text-base">close</span>
-                    Cancel
+                    Hủy
                 </a>
             </div>
 
@@ -255,7 +255,7 @@ function updateStatusLabel(val) {
     if (val === 1) {
         display.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold bg-emerald-50 text-emerald-700 border border-emerald-200';
         dot.className     = 'w-2 h-2 rounded-full bg-emerald-400';
-        text.textContent  = 'Active';
+        text.textContent  = 'Hoạt Động';
         if (avatarDot) avatarDot.className = avatarDot.className.replace('bg-red-400', 'bg-emerald-400');
 
         document.getElementById('label-active').className   = document.getElementById('label-active').className.replace('border-gray-200 bg-gray-50 hover:border-gray-300', 'border-emerald-400 bg-emerald-50');
@@ -263,7 +263,7 @@ function updateStatusLabel(val) {
     } else {
         display.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold bg-red-50 text-red-700 border border-red-200';
         dot.className     = 'w-2 h-2 rounded-full bg-red-400';
-        text.textContent  = 'Inactive';
+        text.textContent  = 'Vô Hiệu Hóa';
         if (avatarDot) avatarDot.className = avatarDot.className.replace('bg-emerald-400', 'bg-red-400');
 
         document.getElementById('label-inactive').className = document.getElementById('label-inactive').className.replace('border-gray-200 bg-gray-50 hover:border-gray-300', 'border-red-400 bg-red-50');

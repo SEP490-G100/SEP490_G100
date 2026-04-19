@@ -69,7 +69,7 @@ public class ModeratorFaqController : Controller
         }
         catch
         {
-            TempData["Error"] = "Khong the tai danh sach FAQ.";
+            TempData["Error"] = "Không thể tải danh sách FAQ.";
             ViewBag.Categories = new List<string>();
             return View("~/Views/Moderator/FAQ/ManageFAQ.cshtml", new FaqListResponse());
         }
@@ -143,14 +143,14 @@ public class ModeratorFaqController : Controller
             var result = JsonSerializer.Deserialize<ApiResult<FaqDto>>(json, JsonOpts);
             if (result?.Success != true || result.Data == null)
             {
-                TempData["Error"] = "Khong tim thay FAQ.";
+                TempData["Error"] = "Không tìm thấy FAQ.";
                 return RedirectToAction(nameof(ManageFAQ));
             }
             return View("~/Views/Moderator/FAQ/ViewFAQDetail.cshtml", result.Data);
         }
         catch
         {
-            TempData["Error"] = "Loi ket noi den API.";
+            TempData["Error"] = "Lỗi kết nối đến API.";
             return RedirectToAction(nameof(ManageFAQ));
         }
     }
@@ -171,7 +171,8 @@ public class ModeratorFaqController : Controller
         {
             question = model.Question.Trim(),
             answer = model.Answer.Trim(),
-            isActive = model.IsActive
+            isActive = model.IsActive,
+            isDeleted = !model.IsActive
         });
         var token = HttpContext.Session.GetString("AccessToken");
         var request = new HttpRequestMessage(HttpMethod.Put, $"/api/Faq/{id}")

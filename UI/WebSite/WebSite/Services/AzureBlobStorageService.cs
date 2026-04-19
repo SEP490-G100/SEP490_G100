@@ -9,6 +9,7 @@ namespace WebSite.Services;
 public interface IAzureBlobStorageService
 {
     Task<string> UploadVerificationDocumentAsync(IFormFile file, VerificationDocumentType documentType, CancellationToken cancellationToken = default);
+    Task<string> UploadUserAvatarAsync(IFormFile file, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<string>> UploadMediaAsync(
         IEnumerable<IFormFile> files,
         BlobStorageContainerKind containerKind,
@@ -47,6 +48,23 @@ public class AzureBlobStorageService : IAzureBlobStorageService
         var blobName = $"{GetVerificationFolderName(documentType)}/{DateTime.UtcNow:yyyy/MM}/{Guid.NewGuid()}{fileExtension}";
 
         return await UploadBlobAsync(containerClient, file, blobName, GetVerificationContentType(file, fileExtension), cancellationToken);
+    }
+
+    public async Task<string> UploadUserAvatarAsync(IFormFile file, CancellationToken cancellationToken = default)
+    {
+        ValidateConnectionString();
+        ValidateContainerName(_options.UserAvatarContainerName, "UserAvatarContainerName");
+
+        if (file == null || file.Length == 0)
+            throw new InvalidOperationException("File avatar khong hop le.");
+
+        var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (!IsSupportedImage(file.ContentType, fileExtension))
+            throw new InvalidOperationException("Chi ho tro upload avatar dinh dang anh hop le.");
+
+        var containerClient = await GetContainerClientAsync(_options.UserAvatarContainerName, cancellationToken);
+        var blobName = $"user-avatar/{DateTime.UtcNow:yyyy/MM}/{Guid.NewGuid()}{fileExtension}";
+        return await UploadBlobAsync(containerClient, file, blobName, GetImageContentType(file.ContentType, fileExtension), cancellationToken);
     }
 
     public async Task<IReadOnlyList<string>> UploadMediaAsync(
@@ -176,7 +194,7 @@ public class AzureBlobStorageService : IAzureBlobStorageService
         return fileExtension is ".jpg" or ".jpeg" or ".png" or ".webp" or ".gif";
     }
 
-    private static string GetBlogImageContentType(string? contentType, string fileExtension)
+    private static string GetImageContentType(string? contentType, string fileExtension)
     {
         if (!string.IsNullOrWhiteSpace(contentType) &&
             contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
@@ -194,6 +212,9 @@ public class AzureBlobStorageService : IAzureBlobStorageService
             _ => "application/octet-stream"
         };
     }
+
+    private static string GetBlogImageContentType(string? contentType, string fileExtension) =>
+        GetImageContentType(contentType, fileExtension);
 
     private static bool IsSupportedVideo(string? contentType, string fileExtension)
     {

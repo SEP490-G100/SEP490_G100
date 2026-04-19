@@ -49,7 +49,7 @@ public class ReviewController : Controller
         // Chi cho phep review khi hop dong da hoan thanh (Status = 4)
         if (d.Status != 4)
         {
-            TempData["Error"] = "Chi co the danh gia sau khi hop dong hoan thanh.";
+            TempData["Error"] = "Chỉ có thể đánh giá sau khi hợp đồng hoàn thành.";
             return RedirectToAction(nameof(History));
         }
 

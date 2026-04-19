@@ -1010,13 +1010,9 @@
                 <!-- Nav Links (giữa) -->
                 <div class="hidden md:flex items-center gap-1 nm-nav-links">
                     <a href="/" class="@homeNavCls">Trang chủ</a>
-                    <a href="/Search" class="@NavCls("Search")">Tìm bảo mẫu</a>
-                    <a href="/Nanny/List" class="@nannyListNavCls">Tìm nanny</a>
+                    <a href="/Search" class="@NavCls("Search")">Tìm Công Việc</a>
+                    <a href="/Nanny/List" class="@nannyListNavCls">Tìm Bảo Mẫu</a>
                     <a href="/Blog" class="@NavCls("Blog")">Blog</a>
-                    @if (User.Identity != null && User.Identity.IsAuthenticated && (User.IsInRole("Parent") || User.IsInRole("Nanny")))
-                    {
-                        <a href="/Contract" class="@NavCls("Contract")">Hợp đồng của tôi</a>
-                    }
                     <a href="/Home/Faq" class="@faqNavCls">FAQ</a>
                 </div>
 
@@ -1027,7 +1023,7 @@
                     {
                         <a href="/Communication"
                            class="nm-icon-btn nm-icon-btn--mini"
-                           aria-label="Tin nhan">
+                           aria-label="Tin Nhắn">
                             <span class="material-icons-round text-[18px]">chat_bubble_outline</span>
                         </a>
 
@@ -1538,7 +1534,7 @@
                         <a class="hidden sm:inline-flex nm-auth-link"
                            href="/Auth/Login">Đăng nhập</a>
                         <a class="nm-primary-btn"
-                           href="/Auth/Register">Đăng ký miễn phí</a>
+                           href="/Auth/Register">Đăng ký</a>
                     }
                 </div>
             </div>

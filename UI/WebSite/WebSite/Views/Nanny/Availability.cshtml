@@ -4,10 +4,10 @@
     var dayColumns = Model.Days.Select((d, i) => new { Index = i, d.DayName }).ToList();
     var slotRows = new[]
     {
-        new { Slot = 0, Label = "Morning", Name = "Morning" },
-        new { Slot = 1, Label = "Afternoon", Name = "Afternoon" },
-        new { Slot = 2, Label = "Evening", Name = "Evening" },
-        new { Slot = 3, Label = "Night", Name = "Night" }
+        new { Slot = 0, Label = "Buổi sáng", Name = "Morning" },
+        new { Slot = 1, Label = "Buổi chiều", Name = "Afternoon" },
+        new { Slot = 2, Label = "Buổi tối", Name = "Evening" },
+        new { Slot = 3, Label = "Ban đêm", Name = "Night" }
     };
 }
 
@@ -21,8 +21,8 @@
         <div class="availability-panel">
             <div class="availability-head">
                 <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-orange-500">Nanny onboarding</p>
-                <h1 class="mt-2 text-2xl sm:text-3xl font-bold text-slate-900" style="font-family:'Quicksand',sans-serif">Chon lich lam viec</h1>
-                <p class="mt-2 text-sm text-slate-500">UI dong bo voi lich tren JobPostList.</p>
+                <h1 class="mt-2 text-2xl sm:text-3xl font-bold text-slate-900" style="font-family:'Quicksand',sans-serif">Chọn lịch làm việc</h1>
+                <p class="mt-2 text-sm text-slate-500">Giao diện đồng bộ với lịch trên danh sách bài đăng.</p>
             </div>
 
             <div class="availability-body">
@@ -40,8 +40,8 @@
                     <div class="section-card schedule-card">
                         <div class="schedule-header">
                             <div>
-                                <p class="section-title">Weekly schedule</p>
-                                <p class="section-caption">Chon cac khung gio ban co the nhan viec.</p>
+                                <p class="section-title">Lịch tuần</p>
+                                <p class="section-caption">Chọn các khung giờ bạn có thể nhận việc.</p>
                             </div>
                         </div>
 
@@ -86,8 +86,8 @@
                     </div>
 
                     <div class="availability-actions">
-                        <a href="@Url.Action("Skills", "Nanny")" class="ghost-btn">Back</a>
-                        <button type="submit" class="profile-primary-btn">Finish</button>
+                        <a href="@Url.Action("Skills", "Nanny")" class="ghost-btn">Quay lại</a>
+                        <button type="submit" class="profile-primary-btn">Hoàn tất</button>
                     </div>
                 </form>
             </div>

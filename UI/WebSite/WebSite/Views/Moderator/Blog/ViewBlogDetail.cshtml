@@ -2,7 +2,7 @@
 @model WebSite.Models.Blog.BlogDto
 @{
     Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
-    ViewData["Title"] = "Blog Detail";
+    ViewData["Title"] = "Chi tiết Blog";
     var categories = ViewBag.Categories as List<WebSite.Models.Blog.BlogCategoryOption>
                      ?? new List<WebSite.Models.Blog.BlogCategoryOption>();
 }
@@ -10,13 +10,13 @@
 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
     <div>
         <h1 class="page-title mt-2">
-            Edit <span class="gradient-text">Blog</span>
+            Sửa <span class="gradient-text">Blog</span>
         </h1>
-        <p class="page-subtitle">Update blog article details and content images.</p>
+        <p class="page-subtitle">Cập nhật thông tin chi tiết bài viết và nội dung.</p>
     </div>
     <a href="/Moderator/ManageBlog" class="btn-outline flex-shrink-0 flex items-center gap-1">
         <span class="material-icons-round text-base">arrow_back</span>
-        Back to List
+        Quay lại danh sách
     </a>
 </div>
 
@@ -35,33 +35,33 @@
             <div class="content-card p-6 fade-in-up">
                 <h2 class="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
                     <span class="material-icons-round text-indigo-400 text-base">title</span>
-                    Basic Info
+                    Thông tin cơ bản
                 </h2>
 
                 <div class="mb-4">
                     <label class="block text-sm font-semibold text-gray-700 mb-1.5">
-                        Title <span class="text-red-500">*</span>
+                        Tiêu đề <span class="text-red-500">*</span>
                     </label>
                     <input id="titleInput" name="Title" type="text" value="@Model.Title"
-                           placeholder="Blog title..."
+                           placeholder="Tiêu đề bài viết..."
                            class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 transition" />
-                    <p id="titleError" class="text-red-500 text-xs mt-1 hidden">Title cannot be empty.</p>
+                    <p id="titleError" class="text-red-500 text-xs mt-1 hidden">Tiêu đề không được để trống.</p>
                 </div>
 
                 <div class="mb-4">
                     <label class="block text-sm font-semibold text-gray-700 mb-1.5">
-                        Slug <span class="text-red-500">*</span>
+                        Đường dẫn (Slug) <span class="text-red-500">*</span>
                     </label>
                     <input id="slugInput" name="Slug" type="text" value="@Model.Slug"
                            placeholder="blog-slug"
                            class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-mono focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 transition" />
-                    <p id="slugError" class="text-red-500 text-xs mt-1 hidden">Slug cannot be empty.</p>
+                    <p id="slugError" class="text-red-500 text-xs mt-1 hidden">Đường dẫn không được để trống.</p>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Summary</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Tóm tắt</label>
                     <textarea name="Summary" rows="2"
-                              placeholder="Short description..."
+                              placeholder="Mô tả súc tích..."
                               class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 transition resize-none">@(Model.Summary ?? "")</textarea>
                 </div>
             </div>
@@ -70,24 +70,24 @@
                 <div class="flex items-center justify-between gap-3 mb-4">
                     <h2 class="text-sm font-bold text-gray-700 flex items-center gap-2">
                         <span class="material-icons-round text-indigo-400 text-base">edit_note</span>
-                        Content <span class="text-red-500">*</span>
+                        Nội dung <span class="text-red-500">*</span>
                     </h2>
-                    <span class="text-xs text-gray-400">Supports HTML image tags</span>
+                    <span class="text-xs text-gray-400">Hỗ trợ thẻ HTML và hình ảnh</span>
                 </div>
 
                 <div>
                     <textarea id="contentInput" name="Content" rows="18"
                               class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 transition resize-y">@Model.Content</textarea>
-                    <p id="contentError" class="text-red-500 text-xs mt-1 hidden">Content cannot be empty.</p>
-                    <p class="text-xs text-gray-400 mt-2">Use TinyMCE toolbar for image/video upload or media URL insertion.</p>
+                    <p id="contentError" class="text-red-500 text-xs mt-1 hidden">Nội dung bài viết không được để trống.</p>
+                    <p class="text-xs text-gray-400 mt-2">Sử dụng thanh công cụ TinyMCE để tải lên hình ảnh/video hoặc chèn URL phương tiện.</p>
 
                     <div class="mt-4 rounded-2xl border border-gray-200 bg-white overflow-hidden">
                         <div class="flex items-center justify-between gap-2 border-b border-gray-100 px-4 py-3 bg-gray-50">
                             <h3 class="text-sm font-bold text-gray-700 flex items-center gap-2">
                                 <span class="material-icons-round text-indigo-400 text-base">preview</span>
-                                Live Preview
+                                Bản xem trước
                             </h3>
-                            <span class="text-xs text-gray-400">Renders HTML content, images, and videos</span>
+                            <span class="text-xs text-gray-400">Hiển thị nội dung HTML, hình ảnh và video</span>
                         </div>
                         <div id="contentPreview" class="p-4 min-h-[220px] max-h-[560px] overflow-y-auto text-sm leading-7 text-gray-700 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-2xl [&_img]:my-4 [&_video]:max-w-full [&_video]:rounded-2xl [&_video]:my-4 [&_video]:bg-black [&_p]:mb-3 [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-3 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:mb-3 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"></div>
                     </div>
@@ -99,24 +99,24 @@
             <div class="content-card p-6 fade-in-up" style="animation-delay:.08s;">
                 <h2 class="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
                     <span class="material-icons-round text-indigo-400 text-base">settings</span>
-                    Settings
+                    Tùy chọn
                 </h2>
 
                 <div class="mb-4">
-                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Status</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Trạng thái</label>
                     <select name="Status"
                             class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-indigo-400 transition appearance-none">
-                        <option value="@((int)BlogStatus.Draft)" selected="@(Model.Status == BlogStatus.Draft ? "selected" : null)">Draft</option>
-                        <option value="@((int)BlogStatus.Published)" selected="@(Model.Status == BlogStatus.Published ? "selected" : null)">Published</option>
-                        <option value="@((int)BlogStatus.Archived)" selected="@(Model.Status == BlogStatus.Archived ? "selected" : null)">Archived</option>
+                        <option value="@((int)BlogStatus.Draft)" selected="@(Model.Status == BlogStatus.Draft ? "selected" : null)">Bản nháp</option>
+                        <option value="@((int)BlogStatus.Published)" selected="@(Model.Status == BlogStatus.Published ? "selected" : null)">Xuất bản</option>
+                        <option value="@((int)BlogStatus.Archived)" selected="@(Model.Status == BlogStatus.Archived ? "selected" : null)">Lưu trữ</option>
                     </select>
                 </div>
 
                 <div class="mb-4">
-                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Category</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Danh mục</label>
                     <select name="CategoryId"
                             class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-indigo-400 transition appearance-none">
-                        <option value="">— No Category —</option>
+                        <option value="">— Không có danh mục —</option>
                         @foreach (var cat in categories)
                         {
                             <option value="@cat.Id" selected="@(Model.CategoryId == cat.Id ? "selected" : null)">@cat.Name</option>
@@ -125,7 +125,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Thumbnail URL</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Ảnh bìa (URL)</label>
                     <input name="ThumbnailUrl" type="url" value="@(Model.ThumbnailUrl ?? "")"
                            placeholder="https://example.com/image.jpg"
                            class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-indigo-400 transition" />
@@ -135,38 +135,38 @@
             <div class="content-card p-6 fade-in-up" style="animation-delay:.1s;">
                 <h2 class="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
                     <span class="material-icons-round text-gray-400 text-base">info_outline</span>
-                    Blog Info
+                    Thông tin hệ thống
                 </h2>
                 <div class="space-y-3 text-sm">
                     <div class="flex justify-between">
-                        <span class="text-gray-400 font-medium">Author</span>
+                        <span class="text-gray-400 font-medium">Tác giả</span>
                         <span class="text-gray-600">@(Model.AuthorName ?? "—")</span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-gray-400 font-medium">Views</span>
+                        <span class="text-gray-400 font-medium">Lượt xem</span>
                         <span class="text-gray-600">@Model.ViewCount</span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-gray-400 font-medium">Published</span>
-                        <span class="text-gray-600">@(Model.PublishedAt?.ToString("MMM dd, yyyy") ?? "—")</span>
+                        <span class="text-gray-400 font-medium">Ngày xuất bản</span>
+                        <span class="text-gray-600">@(Model.PublishedAt?.ToString("dd/MM/yyyy") ?? "—")</span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-gray-400 font-medium">Created</span>
-                        <span class="text-gray-600">@Model.CreatedAt.ToString("MMM dd, yyyy")</span>
+                        <span class="text-gray-400 font-medium">Ngày tạo</span>
+                        <span class="text-gray-600">@Model.CreatedAt.ToString("dd/MM/yyyy")</span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-gray-400 font-medium">Updated</span>
-                        <span class="text-gray-600">@(Model.UpdatedAt?.ToString("MMM dd, yyyy") ?? "—")</span>
+                        <span class="text-gray-400 font-medium">Cập nhật lần cuối</span>
+                        <span class="text-gray-600">@(Model.UpdatedAt?.ToString("dd/MM/yyyy") ?? "—")</span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-gray-400 font-medium">Visibility</span>
+                        <span class="text-gray-400 font-medium">Trạng thái ẩn/hiện</span>
                         @if (!Model.IsDeleted)
                         {
-                            <span class="badge badge-active">Active</span>
+                            <span class="badge badge-active">Hoạt động</span>
                         }
                         else
                         {
-                            <span class="badge badge-inactive">Inactive</span>
+                            <span class="badge badge-inactive">Đã ẩn</span>
                         }
                     </div>
                 </div>
@@ -175,10 +175,10 @@
             <div class="content-card p-5 fade-in-up" style="animation-delay:.12s;">
                 <button type="button" onclick="submitForm()" class="btn-primary w-full justify-center">
                     <span class="material-icons-round text-base">save</span>
-                    Save Changes
+                    Lưu thay đổi
                 </button>
                 <a href="/Moderator/ManageBlog" class="btn-outline w-full justify-center mt-3">
-                    Cancel
+                    Hủy
                 </a>
             </div>
         </div>
@@ -238,7 +238,7 @@ function renderContentPreview() {
     var preview = getContentPreview();
 
     if (!content) {
-        preview.innerHTML = '<p class="text-sm text-gray-400 italic">Content preview will appear here, including any uploaded or linked images.</p>';
+        preview.innerHTML = '<p class="text-sm text-gray-400 italic">Bản xem trước của bài viết sẽ hiển thị tại đây.</p>';
         return;
     }
 

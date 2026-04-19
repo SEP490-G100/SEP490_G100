@@ -47,7 +47,7 @@ public class AdminNotificationController : Controller
         }
         catch
         {
-            TempData["Error"] = "Khong the tai danh sach thong bao admin.";
+            TempData["Error"] = "Không thể tải danh sách thông báo.";
             return View("~/Views/Admin/AdminNotification/ManageAdminNotification.cshtml", new AdminNotificationListResponse());
         }
     }
@@ -129,7 +129,7 @@ public class AdminNotificationController : Controller
         }
         catch
         {
-            TempData["Error"] = "Loi ket noi den API.";
+            TempData["Error"] = "Lỗi kết nối đến API.";
             return RedirectToAction(nameof(ManageAdminNotification));
         }
     }

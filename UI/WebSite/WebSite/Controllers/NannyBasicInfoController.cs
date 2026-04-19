@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebSite.Models;
 using WebSite.Models.Profile;
+using WebSite.Services;
 
 namespace WebSite.Controllers;
 
@@ -12,12 +13,17 @@ public class NannyBasicInfoController : Controller
 {
     private readonly HttpClient _http;
     private readonly string _apiBaseUrl;
+    private readonly IAzureBlobStorageService _blobStorageService;
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
 
-    public NannyBasicInfoController(IHttpClientFactory httpFactory, IConfiguration config)
+    public NannyBasicInfoController(
+        IHttpClientFactory httpFactory,
+        IConfiguration config,
+        IAzureBlobStorageService blobStorageService)
     {
         _http = httpFactory.CreateClient("BackendApi");
         _apiBaseUrl = (config["ApiSettings:BaseUrl"] ?? "").TrimEnd('/');
+        _blobStorageService = blobStorageService;
     }
 
     private string? NormalizeAvatarUrl(string? url)
@@ -36,6 +42,30 @@ public class NannyBasicInfoController : Controller
         var token = GetToken();
         if (!string.IsNullOrEmpty(token))
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+    }
+
+    private static string? NormalizePhoneNumber(string? phoneNumber)
+    {
+        if (string.IsNullOrWhiteSpace(phoneNumber))
+            return null;
+
+        var normalized = phoneNumber.Trim().Replace(" ", string.Empty);
+        if (normalized.StartsWith("00", StringComparison.Ordinal))
+            normalized = "+" + normalized[2..];
+
+        return normalized;
+    }
+
+    private static bool IsValidPhoneNumber(string phoneNumber)
+    {
+        var normalized = NormalizePhoneNumber(phoneNumber);
+        if (string.IsNullOrWhiteSpace(normalized))
+            return false;
+
+        if (normalized.StartsWith("+", StringComparison.Ordinal))
+            normalized = normalized[1..];
+
+        return normalized.Length is >= 9 and <= 15 && normalized.All(char.IsDigit);
     }
 
     private async Task<EditPersonalInfoViewModel?> LoadCurrentProfileAsync()
@@ -61,20 +91,13 @@ public class NannyBasicInfoController : Controller
         // Upload Avatar
         if (model.AvatarFile != null && model.AvatarFile.Length > 0)
         {
-            using var content = new MultipartFormDataContent();
-            var streamContent = new StreamContent(model.AvatarFile.OpenReadStream());
-            streamContent.Headers.ContentType = new MediaTypeHeaderValue(model.AvatarFile.ContentType);
-            content.Add(streamContent, "file", model.AvatarFile.FileName);
-
-            var uploadRes = await _http.PostAsync("/api/profile/upload-avatar", content);
-            if (uploadRes.IsSuccessStatusCode)
+            try
             {
-                var uploadJson = await uploadRes.Content.ReadAsStringAsync();
-                var uploadResult = JsonSerializer.Deserialize<ApiResultDto>(uploadJson, JsonOpts);
-                if (uploadResult?.Success == true && uploadResult.Data != null)
-                {
-                    model.AvatarUrl = uploadResult.Data.ToString();
-                }
+                model.AvatarUrl = await _blobStorageService.UploadUserAvatarAsync(model.AvatarFile);
+            }
+            catch
+            {
+                return false;
             }
         }
 
@@ -99,7 +122,7 @@ public class NannyBasicInfoController : Controller
         {
             FirstName = string.IsNullOrWhiteSpace(firstName) ? "Nanny" : firstName,
             LastName = string.IsNullOrWhiteSpace(lastName) ? "User" : lastName,
-            PhoneNumber = (string?)null,
+            PhoneNumber = NormalizePhoneNumber(model.PhoneNumber),
             AvatarUrl = model.AvatarUrl,
             model.DateOfBirth,
             model.Gender,
@@ -126,6 +149,7 @@ public class NannyBasicInfoController : Controller
         if (existing != null)
         {
             vm.FullName = $"{existing.FirstName} {existing.LastName}".Trim();
+            vm.PhoneNumber = existing.PhoneNumber;
             vm.DateOfBirth = existing.DateOfBirth;
             vm.Gender = existing.Gender;
             vm.Address = existing.Address;
@@ -163,6 +187,9 @@ public class NannyBasicInfoController : Controller
 
             if (model.Gender == null)
                 ModelState.AddModelError(nameof(model.Gender), "Vui lòng chọn giới tính.");
+
+            if (!string.IsNullOrWhiteSpace(model.PhoneNumber) && !IsValidPhoneNumber(model.PhoneNumber))
+                ModelState.AddModelError(nameof(model.PhoneNumber), "So dien thoai khong hop le (9-15 chu so, cho phep dau +).");
 
             if (string.IsNullOrWhiteSpace(model.Address))
                 ModelState.AddModelError(nameof(model.Address), "Vui lòng nhập địa chỉ chi tiết.");

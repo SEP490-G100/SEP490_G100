@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
@@ -62,7 +62,7 @@ public class ModeratorComplainController : Controller
         }
         catch
         {
-            TempData["Error"] = "Cannot load complaint list.";
+            TempData["Error"] = "Không thể tải danh sách khiếu nại.";
             return View("~/Views/Moderator/Complaint/ManageComplaint.cshtml", new ModeratorComplaintListResponse());
         }
     }
@@ -76,7 +76,7 @@ public class ModeratorComplainController : Controller
         var detail = await FetchComplaintDetailAsync(id);
         if (detail == null)
         {
-            TempData["Error"] = "Complaint not found.";
+            TempData["Error"] = "Không tìm thấy khiếu nại.";
             return RedirectToAction(nameof(ManageComplaint));
         }
 
@@ -103,13 +103,13 @@ public class ModeratorComplainController : Controller
         var detail = await FetchComplaintDetailAsync(id);
         if (detail == null)
         {
-            TempData["Error"] = "Complaint not found.";
+            TempData["Error"] = "Không tìm thấy khiếu nại.";
             return RedirectToAction(nameof(ManageComplaint));
         }
 
         if (detail.Status == 1)
         {
-            TempData["Error"] = "Complaint already completed. Resolution cannot be edited.";
+            TempData["Error"] = "Khiếu nại đã giải quyết. Biện pháp không thể chỉnh sửa.";
             var lockedModel = new ModeratorComplaintDetailPageModel
             {
                 Detail = detail,

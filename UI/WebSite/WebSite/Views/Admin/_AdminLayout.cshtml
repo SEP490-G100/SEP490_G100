@@ -1,5 +1,5 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="vi">
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
@@ -22,45 +22,45 @@
                 <img src="~/img/nanny-logo.jpg" alt="Logo" class="w-9 h-9 rounded-xl object-cover shadow-lg flex-shrink-0" />
                 <div class="sidebar-text overflow-hidden">
                     <span class="text-lg font-bold tracking-tight" style="background:linear-gradient(135deg,#F97316,#FB923C);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">NannyMatch</span>
-                    <p class="text-[10px] text-gray-400 -mt-0.5 uppercase tracking-widest">Admin Panel</p>
+                    <p class="text-[10px] text-gray-400 -mt-0.5 uppercase tracking-widest">Bảng Điều Khiển</p>
                 </div>
             </div>
 
             <!-- Nav -->
             <nav class="flex-1 px-3 py-5 space-y-1 overflow-y-auto overflow-x-hidden">
 
-                <p class="sidebar-text px-2 text-[10px] uppercase tracking-widest text-slate-500 mb-2 font-semibold">Overview</p>
+                <p class="sidebar-text px-2 text-[10px] uppercase tracking-widest text-slate-500 mb-2 font-semibold">Tổng Quan</p>
 
                 <a href="/Admin/Dashboard"
                    class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() == "Dashboard" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-slate-300 hover:bg-white/5 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">dashboard</span>
-                    <span class="sidebar-text">Dashboard</span>
+                    <span class="sidebar-text">Trang Chủ</span>
                 </a>
 
-                <p class="sidebar-text px-2 text-[10px] uppercase tracking-widest text-slate-500 mt-5 mb-2 font-semibold">Management</p>
+                <p class="sidebar-text px-2 text-[10px] uppercase tracking-widest text-slate-500 mt-5 mb-2 font-semibold">Quản Lý</p>
 
                 <a href="/Admin/ManageModerators"
                    class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() is "ManageModerators" or "EditModerator" or "CreateModerator" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-slate-300 hover:bg-white/5 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">manage_accounts</span>
-                    <span class="sidebar-text">Manage Moderators</span>
+                    <span class="sidebar-text">Quản Lý Kiểm Duyệt Viên</span>
                 </a>
 
                 <a href="/Admin/ManageSubscriptionPlan"
                    class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() is "ManageSubscriptionPlan" or "ViewSubscriptionPlanDetail" or "CreateSubscriptionPlan" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-slate-300 hover:bg-white/5 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">workspace_premium</span>
-                    <span class="sidebar-text">Subscription Plans</span>
+                    <span class="sidebar-text">Gói Đăng Ký</span>
                 </a>
 
                 <a href="/Admin/ManageAdminNotification"
                    class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() is "ManageAdminNotification" or "ViewAdminNotificationDetail" or "CreateAdminNotification" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-slate-300 hover:bg-white/5 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">campaign</span>
-                    <span class="sidebar-text">Manage Notifications</span>
+                    <span class="sidebar-text">Quản Lý Thông Báo</span>
                 </a>
 
                 <a href="/Admin/RecommendationConfig"
                    class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() == "RecommendationConfig" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-slate-300 hover:bg-white/5 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">tune</span>
-                    <span class="sidebar-text">Recommendation Config</span>
+                    <span class="sidebar-text">Cấu Hình Gợi Ý</span>
                 </a>
 
             </nav>
@@ -76,11 +76,11 @@
                         <p class="text-sm font-semibold text-white truncate">
                             @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? "Admin")
                         </p>
-                        <p class="text-[10px] text-orange-400 uppercase tracking-wider font-bold">Administrator</p>
+                        <p class="text-[10px] text-orange-400 uppercase tracking-wider font-bold">Quản Trị Viên</p>
                     </div>
                     <form asp-controller="Auth" asp-action="Logout" method="post" class="sidebar-text flex-shrink-0">
                         @Html.AntiForgeryToken()
-                        <button type="submit" title="Sign out"
+                        <button type="submit" title="Đăng Xuất"
                                 class="w-8 h-8 rounded-lg hover:bg-red-500/20 flex items-center justify-center text-slate-400 hover:text-red-400 transition-all">
                             <span class="material-icons-round text-xl">logout</span>
                         </button>

@@ -1,7 +1,7 @@
 @model WebSite.Models.BlogCategory.CreateBlogCategoryRequest
 @{
     Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
-    ViewData["Title"] = "Create Blog Category";
+    ViewData["Title"] = "Thêm danh mục Blog";
     var nameError = ViewData.ModelState[nameof(Model.Name)]?.Errors.Count > 0
         ? ViewData.ModelState[nameof(Model.Name)]?.Errors[0].ErrorMessage
         : null;
@@ -12,13 +12,13 @@
 
 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
     <div>
-        <span class="section-label">Content Management</span>
-        <h1 class="page-title mt-2">Create <span class="gradient-text">Blog Category</span></h1>
-        <p class="page-subtitle">Add a new blog category. Slug is generated automatically from the name.</p>
+        <span class="section-label">Quản lý nội dung</span>
+        <h1 class="page-title mt-2">Thêm <span class="gradient-text">Danh mục Blog</span></h1>
+        <p class="page-subtitle">Thêm mới một danh mục blog. Đường dẫn (slug) sẽ được tự động tạo từ tên danh mục.</p>
     </div>
     <a href="/Moderator/ManageBlogCategory" class="btn-outline flex-shrink-0">
         <span class="material-icons-round text-base">arrow_back</span>
-        Back to Categories
+        Quay lại danh sách
     </a>
 </div>
 
@@ -31,51 +31,51 @@
                 <div class="card-header">
                     <div class="flex items-center gap-2">
                         <span class="material-icons-round text-blue-400">category</span>
-                        <h2>Category Information</h2>
+                        <h2>Thông tin danh mục</h2>
                     </div>
                 </div>
                 <div class="p-5 space-y-4">
                     <div class="field-group">
                         <label class="field-label">
-                            Name <span class="text-red-400">*</span>
+                            Tên <span class="text-red-400">*</span>
                         </label>
                         <div class="relative">
                             <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-base pointer-events-none">label</span>
                             <input id="nameInput" name="Name" type="text"
                                    value="@Model?.Name"
-                                   placeholder="e.g. Parenting Tips"
+                                   placeholder="VD: Nuôi dạy con"
                                    class="search-input !pl-9 w-full @(!string.IsNullOrWhiteSpace(nameError) ? "!border-red-400" : "")" />
                         </div>
                         <p id="nameError" class="text-xs text-red-500 mt-0.5 flex items-center gap-1 @((string.IsNullOrWhiteSpace(nameError) ? "hidden" : ""))">
                             <span class="material-icons-round text-xs">error</span>
-                            @(nameError ?? "Name is required.")
+                            @(nameError ?? "Vui lòng nhập tên danh mục.")
                         </p>
                     </div>
 
                     <div class="field-group">
                         <label class="field-label">
-                            Slug <span class="text-red-400">*</span>
-                            <span class="text-gray-400 text-[10px] ml-1 normal-case font-normal">(auto-generated from name)</span>
+                            Đường dẫn <span class="text-red-400">*</span>
+                            <span class="text-gray-400 text-[10px] ml-1 normal-case font-normal">(tự động tạo từ tên)</span>
                         </label>
                         <div class="relative">
                             <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-base pointer-events-none">link</span>
                             <input id="slugInput" name="Slug" type="text"
                                    value="@Model?.Slug"
-                                   placeholder="e.g. parenting-tips"
+                                   placeholder="VD: nuoi-day-con"
                                    class="search-input !pl-9 w-full bg-gray-50 text-gray-500 @(!string.IsNullOrWhiteSpace(slugError) ? "!border-red-400" : "")"
                                    readonly />
                         </div>
                         <p id="slugError" class="text-xs text-red-500 mt-0.5 flex items-center gap-1 @((string.IsNullOrWhiteSpace(slugError) ? "hidden" : ""))">
                             <span class="material-icons-round text-xs">error</span>
-                            @(slugError ?? "Slug is required.")
+                            @(slugError ?? "Vui lòng nhập đường dẫn.")
                         </p>
                     </div>
 
                     <div class="field-group">
-                        <label class="field-label">Sort Order</label>
+                        <label class="field-label">Thứ tự</label>
                         <div class="field-readonly">
                             <span class="material-icons-round text-gray-300 text-base">sort</span>
-                            <span class="text-gray-500 text-sm">Auto-assigned (max existing + 1)</span>
+                            <span class="text-gray-500 text-sm">Tự động (lớn nhất hiện tại + 1)</span>
                         </div>
                     </div>
                 </div>
@@ -87,18 +87,18 @@
                 <div class="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-4 ring-4 ring-blue-100">
                     <span class="material-icons-round text-3xl text-blue-400">category</span>
                 </div>
-                <h3 class="font-bold text-gray-700 text-sm">New Blog Category</h3>
-                <p class="text-xs text-gray-400 mt-1">Fill in the category name and the system will generate the slug.</p>
+                <h3 class="font-bold text-gray-700 text-sm">Danh mục Blog mới</h3>
+                <p class="text-xs text-gray-400 mt-1">Nhập tên danh mục và hệ thống sẽ tự động tạo đường dẫn (slug).</p>
             </div>
 
             <div class="content-card p-4 space-y-2.5 fade-in-up" style="animation-delay:.08s;">
                 <button type="button" onclick="submitForm()" class="btn-primary w-full justify-center">
                     <span class="material-icons-round text-base">add_circle_outline</span>
-                    Create Category
+                    Thêm danh mục
                 </button>
                 <a href="/Moderator/ManageBlogCategory" class="btn-outline w-full justify-center">
                     <span class="material-icons-round text-base">close</span>
-                    Cancel
+                    Hủy
                 </a>
             </div>
         </div>

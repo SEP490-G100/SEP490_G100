@@ -28,6 +28,7 @@ public class SearchJobResponse
     public int? MaxNannyAge { get; set; }
     public List<string> Skills { get; set; } = [];
     public List<JobScheduleSlotResponse> ScheduleSlots { get; set; } = [];
+    public List<JobPostingPrefillChildResponse> Children { get; set; } = [];
     public int? NumberOfChildren { get; set; }
     public double? Latitude { get; set; }
     public double? Longitude { get; set; }

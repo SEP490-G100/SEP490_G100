@@ -2,7 +2,7 @@
 @model WebSite.Models.Account.AccountListResponse
 @{
     Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
-    ViewData["Title"] = "Manage Accounts";
+    ViewData["Title"] = "Quản lý tài khoản";
 
     var currentSearch = ViewBag.Search as string ?? "";
     var currentRole   = ViewBag.Role   as string ?? "";
@@ -17,11 +17,11 @@
      ==================================================== -->
 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
     <div>
-        <span class="section-label">User Management</span>
+        <span class="section-label">Quản lý người dùng</span>
         <h1 class="page-title mt-2">
-            Manage <span class="gradient-text">Accounts</span>
+            Quản lý <span class="gradient-text">Tài khoản</span>
         </h1>
-        <p class="page-subtitle">View account information and manage user account availability in the system.</p>
+        <p class="page-subtitle">Xem thông tin tài khoản và quản lý quyền truy cập của người dùng trong hệ thống.</p>
     </div>
     
 </div>
@@ -45,7 +45,7 @@
             <div class="relative flex-1">
                 <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">search</span>
                 <input name="search" type="text" value="@currentSearch"
-                       placeholder="Search by name or email..."
+                       placeholder="Tìm theo tên hoặc email..."
                        class="search-input pl-9 w-full border border-gray-200 rounded-xl px-4 py-2 font-medium"
                        onkeydown="if(event.key==='Enter'){this.form.submit();}" />
             </div>
@@ -55,7 +55,7 @@
                 <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">person_outline</span>
                 <select name="role" onchange="this.form.submit()"
                         class="search-input md:w-44 !pl-9 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
-                    <option value="">All Roles</option>
+                    <option value="">Tất cả vai trò</option>
                     <option value="Parent" selected="@(currentRole == "Parent" ? "selected" : null)">Parent</option>
                     <option value="Nanny"  selected="@(currentRole == "Nanny"  ? "selected" : null)">Nanny</option>
                 </select>
@@ -66,16 +66,16 @@
                 <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">toggle_on</span>
                 <select name="status" onchange="this.form.submit()"
                         class="search-input md:w-44 !pl-9 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
-                    <option value="">All Statuses</option>
-                    <option value="1" selected="@(currentStatus == "1" ? "selected" : null)">Active</option>
-                    <option value="0" selected="@(currentStatus == "0" ? "selected" : null)">Inactive</option>
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="1" selected="@(currentStatus == "1" ? "selected" : null)">Hoạt động</option>
+                    <option value="2" selected="@(currentStatus == "2" ? "selected" : null)">Vô hiệu hóa</option>
                 </select>
             </div>
 
             <!-- Submit -->
-            <button type="submit" class="btn-primary flex-shrink-0 flex items-center gap-1">
+                <button type="submit" class="btn-primary flex-shrink-0 flex items-center gap-1">
                 <span class="material-icons-round text-base">search</span>
-                Search
+                Tìm kiếm
             </button>
         </div>
     </div>
@@ -86,18 +86,17 @@
      ==================================================== -->
 <div class="content-card overflow-hidden fade-in-up" style="animation-delay:.1s;">
 
-    <!-- Table header row -->
     <div class="card-header">
         <span class="text-sm text-gray-500">
-            Showing <span class="font-bold text-gray-800">@accounts.Count</span>
-            of <span class="font-bold text-gray-800">@(Model?.TotalCount ?? 0)</span> accounts
+            Hiển thị <span class="font-bold text-gray-800">@accounts.Count</span>
+            trên <span class="font-bold text-gray-800">@(Model?.TotalCount ?? 0)</span> tài khoản
         </span>
         <div class="flex items-center gap-4 text-xs text-gray-400">
             <div class="flex items-center gap-1.5">
-                <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-emerald-100"></div>Active
+                <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-emerald-100"></div>Hoạt động
             </div>
             <div class="flex items-center gap-1.5">
-                <div class="w-2.5 h-2.5 rounded-full bg-red-400 ring-2 ring-red-100"></div>Inactive
+                <div class="w-2.5 h-2.5 rounded-full bg-red-400 ring-2 ring-red-100"></div>Vô hiệu hóa
             </div>
         </div>
     </div>
@@ -107,12 +106,12 @@
             <thead>
                 <tr>
                     <th class="text-left">#</th>
-                    <th class="text-left">User</th>
+                    <th class="text-left">Người dùng</th>
                     <th class="text-left">Email</th>
-                    <th class="text-left">Role</th>
-                    <th class="text-left">Joined</th>
-                    <th class="text-left">Status</th>
-                    <th class="text-center">Actions</th>
+                    <th class="text-left">Vai trò</th>
+                    <th class="text-left">Ngày tham gia</th>
+                    <th class="text-left">Trạng thái</th>
+                    <th class="text-center">Hành động</th>
                 </tr>
             </thead>
             <tbody>
@@ -121,8 +120,8 @@
                     <tr>
                         <td colspan="7" class="text-center py-16 text-gray-400">
                             <span class="material-icons-round text-5xl mb-3 block text-gray-200">search_off</span>
-                            <p class="font-semibold text-gray-400">No accounts found matching your criteria.</p>
-                            <p class="text-xs text-gray-300 mt-1">Try adjusting your filters above.</p>
+                            <p class="font-semibold text-gray-400">Không tìm thấy tài khoản nào phù hợp.</p>
+                            <p class="text-xs text-gray-300 mt-1">Thử điều chỉnh bộ lọc phía trên.</p>
                         </td>
                     </tr>
                 }
@@ -130,7 +129,7 @@
                 @foreach (var acc in accounts)
                 {
                     var statusBadge = acc.Status == 1 ? "badge-active"   : "badge-inactive";
-                    var statusLabel = acc.Status == 1 ? "Active"          : "Inactive";
+                    var statusLabel = acc.Status == 1 ? "Hoạt động" : "Vô hiệu hóa";
                     var avatarColors = new[] { "#F97316","#3B82F6","#8B5CF6","#10B981","#F59E0B","#EF4444","#EC4899","#6366F1" };
                     var avatarBg = avatarColors[Math.Abs(acc.Id.GetHashCode()) % avatarColors.Length];
 
@@ -151,7 +150,7 @@
                                     <span class="font-bold text-gray-800">@acc.FullName</span>
                                     @if (!acc.EmailConfirmed)
                                     {
-                                        <span class="ml-1 text-[10px] text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">Unverified</span>
+                                        <span class="ml-1 text-[10px] text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">Chưa xác minh</span>
                                     }
                                 </div>
                             </div>
@@ -172,7 +171,7 @@
                                 }
                             </div>
                         </td>
-                        <td class="text-gray-500 text-xs">@acc.CreatedAt.ToString("MMM dd, yyyy")</td>
+                        <td class="text-gray-500 text-xs">@acc.CreatedAt.ToString("dd/MM/yyyy")</td>
                         <td>
                             <div class="flex items-center gap-1.5" id="status-cell-@acc.Id">
                                 <div class="w-2 h-2 rounded-full @(acc.Status == 1 ? "bg-emerald-400 ring-2 ring-emerald-100" : "bg-red-400 ring-2 ring-red-100")"></div>
@@ -182,7 +181,7 @@
                         <td>
                             <div class="flex items-center justify-center gap-1.5">
                                 <!-- View / Manage -->
-                                <a href="/Moderator/ViewAccountDetail/@acc.Id" title="View Detail"
+                                <a href="/Moderator/ViewAccountDetail/@acc.Id" title="Xem chi tiết"
                                    class="w-8 h-8 rounded-xl hover:bg-blue-50 hover:text-blue-600 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-blue-200">
                                     <span class="material-icons-round text-base">visibility</span>
                                 </a>
@@ -190,7 +189,7 @@
                                 @if (acc.Status == 1)
                                 {
                                     <button id="toggle-btn-@acc.Id"
-                                            onclick="toggleStatus('@acc.Id', '@acc.FullName', 0)" title="Deactivate"
+                                            onclick="toggleStatus('@acc.Id', '@acc.FullName', 2)" title="Vô hiệu hóa"
                                             class="w-8 h-8 rounded-xl hover:bg-red-50 hover:text-red-500 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-red-200">
                                         <span class="material-icons-round text-base">block</span>
                                     </button>
@@ -198,7 +197,7 @@
                                 else
                                 {
                                     <button id="toggle-btn-@acc.Id"
-                                            onclick="toggleStatus('@acc.Id', '@acc.FullName', 1)" title="Activate"
+                                            onclick="toggleStatus('@acc.Id', '@acc.FullName', 1)" title="Kích hoạt"
                                             class="w-8 h-8 rounded-xl hover:bg-emerald-50 hover:text-emerald-600 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-emerald-200">
                                         <span class="material-icons-round text-base">check_circle_outline</span>
                                     </button>
@@ -215,7 +214,7 @@
     <!-- Pagination -->
     <div class="flex items-center justify-between px-6 py-4 border-t border-gray-50">
         <span class="text-sm text-gray-400">
-            Page <span class="font-bold text-gray-600">@currentPage</span> of <span class="font-bold text-gray-600">@totalPages</span>
+            Trang <span class="font-bold text-gray-600">@currentPage</span> / <span class="font-bold text-gray-600">@totalPages</span>
         </span>
         <div class="flex gap-1.5">
             @if (currentPage > 1)
@@ -260,7 +259,7 @@
 <div id="viewModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeModal('viewModal')">
     <div class="modal-box">
         <div class="flex items-center justify-between mb-5">
-            <h3 class="text-lg font-bold text-gray-900">Account Details</h3>
+            <h3 class="text-lg font-bold text-gray-900">Chi tiết tài khoản</h3>
             <button onclick="closeModal('viewModal')"
                     class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-all">
                 <span class="material-icons-round">close</span>
@@ -282,20 +281,20 @@
         <!-- Info grid -->
         <div class="grid grid-cols-2 gap-3 text-sm mb-5">
             <div class="bg-gray-50 rounded-xl p-3 border border-gray-100">
-                <p class="text-xs text-gray-400 mb-1 uppercase tracking-wide font-semibold">Status</p>
+                <p class="text-xs text-gray-400 mb-1 uppercase tracking-wide font-semibold">Trạng thái</p>
                 <p id="modalStatus" class="font-bold text-gray-700"></p>
             </div>
             <div class="bg-gray-50 rounded-xl p-3 border border-gray-100">
-                <p class="text-xs text-gray-400 mb-1 uppercase tracking-wide font-semibold">Joined</p>
+                <p class="text-xs text-gray-400 mb-1 uppercase tracking-wide font-semibold">Ngày tham gia</p>
                 <p id="modalJoined" class="font-bold text-gray-700"></p>
             </div>
             <div class="bg-gray-50 rounded-xl p-3 border border-gray-100 col-span-2">
-                <p class="text-xs text-gray-400 mb-1 uppercase tracking-wide font-semibold">Account ID</p>
+                <p class="text-xs text-gray-400 mb-1 uppercase tracking-wide font-semibold">Mã tài khoản</p>
                 <p id="modalId" class="font-semibold text-gray-600 font-mono text-xs break-all"></p>
             </div>
         </div>
 
-        <button onclick="closeModal('viewModal')" class="btn-outline w-full justify-center">Close</button>
+        <button onclick="closeModal('viewModal')" class="btn-outline w-full justify-center">Đóng</button>
     </div>
 </div>
 
@@ -315,7 +314,7 @@
         </div>
         <p id="toggleMessage" class="text-sm text-gray-600 mb-6 bg-gray-50 rounded-2xl p-4 border border-gray-100 leading-relaxed"></p>
         <div class="flex gap-2">
-            <button onclick="closeModal('toggleModal')" class="btn-outline flex-1 justify-center">Cancel</button>
+            <button onclick="closeModal('toggleModal')" class="btn-outline flex-1 justify-center">Hủy bỏ</button>
             <button id="toggleConfirmBtn" class="btn-primary flex-1 justify-center"></button>
         </div>
     </div>
@@ -358,24 +357,24 @@
         var message = document.getElementById('toggleMessage');
         var btn = document.getElementById('toggleConfirmBtn');
 
-        if (newStatus === 0) {
+        if (newStatus === 2) {
             iconBg.style.background = '#FEE2E2';
             icon.style.color = '#EF4444';
             icon.textContent = 'block';
-            title.textContent = 'Deactivate Account';
-            subtitle.textContent = 'Hide account temporarily';
-            message.innerHTML = 'Are you sure you want to <strong>deactivate</strong> the account of <strong>' + name + '</strong>? This user will no longer be able to sign in.';
+            title.textContent = 'Vô hiệu hóa tài khoản';
+            subtitle.textContent = 'Ẩn tài khoản tạm thời';
+            message.innerHTML = 'Bạn có chắc chắn muốn <strong>vô hiệu hóa</strong> tài khoản của <strong>' + name + '</strong>? Người dùng này sẽ không thể đăng nhập.';
             btn.className = 'btn-danger flex-1 justify-center';
-            btn.textContent = 'Confirm Deactivate';
+            btn.textContent = 'Xác nhận vô hiệu hóa';
         } else {
             iconBg.style.background = '#D1FAE5';
             icon.style.color = '#10B981';
             icon.textContent = 'check_circle_outline';
-            title.textContent = 'Activate Account';
-            subtitle.textContent = 'Make account active again';
-            message.innerHTML = 'Are you sure you want to <strong>activate</strong> the account of <strong>' + name + '</strong>? This user will be able to sign in again.';
+            title.textContent = 'Kích hoạt tài khoản';
+            subtitle.textContent = 'Đưa tài khoản trở lại trạng thái hoạt động';
+            message.innerHTML = 'Bạn có chắc chắn muốn <strong>kích hoạt</strong> tài khoản của <strong>' + name + '</strong>? Người dùng này sẽ có thể đăng nhập lại.';
             btn.className = 'btn-success flex-1 justify-center';
-            btn.textContent = 'Confirm Activate';
+            btn.textContent = 'Xác nhận kích hoạt';
         }
 
         btn.onclick = function() { confirmToggle(id, name, newStatus); };
@@ -413,12 +412,12 @@
                         // Vừa Activate → status = Active (green)
                         dot.className   = 'w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-emerald-100';
                         badge.className = 'badge badge-active';
-                        badge.textContent = 'Active';
+                        badge.textContent = 'Hoạt động';
                     } else {
                         // Vừa Deactivate → status = Inactive (red)
                         dot.className   = 'w-2 h-2 rounded-full bg-red-400 ring-2 ring-red-100';
                         badge.className = 'badge badge-inactive';
-                        badge.textContent = 'Inactive';
+                        badge.textContent = 'Vô hiệu hóa';
                     }
                 }
 
@@ -427,28 +426,28 @@
                 if (toggleBtn) {
                     if (newStatus === 1) {
                         // Đã Active → hiển thị nút Deactivate
-                        toggleBtn.setAttribute('onclick', "toggleStatus('" + id + "', '" + name + "', 0)");
-                        toggleBtn.setAttribute('title', 'Deactivate');
+                        toggleBtn.setAttribute('onclick', "toggleStatus('" + id + "', '" + name + "', 2)");
+                        toggleBtn.setAttribute('title', 'Vô hiệu hóa');
                         toggleBtn.className = 'w-8 h-8 rounded-xl hover:bg-red-50 hover:text-red-500 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-red-200';
                         toggleBtn.querySelector('span').textContent = 'block';
                     } else {
                         // Đã Inactive → hiển thị nút Activate
                         toggleBtn.setAttribute('onclick', "toggleStatus('" + id + "', '" + name + "', 1)");
-                        toggleBtn.setAttribute('title', 'Activate');
+                        toggleBtn.setAttribute('title', 'Kích hoạt');
                         toggleBtn.className = 'w-8 h-8 rounded-xl hover:bg-emerald-50 hover:text-emerald-600 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-emerald-200';
                         toggleBtn.querySelector('span').textContent = 'check_circle_outline';
                     }
                 }
                 triggerToast(newStatus === 1 ? 'success' : 'warning', newStatus === 1
-                    ? 'Ban da activate account ' + name + ' thanh cong'
-                    : 'Ban da deactivate account ' + name + ' thanh cong');
+                    ? 'Đã kích hoạt tài khoản ' + name + ' thành công'
+                    : 'Đã vô hiệu hóa tài khoản ' + name + ' thành công');
             } else {
                 triggerToast('error', data.message);
             }
         })
         .catch(function(err) {
             closeModal('toggleModal');
-            triggerToast('error', 'Connection error: ' + err.message);
+            triggerToast('error', 'Lỗi kết nối: ' + err.message);
         });
     }
 

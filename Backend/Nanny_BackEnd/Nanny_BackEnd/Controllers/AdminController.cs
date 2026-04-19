@@ -132,4 +132,6 @@ public class AdminController : ControllerBase
         var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
         return Guid.TryParse(sub, out var userId) ? userId : null;
     }
+
+   
 }

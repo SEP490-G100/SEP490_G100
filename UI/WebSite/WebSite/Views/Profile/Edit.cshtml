@@ -5,7 +5,10 @@
     ViewData["Title"] = "Chinh sua ho so";
     var avatarUrl = (Model.AvatarUrl ?? "").Trim();
     var isNanny = Model.IsNanny;
-    var dobMax = DateOnly.FromDateTime(DateTime.Today.AddYears(-18)).ToString("yyyy-MM-dd");
+    var dobMax = (isNanny
+        ? DateOnly.FromDateTime(DateTime.Today.AddYears(-31))
+        : DateOnly.FromDateTime(DateTime.Today))
+        .ToString("yyyy-MM-dd");
 }
 
 @section Head {
@@ -55,7 +58,7 @@
                                 <input asp-for="DateOfBirth" id="DateOfBirth" type="date" max="@dobMax" class="form-input" />
                                 @if (isNanny)
                                 {
-                                    <p class="text-xs text-slate-500 mt-1">Nanny phai du 18 tuoi tro len.</p>
+                                    <p class="text-xs text-slate-500 mt-1">Nanny phai lon hon 30 tuoi.</p>
                                 }
                                 <p id="dobError" class="hidden text-xs text-red-600 mt-1"></p>
                             </div>
@@ -64,7 +67,7 @@
                         <div class="mt-4">
                             <label class="form-label">Gioi tinh</label>
                             <input type="hidden" asp-for="Gender" id="Gender" />
-                            <div class="inline-grid grid-cols-2 gap-2 p-2 rounded-2xl border border-slate-200 bg-slate-50" style="max-width:280px">
+                            <div class="gender-segment" role="group" aria-label="Chon gioi tinh">
                                 <button type="button" class="gender-btn" data-value="0">Nam</button>
                                 <button type="button" class="gender-btn" data-value="1">Nu</button>
                             </div>
@@ -101,12 +104,16 @@
                                     <div>
                                         <label class="form-label" for="ExpectedSalaryMin">Luong toi thieu</label>
                                         <input asp-for="ExpectedSalaryMin" id="ExpectedSalaryMin" type="text" inputmode="numeric" autocomplete="off" class="form-input" />
+                                        <span asp-validation-for="ExpectedSalaryMin" class="text-xs text-red-600 mt-1 block"></span>
                                     </div>
                                     <div>
                                         <label class="form-label" for="ExpectedSalaryMax">Luong toi da</label>
                                         <input asp-for="ExpectedSalaryMax" id="ExpectedSalaryMax" type="text" inputmode="numeric" autocomplete="off" class="form-input" />
+                                        <span asp-validation-for="ExpectedSalaryMax" class="text-xs text-red-600 mt-1 block"></span>
                                     </div>
                                 </div>
+                                <p id="salaryError" class="hidden text-xs text-red-600 mt-1"></p>
+                                <p class="text-xs text-slate-500">Luong hop le tu 8.000.000 den 50.000.000 VND.</p>
                                 <div>
                                     <label class="form-label" for="MaxTravelDistance">Khoang cach di chuyen toi da (km)</label>
                                     <input asp-for="MaxTravelDistance" id="MaxTravelDistance" type="number" min="0" class="form-input" />
@@ -149,12 +156,26 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label class="form-label" for="City">Tinh/Thanh</label>
-                                    <input asp-for="City" id="City" class="form-input" list="cityOptions" placeholder="Nhap hoac chon Tinh/Thanh" autocomplete="off" />
+                                    <div class="location-input-wrap">
+                                        <input asp-for="City" id="City" class="form-input location-input" list="cityOptions" placeholder="Nhap hoac chon Tinh/Thanh" autocomplete="off" />
+                                        <button type="button" class="location-picker-btn" data-target-input="City" aria-label="Mo goi y Tinh/Thanh">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                                <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
                                     <datalist id="cityOptions"></datalist>
                                 </div>
                                 <div>
                                     <label class="form-label" for="District">Phuong/Xa</label>
-                                    <input asp-for="District" id="District" class="form-input" list="districtOptions" placeholder="Nhap hoac chon Phuong/Xa" autocomplete="off" />
+                                    <div class="location-input-wrap">
+                                        <input asp-for="District" id="District" class="form-input location-input" list="districtOptions" placeholder="Nhap hoac chon Phuong/Xa" autocomplete="off" />
+                                        <button type="button" class="location-picker-btn" data-target-input="District" aria-label="Mo goi y Phuong/Xa">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                                <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
                                     <datalist id="districtOptions"></datalist>
                                 </div>
                             </div>
@@ -173,22 +194,30 @@
                 <div class="space-y-4">
                     <div class="profile-card">
                         <h3>Anh dai dien</h3>
-                        <div class="flex flex-col items-center">
-                            <img id="avatarPreview"
-                                 class="@((string.IsNullOrWhiteSpace(avatarUrl) ? "hidden " : "") + "w-40 h-40 rounded-3xl object-cover border border-gray-200 bg-gray-50")"
-                                 src="@avatarUrl"
-                                 alt="Avatar preview" />
+                        <div class="avatar-editor">
+                            <div class="avatar-preview-shell">
+                                <img id="avatarPreview"
+                                     class="@((string.IsNullOrWhiteSpace(avatarUrl) ? "hidden " : "") + "avatar-preview-img")"
+                                     src="@avatarUrl"
+                                     alt="Avatar preview" />
+                                <div id="avatarPlaceholder" class="@((string.IsNullOrWhiteSpace(avatarUrl) ? "" : "hidden ") + "avatar-preview-placeholder")">
+                                    Chua co anh
+                                </div>
+                            </div>
                             <input type="hidden" asp-for="AvatarUrl" value="@avatarUrl" />
 
                             <div class="w-full mt-4">
-                                <label class="form-label" for="AvatarFile">Upload anh (.jpg, .png)</label>
-                                <input type="file" asp-for="AvatarFile" id="AvatarFile" accept=".jpg,.png" class="form-input" />
-                                <p class="text-xs text-slate-500 mt-1">Chi cho phep file .jpg hoac .png</p>
+                                <label class="form-label" for="AvatarFile">Upload anh (.jpg, .jpeg, .png)</label>
+                                <input type="file" asp-for="AvatarFile" id="AvatarFile" accept=".jpg,.jpeg,.png" class="hidden" />
+                                <div class="avatar-upload-actions">
+                                    <button type="button" id="avatarUploadBtn" class="profile-primary-btn flex-1">Chon anh</button>
+                                    <button type="button" id="avatarResetBtn" class="ghost-btn">Bo chon</button>
+                                </div>
+                                <p class="text-xs text-slate-500 mt-2">Chi cho phep file .jpg, .jpeg hoac .png</p>
                                 <p id="avatarUploadError" class="hidden text-xs text-red-600 mt-1"></p>
                             </div>
                             <div class="w-full mt-3">
-                                <label class="form-label" for="avatarPathDisplay">Duong dan file da chon</label>
-                                <input type="text" id="avatarPathDisplay" class="form-input" readonly value="" />
+                                <p id="avatarFileName" class="avatar-file-name">Chua chon file nao.</p>
                             </div>
                         </div>
                     </div>
@@ -225,7 +254,6 @@
                 var current = (genderInput.value || "").trim();
                 genderButtons.forEach(function (btn) {
                     var active = btn.getAttribute("data-value") === current;
-                    btn.classList.toggle("status-option", true);
                     btn.classList.toggle("active", active);
                 });
             }
@@ -240,13 +268,19 @@
             var avatarInput = document.getElementById("AvatarFile");
             var avatarErr = document.getElementById("avatarUploadError");
             var avatarPreview = document.getElementById("avatarPreview");
-            var avatarPathDisplay = document.getElementById("avatarPathDisplay");
+            var avatarPlaceholder = document.getElementById("avatarPlaceholder");
+            var avatarUploadBtn = document.getElementById("avatarUploadBtn");
+            var avatarResetBtn = document.getElementById("avatarResetBtn");
+            var avatarFileName = document.getElementById("avatarFileName");
             var currentAvatarUrl = "@avatarUrl";
             var objectUrl = null;
             var salaryInputs = [
                 document.getElementById("ExpectedSalaryMin"),
                 document.getElementById("ExpectedSalaryMax")
             ].filter(Boolean);
+            var salaryError = document.getElementById("salaryError");
+            var minSalaryAllowed = 8000000;
+            var maxSalaryAllowed = 50000000;
 
             function showAvatarError(msg) {
                 avatarErr.textContent = msg || "";
@@ -255,37 +289,54 @@
             function isAllowedImage(file) {
                 if (!file) return false;
                 var name = (file.name || "").toLowerCase();
-                return name.endsWith(".jpg") || name.endsWith(".png");
+                return name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png");
             }
             function clearPreview() {
                 if (objectUrl) { try { URL.revokeObjectURL(objectUrl); } catch (e) { } objectUrl = null; }
                 avatarPreview.src = "";
                 avatarPreview.classList.add("hidden");
+                if (avatarPlaceholder) avatarPlaceholder.classList.remove("hidden");
             }
             function setPreview(src) {
                 avatarPreview.src = src;
                 avatarPreview.classList.remove("hidden");
+                if (avatarPlaceholder) avatarPlaceholder.classList.add("hidden");
+            }
+            function setAvatarFileName(value) {
+                if (!avatarFileName) return;
+                avatarFileName.textContent = value || "Chua chon file nao.";
+            }
+            function restoreInitialAvatar() {
+                clearPreview();
+                if (currentAvatarUrl) setPreview(currentAvatarUrl);
+                setAvatarFileName("");
+                showAvatarError("");
             }
 
-            if (currentAvatarUrl) setPreview(currentAvatarUrl);
-            avatarPathDisplay.value = "";
+            restoreInitialAvatar();
+
+            avatarUploadBtn.addEventListener("click", function () {
+                avatarInput.click();
+            });
+
+            avatarResetBtn.addEventListener("click", function () {
+                avatarInput.value = "";
+                restoreInitialAvatar();
+            });
 
             avatarInput.addEventListener("change", function () {
                 showAvatarError("");
                 var file = avatarInput.files && avatarInput.files[0] ? avatarInput.files[0] : null;
-                avatarPathDisplay.value = avatarInput.value || "";
+                setAvatarFileName(file ? file.name : "");
 
                 if (!file) {
-                    clearPreview();
-                    if (currentAvatarUrl) setPreview(currentAvatarUrl);
+                    restoreInitialAvatar();
                     return;
                 }
                 if (!isAllowedImage(file)) {
                     avatarInput.value = "";
-                    avatarPathDisplay.value = "";
-                    clearPreview();
-                    showAvatarError("Chi cho phep file .jpg hoac .png.");
-                    if (currentAvatarUrl) setPreview(currentAvatarUrl);
+                    restoreInitialAvatar();
+                    showAvatarError("Chi cho phep file .jpg, .jpeg hoac .png.");
                     return;
                 }
                 clearPreview();
@@ -306,16 +357,55 @@
             salaryInputs.forEach(function (input) {
                 input.addEventListener("input", function () {
                     input.value = formatMoneyValue(input.value);
+                    validateSalaryRange();
                 });
 
                 input.addEventListener("blur", function () {
                     input.value = formatMoneyValue(input.value);
+                    validateSalaryRange();
                 });
 
                 if (input.value) {
                     input.value = formatMoneyValue(input.value);
                 }
             });
+
+            function parseSalaryInput(input) {
+                if (!input) return null;
+                var digits = getDigits(input.value);
+                return digits ? Number(digits) : null;
+            }
+
+            function showSalaryError(message) {
+                if (!salaryError) return;
+                salaryError.textContent = message || "";
+                salaryError.classList.toggle("hidden", !message);
+            }
+
+            function validateSalaryRange() {
+                if (!isNanny) return true;
+
+                var salaryMin = parseSalaryInput(document.getElementById("ExpectedSalaryMin"));
+                var salaryMax = parseSalaryInput(document.getElementById("ExpectedSalaryMax"));
+
+                if (salaryMin != null && (salaryMin < minSalaryAllowed || salaryMin > maxSalaryAllowed)) {
+                    showSalaryError("Luong toi thieu phai trong khoang 8.000.000 - 50.000.000 VND.");
+                    return false;
+                }
+
+                if (salaryMax != null && (salaryMax < minSalaryAllowed || salaryMax > maxSalaryAllowed)) {
+                    showSalaryError("Luong toi da phai trong khoang 8.000.000 - 50.000.000 VND.");
+                    return false;
+                }
+
+                if (salaryMin != null && salaryMax != null && salaryMin > salaryMax) {
+                    showSalaryError("Luong toi thieu khong duoc lon hon luong toi da.");
+                    return false;
+                }
+
+                showSalaryError("");
+                return true;
+            }
 
             function validateNannyDob() {
                 if (!isNanny) return true;
@@ -330,8 +420,8 @@
                 var age = today.getFullYear() - dob.getFullYear();
                 var monthDiff = today.getMonth() - dob.getMonth();
                 if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) age--;
-                if (age < 18) {
-                    dobError.textContent = "Nanny phai tu 18 tuoi tro len.";
+                if (age <= 30) {
+                    dobError.textContent = "Nanny phai lon hon 30 tuoi.";
                     dobError.classList.remove("hidden");
                     return false;
                 }
@@ -342,6 +432,11 @@
 
             form.addEventListener("submit", function (e) {
                 if (!validateNannyDob()) {
+                    e.preventDefault();
+                    return;
+                }
+
+                if (!validateSalaryRange()) {
                     e.preventDefault();
                     return;
                 }
@@ -391,12 +486,29 @@
             var selectedAddressSummary = document.getElementById("selectedAddressSummary");
             var addressInput = document.getElementById("Address");
             var addressLoadError = document.getElementById("addressLoadError");
+            var locationPickerButtons = document.querySelectorAll(".location-picker-btn");
             var provinces = [];
+            var htmlDecodeElement = document.createElement("textarea");
             var currentCity = "@(Model.City ?? "")";
             var currentDistrict = "@(Model.District ?? "")";
 
+            function decodeHtmlEntities(value) {
+                if (!value) return "";
+                htmlDecodeElement.innerHTML = value;
+                return htmlDecodeElement.value || "";
+            }
+            function sanitizeAddressLabel(value) {
+                return decodeHtmlEntities(value || "")
+                    .replace(/\s+/g, " ")
+                    .trim();
+            }
+
             if (currentCity && !cityInput.value) cityInput.value = currentCity;
             if (currentDistrict && !districtInput.value) districtInput.value = currentDistrict;
+            cityInput.value = sanitizeAddressLabel(cityInput.value);
+            districtInput.value = sanitizeAddressLabel(districtInput.value);
+            currentCity = sanitizeAddressLabel(currentCity);
+            currentDistrict = sanitizeAddressLabel(currentDistrict);
 
             setAddressInputState(true);
             fetch("/Address/LocationTree")
@@ -405,7 +517,7 @@
                     return r.json();
                 })
                 .then(function (data) {
-                    provinces = data || [];
+                    provinces = sanitizeAddressTree(data || []);
                     renderCityOptions(cityInput.value || currentCity);
                     renderDistrictOptions(cityInput.value || currentCity, districtInput.value || currentDistrict);
                     showAddressLoadError("");
@@ -426,21 +538,75 @@
                 addressLoadError.classList.toggle("hidden", !message);
             }
             function normalizeText(value) {
-                return (value || "")
+                return sanitizeAddressLabel(value || "")
                     .toLowerCase()
                     .normalize("NFD")
                     .replace(/[\u0300-\u036f]/g, "")
+                    .replace(/\u0111/g, "d")
+                    .replace(/\u0110/g, "d")
                     .replace(/đ/g, "d")
                     .trim();
             }
+            function sortByFilterAndName(items, filterKey, getName) {
+                return items.slice().sort(function (a, b) {
+                    var aName = sanitizeAddressLabel(getName(a));
+                    var bName = sanitizeAddressLabel(getName(b));
+                    var aKey = normalizeText(aName);
+                    var bKey = normalizeText(bName);
+                    var aRank = !filterKey ? 0 : (aKey === filterKey ? 0 : (aKey.startsWith(filterKey) ? 1 : 2));
+                    var bRank = !filterKey ? 0 : (bKey === filterKey ? 0 : (bKey.startsWith(filterKey) ? 1 : 2));
+                    if (aRank !== bRank) return aRank - bRank;
+                    return aName.localeCompare(bName, "vi", { sensitivity: "base" });
+                });
+            }
+            function sanitizeAddressTree(rawTree) {
+                if (!Array.isArray(rawTree)) return [];
+                var provinceMap = new Map();
+
+                rawTree.forEach(function (province) {
+                    var provinceName = sanitizeAddressLabel(province && province.name);
+                    if (!provinceName) return;
+                    var provinceKey = normalizeText(provinceName);
+                    if (!provinceKey) return;
+
+                    if (!provinceMap.has(provinceKey)) {
+                        provinceMap.set(provinceKey, { name: provinceName, districts: [] });
+                    }
+
+                    var targetProvince = provinceMap.get(provinceKey);
+                    var districtMap = new Map();
+                    (targetProvince.districts || []).forEach(function (district) {
+                        districtMap.set(normalizeText(district.name), district);
+                    });
+
+                    var districts = Array.isArray(province && province.districts) ? province.districts : [];
+                    districts.forEach(function (district) {
+                        var districtName = sanitizeAddressLabel(district && district.name);
+                        if (!districtName) return;
+                        var districtKey = normalizeText(districtName);
+                        if (!districtKey || districtMap.has(districtKey)) return;
+                        districtMap.set(districtKey, { name: districtName });
+                    });
+
+                    targetProvince.districts = Array.from(districtMap.values()).sort(function (a, b) {
+                        return a.name.localeCompare(b.name, "vi", { sensitivity: "base" });
+                    });
+                });
+
+                return Array.from(provinceMap.values()).sort(function (a, b) {
+                    return a.name.localeCompare(b.name, "vi", { sensitivity: "base" });
+                });
+            }
             function appendOption(listEl, value) {
                 if (!value) return;
+                var cleanedValue = sanitizeAddressLabel(value);
+                if (!cleanedValue) return;
                 var exists = Array.from(listEl.options).some(function (opt) {
-                    return normalizeText(opt.value) === normalizeText(value);
+                    return normalizeText(opt.value) === normalizeText(cleanedValue);
                 });
                 if (!exists) {
                     var option = document.createElement("option");
-                    option.value = value;
+                    option.value = cleanedValue;
                     listEl.appendChild(option);
                 }
             }
@@ -457,41 +623,64 @@
             function renderCityOptions(filterText) {
                 cityOptions.innerHTML = "";
                 var filterKey = normalizeText(filterText);
-                provinces
-                    .filter(function (p) {
+                sortByFilterAndName(
+                    provinces.filter(function (p) {
                         if (!filterKey) return true;
                         return normalizeText(p.name).includes(filterKey);
-                    })
+                    }),
+                    filterKey,
+                    function (p) { return p.name; }
+                )
                     .slice(0, 80)
                     .forEach(function (p) {
                         appendOption(cityOptions, p.name);
                     });
-                appendOption(cityOptions, currentCity);
-                appendOption(cityOptions, cityInput.value);
+
+                if (!filterKey && currentCity) {
+                    appendOption(cityOptions, currentCity);
+                }
+            }
+            function isDistrictInCity(cityName, districtName) {
+                var province = getProvinceByName(cityName);
+                if (!province || !districtName) return false;
+                var districtKey = normalizeText(districtName);
+                return (province.districts || []).some(function (d) {
+                    return normalizeText(d.name) === districtKey;
+                });
             }
             function renderDistrictOptions(cityName, filterText) {
                 districtOptions.innerHTML = "";
                 var province = getProvinceByName(cityName);
                 var districts = province && Array.isArray(province.districts) ? province.districts : [];
                 var filterKey = normalizeText(filterText);
-                districts
-                    .filter(function (d) {
+                sortByFilterAndName(
+                    districts.filter(function (d) {
                         if (!filterKey) return true;
                         return normalizeText(d.name).includes(filterKey);
-                    })
+                    }),
+                    filterKey,
+                    function (d) { return d.name; }
+                )
                     .slice(0, 120)
                     .forEach(function (d) {
                         appendOption(districtOptions, d.name);
                     });
-                appendOption(districtOptions, currentDistrict);
-                appendOption(districtOptions, districtInput.value);
+
+                if (!filterKey && currentDistrict && isDistrictInCity(cityName, currentDistrict)) {
+                    appendOption(districtOptions, currentDistrict);
+                }
             }
             function onCityInputChanged() {
+                cityInput.value = sanitizeAddressLabel(cityInput.value);
                 renderCityOptions(cityInput.value);
+                if (!isDistrictInCity(cityInput.value, districtInput.value)) {
+                    districtInput.value = "";
+                }
                 renderDistrictOptions(cityInput.value, districtInput.value);
                 updateSelectedAddressSummary();
             }
             function onDistrictInputChanged() {
+                districtInput.value = sanitizeAddressLabel(districtInput.value);
                 renderDistrictOptions(cityInput.value, districtInput.value);
                 updateSelectedAddressSummary();
             }
@@ -513,6 +702,15 @@
             districtInput.addEventListener("change", function () {
                 onDistrictInputChanged();
                 autoGeocode();
+            });
+            locationPickerButtons.forEach(function (btn) {
+                btn.addEventListener("click", function () {
+                    var targetId = btn.getAttribute("data-target-input");
+                    var input = targetId ? document.getElementById(targetId) : null;
+                    if (!input || input.disabled) return;
+                    input.focus();
+                    input.dispatchEvent(new Event("input", { bubbles: true }));
+                });
             });
             addressInput.addEventListener("blur", function () { autoGeocode(); });
             updateSelectedAddressSummary();

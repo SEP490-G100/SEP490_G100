@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
 using Nanny_BackEnd.DTOs.Profile;
+using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
 using Nanny_BackEnd.Enums;
@@ -111,15 +112,7 @@ public class OnboardingService
                 return finalStatus;
             }
 
-            var children = await _childRepo.GetByParentProfileIdAsync(parentProfile.Id);
-            if (children.Count == 0)
-            {
-                finalStatus.RequiresOnboarding = true;
-                finalStatus.NextStep = "ParentChildren";
-                return finalStatus;
-            }
-
-            // Parent đã đủ thông tin
+            // Parent đã đủ thông tin (children là tùy chọn, không bắt buộc để hoàn thành onboarding)
             finalStatus.RequiresOnboarding = false;
             finalStatus.NextStep = "Completed";
             return finalStatus;
@@ -182,6 +175,14 @@ public class OnboardingService
 
     public async Task<NannyProfile> UpdateNannyProfileAsync(Guid userId, UpdateNannyProfileRequest request)
     {
+        var salaryValidationError = SalaryValidationRules.GetFirstError(
+            request.ExpectedSalaryMin,
+            request.ExpectedSalaryMax,
+            "Muc luong toi thieu",
+            "Muc luong toi da");
+        if (!string.IsNullOrWhiteSpace(salaryValidationError))
+            throw new InvalidOperationException(salaryValidationError);
+
         var profile = await _nannyProfileRepo.FindByUserIdAsync(userId);
         if (profile == null)
         {
@@ -206,6 +207,7 @@ public class OnboardingService
         profile.UpdatedBy = userId;
 
         await _nannyProfileRepo.SaveChangesAsync();
+
         return profile;
     }
 
@@ -276,4 +278,3 @@ public class OnboardingService
             CreatedBy = userId
         };
 }
-
