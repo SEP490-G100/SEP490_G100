@@ -191,6 +191,9 @@ public class NannyBasicInfoController : Controller
             if (!string.IsNullOrWhiteSpace(model.PhoneNumber) && !IsValidPhoneNumber(model.PhoneNumber))
                 ModelState.AddModelError(nameof(model.PhoneNumber), "S? điện thoại không hop le (9-15 chu so, cho phep dau +).");
 
+            if (!string.IsNullOrWhiteSpace(model.PhoneNumber) && !IsValidPhoneNumber(model.PhoneNumber))
+                ModelState.AddModelError(nameof(model.PhoneNumber), "So dien thoai khong hop le (9-15 chu so, cho phep dau +).");
+
             if (string.IsNullOrWhiteSpace(model.Address))
                 ModelState.AddModelError(nameof(model.Address), "Vui lÃ²ng nháº­p Ä‘á»‹a chá»‰ chi tiáº¿t.");
 

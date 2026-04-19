@@ -325,6 +325,17 @@
                 restoreInitialAvatar();
             });
 
+            restoreInitialAvatar();
+
+            avatarUploadBtn.addEventListener("click", function () {
+                avatarInput.click();
+            });
+
+            avatarResetBtn.addEventListener("click", function () {
+                avatarInput.value = "";
+                restoreInitialAvatar();
+            });
+
             avatarInput.addEventListener("change", function () {
                 showAvatarError("");
                 var file = avatarInput.files && avatarInput.files[0] ? avatarInput.files[0] : null;

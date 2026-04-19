@@ -199,7 +199,7 @@ public class ProfileController : Controller
             var token = GetTokenFromSession();
             if (string.IsNullOrEmpty(token))
             {
-                ViewBag.Warning = "PhiÃªn Ä‘Äƒng nháº­p Ä‘Ã£ háº¿t háº¡n, Ä‘ang hiá»ƒn thá»‹ thÃ´ng tin cÆ¡ báº£n tá»« cookie.";
+                ViewBag.Warning = "Phiên đăng nhập đã hết hạn, đang hiển thị thông tin cơ bản từ cookie.";
                 return View(BuildProfileFromClaims());
             }
 
@@ -208,7 +208,7 @@ public class ProfileController : Controller
             var response = await _http.GetAsync("/api/profile");
             if (!response.IsSuccessStatusCode)
             {
-                ViewBag.Warning = "KhÃ´ng thá»ƒ táº£i há»“ sÆ¡ tá»« API, Ä‘ang hiá»ƒn thá»‹ thÃ´ng tin cÆ¡ báº£n tá»« cookie.";
+                ViewBag.Warning = "Không thể tải hồ sơ từ API, đang hiển thị thông tin cơ bản từ cookie.";
                 return View(BuildProfileFromClaims());
             }
 
@@ -217,7 +217,7 @@ public class ProfileController : Controller
 
             if (apiResult == null || !apiResult.Success)
             {
-                ViewBag.Warning = "KhÃ´ng thá»ƒ táº£i toÃ n bá»™ há»“ sÆ¡, Ä‘ang hiá»ƒn thá»‹ thÃ´ng tin cÆ¡ báº£n tá»« cookie.";
+                ViewBag.Warning = "Không thể tải toàn bộ hồ sơ, đang hiển thị thông tin cơ bản từ cookie.";
                 return View(BuildProfileFromClaims());
             }
 
@@ -233,7 +233,7 @@ public class ProfileController : Controller
         }
         catch (Exception ex)
         {
-            TempData["Error"] = "Lá»—i táº£i thÃ´ng tin: " + ex.Message;
+            TempData["Error"] = "Lỗi tải thông tin: " + ex.Message;
             return View(BuildProfileFromClaims());
         }
     }
@@ -255,8 +255,8 @@ public class ProfileController : Controller
             var token = GetTokenFromSession();
             if (string.IsNullOrEmpty(token))
             {
-                TempData["Error"] = "PhiÃªn Ä‘Äƒng nháº­p Ä‘Ã£ háº¿t háº¡n. Vui lÃ²ng Ä‘Äƒng nháº­p láº¡i.";
-                return RedirectToAction("đăng nhập", "Auth");
+                TempData["Error"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+                return RedirectToAction("Login", "Auth");
             }
 
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -403,8 +403,8 @@ public class ProfileController : Controller
             var token = GetTokenFromSession();
             if (string.IsNullOrEmpty(token))
             {
-                TempData["Error"] = "PhiÃªn Ä‘Äƒng nháº­p Ä‘Ã£ háº¿t háº¡n. Vui lÃ²ng Ä‘Äƒng nháº­p láº¡i.";
-                return RedirectToAction("đăng nhập", "Auth");
+                TempData["Error"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+                return RedirectToAction("Login", "Auth");
             }
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -414,43 +414,15 @@ public class ProfileController : Controller
 
             var content = await response.Content.ReadAsStringAsync();
             var apiResult = JsonSerializer.Deserialize<ApiResultDto>(content, JsonOpts);
-            var profileData = DeserializeApiData<PersonalProfileViewModel>(apiResult);
-            var profile = profileData == null
-                ? null
-                : new EditPersonalInfoViewModel
-                {
-                    FirstName = profileData.FirstName ?? string.Empty,
-                    LastName = profileData.LastName ?? string.Empty,
-                    PhoneNumber = profileData.PhoneNumber,
-                    AvatarUrl = profileData.AvatarUrl,
-                    DateOfBirth = profileData.DateOfBirth,
-                    Gender = profileData.Gender,
-                    Address = profileData.Address,
-                    City = profileData.City,
-                    District = profileData.District,
-                    Ward = profileData.Ward,
-                    Latitude = profileData.Latitude,
-                    Longitude = profileData.Longitude,
-                    Roles = profileData.Roles ?? new List<string>(),
-                    Bio = profileData.Bio,
-                    YearsOfExperience = profileData.YearsOfExperience,
-                    EducationLevel = profileData.EducationLevel,
-                    ExpectedSalaryMin = profileData.ExpectedSalaryMin,
-                    ExpectedSalaryMax = profileData.ExpectedSalaryMax,
-                    MaxTravelDistance = profileData.MaxTravelDistance
-                };
-
-            if (apiResult?.Data is JsonElement dataRoot)
+            EditPersonalInfoViewModel? profile = null;
+            if (apiResult?.Success == true && apiResult.Data is JsonElement profileData && profileData.ValueKind == JsonValueKind.Object)
             {
-                profile ??= new EditPersonalInfoViewModel();
-                profile.AvatarUrl ??= ExtractStringFromJson(dataRoot, "avatarUrl", "avatar", "profileImageUrl");
-                profile.PhoneNumber ??= ExtractStringFromJson(dataRoot, "phoneNumber", "phone", "phoneNo");
-                profile.DateOfBirth ??= ExtractDateOnlyFromJson(dataRoot, "dateOfBirth", "dob", "birthDate");
-
-                if (string.IsNullOrWhiteSpace(profile.FirstName))
-                    profile.FirstName = ExtractStringFromJson(dataRoot, "firstName", "givenName") ?? "";
-                if (string.IsNullOrWhiteSpace(profile.LastName))
-                    profile.LastName = ExtractStringFromJson(dataRoot, "lastName", "surname", "familyName") ?? "";
+                profile = JsonSerializer.Deserialize<EditPersonalInfoViewModel>(profileData.GetRawText(), JsonOpts);
+            }
+            else if (apiResult?.Success == true && apiResult.Data != null)
+            {
+                profile = JsonSerializer.Deserialize<EditPersonalInfoViewModel>(
+                    JsonSerializer.Serialize(apiResult.Data), JsonOpts);
             }
 
             if (profile != null)
@@ -475,7 +447,7 @@ public class ProfileController : Controller
         }
         catch (Exception ex)
         {
-            TempData["Error"] = "Lá»—i táº£i thÃ´ng tin: " + ex.Message;
+            TempData["Error"] = "Lỗi tải thông tin: " + ex.Message;
             return RedirectToAction("Index");
         }
     }
@@ -499,7 +471,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
                 : new[] { string.Empty };
 
             foreach (var memberName in memberNames)
-                ModelState.AddModelError(memberName, error.ErrorMessage ?? "Luong không hop le.");
+                ModelState.AddModelError(memberName, error.ErrorMessage ?? "Luong khong hop le.");
         }
     }
 
@@ -513,7 +485,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
     var today = DateOnly.FromDateTime(DateTime.Today);
     if (model.DateOfBirth.HasValue && model.DateOfBirth.Value > today)
     {
-        ModelState.AddModelError(nameof(model.DateOfBirth), "Ngày sinh không được lon hon ngay hiện tại.");
+        ModelState.AddModelError(nameof(model.DateOfBirth), "Ngay sinh khong duoc lon hon ngay hien tai.");
     }
 
     if (User.IsInRole("Nanny") && !model.DateOfBirth.HasValue)
@@ -603,7 +575,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
     }
     catch (Exception ex)
     {
-        TempData["Error"] = "Lá»—i khi cáº­p nháº­t: " + ex.Message;
+        TempData["Error"] = "Lỗi khi cập nhật: " + ex.Message;
         await PopulateAvailableSkillsAsync(model);
         return View(model);
     }
@@ -632,7 +604,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
         var apiResult = JsonSerializer.Deserialize<ApiResultDto>(content, JsonOpts);
         if (apiResult == null || !apiResult.Success)
         {
-            TempData["Error"] = apiResult?.Message ?? "KhÃ´ng thá»ƒ thÃªm chá»©ng chá»‰.";
+            TempData["Error"] = apiResult?.Message ?? "Không thể thêm chứng chỉ.";
             return RedirectToAction(nameof(Verify));
         }
 
@@ -649,8 +621,8 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
             var token = GetTokenFromSession();
             if (string.IsNullOrEmpty(token))
             {
-                TempData["Error"] = "PhiÃªn Ä‘Äƒng nháº­p Ä‘Ã£ háº¿t háº¡n. Vui lÃ²ng Ä‘Äƒng nháº­p láº¡i.";
-                return RedirectToAction("đăng nhập", "Auth");
+                TempData["Error"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+                return RedirectToAction("Login", "Auth");
             }
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -698,7 +670,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
         }
         catch (Exception ex)
         {
-            TempData["Error"] = "Lá»—i khi táº£i danh sÃ¡ch tráº» em: " + ex.Message;
+            TempData["Error"] = "Lỗi khi tải danh sách trẻ em: " + ex.Message;
             return RedirectToAction("Index");
         }
     }
@@ -722,8 +694,8 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
             var token = GetTokenFromSession();
             if (string.IsNullOrEmpty(token))
             {
-                TempData["Error"] = "PhiÃªn Ä‘Äƒng nháº­p Ä‘Ã£ háº¿t háº¡n. Vui lÃ²ng Ä‘Äƒng nháº­p láº¡i.";
-                return RedirectToAction("đăng nhập", "Auth");
+                TempData["Error"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+                return RedirectToAction("Login", "Auth");
             }
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -742,7 +714,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
         }
         catch (Exception ex)
         {
-            TempData["Error"] = "Lá»—i khi thÃªm tráº» em: " + ex.Message;
+            TempData["Error"] = "Lỗi khi thêm trẻ em: " + ex.Message;
             return View(model);
         }
     }
@@ -756,8 +728,8 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
             var token = GetTokenFromSession();
             if (string.IsNullOrEmpty(token))
             {
-                TempData["Error"] = "PhiÃªn Ä‘Äƒng nháº­p Ä‘Ã£ háº¿t háº¡n. Vui lÃ²ng Ä‘Äƒng nháº­p láº¡i.";
-                return RedirectToAction("đăng nhập", "Auth");
+                TempData["Error"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+                return RedirectToAction("Login", "Auth");
             }
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -788,7 +760,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
         }
         catch (Exception ex)
         {
-            TempData["Error"] = "Lá»—i khi táº£i thÃ´ng tin tráº» em: " + ex.Message;
+            TempData["Error"] = "Lỗi khi tải thông tin trẻ em: " + ex.Message;
             return RedirectToAction("Children");
         }
     }
@@ -805,8 +777,8 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
             var token = GetTokenFromSession();
             if (string.IsNullOrEmpty(token))
             {
-                TempData["Error"] = "PhiÃªn Ä‘Äƒng nháº­p Ä‘Ã£ háº¿t háº¡n. Vui lÃ²ng Ä‘Äƒng nháº­p láº¡i.";
-                return RedirectToAction("đăng nhập", "Auth");
+                TempData["Error"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+                return RedirectToAction("Login", "Auth");
             }
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -824,7 +796,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
 
             if (apiResult == null || !apiResult.Success)
             {
-                ModelState.AddModelError("", apiResult?.Message ?? "Cáº­p nháº­t tháº¥t báº¡i.");
+                ModelState.AddModelError("", apiResult?.Message ?? "Cập nhật thất bại.");
                 return View(model);
             }
 
@@ -833,7 +805,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
         }
         catch (Exception ex)
         {
-            TempData["Error"] = "Lá»—i khi cáº­p nháº­t: " + ex.Message;
+            TempData["Error"] = "Lỗi khi cập nhật: " + ex.Message;
             return View(model);
         }
     }
@@ -848,8 +820,8 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
             var token = GetTokenFromSession();
             if (string.IsNullOrEmpty(token))
             {
-                TempData["Error"] = "PhiÃªn Ä‘Äƒng nháº­p Ä‘Ã£ háº¿t háº¡n. Vui lÃ²ng Ä‘Äƒng nháº­p láº¡i.";
-                return RedirectToAction("đăng nhập", "Auth");
+                TempData["Error"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+                return RedirectToAction("Login", "Auth");
             }
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -868,7 +840,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
         }
         catch (Exception ex)
         {
-            TempData["Error"] = "Lá»—i khi xÃ³a: " + ex.Message;
+            TempData["Error"] = "Lỗi khi xóa: " + ex.Message;
             return RedirectToAction("Children");
         }
     }

@@ -1223,23 +1223,23 @@ async function openNannyDetail(id) {
     document.getElementById('nd-avatar').src = detail.avatarUrl || '/img/nanny-logo.jpg';
     document.getElementById('nd-name').textContent = detail.fullName || 'Báº£o máº«u';
     const publicLocation = formatPublicLocation(detail);
-    document.getElementById('nd-location').textContent = publicLocation || 'Chưa cập nhật khu vuc';
-    document.getElementById('nd-verify').textContent = detail.verificationStatusLabel || 'Äang cáº­p nháº­t';
-    document.getElementById('nd-bio').textContent = detail.bio || 'Há»“ sÆ¡ chÆ°a cÃ³ mÃ´ táº£.';
-    document.getElementById('nd-phone').textContent = isParentRole() ? 'Gui request contact ?? trao doi truc tiep voi nanny' : 'Thông tin lien he chi hien sau khi da ket noi';
-    document.getElementById('nd-address').textContent = publicLocation || 'Chưa cập nhật';
+    document.getElementById('nd-location').textContent = publicLocation || 'Chua cap nhat khu vuc';
+    document.getElementById('nd-verify').textContent = detail.verificationStatusLabel || 'Đang cập nhật';
+    document.getElementById('nd-bio').textContent = detail.bio || 'Hồ sơ chưa có mô tả.';
+    document.getElementById('nd-phone').textContent = isParentRole() ? 'Gui request contact de trao doi truc tiep voi nanny' : 'Thong tin lien he chi hien sau khi da ket noi';
+    document.getElementById('nd-address').textContent = publicLocation || 'Chua cap nhat';
     document.getElementById('nd-travel').textContent = detail.maxTravelDistance ? `${detail.maxTravelDistance} km` : 'Chưa cập nhật';
-    document.getElementById('nd-age').textContent = detail.age ? `${detail.age} tuá»•i` : 'ChÆ°a rÃµ tuá»•i';
-    document.getElementById('nd-exp').textContent = detail.yearsOfExperience ? `${detail.yearsOfExperience} nÄƒm kinh nghiá»‡m` : 'ChÆ°a rÃµ kinh nghiá»‡m';
+    document.getElementById('nd-age').textContent = detail.age ? `${detail.age} tuổi` : 'Chưa rõ tuổi';
+    document.getElementById('nd-exp').textContent = detail.yearsOfExperience ? `${detail.yearsOfExperience} năm kinh nghiệm` : 'Chưa rõ kinh nghiệm';
     document.getElementById('nd-education').textContent = detail.educationLevelLabel || 'Chưa cập nhật học vấn';
     document.getElementById('nd-salary').textContent = formatSalary(detail.expectedSalaryMin, detail.expectedSalaryMax);
     const planChip = document.getElementById('nd-plan');
     if (planChip) {
       const planLabel = getNannyPlanLabel(detail);
       const planText = detail.searchPriority
-        ? `${planLabel || 'Profile noi bat'} â€¢ Uu tien hiển thị`
+        ? `${planLabel || 'Ho so noi bat'} • Uu tien hien thi`
         : detail.featuredBadge
-          ? (planLabel || 'Profile noi bat')
+          ? (planLabel || 'Ho so noi bat')
           : '';
       planChip.textContent = planText;
       planChip.classList.toggle('hidden', !planText);
@@ -1252,7 +1252,7 @@ async function openNannyDetail(id) {
             ${escapeHtml(skill.skillName || '')}
             ${skill.proficiencyLevelLabel ? `<small>${escapeHtml(skill.proficiencyLevelLabel)}</small>` : ''}
           </span>`).join('')
-      : '<span class="nanny-card__muted">ChÆ°a cÃ³ ká»¹ nÄƒng Ä‘Æ°á»£c khai bÃ¡o.</span>';
+      : '<span class="nanny-card__muted">Chưa có kỹ năng được khai báo.</span>';
 
     currentNannyDetailId = detail.id || id;
     currentNannyDetailUserId = detail.userId || null;

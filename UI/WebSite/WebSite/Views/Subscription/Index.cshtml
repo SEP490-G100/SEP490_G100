@@ -1,6 +1,6 @@
 ﻿@model WebSite.Models.Subscription.SubscriptionPageViewModel
 @{
-    ViewData["Title"] = "GÃ³i Ä‘Äƒng kÃ½";
+    ViewData["Title"] = "Gói đăng ký";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
@@ -12,21 +12,21 @@
 <div class="sub-shell">
     <section class="sub-hero">
         <div class="sub-hero-copy">
-            <div class="sub-role">GÃ“I DÃ€NH CHO @Model.RoleLabel.ToUpperInvariant()</div>
+            <div class="sub-role">GÓI DÀNH CHO @Model.RoleLabel.ToUpperInvariant()</div>
             <h1>@Model.Headline</h1>
             <p>@Model.Summary</p>
             <div class="sub-chip-row">
                 @if (Model.Plans.Count > 0)
                 {
-                    <span class="sub-chip">Äang má»Ÿ bÃ¡n @Model.Plans.Count gÃ³i subscription</span>
-                    <span class="sub-chip">Danh sÃ¡ch gÃ³i Ä‘Æ°á»£c Ä‘á»“ng bá»™ tá»« há»‡ thá»‘ng quáº£n trá»‹</span>
-                    <span class="sub-chip">Quyá»n lá»£i má»—i gÃ³i sáº½ thay Ä‘á»•i theo dá»¯ liá»‡u admin cáº­p nháº­t</span>
+                    <span class="sub-chip">Đang mở bán @Model.Plans.Count gói subscription</span>
+                    <span class="sub-chip">Danh sách gói được đồng bộ từ hệ thống quản trị</span>
+                    <span class="sub-chip">Quyền lợi mỗi gói sẽ thay đổi theo dữ liệu admin cập nhật</span>
                 }
             </div>
         </div>
 
         <div class="sub-status-card">
-            <span class="sub-status-label">Tráº¡ng thÃ¡i hiá»‡n táº¡i</span>
+            <span class="sub-status-label">Trạng thái hiện tại</span>
             @if (Model.HasActiveSubscription)
             {
                 <strong>@Model.CurrentSubscription!.Plan.Name</strong>
@@ -35,14 +35,14 @@
             else
             {
                 <strong>Free</strong>
-                <p>Báº¡n Ä‘ang á»Ÿ gÃ³i máº·c Ä‘á»‹nh cá»§a @Model.RoleLabel.ToLowerInvariant().</p>
+                <p>Bạn đang ở gói mặc định của @Model.RoleLabel.ToLowerInvariant().</p>
             }
 
             <div class="sub-status-metrics">
                 @if (Model.IsParent)
                 {
                     <div class="sub-metric">
-                        <span class="sub-metric-label">Miá»…n phÃ­</span>
+                        <span class="sub-metric-label">Miễn phí</span>
                         <b>@Model.FreeBenefits.MonthlyJobPostLimit bài/tháng</b>
                     </div>
                     <div class="sub-metric">
@@ -53,12 +53,12 @@
                 else if (Model.IsNanny)
                 {
                     <div class="sub-metric">
-                        <span class="sub-metric-label">Miá»…n phÃ­</span>
-                        <b>@Model.FreeBenefits.MonthlyApplicationLimit á»©ng tuyá»ƒn/thÃ¡ng</b>
+                        <span class="sub-metric-label">Miễn phí</span>
+                        <b>@Model.FreeBenefits.MonthlyApplicationLimit ứng tuyển/tháng</b>
                     </div>
                     <div class="sub-metric">
-                        <span class="sub-metric-label">Há»“ sÆ¡</span>
-                        <b>Hiá»ƒn thá»‹ cÆ¡ báº£n</b>
+                        <span class="sub-metric-label">Hồ sơ</span>
+                        <b>Hiển thị cơ bản</b>
                     </div>
                 }
             </div>
@@ -78,8 +78,8 @@
     @if (!Model.SupportsSubscription)
     {
         <section class="sub-empty">
-            <h2>KhÃ´ng xÃ¡c Ä‘á»‹nh Ä‘Æ°á»£c vai trÃ² subscription</h2>
-            <p>Trang nÃ y hiá»‡n chá»‰ há»— trá»£ tÃ i khoáº£n Phá»¥ huynh vÃ  Báº£o máº«u. Vui lÃ²ng Ä‘Äƒng nháº­p Ä‘Ãºng vai trÃ² Ä‘á»ƒ mua gÃ³i.</p>
+            <h2>Không xác định được vai trò subscription</h2>
+            <p>Trang này hiện chỉ hỗ trợ tài khoản Phụ huynh và Bảo mẫu. Vui lòng đăng nhập đúng vai trò để mua gói.</p>
         </section>
     }
     else
@@ -89,7 +89,7 @@
                 <div>
                     <div class="sub-section-label">Các gói thành viên</div>
                     <h2>So sánh quyền lợi theo gói</h2>
-                    <p>Miá»…n phÃ­ lÃ  má»‘c cÆ¡ báº£n. Danh sÃ¡ch cÃ¡c gÃ³i tráº£ phÃ­ bÃªn dÆ°á»›i Ä‘Æ°á»£c render tá»« dá»¯ liá»‡u admin hiá»‡n cÃ³ trong há»‡ thá»‘ng.</p>
+                    <p>Miễn phí là mốc cơ bản. Danh sách các gói trả phí bên dưới được render từ dữ liệu admin hiện có trong hệ thống.</p>
                 </div>
                 @if (Model.HasActiveSubscription)
                 {
@@ -105,8 +105,8 @@
                 <article class="plan-card free-card">
                     <div class="plan-top">
                         <span class="plan-tag">Free</span>
-                        <h3>Máº·c Ä‘á»‹nh</h3>
-                        <p>Báº¯t Ä‘áº§u nhanh, Ä‘á»§ Ä‘á»ƒ tráº£i nghiá»‡m vÃ  lÃ m quen há»‡ thá»‘ng.</p>
+                        <h3>Mặc định</h3>
+                        <p>Bắt đầu nhanh, đủ để trải nghiệm và làm quen hệ thống.</p>
                     </div>
                     <div class="plan-price">0d</div>
                     <ul class="plan-list">
@@ -125,7 +125,7 @@
                         <div class="plan-top">
                             <span class="plan-tag">@plan.Name</span>
                             <h3>@plan.Name</h3>
-                            <p>@(plan.Description ?? "GÃ³i phÃ¹ há»£p Ä‘á»ƒ má»Ÿ rá»™ng quyá»n lá»£i sá»­ dá»¥ng.")</p>
+                            <p>@(plan.Description ?? "Gói phù hợp để mở rộng quyền lợi sử dụng.")</p>
                         </div>
 
                         <div class="plan-price">@plan.Price.ToString("N0")d<span>/@plan.DurationDays ngay</span></div>
@@ -134,41 +134,41 @@
                             @if (Model.IsParent)
                             {
                                 <span>@plan.Benefits.MonthlyJobPostLimit bài/tháng</span>
-                                <span>@plan.Benefits.ListingDurationDays ngÃ y hiá»ƒn thá»‹</span>
+                                <span>@plan.Benefits.ListingDurationDays ngày hiển thị</span>
                             }
                             else if (Model.IsNanny)
                             {
-                                <span>@plan.Benefits.MonthlyApplicationLimit á»©ng tuyá»ƒn/thÃ¡ng</span>
-                                <span>@(plan.Benefits.SearchPriority ? "Æ¯u tiÃªn cao hÆ¡n" : "Ná»•i báº­t hÆ¡n Free")</span>
+                                <span>@plan.Benefits.MonthlyApplicationLimit ứng tuyển/tháng</span>
+                                <span>@(plan.Benefits.SearchPriority ? "Ưu tiên cao hơn" : "Nổi bật hơn Free")</span>
                             }
                         </div>
 
-                        <div class="plan-benefit-title">Quyá»n lá»£i nháº­n Ä‘Æ°á»£c</div>
+                        <div class="plan-benefit-title">Quyền lợi nhận được</div>
                         <ul class="plan-list">
                             @if (Model.IsParent)
                             {
                                 <li>
                                     @(plan.Benefits.MonthlyJobPostLimit > 0
-                                        ? $"ÄÄƒng tá»‘i Ä‘a {plan.Benefits.MonthlyJobPostLimit} bÃ i má»—i thÃ¡ng"
-                                        : "Sá»‘ lÆ°á»£ng bÃ i Ä‘Äƒng Ä‘Æ°á»£c má»Ÿ rá»™ng theo cáº¥u hÃ¬nh gÃ³i")
+                                        ? $"Đăng tối đa {plan.Benefits.MonthlyJobPostLimit} bài mỗi tháng"
+                                        : "Số lượng bài đăng được mở rộng theo cấu hình gói")
                                 </li>
                                 <li>
                                     @(plan.Benefits.ListingDurationDays > 0
-                                        ? $"BÃ i Ä‘Äƒng hiá»ƒn thá»‹ {plan.Benefits.ListingDurationDays} ngÃ y"
+                                        ? $"Bài đăng hiển thị {plan.Benefits.ListingDurationDays} ngày"
                                         : $"Gói có thời hạn sử dụng {plan.DurationDays} ngày")
                                 </li>
-                                <li>@(plan.Benefits.FeaturedBadge ? "CÃ³ badge ná»•i báº­t cho bÃ i Ä‘Äƒng" : "KhÃ´ng cÃ³ badge ná»•i báº­t")</li>
-                                <li>@(plan.Benefits.SearchPriority ? "ÄÆ°á»£c Æ°u tiÃªn hiá»ƒn thá»‹ trong tÃ¬m kiáº¿m" : "KhÃ´ng Æ°u tiÃªn hiá»ƒn thá»‹")</li>
+                                <li>@(plan.Benefits.FeaturedBadge ? "Có badge nổi bật cho bài đăng" : "Không có badge nổi bật")</li>
+                                <li>@(plan.Benefits.SearchPriority ? "Được ưu tiên hiển thị trong tìm kiếm" : "Không ưu tiên hiển thị")</li>
                             }
                             else if (Model.IsNanny)
                             {
                                 <li>
                                     @(plan.Benefits.MonthlyApplicationLimit > 0
-                                        ? $"á»¨ng tuyá»ƒn tá»‘i Ä‘a {plan.Benefits.MonthlyApplicationLimit} cÃ´ng viá»‡c má»—i thÃ¡ng"
-                                        : "Quyá»n á»©ng tuyá»ƒn Ä‘Æ°á»£c má»Ÿ rá»™ng theo cáº¥u hÃ¬nh gÃ³i")
+                                        ? $"Ứng tuyển tối đa {plan.Benefits.MonthlyApplicationLimit} công việc mỗi tháng"
+                                        : "Quyền ứng tuyển được mở rộng theo cấu hình gói")
                                 </li>
-                                <li>@(plan.Benefits.FeaturedBadge ? "Há»“ sÆ¡ cÃ³ badge ná»•i báº­t" : "Há»“ sÆ¡ hiá»ƒn thá»‹ thÆ°á»ng")</li>
-                                <li>@(plan.Benefits.SearchPriority ? "Há»“ sÆ¡ Ä‘Æ°á»£c Æ°u tiÃªn hiá»ƒn thá»‹ cao hÆ¡n" : "Há»“ sÆ¡ cÃ³ thÃªm quyá»n lá»£i so vá»›i gÃ³i Free")</li>
+                                <li>@(plan.Benefits.FeaturedBadge ? "Hồ sơ có badge nổi bật" : "Hồ sơ hiển thị thường")</li>
+                                <li>@(plan.Benefits.SearchPriority ? "Hồ sơ được ưu tiên hiển thị cao hơn" : "Hồ sơ có thêm quyền lợi so với gói Free")</li>
                             }
 
                             @foreach (var feature in plan.Features)
@@ -183,7 +183,7 @@
                         }
                         else if (Model.HasActiveSubscription)
                         {
-                            <button type="button" class="sub-disabled-btn" disabled>Äang cÃ³ gÃ³i hoáº¡t Ä‘á»™ng</button>
+                            <button type="button" class="sub-disabled-btn" disabled>Đang có gói hoạt động</button>
                         }
                         else
                         {
@@ -201,15 +201,15 @@
         <section class="sub-current sub-history">
             <div class="sub-section-head">
                 <div>
-                    <div class="sub-section-label">Lá»‹ch sá»­ giao dá»‹ch</div>
+                    <div class="sub-section-label">Lịch sử giao dịch</div>
                     <h2>Theo dõi thanh toán gói subscription</h2>
-                    <p>Há»‡ thá»‘ng lÆ°u láº¡i giao dá»‹ch thÃ nh cÃ´ng, chá» xá»­ lÃ½ hoáº·c tháº¥t báº¡i Ä‘á»ƒ báº¡n Ä‘á»‘i soÃ¡t nhanh.</p>
+                    <p>Hệ thống lưu lại giao dịch thành công, chờ xử lý hoặc thất bại để bạn đối soát nhanh.</p>
                 </div>
             </div>
 
             @if (Model.Transactions.Count == 0)
             {
-                <div class="sub-empty-inline">ChÆ°a cÃ³ giao dá»‹ch subscription nÃ o.</div>
+                <div class="sub-empty-inline">Chưa có giao dịch subscription nào.</div>
             }
             else
             {
@@ -270,7 +270,7 @@
         <button type="button" class="sub-pay-close" id="subPayCloseBtn" aria-label="Dong">&times;</button>
         <p class="sub-pay-kicker">Thanh toán subscription</p>
         <h3 id="subPayTitle" class="sub-pay-title">Thanh toán qua PayOS</h3>
-        <p class="sub-pay-desc">QuÃ©t QR hoáº·c má»Ÿ trang thanh toÃ¡n PayOS. Giao dá»‹ch há»£p lá»‡ sáº½ Ä‘Æ°á»£c callback vá» há»‡ thá»‘ng vÃ  tá»± Ä‘á»™ng kÃ­ch hoáº¡t gÃ³i.</p>
+        <p class="sub-pay-desc">Quét QR hoặc mở trang thanh toán PayOS. Giao dịch hợp lệ sẽ được callback về hệ thống và tự động kích hoạt gói.</p>
 
         <div class="sub-pay-main">
             <div class="sub-pay-qr-wrap">
@@ -280,20 +280,20 @@
 
             <div class="sub-pay-info">
                 <div class="sub-pay-info-row"><span>Gói</span><b id="subPayPlan">-</b></div>
-                <div class="sub-pay-info-row"><span>Sá»‘ tiá»n</span><b id="subPayAmount">-</b></div>
+                <div class="sub-pay-info-row"><span>Số tiền</span><b id="subPayAmount">-</b></div>
                 <div class="sub-pay-info-row"><span>Ngân hàng</span><b id="subPayBank">-</b></div>
-                <div class="sub-pay-info-row"><span>Sá»‘ tÃ i khoáº£n</span><b id="subPayAccountNumber">-</b></div>
+                <div class="sub-pay-info-row"><span>Số tài khoản</span><b id="subPayAccountNumber">-</b></div>
                 <div class="sub-pay-info-row"><span>Chủ tài khoản</span><b id="subPayAccountName">-</b></div>
-                <div class="sub-pay-info-row"><span>MÃ£ Ä‘Æ¡n</span><b id="subPayOrderCode">-</b></div>
-                <div class="sub-pay-info-row"><span>Ná»™i dung CK</span><b id="subPayContent">-</b></div>
-                <div class="sub-pay-info-row"><span>Hiá»‡u lá»±c Ä‘áº¿n</span><b id="subPayExpiresAt">-</b></div>
+                <div class="sub-pay-info-row"><span>Mã đơn</span><b id="subPayOrderCode">-</b></div>
+                <div class="sub-pay-info-row"><span>Nội dung CK</span><b id="subPayContent">-</b></div>
+                <div class="sub-pay-info-row"><span>Hiệu lực đến</span><b id="subPayExpiresAt">-</b></div>
                 <div class="sub-pay-info-row"><span>Trạng thái</span><b id="subPayStatus">Chờ thanh toán</b></div>
             </div>
         </div>
 
         <div class="sub-pay-actions">
-            <a id="subPayCheckoutLink" href="#" target="_blank" rel="noopener" class="sub-secondary-btn">Má»Ÿ trang thanh toÃ¡n PayOS</a>
-            <a id="subPayResultLink" href="#" class="sub-primary-btn">Xem káº¿t quáº£</a>
+            <a id="subPayCheckoutLink" href="#" target="_blank" rel="noopener" class="sub-secondary-btn">Mở trang thanh toán PayOS</a>
+            <a id="subPayResultLink" href="#" class="sub-primary-btn">Xem kết quả</a>
         </div>
     </section>
 </div>
@@ -421,18 +421,18 @@
                     }
 
                     if (data?.subscriptionActivated) {
-                        notify('Subscription Ä‘Ã£ Ä‘Æ°á»£c kÃ­ch hoáº¡t.', 'success');
+                        notify('Subscription đã được kích hoạt.', 'success');
                         window.location.href = `/Subscription/PaymentResult?transactionId=${currentTransactionId}`;
                         return;
                     }
 
                     if (data?.transactionStatus === 3) {
-                        notify('Giao dá»‹ch Ä‘Ã£ tháº¥t báº¡i hoáº·c Ä‘á»‘i soÃ¡t khÃ´ng khá»›p.', 'error');
+                        notify('Giao dịch đã thất bại hoặc đối soát không khớp.', 'error');
                         return;
                     }
                 } catch {
                     if (attempt >= 19) {
-                        notify('KhÃ´ng thá»ƒ cáº­p nháº­t tráº¡ng thÃ¡i thanh toÃ¡n lÃºc nÃ y.', 'error');
+                        notify('Không thể cập nhật trạng thái thanh toán lúc này.', 'error');
                         return;
                     }
                 }
@@ -474,14 +474,14 @@
 
                         const result = await response.json();
                         if (!result?.success || !result?.data) {
-                            notify(result?.message || 'KhÃ´ng táº¡o Ä‘Æ°á»£c giao dá»‹ch thanh toÃ¡n.', 'error');
+                            notify(result?.message || 'Không tạo được giao dịch thanh toán.', 'error');
                             return;
                         }
 
                         const data = result.data;
 
                         if (!data.qrCodeUrl && !data.checkoutUrl) {
-                            notify('KhÃ´ng táº¡o Ä‘Æ°á»£c mÃ£ QR thanh toÃ¡n.', 'error');
+                            notify('Không tạo được mã QR thanh toán.', 'error');
                             return;
                         }
 
@@ -489,7 +489,7 @@
                         applySession(data);
                         pollingTimer = window.setTimeout(() => pollPaymentStatus(0), 3000);
                     } catch {
-                        notify('KhÃ´ng táº¡o Ä‘Æ°á»£c giao dá»‹ch thanh toÃ¡n. Vui lÃ²ng thá»­ láº¡i.', 'error');
+                        notify('Không tạo được giao dịch thanh toán. Vui lòng thử lại.', 'error');
                     } finally {
                         submitBtn.disabled = false;
                         submitBtn.textContent = oldLabel;

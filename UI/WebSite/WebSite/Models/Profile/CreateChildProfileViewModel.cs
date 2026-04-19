@@ -11,7 +11,7 @@ namespace WebSite.Models.Profile
         public string? Notes { get; set; }
         [StringLength(1000)]
         public string? Characteristic { get; set; }
-        [Required(ErrorMessage = "Vui l?ng chon nhom tuoi cua tre.")]
+        [Required(ErrorMessage = "Vui long chon nhom tuoi cua tre.")]
         [EnumDataType(typeof(ChildAgeGroup))]
         public ChildAgeGroup? ChildAgeGroup { get; set; }
     }

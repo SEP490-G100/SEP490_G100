@@ -16,4 +16,3 @@
         public IFormFile? AvatarFile { get; set; }
     }
 }
-

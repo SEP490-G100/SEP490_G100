@@ -12,31 +12,31 @@
     string EducationLabel(int? level) => level switch
     {
         0 => "Trung học",
-        1 => "Cao Ä‘áº³ng",
+        1 => "Cao đẳng",
         2 => "Đại học",
-        3 => "Tháº¡c sÄ©",
+        3 => "Thạc sĩ",
         4 => "Khác",
         _ => "Chưa cập nhật"
     };
 
     string VerificationText(int? code) => code switch
     {
-        1 => "Äang chá» duyá»‡t xÃ¡c minh",
-        2 => "ÄÃ£ Ä‘Æ°á»£c xÃ¡c minh",
+        1 => "Đang chờ duyệt xác minh",
+        2 => "Đã được xác minh",
         _ => "Chưa xác minh"
     };
 
     string ChildAgeGroupLabel(byte? ageGroup) => ageGroup switch
     {
-        0 => "0 - 1 tuá»•i",
-        1 => "1 - 3 tuá»•i",
-        2 => "3 - 5 tuá»•i",
-        3 => "6 - 12 tuá»•i",
+        0 => "0 - 1 tuổi",
+        1 => "1 - 3 tuổi",
+        2 => "3 - 5 tuổi",
+        3 => "6 - 12 tuổi",
         _ => "Chưa cập nhật"
     };
 
     var dayColumns = new[] { (1, "T2"), (2, "T3"), (3, "T4"), (4, "T5"), (5, "T6"), (6, "T7"), (0, "CN") };
-    var slotRows = new[] { (0, "SÃ¡ng"), (1, "Chiá»u"), (2, "Tá»‘i"), (3, "ÄÃªm") };
+    var slotRows = new[] { (0, "Sáng"), (1, "Chiều"), (2, "Tối"), (3, "Đêm") };
     bool IsAvailable(int day, int slot) => p.Availabilities?.Any(a => a.DayOfWeek == day && a.TimeSlot == slot && a.IsAvailable) == true;
 }
 
@@ -48,16 +48,16 @@
 
 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6 fade-in-up">
     <div>
-        <span class="section-label">Kiá»ƒm duyá»‡t khiáº¿u náº¡i</span>
-        <h1 class="page-title mt-2">Chi tiáº¿t <span class="gradient-text">há»“ sÆ¡ bá»‹ khiáº¿u náº¡i</span></h1>
-        <p class="page-subtitle">GÃ³c nhÃ¬n cá»§a ngÆ°á»i kiá»ƒm duyá»‡t Ä‘á»‘i vá»›i há»“ sÆ¡ ngÆ°á»i dÃ¹ng bá»‹ khiáº¿u náº¡i.</p>
+        <span class="section-label">Kiểm duyệt khiếu nại</span>
+        <h1 class="page-title mt-2">Chi tiết <span class="gradient-text">hồ sơ bị khiếu nại</span></h1>
+        <p class="page-subtitle">Góc nhìn của người kiểm duyệt đối với hồ sơ người dùng bị khiếu nại.</p>
     </div>
     <div class="flex gap-2">
         @if (Model.ComplaintId.HasValue && Model.ComplaintId.Value != Guid.Empty)
         {
             <a href="@Url.Action("ViewComplaintDetail", "ModeratorComplain", new { id = Model.ComplaintId })" class="btn-outline">
                 <span class="material-icons-round text-base">arrow_back</span>
-                Quay láº¡i khiáº¿u náº¡i
+                Quay lại khiếu nại
             </a>
         }
         <a href="/Moderator/ViewAccountDetail/@p.UserId" class="btn-outline">
@@ -91,8 +91,8 @@
                 </div>
                 <div class="mt-2 flex items-center gap-2 flex-wrap text-sm text-slate-500 font-semibold">
                     <span class="profile-role-chip">@(isNanny ? "Bảo mẫu" : "Phụ huynh")</span>
-                    <span>@(!string.IsNullOrWhiteSpace(p.City) ? p.City : "Viá»‡t Nam")</span>
-                    <span>@(p.Age?.ToString() ?? "--") tuá»•i</span>
+                    <span>@(!string.IsNullOrWhiteSpace(p.City) ? p.City : "Việt Nam")</span>
+                    <span>@(p.Age?.ToString() ?? "--") tuổi</span>
                     @if (isNanny)
                     {
                         <span class="text-orange-600">Đánh giá @rating.ToString("0.##") (@(p.TotalReviews ?? 0))</span>
@@ -104,7 +104,7 @@
         <div class="profile-grid">
             <div class="space-y-4">
                 <div class="profile-card">
-                    <h3>@(isNanny ? "Giá»›i thiá»‡u báº£n thÃ¢n" : "MÃ´ táº£ gia Ä‘Ã¬nh")</h3>
+                    <h3>@(isNanny ? "Giới thiệu bản thân" : "Mô tả gia đình")</h3>
                     <p class="text-sm text-slate-600 leading-7">
                         @((isNanny ? p.Bio : p.FamilyDescription) ?? "Chưa có thông tin cập nhật.")
                     </p>
@@ -115,17 +115,17 @@
                     <div class="profile-card profile-card-soft">
                         <h3>Thông tin bảo mẫu</h3>
                         <div class="profile-detail-grid">
-                            <div class="profile-detail-item"><div class="label">Kinh nghiá»‡m</div><div class="value">@((p.YearsOfExperience?.ToString()) ?? "0") nÄƒm</div></div>
+                            <div class="profile-detail-item"><div class="label">Kinh nghiệm</div><div class="value">@((p.YearsOfExperience?.ToString()) ?? "0") năm</div></div>
                             <div class="profile-detail-item"><div class="label">Học vấn</div><div class="value">@EducationLabel(p.EducationLevel)</div></div>
-                            <div class="profile-detail-item"><div class="label">LÆ°Æ¡ng mong muá»‘n</div><div class="value">@((p.ExpectedSalaryMin?.ToString("0")) ?? "0") - @((p.ExpectedSalaryMax?.ToString("0")) ?? "0") VNÄ</div></div>
-                            <div class="profile-detail-item"><div class="label">BÃ¡n kÃ­nh di chuyá»ƒn</div><div class="value">@((p.MaxTravelDistance?.ToString()) ?? "0") km</div></div>
+                            <div class="profile-detail-item"><div class="label">Lương mong muốn</div><div class="value">@((p.ExpectedSalaryMin?.ToString("0")) ?? "0") - @((p.ExpectedSalaryMax?.ToString("0")) ?? "0") VNĐ</div></div>
+                            <div class="profile-detail-item"><div class="label">Bán kính di chuyển</div><div class="value">@((p.MaxTravelDistance?.ToString()) ?? "0") km</div></div>
                             <div class="profile-detail-item"><div class="label">Xác minh</div><div class="value">@VerificationText(p.VerificationStatusCode)</div></div>
                             <div class="profile-detail-item"><div class="label">Đánh giá trung bình</div><div class="value">@rating.ToString("0.##")</div></div>
                         </div>
                     </div>
 
                     <div class="profile-card">
-                        <h3>Ká»¹ nÄƒng</h3>
+                        <h3>Kỹ năng</h3>
                         @if (p.Skills != null && p.Skills.Any())
                         {
                             <div class="skill-chip-wrap">
@@ -137,12 +137,12 @@
                         }
                         else
                         {
-                            <p class="text-sm text-slate-500">ChÆ°a cÃ³ ká»¹ nÄƒng nÃ o.</p>
+                            <p class="text-sm text-slate-500">Chưa có kỹ năng nào.</p>
                         }
                     </div>
 
                     <div class="profile-card">
-                        <h3>Lá»‹ch lÃ m viá»‡c</h3>
+                        <h3>Lịch làm việc</h3>
                         <div class="schedule-grid schedule-grid--readonly">
                             <div></div>
                             @foreach (var day in dayColumns)
@@ -165,30 +165,30 @@
                 }
 
                 <div class="profile-card">
-                    <h3>Khu vá»±c hoáº¡t Ä‘á»™ng</h3>
+                    <h3>Khu vực hoạt động</h3>
                     <div id="complainedProfileMap" class="profile-map"></div>
                 </div>
             </div>
 
             <div class="space-y-4">
                 <div class="profile-card">
-                    <h3>ThÃ´ng tin liÃªn há»‡</h3>
+                    <h3>Thông tin liên hệ</h3>
                     <div class="profile-contact-list">
                         <div class="contact-row"><span class="label">Email</span><span class="value">@p.Email</span></div>
-                        <div class="contact-row"><span class="label">Sá»‘ Ä‘iá»‡n thoáº¡i</span><span class="value">@(p.PhoneNumber ?? "ChÆ°a cáº­p nháº­t")</span></div>
-                        <div class="contact-row"><span class="label">Äá»‹a chá»‰</span><span class="value">@($"{p.Address}, {p.Ward}, {p.District}, {p.City}")</span></div>
+                        <div class="contact-row"><span class="label">Số điện thoại</span><span class="value">@(p.PhoneNumber ?? "Chưa cập nhật")</span></div>
+                        <div class="contact-row"><span class="label">Địa chỉ</span><span class="value">@($"{p.Address}, {p.Ward}, {p.District}, {p.City}")</span></div>
                     </div>
                 </div>
 
                 @if (isParent)
                 {
                     <div class="profile-card profile-card-soft">
-                        <h3>ThÃ´ng tin gia Ä‘Ã¬nh</h3>
+                        <h3>Thông tin gia đình</h3>
                         <div class="profile-detail-grid">
-                            <div class="profile-detail-item"><div class="label">Sá»‘ tráº»</div><div class="value">@((p.NumberOfChildren?.ToString()) ?? "ChÆ°a cáº­p nháº­t")</div></div>
-                            <div class="profile-detail-item"><div class="label">Nhu cáº§u Ä‘áº·c biá»‡t</div><div class="value">@(p.SpecialNeeds ?? "KhÃ´ng cÃ³")</div></div>
+                            <div class="profile-detail-item"><div class="label">Số trẻ</div><div class="value">@((p.NumberOfChildren?.ToString()) ?? "Chưa cập nhật")</div></div>
+                            <div class="profile-detail-item"><div class="label">Nhu cầu đặc biệt</div><div class="value">@(p.SpecialNeeds ?? "Không có")</div></div>
                             <div class="profile-detail-item"><div class="label">Ghi chú</div><div class="value">@(p.Notes ?? "Không có")</div></div>
-                            <div class="profile-detail-item"><div class="label">NhÃ³m tuá»•i bÃ©</div><div class="value">@ChildAgeGroupLabel(p.ChildAgeGroup)</div></div>
+                            <div class="profile-detail-item"><div class="label">Nhóm tuổi bé</div><div class="value">@ChildAgeGroupLabel(p.ChildAgeGroup)</div></div>
                         </div>
                     </div>
 
@@ -200,7 +200,7 @@
                                 @foreach (var child in p.Children)
                                 {
                                     <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
-                                        <div class="font-semibold">Há»“ sÆ¡ tráº»</div>
+                                        <div class="font-semibold">Hồ sơ trẻ</div>
                                         <div class="text-xs text-slate-500 mt-1">@(child.ChildAgeGroup?.ToString() ?? "Unknown age group")</div>
                                         <div class="text-xs text-slate-500 mt-1">@(string.IsNullOrWhiteSpace(child.Characteristic) ? "-" : child.Characteristic)</div>
                                     </div>
@@ -217,7 +217,7 @@
                 @if (isNanny)
                 {
                     <div class="profile-card">
-                        <h3>Chá»©ng chá»‰</h3>
+                        <h3>Chứng chỉ</h3>
                         @if (p.Certificates != null && p.Certificates.Any())
                         {
                             <div class="space-y-2">
@@ -225,14 +225,14 @@
                                 {
                                     <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
                                         <div class="font-semibold">@cert.Name</div>
-                                        <div class="text-xs text-slate-500 mt-1">@(cert.IssuingOrganization ?? "Tá»• chá»©c khÃ´ng xÃ¡c Ä‘á»‹nh")</div>
+                                        <div class="text-xs text-slate-500 mt-1">@(cert.IssuingOrganization ?? "Tổ chức không xác định")</div>
                                     </div>
                                 }
                             </div>
                         }
                         else
                         {
-                            <p class="text-sm text-slate-500">ChÆ°a cÃ³ chá»©ng chá»‰.</p>
+                            <p class="text-sm text-slate-500">Chưa có chứng chỉ.</p>
                         }
                     </div>
                 }

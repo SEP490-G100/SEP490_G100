@@ -175,7 +175,7 @@
                     document.getElementById('hiringStatus').textContent = hiringStatusText(hs);
                     document.getElementById('signStatus').textContent = (d.signedByParent && d.signedByNanny) ? 'Đã ký 2 bên' : 'Chờ ký hoàn tất';
                     document.getElementById('signedAt').textContent = `Ngày ký: ${fmtDate(d.signedAt)}`;
-                    const isDirectContactHire = String(d.jobTitle || '').toLowerCase() === 'thuê nanny truc tiếp';
+                    const isDirectContactHire = String(d.jobTitle || '').toLowerCase() === 'thue nanny truc tiep';
                     document.getElementById('jobMeta').textContent = isDirectContactHire
                         ? `${fmtDateOnly(d.startDate)} - ${fmtDateOnly(d.endDate)}`
                         : `${d.jobTitle || '-'} | ${fmtDateOnly(d.startDate)} - ${fmtDateOnly(d.endDate)}`;

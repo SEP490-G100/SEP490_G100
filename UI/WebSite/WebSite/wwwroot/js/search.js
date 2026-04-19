@@ -1865,6 +1865,73 @@ function renderPreviewChildProfiles(job, childProfilesInput) {
   container.classList.remove('hidden');
 }
 
+function renderPreviewChildProfiles(job, childProfilesInput) {
+  const container = document.getElementById('pv-childProfiles');
+  if (!container) return;
+
+  const childProfiles = Array.isArray(childProfilesInput) ? childProfilesInput.filter(Boolean) : [];
+  const hasAggregateFallback = Boolean(job?.characteristic || job?.birthTypeLabel || job?.specialNeeds);
+  const fallbackChildren = childProfiles.length
+    ? childProfiles
+    : (hasAggregateFallback
+      ? [{
+          label: 'Be 1',
+          characteristic: job?.characteristic || '',
+          birthTypeLabel: job?.birthTypeLabel || '',
+          specialNeeds: job?.specialNeeds || ''
+        }]
+      : []);
+  const requiredCount = normalizeChildrenCount(job?.numberOfChildren || fallbackChildren.length || 1);
+
+  if (!fallbackChildren.length && !job?.numberOfChildren) {
+    container.innerHTML = '';
+    container.classList.add('hidden');
+    return;
+  }
+
+  let html = '';
+  for (let idx = 0; idx < requiredCount; idx += 1) {
+    const child = fallbackChildren[idx] || null;
+    const displayIndex = idx + 1;
+
+    if (!child) {
+      html += `
+        <div class="child-profile-panel child-profile-panel--missing child-profile-panel--preview">
+          <div class="child-profile-panel__head">
+          <p class="child-profile-panel__title">Bé thứ ${displayIndex}</p>
+          </div>
+          <p class="child-profile-panel__empty">Chưa thấy Child Profile của bé này.</p>
+        </div>`;
+      continue;
+    }
+
+    html += `
+      <div class="child-profile-panel child-profile-panel--preview">
+        <div class="child-profile-panel__head">
+          <p class="child-profile-panel__title">Bé thứ ${displayIndex}</p>
+          <span class="child-profile-panel__badge">${escapeHtml(child.label || `Bé ${displayIndex}`)}</span>
+        </div>
+        <div class="child-profile-grid">
+          <div class="child-profile-field">
+            <span class="child-profile-field__label">Đặc điểm</span>
+            <p class="child-profile-field__value">${escapeHtml(child.characteristic || 'Chưa cập nhật')}</p>
+          </div>
+          <div class="child-profile-field">
+            <span class="child-profile-field__label">Nhóm tuổi</span>
+            <p class="child-profile-field__value">${escapeHtml(child.birthTypeLabel || 'Chưa cập nhật')}</p>
+          </div>
+          <div class="child-profile-field child-profile-field--full">
+            <span class="child-profile-field__label">Nhu cầu đặc biệt</span>
+            <p class="child-profile-field__value">${escapeHtml(child.specialNeeds || 'Không có')}</p>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  container.innerHTML = html;
+  container.classList.remove('hidden');
+}
+
 function openPreview(job) {
   if (!job) return;
   editingJobId = job.id;
