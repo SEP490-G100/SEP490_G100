@@ -134,7 +134,7 @@ public class SearchController : Controller
     public async Task<IActionResult> SavedJobsData([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
         if (!isNannyRole())
-            return StatusCode(403, new { success = false, total = 0, data = Array.Empty<object>(), message = "Ban khong co quyen xem bai dang da luu." });
+            return StatusCode(403, new { success = false, total = 0, data = Array.Empty<object>(), message = "Bạn không có quyền xem bài đăng đã lưu." });
 
         page = page < 1 ? 1 : page;
         pageSize = pageSize < 1 ? 20 : Math.Min(pageSize, 50);
@@ -189,7 +189,7 @@ public class SearchController : Controller
     public async Task<IActionResult> CreateJob([FromBody] JsonElement body)
     {
         if (!isParentRole())
-            return StatusCode(403, new { success = false, message = "Ban khong co quyen dang tin tim bao mau." });
+            return StatusCode(403, new { success = false, message = "Bạn không có quyền đăng tin tìm bảo mẫu." });
 
         SetAuthHeader();
         try
@@ -200,8 +200,8 @@ public class SearchController : Controller
                 await _notificationHub.Clients.Group("role:Moderator").SendAsync("notification:new", new
                 {
                     type = "job-posting-review-required",
-                    title = "Co bai dang moi can duyet",
-                    message = "Mot parent vua tao job posting moi dang cho moderator duyet.",
+                    title = "Có bài đăng mới cần duyệt",
+                    message = "Một phụ huynh vừa tạo tin đăng mới đang chờ điều hành viên duyệt.",
                     toastType = "info"
                 });
 
@@ -211,8 +211,8 @@ public class SearchController : Controller
                     await _notificationHub.Clients.Group($"user:{currentUserId}").SendAsync("notification:new", new
                     {
                         type = "job-posting-pending",
-                        title = "Bai dang da duoc tao",
-                        message = "Bai dang cua ban dang cho moderator duyet.",
+                        title = "Bài đăng đã được tạo",
+                        message = "Bài đăng của bạn đang chờ điều hành viên duyệt.",
                         toastType = "success"
                     });
                 }
@@ -231,7 +231,7 @@ public class SearchController : Controller
     public async Task<IActionResult> UpdateJob(Guid id, [FromBody] JsonElement body)
     {
         if (!isParentRole())
-            return StatusCode(403, new { success = false, message = "Ban khong co quyen chinh sua bai dang nay." });
+            return StatusCode(403, new { success = false, message = "Bạn không có quyền chỉnh sửa bài đăng này." });
 
         SetAuthHeader();
         try
@@ -251,7 +251,7 @@ public class SearchController : Controller
     public async Task<IActionResult> DeleteJob(Guid id)
     {
         if (!await canEditJob(id))
-            return StatusCode(403, new { success = false, message = "Ban khong co quyen xoa bai dang nay." });
+            return StatusCode(403, new { success = false, message = "Bạn không có quyền xóa bài đăng này." });
 
         SetAuthHeader();
         try
@@ -284,7 +284,7 @@ public class SearchController : Controller
     public async Task<IActionResult> ToggleFavoriteJob(Guid jobPostingId)
     {
         if (!isNannyRole())
-            return StatusCode(403, new { success = false, message = "Ban khong co quyen luu bai dang." });
+            return StatusCode(403, new { success = false, message = "Bạn không có quyền lưu bài đăng." });
 
         SetAuthHeader();
         try
@@ -303,7 +303,7 @@ public class SearchController : Controller
     public async Task<IActionResult> ApplyJob(Guid jobPostingId)
     {
         if (!isNannyRole())
-            return StatusCode(403, new { success = false, message = "Ban khong co quyen ung tuyen bai dang." });
+            return StatusCode(403, new { success = false, message = "Bạn không có quyền ứng tuyển bài đăng." });
 
         SetAuthHeader();
         try
@@ -318,8 +318,8 @@ public class SearchController : Controller
                 {
                     await _notificationHub.Clients.User(parentUserId.ToString()).SendAsync("notification:new", new
                     {
-                        title = "Co nanny vua ung tuyen bai dang cua ban",
-                        message = "Hay vao notification de xem chi tiet don ung tuyen.",
+                        title = "Có bảo mẫu vừa ứng tuyển bài đăng của bạn",
+                        message = "Hãy vào thông báo để xem chi tiết đơn ứng tuyển.",
                         type = "job-application-received",
                         relatedId = jobPostingId
                     });
@@ -329,8 +329,8 @@ public class SearchController : Controller
                 {
                     await _notificationHub.Clients.User(nannyUserId.ToString()).SendAsync("notification:new", new
                     {
-                        title = "Ban da gui don ung tuyen",
-                        message = "Don ung tuyen da duoc gui. Vui long cho Parent phan hoi.",
+                        title = "Bạn đã gửi đơn ứng tuyển",
+                        message = "Đơn ứng tuyển đã được gửi. Vui lòng chờ phụ huynh phản hồi.",
                         type = "job-application-submitted",
                         relatedId = jobPostingId
                     });
@@ -355,7 +355,7 @@ public class SearchController : Controller
     public async Task<IActionResult> MyApplicationsData([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
         if (!isNannyRole())
-            return StatusCode(403, new { success = false, total = 0, data = Array.Empty<object>(), message = "Ban khong co quyen xem lich su ung tuyen." });
+            return StatusCode(403, new { success = false, total = 0, data = Array.Empty<object>(), message = "Bạn không có quyền xem lịch sử ứng tuyển." });
 
         page = page < 1 ? 1 : page;
         pageSize = pageSize < 1 ? 20 : Math.Min(pageSize, 50);
@@ -383,7 +383,7 @@ public class SearchController : Controller
     public async Task<IActionResult> WithdrawApplication(Guid applicationId)
     {
         if (!isNannyRole())
-            return StatusCode(403, new { success = false, message = "Ban khong co quyen huy don ung tuyen." });
+            return StatusCode(403, new { success = false, message = "Bạn không có quyền hủy đơn ứng tuyển." });
 
         SetAuthHeader();
         try
@@ -408,7 +408,7 @@ public class SearchController : Controller
     public async Task<IActionResult> JobApplicationsByJob(Guid jobPostingId, [FromQuery] int? status = null)
     {
         if (!isParentRole())
-            return StatusCode(403, new { success = false, message = "Ban khong co quyen xem request ung tuyen." });
+            return StatusCode(403, new { success = false, message = "Bạn không có quyền xem đơn ứng tuyển." });
 
         SetAuthHeader();
         try
@@ -434,7 +434,7 @@ public class SearchController : Controller
     public async Task<IActionResult> ReviewJobApplication(Guid applicationId, [FromBody] JsonElement body)
     {
         if (!isParentRole())
-            return StatusCode(403, new { success = false, message = "Ban khong co quyen duyet request ung tuyen." });
+            return StatusCode(403, new { success = false, message = "Bạn không có quyền duyệt đơn ứng tuyển." });
 
         SetAuthHeader();
         try
@@ -450,10 +450,10 @@ public class SearchController : Controller
                     var approved = status == 1;
                     await _notificationHub.Clients.User(nannyUserId.ToString()).SendAsync("notification:new", new
                     {
-                        title = approved ? "Don ung tuyen duoc chap nhan" : "Don ung tuyen bi tu choi",
+                        title = approved ? "Đơn ứng tuyển được chấp nhận" : "Đơn ứng tuyển bị từ chối",
                         message = approved
-                            ? "Parent da chap nhan don ung tuyen cua ban."
-                            : "Parent da tu choi don ung tuyen cua ban.",
+                            ? "Phụ huynh đã chấp nhận đơn ứng tuyển của bạn."
+                            : "Phụ huynh đã từ chối đơn ứng tuyển của bạn.",
                         type = approved ? "job-application-approved" : "job-application-rejected",
                         relatedId = relatedJobId == Guid.Empty ? applicationId : relatedJobId
                     });

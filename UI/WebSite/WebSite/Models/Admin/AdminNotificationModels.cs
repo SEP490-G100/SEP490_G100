@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
@@ -91,10 +92,12 @@ public class AdminNotificationFormViewModel : IValidatableObject
 
     [Required]
     [StringLength(200, MinimumLength = 2)]
+    [Display(Name = "Tiêu đề")]
     public string Title { get; set; } = "";
 
     [Required]
     [StringLength(1000, MinimumLength = 2)]
+    [Display(Name = "Nội dung")]
     public string Content { get; set; } = "";
 
     public string TargetType { get; set; } = "All";
@@ -107,7 +110,7 @@ public class AdminNotificationFormViewModel : IValidatableObject
         if (TargetType == "Role" && string.IsNullOrWhiteSpace(TargetRole))
         {
             yield return new ValidationResult(
-                "Please choose a target role.",
+                "Vui lòng chọn vai trò nhận thông báo.",
                 [nameof(TargetRole)]);
         }
     }

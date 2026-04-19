@@ -17,8 +17,8 @@ let suppressNextNannyMapMove = false;
 let currentNannyDetailId = null;
 let currentNannyDetailUserId = null;
 window.currentNannyDetailUserId = null;
-const NANNY_DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
-const NANNY_TIME_LABELS = ['Morning', 'Afternoon', 'Evening', 'Night'];
+const NANNY_DAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+const NANNY_TIME_LABELS = ['Sáng', 'Chiều', 'Tối', 'Đêm'];
 const NANNY_FALLBACK_PROVINCES = [
     'Thành phố Hà Nội',
     'Tỉnh Cao Bằng',
@@ -205,8 +205,8 @@ function formatSalary(min, max) {
 
 function getNannyPlanLabel(profile) {
   const code = String(profile?.subscriptionPlanCode || '').trim().toUpperCase();
-  if (code === 'NANNY_PRO') return 'Nanny Pro';
-  if (code === 'NANNY_PLUS') return 'Nanny Plus';
+  if (code === 'NANNY_PRO') return 'Gói Pro';
+  if (code === 'NANNY_PLUS') return 'Gói Plus';
   return '';
 }
 
@@ -219,9 +219,9 @@ function renderNannyBenefitPills(profile) {
   }
 
   if (profile?.searchPriority) {
-    pills.push('<span class="nanny-pill nanny-pill--orange">Uu tien hien thi</span>');
+    pills.push('<span class="nanny-pill nanny-pill--orange">Ưu tiên hiển thị</span>');
   } else if (profile?.featuredBadge) {
-    pills.push('<span class="nanny-pill">Ho so noi bat</span>');
+    pills.push('<span class="nanny-pill">Hồ sơ nổi bật</span>');
   }
 
   return pills.join('');
@@ -251,7 +251,7 @@ function updateNannyFavoriteUi(nannyId, isFavorite) {
   document.querySelectorAll(`.nanny-card-favorite[data-nanny-id="${normalized}"]`).forEach((button) => {
     button.classList.toggle('active', !!isFavorite);
     button.setAttribute('aria-pressed', isFavorite ? 'true' : 'false');
-    button.title = isFavorite ? 'Bo yeu thich' : 'Yeu thich nanny';
+    button.title = isFavorite ? 'Bỏ yêu thích' : 'Yêu thích bảo mẫu';
     const icon = button.querySelector('.material-icons-round');
     if (icon) icon.textContent = isFavorite ? 'favorite' : 'favorite_border';
   });
@@ -262,7 +262,7 @@ function updateNannyFavoriteUi(nannyId, isFavorite) {
   if (detailButton && currentNannyDetailId && normalizeGuid(currentNannyDetailId) === normalized) {
     detailButton.classList.toggle('active', !!isFavorite);
     if (detailIcon) detailIcon.textContent = isFavorite ? 'favorite' : 'favorite_border';
-    if (detailText) detailText.textContent = isFavorite ? 'Bo yeu thich' : 'Yeu thich';
+    if (detailText) detailText.textContent = isFavorite ? 'Bỏ yêu thích' : 'Yêu thích';
   }
 }
 
@@ -286,12 +286,12 @@ async function toggleNannyFavorite(nannyId, event) {
   event?.stopPropagation?.();
 
   if (!isLoggedIn()) {
-    showNannyToast('Vui long dang nhap de yeu thich nanny.', 'warning');
+    showNannyToast('Vui lòng đăng nhập để yêu thích bảo mẫu.', 'warning');
     return;
   }
 
   if (!isParentRole()) {
-    showNannyToast('Chi Parent moi co quyen yeu thich nanny.', 'warning');
+    showNannyToast('Chỉ phụ huynh mới có quyền yêu thích bảo mẫu.', 'warning');
     return;
   }
 
@@ -302,18 +302,18 @@ async function toggleNannyFavorite(nannyId, event) {
     });
     const json = await response.json();
     if (!json?.success) {
-      showNannyToast(json?.message || 'Khong the cap nhat yeu thich nanny.', 'error');
+      showNannyToast(json?.message || 'Không thể cập nhật yêu thích.', 'error');
       return;
     }
 
     const favoriteState = !!json.isFavorite;
     setNannyFavoriteState(nannyId, favoriteState);
     showNannyToast(
-      json.message || (favoriteState ? 'Da yeu thich nanny.' : 'Da bo yeu thich nanny.'),
+      json.message || (favoriteState ? 'Đã yêu thích bảo mẫu.' : 'Đã bỏ yêu thích.'),
       favoriteState ? 'success' : 'info'
     );
   } catch {
-    showNannyToast('Khong the cap nhat yeu thich nanny.', 'error');
+    showNannyToast('Không thể cập nhật yêu thích.', 'error');
   }
 }
 
@@ -324,17 +324,17 @@ function toggleNannyFavoriteFromDetail(event) {
 
 async function sendContactRequest(nannyProfileId, message) {
   if (!isLoggedIn()) {
-    showNannyToast('Vui long dang nhap de gui request contact.', 'warning');
+    showNannyToast('Vui lòng đăng nhập để gửi yêu cầu liên hệ.', 'warning');
     return null;
   }
 
   if (!isParentRole()) {
-    showNannyToast('Chi Parent moi co quyen gui request contact.', 'warning');
+    showNannyToast('Chỉ phụ huynh mới có quyền gửi yêu cầu liên hệ.', 'warning');
     return null;
   }
 
   if (!nannyProfileId) {
-    showNannyToast('Khong tim thay ho so nanny de gui request.', 'error');
+    showNannyToast('Không tìm thấy hồ sơ bảo mẫu để gửi yêu cầu.', 'error');
     return null;
   }
 
@@ -351,15 +351,15 @@ async function sendContactRequest(nannyProfileId, message) {
 
     const json = await response.json();
     if (!response.ok || !json?.success) {
-      showNannyToast(json?.message || 'Khong the gui request contact.', 'error');
+      showNannyToast(json?.message || 'Không thể gửi yêu cầu liên hệ.', 'error');
       return null;
     }
 
-    showNannyToast(json?.message || 'Da gui request contact thanh cong.', 'success');
+    showNannyToast(json?.message || 'Đã gửi yêu cầu liên hệ thành công.', 'success');
     window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
     return json;
   } catch {
-    showNannyToast('Khong the gui request contact.', 'error');
+    showNannyToast('Không thể gửi yêu cầu liên hệ.', 'error');
     return null;
   }
 }
@@ -371,8 +371,8 @@ async function sendContactRequestFromDetail(event) {
   const contactButton = document.getElementById('nd-contactBtn');
   if (contactButton) contactButton.disabled = true;
 
-  const defaultMessage = 'Toi muon trao doi them ve cong viec va lich lam viec.';
-  const message = window.prompt('Nhap loi nhan gui den nanny (co the bo trong):', defaultMessage);
+  const defaultMessage = 'Tôi muốn trao đổi thêm về công việc và lịch làm việc.';
+  const message = window.prompt('Nhập lời nhắn gửi đến bảo mẫu (có thể bỏ trống):', defaultMessage);
   if (message === null) {
     if (contactButton) contactButton.disabled = false;
     return;
@@ -1022,7 +1022,7 @@ function renderNannyCards(items, options = {}) {
                         class="nanny-card-favorite ${profile.isFavorite ? 'active' : ''}"
                         data-nanny-id="${escapeHtml(normalizeGuid(profile.id))}"
                         aria-pressed="${profile.isFavorite ? 'true' : 'false'}"
-                        title="${profile.isFavorite ? 'Bo yeu thich' : 'Yeu thich nanny'}"
+                        title="${profile.isFavorite ? 'Bỏ yêu thích' : 'Yêu thích bảo mẫu'}"
                         onclick="toggleNannyFavorite('${escapeHtml(profile.id)}', event)">
                   <span class="material-icons-round">${profile.isFavorite ? 'favorite' : 'favorite_border'}</span>
                 </button>` : ''}
@@ -1033,7 +1033,7 @@ function renderNannyCards(items, options = {}) {
             ${renderNannyBenefitPills(profile)}
             <span class="nanny-pill nanny-pill--orange">${escapeHtml(profile.verificationStatusLabel || 'Chưa xác minh')}</span>
             <span class="nanny-pill">${profile.age ? `${profile.age} tuổi` : 'Chưa rõ tuổi'}</span>
-            <span class="nanny-pill">${profile.yearsOfExperience ? `${profile.yearsOfExperience} năm KN` : 'Chưa rõ KN'}</span>
+            <span class="nanny-pill">${profile.yearsOfExperience ? `${profile.yearsOfExperience} năm kinh nghiệm` : 'Chưa rõ kinh nghiệm'}</span>
           </div>
           <div class="nanny-card__skills">
             ${topSkills.length
@@ -1067,8 +1067,8 @@ function renderNannyCards(items, options = {}) {
     }).addTo(nannyMap);
 
     marker.bindPopup(`
-      <div class="text-sm font-semibold text-slate-700">${escapeHtml(profile.fullName || 'Bao mau')}</div>
-      <div class="text-xs text-slate-500 mt-1">${escapeHtml([profile.district, profile.city].filter(Boolean).join(', ') || 'Chua cap nhat khu vuc')}</div>
+      <div class="text-sm font-semibold text-slate-700">${escapeHtml(profile.fullName || 'Bảo mẫu')}</div>
+      <div class="text-xs text-slate-500 mt-1">${escapeHtml([profile.district, profile.city].filter(Boolean).join(', ') || 'Chưa cập nhật khu vực')}</div>
     `);
 
     nannyMarkers.push({ marker, circle, point, element: marker.getElement() });
@@ -1143,7 +1143,7 @@ async function doNannySearch() {
 
 function renderAvailability(slots) {
   if (!Array.isArray(slots) || !slots.length) {
-    return '<span class="nanny-card__muted">Chua cap nhat lich ranh.</span>';
+    return '<span class="nanny-card__muted">Chưa cập nhật lịch rảnh.</span>';
   }
 
   const dayAliases = {
@@ -1223,11 +1223,11 @@ async function openNannyDetail(id) {
     document.getElementById('nd-avatar').src = detail.avatarUrl || '/img/nanny-logo.jpg';
     document.getElementById('nd-name').textContent = detail.fullName || 'Bảo mẫu';
     const publicLocation = formatPublicLocation(detail);
-    document.getElementById('nd-location').textContent = publicLocation || 'Chua cap nhat khu vuc';
+    document.getElementById('nd-location').textContent = publicLocation || 'Chưa cập nhật khu vực';
     document.getElementById('nd-verify').textContent = detail.verificationStatusLabel || 'Đang cập nhật';
     document.getElementById('nd-bio').textContent = detail.bio || 'Hồ sơ chưa có mô tả.';
-    document.getElementById('nd-phone').textContent = isParentRole() ? 'Gui request contact de trao doi truc tiep voi nanny' : 'Thong tin lien he chi hien sau khi da ket noi';
-    document.getElementById('nd-address').textContent = publicLocation || 'Chua cap nhat';
+    document.getElementById('nd-phone').textContent = isParentRole() ? 'Gửi yêu cầu liên hệ để trao đổi trực tiếp với bảo mẫu' : 'Thông tin liên hệ chỉ hiện sau khi đã kết nối';
+    document.getElementById('nd-address').textContent = publicLocation || 'Chưa cập nhật';
     document.getElementById('nd-travel').textContent = detail.maxTravelDistance ? `${detail.maxTravelDistance} km` : 'Chưa cập nhật';
     document.getElementById('nd-age').textContent = detail.age ? `${detail.age} tuổi` : 'Chưa rõ tuổi';
     document.getElementById('nd-exp').textContent = detail.yearsOfExperience ? `${detail.yearsOfExperience} năm kinh nghiệm` : 'Chưa rõ kinh nghiệm';
@@ -1237,9 +1237,9 @@ async function openNannyDetail(id) {
     if (planChip) {
       const planLabel = getNannyPlanLabel(detail);
       const planText = detail.searchPriority
-        ? `${planLabel || 'Ho so noi bat'} • Uu tien hien thi`
+        ? `${planLabel || 'Hồ sơ nổi bật'} • Ưu tiên hiển thị`
         : detail.featuredBadge
-          ? (planLabel || 'Ho so noi bat')
+          ? (planLabel || 'Hồ sơ nổi bật')
           : '';
       planChip.textContent = planText;
       planChip.classList.toggle('hidden', !planText);
@@ -1265,7 +1265,7 @@ async function openNannyDetail(id) {
       const icon = favoriteButton.querySelector('.material-icons-round');
       const text = document.getElementById('nd-favoriteBtnText');
       if (icon) icon.textContent = detail.isFavorite ? 'favorite' : 'favorite_border';
-      if (text) text.textContent = detail.isFavorite ? 'Bo yeu thich' : 'Yeu thich';
+      if (text) text.textContent = detail.isFavorite ? 'Bỏ yêu thích' : 'Yêu thích';
     }
 
     const contactButton = document.getElementById('nd-contactBtn');

@@ -14,7 +14,7 @@ public class AdminPlanDto
     public DateTime? UpdatedAt { get; set; }
     public List<string> Features { get; set; } = new();
 
-    /// <summary>One feature per line (textarea binding helper).</summary>
+    /// <summary>Mỗi dòng một tính năng (hỗ trợ gắn textarea).</summary>
     public string? FeaturesRaw
     {
         get => Features.Count > 0 ? string.Join('\n', Features) : null;

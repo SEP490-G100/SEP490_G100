@@ -8,7 +8,6 @@ namespace Nanny_BackEnd.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Moderator")]
 public class BlogController : ControllerBase
 {
     private readonly BlogService _blogService;
@@ -16,10 +15,29 @@ public class BlogController : ControllerBase
     {
         _blogService = blogService;
     }
-    // GET /api/Blog?search=...&page=1&pageSize=5&status=1&isDeleted=false
 
+    // GET /api/Blog?search=...&page=1&pageSize=9&categoryId=...&sort=newest
+    // Public endpoint — chỉ trả về bài đã Published và chưa xoá
+    [HttpGet]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetPublicBlogList(
+        [FromQuery] string? search     = null,
+        [FromQuery] int     page       = 1,
+        [FromQuery] int     pageSize   = 9,
+        [FromQuery] Guid?   categoryId = null,
+        [FromQuery] string? sort       = null)
+    {
+        // Bắt buộc status=1 (Published) và isDeleted=false cho endpoint công khai
+        var result = await _blogService.ModeratorViewBlogListAsync(
+            search, page, pageSize,
+            status: 1, isDeleted: false,
+            categoryId, sort);
+        return Ok(new { success = true, data = result });
+    }
 
+    // GET /api/Blog/moderator-view-blog-list
     [HttpGet("moderator-view-blog-list")]
+    [Authorize(Roles = "Moderator")]
     public async Task<IActionResult> ModeratorViewBlogList(
         [FromQuery] string? search     = null,
         [FromQuery] int     page       = 1,
@@ -33,8 +51,9 @@ public class BlogController : ControllerBase
         return Ok(new { success = true, data = result });
     }
 
-    // GET /api/Blog/{id}
+    // GET /api/Blog/moderator-view-blog-detail/{id}
     [HttpGet("moderator-view-blog-detail/{id:guid}")]
+    [Authorize(Roles = "Moderator")]
     public async Task<IActionResult> ModeratorViewBlogDetail(Guid id)
     {
         var (ok, code, msg, data) = await _blogService.ModeratorViewBlogDetailAsync(id);
@@ -42,8 +61,9 @@ public class BlogController : ControllerBase
         return Ok(new { success = true, data });
     }
 
-    // GET /api/Blog/by-slug/{slug} — public detail page
+    // GET /api/Blog/by-slug/{slug} — trang chi tiết công khai
     [HttpGet("by-slug/{slug}")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetBlogBySlug(string slug)
     {
         if (string.IsNullOrWhiteSpace(slug))
@@ -54,16 +74,18 @@ public class BlogController : ControllerBase
         return Ok(new { success = true, data });
     }
 
-    // GET /api/Blog/categories — for dropdowns
+    // GET /api/Blog/categories — cho dropdown lọc danh mục
     [HttpGet("categories")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetCategories()
     {
         var result = await _blogService.GetActiveCategoriesAsync();
         return Ok(new { success = true, data = result });
     }
 
-    // POST /api/Blog
+    // POST /api/Blog/moderator-create-blog
     [HttpPost("moderator-create-blog")]
+    [Authorize(Roles = "Moderator")]
     public async Task<IActionResult> ModeratorCreateBlog([FromBody] CreateBlogRequest req)
     {
         var userId = GetUserId();
@@ -75,8 +97,9 @@ public class BlogController : ControllerBase
         return StatusCode(201, new { success = true, message = msg, data });
     }
 
-    // PUT /api/Blog/{id}
+    // PUT /api/Blog/moderator-update-blog/{id}
     [HttpPut("moderator-update-blog/{id:guid}")]
+    [Authorize(Roles = "Moderator")]
     public async Task<IActionResult> ModeratorUpdateBlog(Guid id, [FromBody] UpdateBlogRequest req)
     {
         var userId = GetUserId();
@@ -87,6 +110,7 @@ public class BlogController : ControllerBase
 
     // PUT /api/Blog/moderator-toggle-blog-status/{id}
     [HttpPut("moderator-toggle-blog-status/{id:guid}")]
+    [Authorize(Roles = "Moderator")]
     public async Task<IActionResult> ModeratorToggleBlogStatus(Guid id, [FromQuery] bool activate)
     {
         var (ok, code, msg) = await _blogService.ModeratorToggleBlogStatusAsync(id, activate);

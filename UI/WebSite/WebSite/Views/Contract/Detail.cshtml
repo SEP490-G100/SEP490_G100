@@ -47,7 +47,7 @@
                     <p id="signedAt" class="mt-2 text-sm font-semibold text-slate-600"></p>
                     <p id="jobMeta" class="mt-1 text-sm text-slate-600"></p>
 
-                    @* Action row: chi hien voi Parent *@
+                    @* Chỉ hiển thị với phụ huynh *@
                     <div id="parentActionRow" class="hidden mt-4 flex flex-wrap items-center gap-3">
                         <button type="button" id="completeBtn"
                                 class="hidden inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-all"
@@ -129,8 +129,6 @@
             let currentHiringRecordId = null;
 
             const renderParentActions = (hiringStatus) => {
-                console.log('[Contract Detail] isParent:', isParent, '| hiringRecordId:', currentHiringRecordId, '| hiringStatus:', hiringStatus);
-
                 if (!isParent || !currentHiringRecordId) return;
 
                 parentActionRow.classList.remove('hidden');
@@ -141,14 +139,14 @@
                 completeError.classList.add('hidden');
 
                 if (hiringStatus === 1) {
-                    // Active: Parent có thể hoàn thành hợp đồng
+                    // Đang hoạt động: phụ huynh có thể hoàn thành hợp đồng
                     completeBtn.classList.remove('hidden');
                 } else if (hiringStatus === 0) {
-                    // Pending: nanny chưa xác nhận, hiện ghi chú
-                    pendingNote.textContent = '⏳ Đang chờ nanny xác nhận. Nút "Hoàn thành" sẽ hiện sau khi nanny chấp nhận hợp đồng.';
+                    // Đang chờ: bảo mẫu chưa xác nhận, hiện ghi chú
+                    pendingNote.textContent = '⏳ Đang chờ bảo mẫu xác nhận. Nút "Hoàn thành" sẽ hiện sau khi bảo mẫu chấp nhận hợp đồng.';
                     pendingNote.classList.remove('hidden');
                 } else {
-                    // Declined / Cancelled: ẩn toàn bộ row
+                    // Từ chối / hủy: ẩn toàn bộ hàng thao tác
                     parentActionRow.classList.add('hidden');
                 }
             };
@@ -190,7 +188,11 @@
                 })
                 .catch((err) => {
                     loadState.classList.remove('hidden');
-                    loadState.textContent = `Không tải được hợp đồng: ${err.message || 'Lỗi không xác định'}`;
+                    const msg = String(err?.message || '').trim();
+                    const hasVi = /[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]/i.test(msg);
+                    loadState.textContent = hasVi
+                        ? `Không tải được hợp đồng: ${msg}`
+                        : 'Không tải được hợp đồng. Vui lòng thử lại sau.';
                     detailContent.classList.add('hidden');
                 });
 
@@ -199,7 +201,7 @@
                 if (!currentHiringRecordId) return;
 
                 completeBtn.disabled = true;
-                completeBtn.textContent = 'Đang xử lý...';
+                completeBtn.innerHTML = '<span class="material-icons-round text-base animate-spin">sync</span> Đang xử lý...';
                 completeError.classList.add('hidden');
 
                 try {
@@ -211,14 +213,14 @@
                     const json = await res.json();
 
                     if (!json.success) {
-                        completeError.textContent = json.message || 'Có lỗi xảy ra.';
+                        completeError.textContent = json.message || 'Không thể hoàn thành hợp đồng. Vui lòng thử lại.';
                         completeError.classList.remove('hidden');
                         return;
                     }
 
                     window.location.href = `/Contract/Detail/${contractId}`;
                 } catch {
-                    completeError.textContent = 'Lỗi kết nối. Vui lòng thử lại.';
+                    completeError.textContent = 'Lỗi kết nối máy chủ. Vui lòng thử lại.';
                     completeError.classList.remove('hidden');
                 } finally {
                     completeBtn.disabled = false;

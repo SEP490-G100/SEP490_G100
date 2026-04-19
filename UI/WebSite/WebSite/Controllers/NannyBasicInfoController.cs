@@ -182,20 +182,20 @@ public class NannyBasicInfoController : Controller
                 var age = today.Year - dob.Year;
                 if (dob > today.AddYears(-age)) age--;
                 if (age < 18)
-                    ModelState.AddModelError(nameof(model.DateOfBirth), "Nanny phải đủ 18 tuổi trở lên.");
+                    ModelState.AddModelError(nameof(model.DateOfBirth), "Bảo mẫu phải đủ 18 tuổi trở lên.");
             }
 
             if (model.Gender == null)
                 ModelState.AddModelError(nameof(model.Gender), "Vui lòng chọn giới tính.");
 
             if (!string.IsNullOrWhiteSpace(model.PhoneNumber) && !IsValidPhoneNumber(model.PhoneNumber))
-                ModelState.AddModelError(nameof(model.PhoneNumber), "So dien thoai khong hop le (9-15 chu so, cho phep dau +).");
+                ModelState.AddModelError(nameof(model.PhoneNumber), "Số điện thoại không hợp lệ (9-15 chữ số, cho phép dấu +).");
 
             if (string.IsNullOrWhiteSpace(model.Address))
                 ModelState.AddModelError(nameof(model.Address), "Vui lòng nhập địa chỉ chi tiết.");
 
             if (string.IsNullOrWhiteSpace(model.City) || string.IsNullOrWhiteSpace(model.District))
-                ModelState.AddModelError(string.Empty, "Vui lòng chọn đầy đủ Tỉnh/Thành và Phường/Xã.");
+                ModelState.AddModelError(string.Empty, "Vui lòng chọn đầy đủ Tỉnh/Thành và Quận/Huyện/Phường.");
 
             if (!ModelState.IsValid)
                 return View(model);

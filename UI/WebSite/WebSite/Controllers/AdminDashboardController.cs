@@ -30,7 +30,7 @@ public class AdminDashboardController : Controller
             var json = await response.Content.ReadAsStringAsync();
             if (!response.IsSuccessStatusCode)
             {
-                TempData["Error"] = $"Loi API lay du lieu Dashboard ({(int)response.StatusCode}). Vui long kiem tra lai quyen truy cap.";
+                TempData["Error"] = $"Lỗi API lấy dữ liệu Dashboard ({(int)response.StatusCode}). Vui lòng kiểm tra lại quyền truy cập.";
                 return View("~/Views/Admin/Dashboard.cshtml", new AdminDashboardDto());
             }
 
@@ -39,7 +39,7 @@ public class AdminDashboardController : Controller
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"Loi ket noi Dashboard: {ex.Message}";
+            TempData["Error"] = $"Lỗi kết nối Dashboard: {ex.Message}";
             return View("~/Views/Admin/Dashboard.cshtml", new AdminDashboardDto());
         }
     }

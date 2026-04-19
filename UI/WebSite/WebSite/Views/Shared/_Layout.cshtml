@@ -86,7 +86,7 @@
     }
 }
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 
 
 <!--=============HEADER================-->
@@ -1001,7 +1001,7 @@
                 <!-- Logo -->
                 <a href="/" class="flex items-center gap-3 hover:opacity-90 transition-opacity flex-shrink-0">
                     <div class="w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center bg-gradient-to-br from-orange-100 to-orange-50 shadow-sm">
-                        <img src="~/img/nanny-logo.jpg" alt="NannyMatch Logo" class="w-full h-full object-contain" />
+                        <img src="~/img/nanny-logo.jpg" alt="Logo NannyMatch" class="w-full h-full object-contain" />
                     </div>
                     <span class="text-xl font-bold tracking-tight"
                           style="font-family:'Quicksand',sans-serif; background:linear-gradient(135deg,#EA580C,#F97316); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent">NannyMatch</span>
@@ -1010,10 +1010,10 @@
                 <!-- Nav Links (giữa) -->
                 <div class="hidden md:flex items-center gap-1 nm-nav-links">
                     <a href="/" class="@homeNavCls">Trang chủ</a>
-                    <a href="/Search" class="@NavCls("Search")">Tìm Công Việc</a>
-                    <a href="/Nanny/List" class="@nannyListNavCls">Tìm Bảo Mẫu</a>
+                    <a href="/Search" class="@NavCls("Search")">Tìm công việc</a>
+                    <a href="/Nanny/List" class="@nannyListNavCls">Tìm bảo mẫu</a>
                     <a href="/Blog" class="@NavCls("Blog")">Blog</a>
-                    <a href="/Home/Faq" class="@faqNavCls">FAQ</a>
+                    <a href="/Home/Faq" class="@faqNavCls">Hỏi đáp</a>
                 </div>
 
                 <!-- Actions -->
@@ -1023,7 +1023,7 @@
                     {
                         <a href="/Communication"
                            class="nm-icon-btn nm-icon-btn--mini"
-                           aria-label="Tin Nhắn">
+                           aria-label="Tin nhắn">
                             <span class="material-icons-round text-[18px]">chat_bubble_outline</span>
                         </a>
 
@@ -1135,11 +1135,11 @@
                                     </a>
                                     <a href="/Nanny/Favorites" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                         <span class="material-icons-round text-base">favorite</span>
-                                        Nanny yêu thích
+                                        Bảo mẫu yêu thích
                                     </a>
                                     <a href="/Nanny/ContactRequests" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                         <span class="material-icons-round text-base">contact_phone</span>
-                                        Lịch sử contact
+                                        Lịch sử yêu cầu liên hệ
                                     </a>
                                 }
 
@@ -1155,7 +1155,7 @@
                                     </a>
                                     <a href="/Nanny/ReceivedContactRequests" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                         <span class="material-icons-round text-base">contact_mail</span>
-                                        Request contact đã nhận
+                                        Yêu cầu liên hệ đã nhận
                                     </a>
                                     <a href="/NannyVerificationRequest/NannyGetVerificationRequestList" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                         <span class="material-icons-round text-base">verified_user</span>
@@ -1263,6 +1263,7 @@
                                     const title = normalizeText(item?.title);
                                     if (!typeLabel) return false;
                                     if (typeLabel.includes('moderator')) return true;
+                                    if (typeLabel.includes('kiểm duyệt')) return true;
                                     return typeLabel !== title;
                                 };
 
@@ -1303,27 +1304,27 @@
 
                                     switch (type) {
                                         case 'verification-request-submitted':
-                                            return { message: 'Co yeu cau xac minh moi dang cho duyet.', type: 'info' };
+                                            return { message: 'Có yêu cầu xác minh mới đang chờ duyệt.', type: 'info' };
                                         case 'verification-request-created':
-                                            return { message: 'Ban vua gui yeu cau xac minh thanh cong.', type: 'success' };
+                                            return { message: 'Bạn vừa gửi yêu cầu xác minh thành công.', type: 'success' };
                                         case 'job-posting-review-required':
-                                            return { message: 'Co bai dang moi dang cho moderator duyet.', type: 'info' };
+                                            return { message: 'Có bài đăng mới đang chờ kiểm duyệt viên duyệt.', type: 'info' };
                                         case 'complain-submitted':
-                                            return { message: 'Co bao cao moi can xu ly.', type: 'warning' };
+                                            return { message: 'Có báo cáo mới cần xử lý.', type: 'warning' };
                                         case 'verification-approved':
-                                            return { message: 'Yeu cau xac minh cua ban da duoc chap thuan.', type: 'success' };
+                                            return { message: 'Yêu cầu xác minh của bạn đã được chấp nhận.', type: 'success' };
                                         case 'verification-rejected':
-                                            return { message: 'Yeu cau xac minh cua ban da bi tu choi.', type: 'warning' };
+                                            return { message: 'Yêu cầu xác minh của bạn đã bị từ chối.', type: 'warning' };
                                         case 'job-posting-approved':
-                                            return { message: 'Bai dang cua ban da duoc duyet.', type: 'success' };
+                                            return { message: 'Bài đăng của bạn đã được duyệt.', type: 'success' };
                                         case 'job-posting-rejected':
-                                            return { message: 'Bai dang cua ban da bi tu choi.', type: 'warning' };
+                                            return { message: 'Bài đăng của bạn đã bị từ chối.', type: 'warning' };
                                         case 'job-posting-pending':
-                                            return { message: 'Bai dang cua ban dang cho moderator duyet.', type: 'success' };
+                                            return { message: 'Bài đăng của bạn đang chờ kiểm duyệt viên duyệt.', type: 'success' };
                                         case 'nanny-profile-favorited':
-                                            return { message: 'Ho so cua ban vua duoc yeu thich.', type: 'success' };
+                                            return { message: 'Hồ sơ của bạn vừa được yêu thích.', type: 'success' };
                                         case 'system-warning':
-                                            return { message: 'Co canh bao he thong can xu ly.', type: 'warning' };
+                                            return { message: 'Có cảnh báo hệ thống cần xử lý.', type: 'warning' };
                                         default:
                                             return null;
                                     }
@@ -1605,8 +1606,7 @@
                         <span class="material-icons-round text-yellow-500 text-lg">star</span>
                         <span class="material-icons-round text-yellow-500 text-lg">star_half</span>
                         <span class="text-sm font-bold text-gray-600 dark:text-gray-400 ml-2">
-                            4.8/5 dựa trên 25k đánh
-                            giá
+                            4.8/5 dựa trên 25k đánh giá
                         </span>
                     </div>
                 </div>
@@ -1617,7 +1617,7 @@
                             <path d="M44.7,-76.4C58.9,-69.2,71.8,-59.1,81.6,-46.6C91.4,-34.1,98.1,-19.2,95.8,-5.3C93.5,8.6,82.2,21.5,70.6,32.2C59,42.9,47.1,51.4,34.7,58.8C22.3,66.2,9.4,72.5,-3.1,77.9C-15.6,83.3,-27.7,87.8,-38.7,82.6C-49.7,77.4,-59.6,62.5,-68.6,48.2C-77.6,33.9,-85.7,20.2,-87.6,5.8C-89.5,-8.6,-85.2,-23.7,-76.1,-36.5C-67,-49.3,-53.1,-59.8,-39.5,-67.3C-25.9,-74.8,-12.6,-79.3,1.8,-82.4C16.2,-85.5,30.5,-73.6,44.7,-76.4Z"
                                   fill="currentColor" transform="translate(100 100)"></path>
                         </svg>
-                        <img alt="Happy mother holding baby"
+                        <img alt="Phụ huynh bồng em bé"
                              class="absolute bottom-0 right-10 w-3/4 mask-image-gradient z-10 rounded-3xl shadow-2xl rotate-3 hover:rotate-0 transition-all duration-500"
                              src="https://lh3.googleusercontent.com/aida-public/AB6AXuD3Ob6-Tah8IPvi5QvVXumvaUcQjeWr5H0VIIggZPlMFIlTIsIFcG8U6fWb1uIUBmilAGbtW9vXNDvOnk6APiaLuht8Sgo7euMXFOnpVAVwHE22tJYiaQjEPElfBsbgwFUX4_eRYQJdKanKq3-u6X7y3eJzUDh7KeS3T82WgSYGNqK7732RZluwL1ZbPhRB1_GhpsS5WcHQjHM6Mok6Z660fjttnZo9mjFvJPuk6D58zYNDIWhe9b7PLaqCYmcN99OybOC1rsn1UYae" />
                         <div class="absolute top-20 left-10 bg-white dark:bg-card-dark p-4 rounded-2xl shadow-lg z-20 animate-bounce"
@@ -1661,8 +1661,8 @@
                     </span>
                     <h2 id="nmVerifyPromptTitle" class="nm-verify-title">Xác minh ID để mở khóa kết nối</h2>
                     <p class="nm-verify-subtitle">
-                        Hồ sơ nanny của @(string.IsNullOrWhiteSpace(nannyVerifyPromptProfile?.FirstName) ? "bạn" : nannyVerifyPromptProfile!.FirstName)
-                        chưa hoàn tất xác minh giấy tờ. Khi xác minh xong, phụ huynh sẽ tin tưởng hơn khi xem hồ sơ và gửi contact request.
+                        Hồ sơ bảo mẫu của @(string.IsNullOrWhiteSpace(nannyVerifyPromptProfile?.FirstName) ? "bạn" : nannyVerifyPromptProfile!.FirstName)
+                        chưa hoàn tất xác minh giấy tờ. Khi xác minh xong, phụ huynh sẽ tin tưởng hơn khi xem hồ sơ và gửi yêu cầu liên hệ.
                     </p>
 
                     <div class="nm-verify-hero" aria-hidden="true">
@@ -1701,7 +1701,7 @@
                         <span class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">NannyMatch</span>
                     </a>
                     <p class="text-gray-500 dark:text-gray-400 text-sm mb-8 leading-relaxed max-w-sm">
-                        Nền tảng kết nối gia đình với những chuyên gia chăm sóc trẻ hàng đầu. Sứ mệnh của chúng tôi là mang lại sự bình yên cho cha mẹ và sự linh hoạt tối đa cho người trông trẻ.
+                        Nền tảng kết nối gia đình với những bảo mẫu hàng đầu. Sứ mệnh của chúng tôi là mang lại sự bình yên cho phụ huynh và sự linh hoạt tối đa cho bảo mẫu.
                     </p>
                     <a class="inline-flex items-center gap-2 px-5 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/50 rounded-xl text-sm font-bold text-gray-700 dark:text-gray-300 hover:border-primary hover:text-primary hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 w-fit"
                        href="#">
@@ -1800,7 +1800,7 @@
                     <div class="logo-ring"></div>
                     <div class="logo-bg"></div>
                     <div class="logo-svg">
-                        <img src="img/nanny-logo.jpg" alt="NannyMatch Logo"
+                        <img src="img/nanny-logo.jpg" alt="Logo NannyMatch"
                              style="width:110px;height:110px;object-fit:contain;border-radius:50%;" />
                     </div>
                 </div>
@@ -1825,7 +1825,7 @@
                 </div>
 
                 <div class="tip-text" id="nl-tipText">
-                    💡 Mẹo: <span>Tìm Nanny đã xác minh gần bạn chỉ trong 30 giây.</span>
+                    💡 Mẹo: <span>Tìm bảo mẫu đã xác minh gần bạn chỉ trong 30 giây.</span>
                 </div>
             </div>
         </div>

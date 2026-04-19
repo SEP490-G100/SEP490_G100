@@ -1,7 +1,7 @@
 @model WebSite.Models.BlogCategory.BlogCategoryDto
 @{
     Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
-    ViewData["Title"] = "Chi tiết danh mục Blog";
+    ViewData["Title"] = "Chi tiết danh mục blog";
     var nameError = ViewData.ModelState["Name"]?.Errors.Count > 0
         ? ViewData.ModelState["Name"]?.Errors[0].ErrorMessage
         : null;
@@ -13,7 +13,7 @@
 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
     <div>
         <span class="section-label">Quản lý nội dung</span>
-        <h1 class="page-title mt-2">Danh mục Blog <span class="gradient-text">Chi tiết & Chỉnh sửa</span></h1>
+        <h1 class="page-title mt-2">Danh mục blog <span class="gradient-text">Chi tiết &amp; chỉnh sửa</span></h1>
         <p class="page-subtitle">Cập nhật tên danh mục. Đường dẫn sẽ được tự động tạo từ tên.</p>
     </div>
     <a href="/Moderator/ManageBlogCategory" class="btn-outline flex-shrink-0">

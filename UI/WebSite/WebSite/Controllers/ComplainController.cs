@@ -39,7 +39,7 @@ public class ComplainController : Controller
             return RedirectToAction("Index", "Search", new
             {
                 toastType = "error",
-                toastMessage = "Khong tim thay bai dang can phan nan."
+                toastMessage = "Không tìm thấy bài đăng cần khiếu nại."
             });
         }
 
@@ -49,7 +49,7 @@ public class ComplainController : Controller
             return RedirectToAction("Index", "Search", new
             {
                 toastType = "warning",
-                toastMessage = "Ly do phan nan phai tu 5 den 500 ky tu."
+                toastMessage = "Lý do khiếu nại phải từ 5 đến 500 ký tự."
             });
         }
 
@@ -59,7 +59,7 @@ public class ComplainController : Controller
             return RedirectToAction("Index", "Search", new
             {
                 toastType = "warning",
-                toastMessage = "Bang chung khong duoc vuot qua 2000 ky tu."
+                toastMessage = "Bằng chứng không được vượt quá 2000 ký tự."
             });
         }
 
@@ -84,22 +84,22 @@ public class ComplainController : Controller
                 await _notificationHub.Clients.Group("role:Moderator").SendAsync("notification:new", new
                 {
                     type = "complain-submitted",
-                    title = "Co bao cao bai dang moi",
-                    message = "Mot bao cao job posting moi vua duoc gui va can moderator xu ly.",
+                    title = "Có báo cáo bài đăng mới",
+                    message = "Một báo cáo tin đăng mới vừa được gửi và cần điều hành viên xử lý.",
                     toastType = "warning"
                 }, cancellationToken);
 
                 return RedirectToAction("Index", "Search", new
                 {
                     toastType = "success",
-                    toastMessage = message ?? "Gui phan nan thanh cong."
+                    toastMessage = message ?? "Gửi khiếu nại thành công."
                 });
             }
 
             return RedirectToAction("Index", "Search", new
             {
                 toastType = "error",
-                toastMessage = message ?? "Khong the gui phan nan bai dang."
+                toastMessage = message ?? "Không thể gửi khiếu nại bài đăng."
             });
         }
         catch (Exception)
@@ -107,7 +107,7 @@ public class ComplainController : Controller
             return RedirectToAction("Index", "Search", new
             {
                 toastType = "error",
-                toastMessage = "Khong the gui phan nan bai dang."
+                toastMessage = "Không thể gửi khiếu nại bài đăng."
             });
         }
     }
@@ -122,7 +122,7 @@ public class ComplainController : Controller
                 model.ReturnUrl,
                 model.ComplainedUserId,
                 "error",
-                "Khong tim thay ho so can phan nan.");
+                "Không tìm thấy hồ sơ cần khiếu nại.");
         }
 
         var currentUserIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -132,7 +132,7 @@ public class ComplainController : Controller
                 model.ReturnUrl,
                 model.ComplainedUserId,
                 "warning",
-                "Ban khong the phan nan chinh ho so cua minh.");
+                "Bạn không thể khiếu nại chính hồ sơ của mình.");
         }
 
         var reason = ExtractPlainText(model.Reason);
@@ -142,7 +142,7 @@ public class ComplainController : Controller
                 model.ReturnUrl,
                 model.ComplainedUserId,
                 "warning",
-                "Ly do phan nan phai tu 5 den 500 ky tu.");
+                "Lý do khiếu nại phải từ 5 đến 500 ký tự.");
         }
 
         var evidence = NormalizeEvidence(model.Evidence);
@@ -152,7 +152,7 @@ public class ComplainController : Controller
                 model.ReturnUrl,
                 model.ComplainedUserId,
                 "warning",
-                "Bang chung khong duoc vuot qua 2000 ky tu.");
+                "Bằng chứng không được vượt quá 2000 ký tự.");
         }
 
         SetAuthHeader();
@@ -176,8 +176,8 @@ public class ComplainController : Controller
                 await _notificationHub.Clients.Group("role:Moderator").SendAsync("notification:new", new
                 {
                     type = "complain-submitted",
-                    title = "Co bao cao ho so moi",
-                    message = "Mot bao cao profile moi vua duoc gui va can moderator xu ly.",
+                    title = "Có báo cáo hồ sơ mới",
+                    message = "Một báo cáo hồ sơ mới vừa được gửi và cần điều hành viên xử lý.",
                     toastType = "warning"
                 }, cancellationToken);
 
@@ -185,14 +185,14 @@ public class ComplainController : Controller
                     model.ReturnUrl,
                     model.ComplainedUserId,
                     "success",
-                    message ?? "Gui phan nan ho so thanh cong.");
+                    message ?? "Gửi khiếu nại hồ sơ thành công.");
             }
 
             return RedirectToProfileComplainReturn(
                 model.ReturnUrl,
                 model.ComplainedUserId,
                 "error",
-                message ?? "Khong the gui phan nan ho so.");
+                message ?? "Không thể gửi khiếu nại hồ sơ.");
         }
         catch (Exception)
         {
@@ -200,7 +200,7 @@ public class ComplainController : Controller
                 model.ReturnUrl,
                 model.ComplainedUserId,
                 "error",
-                "Khong the gui phan nan ho so.");
+                "Không thể gửi khiếu nại hồ sơ.");
         }
     }
 
@@ -221,7 +221,7 @@ public class ComplainController : Controller
         var normalized = mediaType?.Trim().ToLowerInvariant();
         if (normalized is not ("image" or "video"))
         {
-            return Json(new { success = false, message = "Loai media khong hop le. Chi ho tro image/video." });
+            return Json(new { success = false, message = "Loại phương tiện không hợp lệ. Chỉ hỗ trợ ảnh/video." });
         }
 
         var type = normalized == "video" ? BlobMediaType.Video : BlobMediaType.Image;
@@ -230,10 +230,10 @@ public class ComplainController : Controller
 
     private async Task<IActionResult> UploadComplainMediaCore(List<IFormFile>? files, BlobMediaType mediaType, CancellationToken cancellationToken)
     {
-        var mediaLabel = mediaType == BlobMediaType.Video ? "video" : "anh";
+        var mediaLabel = mediaType == BlobMediaType.Video ? "video" : "ảnh";
 
         if (files == null || files.Count == 0)
-            return Json(new { success = false, message = $"Vui long chon it nhat mot {mediaLabel}." });
+            return Json(new { success = false, message = $"Vui lòng chọn ít nhất một {mediaLabel}." });
 
         try
         {
@@ -244,18 +244,20 @@ public class ComplainController : Controller
                 cancellationToken);
 
             if (uploadedUrls.Count == 0)
-                return Json(new { success = false, message = $"Khong co {mediaLabel} hop le de upload." });
+                return Json(new { success = false, message = $"Không có {mediaLabel} hợp lệ để tải lên." });
 
             return Json(new
             {
                 success = true,
-                message = uploadedUrls.Count == 1 ? $"Upload {mediaLabel} thanh cong." : $"Upload cac {mediaLabel} thanh cong.",
+                message = uploadedUrls.Count == 1
+                    ? $"Đã tải lên {mediaLabel} thành công."
+                    : $"Đã tải lên các tệp {mediaLabel} thành công.",
                 data = new { urls = uploadedUrls }
             });
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = $"Khong the upload {mediaLabel} complain: {ex.Message}" });
+            return Json(new { success = false, message = $"Không thể tải lên {mediaLabel} khiếu nại: {ex.Message}" });
         }
     }
 

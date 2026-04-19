@@ -35,7 +35,7 @@ public class ReviewController : Controller
 
         SetAuthHeader();
 
-        // Lay thong tin hiring record de hien thi form
+        // Lấy thông tin hợp đồng thuê để hiển thị form
         var resp = await _http.GetAsync($"/api/hiring/records/{hiringRecordId}");
         if (!resp.IsSuccessStatusCode)
             return RedirectToAction(nameof(History));
@@ -46,7 +46,7 @@ public class ReviewController : Controller
         if (d is null)
             return RedirectToAction(nameof(History));
 
-        // Chi cho phep review khi hop dong da hoan thanh (Status = 4)
+        // Chỉ cho phép đánh giá khi hợp đồng đã hoàn thành (Status = 4)
         if (d.Status != 4)
         {
             TempData["Error"] = "Chỉ có thể đánh giá sau khi hợp đồng hoàn thành.";
@@ -139,7 +139,7 @@ public class ReviewController : Controller
         public T? Data { get; set; }
     }
 
-    // DTO noi bo: map response cua GET /api/hiring/records/{id}
+    // DTO nội bộ: map response của GET /api/hiring/records/{id}
     private sealed class HiringRecordApiResult
     {
         public HiringRecordData? Data { get; set; }
@@ -149,7 +149,7 @@ public class ReviewController : Controller
     {
         public string NannyName { get; set; } = "";
         public int Status { get; set; }
-        public string StartDate { get; set; } = "";   // nhan duoi dang string "yyyy-MM-dd"
+        public string StartDate { get; set; } = "";   // nhận dạng chuỗi "yyyy-MM-dd"
         public string? EndDate { get; set; }
     }
 }

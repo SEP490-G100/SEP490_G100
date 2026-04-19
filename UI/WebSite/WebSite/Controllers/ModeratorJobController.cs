@@ -78,7 +78,7 @@ namespace WebSite.Controllers
 
                 if (result?.Success != true || result.Data == null)
                 {
-                    TempData["Error"] = result?.Message ?? "Could not find the job posting.";
+                    TempData["Error"] = result?.Message ?? "Không tìm thấy tin đăng.";
                     return RedirectToAction(nameof(ManageJobPosting));
                 }
 
@@ -108,17 +108,17 @@ namespace WebSite.Controllers
                     await _notificationHub.Clients.Group($"user:{parentUserId.Value}").SendAsync("notification:new", new
                     {
                         type = action == 2 ? "job-posting-approved" : "job-posting-rejected",
-                        title = action == 2 ? "Bai dang da duoc duyet" : "Bai dang da bi tu choi",
+                        title = action == 2 ? "Bài đăng đã được duyệt" : "Bài đăng đã bị từ chối",
                         message = action == 2
-                            ? "Bai dang cua ban da duoc moderator duyet."
-                            : "Bai dang cua ban da bi moderator tu choi.",
+                            ? "Bài đăng của bạn đã được điều hành viên duyệt."
+                            : "Bài đăng của bạn đã bị điều hành viên từ chối.",
                         toastType = action == 2 ? "success" : "warning"
                     });
                 }
 
                 var listUrl = Url.Action(nameof(ManageJobPosting), "ModeratorJob")
                               ?? "/Moderator/ManageJobPosting";
-                var toastMessage = Uri.EscapeDataString("Bạn đã xử lí yêu cầu duyệt bài đăng thành công");
+                var toastMessage = Uri.EscapeDataString("Bạn đã xử lý yêu cầu duyệt bài đăng thành công");
                 return Redirect($"{listUrl}?toastType=success&toastMessage={toastMessage}");
             }
             else

@@ -6,8 +6,7 @@
 
 <div class="max-w-2xl mx-auto px-4 py-10">
 
-    @* Breadcrumb *@
-    <nav class="text-sm text-gray-500 mb-6">
+    <nav class="text-sm text-gray-500 mb-6" aria-label="Đường dẫn trang">
         <a href="/" class="hover:text-rose-500">Trang chủ</a>
         <span class="mx-2">/</span>
         <a href="/Review/History" class="hover:text-rose-500">Đánh giá của tôi</a>
@@ -19,11 +18,10 @@
 
         <h1 class="text-2xl font-bold text-gray-800 mb-6">Đánh giá bảo mẫu</h1>
 
-        @* Nanny Info Card *@
         <div class="flex items-center gap-4 p-4 bg-rose-50 rounded-xl mb-8">
             @if (!string.IsNullOrEmpty(Model.NannyAvatarUrl))
             {
-                <img src="@Model.NannyAvatarUrl" alt="@Model.NannyName"
+                <img src="@Model.NannyAvatarUrl" alt="Ảnh đại diện @Model.NannyName"
                      class="w-14 h-14 rounded-full object-cover ring-2 ring-rose-200" />
             }
             else
@@ -46,7 +44,7 @@
 
         @* Form *@
         <form asp-action="Create" method="post">
-            @* Lỗi chung từ server (vd: đã đánh giá rồi, hết token, ...) *@
+            @* Lỗi chung từ máy chủ (ví dụ: đã đánh giá, phiên hết hạn, …) *@
             @if (!ViewData.ModelState.IsValid && ViewData.ModelState[""] is { } rootState && rootState.Errors.Count > 0)
             {
                 <div class="mb-4 rounded-xl border px-4 py-3 text-sm font-medium"
@@ -61,7 +59,6 @@
             <input type="hidden" asp-for="EndDate" />
             @Html.AntiForgeryToken()
 
-            @* Star Rating *@
             <div class="mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-3">
                     Đánh giá tổng thể <span class="text-rose-500">*</span>
@@ -80,7 +77,6 @@
                 <p class="text-sm text-gray-400 mt-2" id="rating-label">Chưa chọn</p>
             </div>
 
-            @* Comment *@
             <div class="mb-6">
                 <label asp-for="Comment" class="block text-sm font-medium text-gray-700 mb-2">
                     Nhận xét của bạn
@@ -94,7 +90,6 @@
                 </p>
             </div>
 
-            @* Actions *@
             <div class="flex gap-3">
                 <button type="submit"
                         class="flex-1 text-white font-semibold py-3 rounded-xl transition-colors"

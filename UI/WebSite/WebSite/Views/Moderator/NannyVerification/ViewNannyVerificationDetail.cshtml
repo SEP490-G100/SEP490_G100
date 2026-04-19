@@ -8,7 +8,7 @@
     var isPending = Model.Status == 1;
     var fullAddress = string.Join(", ", new[] { Model.NannyAddress, Model.NannyWard, Model.NannyDistrict, Model.NannyCity }
         .Where(value => !string.IsNullOrWhiteSpace(value)));
-    var genderLabel = Model.NannyGender switch { 1 => "Nam", 2 => "Nữ", _ => "Không xác định" };
+    var genderLabel = Model.NannyGender switch { 0 => "Nam", 1 => "Nữ", 2 => "Khác", _ => "Chưa xác định" };
     var salaryTypeLabel = Model.SalaryType == 1 ? "Theo giờ" : "Theo tháng";
     var skillGroups = Model.Skills
         .GroupBy(skill => string.IsNullOrWhiteSpace(skill.SkillCategory) ? "Kỹ năng khác" : skill.SkillCategory)
@@ -41,7 +41,7 @@
             }
 
             <div class="min-w-0">
-                <p class="text-xs font-semibold uppercase tracking-[0.25em] text-orange-500">Đánh giá của Moderator</p>
+                <p class="text-xs font-semibold uppercase tracking-[0.25em] text-orange-500">Kiểm duyệt viên</p>
                 <h1 class="text-2xl sm:text-3xl font-black text-gray-900 mt-2">@Model.FullName</h1>
                 <p class="text-sm text-gray-500 mt-2 break-all">@Model.NannyEmail</p>
 
@@ -325,7 +325,7 @@
 
                                             @if (isImage)
                                             {
-                                                <a href="@doc.DocumentUrl" target="_blank" rel="noopener" title="View @doc.TypeLabel" class="block">
+                                                <a href="@doc.DocumentUrl" target="_blank" rel="noopener" title="Xem @doc.TypeLabel" class="block">
                                                     <img src="@doc.DocumentUrl" alt="@doc.TypeLabel"
                                                          class="w-full h-56 sm:h-72 rounded-3xl object-cover border border-gray-200 hover:scale-[1.01] transition-transform bg-gray-50" />
                                                 </a>

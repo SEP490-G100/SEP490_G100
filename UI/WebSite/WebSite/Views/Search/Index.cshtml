@@ -62,7 +62,7 @@
         <button onclick="openPremium()"
                 class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-white text-sm font-bold shadow-md transition-all"
                 style="background:linear-gradient(135deg,#f59e0b,#d97706)">
-            <span class="material-icons-round text-[16px]">workspace_premium</span>Premium
+            <span class="material-icons-round text-[16px]">workspace_premium</span>Gói đăng ký
         </button>
     </div>
 </div>
@@ -96,7 +96,7 @@
             <div>
                 <p class="modal-kicker">Bài đăng mới</p>
                 <h2 class="text-2xl font-bold text-gray-900">Đăng tin tìm bảo mẫu</h2>
-                <p class="modal-subtitle">Tạo bài đăng rõ ràng để moderator duyệt nhanh hơn và nanny dễ ứng tuyển hơn.</p>
+                <p class="modal-subtitle">Tạo bài đăng rõ ràng để kiểm duyệt viên xử lý nhanh hơn và bảo mẫu dễ ứng tuyển hơn.</p>
             </div>
             <button onclick="closeCreate()" class="modal-close material-icons-round">close</button>
         </div>
@@ -122,8 +122,8 @@
                             <label class="form-label">Loại công việc</label>
                             <input type="text" id="cf-typeText" class="form-input form-select-picker-input" autocomplete="off" placeholder="Chọn loại công việc" />
                             <select id="cf-type" class="form-input form-select-native-hidden">
-                                <option value="1">Full-time</option>
-                                <option value="2">Part-time</option>
+                                <option value="1">Toàn thời gian</option>
+                                <option value="2">Bán thời gian</option>
                                 <option value="3">Qua đêm</option>
                             </select>
                         </div>
@@ -151,8 +151,8 @@
                             <label class="form-label">Tùy chọn lương</label>
                             <label class="negotiable-field negotiable-field-large">
                                 <input type="checkbox" id="cf-negotiable" class="rounded accent-orange-500" />
-                                <span class="negotiable-title">Lương thương lượng</span>
-                                <span class="negotiable-caption">Bật nếu bạn muốn trao đổi mức lương trực tiếp với nanny.</span>
+                                <span class="negotiable-title">Lương thỏa thuận</span>
+                                <span class="negotiable-caption">Bật nếu bạn muốn trao đổi mức lương trực tiếp với bảo mẫu.</span>
                             </label>
                         </div>
                         <div class="md:col-span-2">
@@ -190,7 +190,7 @@
                     <div class="schedule-header">
                         <div>
                             <p class="section-title">Lịch ngày muốn tuyển</p>
-                            <p class="section-caption">Chọn các khung giờ bạn muốn nanny có thể làm việc.</p>
+                            <p class="section-caption">Chọn các khung giờ bạn muốn bảo mẫu có thể làm việc.</p>
                         </div>
                     </div>
                     <div id="cf-schedule" class="schedule-grid"></div>
@@ -199,7 +199,7 @@
                 <div class="section-card section-card-soft">
                     <div class="section-heading">
                         <div>
-                            <p class="section-title">Thông tin từ profile Parent</p>
+                            <p class="section-title">Thông tin từ hồ sơ phụ huynh</p>
                             <p class="section-caption">Mặc định sẽ lấy thông tin cho 1 bé. Khi tăng số trẻ, hệ thống sẽ hiển thị thêm bảng thông tin các bé tiếp theo.</p>
                         </div>
                     </div>
@@ -263,7 +263,7 @@
             <div>
                 <p class="modal-kicker">Cập nhật bài đăng</p>
                 <h2 class="text-2xl font-bold text-gray-900">Chỉnh sửa bài đăng</h2>
-                <p class="modal-subtitle">Sau khi cập nhật, bài đăng sẽ quay về trạng thái chờ moderator duyệt lại.</p>
+                <p class="modal-subtitle">Sau khi cập nhật, bài đăng sẽ quay về trạng thái chờ kiểm duyệt viên duyệt lại.</p>
             </div>
             <button onclick="closeEdit()" class="modal-close material-icons-round">close</button>
         </div>
@@ -274,7 +274,7 @@
                     <div class="section-heading">
                         <div>
                             <p class="section-title">Thông tin cơ bản</p>
-                            <p class="section-caption">Chỉnh sửa nội dung, lương, địa điểm và độ tuổi nanny mong muốn.</p>
+                            <p class="section-caption">Chỉnh sửa nội dung, lương, địa điểm và độ tuổi bảo mẫu mong muốn.</p>
                         </div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -289,8 +289,8 @@
                         <div>
                             <label class="form-label">Loại công việc</label>
                             <select id="ef-type" class="form-input">
-                                <option value="1">Full-time</option>
-                                <option value="2">Part-time</option>
+                                <option value="1">Toàn thời gian</option>
+                                <option value="2">Bán thời gian</option>
                                 <option value="3">Qua đêm</option>
                             </select>
                         </div>
@@ -310,8 +310,8 @@
                             <label class="form-label">Tùy chọn lương</label>
                             <label class="negotiable-field negotiable-field-large">
                                 <input type="checkbox" id="ef-negotiable" class="rounded accent-orange-500" />
-                                <span class="negotiable-title">Lương thương lượng</span>
-                                <span class="negotiable-caption">Bật nếu bạn muốn trao đổi mức lương trực tiếp với nanny.</span>
+                                <span class="negotiable-title">Lương thỏa thuận</span>
+                                <span class="negotiable-caption">Bật nếu bạn muốn trao đổi mức lương trực tiếp với bảo mẫu.</span>
                             </label>
                         </div>
                         <div class="md:col-span-2">
@@ -349,7 +349,7 @@
                     <div class="schedule-header">
                         <div>
                             <p class="section-title">Lịch ngày muốn tuyển</p>
-                            <p class="section-caption">Cập nhật các buổi cần nanny hỗ trợ trong tuần.</p>
+                            <p class="section-caption">Cập nhật các buổi cần bảo mẫu hỗ trợ trong tuần.</p>
                         </div>
                     </div>
                     <div id="ef-schedule" class="schedule-grid"></div>
@@ -358,8 +358,8 @@
                 <div class="section-card section-card-soft">
                     <div class="section-heading">
                         <div>
-                            <p class="section-title">Thông tin từ profile Parent</p>
-                            <p class="section-caption">Chọn lại bé nếu cần, hệ thống sẽ cập nhật thông tin Child Profile tương ứng.</p>
+                            <p class="section-title">Thông tin từ hồ sơ phụ huynh</p>
+                            <p class="section-caption">Chọn lại bé nếu cần, hệ thống sẽ cập nhật hồ sơ trẻ tương ứng.</p>
                         </div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -386,7 +386,7 @@
                     <div class="section-heading">
                         <div>
                             <p class="section-title">Kỹ năng yêu cầu</p>
-                            <p class="section-caption">Tinh chỉnh bộ kỹ năng yêu cầu bằng danh sách skill chuẩn của hệ thống.</p>
+                            <p class="section-caption">Tinh chỉnh bộ kỹ năng yêu cầu bằng danh sách kỹ năng chuẩn của hệ thống.</p>
                         </div>
                     </div>
                     <div class="flex gap-2 items-center">
@@ -429,13 +429,13 @@
                             <span class="material-icons-round text-[16px]">article</span>
                             Chi tiết tin đăng
                         </div>
-                        <h2 id="pv-title" class="search-detail-title">Ten bai viet</h2>
-                        <p id="pv-parentName" class="search-detail-subtitle">Dang boi phu huynh</p>
+                        <h2 id="pv-title" class="search-detail-title">Tiêu đề bài đăng</h2>
+                        <p id="pv-parentName" class="search-detail-subtitle">Đăng bởi phụ huynh</p>
                         <div id="pv-premiumBadges" class="mt-3 flex flex-wrap gap-2"></div>
                         <div class="search-detail-chips">
-                            <span id="pv-type" class="search-detail-chip">Loai viec</span>
-                            <span id="pv-sal" class="search-detail-chip search-detail-chip--strong">Luong</span>
-                            <span id="pv-status" class="search-detail-chip search-detail-chip--muted">Trang thai</span>
+                            <span id="pv-type" class="search-detail-chip">Loại việc</span>
+                            <span id="pv-sal" class="search-detail-chip search-detail-chip--strong">Lương</span>
+                            <span id="pv-status" class="search-detail-chip search-detail-chip--muted">Trạng thái</span>
                         </div>
                     </div>
                 </div>
@@ -455,7 +455,7 @@
                     </div>
                 </section>
                 <section class="search-detail-card search-detail-card--wide">
-                    <h3>Thông tin từ profile Phụ huynh</h3>
+                    <h3>Thông tin từ hồ sơ phụ huynh</h3>
                     <div class="search-detail-info-grid">
                         <div class="search-detail-info-box"><p>Đặc điểm</p><strong id="pv-characteristic"></strong></div>
                         <div class="search-detail-info-box"><p>Nhóm tuổi của bé</p><strong id="pv-birthType"></strong></div>
@@ -465,7 +465,7 @@
                     <div class="search-detail-child-block">
                         <div class="search-detail-child-block__head">
                             <p class="search-detail-child-block__title">Danh sách từng bé</p>
-                            <span class="search-detail-child-block__hint">Dữ liệu từ Child Profile</span>
+                            <span class="search-detail-child-block__hint">Dữ liệu từ hồ sơ trẻ</span>
                         </div>
                         <div id="pv-childProfiles" class="child-profile-stack child-profile-stack--preview hidden"></div>
                     </div>
@@ -507,7 +507,7 @@
                         type="button"
                         class="hidden py-3 rounded-xl border border-rose-200 text-rose-600 bg-rose-50 hover:bg-rose-100 font-bold text-sm transition-all inline-flex items-center justify-center gap-2 px-4">
                     <span class="material-icons-round text-base">flag</span>
-                    <span>Phản nàn bài đăng</span>
+                    <span>Khiếu nại bài đăng</span>
                 </button>
             </div>
         </div>
@@ -518,7 +518,7 @@
     <div class="nmodal-box bg-white rounded-2xl w-full max-w-xl shadow-2xl relative">
         <div class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
             <div>
-                <h2 class="text-lg font-bold text-gray-900">Gửi phản nàn bài đăng</h2>
+                <h2 class="text-lg font-bold text-gray-900">Gửi khiếu nại bài đăng</h2>
                 <p id="jobComplainTarget" class="text-xs text-gray-400 font-semibold mt-0.5">Bài đăng</p>
             </div>
             <button onclick="closeJobComplainModal()" class="text-gray-300 hover:text-gray-700 material-icons-round text-2xl transition-colors">close</button>
@@ -527,16 +527,16 @@
             @Html.AntiForgeryToken()
             <input type="hidden" id="jobComplainJobPostingId" name="JobPostingId" />
             <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">Lý do phản nàn <span class="text-red-500">*</span></label>
-                <textarea id="jobComplainReason" name="Reason" rows="4" class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400" placeholder="Nhập lý do phản nàn..."></textarea>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Lý do khiếu nại <span class="text-red-500">*</span></label>
+                <textarea id="jobComplainReason" name="Reason" rows="4" class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400" placeholder="Nhập lý do khiếu nại..."></textarea>
             </div>
             <div>
                 <label class="block text-sm font-bold text-gray-700 mb-2">Bằng chứng (không bắt buộc)</label>
                 <textarea id="jobComplainEvidence" name="Evidence" rows="3" class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400" placeholder="Link, mô tả bổ sung, thông tin liên quan..."></textarea>
             </div>
             <div class="flex gap-2">
-                <button type="button" onclick="closeJobComplainModal()" class="modal-btn modal-btn-secondary w-full">Huy</button>
-                <button id="jobComplainSubmitBtn" type="submit" class="modal-btn modal-btn-primary w-full">Gửi phản nàn</button>
+                <button type="button" onclick="closeJobComplainModal()" class="modal-btn modal-btn-secondary w-full">Hủy</button>
+                <button id="jobComplainSubmitBtn" type="submit" class="modal-btn modal-btn-primary w-full">Gửi khiếu nại</button>
             </div>
         </form>
     </div>
@@ -547,7 +547,7 @@
         <div class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
             <div>
                 <h2 class="text-lg font-bold text-gray-900">Lịch sử bài đăng</h2>
-                <p class="text-xs text-gray-400 font-semibold mt-0.5">Xem trạng thái chờ duyệt, đã duyệt, từ chối và ghi chú từ moderator.</p>
+                <p class="text-xs text-gray-400 font-semibold mt-0.5">Xem trạng thái chờ duyệt, đã duyệt, từ chối và ghi chú từ kiểm duyệt viên.</p>
             </div>
             <button onclick="closeHistory()" class="text-gray-300 hover:text-gray-700 material-icons-round text-2xl transition-colors">close</button>
         </div>
@@ -574,7 +574,7 @@ function escRecHtml(v) {
 }
 
 function recSalaryText(min, max, neg) {
-    if (neg) return 'Thương lượng';
+    if (neg) return 'Thỏa thuận';
     if (min != null && max != null)
         return `${(min/1e6).toFixed(1).replace(/\.0$/,'')}M – ${(max/1e6).toFixed(1).replace(/\.0$/,'')}M`;
     if (min != null) return `Từ ${(min/1e6).toFixed(1).replace(/\.0$/,'')}M`;
@@ -715,7 +715,7 @@ function loadRecJobs() {
                 content.innerHTML = `
                 <div class="rec-upgrade-prompt">
                     <span class="material-icons-round rec-upgrade-icon">auto_awesome</span>
-                    <h3 class="rec-upgrade-title">Tính năng dành cho gói Plus / Pro</h3>
+                    <h3 class="rec-upgrade-title">Tính năng dành cho gói trả phí</h3>
                     <p class="rec-upgrade-desc">Nâng cấp để AI tự động gợi ý những công việc phù hợp nhất với hồ sơ của bạn — tiết kiệm thời gian tìm kiếm.</p>
                     <a href="/Subscription" class="rec-upgrade-btn">
                         <span class="material-icons-round">rocket_launch</span>Nâng cấp ngay

@@ -94,7 +94,7 @@ public class NannyVerificationRequestController : Controller
             return RedirectToAction(nameof(NannyGetVerificationRequestList), new
             {
                 toastType = "error",
-                toastMessage = "Khong tim thay chi tiet yeu cau xac minh."
+                toastMessage = "Không tìm thấy chi tiết yêu cầu xác minh."
             });
         }
 
@@ -105,7 +105,7 @@ public class NannyVerificationRequestController : Controller
             return RedirectToAction(nameof(NannyGetVerificationRequestList), new
             {
                 toastType = "error",
-                toastMessage = apiResult?.Message ?? "Khong tim thay chi tiet yeu cau xac minh."
+                toastMessage = apiResult?.Message ?? "Không tìm thấy chi tiết yêu cầu xác minh."
             });
         }
 
@@ -123,7 +123,7 @@ public class NannyVerificationRequestController : Controller
             return RedirectToAction("Index", "Profile", new
             {
                 toastType = "error",
-                toastMessage = "Vui long cap nhat ho so ca nhan truoc khi gui yeu cau."
+                toastMessage = "Vui lòng cập nhật hồ sơ cá nhân trước khi gửi yêu cầu."
             });
         }
 
@@ -139,19 +139,19 @@ public class NannyVerificationRequestController : Controller
             return RedirectToAction("Index", "Profile", new
             {
                 toastType = "error",
-                toastMessage = "Vui long cap nhat ho so ca nhan truoc khi gui yeu cau."
+                toastMessage = "Vui lòng cập nhật hồ sơ cá nhân trước khi gửi yêu cầu."
             });
         }
 
         ValidateUploadSection(
             model.IdentityCardFiles,
             nameof(model.IdentityCardFiles),
-            "Ban phai upload anh cho muc can cuoc cong dan.",
+            "Bạn phải tải ảnh cho mục căn cước công dân.",
             isRequired: true);
         ValidateUploadSection(
             model.HealthCertificateFiles,
             nameof(model.HealthCertificateFiles),
-            "Ban phai upload anh cho muc giay kham suc khoe.",
+            "Bạn phải tải ảnh cho mục giấy khám sức khỏe.",
             isRequired: true);
         ValidateUploadSection(
             model.CertificateFiles,
@@ -186,7 +186,7 @@ public class NannyVerificationRequestController : Controller
             return RedirectToAction(nameof(NannySubmitVerificationRequest), new
             {
                 toastType = "error",
-                toastMessage = "Khong the upload tai lieu len Azure Blob Storage. Vui long thu lai sau."
+                toastMessage = "Không thể tải tài liệu lên. Vui lòng thử lại sau."
             });
         }
 
@@ -205,7 +205,7 @@ public class NannyVerificationRequestController : Controller
             return RedirectToAction(nameof(NannySubmitVerificationRequest), new
             {
                 toastType = "error",
-                toastMessage = "Loi he thong tu server. Vui long thu lai sau."
+                toastMessage = "Lỗi hệ thống từ máy chủ. Vui lòng thử lại sau."
             });
         }
 
@@ -214,22 +214,22 @@ public class NannyVerificationRequestController : Controller
             return RedirectToAction(nameof(NannySubmitVerificationRequest), new
             {
                 toastType = "error",
-                toastMessage = result?.Message ?? "Gui yeu cau that bai."
+                toastMessage = result?.Message ?? "Gửi yêu cầu thất bại."
             });
         }
 
         await _notificationHub.Clients.Group("role:Moderator").SendAsync("notification:new", new
         {
             type = "verification-request-submitted",
-            title = "Co yeu cau xac minh moi",
-            message = "Mot nanny vua gui yeu cau xac minh moi.",
+            title = "Có yêu cầu xác minh mới",
+            message = "Một bảo mẫu vừa gửi yêu cầu xác minh mới.",
             toastType = "info"
         });
 
         return RedirectToAction(nameof(NannyGetVerificationRequestList), new
         {
             toastType = "success",
-            toastMessage = "Ban da gui yeu cau xac minh thanh cong."
+            toastMessage = "Bạn đã gửi yêu cầu xác minh thành công."
         });
     }
 
@@ -280,13 +280,13 @@ public class NannyVerificationRequestController : Controller
         {
             if (!IsSupportedDocument(file))
             {
-                ModelState.AddModelError(fieldName, "Ban phai upload file dinh dang anh hoac pdf.");
+                ModelState.AddModelError(fieldName, "Bạn phải tải lên tệp định dạng ảnh hoặc PDF.");
                 return;
             }
 
             if (file.Length > MaxDocumentSizeInBytes)
             {
-                ModelState.AddModelError(fieldName, "Ban chi duoc upload file kich thuoc toi da 5mb.");
+                ModelState.AddModelError(fieldName, "Bạn chỉ được tải lên tệp có dung lượng tối đa 5MB.");
                 return;
             }
         }

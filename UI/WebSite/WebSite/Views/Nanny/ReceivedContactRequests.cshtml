@@ -9,7 +9,7 @@
             <div class="px-6 py-6 sm:px-8 border-b border-orange-100 bg-[radial-gradient(circle_at_top_right,rgba(255,237,213,.82),transparent_32%),linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-orange-500">Nanny zone</p>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-orange-500">Khu vực bảo mẫu</p>
                         <h1 class="ncr-page-title mt-2 text-3xl font-bold text-slate-900">Yêu cầu liên hệ đã nhận</h1>
                         <p class="mt-2 text-sm leading-6 text-slate-500 max-w-2xl">
                             Kiểm tra yêu cầu liên hệ từ Phụ huynh, chấp nhận hoặc từ chối với lý do rõ ràng.
@@ -560,7 +560,7 @@
             }
 
             listEl.innerHTML = items.map((item) => {
-                const parentName = item?.parent?.fullName || 'Parent';
+                const parentName = item?.parent?.fullName || 'Phụ huynh';
                 const parentLocation = [item?.parent?.district, item?.parent?.city].filter(Boolean).join(', ') || 'Chưa cập nhật khu vực';
                 const parentPhone = item?.parent?.phoneNumber || 'Chưa cập nhật';
                 const status = Number(item?.status ?? 0);
@@ -689,7 +689,7 @@
         const renderDetail = (detail) => {
             const status = Number(detail?.status ?? 0);
             const parent = detail?.parent || {};
-            const parentName = parent?.fullName || 'Parent';
+            const parentName = parent?.fullName || 'Phụ huynh';
             const parentLocation = [parent?.district, parent?.city].filter(Boolean).join(', ') || 'Chưa cập nhật';
             const parentPhone = parent?.phoneNumber || 'Chưa cập nhật';
             const parentAddress = parent?.address || 'Chưa cập nhật';
@@ -700,7 +700,7 @@
             modalBodyEl.innerHTML = `
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div class="ncr-meta-tile">
-                        <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Parent</p>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Phụ huynh</p>
                         <p class="mt-1 text-base font-extrabold text-slate-900">${escapeHtml(parentName)}</p>
                         <p class="mt-1 text-sm text-slate-500">${escapeHtml(parentLocation)}</p>
                     </div>
@@ -794,14 +794,14 @@
                 });
                 const json = await response.json();
                 if (!response.ok || !json?.success) {
-                    showToast(json?.message || 'Khong the tai chi tiet request.', 'error');
-                    modalBodyEl.innerHTML = '<p class="text-sm text-rose-600">Khong the tai chi tiet request.</p>';
+                    showToast(json?.message || 'Không thể tải chi tiết yêu cầu.', 'error');
+                    modalBodyEl.innerHTML = '<p class="text-sm text-rose-600">Không thể tải chi tiết yêu cầu.</p>';
                     return;
                 }
                 renderDetail(json.data);
             } catch {
-                showToast('Khong the tai chi tiet request.', 'error');
-                modalBodyEl.innerHTML = '<p class="text-sm text-rose-600">Khong the tai chi tiet request.</p>';
+                showToast('Không thể tải chi tiết yêu cầu.', 'error');
+                modalBodyEl.innerHTML = '<p class="text-sm text-rose-600">Không thể tải chi tiết yêu cầu.</p>';
             }
         };
 
@@ -835,7 +835,7 @@
                 if (!response.ok || !json?.success) {
                     listEl.innerHTML = `
                         <div class="rounded-2xl border border-red-100 bg-red-50 px-5 py-8 text-center text-red-600">
-                            ${escapeHtml(json?.message || 'Khong tai duoc danh sach request contact.')}
+                            ${escapeHtml(json?.message || 'Không tải được danh sách yêu cầu liên hệ.')}
                         </div>`;
                     return;
                 }
@@ -846,7 +846,7 @@
             } catch {
                 listEl.innerHTML = `
                     <div class="rounded-2xl border border-red-100 bg-red-50 px-5 py-8 text-center text-red-600">
-                        Khong tai duoc danh sach request contact.
+                        Không tải được danh sách yêu cầu liên hệ.
                     </div>`;
             } finally {
                 window.setTimeout(() => {

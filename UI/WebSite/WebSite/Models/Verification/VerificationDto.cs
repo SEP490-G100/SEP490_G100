@@ -30,7 +30,13 @@ public class VerificationRequestListDto
     public string? NannyCity      { get; set; }
 
     public string FullName    => $"{NannyFirstName} {NannyLastName}".Trim();
-    public string StatusLabel => Status switch { 2 => "Approved", 3 => "Rejected", _ => "Pending" };
+    public string StatusLabel => Status switch
+    {
+        2 => "Đã duyệt",
+        3 => "Từ chối",
+        1 => "Đang chờ",
+        _ => "Đang chờ"
+    };
     public string StatusClass => Status switch { 2 => "badge-active", 3 => "badge-inactive", _ => "badge-pending" };
 }
 
@@ -71,16 +77,22 @@ public class VerificationRequestDetailDto
     public List<VerificationDocumentDto> Documents { get; set; } = new();
 
     public string FullName    => $"{NannyFirstName} {NannyLastName}".Trim();
-    public string StatusLabel => Status switch { 2 => "Approved", 3 => "Rejected", _ => "Pending" };
+    public string StatusLabel => Status switch
+    {
+        2 => "Đã duyệt",
+        3 => "Từ chối",
+        1 => "Đang chờ",
+        _ => "Đang chờ"
+    };
     public string StatusClass => Status switch { 2 => "badge-active", 3 => "badge-inactive", _ => "badge-pending" };
     public string EducationLabel => EducationLevel switch
     {
-        0 => "No formal education",
-        1 => "High School",
-        2 => "Associate Degree",
-        3 => "Bachelor's Degree",
-        4 => "Master's Degree",
-        _ => "Other"
+        0 => "Trung học",
+        1 => "Cao đẳng",
+        2 => "Đại học",
+        3 => "Thạc sĩ",
+        4 => "Khác",
+        _ => "Chưa cập nhật"
     };
 }
 
@@ -94,10 +106,10 @@ public class VerificationSkillDto
 
     public string ProficiencyLabel => ProficiencyLevel switch
     {
-        1 => "Basic",
-        2 => "Intermediate",
-        3 => "Advanced",
-        _ => "Not specified"
+        1 => "Cơ bản",
+        2 => "Trung cấp",
+        3 => "Nâng cao",
+        _ => "Chưa cập nhật"
     };
 }
 
@@ -113,10 +125,10 @@ public class VerificationCertificateDto
 
     public string VerificationStatusLabel => VerificationStatus switch
     {
-        1 => "Pending",
-        2 => "Approved",
-        3 => "Rejected",
-        _ => "Not submitted"
+        1 => "Đang chờ duyệt",
+        2 => "Đã duyệt",
+        3 => "Từ chối",
+        _ => "Chưa nộp"
     };
 
     public string VerificationStatusClass => VerificationStatus switch
@@ -138,10 +150,10 @@ public class VerificationDocumentDto
 
     public string TypeLabel => DocumentType switch
     {
-        (int)VerificationDocumentType.IdentityCard => "National ID",
-        (int)VerificationDocumentType.DegreeCertificate => "Degree / Certificate",
-        (int)VerificationDocumentType.HealthCertificate => "Health Certificate",
-        _ => "Document"
+        (int)VerificationDocumentType.IdentityCard => "Căn cước công dân",
+        (int)VerificationDocumentType.DegreeCertificate => "Bằng cấp / Chứng chỉ",
+        (int)VerificationDocumentType.HealthCertificate => "Giấy khám sức khỏe",
+        _ => "Tài liệu"
     };
 
     public string TypeIcon => DocumentType switch

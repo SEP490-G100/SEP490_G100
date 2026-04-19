@@ -44,17 +44,17 @@
                 {
                     <a href="/Nanny/Favorites" class="nanny-filter-trigger">
                         <span class="material-icons-round text-[18px]">favorite</span>
-                        Nanny yêu thích
+                        Bảo mẫu yêu thích
                     </a>
                     <a href="/Nanny/ContactRequests" class="nanny-filter-trigger">
                         <span class="material-icons-round text-[18px]">contact_phone</span>
-                        Contact request
+                        Yêu cầu liên hệ
                     </a>
                 }
                 <span id="nannyResultCount" class="nanny-toolbar__count">Đang tải...</span>
                 <a href="/Subscription" class="nanny-upgrade-btn">
                     <span class="material-icons-round text-[18px]">workspace_premium</span>
-                    Upgrade
+                    Gói đăng ký
                 </a>
             </div>
         </div>
@@ -68,7 +68,7 @@
             {
                 <div id="recNannyPanel" class="rec-panel">
                     <div class="rec-panel__header">
-                        <span class="rec-panel__label">Gợi ý nanny cho:</span>
+                        <span class="rec-panel__label">Gợi ý bảo mẫu cho:</span>
                         <select id="recJobSelect" class="rec-panel__select" onchange="loadRecNannies(this.value)">
                             <option value="">— Chọn bài đăng —</option>
                         </select>
@@ -76,7 +76,7 @@
                     <div id="recNannyContent">
                         <div class="rec-panel__loading" style="padding:20px">
                             <span class="material-icons-round" style="font-size:20px;opacity:.4">arrow_upward</span>
-                            Chọn bài đăng để xem nanny phù hợp
+                            Chọn bài đăng để xem bảo mẫu phù hợp
                         </div>
                     </div>
                 </div>
@@ -95,11 +95,10 @@
         <div class="nanny-filter-modal__header">
             <div>
                 <p class="nanny-filter-modal__kicker">Bộ lọc tìm kiếm</p>
-                <h2 class="nanny-filter-modal__title">Tìm nanny phù hợp nhanh hơn</h2>
+                <h2 class="nanny-filter-modal__title">Tìm bảo mẫu phù hợp nhanh hơn</h2>
                 <p class="nanny-filter-modal__subtitle">Chọn khu vực, kỹ năng, độ tuổi, kinh nghiệm và khoảng lương để thu hẹp danh sách hồ sơ.</p>
             </div>
-            <button type="button" onclick="closeNannyFilters()" class="nanny-detail-close material-icons-round">close</button>
-            <button type="button" onclick="closeNannyFilters()" class="nanny-detail-close material-icons-round">close</button>
+            <button type="button" onclick="closeNannyFilters()" class="nanny-detail-close material-icons-round" aria-label="Đóng">close</button>
         </div>
         <div class="nanny-filter-modal__body">
             <div class="nanny-filter-groups">
@@ -189,7 +188,7 @@
                         <span class="material-icons-round">calendar_month</span>
                         <div>
                             <h3>Lịch rảnh theo ngày</h3>
-                            <p>Chọn một hoặc nhiều khung giờ để lọc nanny có lịch phù hợp.</p>
+                            <p>Chọn một hoặc nhiều khung giờ để lọc bảo mẫu có lịch phù hợp.</p>
                         </div>
                     </div>
                     <div id="nannyScheduleFilter" class="nanny-filter-schedule"></div>
@@ -211,7 +210,7 @@
             </div>
             <div class="nanny-detail-header">
                 <div class="nanny-detail-hero">
-                    <img id="nd-avatar" src="/img/nanny-logo.jpg" alt="Avatar nanny" class="nanny-detail-avatar" />
+                    <img id="nd-avatar" src="/img/nanny-logo.jpg" alt="Ảnh đại diện bảo mẫu" class="nanny-detail-avatar" />
                     <div class="nanny-detail-hero__content">
                         <div class="nanny-detail-badge" id="nd-verify">Đang cập nhật</div>
                         <h2 id="nd-name">Tên bảo mẫu</h2>
@@ -242,7 +241,7 @@
                 <section class="nanny-detail-card">
                     <h3>Thông tin liên hệ</h3>
                     <div class="nanny-meta-list">
-                        <div><span>Liên hệ</span><strong id="nd-phone">Gửi request contact để kết nối trực tiếp</strong></div>
+                        <div><span>Liên hệ</span><strong id="nd-phone">Gửi yêu cầu liên hệ để kết nối trực tiếp</strong></div>
                         <div><span>Khu vực</span><strong id="nd-address">Chưa cập nhật</strong></div>
                         <div><span>Bán kính di chuyển</span><strong id="nd-travel">Chưa cập nhật</strong></div>
                     </div>
@@ -264,16 +263,16 @@
                 {
                     <button type="button" id="nd-contactBtn" class="nanny-detail-view-btn" onclick="nannyHiringContact()">
                         <span class="material-icons-round">chat</span>
-                        Lien he Nanny
+                        Liên hệ bảo mẫu
                     </button>
                     <button type="button" id="nd-hireBtn" class="nanny-detail-view-btn" onclick="nannyHiringHire()">
                         <span class="material-icons-round">handshake</span>
-                        Thue Nanny
+                        Thuê bảo mẫu
                     </button>
                 }
                 <button type="button" id="nd-viewProfileBtn" class="nanny-detail-view-btn" onclick="viewNannyProfileDetail(event)">
                     <span class="material-icons-round">visibility</span>
-                    Xem chi tiet ho so Nanny
+                    Xem chi tiết hồ sơ bảo mẫu
                 </button>
             </div>
         </div>
@@ -312,7 +311,7 @@
     function renderRecNannyCard(n, idx) {
         const pct = Math.round((n.finalScore ?? 0) * 100);
         const color = pct >= 80 ? '#16a34a' : pct >= 60 ? '#f97316' : '#6b7280';
-        const exp  = n.yearsOfExperience != null ? `<span class="rec-chip rec-chip--distance">${n.yearsOfExperience} năm KN</span>` : '';
+        const exp  = n.yearsOfExperience != null ? `<span class="rec-chip rec-chip--distance">${n.yearsOfExperience} năm kinh nghiệm</span>` : '';
         const rating = n.averageRating != null
             ? `<span class="rec-stars"><span class="material-icons-round" style="font-size:13px">star</span>${n.averageRating.toFixed(1)}</span>`
             : '';
@@ -412,7 +411,7 @@
                     content.innerHTML = `
                     <div class="rec-upgrade-prompt">
                         <span class="material-icons-round rec-upgrade-icon">auto_awesome</span>
-                        <h3 class="rec-upgrade-title">Tính năng dành cho gói Plus / Pro</h3>
+                        <h3 class="rec-upgrade-title">Tính năng dành cho gói trả phí</h3>
                         <p class="rec-upgrade-desc">Nâng cấp để AI tự động gợi ý những bảo mẫu phù hợp nhất với yêu cầu công việc của bạn.</p>
                         <a href="/Subscription" class="rec-upgrade-btn">
                             <span class="material-icons-round">rocket_launch</span>Nâng cấp ngay
@@ -424,7 +423,7 @@
                     if (typeof clearNannyMarkers === 'function') clearNannyMarkers();
                     content.innerHTML = `<div class="rec-panel__empty">
                         <span class="material-icons-round">person_search</span>
-                        <p>Chưa tìm được nanny phù hợp cho bài đăng này.</p>
+                        <p>Chưa tìm được bảo mẫu phù hợp cho bài đăng này.</p>
                     </div>`;
                 } else {
                     window.recNannies = res.data;

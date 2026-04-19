@@ -22,9 +22,9 @@
     const tipText = document.getElementById('nl-tipText');
 
     const steps = [
-        { pct: 15, msg: 'Đang khởi động...', tip: '💡 Mẹo: <span>Tìm Nanny đã xác minh gần bạn chỉ trong 30 giây.</span>' },
-        { pct: 35, msg: 'Kết nối cơ sở dữ liệu...', tip: '🌟 <span>Hơn 10,000 gia đình đã tin dùng NannyMatch!</span>' },
-        { pct: 55, msg: 'Tải hồ sơ người trông trẻ...', tip: '🔒 <span>Tất cả Nanny đều được kiểm tra lý lịch kỹ càng.</span>' },
+        { pct: 15, msg: 'Đang khởi động...', tip: '💡 Mẹo: <span>Tìm bảo mẫu đã xác minh gần bạn chỉ trong 30 giây.</span>' },
+        { pct: 35, msg: 'Kết nối cơ sở dữ liệu...', tip: '🌟 <span>Hơn 10.000 gia đình đã tin dùng NannyMatch!</span>' },
+        { pct: 55, msg: 'Tải hồ sơ người trông trẻ...', tip: '🔒 <span>Mọi bảo mẫu đều được kiểm tra lý lịch cẩn thận.</span>' },
         { pct: 72, msg: 'Đồng bộ lịch trình...', tip: '📅 <span>Đặt lịch linh hoạt: theo giờ, ngày hoặc dài hạn.</span>' },
         { pct: 88, msg: 'Khởi tạo giao diện...', tip: '💳 <span>Thanh toán an toàn, hoàn tiền nếu không hài lòng.</span>' },
         { pct: 100, msg: 'Hoàn tất! Chào mừng bạn 🎉', tip: '🏠 <span>NannyMatch — Yên tâm giao con, an lòng cha mẹ.</span>' },
@@ -73,11 +73,10 @@
 
 
 /* ══════════════════════════════════════════════════
-   Scroll-reveal: alternating up/down per section
+   Scroll-reveal: xen kê hiệu ứng lên/xuống theo từng section
    ══════════════════════════════════════════════════ */
 (function () {
-    /* 1. Handle .reveal elements (hero already animates via CSS,
-          but other .reveal below fold need JS) */
+    /* 1. Phần tử .reveal (phần hero đã có CSS; các .reveal phía dưới cần JS) */
     var revealEls = document.querySelectorAll('.reveal');
     var revealObserver = new IntersectionObserver(function (entries) {
         entries.forEach(function (entry) {
@@ -89,7 +88,7 @@
     }, { threshold: 0.15 });
     revealEls.forEach(function (el) { revealObserver.observe(el); });
 
-    /* 2. Handle .scroll-section — add in-view when 20% visible */
+    /* 2. .scroll-section — thêm in-view khi vào khoảng 20% viewport */
     var sections = document.querySelectorAll('.scroll-section');
     var sectionObserver = new IntersectionObserver(function (entries) {
         entries.forEach(function (entry) {

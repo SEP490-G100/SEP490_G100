@@ -58,7 +58,7 @@ public class ModeratorBlogController : Controller
         var normalized = mediaType?.Trim().ToLowerInvariant();
         if (normalized is not ("image" or "video"))
         {
-            return Json(new { success = false, message = "Loai media khong hop le. Chi ho tro image/video." });
+            return Json(new { success = false, message = "Loại phương tiện không hợp lệ. Chỉ hỗ trợ ảnh/video." });
         }
 
         var type = normalized == "video" ? BlobMediaType.Video : BlobMediaType.Image;
@@ -67,10 +67,10 @@ public class ModeratorBlogController : Controller
 
     private async Task<IActionResult> UploadBlogContentMediaCore(List<IFormFile>? files, BlobMediaType mediaType, CancellationToken cancellationToken)
     {
-        var mediaLabel = mediaType == BlobMediaType.Video ? "video" : "anh";
+        var mediaLabel = mediaType == BlobMediaType.Video ? "video" : "ảnh";
         if (files == null || files.Count == 0)
         {
-            return Json(new { success = false, message = $"Vui long chon it nhat mot {mediaLabel}." });
+            return Json(new { success = false, message = $"Vui lòng chọn ít nhất một {mediaLabel}." });
         }
 
         try
@@ -82,7 +82,7 @@ public class ModeratorBlogController : Controller
                 cancellationToken);
             if (uploadedUrls.Count == 0)
             {
-                return Json(new { success = false, message = $"Khong co {mediaLabel} hop le de upload." });
+                return Json(new { success = false, message = $"Không có {mediaLabel} hợp lệ để tải lên." });
             }
 
             return Json(new
@@ -97,7 +97,7 @@ public class ModeratorBlogController : Controller
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = $"Khong the upload {mediaLabel} blog: {ex.Message}" });
+            return Json(new { success = false, message = $"Không thể tải lên {mediaLabel} blog: {ex.Message}" });
         }
     }
 
@@ -322,7 +322,7 @@ public class ModeratorBlogController : Controller
             return RedirectToAction(nameof(ManageBlog), new
             {
                 toastType = "error",
-                toastMessage = "Khong the tai lai bai blog de chinh sua"
+                toastMessage = "Không thể tải lại bài blog để chỉnh sửa"
             });
         }
 

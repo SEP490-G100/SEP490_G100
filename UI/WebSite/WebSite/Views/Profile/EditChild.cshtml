@@ -5,10 +5,10 @@
 @{
     ViewData["Title"] = "Chỉnh sửa thông tin con em";
     var ageGroupLabels = new Dictionary<int, string> {
-        { 0, "Em bé (0–1 tuổi)" },
-        { 1, "Toddler (1–3 tuổi)" },
-        { 2, "Mầm non (3–5 tuổi)" },
-        { 3, "Học sinh tiểu học (6–12 tuổi)" }
+        { 0, "0 - 1 tuổi" },
+        { 1, "1 - 3 tuổi" },
+        { 2, "3 - 5 tuổi" },
+        { 3, "6 - 12 tuổi" }
     };
     var currentAge = Model.ChildAgeGroup.HasValue ? (int)Model.ChildAgeGroup.Value : -1;
     var currentAgeLabel = currentAge >= 0 && ageGroupLabels.ContainsKey(currentAge) ? ageGroupLabels[currentAge] : "";
@@ -66,10 +66,10 @@
                                 <span class="material-icons-round cf-dropdown-arrow">expand_more</span>
                             </div>
                             <div class="cf-dropdown-menu">
-                                <div class="cf-dropdown-option @(currentAge == 0 ? "selected" : "")" data-value="0" onclick="selectOption('dd_ageGroup','0','Em bé (0–1 tuổi)')">Em bé (0–1 tuổi)</div>
-                                <div class="cf-dropdown-option @(currentAge == 1 ? "selected" : "")" data-value="1" onclick="selectOption('dd_ageGroup','1','Toddler (1–3 tuổi)')">Toddler (1–3 tuổi)</div>
-                                <div class="cf-dropdown-option @(currentAge == 2 ? "selected" : "")" data-value="2" onclick="selectOption('dd_ageGroup','2','Mầm non (3–5 tuổi)')">Mầm non (3–5 tuổi)</div>
-                                <div class="cf-dropdown-option @(currentAge == 3 ? "selected" : "")" data-value="3" onclick="selectOption('dd_ageGroup','3','Học sinh tiểu học (6–12 tuổi)')">Học sinh tiểu học (6–12 tuổi)</div>
+                                <div class="cf-dropdown-option @(currentAge == 0 ? "selected" : "")" data-value="0" onclick="selectOption('dd_ageGroup','0','0 - 1 tuổi')">0 - 1 tuổi</div>
+                                <div class="cf-dropdown-option @(currentAge == 1 ? "selected" : "")" data-value="1" onclick="selectOption('dd_ageGroup','1','1 - 3 tuổi')">1 - 3 tuổi</div>
+                                <div class="cf-dropdown-option @(currentAge == 2 ? "selected" : "")" data-value="2" onclick="selectOption('dd_ageGroup','2','3 - 5 tuổi')">3 - 5 tuổi</div>
+                                <div class="cf-dropdown-option @(currentAge == 3 ? "selected" : "")" data-value="3" onclick="selectOption('dd_ageGroup','3','6 - 12 tuổi')">6 - 12 tuổi</div>
                             </div>
                         </div>
                         @Html.ValidationMessageFor(m => m.ChildAgeGroup, "", new { @class = "cf-error" })

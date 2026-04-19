@@ -55,7 +55,7 @@
     if (!menu) return;
 
     if (!options.length) {
-      menu.innerHTML = '<li class="nm-unified-empty">Khong co du lieu phu hop</li>';
+      menu.innerHTML = '<li class="nm-unified-empty">Không có dữ liệu phù hợp</li>';
       menu.classList.add('show');
       return;
     }

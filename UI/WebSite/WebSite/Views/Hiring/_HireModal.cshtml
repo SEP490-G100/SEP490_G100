@@ -8,7 +8,7 @@
                 <span class="material-icons-round text-base">close</span>
             </button>
             <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-orange-500">Tuyển dụng</p>
-            <h2 class="mt-1 text-xl font-bold text-slate-900">Thuê Bảo Mẫu</h2>
+            <h2 class="mt-1 text-xl font-bold text-slate-900">Thuê bảo mẫu</h2>
             <p id="hireModalNannyName" class="mt-1 text-sm text-slate-500"></p>
         </div>
 
@@ -25,7 +25,7 @@
                 <label for="hireEndDate" class="block text-sm font-bold text-slate-700 mb-1">Ngày kết thúc</label>
                 <input type="date" id="hireEndDate"
                        class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition" />
-                <p class="mt-1 text-xs text-slate-400">Dể trống nếu chưa xác định.</p>
+                <p class="mt-1 text-xs text-slate-400">Để trống nếu chưa xác định.</p>
             </div>
 
             <div>
@@ -79,7 +79,7 @@
             const select = document.getElementById('hireTemplateId');
             if (json.success && Array.isArray(json.data) && json.data.length) {
                 select.innerHTML = '<option value="">-- Chọn mẫu hợp đồng --</option>' +
-                    json.data.map(t => `<option value="${t.id}">${t.name} (v${t.version})</option>`).join('');
+                    json.data.map(t => `<option value="${t.id}">${t.name} (phiên bản ${t.version})</option>`).join('');
                 templatesLoaded = true;
             } else {
                 select.innerHTML = '<option value="">Không có mẫu hợp đồng</option>';
@@ -91,7 +91,7 @@
 
     window.__openHireModal = async (jobPostingId, jobAppId, nannyName, contactRequestId = null) => {
         context = { jobPostingId, jobAppId, contactRequestId };
-        document.getElementById('hireModalNannyName').textContent = nannyName ? `Nanny: ${nannyName}` : '';
+        document.getElementById('hireModalNannyName').textContent = nannyName ? `Bảo mẫu: ${nannyName}` : '';
         const today = new Date().toISOString().slice(0, 10);
         document.getElementById('hireStartDate').value = today;
         document.getElementById('hireStartDate').setAttribute('min', today);
@@ -112,7 +112,7 @@
         if (!startDate) { setError('Vui lòng chọn ngày bắt đầu.'); return; }
         if (!contractTemplateId) { setError('Vui lòng chọn mẫu hợp đồng.'); return; }
         const today = new Date().toISOString().slice(0, 10);
-        if (startDate < today) { setError('Ngày bắt đầu không được trước ngày tạo hợp đồng.'); return; }
+        if (startDate < today) { setError('Ngày bắt đầu không được trước hôm nay.'); return; }
         if (endDate) {
             if (endDate <= startDate) {
                 setError('Ngày kết thúc phải lớn hơn ngày bắt đầu.');
@@ -121,7 +121,7 @@
         }
 
         confirmBtn.disabled = true;
-        confirmBtn.textContent = 'Đang xử lý...';
+        confirmBtn.innerHTML = '<span class="material-icons-round text-base animate-spin">sync</span> Đang xử lý...';
         setError('');
 
         try {
@@ -140,7 +140,7 @@
             });
             const json = await res.json();
             if (!json.success) {
-                setError(json.message || 'Có lỗi xảy ra.');
+                setError(json.message || 'Đã xảy ra lỗi. Vui lòng thử lại.');
                 return;
             }
 

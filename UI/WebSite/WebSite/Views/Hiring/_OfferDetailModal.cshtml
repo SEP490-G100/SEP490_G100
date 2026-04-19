@@ -65,6 +65,7 @@
     };
 
     const fmtDate = (value) => value ? new Date(value + 'T00:00:00').toLocaleDateString('vi-VN') : 'Chưa xác định';
+    const msgLooksVi = (msg) => /[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]/i.test(String(msg || '').trim());
     const escHtml = (value) => String(value ?? '')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
@@ -114,7 +115,11 @@
             const canRespondOffer = @((canRespondOffer) ? "true" : "false");
             if (Number(d.status) === 0 && canRespondOffer) footer.classList.remove('hidden');
         } catch (err) {
-            body.innerHTML = `<p class="text-rose-600 text-sm font-semibold text-center py-6">Không tải được thông tin: ${err.message || 'Lỗi không xác định'}</p>`;
+            const msg = String(err?.message || '').trim();
+            const line = msgLooksVi(msg)
+                ? `Không tải được thông tin: ${escHtml(msg)}`
+                : 'Không tải được thông tin đề nghị. Vui lòng thử lại sau.';
+            body.innerHTML = `<p class="text-rose-600 text-sm font-semibold text-center py-6">${line}</p>`;
         }
     };
 
@@ -129,7 +134,7 @@
 
         try {
             const payload = action === 'decline'
-                ? { action, declineReason: 'Nanny từ chối đề nghị.' }
+                ? { action, declineReason: 'Bảo mẫu từ chối đề nghị.' }
                 : { action };
             const res = await fetch(`/Hiring/Records/${hiringRecordId}/Respond`, {
                 method: 'POST',
@@ -138,7 +143,12 @@
             });
             const json = await res.json();
             if (!json.success) {
-                alert(json.message || 'Có lỗi xảy ra.');
+                const m = json.message || 'Đã xảy ra lỗi. Vui lòng thử lại.';
+                if (typeof window.showToast === 'function') {
+                    window.showToast(m, { type: 'error' });
+                } else {
+                    alert(m);
+                }
                 return;
             }
             if (action === 'accept') {
@@ -150,7 +160,11 @@
             }
             hide();
         } catch {
-            alert('Lỗi kết nối. Vui lòng thử lại.');
+            if (typeof window.showToast === 'function') {
+                window.showToast('Lỗi kết nối. Vui lòng thử lại.', { type: 'error' });
+            } else {
+                alert('Lỗi kết nối. Vui lòng thử lại.');
+            }
         } finally {
             btn.disabled = false;
         }

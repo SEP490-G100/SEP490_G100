@@ -131,26 +131,26 @@ public class ModeratorVerificationController : Controller
                     await _notificationHub.Clients.Group($"user:{nannyUserId.Value}").SendAsync("notification:new", new
                     {
                         type = action == 2 ? "verification-approved" : "verification-rejected",
-                        title = action == 2 ? "Yeu cau xac minh da duoc chap thuan" : "Yeu cau xac minh da bi tu choi",
+                        title = action == 2 ? "Yêu cầu xác minh đã được chấp thuận" : "Yêu cầu xác minh đã bị từ chối",
                         message = action == 2
-                            ? "Yeu cau xac minh cua ban da duoc chap thuan."
-                            : "Yeu cau xac minh cua ban da bi tu choi.",
+                            ? "Yêu cầu xác minh của bạn đã được chấp thuận."
+                            : "Yêu cầu xác minh của bạn đã bị từ chối.",
                         toastType = action == 2 ? "success" : "warning"
                     });
                 }
 
                 var listUrl = Url.Action(nameof(ManageNannyVerification), "ModeratorVerification")
                               ?? "/Moderator/ManageNannyVerification";
-                var toastMessage = Uri.EscapeDataString("Bạn đã xử lí yêu cầu xác minh thành công");
+                var toastMessage = Uri.EscapeDataString("Bạn đã xử lý yêu cầu xác minh thành công");
                 return Redirect($"{listUrl}?toastType=success&toastMessage={toastMessage}");
             }
 
-            TempData["Error"] = result?.Message ?? "Xu ly that bai.";
+            TempData["Error"] = result?.Message ?? "Xử lý thất bại.";
             return RedirectToAction(nameof(ManageNannyVerification));
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"Loi ket noi: {ex.Message}";
+            TempData["Error"] = $"Lỗi kết nối: {ex.Message}";
             return RedirectToAction(nameof(ManageNannyVerification));
         }
     }

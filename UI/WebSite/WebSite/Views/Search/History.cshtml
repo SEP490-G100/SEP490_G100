@@ -1,5 +1,5 @@
 @{
-    ViewData["Title"] = "Lich su bai dang - NannyMatch";
+    ViewData["Title"] = "Lịch sử bài đăng - NannyMatch";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
@@ -384,16 +384,16 @@
             <div class="px-6 py-6 sm:px-8 border-b border-orange-100 bg-[radial-gradient(circle_at_top_right,rgba(255,237,213,.85),transparent_28%),linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <p class="text-xs font-extrabold uppercase tracking-[0.24em] text-orange-500">Bai dang cua toi</p>
-                        <h1 class="mt-2 text-3xl font-bold text-slate-900">Lich su bai dang</h1>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.24em] text-orange-500">Bài đăng của tôi</p>
+                        <h1 class="mt-2 text-3xl font-bold text-slate-900">Lịch sử bài đăng</h1>
                         <p class="mt-2 text-sm leading-6 text-slate-500 max-w-2xl">
-                            Theo doi trang thai duyet, ghi chu cua moderator va toan bo thong tin cua cac bai dang ban da tao.
+                            Theo dõi trạng thái duyệt, ghi chú của kiểm duyệt viên và toàn bộ thông tin của các bài đăng bạn đã tạo.
                         </p>
                     </div>
                     <div class="flex items-center gap-3">
                         <a href="/Search"
                            class="inline-flex items-center justify-center min-h-[48px] px-5 rounded-2xl border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 transition-all">
-                            Quay lai tim bai
+                            Quay lại tìm bài
                         </a>
                     </div>
                 </div>
@@ -402,22 +402,22 @@
             <div class="px-6 py-6 sm:px-8">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <div class="history-stat-card history-stat-card--total">
-                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Tong bai dang</p>
+                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Tổng bài đăng</p>
                         <p id="historyTotalCount" class="mt-2 text-3xl font-extrabold text-slate-900">0</p>
                     </div>
                     <div class="history-stat-card history-stat-card--pending">
-                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-amber-500">Dang cho duyet</p>
+                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-amber-500">Đang chờ duyệt</p>
                         <p id="historyPendingCount" class="mt-2 text-3xl font-extrabold text-amber-700">0</p>
                     </div>
                     <div class="history-stat-card history-stat-card--public">
-                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-orange-500">Dang hien thi</p>
+                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-orange-500">Đang hiển thị</p>
                         <p id="historyPublishedCount" class="mt-2 text-3xl font-extrabold text-orange-600">0</p>
                     </div>
                 </div>
 
                 <div id="historyPageBody" class="space-y-5">
                     <div class="rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center text-slate-500">
-                        Dang tai lich su bai dang...
+                        Đang tải lịch sử bài đăng...
                     </div>
                 </div>
             </div>
@@ -436,9 +436,9 @@
             <div class="sticky top-0 z-20 px-6 py-5 border-b border-slate-100 bg-[linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
                 <div class="flex items-start gap-4 pr-12">
                     <div>
-                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-orange-500">Request ung tuyen</p>
-                        <h3 id="jobAppModalTitle" class="mt-2 text-xl font-bold text-slate-900">Chi tiet request</h3>
-                        <p id="jobAppModalSubTitle" class="mt-2 text-sm text-slate-500">Xem thong tin va duyet request tu Nanny.</p>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-orange-500">Đơn ứng tuyển</p>
+                        <h3 id="jobAppModalTitle" class="mt-2 text-xl font-bold text-slate-900">Chi tiết đơn ứng tuyển</h3>
+                        <p id="jobAppModalSubTitle" class="mt-2 text-sm text-slate-500">Xem thông tin và duyệt đơn từ bảo mẫu.</p>
                     </div>
                 </div>
             </div>
@@ -446,12 +446,12 @@
             <div class="px-6 py-5 space-y-4">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                     <div class="rounded-2xl border border-slate-100 bg-slate-50 p-3">
-                        <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Nanny</p>
+                        <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Bảo mẫu</p>
                         <p id="jobAppNannyName" class="mt-2 text-base font-extrabold text-slate-900">-</p>
                         <p id="jobAppNannyLocation" class="mt-1 text-sm text-slate-500">-</p>
                     </div>
                     <div class="rounded-2xl border border-slate-100 bg-slate-50 p-3">
-                        <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Trang thai request</p>
+                        <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Trạng thái đơn</p>
                         <div id="jobAppStatusWrap" class="mt-2"></div>
                         <p id="jobAppAppliedAt" class="mt-2 text-sm text-slate-500">-</p>
                     </div>
@@ -459,29 +459,29 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                     <div class="rounded-2xl border border-slate-100 bg-white p-3">
-                        <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">So dien thoai</p>
+                        <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Số điện thoại</p>
                         <p id="jobAppPhone" class="mt-2 font-bold text-slate-900">-</p>
                     </div>
                     <div class="rounded-2xl border border-slate-100 bg-white p-3">
-                        <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Kinh nghiem</p>
+                        <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Kinh nghiệm</p>
                         <p id="jobAppExperience" class="mt-2 font-bold text-slate-900">-</p>
                     </div>
                     <div class="rounded-2xl border border-slate-100 bg-white p-3">
-                        <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Muc luong mong muon</p>
+                        <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Mức lương mong muốn</p>
                         <p id="jobAppSalary" class="mt-2 font-bold text-slate-900">-</p>
                     </div>
                     <div class="rounded-2xl border border-slate-100 bg-white p-3">
-                        <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Ly do tu choi</p>
-                        <p id="jobAppRejectReasonDisplay" class="mt-2 text-slate-600">Chua co.</p>
+                        <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Lý do từ chối</p>
+                        <p id="jobAppRejectReasonDisplay" class="mt-2 text-slate-600">Chưa có.</p>
                     </div>
                 </div>
 
                 <div id="jobAppRejectReasonWrap" class="history-review-note p-4">
-                    <label for="jobAppRejectReason" class="block text-sm font-bold text-amber-700">Ly do tu choi (bat buoc khi Reject)</label>
+                    <label for="jobAppRejectReason" class="block text-sm font-bold text-amber-700">Lý do từ chối (bắt buộc khi từ chối)</label>
                     <textarea id="jobAppRejectReason"
                               rows="3"
                               class="mt-2 w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none"
-                              placeholder="Nhap ly do parent tu choi request..."></textarea>
+                              placeholder="Nhập lý do phụ huynh từ chối đơn..."></textarea>
                 </div>
             </div>
 
@@ -492,28 +492,28 @@
                    rel="noopener"
                    class="hidden inline-flex items-center justify-center gap-2 min-h-[42px] px-5 rounded-xl border border-orange-200 bg-orange-50 text-orange-600 font-bold hover:bg-orange-100 transition-all">
                     <span class="material-icons-round text-base">visibility</span>
-                    Xem chi tiet ho so Nanny
+                    Xem chi tiết hồ sơ bảo mẫu
                 </a>
 
                 <div class="ml-auto flex flex-wrap items-center justify-end gap-3">
                     <button type="button"
                             onclick="window.__closeJobApplicationDetailModal?.()"
                             class="inline-flex items-center justify-center min-h-[42px] px-5 rounded-xl border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 transition-all">
-                        Dong
+                        Đóng
                     </button>
                     <button type="button"
                             id="jobAppApproveBtn"
                             onclick="window.__submitJobApplicationReview?.(1)"
                             class="inline-flex items-center justify-center gap-2 min-h-[42px] px-5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 font-bold hover:bg-emerald-100 transition-all">
                         <span class="material-icons-round text-base">check_circle</span>
-                        Chap nhan
+                        Chấp nhận
                     </button>
                     <button type="button"
                             id="jobAppRejectBtn"
                             onclick="window.__submitJobApplicationReview?.(2)"
                             class="inline-flex items-center justify-center gap-2 min-h-[42px] px-5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 font-bold hover:bg-rose-100 transition-all">
                         <span class="material-icons-round text-base">cancel</span>
-                        Tu choi
+                        Từ chối
                     </button>
                 </div>
             </div>
@@ -527,14 +527,14 @@
     (() => {
         const HISTORY_TOAST_KEY = 'nm:historyToast';
         const moderationLabels = {
-            0: 'Dang cho duyet',
-            1: 'Da bi tu choi',
-            2: 'Cong khai'
+            0: 'Đang chờ duyệt',
+            1: 'Đã bị từ chối',
+            2: 'Công khai'
         };
 
         const postStatusLabels = {
-            1: 'Cong khai',
-            2: 'An bai dang'
+            1: 'Công khai',
+            2: 'Ẩn bài đăng'
         };
         const moderationBadgeClasses = {
             0: 'history-badge history-badge--pending',
@@ -556,8 +556,8 @@
             2: 'history-approval-panel--approved'
         };
 
-        const rowLabels = ['Morning', 'Afternoon', 'Evening', 'Night'];
-        const dayLabels = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+        const rowLabels = ['Sáng', 'Chiều', 'Tối', 'Đêm'];
+        const dayLabels = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
         const focusParams = new URLSearchParams(window.location.search);
         const focusJobId = focusParams.get('jobId');
         const focusApplicationId = focusParams.get('applicationId');
@@ -567,11 +567,11 @@
         let isSubmittingReview = false;
 
         const applicationStatusLabels = {
-            0: 'Dang cho duyet',
-            1: 'Dang xem xet',
-            2: 'Da duoc chon',
-            3: 'Da bi tu choi',
-            4: 'Da huy'
+            0: 'Đang chờ duyệt',
+            1: 'Đang xem xét',
+            2: 'Đã được chọn',
+            3: 'Đã bị từ chối',
+            4: 'Đã hủy'
         };
         const applicationBadgeClasses = {
             0: 'history-app-badge history-app-badge--pending',
@@ -621,30 +621,30 @@
                 const createdAt = Number(parsed?.createdAt || 0);
                 if (!createdAt || Date.now() - createdAt > 60000) return;
 
-                showHistoryToast(parsed?.message || 'Cap nhat bai dang thanh cong.', parsed?.type || 'success');
+                showHistoryToast(parsed?.message || 'Cập nhật bài đăng thành công.', parsed?.type || 'success');
             } catch {
                 // Ignore invalid storage payloads.
             }
         };
 
-        const formatSalary = (value) => value ? `${(Number(value) / 1000).toFixed(0)}k/gio` : 'Khong xac dinh';
+        const formatSalary = (value) => value ? `${(Number(value) / 1000).toFixed(0)}k/giờ` : 'Không xác định';
         const formatSalaryRange = (min, max) => {
             if (min && max) return `${formatSalary(min)} - ${formatSalary(max)}`;
-            if (min) return `Tu ${formatSalary(min)}`;
-            if (max) return `Den ${formatSalary(max)}`;
-            return 'Khong xac dinh';
+            if (min) return `Từ ${formatSalary(min)}`;
+            if (max) return `Đến ${formatSalary(max)}`;
+            return 'Không xác định';
         };
 
         const formatAgeRange = (min, max) => {
-            if (min && max) return `${min} - ${max} tuoi`;
-            if (min) return `Tu ${min} tuoi`;
-            if (max) return `Den ${max} tuoi`;
-            return 'Khong yeu cau';
+            if (min && max) return `${min} - ${max} tuổi`;
+            if (min) return `Từ ${min} tuổi`;
+            if (max) return `Đến ${max} tuổi`;
+            return 'Không yêu cầu';
         };
 
         const renderScheduleGrid = (slots) => {
             if (!Array.isArray(slots) || !slots.length) {
-                return '<span class="text-sm text-slate-400">Chua chon lich cu the.</span>';
+                return '<span class="text-sm text-slate-400">Chưa chọn lịch cụ thể.</span>';
             }
 
             const selectedSet = new Set(slots.map((slot) => `${slot.dayOfWeek}-${slot.timeSlot}`));
@@ -670,9 +670,9 @@
         };
 
         const formatDateTime = (value) => {
-            if (!value) return 'Chua cap nhat';
+            if (!value) return 'Chưa cập nhật';
             const parsed = new Date(value);
-            if (Number.isNaN(parsed.getTime())) return 'Chua cap nhat';
+            if (Number.isNaN(parsed.getTime())) return 'Chưa cập nhật';
             return parsed.toLocaleString('vi-VN', {
                 year: 'numeric',
                 month: '2-digit',
@@ -684,7 +684,7 @@
 
         const renderApplicationBadge = (status) => `
             <span class="${applicationBadgeClasses[Number(status)] || 'history-app-badge history-app-badge--pending'}">
-                ${escapeHtml(applicationStatusLabels[status] || 'Dang cap nhat')}
+                ${escapeHtml(applicationStatusLabels[status] || 'Đang cập nhật')}
             </span>`;
 
         const getNameInitial = (fullName) => {
@@ -704,10 +704,10 @@
             const rejected = applications.filter((item) => Number(item.status) === 3 || Number(item.status) === 4).length;
 
             metricsEl.innerHTML = `
-                <span class="history-request-metric">Tong: ${total}</span>
-                <span class="history-request-metric">Pending: ${pending}</span>
-                <span class="history-request-metric">Chap nhan: ${approved}</span>
-                <span class="history-request-metric">Tu choi: ${rejected}</span>`;
+                <span class="history-request-metric">Tổng: ${total}</span>
+                <span class="history-request-metric">Chờ duyệt: ${pending}</span>
+                <span class="history-request-metric">Chấp nhận: ${approved}</span>
+                <span class="history-request-metric">Từ chối: ${rejected}</span>`;
         };
 
         const updateApplicationSummary = (jobId, applications) => {
@@ -716,14 +716,14 @@
             renderRequestMetrics(jobId, applications);
 
             if (!applications.length) {
-                summaryEl.textContent = 'Chua co request ung tuyen nao.';
+                summaryEl.textContent = 'Chưa có đơn ứng tuyển nào.';
                 return;
             }
 
             const pendingCount = applications.filter((item) => Number(item.status) === 0).length;
             summaryEl.textContent = pendingCount > 0
-                ? `Co ${pendingCount} request dang cho duyet trong tong so ${applications.length} request.`
-                : `Tat ca ${applications.length} request da duoc xu ly.`;
+                ? `Có ${pendingCount} đơn đang chờ duyệt trong tổng số ${applications.length} đơn.`
+                : `Tất cả ${applications.length} đơn đã được xử lý.`;
         };
 
         const renderApplicationList = (jobId, applications) => {
@@ -733,7 +733,7 @@
             if (!applications.length) {
                 listEl.innerHTML = `
                     <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
-                        Chua co request ung tuyen cho bai dang nay.
+                        Chưa có đơn ứng tuyển cho bài đăng này.
                     </div>`;
                 updateApplicationSummary(jobId, applications);
                 return;
@@ -747,27 +747,27 @@
                                 <div class="history-request-user">
                                     <span class="history-request-avatar">
                                         ${item?.nanny?.avatarUrl
-                                            ? `<img src="${escapeHtml(item.nanny.avatarUrl)}" alt="Nanny avatar" />`
+                                            ? `<img src="${escapeHtml(item.nanny.avatarUrl)}" alt="Ảnh đại diện bảo mẫu" />`
                                             : escapeHtml(getNameInitial(item?.nanny?.fullName))}
                                     </span>
                                     <div>
-                                        <p class="text-sm font-extrabold text-slate-900">${escapeHtml(item?.nanny?.fullName || 'Nanny')}</p>
-                                        <p class="mt-1 text-xs text-slate-500">${escapeHtml([item?.nanny?.district, item?.nanny?.city].filter(Boolean).join(', ') || 'Chua cap nhat khu vuc')}</p>
+                                        <p class="text-sm font-extrabold text-slate-900">${escapeHtml(item?.nanny?.fullName || 'Bảo mẫu')}</p>
+                                        <p class="mt-1 text-xs text-slate-500">${escapeHtml([item?.nanny?.district, item?.nanny?.city].filter(Boolean).join(', ') || 'Chưa cập nhật khu vực')}</p>
                                     </div>
                                 </div>
                                 ${renderApplicationBadge(item.status)}
                             </div>
                             <div class="history-request-info-grid text-xs text-slate-600">
                                 <div class="history-request-info">
-                                    <p class="font-bold text-slate-500">Ngay ung tuyen</p>
+                                    <p class="font-bold text-slate-500">Ngày ứng tuyển</p>
                                     <p class="mt-1 font-semibold text-slate-700">${escapeHtml(formatDateTime(item.appliedAt))}</p>
                                 </div>
                                 <div class="history-request-info">
-                                    <p class="font-bold text-slate-500">Kinh nghiem</p>
-                                    <p class="mt-1 font-semibold text-slate-700">${item?.nanny?.yearsOfExperience ? `${item.nanny.yearsOfExperience} nam` : 'Chua cap nhat'}</p>
+                                    <p class="font-bold text-slate-500">Kinh nghiệm</p>
+                                    <p class="mt-1 font-semibold text-slate-700">${item?.nanny?.yearsOfExperience ? `${item.nanny.yearsOfExperience} năm` : 'Chưa cập nhật'}</p>
                                 </div>
                                 <div class="history-request-info">
-                                    <p class="font-bold text-slate-500">Luong mong muon</p>
+                                    <p class="font-bold text-slate-500">Lương mong muốn</p>
                                     <p class="mt-1 font-semibold text-slate-700">${escapeHtml(formatSalaryRange(item?.nanny?.expectedSalaryMin, item?.nanny?.expectedSalaryMax))}</p>
                                 </div>
                             </div>
@@ -779,12 +779,12 @@
                                         onclick="window.__approveApplicant?.(this)"
                                         class="inline-flex items-center justify-center gap-1 min-h-[36px] px-3 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100 transition-all">
                                     <span class="material-icons-round" style="font-size:14px">check_circle</span>
-                                    Dong y
+                                    Đồng ý
                                 </button>` : ''}
                                 <button type="button"
                                         onclick="window.__openJobApplicationDetail?.('${escapeHtml(jobId)}','${escapeHtml(item.id)}')"
                                         class="inline-flex items-center justify-center min-h-[36px] px-3 rounded-lg border border-orange-200 bg-orange-50 text-orange-600 text-xs font-bold hover:bg-orange-100 transition-all">
-                                    Xem chi tiet request
+                                    Xem chi tiết đơn
                                 </button>
                             </div>
                         </article>`).join('')}
@@ -816,12 +816,12 @@
             }
 
             if (shouldRenderList) {
-                setRequestLoadingState(jobId, 'Dang tai request ung tuyen...');
+                setRequestLoadingState(jobId, 'Đang tải đơn ứng tuyển...');
             }
             try {
                 const response = await fetch(`/Hiring/${encodeURIComponent(jobId)}/Applicants`, { credentials: 'same-origin' });
                 const json = await response.json();
-                if (!json?.success) throw new Error(json?.message || 'Khong tai duoc request.');
+                if (!json?.success) throw new Error(json?.message || 'Không tải được đơn.');
 
                 const raw = Array.isArray(json?.data) ? json.data : [];
                 const applications = raw.map((item) => ({
@@ -848,10 +848,10 @@
                 return applications;
             } catch (error) {
                 if (shouldRenderList) {
-                    setRequestLoadingState(jobId, 'Khong tai duoc request ung tuyen.');
+                    setRequestLoadingState(jobId, 'Không tải được đơn ứng tuyển.');
                 }
                 if (!silent) {
-                    showHistoryToast(error?.message || 'Khong tai duoc request ung tuyen.', 'error');
+                    showHistoryToast(error?.message || 'Không tải được đơn ứng tuyển.', 'error');
                 }
                 return [];
             }
@@ -886,13 +886,13 @@
             if (!shouldOpen) {
                 listEl.classList.add('hidden');
                 toggleBtn.classList.remove('is-open');
-                toggleBtn.innerHTML = '<span class="material-icons-round text-base">visibility</span>Xem request';
+                toggleBtn.innerHTML = '<span class="material-icons-round text-base">visibility</span>Xem đơn';
                 return;
             }
 
             listEl.classList.remove('hidden');
             toggleBtn.classList.add('is-open');
-            toggleBtn.innerHTML = '<span class="material-icons-round text-base">expand_less</span>Thu gon';
+            toggleBtn.innerHTML = '<span class="material-icons-round text-base">expand_less</span>Thu gọn';
             await loadJobApplications(jobId);
         };
 
@@ -942,7 +942,7 @@
 
             const application = (applications || []).find((item) => String(item.id).toLowerCase() === String(applicationId).toLowerCase());
             if (!application) {
-                showHistoryToast('Khong tim thay request can xem.', 'warning');
+                showHistoryToast('Không tìm thấy đơn cần xem.', 'warning');
                 return;
             }
 
@@ -950,18 +950,18 @@
             const canReview = Number(application.status) === 0;
             activeReviewContext = { jobId, applicationId };
 
-            document.getElementById('jobAppModalTitle').textContent = job?.title || 'Chi tiet request';
+            document.getElementById('jobAppModalTitle').textContent = job?.title || 'Chi tiết đơn ứng tuyển';
             document.getElementById('jobAppModalSubTitle').textContent = canReview
-                ? 'Request dang cho duyet. Ban co the chap nhan hoac tu choi.'
-                : 'Request nay da duoc xu ly. Ban dang xem lai chi tiet.';
-            document.getElementById('jobAppNannyName').textContent = application?.nanny?.fullName || 'Nanny';
-            document.getElementById('jobAppNannyLocation').textContent = [application?.nanny?.district, application?.nanny?.city].filter(Boolean).join(', ') || 'Chua cap nhat khu vuc';
+                ? 'Đơn đang chờ duyệt. Bạn có thể chấp nhận hoặc từ chối.'
+                : 'Đơn này đã được xử lý. Bạn đang xem lại chi tiết.';
+            document.getElementById('jobAppNannyName').textContent = application?.nanny?.fullName || 'Bảo mẫu';
+            document.getElementById('jobAppNannyLocation').textContent = [application?.nanny?.district, application?.nanny?.city].filter(Boolean).join(', ') || 'Chưa cập nhật khu vực';
             document.getElementById('jobAppStatusWrap').innerHTML = renderApplicationBadge(application.status);
-            document.getElementById('jobAppAppliedAt').textContent = `Ngay ung tuyen: ${formatDateTime(application.appliedAt)}`;
-            document.getElementById('jobAppPhone').textContent = application?.nanny?.phoneNumber || 'Chua cap nhat';
-            document.getElementById('jobAppExperience').textContent = application?.nanny?.yearsOfExperience ? `${application.nanny.yearsOfExperience} nam` : 'Chua cap nhat';
+            document.getElementById('jobAppAppliedAt').textContent = `Ngày ứng tuyển: ${formatDateTime(application.appliedAt)}`;
+            document.getElementById('jobAppPhone').textContent = application?.nanny?.phoneNumber || 'Chưa cập nhật';
+            document.getElementById('jobAppExperience').textContent = application?.nanny?.yearsOfExperience ? `${application.nanny.yearsOfExperience} năm` : 'Chưa cập nhật';
             document.getElementById('jobAppSalary').textContent = formatSalaryRange(application?.nanny?.expectedSalaryMin, application?.nanny?.expectedSalaryMax);
-            document.getElementById('jobAppRejectReasonDisplay').textContent = application?.rejectionReason || 'Chua co.';
+            document.getElementById('jobAppRejectReasonDisplay').textContent = application?.rejectionReason || 'Chưa có.';
 
             const viewProfileBtn = document.getElementById('jobAppViewProfileBtn');
             if (viewProfileBtn) {
@@ -969,10 +969,10 @@
                 if (userId) {
                     if (Number(application.status) === 1) {
                         viewProfileBtn.setAttribute('href', `/Profile/ViewUser?userId=${encodeURIComponent(userId)}&jobPostingId=${encodeURIComponent(jobId)}&jobApplicationId=${encodeURIComponent(application.id)}&source=history`);
-                        viewProfileBtn.innerHTML = '<span class="material-icons-round text-base">handshake</span> Xem ho so &amp; Thue Nanny';
+                        viewProfileBtn.innerHTML = '<span class="material-icons-round text-base">handshake</span> Xem hồ sơ &amp; Thuê bảo mẫu';
                     } else {
                         viewProfileBtn.setAttribute('href', `/Profile/ViewUser?userId=${encodeURIComponent(userId)}&source=history`);
-                        viewProfileBtn.innerHTML = '<span class="material-icons-round text-base">visibility</span> Xem chi tiet ho so Nanny';
+                        viewProfileBtn.innerHTML = '<span class="material-icons-round text-base">visibility</span> Xem chi tiết hồ sơ bảo mẫu';
                     }
                     viewProfileBtn.classList.remove('hidden');
                 } else {
@@ -995,12 +995,12 @@
             const reasonInput = document.getElementById('jobAppRejectReason');
             const rejectionReason = reasonInput?.value.trim() || '';
             if (Number(action) === 2 && !rejectionReason) {
-                showHistoryToast('Vui long nhap ly do khi Reject request.', 'warning');
+                showHistoryToast('Vui lòng nhập lý do khi từ chối đơn.', 'warning');
                 reasonInput?.focus();
                 return;
             }
             if (Number(action) === 2 && rejectionReason.length < 8) {
-                showHistoryToast('Ly do tu choi can toi thieu 8 ky tu.', 'warning');
+                showHistoryToast('Lý do từ chối cần tối thiểu 8 ký tự.', 'warning');
                 reasonInput?.focus();
                 return;
             }
@@ -1024,18 +1024,18 @@
 
                 const json = await response.json();
                 if (!json?.success) {
-                    showHistoryToast(json?.message || 'Khong the xu ly request ung tuyen.', 'error');
+                    showHistoryToast(json?.message || 'Không thể xử lý đơn ứng tuyển.', 'error');
                     setReviewButtonState(true, false);
                     isSubmittingReview = false;
                     return;
                 }
 
-                showHistoryToast(json?.message || 'Cap nhat request ung tuyen thanh cong.', 'success');
+                showHistoryToast(json?.message || 'Cập nhật đơn ứng tuyển thành công.', 'success');
                 await loadJobApplications(jobId, true);
                 window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
                 closeJobApplicationDetailModal();
             } catch {
-                showHistoryToast('Khong the xu ly request ung tuyen.', 'error');
+                showHistoryToast('Không thể xử lý đơn ứng tuyển.', 'error');
                 setReviewButtonState(true, false);
                 isSubmittingReview = false;
             }
@@ -1065,15 +1065,15 @@
                     body.innerHTML = `
                         <div class="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-6 py-14 text-center">
                             <span class="material-icons-round text-[34px] text-orange-300">history</span>
-                            <h3 class="mt-3 text-lg font-bold text-slate-900">Ban chua co bai dang nao</h3>
-                            <p class="mt-2 text-sm text-slate-500">Khi ban tao bai dang dau tien, lich su se hien o day.</p>
+                            <h3 class="mt-3 text-lg font-bold text-slate-900">Bạn chưa có bài đăng nào</h3>
+                            <p class="mt-2 text-sm text-slate-500">Khi bạn tạo bài đăng đầu tiên, lịch sử sẽ hiện ở đây.</p>
                         </div>`;
                     return;
                 }
 
                 body.innerHTML = jobs.map((job) => {
-                    const moderationLabel = moderationLabels[job.moderationStatus] || 'Dang cap nhat';
-                    const postStatusLabel = postStatusLabels[job.status] || 'Dang cap nhat';
+                    const moderationLabel = moderationLabels[job.moderationStatus] || 'Đang cập nhật';
+                    const postStatusLabel = postStatusLabels[job.status] || 'Đang cập nhật';
                     const showPostStatusBadge = String(moderationLabel).trim().toLowerCase() !== String(postStatusLabel).trim().toLowerCase();
 
                     return `
@@ -1082,22 +1082,22 @@
                             <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                                 <div>
                                     <div class="flex flex-wrap items-center gap-2">
-                                        <h2 class="text-lg font-bold text-slate-900">${escapeHtml(job.title || 'Tin dang')}</h2>
+                                        <h2 class="text-lg font-bold text-slate-900">${escapeHtml(job.title || 'Tin đăng')}</h2>
                                         <span class="${moderationBadgeClasses[Number(job.moderationStatus)] || 'history-badge history-badge--pending'}">${escapeHtml(moderationLabel)}</span>
                                         ${showPostStatusBadge
                                             ? `<span class="${postStatusBadgeClasses[Number(job.status)] || 'history-badge history-badge--hidden'}">${escapeHtml(postStatusLabel)}</span>`
                                             : ''}
                                     </div>
-                                    <p class="mt-2 text-sm text-slate-500">${escapeHtml([job.location, job.district, job.city].filter(Boolean).join(', ') || 'Chua cap nhat dia diem')}</p>
+                                    <p class="mt-2 text-sm text-slate-500">${escapeHtml([job.location, job.district, job.city].filter(Boolean).join(', ') || 'Chưa cập nhật địa điểm')}</p>
                                 </div>
                                 <div class="flex items-center gap-3">
                                     <div class="history-salary-badge">
-                                        ${job.salaryNegotiable ? 'Thuong luong' : escapeHtml(formatSalaryRange(job.salaryMin, job.salaryMax))}
+                                        ${job.salaryNegotiable ? 'Thỏa thuận' : escapeHtml(formatSalaryRange(job.salaryMin, job.salaryMax))}
                                     </div>
                                     ${[0, 2].includes(Number(job.moderationStatus)) ? `
                                         <a href="/Search/Edit/${job.id}"
                                            class="inline-flex items-center justify-center min-h-[40px] px-4 rounded-xl border border-orange-200 bg-white text-orange-600 text-sm font-bold hover:bg-orange-50 transition-all">
-                                            Chinh sua
+                                            Chỉnh sửa
                                         </a>` : ''}
                                 </div>
                             </div>
@@ -1106,51 +1106,51 @@
                         <div class="px-6 py-5 grid grid-cols-1 xl:grid-cols-[1.15fr_.85fr] gap-5">
                             <div class="space-y-4">
                                 <div>
-                                    <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Mo ta</p>
+                                    <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Mô tả</p>
                                     <div class="history-description-box">
-                                        <p class="text-sm leading-6 text-slate-600">${escapeHtml(job.description || 'Khong co mo ta chi tiet.')}</p>
+                                        <p class="text-sm leading-6 text-slate-600">${escapeHtml(job.description || 'Không có mô tả chi tiết.')}</p>
                                     </div>
                                 </div>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div class="rounded-3xl border border-slate-100 bg-slate-50 px-4 py-4">
-                                        <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">So tre</p>
-                                        <p class="mt-2 text-base font-extrabold text-slate-900">${job.numberOfChildren ? `${job.numberOfChildren} be` : 'Chua cap nhat'}</p>
+                                        <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Số trẻ</p>
+                                        <p class="mt-2 text-base font-extrabold text-slate-900">${job.numberOfChildren ? `${job.numberOfChildren} bé` : 'Chưa cập nhật'}</p>
                                     </div>
                                     <div class="rounded-3xl border border-slate-100 bg-slate-50 px-4 py-4">
-                                        <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Do tuoi nanny</p>
+                                        <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Độ tuổi bảo mẫu</p>
                                         <p class="mt-2 text-base font-extrabold text-slate-900">${formatAgeRange(job.minNannyAge, job.maxNannyAge)}</p>
                                     </div>
                                 </div>
                                 <div>
-                                    <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Lich ngay muon tuyen</p>
+                                    <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Lịch ngày muốn tuyển</p>
                                     <div class="mt-3">${renderScheduleGrid(job.scheduleSlots || [])}</div>
                                 </div>
                             </div>
 
                             <div class="history-approval-panel ${approvalPanelToneClasses[Number(job.moderationStatus)] || 'history-approval-panel--pending'} rounded-3xl border border-orange-100 bg-orange-50/40 px-5 py-4">
-                                <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-orange-500">Chi tiet duyet bai</p>
+                                <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-orange-500">Chi tiết duyệt bài</p>
                                 <div class="mt-4 space-y-3 text-sm text-slate-600">
                                     <div class="flex items-start justify-between gap-4">
-                                        <span class="font-bold text-slate-500">Trang thai</span>
+                                        <span class="font-bold text-slate-500">Trạng thái</span>
                                         <span class="${moderationBadgeClasses[Number(job.moderationStatus)] || 'history-badge history-badge--pending'}">${escapeHtml(moderationLabel)}</span>
                                     </div>
                                     ${showPostStatusBadge ? `
                                         <div class="flex items-start justify-between gap-4">
-                                            <span class="font-bold text-slate-500">Hien thi</span>
+                                            <span class="font-bold text-slate-500">Hiển thị</span>
                                             <span class="${postStatusBadgeClasses[Number(job.status)] || 'history-badge history-badge--hidden'}">${escapeHtml(postStatusLabel)}</span>
                                         </div>` : ''}
                                     <div>
-                                        <p class="font-bold text-slate-500 mb-2">Ghi chu moderator</p>
+                                        <p class="font-bold text-slate-500 mb-2">Ghi chú kiểm duyệt viên</p>
                                         <div class="history-note-box text-sm leading-6 text-slate-600">
-                                            ${escapeHtml(job.moderationNote || 'Chua co ghi chu tu moderator.')}
+                                            ${escapeHtml(job.moderationNote || 'Chưa có ghi chú từ kiểm duyệt viên.')}
                                         </div>
                                     </div>
                                     <div>
-                                        <p class="font-bold text-slate-500 mb-2">Ky nang yeu cau</p>
+                                        <p class="font-bold text-slate-500 mb-2">Kỹ năng yêu cầu</p>
                                         <div class="flex flex-wrap gap-2">
                                             ${(job.skills && job.skills.length)
                                                 ? job.skills.map((skill) => `<span class="history-skill-chip">${escapeHtml(skill)}</span>`).join('')
-                                                : '<span class="text-sm text-slate-400">Chua co ky nang yeu cau.</span>'}
+                                                : '<span class="text-sm text-slate-400">Chưa có kỹ năng yêu cầu.</span>'}
                                         </div>
                                     </div>
                                 </div>
@@ -1161,13 +1161,13 @@
                             <div class="history-request-panel p-4">
                                 <div class="history-request-head">
                                     <div>
-                                        <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Request tu nanny</p>
-                                        <p id="historyRequestSummary-${escapeHtml(job.id)}" class="mt-2 text-sm text-slate-500">Dang tai so luong request ung tuyen...</p>
+                                        <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Đơn ứng tuyển từ bảo mẫu</p>
+                                        <p id="historyRequestSummary-${escapeHtml(job.id)}" class="mt-2 text-sm text-slate-500">Đang tải số lượng đơn ứng tuyển...</p>
                                         <div id="historyRequestMetrics-${escapeHtml(job.id)}" class="history-request-metrics">
-                                            <span class="history-request-metric">Tong: ...</span>
-                                            <span class="history-request-metric">Pending: ...</span>
-                                            <span class="history-request-metric">Chap nhan: ...</span>
-                                            <span class="history-request-metric">Tu choi: ...</span>
+                                            <span class="history-request-metric">Tổng: ...</span>
+                                            <span class="history-request-metric">Chờ duyệt: ...</span>
+                                            <span class="history-request-metric">Chấp nhận: ...</span>
+                                            <span class="history-request-metric">Từ chối: ...</span>
                                         </div>
                                     </div>
                                     <button id="historyRequestToggle-${escapeHtml(job.id)}"
@@ -1175,7 +1175,7 @@
                                             class="history-request-toggle"
                                             onclick="window.__toggleJobApplications?.('${escapeHtml(job.id)}')">
                                         <span class="material-icons-round text-base">visibility</span>
-                                        Xem request
+                                        Xem đơn
                                     </button>
                                 </div>
                                 <div id="historyRequestList-${escapeHtml(job.id)}" class="history-request-list hidden mt-4"></div>
@@ -1200,7 +1200,7 @@
             } catch {
                 body.innerHTML = `
                     <div class="rounded-3xl border border-red-100 bg-red-50 px-6 py-10 text-center text-red-600">
-                        Khong tai duoc lich su bai dang.
+                        Không tải được lịch sử bài đăng.
                     </div>`;
             }
         }
@@ -1216,20 +1216,22 @@
 
             btn.disabled = true;
             const oldHtml = btn.innerHTML;
-            btn.textContent = 'Dang xu ly...';
+            btn.innerHTML = '<span class="material-icons-round animate-spin" style="font-size:14px">sync</span> Đang xử lý...';
             try {
                 const res = await fetch(`/Hiring/${jobPostingId}/Applicants/${jobAppId}/Approve`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 });
                 const json = await res.json();
-                if (!json?.success) throw new Error(json?.message || 'Co loi xay ra.');
+                if (!json?.success) throw new Error(json?.message || 'Đã xảy ra lỗi. Vui lòng thử lại.');
 
-                showHistoryToast('Da dong y ung vien. Vao ho so de thue chinh thuc.', 'success');
+                showHistoryToast('Đã chấp nhận đơn ứng tuyển. Mở hồ sơ bảo mẫu để thuê chính thức.', 'success');
                 applicationCache.delete(jobPostingId);
                 await loadJobApplications(jobPostingId, true);
             } catch (err) {
-                showHistoryToast(err?.message || 'Khong the dong y ung vien.', 'error');
+                const msg = String(err?.message || '').trim();
+                const hasVi = /[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]/i.test(msg);
+                showHistoryToast(hasVi ? msg : 'Không thể chấp nhận đơn ứng tuyển.', 'error');
                 btn.disabled = false;
                 btn.innerHTML = oldHtml;
             }
