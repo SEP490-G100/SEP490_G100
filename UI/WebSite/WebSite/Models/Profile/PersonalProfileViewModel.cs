@@ -1,4 +1,4 @@
-namespace WebSite.Models.Profile
+﻿namespace WebSite.Models.Profile
 {
     public class PersonalProfileViewModel
     {
@@ -73,7 +73,7 @@ namespace WebSite.Models.Profile
             if (dob > today.AddYears(-age))
                 age--;
 
-            return age > 0 ? age : null;
+            return age >= 0 ? age : null;
         }
     }
 
@@ -85,7 +85,7 @@ namespace WebSite.Models.Profile
         public string ReviewerName { get; set; } = "";
         public string? ReviewerAvatarUrl { get; set; }
         public DateTime CreatedAt { get; set; }
-        public string Stars => new string('★', Rating) + new string('☆', 5 - Rating);
+        public string Stars => new string('\u2605', Rating) + new string('\u2606', 5 - Rating);
     }
 
     public class NannySkillItemViewModel
@@ -111,3 +111,4 @@ namespace WebSite.Models.Profile
         public int VerificationStatus { get; set; }
     }
 }
+

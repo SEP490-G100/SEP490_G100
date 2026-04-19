@@ -1,4 +1,4 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -182,20 +182,23 @@ public class NannyBasicInfoController : Controller
                 var age = today.Year - dob.Year;
                 if (dob > today.AddYears(-age)) age--;
                 if (age < 18)
-                    ModelState.AddModelError(nameof(model.DateOfBirth), "Nanny phải đủ 18 tuổi trở lên.");
+                    ModelState.AddModelError(nameof(model.DateOfBirth), "Nanny pháº£i Ä‘á»§ 18 tuá»•i trá»Ÿ lÃªn.");
             }
 
             if (model.Gender == null)
-                ModelState.AddModelError(nameof(model.Gender), "Vui lòng chọn giới tính.");
+                ModelState.AddModelError(nameof(model.Gender), "Vui lÃ²ng chá»n giá»›i tÃ­nh.");
+
+            if (!string.IsNullOrWhiteSpace(model.PhoneNumber) && !IsValidPhoneNumber(model.PhoneNumber))
+                ModelState.AddModelError(nameof(model.PhoneNumber), "S? điện thoại không hop le (9-15 chu so, cho phep dau +).");
 
             if (!string.IsNullOrWhiteSpace(model.PhoneNumber) && !IsValidPhoneNumber(model.PhoneNumber))
                 ModelState.AddModelError(nameof(model.PhoneNumber), "So dien thoai khong hop le (9-15 chu so, cho phep dau +).");
 
             if (string.IsNullOrWhiteSpace(model.Address))
-                ModelState.AddModelError(nameof(model.Address), "Vui lòng nhập địa chỉ chi tiết.");
+                ModelState.AddModelError(nameof(model.Address), "Vui lÃ²ng nháº­p Ä‘á»‹a chá»‰ chi tiáº¿t.");
 
             if (string.IsNullOrWhiteSpace(model.City) || string.IsNullOrWhiteSpace(model.District))
-                ModelState.AddModelError(string.Empty, "Vui lòng chọn đầy đủ Tỉnh/Thành và Phường/Xã.");
+                ModelState.AddModelError(string.Empty, "Vui lÃ²ng chá»n Ä‘áº§y Ä‘á»§ Tá»‰nh/ThÃ nh vÃ  PhÆ°á»ng/XÃ£.");
 
             if (!ModelState.IsValid)
                 return View(model);
@@ -213,3 +216,4 @@ public class NannyBasicInfoController : Controller
         return View(model);
     }
 }
+

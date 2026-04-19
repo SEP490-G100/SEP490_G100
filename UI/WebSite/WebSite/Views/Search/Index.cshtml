@@ -1,4 +1,4 @@
-@{
+﻿@{
     ViewData["Title"] = "Tìm bảo mẫu - NannyMatch";
     Layout = "~/Views/Shared/_Layout.cshtml";
     var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
@@ -17,12 +17,12 @@
 
 <div class="sticky top-[72px] z-40 bg-white/95 backdrop-blur-lg border-b border-gray-100" style="box-shadow:0 2px 8px rgba(0,0,0,.04);">
     <div class="px-6 py-3 flex items-center gap-3 flex-wrap">
-        @* ── Tab bar (hiện với Nanny) — ngoài cùng bên trái ── *@
+        @* â”€â”€ Tab bar (hiá»‡n vá»›i Nanny) â€” ngoÃ i cÃ¹ng bÃªn trÃ¡i â”€â”€ *@
         @if (User.IsInRole("Nanny"))
         {
             <div class="rec-tab-bar">
                 <button id="tabAll" class="rec-tab active" onclick="switchSearchTab('all')">
-                    <span class="material-icons-round">list</span>Tất cả
+                    <span class="material-icons-round">list</span>Táº¥t cáº£
                 </button>
                 <button id="tabRec" class="rec-tab" onclick="switchSearchTab('rec')">
                     <span class="material-icons-round">auto_awesome</span>Gợi ý
@@ -31,32 +31,32 @@
         }
         <div class="relative flex-1 min-w-[240px]">
             <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[18px]">search</span>
-            <input id="searchCity" type="text" placeholder="Tìm theo thành phố..."
+            <input id="searchCity" type="text" placeholder="TÃ¬m theo thÃ nh phá»‘..."
                    class="w-full pl-9 pr-4 py-2 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold text-gray-800 focus:ring-2 focus:ring-orange-300 focus:border-orange-400 outline-none transition-all placeholder-gray-400"
                    oninput="debounceSearch()" />
         </div>
 
-        <span id="resultCount" class="text-sm text-gray-400 font-semibold whitespace-nowrap">Đang tải...</span>
+        <span id="resultCount" class="text-sm text-gray-400 font-semibold whitespace-nowrap">Äang táº£i...</span>
         @if (isParent)
         {
             <button onclick="openHistory()"
                     class="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-orange-200 bg-white hover:bg-orange-50 text-orange-600 text-sm font-bold transition-all">
-                <span class="material-icons-round text-base">history</span>Lịch sử bài đăng
+                <span class="material-icons-round text-base">history</span>Lá»‹ch sá»­ bÃ i Ä‘Äƒng
             </button>
             <button onclick="openCreate()"
                     class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold shadow-md hover:shadow-lg transition-all">
-                <span class="material-icons-round text-base">add_circle</span>Đăng tin
+                <span class="material-icons-round text-base">add_circle</span>ÄÄƒng tin
             </button>
         }
         @if (isNanny)
         {
             <a href="/Search/Applications"
                class="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-bold transition-all">
-                <span class="material-icons-round text-base">work_history</span>Lịch sử ứng tuyển
+                <span class="material-icons-round text-base">work_history</span>Lá»‹ch sá»­ á»©ng tuyá»ƒn
             </a>
             <a href="/Search/SavedJobs"
                class="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-orange-200 bg-white hover:bg-orange-50 text-orange-600 text-sm font-bold transition-all">
-                <span class="material-icons-round text-base">bookmark</span>Bài đăng đã lưu
+                <span class="material-icons-round text-base">bookmark</span>BÃ i Ä‘Äƒng Ä‘Ã£ lÆ°u
             </a>
         }
         <button onclick="openPremium()"
@@ -70,7 +70,7 @@
 <div class="search-body">
     <div class="list-panel">
 
-        @* ── Rec panel (Tab 2) — chỉ render với Nanny ── *@
+        @* â”€â”€ Rec panel (Tab 2) â€” chá»‰ render vá»›i Nanny â”€â”€ *@
         @if (User.IsInRole("Nanny"))
         {
             <div id="recJobPanel" class="rec-panel">
@@ -94,9 +94,9 @@
     <div class="nmodal-box modal-shell bg-white rounded-2xl w-full max-w-5xl shadow-2xl relative">
         <div class="modal-head">
             <div>
-                <p class="modal-kicker">Bài đăng mới</p>
-                <h2 class="text-2xl font-bold text-gray-900">Đăng tin tìm bảo mẫu</h2>
-                <p class="modal-subtitle">Tạo bài đăng rõ ràng để moderator duyệt nhanh hơn và nanny dễ ứng tuyển hơn.</p>
+                <p class="modal-kicker">BÃ i Ä‘Äƒng má»›i</p>
+                <h2 class="text-2xl font-bold text-gray-900">ÄÄƒng tin tÃ¬m báº£o máº«u</h2>
+                <p class="modal-subtitle">Táº¡o bÃ i Ä‘Äƒng rÃµ rÃ ng Ä‘á»ƒ moderator duyá»‡t nhanh hÆ¡n vÃ  nanny dá»… á»©ng tuyá»ƒn hÆ¡n.</p>
             </div>
             <button onclick="closeCreate()" class="modal-close material-icons-round">close</button>
         </div>
@@ -106,12 +106,12 @@
                     <div class="section-heading">
                         <div>
                             <p class="section-title">Thông tin cơ bản</p>
-                            <p class="section-caption">Nội dung bài đăng, mức lương, địa điểm và yêu cầu chính.</p>
+                            <p class="section-caption">Ná»™i dung bÃ i Ä‘Äƒng, má»©c lÆ°Æ¡ng, Ä‘á»‹a Ä‘iá»ƒm vÃ  yÃªu cáº§u chÃ­nh.</p>
                         </div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="md:col-span-2">
-                            <label class="form-label">Tiêu đề bài đăng</label>
+                            <label class="form-label">TiÃªu Ä‘á» bÃ i Ä‘Äƒng</label>
                             <input type="text" id="cf-title" class="form-input" required style="border-radius: 10px;" />
                         </div>
                         <div class="md:col-span-2">
@@ -119,16 +119,16 @@
                             <textarea id="cf-desc" class="form-input resize-none" rows="3" required></textarea>
                         </div>
                         <div>
-                            <label class="form-label">Loại công việc</label>
-                            <input type="text" id="cf-typeText" class="form-input form-select-picker-input" autocomplete="off" placeholder="Chọn loại công việc" />
+                            <label class="form-label">Loáº¡i cÃ´ng viá»‡c</label>
+                            <input type="text" id="cf-typeText" class="form-input form-select-picker-input" autocomplete="off" placeholder="Chá»n loáº¡i cÃ´ng viá»‡c" />
                             <select id="cf-type" class="form-input form-select-native-hidden">
                                 <option value="1">Full-time</option>
                                 <option value="2">Part-time</option>
-                                <option value="3">Qua đêm</option>
+                                <option value="3">Qua Ä‘Ãªm</option>
                             </select>
                         </div>
                         <div>
-                            <label class="form-label">Số trẻ cần chăm</label>
+                            <label class="form-label">Sá»‘ tráº» cáº§n chÄƒm</label>
                             <select id="cf-children" class="form-input">
                                 @for (var childCount = 1; childCount <= 10; childCount++)
                                 {
@@ -137,49 +137,49 @@
                             </select>
                         </div>
                         <div>
-                            <label class="form-label" >Lương tối thiểu</label>
+                            <label class="form-label" >LÆ°Æ¡ng tá»‘i thiá»ƒu</label>
                             <input type="text" id="cf-salMin" inputmode="numeric" style="border-radius: 10px;" class="form-input" placeholder="VD: 1.000.000" />
                         </div>
                         <div>
-                            <label class="form-label" >Lương tối đa</label>
+                            <label class="form-label" >LÆ°Æ¡ng tá»‘i Ä‘a</label>
                             <input type="text" id="cf-salMax" inputmode="numeric" style="border-radius: 10px;" class="form-input" placeholder="VD: 3.000.000" />
                         </div>
                         <div class="md:col-span-2 text-xs font-semibold text-slate-500">
-                            Để trống nếu chưa xác định. Lương hợp lệ từ 8.000.000 đến 50.000.000 VND.
+                            Äá»ƒ trá»‘ng náº¿u chÆ°a xÃ¡c Ä‘á»‹nh. LÆ°Æ¡ng há»£p lá»‡ tá»« 8.000.000 Ä‘áº¿n 50.000.000 VND.
                         </div>
                         <div class="md:col-span-2">
                             <label class="form-label">Tùy chọn lương</label>
                             <label class="negotiable-field negotiable-field-large">
                                 <input type="checkbox" id="cf-negotiable" class="rounded accent-orange-500" />
                                 <span class="negotiable-title">Lương thương lượng</span>
-                                <span class="negotiable-caption">Bật nếu bạn muốn trao đổi mức lương trực tiếp với nanny.</span>
+                                <span class="negotiable-caption">Báº­t náº¿u báº¡n muá»‘n trao Ä‘á»•i má»©c lÆ°Æ¡ng trá»±c tiáº¿p vá»›i nanny.</span>
                             </label>
                         </div>
                         <div class="md:col-span-2">
-                            <label class="form-label" >Địa chỉ chi tiết</label>
+                            <label class="form-label" >Äá»‹a chá»‰ chi tiáº¿t</label>
                             <input type="text" id="cf-location" style="border-radius: 10px;" class="form-input" />
                         </div>
                         <div>
-                            <label class="form-label">Thành phố</label>
-                            <input type="text" id="cf-city" style="border-radius: 10px;" class="form-input form-select-picker-input" autocomplete="off" placeholder="Nhập hoặc chọn thành phố" required />
+                            <label class="form-label">ThÃ nh phá»‘</label>
+                            <input type="text" id="cf-city" style="border-radius: 10px;" class="form-input form-select-picker-input" autocomplete="off" placeholder="Nháº­p hoáº·c chá»n thÃ nh phá»‘" required />
                         </div>
                         <div>
                             <label class="form-label">Phường/Xã</label>
                             <input type="text" id="cf-district" style="border-radius: 10px;" class="form-input form-select-picker-input" autocomplete="off" placeholder="Nhập hoặc chọn phường/xã" />
                         </div>
                         <div>
-                            <label class="form-label" >Độ tuổi bảo mẫu từ</label>
+                            <label class="form-label" >Äá»™ tuá»•i báº£o máº«u tá»«</label>
                             <input type="number" id="cf-minAge" class="form-input" style="border-radius: 10px;" min="18" max="80" />
                         </div>
                         <div>
-                            <label class="form-label" >Độ tuổi bảo mẫu đến</label>
+                            <label class="form-label" >Äá»™ tuá»•i báº£o máº«u Ä‘áº¿n</label>
                             <input type="number" id="cf-maxAge" class="form-input" style="border-radius: 10px;" min="18" max="80" />
                         </div>
                         <div>
-                            <label class="form-label">Trạng thái bài đăng</label>
+                            <label class="form-label">Tráº¡ng thÃ¡i bÃ i Ä‘Äƒng</label>
                             <div class="status-toggle" id="cf-statusToggle">
                                 <button type="button" class="status-option active" onclick="setCreateStatus(1)">Công khai</button>
-                                <button type="button" class="status-option" onclick="setCreateStatus(2)">Ẩn bài đăng</button>
+                                <button type="button" class="status-option" onclick="setCreateStatus(2)">áº¨n bÃ i Ä‘Äƒng</button>
                             </div>
                             <input type="hidden" id="cf-status" value="1" />
                         </div>
@@ -189,8 +189,8 @@
                 <div class="section-card schedule-card">
                     <div class="schedule-header">
                         <div>
-                            <p class="section-title">Lịch ngày muốn tuyển</p>
-                            <p class="section-caption">Chọn các khung giờ bạn muốn nanny có thể làm việc.</p>
+                            <p class="section-title">Lá»‹ch ngÃ y muá»‘n tuyá»ƒn</p>
+                            <p class="section-caption">Chá»n cÃ¡c khung giá» báº¡n muá»‘n nanny cÃ³ thá»ƒ lÃ m viá»‡c.</p>
                         </div>
                     </div>
                     <div id="cf-schedule" class="schedule-grid"></div>
@@ -200,7 +200,7 @@
                     <div class="section-heading">
                         <div>
                             <p class="section-title">Thông tin từ profile Parent</p>
-                            <p class="section-caption">Mặc định sẽ lấy thông tin cho 1 bé. Khi tăng số trẻ, hệ thống sẽ hiển thị thêm bảng thông tin các bé tiếp theo.</p>
+                            <p class="section-caption">Chá»n bÃ© thá»© 1 á»Ÿ Ä‘Ã¢y. Khi tÄƒng sá»‘ tráº», báº¡n cÃ³ thá»ƒ chá»n tá»«ng bÃ© vÃ  xem chi tiáº¿t táº¥t cáº£ cÃ¡c bÃ© bÃªn dÆ°á»›i.</p>
                         </div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -210,15 +210,15 @@
                             <select id="cf-childProfileId" class="form-input form-select-native-hidden"></select>
                         </div>
                         <div>
-                            <label class="form-label">Đặc điểm</label>
+                            <label class="form-label">Äáº·c Ä‘iá»ƒm</label>
                             <textarea id="cf-characteristic" class="form-input resize-none bg-white/80" rows="2" readonly></textarea>
                         </div>
                         <div>
-                            <label class="form-label">Nhóm tuổi của bé</label>
+                            <label class="form-label">NhÃ³m tuá»•i cá»§a bÃ©</label>
                             <input type="text" id="cf-birthType" class="form-input bg-white/80" readonly />
                         </div>
                         <div class="md:col-span-2">
-                            <label class="form-label">Nhu cầu đặc biệt</label>
+                            <label class="form-label">Nhu cáº§u Ä‘áº·c biá»‡t</label>
                             <textarea id="cf-specialNeeds" class="form-input resize-none bg-white/80" rows="2" readonly></textarea>
                         </div>
                     </div>
@@ -228,14 +228,14 @@
                 <div class="section-card section-card-plain">
                     <div class="section-heading">
                         <div>
-                            <p class="section-title">Kỹ năng yêu cầu</p>
-                            <p class="section-caption">Chọn từ danh sách kỹ năng có sẵn trong hệ thống để bài đăng đồng bộ hơn.</p>
+                            <p class="section-title">Ká»¹ nÄƒng yÃªu cáº§u</p>
+                            <p class="section-caption">Chá»n tá»« danh sÃ¡ch ká»¹ nÄƒng cÃ³ sáºµn trong há»‡ thá»‘ng Ä‘á»ƒ bÃ i Ä‘Äƒng Ä‘á»“ng bá»™ hÆ¡n.</p>
                         </div>
                     </div>
                     <div class="flex gap-2 items-center">
-                        <input type="text" id="cf-skillSelectText" class="form-input form-select-picker-input" autocomplete="off" placeholder="Chọn kỹ năng cần yêu cầu" />
+                        <input type="text" id="cf-skillSelectText" class="form-input form-select-picker-input" autocomplete="off" placeholder="Chá»n ká»¹ nÄƒng cáº§n yÃªu cáº§u" />
                         <select id="cf-skillSelect" class="form-input form-select-native-hidden">
-                            <option value="">Chọn kỹ năng cần yêu cầu</option>
+                            <option value="">Chá»n ká»¹ nÄƒng cáº§n yÃªu cáº§u</option>
                             @foreach (var skill in skillOptions)
                             {
                                 <option value="@skill.SkillName">@skill.SkillName@(string.IsNullOrWhiteSpace(skill.Category) ? "" : $" - {skill.Category}")</option>
@@ -251,7 +251,7 @@
             </form>
             <div class="modal-footer">
                 <button type="button" onclick="closeCreate()" class="modal-btn modal-btn-secondary">Hủy</button>
-                <button type="button" onclick="submitCreate()" class="modal-btn modal-btn-primary">Đăng bài</button>
+                <button type="button" onclick="submitCreate()" class="modal-btn modal-btn-primary">ÄÄƒng bÃ i</button>
             </div>
         </div>
     </div>
@@ -261,9 +261,9 @@
     <div class="nmodal-box modal-shell bg-white rounded-2xl w-full max-w-5xl shadow-2xl relative">
         <div class="modal-head">
             <div>
-                <p class="modal-kicker">Cập nhật bài đăng</p>
-                <h2 class="text-2xl font-bold text-gray-900">Chỉnh sửa bài đăng</h2>
-                <p class="modal-subtitle">Sau khi cập nhật, bài đăng sẽ quay về trạng thái chờ moderator duyệt lại.</p>
+                <p class="modal-kicker">Cáº­p nháº­t bÃ i Ä‘Äƒng</p>
+                <h2 class="text-2xl font-bold text-gray-900">Chá»‰nh sá»­a bÃ i Ä‘Äƒng</h2>
+                <p class="modal-subtitle">Sau khi cáº­p nháº­t, bÃ i Ä‘Äƒng sáº½ quay vá» tráº¡ng thÃ¡i chá» moderator duyá»‡t láº¡i.</p>
             </div>
             <button onclick="closeEdit()" class="modal-close material-icons-round">close</button>
         </div>
@@ -274,12 +274,12 @@
                     <div class="section-heading">
                         <div>
                             <p class="section-title">Thông tin cơ bản</p>
-                            <p class="section-caption">Chỉnh sửa nội dung, lương, địa điểm và độ tuổi nanny mong muốn.</p>
+                            <p class="section-caption">Chá»‰nh sá»­a ná»™i dung, lÆ°Æ¡ng, Ä‘á»‹a Ä‘iá»ƒm vÃ  Ä‘á»™ tuá»•i nanny mong muá»‘n.</p>
                         </div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="md:col-span-2">
-                            <label class="form-label">Tiêu đề bài đăng</label>
+                            <label class="form-label">TiÃªu Ä‘á» bÃ i Ä‘Äƒng</label>
                             <input type="text" id="ef-title" class="form-input" required />
                         </div>
                         <div class="md:col-span-2">
@@ -287,23 +287,23 @@
                             <textarea id="ef-desc" class="form-input resize-none" rows="3" required></textarea>
                         </div>
                         <div>
-                            <label class="form-label">Loại công việc</label>
+                            <label class="form-label">Loáº¡i cÃ´ng viá»‡c</label>
                             <select id="ef-type" class="form-input">
                                 <option value="1">Full-time</option>
                                 <option value="2">Part-time</option>
-                                <option value="3">Qua đêm</option>
+                                <option value="3">Qua Ä‘Ãªm</option>
                             </select>
                         </div>
                         <div>
-                            <label class="form-label">Số trẻ cần chăm</label>
+                            <label class="form-label">Sá»‘ tráº» cáº§n chÄƒm</label>
                             <input type="number" id="ef-children" class="form-input bg-gray-50" min="1" max="10" readonly />
                         </div>
                         <div>
-                            <label class="form-label">Lương tối thiểu</label>
+                            <label class="form-label">LÆ°Æ¡ng tá»‘i thiá»ƒu</label>
                             <input type="text" id="ef-salMin" inputmode="numeric" class="form-input" placeholder="VD: 1.000.000" />
                         </div>
                         <div>
-                            <label class="form-label">Lương tối đa</label>
+                            <label class="form-label">LÆ°Æ¡ng tá»‘i Ä‘a</label>
                             <input type="text" id="ef-salMax" inputmode="numeric" class="form-input" placeholder="VD: 3.000.000" />
                         </div>
                         <div class="md:col-span-2">
@@ -311,34 +311,34 @@
                             <label class="negotiable-field negotiable-field-large">
                                 <input type="checkbox" id="ef-negotiable" class="rounded accent-orange-500" />
                                 <span class="negotiable-title">Lương thương lượng</span>
-                                <span class="negotiable-caption">Bật nếu bạn muốn trao đổi mức lương trực tiếp với nanny.</span>
+                                <span class="negotiable-caption">Báº­t náº¿u báº¡n muá»‘n trao Ä‘á»•i má»©c lÆ°Æ¡ng trá»±c tiáº¿p vá»›i nanny.</span>
                             </label>
                         </div>
                         <div class="md:col-span-2">
-                            <label class="form-label">Địa chỉ chi tiết</label>
+                            <label class="form-label">Äá»‹a chá»‰ chi tiáº¿t</label>
                             <input type="text" id="ef-location" class="form-input" />
                         </div>
                         <div>
-                            <label class="form-label">Thành phố</label>
-                            <input type="text" id="ef-city" class="form-input form-select-picker-input" autocomplete="off" placeholder="Nhập hoặc chọn thành phố" />
+                            <label class="form-label">ThÃ nh phá»‘</label>
+                            <input type="text" id="ef-city" class="form-input form-select-picker-input" autocomplete="off" placeholder="Nháº­p hoáº·c chá»n thÃ nh phá»‘" />
                         </div>
                         <div>
                             <label class="form-label">Phường/Xã</label>
                             <input type="text" id="ef-district" class="form-input form-select-picker-input" autocomplete="off" placeholder="Nhập hoặc chọn phường/xã" />
                         </div>
                         <div>
-                            <label class="form-label">Độ tuổi bảo mẫu từ</label>
+                            <label class="form-label">Äá»™ tuá»•i báº£o máº«u tá»«</label>
                             <input type="number" id="ef-minAge" class="form-input" min="18" max="80" />
                         </div>
                         <div>
-                            <label class="form-label">Độ tuổi bảo mẫu đến</label>
+                            <label class="form-label">Äá»™ tuá»•i báº£o máº«u Ä‘áº¿n</label>
                             <input type="number" id="ef-maxAge" class="form-input" min="18" max="80" />
                         </div>
                         <div>
-                            <label class="form-label">Trạng thái bài đăng</label>
+                            <label class="form-label">Tráº¡ng thÃ¡i bÃ i Ä‘Äƒng</label>
                             <div class="status-toggle" id="ef-statusToggle">
                                 <button type="button" class="status-option active" onclick="setEditStatus(1)">Công khai</button>
-                                <button type="button" class="status-option" onclick="setEditStatus(2)">Ẩn bài đăng</button>
+                                <button type="button" class="status-option" onclick="setEditStatus(2)">áº¨n bÃ i Ä‘Äƒng</button>
                             </div>
                             <input type="hidden" id="ef-status" value="1" />
                         </div>
@@ -348,8 +348,8 @@
                 <div class="section-card schedule-card">
                     <div class="schedule-header">
                         <div>
-                            <p class="section-title">Lịch ngày muốn tuyển</p>
-                            <p class="section-caption">Cập nhật các buổi cần nanny hỗ trợ trong tuần.</p>
+                            <p class="section-title">Lá»‹ch ngÃ y muá»‘n tuyá»ƒn</p>
+                            <p class="section-caption">Cáº­p nháº­t cÃ¡c buá»•i cáº§n nanny há»— trá»£ trong tuáº§n.</p>
                         </div>
                     </div>
                     <div id="ef-schedule" class="schedule-grid"></div>
@@ -359,7 +359,7 @@
                     <div class="section-heading">
                         <div>
                             <p class="section-title">Thông tin từ profile Parent</p>
-                            <p class="section-caption">Chọn lại bé nếu cần, hệ thống sẽ cập nhật thông tin Child Profile tương ứng.</p>
+                            <p class="section-caption">Chá»n láº¡i bÃ© náº¿u cáº§n, há»‡ thá»‘ng sáº½ cáº­p nháº­t thÃ´ng tin Hồ sơ trẻ tÆ°Æ¡ng á»©ng.</p>
                         </div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -368,15 +368,15 @@
                             <select id="ef-childProfileId" class="form-input" onchange="handleEditChildChange()"></select>
                         </div>
                         <div>
-                            <label class="form-label">Đặc điểm</label>
+                            <label class="form-label">Äáº·c Ä‘iá»ƒm</label>
                             <textarea id="ef-characteristic" class="form-input resize-none bg-white/80" rows="2" readonly></textarea>
                         </div>
                         <div>
-                            <label class="form-label">Nhóm tuổi của bé</label>
+                            <label class="form-label">NhÃ³m tuá»•i cá»§a bÃ©</label>
                             <input type="text" id="ef-birthType" class="form-input bg-white/80" readonly />
                         </div>
                         <div class="md:col-span-2">
-                            <label class="form-label">Nhu cầu đặc biệt</label>
+                            <label class="form-label">Nhu cáº§u Ä‘áº·c biá»‡t</label>
                             <textarea id="ef-specialNeeds" class="form-input resize-none bg-white/80" rows="2" readonly></textarea>
                         </div>
                     </div>
@@ -385,8 +385,8 @@
                 <div class="section-card section-card-plain">
                     <div class="section-heading">
                         <div>
-                            <p class="section-title">Kỹ năng yêu cầu</p>
-                            <p class="section-caption">Tinh chỉnh bộ kỹ năng yêu cầu bằng danh sách skill chuẩn của hệ thống.</p>
+                            <p class="section-title">Ká»¹ nÄƒng yÃªu cáº§u</p>
+                            <p class="section-caption">Tinh chá»‰nh bá»™ ká»¹ nÄƒng yÃªu cáº§u báº±ng danh sÃ¡ch skill chuáº©n cá»§a há»‡ thá»‘ng.</p>
                         </div>
                     </div>
                     <div class="flex gap-2 items-center">
@@ -395,7 +395,7 @@
                             {
                                 <option value="@skill.SkillName">@skill.SkillName@(string.IsNullOrWhiteSpace(skill.Category) ? "" : $" - {skill.Category}")</option>
                             }
-                            <option value="">Chọn kỹ năng cần yêu cầu</option>
+                            <option value="">Chá»n ká»¹ nÄƒng cáº§n yÃªu cáº§u</option>
                         </select>
                         <button type="button" onclick="addEditSkill()" class="icon-pill-btn">
                             <span class="material-icons-round text-base">add</span>
@@ -410,7 +410,7 @@
                     <span class="material-icons-round text-base">delete</span>Xóa
                 </button>
                 <button type="button" onclick="closeEdit()" class="modal-btn modal-btn-secondary">Hủy</button>
-                <button type="button" onclick="submitEdit()" class="modal-btn modal-btn-primary">Lưu thay đổi</button>
+                <button type="button" onclick="submitEdit()" class="modal-btn modal-btn-primary">LÆ°u thay Ä‘á»•i</button>
             </div>
         </div>
     </div>
@@ -427,7 +427,7 @@
                     <div class="search-detail-hero__content">
                         <div class="search-detail-badge">
                             <span class="material-icons-round text-[16px]">article</span>
-                            Chi tiết tin đăng
+                            Chi tiáº¿t tin Ä‘Äƒng
                         </div>
                         <h2 id="pv-title" class="search-detail-title">Ten bai viet</h2>
                         <p id="pv-parentName" class="search-detail-subtitle">Dang boi phu huynh</p>
@@ -435,51 +435,51 @@
                         <div class="search-detail-chips">
                             <span id="pv-type" class="search-detail-chip">Loai viec</span>
                             <span id="pv-sal" class="search-detail-chip search-detail-chip--strong">Luong</span>
-                            <span id="pv-status" class="search-detail-chip search-detail-chip--muted">Trang thai</span>
+                            <span id="pv-status" class="search-detail-chip search-detail-chip--muted">Trạng thái</span>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="search-detail-grid">
                 <section class="search-detail-card">
-                    <h3>Mô tả công việc</h3>
+                    <h3>MÃ´ táº£ cÃ´ng viá»‡c</h3>
                     <p id="pv-desc" class="search-detail-text"></p>
                 </section>
                 <section class="search-detail-card">
                     <h3>Thông tin chính</h3>
                     <div class="search-detail-meta-list">
-                        <div><span>Địa điểm</span><strong id="pv-loc"></strong></div>
-                        <div><span>Số trẻ cần chăm</span><strong id="pv-kids"></strong></div>
-                        <div><span>Tọa độ bản đồ</span><strong id="pv-coords"></strong></div>
+                        <div><span>Äá»‹a Ä‘iá»ƒm</span><strong id="pv-loc"></strong></div>
+                        <div><span>Sá»‘ tráº» cáº§n chÄƒm</span><strong id="pv-kids"></strong></div>
+                        <div><span>Tá»a Ä‘á»™ báº£n Ä‘á»“</span><strong id="pv-coords"></strong></div>
                         <div><span>Khoảng cách</span><strong id="pv-distance"></strong></div>
                     </div>
                 </section>
                 <section class="search-detail-card search-detail-card--wide">
                     <h3>Thông tin từ profile Phụ huynh</h3>
                     <div class="search-detail-info-grid">
-                        <div class="search-detail-info-box"><p>Đặc điểm</p><strong id="pv-characteristic"></strong></div>
-                        <div class="search-detail-info-box"><p>Nhóm tuổi của bé</p><strong id="pv-birthType"></strong></div>
-                        <div class="search-detail-info-box"><p>Nhu cầu đặc biệt</p><strong id="pv-specialNeeds"></strong></div>
-                        <div class="search-detail-info-box"><p>Độ tuổi bảo mẫu</p><strong id="pv-ageRange"></strong></div>
+                        <div class="search-detail-info-box"><p>Äáº·c Ä‘iá»ƒm</p><strong id="pv-characteristic"></strong></div>
+                        <div class="search-detail-info-box"><p>NhÃ³m tuá»•i cá»§a bÃ©</p><strong id="pv-birthType"></strong></div>
+                        <div class="search-detail-info-box"><p>Nhu cáº§u Ä‘áº·c biá»‡t</p><strong id="pv-specialNeeds"></strong></div>
+                        <div class="search-detail-info-box"><p>Äá»™ tuá»•i báº£o máº«u</p><strong id="pv-ageRange"></strong></div>
                     </div>
                     <div class="search-detail-child-block">
                         <div class="search-detail-child-block__head">
                             <p class="search-detail-child-block__title">Danh sách từng bé</p>
-                            <span class="search-detail-child-block__hint">Dữ liệu từ Child Profile</span>
+                            <span class="search-detail-child-block__hint">Dá»¯ liá»‡u tá»« Hồ sơ trẻ</span>
                         </div>
                         <div id="pv-childProfiles" class="child-profile-stack child-profile-stack--preview hidden"></div>
                     </div>
                 </section>
                 <section class="search-detail-card search-detail-card--wide">
-                    <h3>Kỹ năng yêu cầu</h3>
+                    <h3>Ká»¹ nÄƒng yÃªu cáº§u</h3>
                     <div id="pv-skills" class="search-detail-skill-list"></div>
                 </section>
                 <section class="search-detail-card search-detail-card--wide">
-                    <h3>Lịch ngày muốn tuyển</h3>
+                    <h3>Lá»‹ch ngÃ y muá»‘n tuyá»ƒn</h3>
                     <div id="pv-schedule"></div>
                 </section>
                 <section class="search-detail-card search-detail-card--wide">
-                    <h3>Trạng thái duyệt</h3>
+                    <h3>Tráº¡ng thÃ¡i duyá»‡t</h3>
                     <div class="search-detail-moderation-box">
                         <strong id="pv-moderation"></strong>
                         <p id="pv-note" class="search-detail-note hidden"></p>
@@ -491,23 +491,23 @@
                         type="button"
                         class="hidden search-detail-action-btn search-detail-action-btn--primary">
                     <span class="material-icons-round text-base">send</span>
-                    <span id="pv-applyBtnText">Ứng tuyển ngay</span>
+                    <span id="pv-applyBtnText">á»¨ng tuyá»ƒn ngay</span>
                 </button>
                 <a id="pv-editBtn"
                    href="#"
                    class="hidden search-detail-action-btn search-detail-action-btn--secondary">
                     <span class="material-icons-round text-base">edit</span>
-                    <span>Chỉnh sửa bài đăng</span>
+                    <span>Chá»‰nh sá»­a bÃ i Ä‘Äƒng</span>
                 </a>
                 <a id="pv-parentBtn" href="#" target="_blank" class="search-detail-action-btn search-detail-action-btn--ghost">
                     <span class="material-icons-round text-base">person</span>
-                    <span id="pv-parentBtnText">Xem chi tiết hồ sơ người đăng</span>
+                    <span id="pv-parentBtnText">Xem chi tiáº¿t há»“ sÆ¡ ngÆ°á»i Ä‘Äƒng</span>
                 </a>
                 <button id="pv-complainBtn"
                         type="button"
                         class="hidden py-3 rounded-xl border border-rose-200 text-rose-600 bg-rose-50 hover:bg-rose-100 font-bold text-sm transition-all inline-flex items-center justify-center gap-2 px-4">
                     <span class="material-icons-round text-base">flag</span>
-                    <span>Phản nàn bài đăng</span>
+                    <span>Pháº£n nÃ n bÃ i Ä‘Äƒng</span>
                 </button>
             </div>
         </div>
@@ -518,8 +518,8 @@
     <div class="nmodal-box bg-white rounded-2xl w-full max-w-xl shadow-2xl relative">
         <div class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
             <div>
-                <h2 class="text-lg font-bold text-gray-900">Gửi phản nàn bài đăng</h2>
-                <p id="jobComplainTarget" class="text-xs text-gray-400 font-semibold mt-0.5">Bài đăng</p>
+                <h2 class="text-lg font-bold text-gray-900">Gá»­i pháº£n nÃ n bÃ i Ä‘Äƒng</h2>
+                <p id="jobComplainTarget" class="text-xs text-gray-400 font-semibold mt-0.5">BÃ i Ä‘Äƒng</p>
             </div>
             <button onclick="closeJobComplainModal()" class="text-gray-300 hover:text-gray-700 material-icons-round text-2xl transition-colors">close</button>
         </div>
@@ -531,11 +531,11 @@
                 <textarea id="jobComplainReason" name="Reason" rows="4" class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400" placeholder="Nhập lý do phản nàn..."></textarea>
             </div>
             <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">Bằng chứng (không bắt buộc)</label>
-                <textarea id="jobComplainEvidence" name="Evidence" rows="3" class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400" placeholder="Link, mô tả bổ sung, thông tin liên quan..."></textarea>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Báº±ng chá»©ng (khÃ´ng báº¯t buá»™c)</label>
+                <textarea id="jobComplainEvidence" name="Evidence" rows="3" class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400" placeholder="Link, mÃ´ táº£ bá»• sung, thÃ´ng tin liÃªn quan..."></textarea>
             </div>
             <div class="flex gap-2">
-                <button type="button" onclick="closeJobComplainModal()" class="modal-btn modal-btn-secondary w-full">Huy</button>
+                <button type="button" onclick="closeJobComplainModal()" class="modal-btn modal-btn-secondary w-full">Hủy</button>
                 <button id="jobComplainSubmitBtn" type="submit" class="modal-btn modal-btn-primary w-full">Gửi phản nàn</button>
             </div>
         </form>
@@ -546,13 +546,13 @@
     <div class="nmodal-box bg-white rounded-2xl w-full max-w-3xl shadow-2xl relative">
         <div class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
             <div>
-                <h2 class="text-lg font-bold text-gray-900">Lịch sử bài đăng</h2>
-                <p class="text-xs text-gray-400 font-semibold mt-0.5">Xem trạng thái chờ duyệt, đã duyệt, từ chối và ghi chú từ moderator.</p>
+                <h2 class="text-lg font-bold text-gray-900">Lá»‹ch sá»­ bÃ i Ä‘Äƒng</h2>
+                <p class="text-xs text-gray-400 font-semibold mt-0.5">Xem tráº¡ng thÃ¡i chá» duyá»‡t, Ä‘Ã£ duyá»‡t, tá»« chá»‘i vÃ  ghi chÃº tá»« moderator.</p>
             </div>
             <button onclick="closeHistory()" class="text-gray-300 hover:text-gray-700 material-icons-round text-2xl transition-colors">close</button>
         </div>
         <div id="historyBody" class="px-6 py-5 max-h-[70vh] overflow-y-auto space-y-3">
-            <div class="text-sm text-gray-500">Đang tải dữ liệu...</div>
+            <div class="text-sm text-gray-500">Äang táº£i dá»¯ liá»‡u...</div>
         </div>
     </div>
 </div>
@@ -564,7 +564,7 @@
 @if (User.IsInRole("Nanny"))
 {
 <script>
-// ── Recommendation tab (Nanny) ──────────────────────────────
+// â”€â”€ Recommendation tab (Nanny) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let recJobsLoaded = false;
 let recUpgradeRequired = false;
 window.recJobs = [];
@@ -576,9 +576,9 @@ function escRecHtml(v) {
 function recSalaryText(min, max, neg) {
     if (neg) return 'Thương lượng';
     if (min != null && max != null)
-        return `${(min/1e6).toFixed(1).replace(/\.0$/,'')}M – ${(max/1e6).toFixed(1).replace(/\.0$/,'')}M`;
+        return `${(min/1e6).toFixed(1).replace(/\.0$/,'')}M â€“ ${(max/1e6).toFixed(1).replace(/\.0$/,'')}M`;
     if (min != null) return `Từ ${(min/1e6).toFixed(1).replace(/\.0$/,'')}M`;
-    return 'Thoả thuận';
+    return 'Thoáº£ thuáº­n';
 }
 
 function recScoreColor(pct) {
@@ -715,10 +715,10 @@ function loadRecJobs() {
                 content.innerHTML = `
                 <div class="rec-upgrade-prompt">
                     <span class="material-icons-round rec-upgrade-icon">auto_awesome</span>
-                    <h3 class="rec-upgrade-title">Tính năng dành cho gói Plus / Pro</h3>
-                    <p class="rec-upgrade-desc">Nâng cấp để AI tự động gợi ý những công việc phù hợp nhất với hồ sơ của bạn — tiết kiệm thời gian tìm kiếm.</p>
+                    <h3 class="rec-upgrade-title">TÃ­nh nÄƒng dÃ nh cho gÃ³i Plus / Pro</h3>
+                    <p class="rec-upgrade-desc">NÃ¢ng cáº¥p Ä‘á»ƒ AI tá»± Ä‘á»™ng gá»£i Ã½ nhá»¯ng cÃ´ng viá»‡c phÃ¹ há»£p nháº¥t vá»›i há»“ sÆ¡ cá»§a báº¡n â€” tiáº¿t kiá»‡m thá»i gian tÃ¬m kiáº¿m.</p>
                     <a href="/Subscription" class="rec-upgrade-btn">
-                        <span class="material-icons-round">rocket_launch</span>Nâng cấp ngay
+                        <span class="material-icons-round">rocket_launch</span>NÃ¢ng cáº¥p ngay
                     </a>
                 </div>`;
                 return;
@@ -727,8 +727,8 @@ function loadRecJobs() {
                 if (typeof clearMapMarkers === 'function') clearMapMarkers();
                 content.innerHTML = `<div class="rec-panel__empty">
                     <span class="material-icons-round">work_off</span>
-                    <p>Chưa có việc phù hợp ngay lúc này.</p>
-                    <p style="font-size:.78rem;margin-top:4px">Hãy cập nhật kỹ năng và hồ sơ để nhận gợi ý tốt hơn.</p>
+                    <p>ChÆ°a cÃ³ viá»‡c phÃ¹ há»£p ngay lÃºc nÃ y.</p>
+                    <p style="font-size:.78rem;margin-top:4px">HÃ£y cáº­p nháº­t ká»¹ nÄƒng vÃ  há»“ sÆ¡ Ä‘á»ƒ nháº­n gá»£i Ã½ tá»‘t hÆ¡n.</p>
                 </div>`;
             } else {
                 window.recJobs = res.data;
@@ -740,7 +740,7 @@ function loadRecJobs() {
         })
         .catch(() => {
             content.innerHTML = `<div class="rec-panel__empty">
-                <span class="material-icons-round">wifi_off</span><p>Không tải được gợi ý.</p>
+                <span class="material-icons-round">wifi_off</span><p>KhÃ´ng táº£i Ä‘Æ°á»£c gá»£i Ã½.</p>
             </div>`;
         });
 }
@@ -760,7 +760,7 @@ function switchSearchTab(tab) {
         if (resultCount) resultCount.style.display = 'none';
         if (searchBar)   searchBar.style.display = 'none';
         recPanel.classList.add('active');
-        // Re-plot nếu đã có data, load lần đầu nếu chưa
+        // Re-plot náº¿u Ä‘Ã£ cÃ³ data, load láº§n Ä‘áº§u náº¿u chÆ°a
         if (recJobsLoaded && window.recJobs.length) {
             plotRecJobMarkers(window.recJobs);
             bindRecJobHover();
@@ -774,7 +774,7 @@ function switchSearchTab(tab) {
         if (resultCount) resultCount.style.display = '';
         if (searchBar)   searchBar.style.display = '';
         recPanel.classList.remove('active');
-        // Xoá rec markers, hiện lại job markers thường
+        // XoÃ¡ rec markers, hiá»‡n láº¡i job markers thÆ°á»ng
         if (typeof clearMapMarkers === 'function') clearMapMarkers();
         if (typeof fetchJobs === 'function') fetchJobs();
     }
@@ -792,4 +792,5 @@ const CURRENT_USER_NAME = '@userName';
 </script>
 <script src="~/js/search.js" asp-append-version="true"></script>
 }
+
 

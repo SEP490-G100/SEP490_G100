@@ -1,9 +1,10 @@
-@using WebSite.Models.Profile
+﻿@using WebSite.Models.Profile
 @model EditPersonalInfoViewModel
 
 @{
-    ViewData["Title"] = "Chinh sua ho so";
+    ViewData["Title"] = "Chỉnh sửa hồ sơ";
     var avatarUrl = (Model.AvatarUrl ?? "").Trim();
+    var avatarUrlJson = System.Text.Json.JsonSerializer.Serialize(avatarUrl);
     var isNanny = Model.IsNanny;
     var dobMax = (isNanny
         ? DateOnly.FromDateTime(DateTime.Today.AddYears(-31))
@@ -21,8 +22,8 @@
     <div class="profile-shell">
         <div class="profile-header">
             <div class="flex-1 min-w-[220px]">
-                <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-orange-500">Profile</p>
-                <h1 class="mt-2 text-3xl font-bold text-slate-900" style="font-family:'Quicksand',sans-serif">Chinh sua thong tin ca nhan</h1>
+                <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-orange-500">Hồ sơ</p>
+                <h1 class="mt-2 text-3xl font-bold text-slate-900" style="font-family:'Quicksand',sans-serif">Chỉnh sửa thông tin cá nhân</h1>
             </div>
         </div>
 
@@ -39,37 +40,37 @@
             <div class="profile-grid">
                 <div class="space-y-4">
                     <div class="profile-card">
-                        <h3>Thong tin ca nhan</h3>
+                        <h3>Thông tin cá nhân</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label class="form-label" for="FirstName">Ho</label>
+                                <label class="form-label" for="FirstName">Họ</label>
                                 <input asp-for="FirstName" id="FirstName" class="form-input" required />
                             </div>
                             <div>
-                                <label class="form-label" for="LastName">Ten</label>
+                                <label class="form-label" for="LastName">Tên</label>
                                 <input asp-for="LastName" id="LastName" class="form-input" required />
                             </div>
                             <div>
-                                <label class="form-label" for="PhoneNumber">Dien thoai</label>
+                                <label class="form-label" for="PhoneNumber">Điện thoại</label>
                                 <input asp-for="PhoneNumber" id="PhoneNumber" class="form-input" />
                             </div>
                             <div>
-                                <label class="form-label" for="DateOfBirth">Ngay sinh</label>
-                                <input asp-for="DateOfBirth" id="DateOfBirth" type="date" max="@dobMax" class="form-input" />
+                                <label class="form-label" for="DateOfBirth">Ngày sinh</label>
+                                <input asp-for="DateOfBirth" asp-format="{0:yyyy-MM-dd}" id="DateOfBirth" type="date" max="@dobMax" class="form-input" />
                                 @if (isNanny)
                                 {
-                                    <p class="text-xs text-slate-500 mt-1">Nanny phai lon hon 30 tuoi.</p>
+                                    <p class="text-xs text-slate-500 mt-1">Nanny phải lớn hơn 30 tuổi.</p>
                                 }
                                 <p id="dobError" class="hidden text-xs text-red-600 mt-1"></p>
                             </div>
                         </div>
 
                         <div class="mt-4">
-                            <label class="form-label">Gioi tinh</label>
+                            <label class="form-label">Giới tính</label>
                             <input type="hidden" asp-for="Gender" id="Gender" />
-                            <div class="gender-segment" role="group" aria-label="Chon gioi tinh">
+                            <div class="gender-segment" role="group" aria-label="Chọn giới tính">
                                 <button type="button" class="gender-btn" data-value="0">Nam</button>
-                                <button type="button" class="gender-btn" data-value="1">Nu</button>
+                                <button type="button" class="gender-btn" data-value="1">Nữ</button>
                             </div>
                         </div>
                     </div>
@@ -77,49 +78,49 @@
                     @if (isNanny)
                     {
                         <div class="profile-card profile-card-soft">
-                            <h3>Thong tin nghe nghiep (Nanny)</h3>
+                            <h3>Thông tin nghề nghiệp (Nanny)</h3>
                             <div class="space-y-4">
                                 <div>
-                                    <label class="form-label" for="Bio">Gioi thieu</label>
+                                    <label class="form-label" for="Bio">Giới thiệu</label>
                                     <textarea asp-for="Bio" id="Bio" rows="3" class="form-input resize-none"></textarea>
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label class="form-label" for="YearsOfExperience">Nam kinh nghiem</label>
+                                        <label class="form-label" for="YearsOfExperience">Năm kinh nghiệm</label>
                                         <input asp-for="YearsOfExperience" id="YearsOfExperience" type="number" min="0" class="form-input" />
                                     </div>
                                     <div>
-                                        <label class="form-label" for="EducationLevel">Hoc van</label>
+                                        <label class="form-label" for="EducationLevel">Học vấn</label>
                                         <select asp-for="EducationLevel" id="EducationLevel" class="form-input">
-                                            <option value="">-- Chon --</option>
-                                            <option value="0">Trung hoc</option>
-                                            <option value="1">Cao dang</option>
-                                            <option value="2">Dai hoc</option>
-                                            <option value="3">Thac si</option>
-                                            <option value="4">Khac</option>
+                                            <option value="">-- Chọn --</option>
+                                            <option value="0">Trung học</option>
+                                            <option value="1">Cao đẳng</option>
+                                            <option value="2">Đại học</option>
+                                            <option value="3">Thạc sĩ</option>
+                                            <option value="4">Khác</option>
                                         </select>
                                     </div>
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label class="form-label" for="ExpectedSalaryMin">Luong toi thieu</label>
+                                        <label class="form-label" for="ExpectedSalaryMin">Lương tối thiểu</label>
                                         <input asp-for="ExpectedSalaryMin" id="ExpectedSalaryMin" type="text" inputmode="numeric" autocomplete="off" class="form-input" />
                                         <span asp-validation-for="ExpectedSalaryMin" class="text-xs text-red-600 mt-1 block"></span>
                                     </div>
                                     <div>
-                                        <label class="form-label" for="ExpectedSalaryMax">Luong toi da</label>
+                                        <label class="form-label" for="ExpectedSalaryMax">Lương tối đa</label>
                                         <input asp-for="ExpectedSalaryMax" id="ExpectedSalaryMax" type="text" inputmode="numeric" autocomplete="off" class="form-input" />
                                         <span asp-validation-for="ExpectedSalaryMax" class="text-xs text-red-600 mt-1 block"></span>
                                     </div>
                                 </div>
                                 <p id="salaryError" class="hidden text-xs text-red-600 mt-1"></p>
-                                <p class="text-xs text-slate-500">Luong hop le tu 8.000.000 den 50.000.000 VND.</p>
+                                <p class="text-xs text-slate-500">Lương hợp lệ từ 8.000.000 đến 50.000.000 VND.</p>
                                 <div>
-                                    <label class="form-label" for="MaxTravelDistance">Khoang cach di chuyen toi da (km)</label>
+                                    <label class="form-label" for="MaxTravelDistance">Khoảng cách di chuyển tối đa (km)</label>
                                     <input asp-for="MaxTravelDistance" id="MaxTravelDistance" type="number" min="0" class="form-input" />
                                 </div>
                                 <div>
-                                    <label class="form-label">Ky nang</label>
+                                    <label class="form-label">Kỹ năng</label>
                                     @if (Model.AvailableSkills.Any())
                                     {
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-2 p-4 rounded-2xl border border-orange-100 bg-white">
@@ -139,7 +140,7 @@
                                     }
                                     else
                                     {
-                                        <p class="text-sm text-slate-500">Khong tai duoc danh sach ky nang.</p>
+                                        <p class="text-sm text-slate-500">Không tải được danh sách kỹ năng.</p>
                                     }
                                 </div>
                             </div>
@@ -147,18 +148,18 @@
                     }
 
                     <div class="profile-card">
-                        <h3>Dia chi va ban do</h3>
+                        <h3>Địa chỉ và bản đồ</h3>
                         <div class="space-y-4">
                             <div>
-                                <label class="form-label" for="Address">Dia chi chi tiet</label>
-                                <input asp-for="Address" id="Address" class="form-input" placeholder="So nha, ten duong..." />
+                                <label class="form-label" for="Address">Địa chỉ chi tiết</label>
+                                <input asp-for="Address" id="Address" class="form-input" placeholder="Số nhà, tên đường..." />
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label class="form-label" for="City">Tinh/Thanh</label>
+                                    <label class="form-label" for="City">Tỉnh/Thành</label>
                                     <div class="location-input-wrap">
-                                        <input asp-for="City" id="City" class="form-input location-input" list="cityOptions" placeholder="Nhap hoac chon Tinh/Thanh" autocomplete="off" />
-                                        <button type="button" class="location-picker-btn" data-target-input="City" aria-label="Mo goi y Tinh/Thanh">
+                                        <input asp-for="City" id="City" class="form-input location-input" list="cityOptions" placeholder="Nhập hoặc chọn Tỉnh/Thành" autocomplete="off" />
+                                        <button type="button" class="location-picker-btn" data-target-input="City" aria-label="Mở gợi ý Tỉnh/Thành">
                                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                                 <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
                                             </svg>
@@ -167,10 +168,10 @@
                                     <datalist id="cityOptions"></datalist>
                                 </div>
                                 <div>
-                                    <label class="form-label" for="District">Phuong/Xa</label>
+                                    <label class="form-label" for="District">Phường/Xã</label>
                                     <div class="location-input-wrap">
-                                        <input asp-for="District" id="District" class="form-input location-input" list="districtOptions" placeholder="Nhap hoac chon Phuong/Xa" autocomplete="off" />
-                                        <button type="button" class="location-picker-btn" data-target-input="District" aria-label="Mo goi y Phuong/Xa">
+                                        <input asp-for="District" id="District" class="form-input location-input" list="districtOptions" placeholder="Nhập hoặc chọn Phường/Xã" autocomplete="off" />
+                                        <button type="button" class="location-picker-btn" data-target-input="District" aria-label="Mở gợi ý Phường/Xã">
                                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                                 <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
                                             </svg>
@@ -180,20 +181,20 @@
                                 </div>
                             </div>
                             <p id="selectedAddressSummary" class="text-xs text-slate-500 font-semibold">
-                                Dang chon: @(string.IsNullOrWhiteSpace(Model.District) ? "-" : Model.District), @(string.IsNullOrWhiteSpace(Model.City) ? "-" : Model.City)
+                                Đang chọn: @(string.IsNullOrWhiteSpace(Model.District) ? "-" : Model.District), @(string.IsNullOrWhiteSpace(Model.City) ? "-" : Model.City)
                             </p>
                             <div id="addressLoadError" class="hidden text-sm text-red-600"></div>
                             <div id="map" class="profile-map"></div>
                             <input asp-for="Latitude" id="Latitude" type="hidden" />
                             <input asp-for="Longitude" id="Longitude" type="hidden" />
-                            <p class="text-xs font-semibold text-slate-500">Toa do: <span id="coords-display">@Model.Latitude, @Model.Longitude</span></p>
+                            <p class="text-xs font-semibold text-slate-500">Tọa độ: <span id="coords-display">@Model.Latitude, @Model.Longitude</span></p>
                         </div>
                     </div>
                 </div>
 
                 <div class="space-y-4">
                     <div class="profile-card">
-                        <h3>Anh dai dien</h3>
+                        <h3>Ảnh đại diện</h3>
                         <div class="avatar-editor">
                             <div class="avatar-preview-shell">
                                 <img id="avatarPreview"
@@ -201,32 +202,32 @@
                                      src="@avatarUrl"
                                      alt="Avatar preview" />
                                 <div id="avatarPlaceholder" class="@((string.IsNullOrWhiteSpace(avatarUrl) ? "" : "hidden ") + "avatar-preview-placeholder")">
-                                    Chua co anh
+                                    Chưa có ảnh
                                 </div>
                             </div>
                             <input type="hidden" asp-for="AvatarUrl" value="@avatarUrl" />
 
                             <div class="w-full mt-4">
-                                <label class="form-label" for="AvatarFile">Upload anh (.jpg, .jpeg, .png)</label>
+                                <label class="form-label" for="AvatarFile">Upload ảnh (.jpg, .jpeg, .png)</label>
                                 <input type="file" asp-for="AvatarFile" id="AvatarFile" accept=".jpg,.jpeg,.png" class="hidden" />
                                 <div class="avatar-upload-actions">
-                                    <button type="button" id="avatarUploadBtn" class="profile-primary-btn flex-1">Chon anh</button>
-                                    <button type="button" id="avatarResetBtn" class="ghost-btn">Bo chon</button>
+                                    <button type="button" id="avatarUploadBtn" class="profile-primary-btn flex-1">Chọn ảnh</button>
+                                    <button type="button" id="avatarResetBtn" class="ghost-btn">Bỏ chọn</button>
                                 </div>
-                                <p class="text-xs text-slate-500 mt-2">Chi cho phep file .jpg, .jpeg hoac .png</p>
+                                <p class="text-xs text-slate-500 mt-2">Chỉ cho phép file .jpg, .jpeg hoặc .png</p>
                                 <p id="avatarUploadError" class="hidden text-xs text-red-600 mt-1"></p>
                             </div>
                             <div class="w-full mt-3">
-                                <p id="avatarFileName" class="avatar-file-name">Chua chon file nao.</p>
+                                <p id="avatarFileName" class="avatar-file-name">Chưa chọn file nào.</p>
                             </div>
                         </div>
                     </div>
 
                     <div class="profile-card">
-                        <h3>Hanh dong</h3>
+                        <h3>Hành động</h3>
                         <div class="space-y-2">
-                            <a href="@Url.Action("Index", "Profile")" class="ghost-btn w-full">Huy bo</a>
-                            <button type="submit" class="profile-primary-btn w-full">Luu thong tin</button>
+                            <a href="@Url.Action("Index", "Profile")" class="ghost-btn w-full">Hủy bỏ</a>
+                            <button type="submit" class="profile-primary-btn w-full">Lưu thông tin</button>
                         </div>
                     </div>
                 </div>
@@ -272,7 +273,7 @@
             var avatarUploadBtn = document.getElementById("avatarUploadBtn");
             var avatarResetBtn = document.getElementById("avatarResetBtn");
             var avatarFileName = document.getElementById("avatarFileName");
-            var currentAvatarUrl = "@avatarUrl";
+            var currentAvatarUrl = @Html.Raw(avatarUrlJson);
             var objectUrl = null;
             var salaryInputs = [
                 document.getElementById("ExpectedSalaryMin"),
@@ -304,7 +305,7 @@
             }
             function setAvatarFileName(value) {
                 if (!avatarFileName) return;
-                avatarFileName.textContent = value || "Chua chon file nao.";
+                avatarFileName.textContent = value || "Chưa chọn file nào.";
             }
             function restoreInitialAvatar() {
                 clearPreview();
@@ -312,6 +313,17 @@
                 setAvatarFileName("");
                 showAvatarError("");
             }
+
+            restoreInitialAvatar();
+
+            avatarUploadBtn.addEventListener("click", function () {
+                avatarInput.click();
+            });
+
+            avatarResetBtn.addEventListener("click", function () {
+                avatarInput.value = "";
+                restoreInitialAvatar();
+            });
 
             restoreInitialAvatar();
 
@@ -336,7 +348,7 @@
                 if (!isAllowedImage(file)) {
                     avatarInput.value = "";
                     restoreInitialAvatar();
-                    showAvatarError("Chi cho phep file .jpg, .jpeg hoac .png.");
+                    showAvatarError("Chỉ cho phép file .jpg, .jpeg hoặc .png.");
                     return;
                 }
                 clearPreview();
@@ -389,17 +401,17 @@
                 var salaryMax = parseSalaryInput(document.getElementById("ExpectedSalaryMax"));
 
                 if (salaryMin != null && (salaryMin < minSalaryAllowed || salaryMin > maxSalaryAllowed)) {
-                    showSalaryError("Luong toi thieu phai trong khoang 8.000.000 - 50.000.000 VND.");
+                    showSalaryError("Lương tối thiểu phải trong khoảng 8.000.000 - 50.000.000 VND.");
                     return false;
                 }
 
                 if (salaryMax != null && (salaryMax < minSalaryAllowed || salaryMax > maxSalaryAllowed)) {
-                    showSalaryError("Luong toi da phai trong khoang 8.000.000 - 50.000.000 VND.");
+                    showSalaryError("Lương tối đa phải trong khoảng 8.000.000 - 50.000.000 VND.");
                     return false;
                 }
 
                 if (salaryMin != null && salaryMax != null && salaryMin > salaryMax) {
-                    showSalaryError("Luong toi thieu khong duoc lon hon luong toi da.");
+                    showSalaryError("Lương tối thiểu không được lớn hơn lương tối đa.");
                     return false;
                 }
 
@@ -411,7 +423,7 @@
                 if (!isNanny) return true;
                 var value = dobInput.value;
                 if (!value) {
-                    dobError.textContent = "Vui long chon ngay sinh.";
+                    dobError.textContent = "Vui lòng chọn ngày sinh.";
                     dobError.classList.remove("hidden");
                     return false;
                 }
@@ -421,7 +433,7 @@
                 var monthDiff = today.getMonth() - dob.getMonth();
                 if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) age--;
                 if (age <= 30) {
-                    dobError.textContent = "Nanny phai lon hon 30 tuoi.";
+                    dobError.textContent = "Nanny phải lớn hơn 30 tuổi.";
                     dobError.classList.remove("hidden");
                     return false;
                 }
@@ -526,7 +538,7 @@
                 .catch(function () {
                     provinces = [];
                     setAddressInputState(true);
-                    showAddressLoadError("Khong tai duoc danh sach tinh thanh.");
+                    showAddressLoadError("Không tải được danh sách tỉnh thành.");
                 });
 
             function setAddressInputState(disabled) {
@@ -544,7 +556,7 @@
                     .replace(/[\u0300-\u036f]/g, "")
                     .replace(/\u0111/g, "d")
                     .replace(/\u0110/g, "d")
-                    .replace(/đ/g, "d")
+                    .replace(/Ä‘/g, "d")
                     .trim();
             }
             function sortByFilterAndName(items, filterKey, getName) {
@@ -688,7 +700,7 @@
                 if (!selectedAddressSummary) return;
                 var city = (cityInput.value || "").trim();
                 var district = (districtInput.value || "").trim();
-                selectedAddressSummary.textContent = "Dang chon: " + (district || "-") + ", " + (city || "-");
+                selectedAddressSummary.textContent = "Đang chọn: " + (district || "-") + ", " + (city || "-");
             }
 
             cityInput.addEventListener("focus", function () { renderCityOptions(cityInput.value); });
@@ -742,3 +754,4 @@
         });
     </script>
 }
+

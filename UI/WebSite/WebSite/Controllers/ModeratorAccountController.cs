@@ -77,7 +77,7 @@ public class ModeratorAccountController : Controller
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = $"Loi ket noi: {ex.Message}" });
+            return Json(new { success = false, message = $"L?i kết nối: {ex.Message}" });
         }
     }
 
@@ -136,17 +136,17 @@ public class ModeratorAccountController : Controller
                 {
                     toastType = "success",
                     toastMessage = model.Status == 1
-                        ? "Ban da activate account thanh cong"
-                        : "Ban da deactivate account thanh cong"
+                        ? "Ban da activate account thành công"
+                        : "Ban da deactivate account thành công"
                 });
             }
 
-            TempData["Error"] = result?.Message ?? "Cap nhat that bai.";
+            TempData["Error"] = result?.Message ?? "C?p nh?t thất bại.";
             return RedirectToAction(nameof(ManageAccount));
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"Loi ket noi: {ex.Message}";
+            TempData["Error"] = $"L?i kết nối: {ex.Message}";
             return RedirectToAction(nameof(ManageAccount));
         }
     }

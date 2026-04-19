@@ -1,4 +1,4 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
@@ -10,12 +10,12 @@ using WebSite.Models.Search;
 namespace WebSite.Controllers;
 
 /// <summary>
-/// Proxy mọi request từ browser đến Backend API
-/// GET  /Search          → View trang tìm kiếm
-/// GET  /Search/Jobs     → proxy GET /api/search/jobs
-/// POST /Search/CreateJob → proxy POST /api/job-postings
-/// PUT  /Search/UpdateJob/{id} → proxy PUT /api/job-postings/{id}
-/// DELETE /Search/DeleteJob/{id} → proxy DELETE /api/job-postings/{id}
+/// Proxy má»i request tá»« browser Ä‘áº¿n Backend API
+/// GET  /Search          â†’ View trang tÃ¬m kiáº¿m
+/// GET  /Search/Jobs     â†’ proxy GET /api/search/jobs
+/// POST /Search/CreateJob â†’ proxy POST /api/job-postings
+/// PUT  /Search/UpdateJob/{id} â†’ proxy PUT /api/job-postings/{id}
+/// DELETE /Search/DeleteJob/{id} â†’ proxy DELETE /api/job-postings/{id}
 /// </summary>
 public class SearchController : Controller
 {
@@ -31,7 +31,7 @@ public class SearchController : Controller
         _notificationHub = notificationHub;
     }
 
-    // ── GET /Search ─────────────────────────────────────────
+    // â”€â”€ GET /Search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     [HttpGet]
     public async Task<IActionResult> Index()
     {
@@ -75,7 +75,7 @@ public class SearchController : Controller
         return View();
     }
 
-    // ── GET /Search/Jobs ────────────────────────────────────
+    // â”€â”€ GET /Search/Jobs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     [HttpGet]
     public async Task<IActionResult> Jobs([FromQuery] SearchJobRequest req)
     {
@@ -134,7 +134,7 @@ public class SearchController : Controller
     public async Task<IActionResult> SavedJobsData([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
         if (!isNannyRole())
-            return StatusCode(403, new { success = false, total = 0, data = Array.Empty<object>(), message = "Ban khong co quyen xem bai dang da luu." });
+            return StatusCode(403, new { success = false, total = 0, data = Array.Empty<object>(), message = "Ban không co quyen xem bài đăng da luu." });
 
         page = page < 1 ? 1 : page;
         pageSize = pageSize < 1 ? 20 : Math.Min(pageSize, 50);
@@ -183,13 +183,13 @@ public class SearchController : Controller
         return Json(new { success = skills.Count > 0, data = skills });
     }
 
-    // ── POST /Search/CreateJob ──────────────────────────────
+    // â”€â”€ POST /Search/CreateJob â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     [HttpPost]
     [Authorize]
     public async Task<IActionResult> CreateJob([FromBody] JsonElement body)
     {
         if (!isParentRole())
-            return StatusCode(403, new { success = false, message = "Ban khong co quyen dang tin tim bao mau." });
+            return StatusCode(403, new { success = false, message = "Ban không co quyen ?ang tin tim b?o m?u." });
 
         SetAuthHeader();
         try
@@ -200,8 +200,8 @@ public class SearchController : Controller
                 await _notificationHub.Clients.Group("role:Moderator").SendAsync("notification:new", new
                 {
                     type = "job-posting-review-required",
-                    title = "Co bai dang moi can duyet",
-                    message = "Mot parent vua tao job posting moi dang cho moderator duyet.",
+                    title = "Co bài đăng mới can duy?t",
+                    message = "Mot parent vua tao job posting mới đang chờ moderator duy?t.",
                     toastType = "info"
                 });
 
@@ -211,8 +211,8 @@ public class SearchController : Controller
                     await _notificationHub.Clients.Group($"user:{currentUserId}").SendAsync("notification:new", new
                     {
                         type = "job-posting-pending",
-                        title = "Bai dang da duoc tao",
-                        message = "Bai dang cua ban dang cho moderator duyet.",
+                        title = "Bài đăng da được tao",
+                        message = "Bài đăng cua ban đang chờ moderator duy?t.",
                         toastType = "success"
                     });
                 }
@@ -225,13 +225,13 @@ public class SearchController : Controller
         }
     }
 
-    // ── PUT /Search/UpdateJob/{id} ──────────────────────────
+    // â”€â”€ PUT /Search/UpdateJob/{id} â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     [HttpPut]
     [Authorize]
     public async Task<IActionResult> UpdateJob(Guid id, [FromBody] JsonElement body)
     {
         if (!isParentRole())
-            return StatusCode(403, new { success = false, message = "Ban khong co quyen chinh sua bai dang nay." });
+            return StatusCode(403, new { success = false, message = "Ban không co quyen chỉnh sửa bài đăng nay." });
 
         SetAuthHeader();
         try
@@ -245,13 +245,13 @@ public class SearchController : Controller
         }
     }
 
-    // ── DELETE /Search/DeleteJob/{id} ───────────────────────
+    // â”€â”€ DELETE /Search/DeleteJob/{id} â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     [HttpDelete]
     [Authorize]
     public async Task<IActionResult> DeleteJob(Guid id)
     {
         if (!await canEditJob(id))
-            return StatusCode(403, new { success = false, message = "Ban khong co quyen xoa bai dang nay." });
+            return StatusCode(403, new { success = false, message = "Ban không co quyen xoa bài đăng nay." });
 
         SetAuthHeader();
         try
@@ -265,7 +265,7 @@ public class SearchController : Controller
         }
     }
 
-    // ── GET /Search/Detail/{id} ────────────────────────────
+    // â”€â”€ GET /Search/Detail/{id} â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     [HttpGet]
     public async Task<IActionResult> Detail(Guid id)
     {
@@ -284,7 +284,7 @@ public class SearchController : Controller
     public async Task<IActionResult> ToggleFavoriteJob(Guid jobPostingId)
     {
         if (!isNannyRole())
-            return StatusCode(403, new { success = false, message = "Ban khong co quyen luu bai dang." });
+            return StatusCode(403, new { success = false, message = "Ban không co quyen luu bai dang." });
 
         SetAuthHeader();
         try
@@ -303,7 +303,7 @@ public class SearchController : Controller
     public async Task<IActionResult> ApplyJob(Guid jobPostingId)
     {
         if (!isNannyRole())
-            return StatusCode(403, new { success = false, message = "Ban khong co quyen ung tuyen bai dang." });
+            return StatusCode(403, new { success = false, message = "Ban không co quyen ứng tuyển bai dang." });
 
         SetAuthHeader();
         try
@@ -318,8 +318,8 @@ public class SearchController : Controller
                 {
                     await _notificationHub.Clients.User(parentUserId.ToString()).SendAsync("notification:new", new
                     {
-                        title = "Co nanny vua ung tuyen bai dang cua ban",
-                        message = "Hay vao notification de xem chi tiet don ung tuyen.",
+                        title = "Co nanny vua ứng tuyển bài đăng cua ban",
+                        message = "Hay vao notification ?? xem chi tiết don ứng tuyển.",
                         type = "job-application-received",
                         relatedId = jobPostingId
                     });
@@ -329,8 +329,8 @@ public class SearchController : Controller
                 {
                     await _notificationHub.Clients.User(nannyUserId.ToString()).SendAsync("notification:new", new
                     {
-                        title = "Ban da gui don ung tuyen",
-                        message = "Don ung tuyen da duoc gui. Vui long cho Parent phan hoi.",
+                        title = "Ban da gui don ứng tuyển",
+                        message = "Don ứng tuyển da được gui. Vui lòng cho Parent phan hoi.",
                         type = "job-application-submitted",
                         relatedId = jobPostingId
                     });
@@ -355,7 +355,7 @@ public class SearchController : Controller
     public async Task<IActionResult> MyApplicationsData([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
         if (!isNannyRole())
-            return StatusCode(403, new { success = false, total = 0, data = Array.Empty<object>(), message = "Ban khong co quyen xem lich su ung tuyen." });
+            return StatusCode(403, new { success = false, total = 0, data = Array.Empty<object>(), message = "Ban không co quyen xem lich su ứng tuyển." });
 
         page = page < 1 ? 1 : page;
         pageSize = pageSize < 1 ? 20 : Math.Min(pageSize, 50);
@@ -383,7 +383,7 @@ public class SearchController : Controller
     public async Task<IActionResult> WithdrawApplication(Guid applicationId)
     {
         if (!isNannyRole())
-            return StatusCode(403, new { success = false, message = "Ban khong co quyen huy don ung tuyen." });
+            return StatusCode(403, new { success = false, message = "Ban không co quyen huy don ứng tuyển." });
 
         SetAuthHeader();
         try
@@ -408,7 +408,7 @@ public class SearchController : Controller
     public async Task<IActionResult> JobApplicationsByJob(Guid jobPostingId, [FromQuery] int? status = null)
     {
         if (!isParentRole())
-            return StatusCode(403, new { success = false, message = "Ban khong co quyen xem request ung tuyen." });
+            return StatusCode(403, new { success = false, message = "Ban không co quyen xem request ứng tuyển." });
 
         SetAuthHeader();
         try
@@ -434,7 +434,7 @@ public class SearchController : Controller
     public async Task<IActionResult> ReviewJobApplication(Guid applicationId, [FromBody] JsonElement body)
     {
         if (!isParentRole())
-            return StatusCode(403, new { success = false, message = "Ban khong co quyen duyet request ung tuyen." });
+            return StatusCode(403, new { success = false, message = "Ban không co quyen duy?t request ứng tuyển." });
 
         SetAuthHeader();
         try
@@ -450,10 +450,10 @@ public class SearchController : Controller
                     var approved = status == 1;
                     await _notificationHub.Clients.User(nannyUserId.ToString()).SendAsync("notification:new", new
                     {
-                        title = approved ? "Don ung tuyen duoc chap nhan" : "Don ung tuyen bi tu choi",
+                        title = approved ? "Don ứng tuyển được chap nhan" : "Don ứng tuyển bi từ chối",
                         message = approved
-                            ? "Parent da chap nhan don ung tuyen cua ban."
-                            : "Parent da tu choi don ung tuyen cua ban.",
+                            ? "Parent da chap nhan don ứng tuyển cua ban."
+                            : "Parent da từ chối don ứng tuyển cua ban.",
                         type = approved ? "job-application-approved" : "job-application-rejected",
                         relatedId = relatedJobId == Guid.Empty ? applicationId : relatedJobId
                     });
@@ -473,7 +473,7 @@ public class SearchController : Controller
         }
     }
 
-    // ── Helper: đính kèm JWT token từ session ──────────────
+    // â”€â”€ Helper: Ä‘Ã­nh kÃ¨m JWT token tá»« session â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     private void SetAuthHeader()
     {
         var token = HttpContext.Session.GetString("AccessToken");
@@ -491,7 +491,7 @@ public class SearchController : Controller
             return new JsonResult(new
             {
                 success = response.IsSuccessStatusCode,
-                message = response.IsSuccessStatusCode ? "Thành công." : $"Lỗi HTTP {(int)response.StatusCode}."
+                message = response.IsSuccessStatusCode ? "ThÃ nh cÃ´ng." : $"Lá»—i HTTP {(int)response.StatusCode}."
             })
             { StatusCode = (int)response.StatusCode };
 
@@ -714,3 +714,4 @@ public class SearchController : Controller
         }
     }
 }
+

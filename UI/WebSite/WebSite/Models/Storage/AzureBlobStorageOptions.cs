@@ -1,4 +1,4 @@
-﻿namespace WebSite.Models.Storage;
+namespace WebSite.Models.Storage;
 
 public class AzureBlobStorageOptions
 {

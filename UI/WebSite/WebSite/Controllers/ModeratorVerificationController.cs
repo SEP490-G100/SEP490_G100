@@ -131,10 +131,10 @@ public class ModeratorVerificationController : Controller
                     await _notificationHub.Clients.Group($"user:{nannyUserId.Value}").SendAsync("notification:new", new
                     {
                         type = action == 2 ? "verification-approved" : "verification-rejected",
-                        title = action == 2 ? "Yeu cau xac minh da duoc chap thuan" : "Yeu cau xac minh da bi tu choi",
+                        title = action == 2 ? "Y?u c?u xác minh da được chap thuan" : "Y?u c?u xác minh da bi từ chối",
                         message = action == 2
-                            ? "Yeu cau xac minh cua ban da duoc chap thuan."
-                            : "Yeu cau xac minh cua ban da bi tu choi.",
+                            ? "Y?u c?u xác minh cua ban da được chap thuan."
+                            : "Y?u c?u xác minh cua ban da bi từ chối.",
                         toastType = action == 2 ? "success" : "warning"
                     });
                 }
@@ -145,12 +145,12 @@ public class ModeratorVerificationController : Controller
                 return Redirect($"{listUrl}?toastType=success&toastMessage={toastMessage}");
             }
 
-            TempData["Error"] = result?.Message ?? "Xu ly that bai.";
+            TempData["Error"] = result?.Message ?? "Xu ly thất bại.";
             return RedirectToAction(nameof(ManageNannyVerification));
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"Loi ket noi: {ex.Message}";
+            TempData["Error"] = $"L?i kết nối: {ex.Message}";
             return RedirectToAction(nameof(ManageNannyVerification));
         }
     }

@@ -1,4 +1,4 @@
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace WebSite.Models.Nanny;
 
@@ -180,3 +180,4 @@ public class NannyAvailabilitySlotViewModel
     [JsonPropertyName("timeSlotLabel")]
     public string TimeSlotLabel { get; set; } = "";
 }
+

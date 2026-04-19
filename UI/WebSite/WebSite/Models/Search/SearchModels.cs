@@ -1,4 +1,4 @@
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace WebSite.Models.Search;
 
@@ -380,3 +380,4 @@ public class SearchApiResult
     [JsonPropertyName("data")]
     public List<SearchJobResponse> Data { get; set; } = [];
 }
+

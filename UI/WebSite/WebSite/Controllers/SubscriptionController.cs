@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -24,7 +24,7 @@ public class SubscriptionController : Controller
     {
         var token = getToken();
         if (string.IsNullOrWhiteSpace(token))
-            return RedirectToAction("Login", "Auth", new { returnUrl = Url.Action("Index", "Subscription") });
+            return RedirectToAction("đăng nhập", "Auth", new { returnUrl = Url.Action("Index", "Subscription") });
 
         var vm = await buildPageModel(token);
         return View(vm);
@@ -36,7 +36,7 @@ public class SubscriptionController : Controller
     {
         var token = getToken();
         if (string.IsNullOrWhiteSpace(token))
-            return RedirectToAction("Login", "Auth", new { returnUrl = Url.Action("Index", "Subscription") });
+            return RedirectToAction("đăng nhập", "Auth", new { returnUrl = Url.Action("Index", "Subscription") });
 
         setAuthHeader(token);
 
@@ -84,7 +84,7 @@ public class SubscriptionController : Controller
     {
         var token = getToken();
         if (string.IsNullOrWhiteSpace(token))
-            return RedirectToAction("Login", "Auth", new { returnUrl = Url.Action("Index", "Subscription") });
+            return RedirectToAction("đăng nhập", "Auth", new { returnUrl = Url.Action("Index", "Subscription") });
 
         setAuthHeader(token);
 
@@ -105,7 +105,7 @@ public class SubscriptionController : Controller
     {
         var token = getToken();
         if (string.IsNullOrWhiteSpace(token))
-            return RedirectToAction("Login", "Auth", new { returnUrl = Url.Action(nameof(PaymentResult), "Subscription", new { transactionId, cancelled }) });
+            return RedirectToAction("đăng nhập", "Auth", new { returnUrl = Url.Action(nameof(PaymentResult), "Subscription", new { transactionId, cancelled }) });
 
         setAuthHeader(token);
         var vm = new SubscriptionPaymentResultPageViewModel

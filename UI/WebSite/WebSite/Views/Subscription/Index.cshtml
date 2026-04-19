@@ -1,4 +1,4 @@
-@model WebSite.Models.Subscription.SubscriptionPageViewModel
+﻿@model WebSite.Models.Subscription.SubscriptionPageViewModel
 @{
     ViewData["Title"] = "Gói đăng ký";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -95,7 +95,7 @@
                 {
                     <form asp-action="CancelCurrent" method="post">
                         @Html.AntiForgeryToken()
-                        <button type="submit" class="sub-secondary-btn">Huy goi hien tai</button>
+                        <button type="submit" class="sub-secondary-btn">Hủy gói hiện tại</button>
                     </form>
                 }
             </div>
@@ -499,3 +499,4 @@
         })();
     </script>
 }
+

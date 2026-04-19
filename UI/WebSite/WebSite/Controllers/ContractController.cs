@@ -1,4 +1,4 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebSite.Models.Contract;
@@ -63,3 +63,4 @@ public class ContractController : Controller
         };
     }
 }
+

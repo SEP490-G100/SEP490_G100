@@ -1,4 +1,4 @@
-const JOB_TYPES = { 1: 'Full-time', 2: 'Part-time', 3: 'Qua dem' };
+﻿const JOB_TYPES = { 1: 'Full-time', 2: 'Part-time', 3: 'Qua dem' };
 const MODERATION_LABELS = { 0: 'Dang cho duyet', 1: 'Da bi tu choi', 2: 'Cong khai' };
 const POST_STATUS_LABELS = { 1: 'Cong khai', 2: 'An bai dang' };
 
@@ -283,6 +283,10 @@ function attachSelectPicker(prefix, kind, selectId, inputId, emptyLabel, onValue
   if (!select || !input || input.dataset.acReady === 'true') return;
 
   input.dataset.acReady = 'true';
+  if (kind === 'childPicker') {
+    input.readOnly = true;
+    input.setAttribute('aria-readonly', 'true');
+  }
   input.parentElement?.classList.add('autocomplete-field');
 
   const dropdown = document.createElement('ul');
@@ -1317,6 +1321,25 @@ function normalizeChildrenCount(value) {
   return Math.min(10, Math.max(1, Math.trunc(parsed)));
 }
 
+function ensureChildrenCountOptions(selectId, preferredValue) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+
+  const maxChildren = 10;
+  const hasExpectedOptions = select.options.length === maxChildren
+    && Array.from(select.options).every((option, idx) => Number(option.value) === idx + 1);
+
+  if (!hasExpectedOptions) {
+    select.innerHTML = Array.from({ length: maxChildren }, (_, idx) => {
+      const value = idx + 1;
+      return `<option value="${value}">${value} bé</option>`;
+    }).join('');
+  }
+
+  const resolvedValue = normalizeChildrenCount(preferredValue ?? select.value ?? 1);
+  select.value = String(resolvedValue);
+}
+
 function getSelectedChild(prefix) {
   const childId = document.getElementById(`${prefix}-childProfileId`)?.value;
   const collection = prefix === 'cf' ? createChildren : editChildren;
@@ -1327,19 +1350,27 @@ function getCreateSelectedChildren(requiredCount) {
   const count = normalizeChildrenCount(requiredCount);
   if (!Array.isArray(createChildren) || createChildren.length === 0) return [];
 
-  const firstSelectedId = String(document.getElementById('cf-childProfileId')?.value || '').toLowerCase();
-  const selectedIndex = createChildren.findIndex((child) => String(child.id).toLowerCase() === firstSelectedId);
-  const orderedChildren = selectedIndex >= 0
-    ? [...createChildren.slice(selectedIndex + 1), ...createChildren.slice(0, selectedIndex)]
-    : [...createChildren];
-  const remainingChildren = orderedChildren.filter((child) => String(child.id).toLowerCase() !== firstSelectedId);
-
-  const firstChild = selectedIndex >= 0 ? createChildren[selectedIndex] : createChildren[0];
   const selected = [];
-  if (firstChild) selected.push(firstChild);
+  const selectedIds = new Set();
+  const tryAddChild = (childId) => {
+    const normalizedId = String(childId || '').toLowerCase();
+    if (!normalizedId || selectedIds.has(normalizedId)) return;
+    const child = createChildren.find((item) => String(item.id).toLowerCase() === normalizedId);
+    if (!child) return;
+    selectedIds.add(normalizedId);
+    selected.push(child);
+  };
 
-  for (let idx = 0; idx < remainingChildren.length && selected.length < count; idx += 1) {
-    selected.push(remainingChildren[idx]);
+  tryAddChild(document.getElementById('cf-childProfileId')?.value || '');
+  for (let idx = 0; idx < count - 1; idx += 1) {
+    tryAddChild(document.getElementById(`cf-extraChildProfileId-${idx}`)?.value || '');
+  }
+
+  for (let idx = 0; idx < createChildren.length && selected.length < count; idx += 1) {
+    const fallbackId = String(createChildren[idx]?.id || '').toLowerCase();
+    if (!fallbackId || selectedIds.has(fallbackId)) continue;
+    selectedIds.add(fallbackId);
+    selected.push(createChildren[idx]);
   }
 
   return selected;
@@ -1353,17 +1384,54 @@ function renderCreateExtraChildProfiles() {
   const requiredCount = normalizeChildrenCount(countInput.value);
   countInput.value = String(requiredCount);
   const extraCount = Math.max(requiredCount - 1, 0);
-  if (extraCount === 0) {
+  if (requiredCount <= 1) {
     container.innerHTML = '';
     return;
   }
 
-  const selectedChildren = getCreateSelectedChildren(requiredCount);
-  const remainingChildren = selectedChildren.slice(1);
+  const existingSelections = {};
+  container.querySelectorAll('select[id^="cf-extraChildProfileId-"]').forEach((selectEl) => {
+    existingSelections[selectEl.id] = selectEl.value || '';
+  });
+
+  const firstSelectedId = String(document.getElementById('cf-childProfileId')?.value || '').toLowerCase();
+  const usedIds = new Set(firstSelectedId ? [firstSelectedId] : []);
+  const findChildById = (childId) => {
+    const normalizedId = String(childId || '').toLowerCase();
+    return createChildren.find((child) => String(child.id).toLowerCase() === normalizedId) || null;
+  };
 
   let html = '';
+
   for (let idx = 0; idx < extraCount; idx += 1) {
-    const child = remainingChildren[idx] || null;
+    const selectId = `cf-extraChildProfileId-${idx}`;
+    const preservedValue = existingSelections[selectId] || '';
+    const preservedChild = findChildById(preservedValue);
+
+    let selectedChild = null;
+    if (preservedChild && !usedIds.has(String(preservedChild.id).toLowerCase())) {
+      selectedChild = preservedChild;
+    } else {
+      selectedChild = createChildren.find((child) => !usedIds.has(String(child.id).toLowerCase())) || null;
+    }
+
+    const selectedChildId = selectedChild ? String(selectedChild.id) : '';
+    if (selectedChild) usedIds.add(String(selectedChild.id).toLowerCase());
+
+    const selectableChildren = createChildren.filter((child) => {
+      const normalizedId = String(child.id).toLowerCase();
+      if (selectedChild && normalizedId === String(selectedChild.id).toLowerCase()) return true;
+      return !usedIds.has(normalizedId);
+    });
+
+    const selectOptions = selectableChildren.length
+      ? selectableChildren.map((child) => `
+          <option value="${escapeHtml(child.id)}" ${String(child.id) === selectedChildId ? 'selected' : ''}>
+            ${escapeHtml(child.label || 'Be')}
+          </option>`).join('')
+      : '<option value="">Chua co Child Profile phu hop</option>';
+
+    const child = selectedChild;
     const displayIndex = idx + 2;
 
     if (!child) {
@@ -1371,6 +1439,10 @@ function renderCreateExtraChildProfiles() {
         <div class="child-profile-panel child-profile-panel--missing">
           <div class="child-profile-panel__head">
             <p class="child-profile-panel__title">Be thu ${displayIndex}</p>
+          </div>
+          <div class="mt-2 mb-3">
+            <label class="form-label">Chon be thu ${displayIndex}</label>
+            <select id="${selectId}" class="form-input">${selectOptions}</select>
           </div>
           <p class="child-profile-panel__empty">Chua co Child Profile cho be nay. Vui long tao them Child Profile trong Quan ly con em.</p>
         </div>`;
@@ -1382,6 +1454,10 @@ function renderCreateExtraChildProfiles() {
         <div class="child-profile-panel__head">
           <p class="child-profile-panel__title">Be thu ${displayIndex}</p>
           <span class="child-profile-panel__badge">${escapeHtml(child.label || `Be ${displayIndex}`)}</span>
+        </div>
+        <div class="mt-2 mb-3">
+          <label class="form-label">Chon be thu ${displayIndex}</label>
+          <select id="${selectId}" class="form-input">${selectOptions}</select>
         </div>
         <div class="child-profile-grid">
           <div class="child-profile-field">
@@ -1401,6 +1477,9 @@ function renderCreateExtraChildProfiles() {
   }
 
   container.innerHTML = html;
+  container.querySelectorAll('select[id^="cf-extraChildProfileId-"]').forEach((selectEl) => {
+    selectEl.addEventListener('change', renderCreateExtraChildProfiles);
+  });
 }
 
 function renderChildren(prefix, selectedChildId) {
@@ -1418,8 +1497,13 @@ function renderChildren(prefix, selectedChildId) {
 
 function applyPrefill(prefix, data, selectedChildId) {
   const childrenInput = document.getElementById(`${prefix}-children`);
-  if (childrenInput && (!childrenInput.value || Number(childrenInput.value) < 1)) {
-    childrenInput.value = data?.numberOfChildren || 1;
+  if (childrenInput) {
+    const preferredCount = data?.numberOfChildren ?? childrenInput.value ?? 1;
+    if (prefix === 'cf') {
+      ensureChildrenCountOptions('cf-children', preferredCount);
+    } else {
+      childrenInput.value = String(normalizeChildrenCount(preferredCount));
+    }
   }
   const collection = prefix === 'cf' ? createChildren : editChildren;
   collection.splice(0, collection.length, ...((data?.children) || []));
@@ -1536,6 +1620,7 @@ async function openCreate() {
   createSchedule = [];
   createChildren = [];
   setCreateStatus(1);
+  ensureChildrenCountOptions('cf-children', 1);
   renderSkillCollection('cf-skills', createSkills, 'removeCreateSkill');
   renderScheduleGrid('cf-schedule', createSchedule, 'toggleCreateSchedule');
   applyPrefill('cf', {}, null);
@@ -1546,10 +1631,6 @@ async function openCreate() {
     if (json.success && json.data) applyPrefill('cf', json.data, json.data.selectedChildProfileId);
   } catch { }
 
-  const createChildrenInput = document.getElementById('cf-children');
-  if (createChildrenInput) {
-    createChildrenInput.value = '1';
-  }
   renderCreateExtraChildProfiles();
 
   syncSelectPickerTexts();
@@ -1784,6 +1865,73 @@ function renderPreviewChildProfiles(job, childProfilesInput) {
   container.classList.remove('hidden');
 }
 
+function renderPreviewChildProfiles(job, childProfilesInput) {
+  const container = document.getElementById('pv-childProfiles');
+  if (!container) return;
+
+  const childProfiles = Array.isArray(childProfilesInput) ? childProfilesInput.filter(Boolean) : [];
+  const hasAggregateFallback = Boolean(job?.characteristic || job?.birthTypeLabel || job?.specialNeeds);
+  const fallbackChildren = childProfiles.length
+    ? childProfiles
+    : (hasAggregateFallback
+      ? [{
+          label: 'Be 1',
+          characteristic: job?.characteristic || '',
+          birthTypeLabel: job?.birthTypeLabel || '',
+          specialNeeds: job?.specialNeeds || ''
+        }]
+      : []);
+  const requiredCount = normalizeChildrenCount(job?.numberOfChildren || fallbackChildren.length || 1);
+
+  if (!fallbackChildren.length && !job?.numberOfChildren) {
+    container.innerHTML = '';
+    container.classList.add('hidden');
+    return;
+  }
+
+  let html = '';
+  for (let idx = 0; idx < requiredCount; idx += 1) {
+    const child = fallbackChildren[idx] || null;
+    const displayIndex = idx + 1;
+
+    if (!child) {
+      html += `
+        <div class="child-profile-panel child-profile-panel--missing child-profile-panel--preview">
+          <div class="child-profile-panel__head">
+          <p class="child-profile-panel__title">Bé thứ ${displayIndex}</p>
+          </div>
+          <p class="child-profile-panel__empty">Chưa thấy Child Profile của bé này.</p>
+        </div>`;
+      continue;
+    }
+
+    html += `
+      <div class="child-profile-panel child-profile-panel--preview">
+        <div class="child-profile-panel__head">
+          <p class="child-profile-panel__title">Bé thứ ${displayIndex}</p>
+          <span class="child-profile-panel__badge">${escapeHtml(child.label || `Bé ${displayIndex}`)}</span>
+        </div>
+        <div class="child-profile-grid">
+          <div class="child-profile-field">
+            <span class="child-profile-field__label">Đặc điểm</span>
+            <p class="child-profile-field__value">${escapeHtml(child.characteristic || 'Chưa cập nhật')}</p>
+          </div>
+          <div class="child-profile-field">
+            <span class="child-profile-field__label">Nhóm tuổi</span>
+            <p class="child-profile-field__value">${escapeHtml(child.birthTypeLabel || 'Chưa cập nhật')}</p>
+          </div>
+          <div class="child-profile-field child-profile-field--full">
+            <span class="child-profile-field__label">Nhu cầu đặc biệt</span>
+            <p class="child-profile-field__value">${escapeHtml(child.specialNeeds || 'Không có')}</p>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  container.innerHTML = html;
+  container.classList.remove('hidden');
+}
+
 function openPreview(job) {
   if (!job) return;
   editingJobId = job.id;
@@ -1839,6 +1987,18 @@ function handleEditCityChange() {
   handleCityChange('ef');
 }
 
+function bindClickOnlySelect(selectElement) {
+  if (!selectElement || selectElement.dataset.clickOnlyBound === 'true') return;
+
+  selectElement.dataset.clickOnlyBound = 'true';
+  selectElement.style.caretColor = 'transparent';
+
+  selectElement.addEventListener('keydown', (event) => {
+    if (event.key === 'Tab') return;
+    event.preventDefault();
+  });
+}
+
 async function bootstrapSearchPage() {
   ['cf-city', 'cf-district', 'ef-city', 'ef-district', 'cf-typeText', 'cf-childProfileText', 'cf-skillSelectText'].forEach((id) => {
     document.getElementById(id)?.setAttribute('autocomplete', 'off');
@@ -1853,6 +2013,7 @@ async function bootstrapSearchPage() {
     createChildrenInput.dataset.bindChildrenCount = 'true';
     createChildrenInput.addEventListener('change', renderCreateExtraChildProfiles);
   }
+  bindClickOnlySelect(createChildrenInput);
   initMoneyInputs();
   initMap();
   loadLocationData();

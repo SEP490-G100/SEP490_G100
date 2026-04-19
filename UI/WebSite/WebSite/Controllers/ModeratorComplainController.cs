@@ -209,7 +209,7 @@ public class ModeratorComplainController : Controller
     public async Task<IActionResult> ViewComplainedJobPostingDetail(Guid jobPostingId, Guid? complaintId = null)
     {
         if (jobPostingId == Guid.Empty)
-            return RedirectToAction(nameof(ManageComplaint), new { toastType = "error", toastMessage = "Khong tim thay bai dang." });
+            return RedirectToAction(nameof(ManageComplaint), new { toastType = "error", toastMessage = "Không t?m th?y bai dang." });
 
         var token = HttpContext.Session.GetString("AccessToken");
         _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -225,7 +225,7 @@ public class ModeratorComplainController : Controller
                 return RedirectToAction(nameof(ManageComplaint), new
                 {
                     toastType = "error",
-                    toastMessage = result?.Message ?? "Khong the tai chi tiet bai dang bi phan nan."
+                    toastMessage = result?.Message ?? "Không th? tai chi tiết bài đăng bi phàn nàn."
                 });
             }
 
@@ -242,7 +242,7 @@ public class ModeratorComplainController : Controller
             return RedirectToAction(nameof(ManageComplaint), new
             {
                 toastType = "error",
-                toastMessage = "Khong the tai chi tiet bai dang bi phan nan."
+                toastMessage = "Không th? tai chi tiết bài đăng bi phàn nàn."
             });
         }
     }
@@ -252,7 +252,7 @@ public class ModeratorComplainController : Controller
     public async Task<IActionResult> DeactivateComplainedJobPosting(Guid jobPostingId, Guid? complaintId = null)
     {
         if (jobPostingId == Guid.Empty)
-            return RedirectToAction(nameof(ManageComplaint), new { toastType = "error", toastMessage = "Khong tim thay bai dang." });
+            return RedirectToAction(nameof(ManageComplaint), new { toastType = "error", toastMessage = "Không t?m th?y bai dang." });
 
         var token = HttpContext.Session.GetString("AccessToken");
         _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -287,7 +287,7 @@ public class ModeratorComplainController : Controller
                 jobPostingId,
                 complaintId,
                 toastType = "error",
-                toastMessage = result?.Message ?? "Khong the vo hieu hoa bai dang."
+                toastMessage = result?.Message ?? "Không th? vo hieu hoa bai dang."
             });
         }
         catch
@@ -297,7 +297,7 @@ public class ModeratorComplainController : Controller
                 jobPostingId,
                 complaintId,
                 toastType = "error",
-                toastMessage = "Khong the vo hieu hoa bai dang."
+                toastMessage = "Không th? vo hieu hoa bai dang."
             });
         }
     }
@@ -306,17 +306,17 @@ public class ModeratorComplainController : Controller
     public async Task<IActionResult> ViewComplainedProfileDetail(Guid userId, Guid? complaintId = null)
     {
         if (userId == Guid.Empty)
-            return RedirectToAction(nameof(ManageComplaint), new { toastType = "error", toastMessage = "Khong tim thay profile." });
+            return RedirectToAction(nameof(ManageComplaint), new { toastType = "error", toastMessage = "Không t?m th?y profile." });
 
         try
         {
             var token = HttpContext.Session.GetString("AccessToken");
             if (string.IsNullOrWhiteSpace(token))
             {
-                return RedirectToAction("Login", "Auth", new
+                return RedirectToAction("đăng nhập", "Auth", new
                 {
                     toastType = "warning",
-                    toastMessage = "Phien dang nhap da het han."
+                    toastMessage = "Phi?n đăng nhập da het han."
                 });
             }
 
@@ -328,7 +328,7 @@ public class ModeratorComplainController : Controller
                 return RedirectToAction(nameof(ManageComplaint), new
                 {
                     toastType = "error",
-                    toastMessage = "Khong the tai profile bi phan nan."
+                    toastMessage = "Không th? tai profile bi phàn nàn."
                 });
             }
 
@@ -339,7 +339,7 @@ public class ModeratorComplainController : Controller
                 return RedirectToAction(nameof(ManageComplaint), new
                 {
                     toastType = "error",
-                    toastMessage = result?.Message ?? "Khong the tai profile bi phan nan."
+                    toastMessage = result?.Message ?? "Không th? tai profile bi phàn nàn."
                 });
             }
 
@@ -358,7 +358,7 @@ public class ModeratorComplainController : Controller
             return RedirectToAction(nameof(ManageComplaint), new
             {
                 toastType = "error",
-                toastMessage = "Khong the tai profile bi phan nan."
+                toastMessage = "Không th? tai profile bi phàn nàn."
             });
         }
     }

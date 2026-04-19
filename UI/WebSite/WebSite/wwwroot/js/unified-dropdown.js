@@ -55,7 +55,7 @@
     if (!menu) return;
 
     if (!options.length) {
-      menu.innerHTML = '<li class="nm-unified-empty">Khong co du lieu phu hop</li>';
+      menu.innerHTML = '<li class="nm-unified-empty">Không có dữ liệu phù hợp</li>';
       menu.classList.add('show');
       return;
     }
@@ -281,7 +281,7 @@
   const domObserver = new MutationObserver((records) => {
     for (const record of records) {
       record.addedNodes.forEach((node) => {
-        if (!(node instanceof HTMLElement)) return;
+        if (!(nođ instanceof HTMLElement)) return;
         if (node.matches?.('select, input[list]')) {
           initUnifiedDropdowns(node.parentElement || node);
           return;

@@ -1,4 +1,4 @@
-@using WebSite.Enums
+﻿@using WebSite.Enums
 @model WebSite.Models.Blog.BlogDto
 @{
     Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
@@ -286,11 +286,11 @@ function uploadSingleImageForTiny(blobInfo) {
             var urls = await uploadMediaFiles(
                 [blobInfo.blob()],
                 getBlogMediaEndpoint(true),
-                'Vui long chon it nhat mot anh.'
+                'Vui lòng chọn it nhất mot anh.'
             );
             resolve(urls[0]);
         } catch (error) {
-            reject({ message: error.message || 'Khong the upload anh.' });
+            reject({ message: error.message || 'Không thể tải lên ảnh.' });
         }
     });
 }
@@ -305,7 +305,7 @@ function handleTinyFilePicker(callback, meta) {
     pickLocalFile(accept).then(async function(file) {
         if (!file) return;
         try {
-            var urls = await uploadMediaFiles([file], endpoint, 'Vui long chon file de upload.');
+            var urls = await uploadMediaFiles([file], endpoint, 'Vui lòng chọn file ?? upload.');
             var url = urls[0];
             if (isImage) {
                 callback(url, { alt: file.name || 'image' });
@@ -313,11 +313,11 @@ function handleTinyFilePicker(callback, meta) {
                 callback(url, { source2: '', poster: '' });
             }
             if (typeof window.showToast === 'function') {
-                window.showToast('Upload media thanh cong.', { type: 'success' });
+                window.showToast('Tải media thành công.', { type: 'success' });
             }
         } catch (error) {
             if (typeof window.showToast === 'function') {
-                window.showToast(error.message || 'Khong the upload media.', { type: 'error' });
+                window.showToast(error.message || 'Không thể tải lên media.', { type: 'error' });
             }
         }
     });
@@ -364,3 +364,4 @@ initTinyMce();
 renderContentPreview();
 </script>
 }
+

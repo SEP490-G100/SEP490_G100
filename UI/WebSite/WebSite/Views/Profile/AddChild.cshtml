@@ -6,512 +6,65 @@
 }
 
 <div class="child-page">
-    <div class="child-shell child-shell--narrow">
-        <div class="child-surface">
-            <div class="child-breadcrumb">
-                <a href="@Url.Action("Index", "Profile")" class="child-breadcrumb__link">
-                    <span class="material-icons-round">person</span>
-                    Ho so
-                </a>
-                <span class="material-icons-round child-breadcrumb__sep">chevron_right</span>
-                <a href="@Url.Action("Children", "Profile")" class="child-breadcrumb__link">Quan ly con em</a>
-                <span class="material-icons-round child-breadcrumb__sep">chevron_right</span>
-                <span class="child-breadcrumb__current">Them moi</span>
+    <div class="child-shell">
+        <h1 class="child-title">Them ho so con em</h1>
+
+        <form method="post" class="child-form">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="child-summary"></div>
+
+            <div class="child-field">
+                <label asp-for="ChildAgeGroup" class="child-label">Nhom tuoi</label>
+                <select asp-for="ChildAgeGroup"
+                        asp-items="Html.GetEnumSelectList<WebSite.Enums.ChildAgeGroup>()"
+                        class="child-input">
+                    <option value="">-- Chon nhom tuoi --</option>
+                </select>
+                @Html.ValidationMessageFor(m => m.ChildAgeGroup, "", new { @class = "child-error" })
             </div>
 
-            <div class="child-hero">
-                <div class="child-hero__left">
-                    <div class="child-hero__icon">
-                        <span class="material-icons-round">child_care</span>
-                    </div>
-                    <div>
-                        <p class="child-hero__eyebrow">Gia dinh</p>
-                        <h1 class="child-hero__title">Them con em moi</h1>
-                        <p class="child-hero__subtitle">Dien thong tin co ban de nang cao do chinh xac khi goi y nanny.</p>
-                    </div>
-                </div>
-                <div class="child-hero__right">
-                    <span class="child-chip">Buoc bo sung</span>
-                </div>
+            <div class="child-field">
+                <label asp-for="Characteristic" class="child-label">Dac diem tinh cach</label>
+                <textarea asp-for="Characteristic" rows="3" class="child-input child-textarea" placeholder="Mo ta tinh cach cua tre..."></textarea>
+                @Html.ValidationMessageFor(m => m.Characteristic, "", new { @class = "child-error" })
             </div>
 
-            <div class="child-content">
-                <form method="post" class="child-form">
-                    @Html.AntiForgeryToken()
-                    <div asp-validation-summary="ModelOnly" class="child-form__summary"></div>
-
-                    <section class="child-form__section">
-                        <div class="child-form__section-head">
-                            <div class="child-form__section-icon child-form__section-icon--orange">
-                                <span class="material-icons-round">child_care</span>
-                            </div>
-                            <div>
-                                <h2>Thong tin co ban</h2>
-                                <p>Nhom do tuoi cua tre</p>
-                            </div>
-                        </div>
-
-                        <div class="child-field">
-                            <label asp-for="ChildAgeGroup" class="child-field__label">Nhom tuoi</label>
-                            <select asp-for="ChildAgeGroup" asp-items="Html.GetEnumSelectList<WebSite.Enums.ChildAgeGroup>()" class="child-input">
-                                <option value="">-- Chon nhom tuoi --</option>
-                            </select>
-                            @Html.ValidationMessageFor(m => m.ChildAgeGroup, "", new { @class = "child-field__error" })
-                        </div>
-                    </section>
-
-                    <section class="child-form__section child-form__section--soft">
-                        <div class="child-form__section-head">
-                            <div class="child-form__section-icon child-form__section-icon--blue">
-                                <span class="material-icons-round">health_and_safety</span>
-                            </div>
-                            <div>
-                                <h2>Thong tin chi tiet</h2>
-                                <p>Tinh cach va nhu cau cua tre (co the bo qua)</p>
-                            </div>
-                        </div>
-
-                        <div class="child-field">
-                            <label asp-for="SpecialNeeds" class="child-field__label">Nhu cau dac biet</label>
-                            <textarea asp-for="SpecialNeeds" rows="3" class="child-textarea" placeholder="Mo ta cac nhu cau dac biet neu co..."></textarea>
-                            @Html.ValidationMessageFor(m => m.SpecialNeeds, "", new { @class = "child-field__error" })
-                        </div>
-
-                        <div class="child-field">
-                            <label asp-for="Characteristic" class="child-field__label">Dac diem tinh cach</label>
-                            <textarea asp-for="Characteristic" rows="3" class="child-textarea" placeholder="Mo ta tinh cach cua con..."></textarea>
-                            @Html.ValidationMessageFor(m => m.Characteristic, "", new { @class = "child-field__error" })
-                        </div>
-
-                        <div class="child-field child-field--last">
-                            <label asp-for="Notes" class="child-field__label">Ghi chu them</label>
-                            <textarea asp-for="Notes" rows="3" class="child-textarea" placeholder="Cac thong tin bo sung khac..."></textarea>
-                            @Html.ValidationMessageFor(m => m.Notes, "", new { @class = "child-field__error" })
-                        </div>
-                    </section>
-
-                    <div class="child-form__actions">
-                        <button type="submit" class="child-btn child-btn--primary">
-                            <span class="material-icons-round">add_circle</span>
-                            Luu ho so con em
-                        </button>
-                        <a href="@Url.Action("Children", "Profile")" class="child-btn child-btn--ghost">Huy</a>
-                    </div>
-                </form>
+            <div class="child-field">
+                <label asp-for="SpecialNeeds" class="child-label">Nhu cau dac biet</label>
+                <textarea asp-for="SpecialNeeds" rows="3" class="child-input child-textarea" placeholder="Mo ta nhu cau dac biet neu co..."></textarea>
+                @Html.ValidationMessageFor(m => m.SpecialNeeds, "", new { @class = "child-error" })
             </div>
-        </div>
+
+            <div class="child-field">
+                <label asp-for="Notes" class="child-label">Ghi chu</label>
+                <textarea asp-for="Notes" rows="3" class="child-input child-textarea" placeholder="Thong tin bo sung..."></textarea>
+                @Html.ValidationMessageFor(m => m.Notes, "", new { @class = "child-error" })
+            </div>
+
+            <div class="child-actions">
+                <button type="submit" class="btn-primary">Luu ho so con em</button>
+                <a href="@Url.Action("Children", "Profile")" class="btn-secondary">Huy</a>
+            </div>
+        </form>
     </div>
 </div>
 
 <style>
-    .child-page {
-        min-height: calc(100vh - 72px);
-        padding: 28px 16px 56px;
-        background:
-            radial-gradient(circle at top right, rgba(255, 237, 213, .42), transparent 35%),
-            linear-gradient(180deg, #faf9f7 0%, #f8fafc 100%);
-    }
-
-    .child-shell {
-        max-width: 980px;
-        margin: 0 auto;
-    }
-
-    .child-shell--narrow {
-        max-width: 760px;
-    }
-
-    .child-surface {
-        border: 1px solid #e2e8f0;
-        border-radius: 28px;
-        background: #fff;
-        box-shadow: 0 24px 56px rgba(15, 23, 42, .08);
-        overflow: hidden;
-    }
-
-    .child-breadcrumb {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding: 18px 24px 0;
-        font-size: 12px;
-        color: #94a3b8;
-    }
-
-    .child-breadcrumb__link {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        text-decoration: none;
-        color: #94a3b8;
-        transition: color .15s ease;
-    }
-
-    .child-breadcrumb__link:hover {
-        color: #f97316;
-    }
-
-    .child-breadcrumb .material-icons-round {
-        font-size: 14px;
-    }
-
-    .child-breadcrumb__current {
-        color: #f97316;
-        font-weight: 700;
-    }
-
-    .child-breadcrumb__sep {
-        font-size: 14px !important;
-    }
-
-    .child-hero {
-        margin: 14px 24px 0;
-        padding: 18px;
-        border-radius: 20px;
-        border: 1px solid #fed7aa;
-        background: linear-gradient(145deg, #ffffff 0%, #fff7ed 100%);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 14px;
-        flex-wrap: wrap;
-    }
-
-    .child-hero__left {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        min-width: 260px;
-    }
-
-    .child-hero__icon {
-        width: 54px;
-        height: 54px;
-        border-radius: 16px;
-        border: 1px solid #fed7aa;
-        background: #fff;
-        color: #f97316;
-        display: grid;
-        place-items: center;
-        box-shadow: 0 10px 24px rgba(249, 115, 22, .16);
-        flex-shrink: 0;
-    }
-
-    .child-hero__icon .material-icons-round {
-        font-size: 28px;
-    }
-
-    .child-hero__eyebrow {
-        margin: 0;
-        font-size: 11px;
-        font-weight: 800;
-        letter-spacing: .1em;
-        text-transform: uppercase;
-        color: #f97316;
-    }
-
-    .child-hero__title {
-        margin: 4px 0 0;
-        font-size: 26px;
-        line-height: 1.15;
-        font-weight: 800;
-        color: #0f172a;
-        font-family: 'Quicksand', sans-serif;
-    }
-
-    .child-hero__subtitle {
-        margin: 6px 0 0;
-        font-size: 13px;
-        color: #64748b;
-    }
-
-    .child-hero__right {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-
-    .child-chip {
-        display: inline-flex;
-        align-items: center;
-        min-height: 34px;
-        padding: 0 12px;
-        border-radius: 999px;
-        border: 1px solid #fdba74;
-        background: #fff;
-        color: #c2410c;
-        font-size: 12px;
-        font-weight: 800;
-        letter-spacing: .04em;
-        text-transform: uppercase;
-    }
-
-    .child-content {
-        padding: 24px;
-    }
-
-    .child-form {
-        border: 1px solid #e2e8f0;
-        border-radius: 20px;
-        overflow: hidden;
-        background: #fff;
-        box-shadow: 0 12px 26px rgba(15, 23, 42, .04);
-    }
-
-    .child-form__summary {
-        margin: 12px 14px 0;
-        padding: 10px 12px;
-        border-radius: 12px;
-        background: #fff1f2;
-        border: 1px solid #fecdd3;
-        color: #be123c;
-        font-size: 13px;
-        font-weight: 600;
-    }
-
-    .child-form__section {
-        padding: 18px;
-    }
-
-    .child-form__section + .child-form__section {
-        border-top: 1px solid #f1f5f9;
-    }
-
-    .child-form__section--soft {
-        background: #f8fafc;
-    }
-
-    .child-form__section-head {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 16px;
-    }
-
-    .child-form__section-icon {
-        width: 38px;
-        height: 38px;
-        border-radius: 12px;
-        display: grid;
-        place-items: center;
-    }
-
-    .child-form__section-icon .material-icons-round {
-        font-size: 20px;
-    }
-
-    .child-form__section-icon--orange {
-        background: #fff7ed;
-        color: #f97316;
-        border: 1px solid #fed7aa;
-    }
-
-    .child-form__section-icon--blue {
-        background: #eff6ff;
-        color: #2563eb;
-        border: 1px solid #bfdbfe;
-    }
-
-    .child-form__section-head h2 {
-        margin: 0;
-        font-size: 16px;
-        color: #0f172a;
-        font-weight: 800;
-        font-family: 'Quicksand', sans-serif;
-    }
-
-    .child-form__section-head p {
-        margin: 2px 0 0;
-        font-size: 12px;
-        color: #64748b;
-    }
-
-    .child-field {
-        margin-bottom: 14px;
-    }
-
-    .child-field--last {
-        margin-bottom: 0;
-    }
-
-    .child-field__label {
-        display: block;
-        margin-bottom: 6px;
-        font-size: 12px;
-        font-weight: 800;
-        letter-spacing: .06em;
-        text-transform: uppercase;
-        color: #334155;
-    }
-
-    .child-input,
-    .child-textarea {
-        width: 100%;
-        border: 1.5px solid #dbe3ec;
-        border-radius: 12px;
-        background: #fff;
-        color: #0f172a;
-        font-size: 14px;
-        transition: border-color .15s ease, box-shadow .15s ease;
-    }
-
-    .child-input {
-        min-height: 46px;
-        padding: 0 12px;
-        font-weight: 600;
-    }
-
-    .child-textarea {
-        padding: 10px 12px;
-        resize: vertical;
-        min-height: 104px;
-        line-height: 1.55;
-    }
-
-    .child-input:focus,
-    .child-textarea:focus {
-        outline: none;
-        border-color: #f97316;
-        box-shadow: 0 0 0 3px rgba(249, 115, 22, .14);
-    }
-
-    .child-input:hover,
-    .child-textarea:hover {
-        border-color: #fdba74;
-    }
-
-    .child-field .nm-unified-field {
-        z-index: 12;
-    }
-
-    .child-field .nm-unified-field:focus-within {
-        z-index: 2600;
-    }
-
-    .child-field .nm-unified-input {
-        min-height: 46px;
-        border: 1.5px solid #dbe3ec;
-        border-radius: 12px;
-        background: #fff;
-        padding-left: 12px;
-        padding-right: 42px;
-        font-size: 14px;
-        font-weight: 600;
-        color: #0f172a;
-        box-shadow: none;
-    }
-
-    .child-field .nm-unified-input:hover,
-    .child-field .nm-unified-input:focus {
-        border-color: #f97316;
-        box-shadow: 0 0 0 3px rgba(249, 115, 22, .14);
-        background: #fff;
-    }
-
-    .child-field .nm-unified-menu {
-        top: calc(100% + 6px);
-        border: 1.5px solid #fdba74;
-        border-radius: 12px;
-        background: #fff;
-        box-shadow: 0 18px 30px rgba(15, 23, 42, .14);
-        max-height: 240px;
-        z-index: 2700 !important;
-    }
-
-    .child-field .nm-unified-menu li {
-        font-size: 14px;
-        font-weight: 600;
-        color: #334155;
-    }
-
-    .child-field__error {
-        display: block;
-        margin-top: 4px;
-        font-size: 12px;
-        color: #dc2626;
-        font-weight: 600;
-    }
-
-    .child-form__actions {
-        padding: 14px 18px 18px;
-        border-top: 1px solid #f1f5f9;
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-
-    .child-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        min-height: 42px;
-        padding: 0 16px;
-        border-radius: 12px;
-        border: 1px solid transparent;
-        font-size: 14px;
-        font-weight: 700;
-        text-decoration: none;
-        transition: .18s ease;
-        cursor: pointer;
-    }
-
-    .child-btn .material-icons-round {
-        font-size: 18px;
-    }
-
-    .child-btn--primary {
-        background: linear-gradient(135deg, #f97316, #ea580c);
-        border-color: #f97316;
-        color: #fff;
-        box-shadow: 0 12px 24px rgba(249, 115, 22, .24);
-    }
-
-    .child-btn--primary:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 16px 30px rgba(249, 115, 22, .3);
-        color: #fff;
-    }
-
-    .child-btn--ghost {
-        background: #fff;
-        border-color: #dbe3ec;
-        color: #475569;
-    }
-
-    .child-btn--ghost:hover {
-        border-color: #cbd5e1;
-        background: #f8fafc;
-        color: #1f2937;
-    }
-
-    @@media (max-width: 768px) {
-        .child-page {
-            padding-top: 18px;
-        }
-
-        .child-breadcrumb,
-        .child-content {
-            padding-left: 16px;
-            padding-right: 16px;
-        }
-
-        .child-hero {
-            margin: 12px 16px 0;
-            padding: 14px;
-        }
-
-        .child-hero__title {
-            font-size: 22px;
-        }
-
-        .child-form__actions {
-            flex-direction: column;
-        }
-
-        .child-btn {
-            width: 100%;
-        }
-    }
+    .child-page { min-height: calc(100vh - 72px); padding: 28px 16px; background: #faf9f7; }
+    .child-shell { max-width: 760px; margin: 0 auto; }
+    .child-title { margin: 0 0 16px; font-size: 28px; font-weight: 800; color: #0f172a; }
+    .child-form { background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 20px; }
+    .child-summary { margin-bottom: 12px; color: #b91c1c; font-weight: 600; }
+    .child-field { margin-bottom: 14px; }
+    .child-label { display: block; margin-bottom: 6px; font-size: 12px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: #334155; }
+    .child-input { width: 100%; min-height: 46px; border: 1px solid #cbd5e1; border-radius: 12px; padding: 0 12px; font-size: 14px; }
+    .child-textarea { min-height: 104px; padding: 10px 12px; resize: vertical; }
+    .child-input:focus { outline: none; border-color: #f97316; box-shadow: 0 0 0 3px rgba(249,115,22,.12); }
+    .child-error { display: block; margin-top: 4px; color: #dc2626; font-size: 12px; }
+    .child-actions { display: flex; gap: 10px; margin-top: 16px; }
+    .btn-primary, .btn-secondary { min-height: 42px; border-radius: 12px; padding: 0 16px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; cursor: pointer; }
+    .btn-primary { background: #f97316; color: #fff; }
+    .btn-primary:hover { background: #ea580c; }
+    .btn-secondary { background: #fff; border-color: #cbd5e1; color: #334155; }
+    .btn-secondary:hover { background: #f8fafc; }
 </style>
