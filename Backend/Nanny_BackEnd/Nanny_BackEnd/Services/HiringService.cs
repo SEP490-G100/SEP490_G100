@@ -10,8 +10,13 @@ namespace Nanny_BackEnd.Services;
 public class HiringService
 {
     private readonly HiringRepository _repo;
+    private readonly CommunicationService _communication;
 
-    public HiringService(HiringRepository repo) => _repo = repo;
+    public HiringService(HiringRepository repo, CommunicationService communication)
+    {
+        _repo = repo;
+        _communication = communication;
+    }
 
     public async Task<List<JobApplicantDto>> GetApplicantsAsync(Guid jobPostingId, Guid parentUserId)
     {
@@ -179,7 +184,7 @@ public class HiringService
             });
         }
 
-        _repo.AddMessage(new Message
+        var hiringOfferMessage = new Message
         {
             Id = Guid.NewGuid(),
             ConversationId = conversation.Id,
@@ -189,7 +194,8 @@ public class HiringService
             AttachmentUrl = hiringRecord.Id.ToString(),
             CreatedAt = now,
             IsDeleted = false
-        });
+        };
+        _repo.AddMessage(hiringOfferMessage);
         conversation.LastMessageAt = now;
 
         _repo.AddNotification(new Notification
@@ -230,6 +236,8 @@ public class HiringService
         }
 
         await _repo.SaveChangesAsync();
+
+        await _communication.BroadcastPersistedMessageAsync(hiringOfferMessage.Id);
 
         return new HiringConfirmedDto
         {
@@ -373,7 +381,7 @@ public class HiringService
             });
         }
 
-        _repo.AddMessage(new Message
+        var hiringOfferMessageContact = new Message
         {
             Id = Guid.NewGuid(),
             ConversationId = conversation.Id,
@@ -383,7 +391,8 @@ public class HiringService
             AttachmentUrl = hiringRecord.Id.ToString(),
             CreatedAt = now,
             IsDeleted = false
-        });
+        };
+        _repo.AddMessage(hiringOfferMessageContact);
         conversation.LastMessageAt = now;
 
         _repo.AddNotification(new Notification
@@ -402,6 +411,8 @@ public class HiringService
         });
 
         await _repo.SaveChangesAsync();
+
+        await _communication.BroadcastPersistedMessageAsync(hiringOfferMessageContact.Id);
 
         return new HiringConfirmedDto
         {

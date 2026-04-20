@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.SignalR;
 using Nanny_BackEnd.DTOs.Communication;
 using Nanny_BackEnd.Helpers;
+using Nanny_BackEnd.Hubs;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
 
@@ -11,17 +13,33 @@ public class CommunicationService
     private readonly NotificationService _notificationService;
     private readonly UserRepository _userRepo;
     private readonly ReportService _reportService;
+    private readonly IHubContext<ChatHub> _chatHub;
 
     public CommunicationService(
         CommunicationRepository repo,
         NotificationService notificationService,
         UserRepository userRepo,
-        ReportService reportService)
+        ReportService reportService,
+        IHubContext<ChatHub> chatHub)
     {
         _repo = repo;
         _notificationService = notificationService;
         _userRepo = userRepo;
         _reportService = reportService;
+        _chatHub = chatHub;
+    }
+
+    /// <summary>
+    /// Broadcast a message already saved in DB (e.g. hiring-offer card created by <see cref="HiringService"/>).
+    /// Same channel as <see cref="Hubs.ChatHub.SendMessage"/>.
+    /// </summary>
+    public async Task BroadcastPersistedMessageAsync(Guid messageId)
+    {
+        var m = await _repo.GetMessageByIdForHubAsync(messageId);
+        if (m == null) return;
+
+        var dto = mapMessage(m, m.SenderUserId);
+        await _chatHub.Clients.Group(m.ConversationId.ToString()).SendAsync("ReceiveMessage", dto);
     }
 
     // ─── Lấy danh sách hội thoại ─────────────────────────────────────────────
@@ -30,6 +48,18 @@ public class CommunicationService
     {
         var conversations = await _repo.GetConversationsByUserIdAsync(userId);
         return conversations.Select(c => mapConversation(c, userId)).ToList();
+    }
+
+    public Task<int> GetTotalUnreadMessageCountAsync(Guid userId) =>
+        _repo.CountUnreadMessagesForUserAsync(userId);
+
+    /// <summary>Đánh dấu đã đọc toàn bộ tin nhận được trong một cuộc hội thoại.</summary>
+    public async Task<int> MarkConversationReadAsync(Guid conversationId, Guid userId)
+    {
+        _ = await _repo.GetParticipantAsync(conversationId, userId)
+            ?? throw new UnauthorizedAccessException("Ban khong phai thanh vien cua cuoc hoi thoai nay.");
+
+        return await _repo.MarkConversationMessagesReadForUserAsync(conversationId, userId);
     }
 
     // ─── Lấy lịch sử tin nhắn (phân trang) ──────────────────────────────────
