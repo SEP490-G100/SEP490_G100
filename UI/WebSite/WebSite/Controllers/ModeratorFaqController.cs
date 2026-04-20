@@ -69,7 +69,7 @@ public class ModeratorFaqController : Controller
         }
         catch
         {
-            TempData["Error"] = "Khong the tai danh sach FAQ.";
+            TempData["Error"] = "Không thể tải danh sách FAQ.";
             ViewBag.Categories = new List<string>();
             return View("~/Views/Moderator/FAQ/ManageFAQ.cshtml", new FaqListResponse());
         }
@@ -117,12 +117,12 @@ public class ModeratorFaqController : Controller
                 });
             }
 
-            ModelState.AddModelError(nameof(model.Question), result?.Message ?? "Tao FAQ that bai.");
+            ModelState.AddModelError(nameof(model.Question), result?.Message ?? "Tao FAQ thất bại.");
             return View("~/Views/Moderator/FAQ/CreateFAQ.cshtml", model);
         }
         catch (Exception ex)
         {
-            ModelState.AddModelError(nameof(model.Question), $"Loi ket noi: {ex.Message}");
+            ModelState.AddModelError(nameof(model.Question), $"L?i kết nối: {ex.Message}");
             return View("~/Views/Moderator/FAQ/CreateFAQ.cshtml", model);
         }
     }
@@ -143,14 +143,14 @@ public class ModeratorFaqController : Controller
             var result = JsonSerializer.Deserialize<ApiResult<FaqDto>>(json, JsonOpts);
             if (result?.Success != true || result.Data == null)
             {
-                TempData["Error"] = "Khong tim thay FAQ.";
+                TempData["Error"] = "Không tìm thấy FAQ.";
                 return RedirectToAction(nameof(ManageFAQ));
             }
             return View("~/Views/Moderator/FAQ/ViewFAQDetail.cshtml", result.Data);
         }
         catch
         {
-            TempData["Error"] = "Loi ket noi den API.";
+            TempData["Error"] = "Lỗi kết nối đến API.";
             return RedirectToAction(nameof(ManageFAQ));
         }
     }
@@ -196,11 +196,11 @@ public class ModeratorFaqController : Controller
                 });
             }
 
-            ModelState.AddModelError(nameof(model.Question), result?.Message ?? "Cap nhat FAQ that bai.");
+            ModelState.AddModelError(nameof(model.Question), result?.Message ?? "C?p nh?t FAQ thất bại.");
         }
         catch (Exception ex)
         {
-            ModelState.AddModelError(nameof(model.Question), $"Loi ket noi: {ex.Message}");
+            ModelState.AddModelError(nameof(model.Question), $"L?i kết nối: {ex.Message}");
         }
 
         var failedVm = await BuildFaqDetailViewModelForInvalidPost(id, model);
@@ -225,7 +225,7 @@ public class ModeratorFaqController : Controller
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = $"Loi ket noi: {ex.Message}" });
+            return Json(new { success = false, message = $"L?i kết nối: {ex.Message}" });
         }
     }
 

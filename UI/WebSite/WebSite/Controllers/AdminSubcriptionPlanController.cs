@@ -47,7 +47,7 @@ public class AdminSubcriptionPlanController : Controller
         }
         catch
         {
-            TempData["Error"] = "Khong the tai danh sach subscription plan.";
+            TempData["Error"] = "Không thể tải danh sách gói dịch vụ.";
             return View("~/Views/Admin/SubscriptionPlan/ManageSubscriptionPlan.cshtml", new AdminSubscriptionPlanListResponse());
         }
     }
@@ -85,12 +85,12 @@ public class AdminSubcriptionPlanController : Controller
                 });
             }
 
-            ModelState.AddModelError(nameof(model.Name), result?.Message ?? "Khong the tao subscription plan.");
+            ModelState.AddModelError(nameof(model.Name), result?.Message ?? "Không th? tao subscription plan.");
             return View("~/Views/Admin/SubscriptionPlan/CreateSubscriptionPlan.cshtml", model);
         }
         catch (Exception ex)
         {
-            ModelState.AddModelError(nameof(model.Name), $"Loi ket noi: {ex.Message}");
+            ModelState.AddModelError(nameof(model.Name), $"L?i kết nối: {ex.Message}");
             return View("~/Views/Admin/SubscriptionPlan/CreateSubscriptionPlan.cshtml", model);
         }
     }
@@ -107,7 +107,7 @@ public class AdminSubcriptionPlanController : Controller
             var result = JsonSerializer.Deserialize<ApiResult<AdminSubscriptionPlanDetailViewModel>>(json, JsonOpts);
             if (result?.Success != true || result.Data == null)
             {
-                TempData["Error"] = result?.Message ?? "Khong tim thay subscription plan.";
+                TempData["Error"] = result?.Message ?? "Không t?m th?y subscription plan.";
                 return RedirectToAction(nameof(ManageSubscriptionPlan));
             }
 
@@ -115,7 +115,7 @@ public class AdminSubcriptionPlanController : Controller
         }
         catch
         {
-            TempData["Error"] = "Loi ket noi den API.";
+            TempData["Error"] = "Lỗi kết nối đến API.";
             return RedirectToAction(nameof(ManageSubscriptionPlan));
         }
     }
@@ -152,13 +152,13 @@ public class AdminSubcriptionPlanController : Controller
                 });
             }
 
-            ModelState.AddModelError(nameof(model.Name), result?.Message ?? "Khong the cap nhat subscription plan.");
+            ModelState.AddModelError(nameof(model.Name), result?.Message ?? "Không th? cập nhật subscription plan.");
             model.Id = id;
             return View("~/Views/Admin/SubscriptionPlan/ViewSubscriptionPlanDetail.cshtml", model);
         }
         catch (Exception ex)
         {
-            ModelState.AddModelError(nameof(model.Name), $"Loi ket noi: {ex.Message}");
+            ModelState.AddModelError(nameof(model.Name), $"L?i kết nối: {ex.Message}");
             model.Id = id;
             return View("~/Views/Admin/SubscriptionPlan/ViewSubscriptionPlanDetail.cshtml", model);
         }
@@ -199,11 +199,11 @@ public class AdminSubcriptionPlanController : Controller
             return RedirectToReturnUrlOrList(
                 returnUrl,
                 "error",
-                result?.Message ?? "Khong the cap nhat trang thai subscription plan.");
+                result?.Message ?? "Không th? cập nhật tr?ng th?i subscription plan.");
         }
         catch (Exception ex)
         {
-            return RedirectToReturnUrlOrList(returnUrl, "error", $"Loi ket noi: {ex.Message}");
+            return RedirectToReturnUrlOrList(returnUrl, "error", $"L?i kết nối: {ex.Message}");
         }
     }
 

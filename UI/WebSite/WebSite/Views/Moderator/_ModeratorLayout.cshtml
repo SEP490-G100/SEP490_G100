@@ -25,33 +25,33 @@
                 <img src="~/img/nanny-logo.jpg" alt="Logo" class="w-9 h-9 rounded-xl object-cover shadow-lg flex-shrink-0" />
                 <div class="sidebar-text overflow-hidden">
                     <span class="text-lg font-bold tracking-tight" style="background:linear-gradient(135deg,#F97316,#FB923C);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">NannyMatch</span>
-                    <p class="text-[10px] text-gray-400 -mt-0.5 uppercase tracking-widest">Moderator Panel</p>
+                    <p class="text-[10px] text-gray-400 -mt-0.5 uppercase tracking-widest">Trang Quản trị viên</p>
                 </div>
             </div>
 
             <!-- Nav -->
             <nav class="flex-1 px-3 py-5 space-y-1 overflow-y-auto overflow-x-hidden">
 
-                <p class="sidebar-text px-2 text-[10px] uppercase tracking-widest text-gray-500 mb-2 font-semibold">Overview</p>
+                <p class="sidebar-text px-2 text-[10px] uppercase tracking-widest text-gray-500 mb-2 font-semibold">Tổng quan</p>
 
                 <a href="/Moderator/Dashboard"
                    class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() == "Dashboard" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">dashboard</span>
-                    <span class="sidebar-text">Dashboard</span>
+                    <span class="sidebar-text">Bảng điều khiển</span>
                 </a>
 
-                <p class="sidebar-text px-2 text-[10px] uppercase tracking-widest text-gray-500 mt-5 mb-2 font-semibold">Management</p>
+                <p class="sidebar-text px-2 text-[10px] uppercase tracking-widest text-gray-500 mt-5 mb-2 font-semibold">Quản lý</p>
 
                 <a href="/Moderator/ManageAccount"
                    class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() == "ManageAccount" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">manage_accounts</span>
-                    <span class="sidebar-text">Manage Accounts</span>
+                    <span class="sidebar-text">Quản lý tài khoản</span>
                 </a>
 
                 <a href="/Moderator/ManageNannyVerification"
                    class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() is "ManageNannyVerification" or "ViewNannyVerificationDetail" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">verified_user</span>
-                    <span class="sidebar-text">Manage Nanny Verification Requests</span>
+                    <span class="sidebar-text">Xác minh bảo mẫu</span>
                 </a>
 
                  
@@ -59,32 +59,32 @@
                 <a href="/Moderator/ManageJobPosting"
                    class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() == "ManageJobPosting" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">work</span>
-                    <span class="sidebar-text">Manage Job Postings</span>
+                    <span class="sidebar-text">Quản lý bài đăng việc</span>
                 </a>
                 <a href="/Moderator/ManageComplaint"
                    class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() is "ManageComplaint" or "ViewComplaintDetail" or "ViewComplainedJobPostingDetail" or "ViewComplainedProfileDetail" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">flag</span>
-                    <span class="sidebar-text">Complaints</span>
+                    <span class="sidebar-text">Khiếu nại</span>
                 </a>
 
-                <p class="sidebar-text px-2 text-[10px] uppercase tracking-widest text-gray-500 mt-5 mb-2 font-semibold">Content</p>
+                <p class="sidebar-text px-2 text-[10px] uppercase tracking-widest text-gray-500 mt-5 mb-2 font-semibold">Nội dung</p>
 
                 <a href="/Moderator/ManageBlog"
                    class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() is "ManageBlog" or "CreateBlog" or "ViewBlogDetail" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">article</span>
-                    <span class="sidebar-text">Manage Blogs</span>
+                    <span class="sidebar-text">Quản lý Blog</span>
                 </a>
 
                 <a href="/Moderator/ManageFAQ"
                    class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() is "ManageFAQ" or "CreateFAQ" or "ViewFAQDetail" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">help_outline</span>
-                    <span class="sidebar-text">Manage FAQ</span>
+                    <span class="sidebar-text">Quản lý FAQ</span>
                 </a>
 
                 <a href="/Moderator/ManageBlogCategory"
                    class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() is "ManageBlogCategory" or "CreateBlogCategory" or "ViewBlogCategoryDetail" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">category</span>
-                    <span class="sidebar-text">Manage Blog Categories</span>
+                    <span class="sidebar-text">Danh mục Blog</span>
                 </a>
             </nav>
 
@@ -102,7 +102,7 @@
                     </div>
                     <form asp-controller="Auth" asp-action="Logout" method="post" class="sidebar-text flex-shrink-0">
                         @Html.AntiForgeryToken()
-                        <button type="submit" title="Sign out"
+                        <button type="submit" title="Đăng xuất"
                                 class="w-8 h-8 rounded-lg hover:bg-red-500/20 flex items-center justify-center text-gray-400 hover:text-red-400 transition-all">
                             <span class="material-icons-round text-xl">logout</span>
                         </button>
@@ -363,11 +363,11 @@
 
                 switch (type) {
                     case 'verification-request-submitted':
-                        return { message: 'Co yeu cau xac minh moi dang cho duyet.', type: 'info' };
+                        return { message: 'Co yư cư xác minh mới Đang chờ duyệt.', type: 'info' };
                     case 'job-posting-review-required':
-                        return { message: 'Co bai dang moi dang cho moderator duyet.', type: 'info' };
+                        return { message: 'Có bài đăng mới đang chờ moderator duyệt.', type: 'info' };
                     case 'complain-submitted':
-                        return { message: 'Co bao cao moi can xu ly.', type: 'warning' };
+                        return { message: 'Co bao cao mới can xu ly.', type: 'warning' };
                     case 'system-warning':
                         return { message: 'Co canh bao he thong can xu ly.', type: 'warning' };
                     default:

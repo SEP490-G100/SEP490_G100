@@ -1,4 +1,4 @@
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace WebSite.Models.Search;
 
@@ -89,6 +89,9 @@ public class SearchJobResponse
 
     [JsonPropertyName("scheduleSlots")]
     public List<JobScheduleSlotResponse> ScheduleSlots { get; set; } = [];
+
+    [JsonPropertyName("children")]
+    public List<JobPostingPrefillChildResponse> Children { get; set; } = [];
 
     [JsonPropertyName("numberOfChildren")]
     public int? NumberOfChildren { get; set; }
@@ -240,6 +243,9 @@ public class JobPostingDetailResponse
     [JsonPropertyName("scheduleSlots")]
     public List<JobScheduleSlotResponse> ScheduleSlots { get; set; } = [];
 
+    [JsonPropertyName("children")]
+    public List<JobPostingPrefillChildResponse> Children { get; set; } = [];
+
     [JsonPropertyName("latitude")]
     public double? Latitude { get; set; }
 
@@ -374,3 +380,4 @@ public class SearchApiResult
     [JsonPropertyName("data")]
     public List<SearchJobResponse> Data { get; set; } = [];
 }
+

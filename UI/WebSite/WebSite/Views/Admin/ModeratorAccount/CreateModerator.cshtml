@@ -1,7 +1,7 @@
 @model WebSite.Models.Admin.CreateModeratorRequest
 @{
     Layout = "~/Views/Admin/_AdminLayout.cshtml";
-    ViewData["Title"] = "Create Moderator";
+    ViewData["Title"] = "Tạo Kiểm Duyệt Viên";
 }
 
 <!-- ====================================================
@@ -9,15 +9,15 @@
      ==================================================== -->
 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
     <div>
-        <span class="section-label">🛡️ Admin Action</span>
+        <span class="section-label">🛡️ Hành Động Quản Trị</span>
         <h1 class="page-title mt-2">
-            Create <span class="gradient-text">Moderator</span>
+            Tạo <span class="gradient-text">Kiểm Duyệt Viên</span>
         </h1>
-        <p class="page-subtitle">Add a new moderator to the platform administration team.</p>
+        <p class="page-subtitle">Thêm một kiểm duyệt viên mới vào đội ngũ quản trị nền tảng.</p>
     </div>
     <a href="/Admin/ManageModerators" class="btn-outline flex-shrink-0">
         <span class="material-icons-round text-base">arrow_back</span>
-        Back to List
+        Quay Lại Danh Sách
     </a>
 </div>
 
@@ -44,14 +44,14 @@
                 <div class="card-header">
                     <div class="flex items-center gap-2">
                         <span class="material-icons-round text-orange-400">lock</span>
-                        <h2>Sign-In Credentials <span class="text-xs text-red-500 font-semibold ml-1">* required</span></h2>
+                        <h2>Thông Tin Đăng Nhập <span class="text-xs text-red-500 font-semibold ml-1">* bắt buộc</span></h2>
                     </div>
                 </div>
                 <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
 
                     <!-- Email -->
                     <div class="field-group sm:col-span-2">
-                        <label class="field-label">Email Address <span class="text-red-400">*</span></label>
+                        <label class="field-label">Email <span class="text-red-400">*</span></label>
                         <div class="relative">
                             <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-base pointer-events-none">email</span>
                             <input id="emailInput" name="Email" type="email" value="@Model.Email"
@@ -62,11 +62,11 @@
 
                     <!-- Password -->
                     <div class="field-group sm:col-span-2">
-                        <label class="field-label">Password <span class="text-red-400">*</span></label>
+                        <label class="field-label">Mật Khẩu <span class="text-red-400">*</span></label>
                         <div class="relative">
                             <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-base pointer-events-none">lock_outline</span>
                             <input id="passwordInput" name="Password" type="password"
-                                   placeholder="Must be at least 8 characters" required
+                                   placeholder="Tối thiểu 8 ký tự" required
                                    oninput="validatePassword(this)"
                                    class="search-input !pl-9 w-full pr-10" />
                             <button type="button" onclick="togglePassword()"
@@ -75,7 +75,7 @@
                             </button>
                         </div>
                         <p id="password-error" class="text-xs text-red-500 mt-1 hidden">
-                            Password must be at least 8 characters long.
+                            Mật khẩu phải có ít nhất 8 ký tự.
                         </p>
                     </div>
 
@@ -87,38 +87,38 @@
                 <div class="card-header">
                     <div class="flex items-center gap-2">
                         <span class="material-icons-round text-orange-400">person</span>
-                        <h2>Personal Information</h2>
+                        <h2>Thông Tin Cá Nhân</h2>
                     </div>
                 </div>
                 <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
 
                     <!-- First Name -->
                     <div class="field-group">
-                        <label class="field-label">First Name <span class="text-red-400">*</span></label>
+                        <label class="field-label">Họ <span class="text-red-400">*</span></label>
                         <input name="FirstName" type="text" value="@Model.FirstName" required
-                               placeholder="e.g. John" class="search-input w-full" />
+                               placeholder="ví dụ: Nguyễn" class="search-input w-full" />
                     </div>
 
                     <!-- Last Name -->
                     <div class="field-group">
-                        <label class="field-label">Last Name <span class="text-red-400">*</span></label>
+                        <label class="field-label">Tên <span class="text-red-400">*</span></label>
                         <input name="LastName" type="text" value="@Model.LastName" required
-                               placeholder="e.g. Doe" class="search-input w-full" />
+                               placeholder="ví dụ: An" class="search-input w-full" />
                     </div>
 
                     <!-- Phone Number -->
                     <div class="field-group sm:col-span-2">
-                        <label class="field-label">Phone Number <span class="text-gray-400 text-xs normal-case ml-1">(optional)</span></label>
+                        <label class="field-label">Số Điện Thoại <span class="text-gray-400 text-xs normal-case ml-1">(không bắt buộc)</span></label>
                         <div class="relative">
                             <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-base pointer-events-none">phone</span>
                             <input id="phoneInput" name="PhoneNumber" type="tel"
-                                   value="@Model.PhoneNumber" placeholder="10–11 digits"
+                                   value="@Model.PhoneNumber" placeholder="10–11 chữ số"
                                    pattern="^[0-9]{10,11}$"
                                    maxlength="11" oninput="validatePhone(this)"
                                    class="search-input !pl-9 w-full" />
                         </div>
                         <p id="phone-error" class="text-xs text-red-500 mt-1 hidden">
-                            Phone number must be 10–11 digits (numbers only).
+                            Số điện thoại phải có 10–11 chữ số (chỉ chữa số).
                         </p>
                     </div>
 
@@ -138,11 +138,11 @@
                     <span class="material-icons-round text-3xl">add_photo_alternate</span>
                 </div>
 
-                <h3 class="font-bold text-gray-900 text-lg">New Moderator</h3>
-                <p class="text-sm text-gray-400 mt-0.5">Fill out all details</p>
+                <h3 class="font-bold text-gray-900 text-lg">Kiểm Duyệt Viên Mới</h3>
+                <p class="text-sm text-gray-400 mt-0.5">Nhập đầy đủ thông tin</p>
 
                 <div class="flex flex-wrap gap-1.5 justify-center mt-3">
-                    <span class="badge badge-mod">Moderator Role</span>
+                    <span class="badge badge-mod">Kiểm Duyệt Viên</span>
                 </div>
             </div>
 
@@ -150,18 +150,18 @@
             <div class="content-card p-4 space-y-2.5 fade-in-up" style="animation-delay:.12s;">
                 <button type="submit" class="btn-primary w-full justify-center">
                     <span class="material-icons-round text-base">person_add</span>
-                    Create Moderator
+                    Tạo Kiểm Duyệt Viên
                 </button>
                 <a href="/Admin/ManageModerators" class="btn-outline w-full justify-center">
                     <span class="material-icons-round text-base">close</span>
-                    Cancel
+                    Hủy
                 </a>
             </div>
 
             <div class="bg-orange-50 border border-orange-100 rounded-2xl p-4 flex gap-3 fade-in-up" style="animation-delay:.15s;">
                 <span class="material-icons-round text-orange-400 text-xl flex-shrink-0">info</span>
                 <p class="text-xs text-orange-800 leading-relaxed">
-                    By default, new moderator accounts are created with an <strong class="text-orange-900">Active</strong> status and can sign in immediately using the provided credentials.
+                    Mặc định, tài khoản kiểm duyệt viên mới được tạo với trạng thái <strong class="text-orange-900">Hoạt Động</strong> và có thể đăng nhập ngay bằng thông tin đã cung cấp.
                 </p>
             </div>
 

@@ -33,8 +33,6 @@ public partial class NannyProfile
 
     public int TotalReviews { get; set; }
 
-    public int ProfileCompleteness { get; set; }
-
     public DateTime CreatedAt { get; set; }
 
     public Guid? CreatedBy { get; set; }

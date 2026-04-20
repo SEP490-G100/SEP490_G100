@@ -1,30 +1,29 @@
 @model WebSite.Models.Verification.VerificationRequestListResponse
 @{
     Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
-    ViewData["Title"] = "Nanny Verification";
+    ViewData["Title"] = "Xac minh bao mau";
 
     var currentSearch = ViewBag.Search as string ?? "";
     var currentStatus = ViewBag.Status as int?;
-    var currentPage   = Model?.Page ?? 1;
-    var totalPages    = Model?.TotalPages ?? 1;
-    var items         = Model?.Items ?? new List<WebSite.Models.Verification.VerificationRequestListDto>();
+    var currentRequestType = ViewBag.RequestType as int?;
+    var currentPage = Model?.Page ?? 1;
+    var totalPages = Model?.TotalPages ?? 1;
+    var items = Model?.Items ?? new List<WebSite.Models.Verification.VerificationRequestListDto>();
 }
 
-<!-- PAGE HEADER -->
 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
     <div>
-        <span class="section-label">Verification Management</span>
+        <span class="section-label">Quan ly xac minh</span>
         <h1 class="page-title mt-2">
-            Nanny <span class="gradient-text">Verification</span>
+            Danh sach <span class="gradient-text">Yeu cau xac minh</span>
         </h1>
-        <p class="page-subtitle">Review nanny applications and approve or reject their verification requests.</p>
+        <p class="page-subtitle">Moderator xem xet va phe duyet yeu cau xac minh/giay kham suc khoe cua nanny.</p>
     </div>
     <div class="flex gap-2 text-sm">
-        <span class="badge badge-pending px-3 py-1.5">@(Model?.TotalCount ?? 0) Total</span>
+        <span class="badge badge-pending px-3 py-1.5">Tong so @(Model?.TotalCount ?? 0)</span>
     </div>
 </div>
 
-<!-- Alert messages -->
 @if (TempData["Error"] != null)
 {
     <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 fade-in-up">
@@ -33,48 +32,51 @@
     </div>
 }
 
-<!-- FILTER / SEARCH FORM -->
 <form method="get" action="/Moderator/ManageNannyVerification" id="filterForm" class="mod-filter-form">
     <div class="content-card p-4 mb-5 fade-in-up" style="animation-delay:.05s;">
         <div class="flex flex-col md:flex-row gap-3">
-
-            <!-- Search -->
             <div class="relative flex-1">
                 <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">search</span>
                 <input name="search" type="text" value="@currentSearch"
-                       placeholder="Search by nanny name or email..."
+                       placeholder="Tim theo ten hoac email..."
                        class="search-input pl-9 w-full border border-gray-200 rounded-xl px-4 py-2 font-medium"
                        onkeydown="if(event.key==='Enter'){this.form.submit();}" />
             </div>
 
-            <!-- Status Filter -->
+            <div class="relative">
+                <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">category</span>
+                <select name="requestType" onchange="this.form.submit()"
+                        class="search-input md:w-52 !pl-9 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
+                    <option value="">Tat ca loai ho so</option>
+                    <option value="1" selected="@(currentRequestType == 1 ? "selected" : null)">Ho so xac minh</option>
+                    <option value="2" selected="@(currentRequestType == 2 ? "selected" : null)">Giay kham suc khoe</option>
+                </select>
+            </div>
+
             <div class="relative">
                 <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">toggle_on</span>
                 <select name="status" onchange="this.form.submit()"
                         class="search-input md:w-44 !pl-9 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
-                    <option value="">All Statuses</option>
-                    <option value="1" selected="@(currentStatus == 1 ? "selected" : null)">Pending</option>
-                    <option value="2" selected="@(currentStatus == 2 ? "selected" : null)">Approved</option>
-                    <option value="3" selected="@(currentStatus == 3 ? "selected" : null)">Rejected</option>
+                    <option value="">Tat ca trang thai</option>
+                    <option value="1" selected="@(currentStatus == 1 ? "selected" : null)">Dang cho</option>
+                    <option value="2" selected="@(currentStatus == 2 ? "selected" : null)">Da duyet</option>
+                    <option value="3" selected="@(currentStatus == 3 ? "selected" : null)">Da tu choi</option>
                 </select>
             </div>
 
-            <!-- Submit -->
             <button type="submit" class="btn-primary flex-shrink-0 flex items-center gap-1">
                 <span class="material-icons-round text-base">search</span>
-                Search
+                Tim kiem
             </button>
         </div>
     </div>
 </form>
 
-<!-- TABLE -->
 <div class="content-card overflow-hidden fade-in-up" style="animation-delay:.1s;">
-
     <div class="card-header">
         <span class="text-sm text-gray-500">
-            Showing <span class="font-bold text-gray-800">@items.Count</span>
-            of <span class="font-bold text-gray-800">@(Model?.TotalCount ?? 0)</span> requests
+            Hien thi <span class="font-bold text-gray-800">@items.Count</span>
+            tren <span class="font-bold text-gray-800">@(Model?.TotalCount ?? 0)</span> yeu cau
         </span>
     </div>
 
@@ -83,30 +85,31 @@
             <thead>
                 <tr>
                     <th class="text-left">#</th>
-                    <th class="text-left">Nanny</th>
+                    <th class="text-left">Bao mau</th>
                     <th class="text-left">Email</th>
-                    <th class="text-left">City</th>
-                    <th class="text-left">Submitted</th>
-                    <th class="text-left">Status</th>
-                    <th class="text-center">Action</th>
+                    <th class="text-left">Loai ho so</th>
+                    <th class="text-left">Het han</th>
+                    <th class="text-left">Ngay nop</th>
+                    <th class="text-left">Trang thai</th>
+                    <th class="text-center">Hanh dong</th>
                 </tr>
             </thead>
             <tbody>
                 @if (!items.Any())
                 {
                     <tr>
-                        <td colspan="7" class="text-center py-16 text-gray-400">
+                        <td colspan="8" class="text-center py-16 text-gray-400">
                             <span class="material-icons-round text-5xl mb-3 block text-gray-200">verified_user</span>
-                            <p class="font-semibold text-gray-400">No verification requests found.</p>
-                            <p class="text-xs text-gray-300 mt-1">Try adjusting the filter above.</p>
+                            <p class="font-semibold text-gray-400">Khong tim thay yeu cau xac minh.</p>
+                            <p class="text-xs text-gray-300 mt-1">Thu dieu chinh bo loc.</p>
                         </td>
                     </tr>
                 }
                 @{ int rowNum = ((currentPage - 1) * 10) + 1; }
                 @foreach (var item in items)
                 {
-                    var avatarColors = new[] { "#F97316","#3B82F6","#8B5CF6","#10B981","#F59E0B","#EF4444","#EC4899","#6366F1" };
-                    var avatarBg    = avatarColors[Math.Abs(item.NannyUserId.GetHashCode()) % avatarColors.Length];
+                    var avatarColors = new[] { "#F97316", "#3B82F6", "#8B5CF6", "#10B981", "#F59E0B", "#EF4444", "#EC4899", "#6366F1" };
+                    var avatarBg = avatarColors[Math.Abs(item.NannyUserId.GetHashCode()) % avatarColors.Length];
 
                     <tr class="account-row">
                         <td class="text-gray-300 text-xs font-mono">@rowNum</td>
@@ -127,14 +130,19 @@
                             </div>
                         </td>
                         <td class="text-gray-500 text-sm">@item.NannyEmail</td>
-                        <td class="text-gray-500 text-sm">@(item.NannyCity ?? "â€”")</td>
-                        <td class="text-gray-500 text-xs">@item.CreatedAt.ToString("MMM dd, yyyy")</td>
+                        <td class="text-gray-500 text-sm">
+                            <span class="badge @(item.RequestType == 2 ? "bg-emerald-100 text-emerald-700" : "bg-orange-100 text-orange-700")">
+                                @item.RequestTypeLabel
+                            </span>
+                        </td>
+                        <td class="text-gray-500 text-sm">@item.ExpiryDateLabel</td>
+                        <td class="text-gray-500 text-xs">@item.CreatedAt.ToString("dd/MM/yyyy")</td>
                         <td><span class="badge @item.StatusClass">@item.StatusLabel</span></td>
                         <td class="text-center">
                             <a href="/Moderator/ViewNannyVerificationDetail/@item.Id"
                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-orange-50 text-orange-600 border border-orange-200 hover:bg-orange-100 transition-all">
                                 <span class="material-icons-round text-sm">visibility</span>
-                                Review
+                                Xem xet
                             </a>
                         </td>
                     </tr>
@@ -144,16 +152,15 @@
         </table>
     </div>
 
-    <!-- Pagination -->
     <div class="flex items-center justify-between px-6 py-4 border-t border-gray-50">
         <span class="text-sm text-gray-400">
-            Page <span class="font-bold text-gray-600">@currentPage</span>
-            of <span class="font-bold text-gray-600">@totalPages</span>
+            Trang <span class="font-bold text-gray-600">@currentPage</span>
+            / <span class="font-bold text-gray-600">@totalPages</span>
         </span>
         <div class="flex gap-1.5">
             @if (currentPage > 1)
             {
-                <a href="?search=@currentSearch&status=@currentStatus&page=@(currentPage - 1)" class="page-btn">
+                <a href="?search=@currentSearch&status=@currentStatus&requestType=@currentRequestType&page=@(currentPage - 1)" class="page-btn">
                     <span class="material-icons-round text-sm">chevron_left</span>
                 </a>
             }
@@ -165,12 +172,12 @@
             }
             @for (int p = Math.Max(1, currentPage - 2); p <= Math.Min(totalPages, currentPage + 2); p++)
             {
-                <a href="?search=@currentSearch&status=@currentStatus&page=@p"
+                <a href="?search=@currentSearch&status=@currentStatus&requestType=@currentRequestType&page=@p"
                    class="page-btn @(p == currentPage ? "active" : "")">@p</a>
             }
             @if (currentPage < totalPages)
             {
-                <a href="?search=@currentSearch&status=@currentStatus&page=@(currentPage + 1)" class="page-btn">
+                <a href="?search=@currentSearch&status=@currentStatus&requestType=@currentRequestType&page=@(currentPage + 1)" class="page-btn">
                     <span class="material-icons-round text-sm">chevron_right</span>
                 </a>
             }

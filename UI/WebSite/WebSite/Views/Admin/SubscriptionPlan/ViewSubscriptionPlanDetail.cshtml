@@ -1,23 +1,23 @@
 @model WebSite.Models.Admin.AdminSubscriptionPlanFormViewModel
 @{
     Layout = "~/Views/Admin/_AdminLayout.cshtml";
-    ViewData["Title"] = "Subscription Plan Detail";
+    ViewData["Title"] = "Chi Tiết Gói Đăng Ký";
 }
 
 <div class="flex flex-col gap-6 fade-in-up">
     <div class="content-card p-6">
-        <span class="section-label">Subscription Plan</span>
+        <span class="section-label">Gói Đăng Ký</span>
 
         <div class="mt-2 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
             <div class="min-w-0 lg:flex-1">
                 <h1 class="page-title">@Model.Name</h1>
-                <p class="page-subtitle">Review plan details, update plan configuration, or change its availability.</p>
+                <p class="page-subtitle">Xem chi tiết gói, cập nhật cấu hình, hoặc thay đổi trạng thái hiển thị.</p>
                 <div class="flex flex-wrap items-center gap-2 mt-4">
-                    <span class="badge @(Model.IsActive ? "badge-active" : "badge-inactive")">@(Model.IsActive ? "Active" : "Inactive")</span>
+                    <span class="badge @(Model.IsActive ? "badge-active" : "badge-inactive")">@(Model.IsActive ? "Hoạt Động" : "Vô Hiệu Hóa")</span>
                     <span class="badge @(Model.TargetRole == "Parent" ? "badge-parent" : "badge-nanny")">@Model.TargetRole</span>
                     <span class="badge badge-mod">@Model.Code</span>
-                    <span class="badge badge-pending">@Model.GetFeatures().Count feature(s)</span>
-                    <span class="badge badge-pending">@Model.ActiveSubscriberCount active subscriber(s)</span>
+                    <span class="badge badge-pending">@Model.GetFeatures().Count tính năng</span>
+                    <span class="badge badge-pending">@Model.ActiveSubscriberCount người đăng ký đang hoạt động</span>
                 </div>
             </div>
 
@@ -25,21 +25,21 @@
                 <div class="flex flex-wrap lg:flex-nowrap items-center justify-start lg:justify-end gap-3">
                     <a href="/Admin/ManageSubscriptionPlan" class="btn-outline whitespace-nowrap">
                         <span class="material-icons-round text-base">arrow_back</span>
-                        Back to List
+                        Quay Lại Danh Sách
                     </a>
-                    <form method="post" action="/Admin/ToggleSubscriptionPlanStatus" class="inline" onsubmit="return confirm('@(Model.IsActive ? "Deactivate" : "Activate") this subscription plan?');">
+                    <form method="post" action="/Admin/ToggleSubscriptionPlanStatus" class="inline" onsubmit="return confirm('@(Model.IsActive ? "Vô hiệu hóa" : "Kích hoạt") gói đăng ký này?');">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="id" value="@Model.Id" />
                         <input type="hidden" name="isActive" value="@(!Model.IsActive ? "true" : "false")" />
                         <input type="hidden" name="returnUrl" value="/Admin/ViewSubscriptionPlanDetail/@Model.Id" />
                         <button type="submit" class="btn-outline whitespace-nowrap">
                             <span class="material-icons-round text-base">@(Model.IsActive ? "block" : "check_circle_outline")</span>
-                            @(Model.IsActive ? "Deactivate" : "Activate")
+                            @(Model.IsActive ? "Vô Hiệu Hóa" : "Kích Hoạt")
                         </button>
                     </form>
                     <button type="submit" form="updateSubscriptionPlanForm" class="btn-primary whitespace-nowrap">
                         <span class="material-icons-round text-base">save</span>
-                        Save Changes
+                        Lưu Thay Đổi
                     </button>
                 </div>
             </div>
@@ -47,15 +47,15 @@
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5">
             <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100 min-w-[150px]">
-                <p class="text-xs text-gray-400 font-bold uppercase tracking-wide mb-1">Price</p>
+                <p class="text-xs text-gray-400 font-bold uppercase tracking-wide mb-1">Giá</p>
                 <p class="font-bold text-gray-800">@Model.Price.ToString("N0")</p>
             </div>
             <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100 min-w-[150px]">
-                <p class="text-xs text-gray-400 font-bold uppercase tracking-wide mb-1">Duration</p>
-                <p class="font-bold text-gray-800">@Model.DurationDays day(s)</p>
+                <p class="text-xs text-gray-400 font-bold uppercase tracking-wide mb-1">Thời Hạn</p>
+                <p class="font-bold text-gray-800">@Model.DurationDays ngày</p>
             </div>
             <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100 min-w-[150px]">
-                <p class="text-xs text-gray-400 font-bold uppercase tracking-wide mb-1">Created</p>
+                <p class="text-xs text-gray-400 font-bold uppercase tracking-wide mb-1">Đã Tạo</p>
                 <p class="font-bold text-gray-800">@Model.CreatedAt.ToString("MMM dd, yyyy")</p>
             </div>
         </div>
@@ -86,10 +86,10 @@
                     <span asp-validation-for="Name" class="text-xs text-red-500"></span>
                 </div>
                 <div class="field-group">
-                    <label asp-for="TargetRole" class="field-label">Target Role</label>
+                    <label asp-for="TargetRole" class="field-label">Vai Trò Mục Tiêu</label>
                     <select asp-for="TargetRole" class="search-input !pl-4" required>
-                        <option value="Parent">Parent</option>
-                        <option value="Nanny">Nanny</option>
+                        <option value="Parent">Phụ Huynh</option>
+                        <option value="Nanny">Người Giữ Trẻ</option>
                     </select>
                     <span asp-validation-for="TargetRole" class="text-xs text-red-500"></span>
                 </div>
@@ -107,20 +107,20 @@
                     <span asp-validation-for="Price" class="text-xs text-red-500"></span>
                 </div>
                 <div class="field-group">
-                    <label asp-for="DurationDays" class="field-label">Duration (Days)</label>
+                    <label asp-for="DurationDays" class="field-label">Thời Hạn (Ngày)</label>
                     <input asp-for="DurationDays" type="number" min="1" max="3650" class="search-input !pl-4" required />
                     <span asp-validation-for="DurationDays" class="text-xs text-red-500"></span>
                 </div>
                 <div class="field-group">
-                    <label asp-for="SortOrder" class="field-label">Sort Order</label>
+                    <label asp-for="SortOrder" class="field-label">Thứ Tự Hiển Thị</label>
                     <input asp-for="SortOrder" type="number" min="1" max="999" class="search-input !pl-4 bg-gray-50 text-gray-500 cursor-not-allowed" readonly />
                     <span asp-validation-for="SortOrder" class="text-xs text-red-500"></span>
                 </div>
                 <div class="field-group lg:col-span-2">
-                    <label asp-for="FeatureLines" class="field-label">Features</label>
+                    <label asp-for="FeatureLines" class="field-label">Tính Năng</label>
                     <textarea asp-for="FeatureLines"
                               class="search-input !pl-4 subscription-feature-input"
-                              placeholder="One feature per line"
+                              placeholder="Mỗi tính năng một dòng"
                               required></textarea>
                     <span asp-validation-for="FeatureLines" class="text-xs text-red-500"></span>
                 </div>
@@ -129,36 +129,36 @@
 
         <div class="content-card p-6">
             <div class="flex items-center justify-between mb-4">
-                <h2 class="text-lg font-bold text-gray-900">Benefits</h2>
-                <span class="text-xs text-gray-400">Update the commercial behavior of this plan.</span>
+                <h2 class="text-lg font-bold text-gray-900">Quyền Lợi</h2>
+                <span class="text-xs text-gray-400">Cập nhật hành vi thương mại của gói này.</span>
             </div>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 <div class="field-group">
-                    <label asp-for="MonthlyJobPostLimit" class="field-label">Monthly Job Post Limit</label>
+                    <label asp-for="MonthlyJobPostLimit" class="field-label">Giới Hạn Đăng Tin Hàng Tháng</label>
                     <input asp-for="MonthlyJobPostLimit" type="number" min="0" class="search-input !pl-4" required />
                     <span asp-validation-for="MonthlyJobPostLimit" class="text-xs text-red-500"></span>
                 </div>
                 <div class="field-group">
-                    <label asp-for="MonthlyApplicationLimit" class="field-label">Monthly Application Limit</label>
+                    <label asp-for="MonthlyApplicationLimit" class="field-label">Giới Hạn Ứng Tuyển Hàng Tháng</label>
                     <input asp-for="MonthlyApplicationLimit" type="number" min="0" class="search-input !pl-4" required />
                     <span asp-validation-for="MonthlyApplicationLimit" class="text-xs text-red-500"></span>
                 </div>
                 <div class="field-group">
-                    <label asp-for="ListingDurationDays" class="field-label">Listing Duration Days</label>
+                    <label asp-for="ListingDurationDays" class="field-label">Thời Hạn Hiển Thị (Ngày)</label>
                     <input asp-for="ListingDurationDays" type="number" min="0" max="3650" class="search-input !pl-4" required />
                     <span asp-validation-for="ListingDurationDays" class="text-xs text-red-500"></span>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:col-span-2">
                     <label class="field-readonly !justify-between cursor-pointer">
-                        <span>Featured Badge</span>
+                        <span>Huy Hiệu Nổi Bật</span>
                         <input asp-for="FeaturedBadge" type="checkbox" class="w-4 h-4 accent-orange-500" />
                     </label>
                     <label class="field-readonly !justify-between cursor-pointer">
-                        <span>Search Priority</span>
+                        <span>ƯU Tiên Tìm Kiếm</span>
                         <input asp-for="SearchPriority" type="checkbox" class="w-4 h-4 accent-orange-500" />
                     </label>
                     <label class="field-readonly !justify-between cursor-pointer">
-                        <span>Can Use Recommendation (AI Recommendation)</span>
+                        <span>Có Thể Dùng Gợi Ý (AI)</span>
                         <input asp-for="CanUseRecommendation" type="checkbox" class="w-4 h-4 accent-orange-500" />
                     </label>
                 </div>
@@ -182,7 +182,7 @@
                     .map(item => item.trim())
                     .some(item => item.length > 0);
 
-                featureInput.setCustomValidity(hasFeature ? '' : 'Please enter at least one feature.');
+                featureInput.setCustomValidity(hasFeature ? '' : 'Vui lòng nhập ít nhất một tính năng.');
             };
 
             featureInput.addEventListener('input', validateFeatures);

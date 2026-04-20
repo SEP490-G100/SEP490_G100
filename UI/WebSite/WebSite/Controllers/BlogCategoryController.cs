@@ -46,7 +46,7 @@ public class BlogCategoryController : Controller
         {
             ViewBag.Search = search ?? "";
             ViewBag.IsDeleted = "";
-            TempData["Error"] = "Khong the tai danh sach danh muc.";
+            TempData["Error"] = "Không thể tải danh sách danh mục.";
             return View("~/Views/Moderator/BlogCategory/ManageBlogCategory.cshtml", new BlogCategoryListResponse { Page = page, PageSize = pageSize });
         }
     }
@@ -85,11 +85,11 @@ public class BlogCategoryController : Controller
                     toastMessage = "Bạn đã tạo thể loại blog thành công"
                 });
             }
-            ModelState.AddModelError(nameof(model.Name), result?.Message ?? "Tao danh muc that bai.");
+            ModelState.AddModelError(nameof(model.Name), result?.Message ?? "Tao danh muc thất bại.");
         }
         catch (Exception ex)
         {
-            ModelState.AddModelError(nameof(model.Name), $"Loi ket noi: {ex.Message}");
+            ModelState.AddModelError(nameof(model.Name), $"L?i kết nối: {ex.Message}");
         }
 
         return View("~/Views/Moderator/BlogCategory/CreateBlogCategory.cshtml", model);
@@ -102,7 +102,7 @@ public class BlogCategoryController : Controller
         if (data != null)
             return View("~/Views/Moderator/BlogCategory/ViewBlogCategoryDetail.cshtml", data);
 
-        TempData["Error"] = "Khong tim thay danh muc.";
+        TempData["Error"] = "Không tìm thấy danh mục.";
         return RedirectToAction(nameof(ManageBlogCategory));
     }
 
@@ -141,11 +141,11 @@ public class BlogCategoryController : Controller
                     toastMessage = "Bạn đã chỉnh sửa thể loại blog thành công"
                 });
             }
-            ModelState.AddModelError(nameof(model.Name), result?.Message ?? "Cap nhat danh muc that bai.");
+            ModelState.AddModelError(nameof(model.Name), result?.Message ?? "C?p nh?t danh muc thất bại.");
         }
         catch (Exception ex)
         {
-            ModelState.AddModelError(nameof(model.Name), $"Loi ket noi: {ex.Message}");
+            ModelState.AddModelError(nameof(model.Name), $"L?i kết nối: {ex.Message}");
         }
 
         var failedVm = await BuildCategoryDetailViewModelForInvalidPost(id, model);
@@ -178,11 +178,11 @@ public class BlogCategoryController : Controller
                 });
             }
 
-            TempData["Error"] = result?.Message ?? "Thao tac that bai.";
+            TempData["Error"] = result?.Message ?? "Thao tac thất bại.";
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"Loi ket noi: {ex.Message}";
+            TempData["Error"] = $"L?i kết nối: {ex.Message}";
         }
 
         return RedirectToAction(nameof(ManageBlogCategory));

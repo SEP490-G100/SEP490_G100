@@ -1,7 +1,7 @@
 @model WebSite.Models.BlogCategory.BlogCategoryDto
 @{
     Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
-    ViewData["Title"] = "Blog Category Detail";
+    ViewData["Title"] = "Chi tiết danh mục Blog";
     var nameError = ViewData.ModelState["Name"]?.Errors.Count > 0
         ? ViewData.ModelState["Name"]?.Errors[0].ErrorMessage
         : null;
@@ -12,13 +12,13 @@
 
 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
     <div>
-        <span class="section-label">Content Management</span>
-        <h1 class="page-title mt-2">Blog Category <span class="gradient-text">Detail & Edit</span></h1>
-        <p class="page-subtitle">Update category name. The slug will be generated automatically from the name.</p>
+        <span class="section-label">Quản lý nội dung</span>
+        <h1 class="page-title mt-2">Danh mục Blog <span class="gradient-text">Chi tiết & Chỉnh sửa</span></h1>
+        <p class="page-subtitle">Cập nhật tên danh mục. Đường dẫn sẽ được tự động tạo từ tên.</p>
     </div>
     <a href="/Moderator/ManageBlogCategory" class="btn-outline flex-shrink-0">
         <span class="material-icons-round text-base">arrow_back</span>
-        Back to Categories
+        Quay lại danh sách
     </a>
 </div>
 
@@ -31,44 +31,44 @@
                 <div class="card-header">
                     <div class="flex items-center gap-2">
                         <span class="material-icons-round text-blue-400">info</span>
-                        <h2>Category Info <span class="text-xs text-gray-400 font-normal ml-1">(read-only)</span></h2>
+                        <h2>Thông tin danh mục <span class="text-xs text-gray-400 font-normal ml-1">(chỉ xem)</span></h2>
                     </div>
                 </div>
                 <div class="p-5 space-y-3">
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div class="field-group sm:col-span-2">
-                            <label class="field-label">Category ID</label>
+                            <label class="field-label">Mã danh mục</label>
                             <div class="field-readonly font-mono text-xs break-all">@Model.Id</div>
                         </div>
                         <div class="field-group">
-                            <label class="field-label">Sort Order</label>
+                            <label class="field-label">Thứ tự</label>
                             <div class="field-readonly">
                                 <span class="material-icons-round text-gray-300 text-base">sort</span>
                                 <span class="font-semibold text-gray-700">@Model.SortOrder</span>
-                                <span class="text-xs text-gray-300 ml-1">(read-only)</span>
+                                <span class="text-xs text-gray-300 ml-1">(chỉ xem)</span>
                             </div>
                         </div>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div class="field-group">
-                            <label class="field-label">Total Blogs</label>
+                            <label class="field-label">Tổng số bài</label>
                             <div class="field-readonly">
                                 <span class="material-icons-round text-gray-300 text-base">article</span>
                                 <span class="font-semibold text-gray-700">@Model.BlogCount</span>
                             </div>
                         </div>
                         <div class="field-group">
-                            <label class="field-label">Created At</label>
+                            <label class="field-label">Ngày tạo</label>
                             <div class="field-readonly text-xs">
                                 <span class="material-icons-round text-gray-300 text-base">calendar_today</span>
-                                @Model.CreatedAt.ToString("dd MMM yyyy, HH:mm")
+                                @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")
                             </div>
                         </div>
                         <div class="field-group">
-                            <label class="field-label">Last Updated</label>
+                            <label class="field-label">Ngày cập nhật</label>
                             <div class="field-readonly text-xs">
                                 <span class="material-icons-round text-gray-300 text-base">update</span>
-                                @(Model.UpdatedAt.HasValue ? Model.UpdatedAt.Value.ToString("dd MMM yyyy, HH:mm") : "Never")
+                                @(Model.UpdatedAt.HasValue ? Model.UpdatedAt.Value.ToString("dd/MM/yyyy HH:mm") : "Chưa từng")
                             </div>
                         </div>
                     </div>
@@ -79,44 +79,44 @@
                 <div class="card-header">
                     <div class="flex items-center gap-2">
                         <span class="material-icons-round text-blue-400">edit</span>
-                        <h2>Edit Content <span class="text-xs text-green-500 font-semibold ml-1">editable</span></h2>
+                        <h2>Sửa nội dung <span class="text-xs text-green-500 font-semibold ml-1">có thể sửa</span></h2>
                     </div>
                 </div>
                 <div class="p-5 space-y-4">
                     <div class="field-group">
                         <label class="field-label">
-                            Name <span class="text-red-400">*</span>
-                            <span class="text-blue-400 text-[10px] ml-1">editable</span>
+                            Tên <span class="text-red-400">*</span>
+                            <span class="text-blue-400 text-[10px] ml-1">có thể sửa</span>
                         </label>
                         <div class="relative">
                             <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-base pointer-events-none">label</span>
                             <input id="nameInput" name="Name" type="text"
                                    value="@Model.Name"
-                                   placeholder="e.g. Parenting Tips"
+                                   placeholder="VD: Nuôi dạy con"
                                    class="search-input !pl-9 w-full @(!string.IsNullOrWhiteSpace(nameError) ? "!border-red-400" : "")" />
                         </div>
                         <p id="nameError" class="text-xs text-red-500 mt-0.5 flex items-center gap-1 @((string.IsNullOrWhiteSpace(nameError) ? "hidden" : ""))">
                             <span class="material-icons-round text-xs">error</span>
-                            @(nameError ?? "Name is required.")
+                            @(nameError ?? "Vui lòng nhập tên danh mục.")
                         </p>
                     </div>
 
                     <div class="field-group">
                         <label class="field-label">
-                            Slug <span class="text-red-400">*</span>
-                            <span class="text-gray-400 text-[10px] ml-1">auto-generated from name</span>
+                            Đường dẫn <span class="text-red-400">*</span>
+                            <span class="text-gray-400 text-[10px] ml-1">tự động tạo từ tên</span>
                         </label>
                         <div class="relative">
                             <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-base pointer-events-none">link</span>
                             <input id="slugInput" name="Slug" type="text"
                                    value="@Model.Slug"
-                                   placeholder="e.g. parenting-tips"
+                                   placeholder="VD: nuoi-day-con"
                                    class="search-input !pl-9 w-full bg-gray-50 text-gray-500 @(!string.IsNullOrWhiteSpace(slugError) ? "!border-red-400" : "")"
                                    readonly />
                         </div>
                         <p id="slugError" class="text-xs text-red-500 mt-0.5 flex items-center gap-1 @((string.IsNullOrWhiteSpace(slugError) ? "hidden" : ""))">
                             <span class="material-icons-round text-xs">error</span>
-                            @(slugError ?? "Slug is required.")
+                            @(slugError ?? "Vui lòng nhập đường dẫn.")
                         </p>
                     </div>
                 </div>
@@ -132,30 +132,30 @@
                 <p id="summarySlug" class="text-xs text-gray-400 mt-1 font-mono">@Model.Slug</p>
                 <div class="mt-3 pt-3 border-t border-gray-100">
                     <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-50 text-orange-500 border border-orange-100">
-                        @Model.BlogCount blog@(Model.BlogCount == 1 ? "" : "s")
+                        @Model.BlogCount bài viết
                     </span>
                 </div>
             </div>
 
             <div class="content-card p-4 space-y-3 fade-in-up" style="animation-delay:.1s;">
                 <div>
-                    <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-0.5">Sort Order</p>
-                    <p class="text-lg font-bold text-gray-700">@Model.SortOrder <span class="text-xs text-gray-400 font-normal">(not editable)</span></p>
+                    <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-0.5">Thứ tự ưu tiên</p>
+                    <p class="text-lg font-bold text-gray-700">@Model.SortOrder <span class="text-xs text-gray-400 font-normal">(không thể sửa)</span></p>
                 </div>
                 <div>
-                    <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-0.5">Created</p>
-                    <p class="text-sm text-gray-600">@Model.CreatedAt.ToString("dd MMM yyyy, HH:mm")</p>
+                    <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-0.5">Ngày tạo</p>
+                    <p class="text-sm text-gray-600">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</p>
                 </div>
             </div>
 
             <div class="content-card p-4 space-y-2.5 fade-in-up" style="animation-delay:.15s;">
                 <button type="button" onclick="submitEditForm()" class="btn-primary w-full justify-center">
                     <span class="material-icons-round text-base">save</span>
-                    Save Changes
+                    Lưu thay đổi
                 </button>
                 <a href="/Moderator/ManageBlogCategory" class="btn-outline w-full justify-center">
                     <span class="material-icons-round text-base">close</span>
-                    Cancel
+                    Hủy
                 </a>
             </div>
         </div>

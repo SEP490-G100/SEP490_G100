@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
@@ -60,7 +60,7 @@ namespace WebSite.Controllers
                 return View("~/Views/Moderator/JobPosting/ManageJobPosting.cshtml", result?.Data);
             }
 
-            TempData["Error"] = "Could not fetch job postings.";
+            TempData["Error"] = "Không thể tải danh sách tin đăng.";
             return View("~/Views/Moderator/JobPosting/ManageJobPosting.cshtml", new JobPostingListResponse());
         }
 
@@ -86,7 +86,7 @@ namespace WebSite.Controllers
             }
             catch
             {
-                TempData["Error"] = "Could not load the job posting detail.";
+                TempData["Error"] = "Không thể tải chi tiết tin đăng.";
                 return RedirectToAction(nameof(ManageJobPosting));
             }
         }
@@ -108,10 +108,10 @@ namespace WebSite.Controllers
                     await _notificationHub.Clients.Group($"user:{parentUserId.Value}").SendAsync("notification:new", new
                     {
                         type = action == 2 ? "job-posting-approved" : "job-posting-rejected",
-                        title = action == 2 ? "Bai dang da duoc duyet" : "Bai dang da bi tu choi",
+                        title = action == 2 ? "Bài đăng da được duy?t" : "Bài đăng da bi từ chối",
                         message = action == 2
-                            ? "Bai dang cua ban da duoc moderator duyet."
-                            : "Bai dang cua ban da bi moderator tu choi.",
+                            ? "Bài đăng cua ban da được moderator duy?t."
+                            : "Bài đăng cua ban da bi moderator từ chối.",
                         toastType = action == 2 ? "success" : "warning"
                     });
                 }
@@ -124,7 +124,7 @@ namespace WebSite.Controllers
             else
             {
                 var errorJson = await response.Content.ReadAsStringAsync();
-                TempData["Error"] = "Review failed: " + errorJson;
+                TempData["Error"] = "Kiểm duyệt thất bại: " + errorJson;
             }
 
             return RedirectToAction(nameof(ManageJobPosting));

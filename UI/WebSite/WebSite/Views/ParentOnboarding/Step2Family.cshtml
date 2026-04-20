@@ -1,6 +1,6 @@
 @model WebSite.Models.Profile.ParentOnboardingWizardViewModel
 @{
-    ViewData["Title"] = "Parent - Gia dinh va con cai";
+    ViewData["Title"] = "Phụ huynh - Gia đình và trẻ";
 }
 
 <div class="nm-flow-shell">
@@ -9,49 +9,45 @@
             <div class="nm-flow-card__inner">
                 <div class="nm-flow-header">
                     <div class="nm-flow-header__content">
-                        <span class="nm-flow-badge">Parent onboarding</span>
-                        <h1 class="nm-flow-title">Them thong tin gia dinh va tre</h1>
+                        <span class="nm-flow-badge">Phụ huynh onboarding</span>
+                        <h1 class="nm-flow-title">Thông tin gia đình và trẻ</h1>
                         <p class="nm-flow-subtitle">
-                            Man hinh nay giup job posting va goi y nanny khop hon. Ban chi can khai thong tin cua mot be, cac be khac co the them sau trong profile.
+                            Khai báo tổng số trẻ trong gia đình và thông tin chi tiết của một bé để hệ thống đề xuất nanny phù hợp hơn.
                         </p>
-                    </div>
-                    <div class="nm-flow-progress" aria-hidden="true">
-                        <span class="nm-progress-step">1</span>
-                        <span class="nm-progress-line"></span>
-                        <span class="nm-progress-step is-active">2</span>
                     </div>
                 </div>
 
                 <div asp-validation-summary="ModelOnly" class="nm-alert"></div>
 
-                <form asp-action="Step2Family" method="post" data-nm-unified-skip="true">
+                <form asp-action="Step2Family" method="post" data-nm-unified-skip="true" class="nm-family-form">
                     @Html.AntiForgeryToken()
 
                     <div class="nm-form-grid">
                         <div class="nm-col-12">
                             <div class="nm-section-card">
-                                <div class="nm-section-title">Tong quan gia dinh</div>
-                                <div class="nm-section-note">Thong tin nay duoc dung de moderator va nanny hieu nhanh boi canh gia dinh truoc khi ket noi.</div>
+                                <div class="nm-section-title">Tổng quan gia đình</div>
+                                <div class="nm-section-note">Tổng số trẻ là thông tin tổng quan của gia đình. Bạn có thể thêm đầy đủ hồ sơ của từng trẻ sau.</div>
 
                                 <div class="nm-form-grid">
                                     <div class="nm-col-12">
                                         <div class="nm-field">
-                                            <label asp-for="FamilyDescription" class="nm-label">Mo ta gia dinh <span class="required">*</span></label>
-                                            <textarea asp-for="FamilyDescription" rows="4" class="nm-textarea" placeholder="Mo ta nhip sinh hoat, nhu cau cham be, dieu can luu y..."></textarea>
+                                            <label asp-for="FamilyDescription" class="nm-label">Mô tả gia đình <span class="required">*</span></label>
+                                            <textarea asp-for="FamilyDescription" rows="4" class="nm-textarea" placeholder="Mô tả nhịp sinh hoạt, nhu cầu chăm bé, điều cần lưu ý..."></textarea>
                                             <span asp-validation-for="FamilyDescription" class="nm-error"></span>
                                         </div>
                                     </div>
 
-                                    <div class="nm-col-4">
+                                    <div class="nm-col-6">
                                         <div class="nm-field">
-                                            <label asp-for="NumberOfChildren" class="nm-label">So luong con <span class="required">*</span></label>
-                                            <select asp-for="NumberOfChildren" class="nm-select">
-                                                <option value="">Chon so luong</option>
-                                                <option value="1">1 con</option>
-                                                <option value="2">2 con</option>
-                                                <option value="3">3 con</option>
-                                                <option value="4">4 con</option>
-                                            </select>
+                                            <label asp-for="NumberOfChildren" class="nm-label">Tổng số trẻ trong gia đình <span class="required">*</span></label>
+                                            <input type="hidden" asp-for="NumberOfChildren" id="NumberOfChildren" />
+                                            <div class="nm-cf-dropdown" id="dd_number">
+                                                <button type="button" class="nm-cf-dropdown-trigger" aria-label="Chọn số lượng trẻ">
+                                                    <span id="NumberDisplay" class="nm-cf-dropdown-text nm-cf-dropdown-placeholder">Chọn số lượng trẻ</span>
+                                                    <span class="material-icons-round nm-cf-dropdown-arrow">expand_more</span>
+                                                </button>
+                                                <div class="nm-cf-dropdown-menu" id="NumberMenu"></div>
+                                            </div>
                                             <span asp-validation-for="NumberOfChildren" class="nm-error"></span>
                                         </div>
                                     </div>
@@ -61,34 +57,39 @@
 
                         <div class="nm-col-12">
                             <div class="nm-section-card">
-                                <div class="nm-section-title">Thong tin cua mot be</div>
-                                <div class="nm-section-note">Sau khi vao he thong, ban co the them ho so cho cac be khac trong trang profile.</div>
+                                <div class="nm-section-title">Thông tin của một bé</div>
+                                <div class="nm-section-note">Hồ sơ này dùng làm mẫu để matching. Các bé còn lại bạn thêm trong Quản lý con em.</div>
 
                                 <div class="nm-form-grid">
                                     <div class="nm-col-6">
                                         <div class="nm-field">
-                                            <label asp-for="ChildAgeGroup" class="nm-label">Nhom tuoi <span class="required">*</span></label>
-                                            <select asp-for="ChildAgeGroup" asp-items="Html.GetEnumSelectList<WebSite.Enums.ChildAgeGroup>()" class="nm-select">
-                                                <option value="">Chon nhom tuoi</option>
-                                            </select>
+                                            <label asp-for="ChildAgeGroup" class="nm-label">Nhóm tuổi <span class="required">*</span></label>
+                                            <input type="hidden" asp-for="ChildAgeGroup" id="ChildAgeGroup" />
+                                            <div class="nm-cf-dropdown" id="dd_age">
+                                                <button type="button" class="nm-cf-dropdown-trigger" aria-label="Chọn nhóm tuổi">
+                                                    <span id="AgeDisplay" class="nm-cf-dropdown-text nm-cf-dropdown-placeholder">Chọn nhóm tuổi</span>
+                                                    <span class="material-icons-round nm-cf-dropdown-arrow">expand_more</span>
+                                                </button>
+                                                <div class="nm-cf-dropdown-menu" id="AgeMenu"></div>
+                                            </div>
                                             <span asp-validation-for="ChildAgeGroup" class="nm-error"></span>
                                         </div>
                                     </div>
 
                                     <div class="nm-col-6">
                                         <div class="nm-field">
-                                            <label asp-for="ChildCharacteristic" class="nm-label">Tinh cach</label>
-                                            <input asp-for="ChildCharacteristic" class="nm-input" placeholder="Nang dong, de ngu, thich ve..." />
+                                            <label asp-for="ChildCharacteristic" class="nm-label">Tính cách</label>
+                                            <input asp-for="ChildCharacteristic" class="nm-input" placeholder="Năng động, dễ ngủ, thích vẽ..." />
                                         </div>
                                     </div>
 
                                     <div class="nm-col-12">
                                         <div class="nm-field">
-                                            <label class="nm-label">Nhu cau dac biet</label>
-                                            <div class="nm-field-hint">Chon tat ca nhung muc phu hop de nanny chuan bi dung kinh nghiem va ky nang.</div>
-                                            <div class="nm-tags-grid mt-2">
+                                            <label class="nm-label">Nhu cầu đặc biệt</label>
+                                            <div class="nm-field-hint">Chọn tất cả những mục phù hợp để nanny chuẩn bị đúng kinh nghiệm và kỹ năng.</div>
+                                            <div class="nm-tags-grid mt-2 nm-check-grid">
                                                 @{
-                                                    var options = new[] { "Di ung thuc pham", "Hen suyen", "Tu ky", "ADHD", "Che do an dac biet", "Khac" };
+                                                    var options = new[] { "Dị ứng thực phẩm", "Hen suyễn", "Tự kỷ", "ADHD", "Chế độ ăn đặc biệt", "Khác" };
                                                 }
                                                 @foreach (var option in options)
                                                 {
@@ -104,8 +105,8 @@
 
                                     <div class="nm-col-12">
                                         <div class="nm-field">
-                                            <label asp-for="ChildNotes" class="nm-label">Ghi chu them</label>
-                                            <textarea asp-for="ChildNotes" rows="3" class="nm-textarea" placeholder="Thong tin bo sung de nanny de hinh dung hon ve be..."></textarea>
+                                            <label asp-for="ChildNotes" class="nm-label">Ghi chú thêm</label>
+                                            <textarea asp-for="ChildNotes" rows="3" class="nm-textarea" placeholder="Thông tin bổ sung để nanny dễ hình dung hơn về bé..."></textarea>
                                         </div>
                                     </div>
                                 </div>
@@ -114,8 +115,8 @@
                     </div>
 
                     <div class="nm-flow-actions">
-                        <button type="submit" name="direction" value="back" class="nm-btn nm-btn--ghost">Quay lai</button>
-                        <button type="submit" name="direction" value="next" class="nm-btn nm-btn--primary">Hoan thanh</button>
+                        <button type="submit" name="direction" value="back" class="nm-btn nm-btn--ghost">Quay lại</button>
+                        <button type="submit" name="direction" value="next" class="nm-btn nm-btn--primary">Hoàn thành</button>
                     </div>
                 </form>
             </div>
@@ -123,18 +124,250 @@
     </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const checkboxes = document.querySelectorAll('.special-need-checkbox');
-    const hiddenInput = document.getElementById('hiddenSpecialNeeds');
-
-    function updateHiddenInput() {
-        const selected = Array.from(checkboxes)
-            .filter(cb => cb.checked)
-            .map(cb => cb.value);
-        hiddenInput.value = selected.join(', ');
+<style>
+    .nm-family-form .nm-section-card {
+        border: 1px solid #f1f5f9;
+        border-radius: 22px;
+        background: #fff;
+        box-shadow: 0 10px 26px rgba(15, 23, 42, 0.04);
     }
 
-    checkboxes.forEach(cb => cb.addEventListener('change', updateHiddenInput));
+    .nm-family-form .nm-section-card + .nm-section-card {
+        margin-top: 2px;
+    }
+
+    .nm-cf-dropdown {
+        position: relative;
+        z-index: 2;
+    }
+
+    .nm-cf-dropdown.open {
+        z-index: 2200;
+    }
+
+    .nm-field.nm-dropdown-active {
+        z-index: 2200;
+    }
+
+    .nm-section-card.nm-dropdown-active {
+        z-index: 2300;
+    }
+
+    .nm-cf-dropdown-trigger {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 54px;
+        padding: 0 16px;
+        border: 1.5px solid #dbe3ec;
+        border-radius: 18px;
+        background: #fff;
+        cursor: pointer;
+        transition: border-color .15s, box-shadow .15s;
+    }
+
+    .nm-cf-dropdown:not(.is-disabled) .nm-cf-dropdown-trigger:hover {
+        border-color: #fdba74;
+    }
+
+    .nm-cf-dropdown.open .nm-cf-dropdown-trigger {
+        border-color: #f97316;
+        box-shadow: 0 0 0 3px rgba(249, 115, 22, .12);
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+
+    .nm-cf-dropdown-text {
+        font-size: 16px;
+        font-weight: 600;
+        color: #0f172a;
+    }
+
+    .nm-cf-dropdown-placeholder {
+        color: #94a3b8;
+        font-weight: 500;
+    }
+
+    .nm-cf-dropdown-arrow {
+        font-size: 20px !important;
+        color: #f97316;
+        transition: transform .2s;
+    }
+
+    .nm-cf-dropdown.open .nm-cf-dropdown-arrow {
+        transform: rotate(180deg);
+    }
+
+    .nm-cf-dropdown-menu {
+        display: none;
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 100%;
+        max-height: 260px;
+        overflow-y: auto;
+        background: #fff;
+        border: 1.5px solid #f97316;
+        border-top: none;
+        border-bottom-left-radius: 16px;
+        border-bottom-right-radius: 16px;
+        box-shadow: 0 10px 26px rgba(15, 23, 42, .12);
+        z-index: 2250;
+    }
+
+    .nm-cf-dropdown.open .nm-cf-dropdown-menu {
+        display: block;
+    }
+
+    .nm-cf-dropdown-option {
+        padding: 12px 16px;
+        font-size: 14px;
+        font-weight: 500;
+        color: #334155;
+        cursor: pointer;
+        border-bottom: 1px solid #ffedd5;
+        transition: background .1s, color .1s;
+    }
+
+    .nm-cf-dropdown-option:last-child {
+        border-bottom: none;
+    }
+
+    .nm-cf-dropdown-option:hover {
+        background: #fff7ed;
+        color: #c2410c;
+    }
+
+    .nm-cf-dropdown-option.is-selected {
+        background: #fff7ed;
+        color: #c2410c;
+        font-weight: 700;
+    }
+
+    .nm-check-grid .nm-check-card {
+        background: #f8fafc;
+        border-color: #e2e8f0;
+    }
+
+    .nm-check-grid .nm-check-card:hover {
+        background: #fff7ed;
+        border-color: #fdba74;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var hiddenSpecialNeeds = document.getElementById('hiddenSpecialNeeds');
+    var checkboxes = Array.from(document.querySelectorAll('.special-need-checkbox'));
+
+    function normalizeText(value) {
+        return (value || '')
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/đ/g, 'd')
+            .trim();
+    }
+
+    function syncSpecialNeeds() {
+        var selected = checkboxes
+            .filter(function (cb) { return cb.checked; })
+            .map(function (cb) { return cb.value; });
+        hiddenSpecialNeeds.value = selected.join(', ');
+    }
+
+    var initialSpecialNeeds = (hiddenSpecialNeeds && hiddenSpecialNeeds.value) ? hiddenSpecialNeeds.value.split(',') : [];
+    var initialNeedSet = new Set(initialSpecialNeeds.map(function (x) { return normalizeText(x); }));
+    checkboxes.forEach(function (cb) {
+        cb.checked = initialNeedSet.has(normalizeText(cb.value));
+        cb.addEventListener('change', syncSpecialNeeds);
+    });
+    syncSpecialNeeds();
+
+    function setDropdownOpenState(dropdown, isOpen) {
+        if (!dropdown) return;
+        dropdown.classList.toggle('open', !!isOpen);
+
+        var parentField = dropdown.closest('.nm-field');
+        var parentCard = dropdown.closest('.nm-section-card');
+        if (parentField) parentField.classList.toggle('nm-dropdown-active', !!isOpen);
+        if (parentCard) parentCard.classList.toggle('nm-dropdown-active', !!isOpen);
+    }
+
+    function closeAllDropdowns() {
+        document.querySelectorAll('.nm-cf-dropdown.open').forEach(function (dd) {
+            setDropdownOpenState(dd, false);
+        });
+    }
+
+    function initDropdown(dropdownId, hiddenInputId, displayId, menuId, placeholder, options) {
+        var dropdown = document.getElementById(dropdownId);
+        var hiddenInput = document.getElementById(hiddenInputId);
+        var display = document.getElementById(displayId);
+        var menu = document.getElementById(menuId);
+
+        if (!dropdown || !hiddenInput || !display || !menu) return;
+
+        function setDisplay(value, label) {
+            hiddenInput.value = value;
+            display.textContent = label || placeholder;
+            display.classList.toggle('nm-cf-dropdown-placeholder', !label);
+        }
+
+        function render() {
+            menu.innerHTML = '';
+            options.forEach(function (opt) {
+                var item = document.createElement('div');
+                item.className = 'nm-cf-dropdown-option';
+                if (String(hiddenInput.value) === String(opt.value)) item.classList.add('is-selected');
+                item.textContent = opt.label;
+                item.addEventListener('click', function () {
+                    setDisplay(opt.value, opt.label);
+                    render();
+                    closeAllDropdowns();
+                });
+                menu.appendChild(item);
+            });
+        }
+
+        var selectedOption = options.find(function (opt) { return String(opt.value) === String(hiddenInput.value); });
+        setDisplay(hiddenInput.value, selectedOption ? selectedOption.label : '');
+        render();
+
+        var trigger = dropdown.querySelector('.nm-cf-dropdown-trigger');
+        if (trigger) {
+            trigger.addEventListener('click', function () {
+                if (dropdown.classList.contains('open')) {
+                    setDropdownOpenState(dropdown, false);
+                } else {
+                    closeAllDropdowns();
+                    setDropdownOpenState(dropdown, true);
+                }
+            });
+        }
+    }
+
+    initDropdown('dd_number', 'NumberOfChildren', 'NumberDisplay', 'NumberMenu', 'Chọn số lượng trẻ', [
+        { value: '1', label: '1 trẻ' },
+        { value: '2', label: '2 trẻ' },
+        { value: '3', label: '3 trẻ' },
+        { value: '4', label: '4 trẻ' },
+        { value: '5', label: '5 trẻ' },
+        { value: '6', label: '6 trẻ' }
+    ]);
+
+    initDropdown('dd_age', 'ChildAgeGroup', 'AgeDisplay', 'AgeMenu', 'Chọn nhóm tuổi', [
+        { value: '0', label: 'Em bé (0 - 1 tuổi)' },
+        { value: '1', label: 'Toddler (1 - 3 tuổi)' },
+        { value: '2', label: 'Mầm non (3 - 5 tuổi)' },
+        { value: '3', label: 'Học sinh tiểu học (6 - 12 tuổi)' }
+    ]);
+
+    document.addEventListener('click', function (event) {
+        if (!event.target.closest('.nm-cf-dropdown')) {
+            closeAllDropdowns();
+        }
+    });
 });
 </script>

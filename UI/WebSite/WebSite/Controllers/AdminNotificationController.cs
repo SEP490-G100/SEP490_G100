@@ -47,7 +47,7 @@ public class AdminNotificationController : Controller
         }
         catch
         {
-            TempData["Error"] = "Khong the tai danh sach thong bao admin.";
+            TempData["Error"] = "Không thể tải danh sách thông báo.";
             return View("~/Views/Admin/AdminNotification/ManageAdminNotification.cshtml", new AdminNotificationListResponse());
         }
     }
@@ -99,12 +99,12 @@ public class AdminNotificationController : Controller
                 });
             }
 
-            ModelState.AddModelError(string.Empty, result?.Message ?? "Khong the tao thong bao admin.");
+            ModelState.AddModelError(string.Empty, result?.Message ?? "Không th? tao thong bao admin.");
             return View("~/Views/Admin/AdminNotification/CreateAdminNotification.cshtml", model);
         }
         catch (Exception ex)
         {
-            ModelState.AddModelError(string.Empty, $"Loi ket noi: {ex.Message}");
+            ModelState.AddModelError(string.Empty, $"L?i kết nối: {ex.Message}");
             return View("~/Views/Admin/AdminNotification/CreateAdminNotification.cshtml", model);
         }
     }
@@ -121,7 +121,7 @@ public class AdminNotificationController : Controller
             var result = JsonSerializer.Deserialize<ApiResult<AdminNotificationDetailViewModel>>(json, JsonOpts);
             if (result?.Success != true || result.Data == null)
             {
-                TempData["Error"] = result?.Message ?? "Khong tim thay thong bao admin.";
+                TempData["Error"] = result?.Message ?? "Không t?m th?y thong bao admin.";
                 return RedirectToAction(nameof(ManageAdminNotification));
             }
 
@@ -129,7 +129,7 @@ public class AdminNotificationController : Controller
         }
         catch
         {
-            TempData["Error"] = "Loi ket noi den API.";
+            TempData["Error"] = "Lỗi kết nối đến API.";
             return RedirectToAction(nameof(ManageAdminNotification));
         }
     }
@@ -172,13 +172,13 @@ public class AdminNotificationController : Controller
                 });
             }
 
-            ModelState.AddModelError(string.Empty, result?.Message ?? "Khong the cap nhat thong bao admin.");
+            ModelState.AddModelError(string.Empty, result?.Message ?? "Không th? cập nhật thong bao admin.");
             model.Id = id;
             return View("~/Views/Admin/AdminNotification/ViewAdminNotificationDetail.cshtml", model);
         }
         catch (Exception ex)
         {
-            ModelState.AddModelError(string.Empty, $"Loi ket noi: {ex.Message}");
+            ModelState.AddModelError(string.Empty, $"L?i kết nối: {ex.Message}");
             model.Id = id;
             return View("~/Views/Admin/AdminNotification/ViewAdminNotificationDetail.cshtml", model);
         }
@@ -215,11 +215,11 @@ public class AdminNotificationController : Controller
             return RedirectToAdminNotificationReturnUrlOrList(
                 returnUrl,
                 "error",
-                result?.Message ?? "Khong the cap nhat trang thai thong bao admin.");
+                result?.Message ?? "Không th? cập nhật tr?ng th?i thong bao admin.");
         }
         catch (Exception ex)
         {
-            return RedirectToAdminNotificationReturnUrlOrList(returnUrl, "error", $"Loi ket noi: {ex.Message}");
+            return RedirectToAdminNotificationReturnUrlOrList(returnUrl, "error", $"L?i kết nối: {ex.Message}");
         }
     }
 

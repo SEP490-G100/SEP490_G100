@@ -20,6 +20,7 @@ public class ModeratorVerificationService
 
     public async Task<VerificationRequestListResponse> ModeratorViewVerificationListAsync(
         int? status,
+        int? requestType,
         string? search,
         int page,
         int pageSize)
@@ -27,7 +28,7 @@ public class ModeratorVerificationService
         if (page < 1) page = 1;
         if (pageSize < 1 || pageSize > 100) pageSize = 3;
 
-        var (items, totalCount) = await _moderatorVerificationRepo.GetListAsync(status, search, page, pageSize);
+        var (items, totalCount) = await _moderatorVerificationRepo.GetListAsync(status, requestType, search, page, pageSize);
 
         return new VerificationRequestListResponse
         {
@@ -42,7 +43,7 @@ public class ModeratorVerificationService
     {
         var request = await _moderatorVerificationRepo.GetByIdAsync(id);
         if (request == null)
-            return (false, null, "Khong tim thay yeu cau xac minh.");
+            return (false, null, "Không tìm thấy yêu cầu xác minh.");
 
         return (true, MapDetailDto(request), null);
     }
@@ -55,21 +56,21 @@ public class ModeratorVerificationService
         if (request.Action != (int)NannyVerificationRequestStatus.Approved &&
             request.Action != (int)NannyVerificationRequestStatus.Rejected)
         {
-            return (false, 400, "Action khong hop le. Chi chap nhan 2 (Approve) hoac 3 (Reject).");
+            return (false, 400, "Action không hợp lệ. Chỉ chấp nhận 2 (Approve) hoặc 3 (Reject).");
         }
 
         if (request.Action == (int)NannyVerificationRequestStatus.Rejected &&
             string.IsNullOrWhiteSpace(request.RejectionReason))
         {
-            return (false, 400, "Ly do tu choi la bat buoc khi tu choi yeu cau.");
+            return (false, 400, "Lý do từ chối là bắt buộc khi từ chối yêu cầu.");
         }
 
         var verificationRequest = await _moderatorVerificationRepo.GetByIdAsync(id);
         if (verificationRequest == null)
-            return (false, 404, "Khong tim thay yeu cau xac minh.");
+            return (false, 404, "Không tìm thấy yêu cầu xác minh.");
 
         if (verificationRequest.Status != (int)NannyVerificationRequestStatus.Pending)
-            return (false, 409, "Yeu cau nay da duoc xu ly truoc do.");
+            return (false, 409, "Yêu cầu này đã được xử lý trước đó.");
 
         verificationRequest.Status = request.Action;
         verificationRequest.ReviewedBy = moderatorId;
@@ -80,8 +81,21 @@ public class ModeratorVerificationService
         verificationRequest.UpdatedAt = DateTime.UtcNow;
         verificationRequest.UpdatedBy = moderatorId;
 
+        if (request.Action == (int)NannyVerificationRequestStatus.Approved)
+        {
+            var reviewTime = verificationRequest.ReviewedAt ?? DateTime.UtcNow;
+            foreach (var document in verificationRequest.VerificationDocuments.Where(document =>
+                         !document.IsDeleted &&
+                         document.DocumentType == (int)VerificationDocumentType.HealthCertificate))
+            {
+                document.ExpiryDate = reviewTime.AddMonths(6);
+                document.UpdatedAt = DateTime.UtcNow;
+                document.UpdatedBy = moderatorId;
+            }
+        }
+
         var nannyProfile = await _moderatorVerificationRepo.GetNannyProfileAsync(verificationRequest.NannyProfileId);
-        if (nannyProfile != null)
+        if (nannyProfile != null && verificationRequest.RequestType == (int)VerificationRequestType.ProfileVerification)
         {
             nannyProfile.VerificationStatus = request.Action == (int)NannyVerificationRequestStatus.Approved
                 ? (int)VerificationStatus.Approved
@@ -97,11 +111,11 @@ public class ModeratorVerificationService
         await _moderatorVerificationRepo.SaveChangesAsync();
 
         var notificationTitle = request.Action == (int)NannyVerificationRequestStatus.Approved
-            ? "Yeu cau xac minh cua ban da duoc chap thuan"
-            : "Yeu cau xac minh cua ban da bi tu choi";
+            ? "Yêu cầu xác minh của bạn đã được chấp thuận"
+            : "Yêu cầu xác minh của bạn đã bị từ chối";
         var notificationContent = request.Action == (int)NannyVerificationRequestStatus.Approved
-            ? "Moderator da chap thuan yeu cau xac minh cua ban."
-            : $"Moderator da tu choi yeu cau xac minh cua ban. {(string.IsNullOrWhiteSpace(verificationRequest.RejectionReason) ? string.Empty : $"Ly do: {verificationRequest.RejectionReason}")}".Trim();
+            ? "Moderator đã chấp thuận yêu cầu xác minh của bạn."
+            : $"Moderator đã từ chối yêu cầu xác minh của bạn. {(string.IsNullOrWhiteSpace(verificationRequest.RejectionReason) ? string.Empty : $"Lý do: {verificationRequest.RejectionReason}")}".Trim();
         var notificationType = request.Action == (int)NannyVerificationRequestStatus.Approved
             ? NotificationTypes.VerificationRequestApproved
             : NotificationTypes.VerificationRequestRejected;
@@ -116,18 +130,30 @@ public class ModeratorVerificationService
             moderatorId);
 
         var message = request.Action == (int)NannyVerificationRequestStatus.Approved
-            ? "Da duyet yeu cau xac minh."
-            : "Da tu choi yeu cau xac minh.";
+            ? "Đã duyệt yêu cầu xác minh."
+            : "Đã từ chối yêu cầu xác minh.";
 
         return (true, 200, message);
     }
 
     private static VerificationRequestListDto MapListDto(Nanny_BackEnd.Models.VerificationRequest request)
     {
+        var activeDocuments = request.VerificationDocuments.Where(document => !document.IsDeleted).ToList();
+        var healthCertDocument = activeDocuments
+            .Where(document => document.DocumentType == (int)VerificationDocumentType.HealthCertificate)
+            .OrderByDescending(document => document.ExpiryDate)
+            .FirstOrDefault();
+
         return new VerificationRequestListDto
         {
             Id = request.Id,
             NannyProfileId = request.NannyProfileId,
+            RequestType = request.RequestType,
+            DocumentTypes = activeDocuments
+                .Select(document => document.DocumentType)
+                .Distinct()
+                .ToList(),
+            ExpiryDate = healthCertDocument?.ExpiryDate,
             Status = request.Status,
             CreatedAt = request.CreatedAt,
             ReviewedAt = request.ReviewedAt,
@@ -151,6 +177,7 @@ public class ModeratorVerificationService
         {
             Id = request.Id,
             NannyProfileId = request.NannyProfileId,
+            RequestType = request.RequestType,
             Status = request.Status,
             RejectionReason = request.RejectionReason,
             CreatedAt = request.CreatedAt,
@@ -212,7 +239,8 @@ public class ModeratorVerificationService
                     DocumentType = document.DocumentType,
                     DocumentUrl = document.DocumentUrl,
                     FileName = document.FileName,
-                    FileSize = document.FileSize
+                    FileSize = document.FileSize,
+                    ExpiryDate = document.ExpiryDate
                 }).ToList()
         };
     }

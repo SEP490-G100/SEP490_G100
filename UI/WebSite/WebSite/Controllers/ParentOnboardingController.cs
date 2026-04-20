@@ -11,15 +11,18 @@ namespace WebSite.Controllers;
 [Authorize(Roles = "Parent")]
 public class ParentOnboardingController : Controller
 {
-
-
     private readonly HttpClient _http;
+    private readonly string _apiBaseUrl;
     private readonly IAzureBlobStorageService _blobStorageService;
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
 
-    public ParentOnboardingController(IHttpClientFactory httpFactory, IAzureBlobStorageService blobStorageService)
+    public ParentOnboardingController(
+        IHttpClientFactory httpFactory,
+        IConfiguration config,
+        IAzureBlobStorageService blobStorageService)
     {
         _http = httpFactory.CreateClient("BackendApi");
+        _apiBaseUrl = (config["ApiSettings:BaseUrl"] ?? string.Empty).TrimEnd('/');
         _blobStorageService = blobStorageService;
     }
 
@@ -32,6 +35,43 @@ public class ParentOnboardingController : Controller
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
     }
 
+    private static string? NormalizePhoneNumber(string? phoneNumber)
+    {
+        if (string.IsNullOrWhiteSpace(phoneNumber))
+            return null;
+
+        var normalized = phoneNumber.Trim().Replace(" ", string.Empty);
+        if (normalized.StartsWith("00", StringComparison.Ordinal))
+            normalized = "+" + normalized[2..];
+
+        return normalized;
+    }
+
+    private static bool IsValidPhoneNumber(string phoneNumber)
+    {
+        var normalized = NormalizePhoneNumber(phoneNumber);
+        if (string.IsNullOrWhiteSpace(normalized))
+            return false;
+
+        if (normalized.StartsWith("+", StringComparison.Ordinal))
+            normalized = normalized[1..];
+
+        return normalized.Length is >= 9 and <= 15 && normalized.All(char.IsDigit);
+    }
+
+    private string? NormalizeAvatarUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return url;
+        if (Uri.TryCreate(url, UriKind.Absolute, out _)) return url;
+        if (url.StartsWith("~/", StringComparison.Ordinal))
+            url = url[1..];
+        if (url.StartsWith("/") && !string.IsNullOrWhiteSpace(_apiBaseUrl))
+            return _apiBaseUrl + url;
+        if (!string.IsNullOrWhiteSpace(_apiBaseUrl))
+            return _apiBaseUrl + "/" + url.TrimStart('/');
+        return url;
+    }
+
     private async Task<EditPersonalInfoViewModel?> LoadCurrentProfileAsync()
     {
         SetAuthHeader();
@@ -40,9 +80,19 @@ public class ParentOnboardingController : Controller
 
         var content = await response.Content.ReadAsStringAsync();
         var apiResult = JsonSerializer.Deserialize<ApiResultDto>(content, JsonOpts);
-        if (apiResult?.Data is System.Text.Json.JsonElement element)
+        if (apiResult?.Data is JsonElement element)
         {
-            return JsonSerializer.Deserialize<EditPersonalInfoViewModel>(element.GetRawText(), JsonOpts);
+            var profile = JsonSerializer.Deserialize<EditPersonalInfoViewModel>(element.GetRawText(), JsonOpts)
+                          ?? new EditPersonalInfoViewModel();
+
+            if (string.IsNullOrWhiteSpace(profile.AvatarUrl) &&
+                element.TryGetProperty("avatarUrl", out var avatarElement) &&
+                avatarElement.ValueKind == JsonValueKind.String)
+            {
+                profile.AvatarUrl = avatarElement.GetString();
+            }
+
+            return profile;
         }
 
         return null;
@@ -52,7 +102,6 @@ public class ParentOnboardingController : Controller
     {
         SetAuthHeader();
 
-        // 1. Upload Avatar if present
         if (model.AvatarFile != null && model.AvatarFile.Length > 0)
         {
             try
@@ -86,9 +135,9 @@ public class ParentOnboardingController : Controller
         {
             FirstName = string.IsNullOrWhiteSpace(firstName) ? "Parent" : firstName,
             LastName = string.IsNullOrWhiteSpace(lastName) ? "User" : lastName,
-            PhoneNumber = (string?)null,
+            PhoneNumber = NormalizePhoneNumber(model.PhoneNumber),
             AvatarUrl = model.AvatarUrl,
-            DateOfBirth = (System.DateOnly?)null,
+            DateOfBirth = model.DateOfBirth,
             Gender = (int?)null,
             model.Address,
             model.City,
@@ -101,10 +150,10 @@ public class ParentOnboardingController : Controller
         var response = await _http.PutAsJsonAsync("/api/profile", updateRequest);
         var resContent = await response.Content.ReadAsStringAsync();
         var apiResult = JsonSerializer.Deserialize<ApiResultDto>(resContent, JsonOpts);
-        return apiResult != null && apiResult.Success;
+        return apiResult is { Success: true };
     }
 
-    private async Task<bool> SaveParentProfileAsync(ParentOnboardingWizardViewModel model)
+    private async Task<(bool Success, string? Message)> SaveParentProfileAsync(ParentOnboardingWizardViewModel model)
     {
         SetAuthHeader();
         var payload = new
@@ -115,8 +164,8 @@ public class ParentOnboardingController : Controller
 
         var response = await _http.PutAsJsonAsync("/api/onboarding/parent/profile", payload);
         var content = await response.Content.ReadAsStringAsync();
-        var apiResult = JsonSerializer.Deserialize<ApiResultDto>(content, JsonOpts);
-        return apiResult != null && apiResult.Success;
+        var apiResult = JsonSerializer.Deserialize<ApiResult>(content, JsonOpts);
+        return (apiResult is { Success: true }, apiResult?.Message);
     }
 
     private async Task<bool> CreateChildAsync(ParentOnboardingWizardViewModel model)
@@ -130,25 +179,18 @@ public class ParentOnboardingController : Controller
             Notes = model.ChildNotes
         };
 
-        // Tận dụng endpoint tạo con đã hoạt động trong ProfileController
         var response = await _http.PostAsJsonAsync("/api/profile/children", payload);
-
-        // Nếu backend trả lỗi (500 HTML, 400 validation, v.v.) thì không cố Deserialize JSON
         if (!response.IsSuccessStatusCode)
-        {
             return false;
-        }
 
         var content = await response.Content.ReadAsStringAsync();
-
         try
         {
             var apiResult = JsonSerializer.Deserialize<ApiResultDto>(content, JsonOpts);
-            return apiResult != null && apiResult.Success;
+            return apiResult is { Success: true };
         }
         catch
         {
-            // Response không phải JSON đúng định dạng ApiResultDto
             return false;
         }
     }
@@ -162,13 +204,15 @@ public class ParentOnboardingController : Controller
         if (existing != null)
         {
             vm.FullName = $"{existing.FirstName} {existing.LastName}".Trim();
+            vm.PhoneNumber = existing.PhoneNumber;
+            vm.DateOfBirth = existing.DateOfBirth;
             vm.Address = existing.Address;
             vm.City = existing.City;
             vm.District = existing.District;
             vm.Ward = existing.Ward;
             vm.Latitude = existing.Latitude;
             vm.Longitude = existing.Longitude;
-            vm.AvatarUrl = existing.AvatarUrl;
+            vm.AvatarUrl = NormalizeAvatarUrl(existing.AvatarUrl);
         }
 
         return View(vm);
@@ -178,31 +222,70 @@ public class ParentOnboardingController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Step1BasicInfo(ParentOnboardingWizardViewModel model, string? direction)
     {
-        if (direction == "next")
+        if (direction != "next")
+            return View(model);
+
+        if (string.IsNullOrWhiteSpace(model.FullName))
+            ModelState.AddModelError(nameof(model.FullName), "Vui long nhap ho ten.");
+
+        if (!model.DateOfBirth.HasValue)
         {
-            if (string.IsNullOrWhiteSpace(model.FullName))
-                ModelState.AddModelError(nameof(model.FullName), "Vui lòng nhập họ tên.");
-
-            if (string.IsNullOrWhiteSpace(model.Address))
-                ModelState.AddModelError(nameof(model.Address), "Vui lòng nhập địa chỉ chi tiết.");
-
-            if (string.IsNullOrWhiteSpace(model.City) || string.IsNullOrWhiteSpace(model.District))
-                ModelState.AddModelError(string.Empty, "Vui lòng chọn đầy đủ Tỉnh/Thành và Phường/Xã.");
-
-            if (!ModelState.IsValid)
-                return View(model);
-
-            var success = await SaveBasicUserInfoAsync(model);
-            if (!success)
-            {
-                ModelState.AddModelError(string.Empty, "Lưu thông tin thất bại. Vui lòng thử lại.");
-                return View(model);
-            }
-
-            return RedirectToAction("Step2Family");
+            ModelState.AddModelError(nameof(model.DateOfBirth), "Vui long chon ngay sinh.");
+        }
+        else if (model.DateOfBirth.Value > DateOnly.FromDateTime(DateTime.Today))
+        {
+            ModelState.AddModelError(nameof(model.DateOfBirth), "Ngay sinh khong duoc lon hon ngay hien tai.");
+        }
+        else
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var age = today.Year - model.DateOfBirth.Value.Year;
+            if (model.DateOfBirth.Value > today.AddYears(-age))
+                age--;
+            if (age < 18)
+                ModelState.AddModelError(nameof(model.DateOfBirth), "Parent phai du 18 tuoi tro len.");
         }
 
-        return View(model);
+        if (!string.IsNullOrWhiteSpace(model.PhoneNumber) && !IsValidPhoneNumber(model.PhoneNumber))
+            ModelState.AddModelError(nameof(model.PhoneNumber), "So dien thoai khong hop le (9-15 chu so, cho phep dau +).");
+
+        if (model.AvatarFile != null && model.AvatarFile.Length > 0)
+        {
+            var ext = Path.GetExtension(model.AvatarFile.FileName)?.ToLowerInvariant();
+            var allowedExt = new[] { ".jpg", ".jpeg", ".png" };
+            if (string.IsNullOrWhiteSpace(ext) || !allowedExt.Contains(ext))
+                ModelState.AddModelError(nameof(model.AvatarFile), "Anh dai dien chi chap nhan .jpg, .jpeg hoac .png.");
+
+            const long maxSizeBytes = 5 * 1024 * 1024;
+            if (model.AvatarFile.Length > maxSizeBytes)
+                ModelState.AddModelError(nameof(model.AvatarFile), "Anh dai dien khong duoc vuot qua 5MB.");
+
+            var contentType = model.AvatarFile.ContentType?.ToLowerInvariant();
+            if (!string.IsNullOrWhiteSpace(contentType))
+            {
+                var allowedTypes = new[] { "image/jpeg", "image/jpg", "image/png" };
+                if (!allowedTypes.Contains(contentType))
+                    ModelState.AddModelError(nameof(model.AvatarFile), "Dinh dang tep anh khong hop le.");
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(model.Address))
+            ModelState.AddModelError(nameof(model.Address), "Vui long nhap dia chi chi tiet.");
+
+        if (string.IsNullOrWhiteSpace(model.City) || string.IsNullOrWhiteSpace(model.District))
+            ModelState.AddModelError(string.Empty, "Vui long chon day du Tinh/Thanh va Quan/Huyen/Phuong.");
+
+        if (!ModelState.IsValid)
+            return View(model);
+
+        var success = await SaveBasicUserInfoAsync(model);
+        if (!success)
+        {
+            ModelState.AddModelError(string.Empty, "Luu thong tin that bai. Vui long thu lai.");
+            return View(model);
+        }
+
+        return RedirectToAction("Step2Family");
     }
 
     [HttpGet]
@@ -216,43 +299,37 @@ public class ParentOnboardingController : Controller
     public async Task<IActionResult> Step2Family(ParentOnboardingWizardViewModel model, string? direction)
     {
         if (direction == "back")
-        {
             return RedirectToAction("Step1BasicInfo");
-        }
 
-        if (direction == "next")
+        if (direction != "next")
+            return View(model);
+
+        if (string.IsNullOrWhiteSpace(model.FamilyDescription))
+            ModelState.AddModelError(nameof(model.FamilyDescription), "Vui long mo ta gia dinh.");
+
+        if (!model.NumberOfChildren.HasValue || model.NumberOfChildren < 1)
+            ModelState.AddModelError(nameof(model.NumberOfChildren), "Vui long nhap so luong con.");
+
+        if (!model.ChildAgeGroup.HasValue)
+            ModelState.AddModelError(nameof(model.ChildAgeGroup), "Vui long chon nhom tuoi cua tre.");
+
+        if (!ModelState.IsValid)
+            return View(model);
+
+        var parentSaveResult = await SaveParentProfileAsync(model);
+        if (!parentSaveResult.Success)
         {
-            if (string.IsNullOrWhiteSpace(model.FamilyDescription))
-                ModelState.AddModelError(nameof(model.FamilyDescription), "Vui lòng mô tả gia đình.");
-
-            if (!model.NumberOfChildren.HasValue || model.NumberOfChildren < 1)
-                ModelState.AddModelError(nameof(model.NumberOfChildren), "Vui lòng nhập số lượng con.");
-
-            if (!model.ChildAgeGroup.HasValue)
-                ModelState.AddModelError(nameof(model.ChildAgeGroup), "Vui lòng chọn nhóm tuổi của trẻ.");
-
-            if (!ModelState.IsValid)
-                return View(model);
-
-            // Lưu Parent Profile (FamilyDescription & NumberOfChildren)
-            var parentSuccess = await SaveParentProfileAsync(model);
-            if (!parentSuccess)
-            {
-                ModelState.AddModelError(string.Empty, "Lưu thông tin gia đình thất bại.");
-                return View(model);
-            }
-
-            // Gọi API thêm Child Profile đầu tiên
-            var childSuccess = await CreateChildAsync(model);
-            if (!childSuccess)
-            {
-                // Có thể API trả về 500 do DB schema mismatch, cứ cho user qua buớc này
-                // (Chấp nhận fail ở bước thêm child để user có thể vào được Homepage)
-            }
-
-            return RedirectToAction("Index", "Home");
+            ModelState.AddModelError(string.Empty, parentSaveResult.Message ?? "Luu thong tin gia dinh that bai.");
+            return View(model);
         }
 
-        return View(model);
+        var childSuccess = await CreateChildAsync(model);
+        if (!childSuccess)
+        {
+            ModelState.AddModelError(string.Empty, "Tao ho so con that bai. Vui long kiem tra thong tin va thu lai.");
+            return View(model);
+        }
+
+        return RedirectToAction("Index", "Home");
     }
 }

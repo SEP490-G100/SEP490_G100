@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nanny_BackEnd.DTOs.Verification;
+using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Services;
 
 namespace Nanny_BackEnd.Controllers;
@@ -53,6 +54,27 @@ public class NannyVerificationRequestController : ControllerBase
     [Authorize(Roles = "Nanny")]
     [HttpPost("nanny-submit-verification")]
     public async Task<IActionResult> NannySubmitVerificationRequest([FromBody] SubmitVerificationRequestDto model)
+    {
+        return await SubmitVerificationInternalAsync(model);
+    }
+
+    [Authorize(Roles = "Nanny")]
+    [HttpPost("nanny-submit-profile-verification")]
+    public async Task<IActionResult> NannySubmitProfileVerificationRequest([FromBody] SubmitVerificationRequestDto model)
+    {
+        model.RequestType = (int)VerificationRequestType.ProfileVerification;
+        return await SubmitVerificationInternalAsync(model);
+    }
+
+    [Authorize(Roles = "Nanny")]
+    [HttpPost("nanny-submit-health-certificate")]
+    public async Task<IActionResult> NannySubmitHealthCertificateRequest([FromBody] SubmitVerificationRequestDto model)
+    {
+        model.RequestType = (int)VerificationRequestType.HealthCertificate;
+        return await SubmitVerificationInternalAsync(model);
+    }
+
+    private async Task<IActionResult> SubmitVerificationInternalAsync(SubmitVerificationRequestDto model)
     {
         try
         {

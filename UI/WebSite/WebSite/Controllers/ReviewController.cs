@@ -35,7 +35,7 @@ public class ReviewController : Controller
 
         SetAuthHeader();
 
-        // Lay thong tin hiring record de hien thi form
+        // Lay thong tin hiring record ?? hien thi form
         var resp = await _http.GetAsync($"/api/hiring/records/{hiringRecordId}");
         if (!resp.IsSuccessStatusCode)
             return RedirectToAction(nameof(History));
@@ -49,7 +49,7 @@ public class ReviewController : Controller
         // Chi cho phep review khi hop dong da hoan thanh (Status = 4)
         if (d.Status != 4)
         {
-            TempData["Error"] = "Chi co the danh gia sau khi hop dong hoan thanh.";
+            TempData["Error"] = "Chỉ có thể đánh giá sau khi hợp đồng hoàn thành.";
             return RedirectToAction(nameof(History));
         }
 
@@ -149,7 +149,7 @@ public class ReviewController : Controller
     {
         public string NannyName { get; set; } = "";
         public int Status { get; set; }
-        public string StartDate { get; set; } = "";   // nhan duoi dang string "yyyy-MM-dd"
+        public string StartDate { get; set; } = "";   // nhan duoi ?ang string "yyyy-MM-dd"
         public string? EndDate { get; set; }
     }
 }

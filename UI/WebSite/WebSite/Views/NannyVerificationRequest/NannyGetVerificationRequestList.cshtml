@@ -1,6 +1,6 @@
 @model WebSite.Models.Verification.VerificationRequestListResponse
 @{
-    ViewData["Title"] = "Verification Requests";
+    ViewData["Title"] = "Danh sách yêu cầu xác minh";
 
     var currentStatus = ViewBag.Status as int?;
     var currentPage = Model?.Page ?? 1;
@@ -15,17 +15,17 @@
 <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
     <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
         <div>
-            <span class="section-label">Verification History</span>
+            <span class="section-label">Lịch sử xác minh</span>
             <h1 class="page-title mt-2">
-                My <span class="gradient-text">Verification Requests</span>
+                Các <span class="gradient-text">yêu cầu xác minh</span> của tôi
             </h1>
-            <p class="page-subtitle">Track every submission, review status, and moderator feedback in one place.</p>
+            <p class="page-subtitle">Theo dõi mọi lượt gửi, trạng thái đánh giá và phản hồi của ban quản trị tại một nơi.</p>
         </div>
         <div class="flex items-center gap-2">
-            <span class="badge badge-pending px-3 py-1.5">@(Model?.TotalCount ?? 0) Total</span>
+            <span class="badge badge-pending px-3 py-1.5">Tổng cộng @(Model?.TotalCount ?? 0)</span>
             <a href="@Url.Action("NannySubmitVerificationRequest", "NannyVerificationRequest")" class="btn-primary flex items-center gap-2">
                 <span class="material-icons-round text-base">upload_file</span>
-                New Request
+                Yêu cầu mới
             </a>
         </div>
     </div>
@@ -38,10 +38,10 @@
                     <select name="status"
                             onchange="this.form.submit()"
                             class="search-input w-full !pl-9 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
-                        <option value="">All Statuses</option>
-                        <option value="1" selected="@(currentStatus == 1 ? "selected" : null)">Pending</option>
-                        <option value="2" selected="@(currentStatus == 2 ? "selected" : null)">Approved</option>
-                        <option value="3" selected="@(currentStatus == 3 ? "selected" : null)">Rejected</option>
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="1" selected="@(currentStatus == 1 ? "selected" : null)">Đang chờ</option>
+                        <option value="2" selected="@(currentStatus == 2 ? "selected" : null)">Đã duyệt</option>
+                        <option value="3" selected="@(currentStatus == 3 ? "selected" : null)">Từ chối</option>
                     </select>
                 </div>
             </div>
@@ -51,8 +51,8 @@
     <div class="content-card overflow-hidden fade-in-up" style="animation-delay:.1s;">
         <div class="card-header">
             <span class="text-sm text-gray-500">
-                Showing <span class="font-bold text-gray-800">@items.Count</span>
-                of <span class="font-bold text-gray-800">@(Model?.TotalCount ?? 0)</span> request(s)
+                Đang hiển thị <span class="font-bold text-gray-800">@items.Count</span>
+                trong tổng số <span class="font-bold text-gray-800">@(Model?.TotalCount ?? 0)</span> yêu cầu
             </span>
         </div>
 
@@ -61,22 +61,24 @@
                 <thead>
                     <tr>
                         <th class="text-left">#</th>
-                        <th class="text-left">Submitted</th>
-                        <th class="text-left">Status</th>
-                        <th class="text-left">Reviewed By</th>
-                        <th class="text-left">Reviewed At</th>
-                        <th class="text-left">Feedback</th>
-                        <th class="text-center">Action</th>
+                        <th class="text-left">Ngày nộp</th>
+                        <th class="text-left">Loại hồ sơ</th>
+                        <th class="text-left">Hết hạn</th>
+                        <th class="text-left">Trạng thái</th>
+                        <th class="text-left">Người duyệt</th>
+                        <th class="text-left">Ngày duyệt</th>
+                        <th class="text-left">Phản hồi</th>
+                        <th class="text-center">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
                     @if (!items.Any())
                     {
                         <tr>
-                            <td colspan="7" class="text-center py-16 text-gray-400">
+                            <td colspan="9" class="text-center py-16 text-gray-400">
                                 <span class="material-icons-round text-5xl mb-3 block text-gray-200">verified_user</span>
-                                <p class="font-semibold text-gray-400">No verification requests found.</p>
-                                <p class="text-xs text-gray-300 mt-1">Try another status filter or submit a new request.</p>
+                                <p class="font-semibold text-gray-400">Không tìm thấy yêu cầu xác minh nào.</p>
+                                <p class="text-xs text-gray-300 mt-1">Hãy thử bộ lọc khác hoặc gửi yêu cầu mới.</p>
                             </td>
                         </tr>
                     }
@@ -92,6 +94,19 @@
                                         <span class="font-semibold text-gray-800">@item.CreatedAt.ToString("dd/MM/yyyy")</span>
                                         <span class="text-xs text-gray-400">@item.CreatedAt.ToString("HH:mm")</span>
                                     </div>
+                                </td>
+                                <td class="text-gray-600 text-sm">
+                                    @if (item.RequestType == 2)
+                                    {
+                                        <span class="badge badge-active">Giấy khám sức khỏe</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-pending">Hồ sơ xác minh</span>
+                                    }
+                                </td>
+                                <td class="text-gray-500 text-sm">
+                                    @(item.ExpiryDate.HasValue ? item.ExpiryDate.Value.ToString("dd/MM/yyyy") : "-")
                                 </td>
                                 <td>
                                     <span class="badge @item.StatusClass">@item.StatusLabel</span>
@@ -110,7 +125,7 @@
                                 <td class="text-center">
                                     <a href="@Url.Action("NannyViewVerificationRequestDetail", "NannyVerificationRequest", new { id = item.Id })"
                                        class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-orange-50 text-orange-600 border border-orange-200 hover:bg-orange-100 transition-all"
-                                       title="View detail">
+                                       title="Xem chi tiết">
                                         <span class="material-icons-round text-sm">visibility</span>
                                     </a>
                                 </td>
@@ -125,8 +140,8 @@
 
         <div class="flex items-center justify-between px-6 py-4 border-t border-gray-50">
             <span class="text-sm text-gray-400">
-                Page <span class="font-bold text-gray-600">@currentPage</span>
-                of <span class="font-bold text-gray-600">@totalPages</span>
+                Trang <span class="font-bold text-gray-600">@currentPage</span>
+                / <span class="font-bold text-gray-600">@totalPages</span>
             </span>
             <div class="flex gap-1.5">
                 @if (currentPage > 1)

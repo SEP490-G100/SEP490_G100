@@ -1,19 +1,19 @@
 @model WebSite.Models.Admin.AdminNotificationFormViewModel
 @{
     Layout = "~/Views/Admin/_AdminLayout.cshtml";
-    ViewData["Title"] = "Create Notification";
+    ViewData["Title"] = "Tạo Thông Báo";
     var availableRoles = ViewBag.AdminNotificationRoles as List<string> ?? new List<string>();
 }
 
 <div class="flex items-center justify-between gap-4 mb-7 fade-in-up">
     <div>
-        <span class="section-label">Notification Management</span>
-        <h1 class="page-title mt-2">Create <span class="gradient-text">Notification</span></h1>
-        <p class="page-subtitle">Broadcast an announcement to all users or a specific role with realtime bell and toast delivery.</p>
+        <span class="section-label">Quản Lý Thông Báo</span>
+        <h1 class="page-title mt-2">Tạo <span class="gradient-text">Thông Báo</span></h1>
+        <p class="page-subtitle">Gửi thông báo đến toàn bộ người dùng hoặc một nhóm vai trò cụ thể với chuông và toast thời gian thực.</p>
     </div>
     <a href="/Admin/ManageAdminNotification" class="btn-outline">
         <span class="material-icons-round text-base">arrow_back</span>
-        Back to List
+        Quay Lại Danh Sách
     </a>
 </div>
 
@@ -30,9 +30,9 @@
             </div>
 
             <div class="field-group lg:col-span-2">
-                <label asp-for="TargetRole" class="field-label">Role nhan thong bao</label>
+                <label asp-for="TargetRole" class="field-label">Vai Trò Nhận Thông Báo</label>
                 <select asp-for="TargetRole" class="search-input !pl-4" id="targetRoleSelect" required>
-                    <option value="All">All Roles</option>
+                    <option value="All">Tất Cả Vai Trò</option>
                     @foreach (var role in availableRoles)
                     {
                         <option value="@role">@role</option>
@@ -50,10 +50,10 @@
     </div>
 
     <div class="flex justify-end gap-3 fade-in-up">
-        <a href="/Admin/ManageAdminNotification" class="btn-outline">Cancel</a>
+        <a href="/Admin/ManageAdminNotification" class="btn-outline">Hủy</a>
         <button type="submit" class="btn-primary">
             <span class="material-icons-round text-base">campaign</span>
-            Create Notification
+            Tạo Thông Báo
         </button>
     </div>
 </form>
@@ -70,9 +70,9 @@
             if (!form || !targetRoleSelect || !titleInput || !contentInput) return;
 
             const validateForm = () => {
-                titleInput.setCustomValidity(titleInput.value.trim().length >= 2 ? '' : 'Please enter a title.');
-                contentInput.setCustomValidity(contentInput.value.trim().length >= 2 ? '' : 'Please enter notification content.');
-                targetRoleSelect.setCustomValidity(targetRoleSelect.value ? '' : 'Please choose a recipient role.');
+                titleInput.setCustomValidity(titleInput.value.trim().length >= 2 ? '' : 'Vui lòng nhập tiêu đề.');
+                contentInput.setCustomValidity(contentInput.value.trim().length >= 2 ? '' : 'Vui lòng nhập nội dung thông báo.');
+                targetRoleSelect.setCustomValidity(targetRoleSelect.value ? '' : 'Vui lòng chọn vai trò nhận thông báo.');
             };
 
             targetRoleSelect.addEventListener('change', validateForm);

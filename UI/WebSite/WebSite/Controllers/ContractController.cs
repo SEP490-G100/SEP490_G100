@@ -1,4 +1,4 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebSite.Models.Contract;
@@ -105,3 +105,4 @@ public class ContractController : Controller
     private static StringContent JsonContent(string body) =>
         new(string.IsNullOrWhiteSpace(body) ? "{}" : body, Encoding.UTF8, "application/json");
 }
+

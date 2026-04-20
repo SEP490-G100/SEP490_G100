@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
@@ -58,7 +58,7 @@ public class ModeratorBlogController : Controller
         var normalized = mediaType?.Trim().ToLowerInvariant();
         if (normalized is not ("image" or "video"))
         {
-            return Json(new { success = false, message = "Loai media khong hop le. Chi ho tro image/video." });
+            return Json(new { success = false, message = "Lo?i media không h?p l?. Ch? h? tr? image/video." });
         }
 
         var type = normalized == "video" ? BlobMediaType.Video : BlobMediaType.Image;
@@ -70,7 +70,7 @@ public class ModeratorBlogController : Controller
         var mediaLabel = mediaType == BlobMediaType.Video ? "video" : "anh";
         if (files == null || files.Count == 0)
         {
-            return Json(new { success = false, message = $"Vui long chon it nhat mot {mediaLabel}." });
+            return Json(new { success = false, message = $"Vui lòng chon it nhat mot {mediaLabel}." });
         }
 
         try
@@ -82,13 +82,13 @@ public class ModeratorBlogController : Controller
                 cancellationToken);
             if (uploadedUrls.Count == 0)
             {
-                return Json(new { success = false, message = $"Khong co {mediaLabel} hop le de upload." });
+                return Json(new { success = false, message = $"Không c? {mediaLabel} hop le ?? upload." });
             }
 
             return Json(new
             {
                 success = true,
-                message = uploadedUrls.Count == 1 ? $"Upload {mediaLabel} thanh cong." : $"Upload cac {mediaLabel} thanh cong.",
+                message = uploadedUrls.Count == 1 ? $"Upload {mediaLabel} thành công." : $"Upload cac {mediaLabel} thành công.",
                 data = new
                 {
                     urls = uploadedUrls
@@ -97,7 +97,7 @@ public class ModeratorBlogController : Controller
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = $"Khong the upload {mediaLabel} blog: {ex.Message}" });
+            return Json(new { success = false, message = $"Không th? upload {mediaLabel} blog: {ex.Message}" });
         }
     }
 
@@ -322,7 +322,7 @@ public class ModeratorBlogController : Controller
             return RedirectToAction(nameof(ManageBlog), new
             {
                 toastType = "error",
-                toastMessage = "Khong the tai lai bai blog de chinh sua"
+                toastMessage = "Không th? tai lai bai blog ?? chỉnh sửa"
             });
         }
 

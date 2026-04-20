@@ -14,11 +14,16 @@ public class ParentOnboardingController : ControllerBase
 {
     private readonly ProfileService _profileService;
     private readonly ParentRepository _parentRepo;
+    private readonly ChildRepository _childRepo;
 
-    public ParentOnboardingController(ProfileService profileService, ParentRepository parentRepo)
+    public ParentOnboardingController(
+        ProfileService profileService,
+        ParentRepository parentRepo,
+        ChildRepository childRepo)
     {
         _profileService = profileService;
         _parentRepo = parentRepo;
+        _childRepo = childRepo;
     }
 
     [HttpPut("profile")]
@@ -26,6 +31,9 @@ public class ParentOnboardingController : ControllerBase
     {
         try
         {
+            if (request.NumberOfChildren.HasValue && request.NumberOfChildren.Value < 1)
+                throw new InvalidOperationException("So luong tre phai lon hon hoac bang 1.");
+
             var userId = GetCurrentUserId();
             var parentProfile = await _parentRepo.FindByUserIdAsync(userId);
             if (parentProfile == null)
@@ -40,8 +48,22 @@ public class ParentOnboardingController : ControllerBase
                 _parentRepo.Add(parentProfile);
             }
 
+            var createdChildrenCount = (await _childRepo.GetByParentProfileIdAsync(parentProfile.Id)).Count;
+            if (request.NumberOfChildren.HasValue && request.NumberOfChildren.Value < createdChildrenCount)
+            {
+                throw new InvalidOperationException(
+                    $"Khong the giam tong so tre xuong {request.NumberOfChildren.Value} vi ban da tao {createdChildrenCount} ho so tre.");
+            }
+
             parentProfile.FamilyDescription = request.FamilyDescription;
-            parentProfile.NumberOfChildren = request.NumberOfChildren;
+            if (request.NumberOfChildren.HasValue)
+            {
+                parentProfile.NumberOfChildren = request.NumberOfChildren.Value;
+            }
+            else if (!parentProfile.NumberOfChildren.HasValue && createdChildrenCount > 0)
+            {
+                parentProfile.NumberOfChildren = createdChildrenCount;
+            }
             parentProfile.UpdatedAt = DateTime.UtcNow;
             parentProfile.UpdatedBy = userId;
 

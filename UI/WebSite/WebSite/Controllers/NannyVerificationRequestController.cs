@@ -1,4 +1,4 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Azure;
@@ -94,7 +94,7 @@ public class NannyVerificationRequestController : Controller
             return RedirectToAction(nameof(NannyGetVerificationRequestList), new
             {
                 toastType = "error",
-                toastMessage = "Khong tim thay chi tiet yeu cau xac minh."
+                toastMessage = "Không t?m th?y chi tiết yêu cầu xác minh."
             });
         }
 
@@ -105,7 +105,7 @@ public class NannyVerificationRequestController : Controller
             return RedirectToAction(nameof(NannyGetVerificationRequestList), new
             {
                 toastType = "error",
-                toastMessage = apiResult?.Message ?? "Khong tim thay chi tiet yeu cau xac minh."
+                toastMessage = apiResult?.Message ?? "Không t?m th?y chi tiết yêu cầu xác minh."
             });
         }
 
@@ -113,6 +113,8 @@ public class NannyVerificationRequestController : Controller
     }
 
     [HttpGet("NannySubmitVerificationRequest")]
+    [HttpGet("verifyNanny")]
+    [HttpGet("vetifyNanny")]
     public async Task<IActionResult> NannySubmitVerificationRequest()
     {
         var model = new SubmitVerificationRequestViewModel();
@@ -121,23 +123,23 @@ public class NannyVerificationRequestController : Controller
             return RedirectToAction("Index", "Profile", new
             {
                 toastType = "error",
-                toastMessage = "Vui long cap nhat ho so ca nhan truoc khi gui yeu cau."
+                toastMessage = "Vui lòng cập nhật profile cá nhân truoc khi gui yêu cầu."
             });
         }
 
         return View(model);
     }
 
-    [HttpPost("NannySubmitVerificationRequest")]
+    [HttpPost("NannySubmitProfileVerificationRequest")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> NannySubmitVerificationRequest(SubmitVerificationRequestViewModel model)
+    public async Task<IActionResult> NannySubmitProfileVerificationRequest(SubmitVerificationRequestViewModel model)
     {
         if (!await PopulateProfileInfoAsync(model))
         {
             return RedirectToAction("Index", "Profile", new
             {
                 toastType = "error",
-                toastMessage = "Vui long cap nhat ho so ca nhan truoc khi gui yeu cau."
+                toastMessage = "Vui lòng cập nhật profile cá nhân truoc khi gui yêu cầu."
             });
         }
 
@@ -147,11 +149,6 @@ public class NannyVerificationRequestController : Controller
             "Ban phai upload anh cho muc can cuoc cong dan.",
             isRequired: true);
         ValidateUploadSection(
-            model.HealthCertificateFiles,
-            nameof(model.HealthCertificateFiles),
-            "Ban phai upload anh cho muc giay kham suc khoe.",
-            isRequired: true);
-        ValidateUploadSection(
             model.CertificateFiles,
             nameof(model.CertificateFiles),
             requiredMessage: null,
@@ -159,17 +156,19 @@ public class NannyVerificationRequestController : Controller
 
         if (!ModelState.IsValid)
         {
-            return View(model);
+            return View("NannySubmitVerificationRequest", model);
         }
 
-        AddAuthHeader();
-
-        var documents = new List<object>();
         try
         {
-            await AddDocumentsAsync(model.IdentityCardFiles, VerificationDocumentType.IdentityCard, documents);
-            await AddDocumentsAsync(model.HealthCertificateFiles, VerificationDocumentType.HealthCertificate, documents);
-            await AddDocumentsAsync(model.CertificateFiles, VerificationDocumentType.DegreeCertificate, documents);
+            var payload = await BuildSubmissionPayloadAsync(
+                model,
+                requestType: 1,
+                includeIdentity: true,
+                includeHealthCertificate: false,
+                includeDegreeCertificate: true);
+
+            return await SubmitVerificationPayloadAsync(payload, "Ban da gui yeu cau xac minh ho so thanh cong.");
         }
         catch (InvalidOperationException ex)
         {
@@ -184,12 +183,110 @@ public class NannyVerificationRequestController : Controller
             return RedirectToAction(nameof(NannySubmitVerificationRequest), new
             {
                 toastType = "error",
-                toastMessage = "Khong the upload tai lieu len Azure Blob Storage. Vui long thu lai sau."
+                toastMessage = "Không th? upload tai lieu len Azure Blob Storage. Vui lòng thử lại sau."
+            });
+        }
+    }
+
+    [HttpPost("NannySubmitHealthCertificateRequest")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> NannySubmitHealthCertificateRequest(SubmitVerificationRequestViewModel model)
+    {
+        if (!await PopulateProfileInfoAsync(model))
+        {
+            return RedirectToAction("Index", "Profile", new
+            {
+                toastType = "error",
+                toastMessage = "Vui lòng cập nhật profile cá nhân truoc khi gui yêu cầu."
             });
         }
 
-        var payload = JsonSerializer.Serialize(new { Documents = documents });
-        var jsonContent = new StringContent(payload, Encoding.UTF8, "application/json");
+        ValidateUploadSection(
+            model.HealthCertificateFiles,
+            nameof(model.HealthCertificateFiles),
+            "Ban phai upload anh cho muc giay kham suc khoe.",
+            isRequired: true);
+
+        if (!model.HealthCertificateExpiryDate.HasValue)
+        {
+            ModelState.AddModelError(nameof(model.HealthCertificateExpiryDate), "Ban phai chon ngay het han cho giay kham suc khoe.");
+        }
+        else if (model.HealthCertificateExpiryDate.Value.Date <= DateTime.UtcNow.Date)
+        {
+            ModelState.AddModelError(nameof(model.HealthCertificateExpiryDate), "Ngay het han phai lon hon ngay hien tai.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return View("NannySubmitVerificationRequest", model);
+        }
+
+        try
+        {
+            var payload = await BuildSubmissionPayloadAsync(
+                model,
+                requestType: 2,
+                includeIdentity: false,
+                includeHealthCertificate: true,
+                includeDegreeCertificate: false);
+
+            return await SubmitVerificationPayloadAsync(payload, "Ban da gui yeu cau giay kham suc khoe thanh cong.");
+        }
+        catch (InvalidOperationException ex)
+        {
+            return RedirectToAction(nameof(NannySubmitVerificationRequest), new
+            {
+                toastType = "error",
+                toastMessage = ex.Message
+            });
+        }
+        catch (RequestFailedException)
+        {
+            return RedirectToAction(nameof(NannySubmitVerificationRequest), new
+            {
+                toastType = "error",
+                toastMessage = "Không th? upload tai lieu len Azure Blob Storage. Vui lòng thử lại sau."
+            });
+        }
+    }
+
+    private async Task<object> BuildSubmissionPayloadAsync(
+        SubmitVerificationRequestViewModel model,
+        int requestType,
+        bool includeIdentity,
+        bool includeHealthCertificate,
+        bool includeDegreeCertificate)
+    {
+        var documents = new List<object>();
+
+        if (includeIdentity)
+        {
+            await AddDocumentsAsync(model.IdentityCardFiles, VerificationDocumentType.IdentityCard, documents);
+        }
+
+        if (includeHealthCertificate)
+        {
+            await AddDocumentsAsync(model.HealthCertificateFiles, VerificationDocumentType.HealthCertificate, documents, model.HealthCertificateExpiryDate);
+        }
+
+        if (includeDegreeCertificate)
+        {
+            await AddDocumentsAsync(model.CertificateFiles, VerificationDocumentType.DegreeCertificate, documents);
+        }
+
+        return new
+        {
+            RequestType = requestType,
+            HealthCertificateExpiryDate = model.HealthCertificateExpiryDate,
+            Documents = documents
+        };
+    }
+
+    private async Task<IActionResult> SubmitVerificationPayloadAsync(object payload, string successMessage)
+    {
+        AddAuthHeader();
+        var payloadJson = JsonSerializer.Serialize(payload);
+        var jsonContent = new StringContent(payloadJson, Encoding.UTF8, "application/json");
         var response = await _http.PostAsync("/api/NannyVerificationRequest/nanny-submit-verification", jsonContent);
 
         var json = await response.Content.ReadAsStringAsync();
@@ -203,7 +300,7 @@ public class NannyVerificationRequestController : Controller
             return RedirectToAction(nameof(NannySubmitVerificationRequest), new
             {
                 toastType = "error",
-                toastMessage = "Loi he thong tu server. Vui long thu lai sau."
+                toastMessage = "L?i he thong tu server. Vui lòng thử lại sau."
             });
         }
 
@@ -212,22 +309,22 @@ public class NannyVerificationRequestController : Controller
             return RedirectToAction(nameof(NannySubmitVerificationRequest), new
             {
                 toastType = "error",
-                toastMessage = result?.Message ?? "Gui yeu cau that bai."
+                toastMessage = result?.Message ?? "Gui yêu cầu thất bại."
             });
         }
 
         await _notificationHub.Clients.Group("role:Moderator").SendAsync("notification:new", new
         {
             type = "verification-request-submitted",
-            title = "Co yeu cau xac minh moi",
-            message = "Mot nanny vua gui yeu cau xac minh moi.",
+            title = "Co yêu cầu xác minh mới",
+            message = "Mot nanny vua gui yêu cầu xác minh mới.",
             toastType = "info"
         });
 
         return RedirectToAction(nameof(NannyGetVerificationRequestList), new
         {
             toastType = "success",
-            toastMessage = "Ban da gui yeu cau xac minh thanh cong."
+            toastMessage = successMessage
         });
     }
 
@@ -278,13 +375,13 @@ public class NannyVerificationRequestController : Controller
         {
             if (!IsSupportedDocument(file))
             {
-                ModelState.AddModelError(fieldName, "Ban phai upload file dinh dang anh hoac pdf.");
+                ModelState.AddModelError(fieldName, "Ban phai upload file dinh ?ang anh hoac pdf.");
                 return;
             }
 
             if (file.Length > MaxDocumentSizeInBytes)
             {
-                ModelState.AddModelError(fieldName, "Ban chi duoc upload file kich thuoc toi da 5mb.");
+                ModelState.AddModelError(fieldName, "Ban chi được upload file kich thuoc toi da 5mb.");
                 return;
             }
         }
@@ -311,7 +408,8 @@ public class NannyVerificationRequestController : Controller
     private async Task AddDocumentsAsync(
         List<IFormFile>? files,
         VerificationDocumentType documentType,
-        List<object> documents)
+        List<object> documents,
+        DateTime? expiryDate = null)
     {
         if (files == null || files.Count == 0)
         {
@@ -327,7 +425,8 @@ public class NannyVerificationRequestController : Controller
                 DocumentType = (int)documentType,
                 DocumentUrl = documentUrl,
                 FileName = file.FileName,
-                FileSize = (int)file.Length
+                FileSize = (int)file.Length,
+                ExpiryDate = expiryDate
             });
         }
     }

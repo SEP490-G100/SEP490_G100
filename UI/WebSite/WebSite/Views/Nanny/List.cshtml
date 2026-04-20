@@ -1,4 +1,4 @@
-@model WebSite.Models.Nanny.NannyBrowsePageViewModel
+﻿@model WebSite.Models.Nanny.NannyBrowsePageViewModel
 @{
     ViewData["Title"] = "Danh sách bảo mẫu - NannyMatch";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -18,7 +18,7 @@
 <div class="nanny-page">
     <div class="nanny-toolbar-shell">
         <div class="nanny-toolbar">
-            @* ── Tab bar — chỉ hiện với Parent, ngoài cùng bên trái ── *@
+            @* â”€â”€ Tab bar â€” chá»‰ hiá»‡n vá»›i Parent, ngoÃ i cÃ¹ng bÃªn trÃ¡i â”€â”€ *@
             @if (User.IsInRole("Parent") && (User.Identity?.IsAuthenticated ?? false))
             {
                 <div class="rec-tab-bar">
@@ -38,7 +38,7 @@
             <div class="nanny-toolbar__actions">
                 <button type="button" class="nanny-filter-trigger" onclick="openNannyFilters()">
                     <span class="material-icons-round text-[18px]">tune</span>
-                    Bộ lọc
+                    Bá»™ lá»c
                 </button>
                 @if (isParent)
                 {
@@ -51,7 +51,7 @@
                         Contact request
                     </a>
                 }
-                <span id="nannyResultCount" class="nanny-toolbar__count">Đang tải...</span>
+                <span id="nannyResultCount" class="nanny-toolbar__count">Äang táº£i...</span>
                 <a href="/Subscription" class="nanny-upgrade-btn">
                     <span class="material-icons-round text-[18px]">workspace_premium</span>
                     Upgrade
@@ -63,20 +63,20 @@
     <div class="nanny-layout">
         <div class="nanny-list-panel">
 
-            @* ── Rec panel (Tab 2) — chỉ render với Parent ── *@
+            @* â”€â”€ Rec panel (Tab 2) â€” chá»‰ render vá»›i Parent â”€â”€ *@
             @if (User.IsInRole("Parent") && (User.Identity?.IsAuthenticated ?? false))
             {
                 <div id="recNannyPanel" class="rec-panel">
                     <div class="rec-panel__header">
                         <span class="rec-panel__label">Gợi ý nanny cho:</span>
                         <select id="recJobSelect" class="rec-panel__select" onchange="loadRecNannies(this.value)">
-                            <option value="">— Chọn bài đăng —</option>
+                            <option value="">â€” Chá»n bÃ i Ä‘Äƒng â€”</option>
                         </select>
                     </div>
                     <div id="recNannyContent">
                         <div class="rec-panel__loading" style="padding:20px">
                             <span class="material-icons-round" style="font-size:20px;opacity:.4">arrow_upward</span>
-                            Chọn bài đăng để xem nanny phù hợp
+                            Chá»n bÃ i Ä‘Äƒng Ä‘á»ƒ xem nanny phÃ¹ há»£p
                         </div>
                     </div>
                 </div>
@@ -94,9 +94,9 @@
     <div class="nmodal-box nanny-filter-modal bg-white rounded-2xl w-full max-w-4xl shadow-2xl relative">
         <div class="nanny-filter-modal__header">
             <div>
-                <p class="nanny-filter-modal__kicker">Bộ lọc tìm kiếm</p>
+                <p class="nanny-filter-modal__kicker">Bá»™ lá»c tÃ¬m kiáº¿m</p>
                 <h2 class="nanny-filter-modal__title">Tìm nanny phù hợp nhanh hơn</h2>
-                <p class="nanny-filter-modal__subtitle">Chọn khu vực, kỹ năng, độ tuổi, kinh nghiệm và khoảng lương để thu hẹp danh sách hồ sơ.</p>
+                <p class="nanny-filter-modal__subtitle">Chá»n khu vá»±c, ká»¹ nÄƒng, Ä‘á»™ tuá»•i, kinh nghiá»‡m vÃ  khoáº£ng lÆ°Æ¡ng Ä‘á»ƒ thu háº¹p danh sÃ¡ch há»“ sÆ¡.</p>
             </div>
             <button type="button" onclick="closeNannyFilters()" class="nanny-detail-close material-icons-round">close</button>
             <button type="button" onclick="closeNannyFilters()" class="nanny-detail-close material-icons-round">close</button>
@@ -107,18 +107,18 @@
                     <div class="nanny-filter-group__head">
                         <span class="material-icons-round">location_on</span>
                         <div>
-                            <h3>Khu vực làm việc</h3>
-                            <p>Chọn tỉnh/thành phố và quận/huyện theo dữ liệu hành chính mới nhất.</p>
+                            <h3>Khu vá»±c lÃ m viá»‡c</h3>
+                            <p>Chá»n tá»‰nh/thÃ nh phá»‘ vÃ  quáº­n/huyá»‡n theo dá»¯ liá»‡u hÃ nh chÃ­nh má»›i nháº¥t.</p>
                         </div>
                     </div>
                     <div class="nanny-toolbar__filters nanny-toolbar__filters--modal">
                         <div class="nanny-filter-field">
-                            <label for="nannyCity">Thành phố/Tỉnh</label>
-                            <input id="nannyCity" type="text" class="nanny-filter" placeholder="Nhập để gợi ý thành phố" autocomplete="off" />
+                            <label for="nannyCity">ThÃ nh phá»‘/Tá»‰nh</label>
+                            <input id="nannyCity" type="text" class="nanny-filter" placeholder="Nháº­p Ä‘á»ƒ gá»£i Ã½ thÃ nh phá»‘" autocomplete="off" />
                         </div>
                         <div class="nanny-filter-field">
                             <label for="nannyDistrict">Quận/Huyện</label>
-                            <input id="nannyDistrict" type="text" class="nanny-filter" placeholder="Chọn quận/huyện phù hợp" autocomplete="off" />
+                            <input id="nannyDistrict" type="text" class="nanny-filter" placeholder="Chá»n quáº­n/huyá»‡n phÃ¹ há»£p" autocomplete="off" />
                         </div>
                     </div>
                 </section>
@@ -127,8 +127,8 @@
                     <div class="nanny-filter-group__head">
                         <span class="material-icons-round">payments</span>
                         <div>
-                            <h3>Kinh nghiệm và mức lương</h3>
-                            <p>Lọc theo số năm kinh nghiệm, độ tuổi và khoảng lương mong muốn.</p>
+                            <h3>Kinh nghiệm vÃ  má»©c lÆ°Æ¡ng</h3>
+                            <p>Lá»c theo sá»‘ nÄƒm kinh nghiá»‡m, Ä‘á»™ tuá»•i vÃ  khoáº£ng lÆ°Æ¡ng mong muá»‘n.</p>
                         </div>
                     </div>
                     <div class="nanny-toolbar__filters nanny-toolbar__filters--modal nanny-toolbar__filters--modal-compact">
@@ -155,16 +155,16 @@
                     <div class="nanny-filter-group__head">
                         <span class="material-icons-round">verified</span>
                         <div>
-                            <h3>Kỹ năng và xác minh</h3>
-                            <p>Thu hẹp danh sách theo kỹ năng nổi bật và trạng thái xác minh.</p>
+                            <h3>Kỹ năng vÃ  xÃ¡c minh</h3>
+                            <p>Thu háº¹p danh sÃ¡ch theo ká»¹ nÄƒng ná»•i báº­t vÃ  tráº¡ng thÃ¡i xÃ¡c minh.</p>
                         </div>
                     </div>
                     <div class="nanny-toolbar__filters nanny-toolbar__filters--modal">
                         <div class="nanny-filter-field">
                             <label for="nannySkillText">Kỹ năng</label>
-                            <input id="nannySkillText" type="text" class="nanny-filter" placeholder="Tất cả kỹ năng" autocomplete="off" />
+                            <input id="nannySkillText" type="text" class="nanny-filter" placeholder="Tất cả ká»¹ nÄƒng" autocomplete="off" />
                             <select id="nannySkillId" class="nanny-filter nanny-filter--native" tabindex="-1" aria-hidden="true">
-                                <option value="">Tất cả kỹ năng</option>
+                                <option value="">Tất cả ká»¹ nÄƒng</option>
                                 @foreach (var skill in Model.SkillOptions)
                                 {
                                     <option value="@skill.SkillId">@skill.SkillName</option>
@@ -176,7 +176,7 @@
                             <input id="nannyVerificationText" type="text" class="nanny-filter" placeholder="Tất cả trạng thái" autocomplete="off" />
                             <select id="nannyVerification" class="nanny-filter nanny-filter--native" tabindex="-1" aria-hidden="true">
                                 <option value="">Tất cả trạng thái</option>
-                                <option value="2">Đã duyệt</option>
+                                <option value="2">ÄÃ£ duyá»‡t</option>
                                 <option value="1">Đang chờ</option>
                                 <option value="0">Chưa gửi</option>
                             </select>
@@ -188,8 +188,8 @@
                     <div class="nanny-filter-group__head">
                         <span class="material-icons-round">calendar_month</span>
                         <div>
-                            <h3>Lịch rảnh theo ngày</h3>
-                            <p>Chọn một hoặc nhiều khung giờ để lọc nanny có lịch phù hợp.</p>
+                            <h3>Lịch rảnh theo ngÃ y</h3>
+                            <p>Chá»n má»™t hoáº·c nhiá»u khung giá» Ä‘á»ƒ lá»c nanny cÃ³ lá»‹ch phÃ¹ há»£p.</p>
                         </div>
                     </div>
                     <div id="nannyScheduleFilter" class="nanny-filter-schedule"></div>
@@ -197,8 +197,8 @@
             </div>
         </div>
         <div class="nanny-filter-modal__footer">
-            <button type="button" class="nanny-filter-btn nanny-filter-btn--ghost" onclick="resetNannyFilters()">Đặt lại</button>
-            <button type="button" class="nanny-filter-btn nanny-filter-btn--primary" onclick="applyNannyFilters()">Áp dụng bộ lọc</button>
+            <button type="button" class="nanny-filter-btn nanny-filter-btn--ghost" onclick="resetNannyFilters()">Äáº·t láº¡i</button>
+            <button type="button" class="nanny-filter-btn nanny-filter-btn--primary" onclick="applyNannyFilters()">Ãp dá»¥ng bá»™ lá»c</button>
         </div>
     </div>
 </div>
@@ -213,7 +213,7 @@
                 <div class="nanny-detail-hero">
                     <img id="nd-avatar" src="/img/nanny-logo.jpg" alt="Avatar nanny" class="nanny-detail-avatar" />
                     <div class="nanny-detail-hero__content">
-                        <div class="nanny-detail-badge" id="nd-verify">Đang cập nhật</div>
+                        <div class="nanny-detail-badge" id="nd-verify">Äang cáº­p nháº­t</div>
                         <h2 id="nd-name">Tên bảo mẫu</h2>
                         <p id="nd-location">Khu vực hoạt động</p>
                         <div class="nanny-detail-chips">
@@ -242,10 +242,9 @@
                 <section class="nanny-detail-card">
                     <h3>Thông tin liên hệ</h3>
                     <div class="nanny-meta-list">
-                        <div><span>Liên hệ</span><strong id="nd-phone">Gửi request contact để kết nối trực tiếp</strong></div>
+                        <div><span>Liên hệ</span><strong id="nd-phone">Gửi yêu cầu liên hệ để kết nối trực tiếp</strong></div>
                         <div><span>Khu vực</span><strong id="nd-address">Chưa cập nhật</strong></div>
                         <div><span>Bán kính di chuyển</span><strong id="nd-travel">Chưa cập nhật</strong></div>
-                        <div><span>Độ hoàn thiện hồ sơ</span><strong id="nd-completeness">0%</strong></div>
                     </div>
                 </section>
 
@@ -265,16 +264,16 @@
                 {
                     <button type="button" id="nd-contactBtn" class="nanny-detail-view-btn" onclick="nannyHiringContact()">
                         <span class="material-icons-round">chat</span>
-                        Lien he Nanny
+                        Liên hệ Nanny
                     </button>
                     <button type="button" id="nd-hireBtn" class="nanny-detail-view-btn" onclick="nannyHiringHire()">
                         <span class="material-icons-round">handshake</span>
-                        Thue Nanny
+                        Thuê Nanny
                     </button>
                 }
                 <button type="button" id="nd-viewProfileBtn" class="nanny-detail-view-btn" onclick="viewNannyProfileDetail(event)">
                     <span class="material-icons-round">visibility</span>
-                    Xem chi tiet ho so Nanny
+                    Xem chi tiết profile Nanny
                 </button>
             </div>
         </div>
@@ -299,14 +298,14 @@
 
     <script>
     if (IS_PARENT && IS_AUTH) {
-    // ── Recommendation tab (Parent — Nannies for Job) ───────────────
-    const EDU_LABELS = ['Trung học','Cao đẳng','Đại học','Thạc sĩ','Khác'];
+    // â”€â”€ Recommendation tab (Parent â€” Nannies for Job) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    const EDU_LABELS = ['Trung há»c','Cao Ä‘áº³ng','Äáº¡i há»c','Tháº¡c sÄ©','KhÃ¡c'];
 
     function escNRec(v) {
         return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
-    // Lưu dữ liệu rec để dùng cho map
+    // LÆ°u dá»¯ liá»‡u rec Ä‘á»ƒ dÃ¹ng cho map
     window.recNannies = [];
     let recUpgradeRequired = false;
 
@@ -396,12 +395,12 @@
         if (!jobId) {
             if (typeof clearNannyMarkers === 'function') clearNannyMarkers();
             content.innerHTML = `<div class="rec-panel__loading" style="padding:20px">
-                <span class="material-icons-round" style="font-size:20px;opacity:.4">arrow_upward</span>Chọn bài đăng để xem gợi ý
+                <span class="material-icons-round" style="font-size:20px;opacity:.4">arrow_upward</span>Chá»n bÃ i Ä‘Äƒng Ä‘á»ƒ xem gá»£i Ã½
             </div>`;
             return;
         }
         content.innerHTML = `<div class="rec-panel__loading">
-            <span class="material-icons-round" style="font-size:22px;opacity:.4">hourglass_top</span>Đang tải...
+            <span class="material-icons-round" style="font-size:22px;opacity:.4">hourglass_top</span>Äang táº£i...
         </div>`;
         fetch(`/Recommendation/NanniesData?jobId=${jobId}&topK=10`)
             .then(r => r.json())
@@ -413,10 +412,10 @@
                     content.innerHTML = `
                     <div class="rec-upgrade-prompt">
                         <span class="material-icons-round rec-upgrade-icon">auto_awesome</span>
-                        <h3 class="rec-upgrade-title">Tính năng dành cho gói Plus / Pro</h3>
-                        <p class="rec-upgrade-desc">Nâng cấp để AI tự động gợi ý những bảo mẫu phù hợp nhất với yêu cầu công việc của bạn.</p>
+                        <h3 class="rec-upgrade-title">TÃ­nh nÄƒng dÃ nh cho gÃ³i Plus / Pro</h3>
+                        <p class="rec-upgrade-desc">NÃ¢ng cáº¥p Ä‘á»ƒ AI tá»± Ä‘á»™ng gá»£i Ã½ nhá»¯ng báº£o máº«u phÃ¹ há»£p nháº¥t vá»›i yÃªu cáº§u cÃ´ng viá»‡c cá»§a báº¡n.</p>
                         <a href="/Subscription" class="rec-upgrade-btn">
-                            <span class="material-icons-round">rocket_launch</span>Nâng cấp ngay
+                            <span class="material-icons-round">rocket_launch</span>NÃ¢ng cáº¥p ngay
                         </a>
                     </div>`;
                     return;
@@ -425,7 +424,7 @@
                     if (typeof clearNannyMarkers === 'function') clearNannyMarkers();
                     content.innerHTML = `<div class="rec-panel__empty">
                         <span class="material-icons-round">person_search</span>
-                        <p>Chưa tìm được nanny phù hợp cho bài đăng này.</p>
+                        <p>ChÆ°a tÃ¬m Ä‘Æ°á»£c nanny phÃ¹ há»£p cho bÃ i Ä‘Äƒng nÃ y.</p>
                     </div>`;
                 } else {
                     window.recNannies = res.data;
@@ -436,7 +435,7 @@
             })
             .catch(() => {
                 content.innerHTML = `<div class="rec-panel__empty">
-                    <span class="material-icons-round">wifi_off</span><p>Không tải được gợi ý.</p>
+                    <span class="material-icons-round">wifi_off</span><p>KhÃ´ng táº£i Ä‘Æ°á»£c gá»£i Ã½.</p>
                 </div>`;
             });
     }
@@ -454,12 +453,12 @@
             nannyList.style.display = 'none';
             if (cnt) cnt.style.display = 'none';
             recPanel.classList.add('active');
-            // Re-plot markers nếu đã có data
+            // Re-plot markers náº¿u Ä‘Ã£ cÃ³ data
             if (window.recNannies.length) {
                 plotRecNannyMarkers(window.recNannies);
                 bindRecNannyHover();
             }
-            // Populate job dropdown lần đầu
+            // Populate job dropdown láº§n Ä‘áº§u
             const sel = document.getElementById('recJobSelect');
             if (sel && sel.options.length <= 1) {
                 fetch('/Search/MyJobs')
@@ -515,3 +514,4 @@
         </script>
     }
 }
+

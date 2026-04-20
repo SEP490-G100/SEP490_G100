@@ -2,17 +2,17 @@
 @model ScoringWeightsDto
 @{
     Layout = "~/Views/Admin/_AdminLayout.cshtml";
-    ViewData["Title"] = "Recommendation Config";
+    ViewData["Title"] = "Cấu Hình Gợi Ý";
 }
 
 <!-- PAGE HEADER -->
 <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-7 fade-in-up">
     <div>
-        <span class="section-label">AI System</span>
+        <span class="section-label">Hệ Thống AI</span>
         <h1 class="page-title mt-2">
-            Recommendation <span class="gradient-text">Config</span>
+            Cấu Hình <span class="gradient-text">Gợi Ý</span>
         </h1>
-        <p class="page-subtitle">Tune scoring weights and manage embedding vectors. Changes apply within 5 minutes.</p>
+        <p class="page-subtitle">Tiếnh chỉnh trọng số điểm và quản lý vector embedding. Thay đổi có hiệu lực trong vòng 5 phút.</p>
     </div>
 </div>
 
@@ -32,8 +32,8 @@
                 <span class="material-icons-round text-orange-500 text-2xl">tune</span>
             </div>
             <div>
-                <h2 class="font-bold text-gray-800">Scoring Weights</h2>
-                <p class="text-xs text-gray-400">semantic + salary + distance must sum to 1.0</p>
+                <h2 class="font-bold text-gray-800">Trọng Số Điểm</h2>
+                <p class="text-xs text-gray-400">semantic + salary + distance phải cộng bằng 1.0</p>
             </div>
         </div>
 
@@ -43,7 +43,7 @@
             <div class="weight-row p-4 rounded-2xl border border-gray-100 bg-gray-50/50">
                 <div class="flex items-center justify-between mb-2">
                     <div>
-                        <span class="font-semibold text-sm text-gray-700">Semantic (Cosine Similarity)</span>
+                        <span class="font-semibold text-sm text-gray-700">Ngữ Nghĩa (Cosine Similarity)</span>
                         <span class="ml-2 text-xs text-gray-400">rec:semantic_weight</span>
                     </div>
                     <span id="lbl-semantic" class="font-bold text-orange-500 text-sm">@Model.SemanticWeight.ToString("P0")</span>
@@ -64,7 +64,7 @@
             <div class="weight-row p-4 rounded-2xl border border-gray-100 bg-gray-50/50">
                 <div class="flex items-center justify-between mb-2">
                     <div>
-                        <span class="font-semibold text-sm text-gray-700">Salary Range Overlap</span>
+                        <span class="font-semibold text-sm text-gray-700">Khoảng Lương Phù Hợp</span>
                         <span class="ml-2 text-xs text-gray-400">rec:salary_weight</span>
                     </div>
                     <span id="lbl-salary" class="font-bold text-orange-500 text-sm">@Model.SalaryWeight.ToString("P0")</span>
@@ -85,7 +85,7 @@
             <div class="weight-row p-4 rounded-2xl border border-gray-100 bg-gray-50/50">
                 <div class="flex items-center justify-between mb-2">
                     <div>
-                        <span class="font-semibold text-sm text-gray-700">Distance Score</span>
+                        <span class="font-semibold text-sm text-gray-700">Điểm Khoảng Cách</span>
                         <span class="ml-2 text-xs text-gray-400">rec:distance_weight</span>
                     </div>
                     <span id="lbl-distance" class="font-bold text-orange-500 text-sm">@Model.DistanceWeight.ToString("P0")</span>
@@ -106,8 +106,8 @@
             <div class="weight-row p-4 rounded-2xl border border-gray-100 bg-gray-50/50">
                 <div class="flex items-center justify-between mb-2">
                     <div>
-                        <span class="font-semibold text-sm text-gray-700">Cold Start Score</span>
-                        <span class="ml-2 text-xs text-gray-400">rec:cold_start_score — used when embedding is null</span>
+                        <span class="font-semibold text-sm text-gray-700">Điểm Khởi Đầu Lạnh</span>
+                        <span class="ml-2 text-xs text-gray-400">rec:cold_start_score — dùng khi chưa có embedding</span>
                     </div>
                     <span id="lbl-coldstart" class="font-bold text-orange-500 text-sm">@Model.ColdStartScore.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)</span>
                 </div>
@@ -132,7 +132,7 @@
         </div>
         <div id="sumOk" class="mt-4 bg-green-50 border border-green-200 text-green-700 px-4 py-2.5 rounded-xl text-sm flex items-center gap-2">
             <span class="material-icons-round text-base">check_circle_outline</span>
-            <span>Weights sum = <strong id="sumValue">@((Model.SemanticWeight + Model.SalaryWeight + Model.DistanceWeight).ToString("F2", System.Globalization.CultureInfo.InvariantCulture))</strong> ✓</span>
+            <span>Tổng trọng số = <strong id="sumValue">@((Model.SemanticWeight + Model.SalaryWeight + Model.DistanceWeight).ToString("F2", System.Globalization.CultureInfo.InvariantCulture))</strong> ✓</span>
         </div>
 
         <!-- Save All -->
@@ -140,7 +140,7 @@
             <button onclick="saveAll()"
                     class="btn-primary flex items-center gap-2 px-6 py-2.5 text-sm font-semibold">
                 <span class="material-icons-round text-base">save</span>
-                Save All Weights
+                Lưu Tất Cả Trọng Số
             </button>
         </div>
     </div>
@@ -155,8 +155,8 @@
                     <span class="material-icons-round text-blue-500 text-2xl">auto_fix_high</span>
                 </div>
                 <div>
-                    <h2 class="font-bold text-gray-800">Embedding</h2>
-                    <p class="text-xs text-gray-400">Generate embedding vectors via Azure AI</p>
+                    <h2 class="font-bold text-gray-800">Embedding (Vector)</h2>
+                    <p class="text-xs text-gray-400">Tạo vector embedding thông qua Azure AI</p>
                 </div>
             </div>
 
@@ -164,12 +164,12 @@
                 <button onclick="reembed(false)"
                         class="w-full flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white py-2.5 rounded-xl font-semibold text-sm transition-all">
                     <span class="material-icons-round text-base">play_circle_outline</span>
-                    Embed Pending Only
+                    Chỉ Embed Mấu Chưa Xử Lý
                 </button>
                 <button onclick="reembed(true)"
                         class="w-full flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-800 text-white py-2.5 rounded-xl font-semibold text-sm transition-all">
                     <span class="material-icons-round text-base">refresh</span>
-                    Force Re-embed All
+                    Buộc Embed Lại Tất Cả
                 </button>
             </div>
 
@@ -178,14 +178,14 @@
 
         <!-- Info card -->
         <div class="content-card p-5 fade-in-up bg-orange-50/50 border border-orange-100">
-            <p class="text-xs font-semibold text-orange-600 uppercase tracking-wider mb-3">How it works</p>
+            <p class="text-xs font-semibold text-orange-600 uppercase tracking-wider mb-3">Cách Thức Hoạt Động</p>
             <ul class="space-y-2 text-xs text-gray-600">
-                <li class="flex gap-2"><span class="text-orange-400 font-bold">80%</span> Semantic — cosine similarity of embedding vectors</li>
-                <li class="flex gap-2"><span class="text-orange-400 font-bold">12%</span> Salary — range overlap between nanny & job</li>
-                <li class="flex gap-2"><span class="text-orange-400 font-bold">8%</span> Distance — Haversine soft score</li>
-                <li class="flex gap-2"><span class="text-orange-400 font-bold">×</span> Boost — rating multiplier up to +15%</li>
+                <li class="flex gap-2"><span class="text-orange-400 font-bold">80%</span> Ngữ nghĩa — độ tương đồng cosine của vector embedding</li>
+                <li class="flex gap-2"><span class="text-orange-400 font-bold">12%</span> Lương — khoảng phù hợp giữa người giữ trẻ &amp; việc làm</li>
+                <li class="flex gap-2"><span class="text-orange-400 font-bold">8%</span> Khoảng cách — điểm Haversine mềm</li>
+                <li class="flex gap-2"><span class="text-orange-400 font-bold">×</span> Tăng cường — hệ số đánh giá lên tới +15%</li>
             </ul>
-            <p class="text-xs text-gray-400 mt-3">Cache TTL: 5 minutes after each update.</p>
+            <p class="text-xs text-gray-400 mt-3">TTL bộ nhớ đệm: 5 phút sau mỗi lần cập nhật.</p>
         </div>
 
     </div>
@@ -241,7 +241,7 @@
     async function saveAll() {
         const btn = document.querySelector('button[onclick="saveAll()"]');
         btn.disabled = true;
-        btn.innerHTML = '<span class="material-icons-round text-base animate-spin">sync</span> Saving...';
+        btn.innerHTML = '<span class="material-icons-round text-base animate-spin">sync</span> Đang lưu...';
         try {
             const pairs = [
                 { key: 'rec:semantic_weight',  name: 'semantic'  },
@@ -252,23 +252,23 @@
             for (const p of pairs) {
                 const val = parseFloat(document.getElementById('inp-' + p.name).value);
                 if (isNaN(val) || val < 0 || val > 1) {
-                    showToast(`Invalid value for ${p.key}`, false); return;
+                    showToast(`Giá trị không hợp lệ cho ${p.key}`, false); return;
                 }
             }
             const results = await Promise.all(pairs.map(p => saveWeight(p.key, p.name)));
             const allOk = results.every(Boolean);
-            showToast(allOk ? 'All weights saved ✓' : 'Some weights failed to save', allOk);
-        } catch { showToast('Network error', false); }
+            showToast(allOk ? 'Đã lưu tất cả trọng số ✓' : 'Một số trọng số lưu thất bại', allOk);
+        } catch { showToast('Lỗi kết nối mạng', false); }
         finally {
             btn.disabled = false;
-            btn.innerHTML = '<span class="material-icons-round text-base">save</span> Save All Weights';
+            btn.innerHTML = '<span class="material-icons-round text-base">save</span> Lưu Tất Cả Trọng Số';
         }
     }
 
     async function reembed(force) {
         const btn = event.currentTarget;
         btn.disabled = true;
-        btn.innerHTML = '<span class="material-icons-round text-base animate-spin">sync</span> Running...';
+        btn.innerHTML = '<span class="material-icons-round text-base animate-spin">sync</span> Đang chạy...';
         document.getElementById('embedResult').classList.add('hidden');
         try {
             const res = await fetch(`/Admin/ReembedBatch?force=${force}`, {
@@ -280,17 +280,17 @@
             el.classList.remove('hidden');
             if (data.success) {
                 el.className = 'mt-4 text-sm rounded-xl p-3 border bg-green-50 border-green-200 text-green-700';
-                el.innerHTML = `<strong>${data.nanniesEmbedded}</strong> nannies, <strong>${data.jobsEmbedded}</strong> jobs embedded${force ? ' (forced)' : ''}.`;
+                el.innerHTML = `Đã embed <strong>${data.nanniesEmbedded}</strong> người giữ trẻ, <strong>${data.jobsEmbedded}</strong> việc làm${force ? ' (buộc)' : ''}.`;
             } else {
                 el.className = 'mt-4 text-sm rounded-xl p-3 border bg-red-50 border-red-200 text-red-700';
-                el.textContent = data.message || 'Embed failed.';
+                el.textContent = data.message || 'Embed thất bại.';
             }
-        } catch { showToast('Network error', false); }
+        } catch { showToast('Lỗi kết nối mạng', false); }
         finally {
             btn.disabled = false;
             btn.innerHTML = force
-                ? '<span class="material-icons-round text-base">refresh</span> Force Re-embed All'
-                : '<span class="material-icons-round text-base">play_circle_outline</span> Embed Pending Only';
+                ? '<span class="material-icons-round text-base">refresh</span> Buộc Embed Lại Tất Cả'
+                : '<span class="material-icons-round text-base">play_circle_outline</span> Chỉ Embed Mấu Chưa Xử Lý';
         }
     }
 

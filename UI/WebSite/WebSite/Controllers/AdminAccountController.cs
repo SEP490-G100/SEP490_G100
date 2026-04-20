@@ -42,7 +42,7 @@ public class AdminAccountController : Controller
         }
         catch
         {
-            TempData["Error"] = "Khong the tai danh sach Moderator.";
+            TempData["Error"] = "Không th? tai danh s?ch Moderator.";
             return View("~/Views/Admin/ModeratorAccount/ManageModerators.cshtml", new AccountListResponse());
         }
     }
@@ -88,16 +88,16 @@ public class AdminAccountController : Controller
                     new
                     {
                         toastType = "success",
-                        toastMessage = result.Message ?? "Tao Moderator thanh cong."
+                        toastMessage = result.Message ?? "Tao Moderator thành công."
                     });
             }
 
-            TempData["Error"] = result?.Message ?? "Tao Moderator that bai.";
+            TempData["Error"] = result?.Message ?? "Tao Moderator thất bại.";
             return View("~/Views/Admin/ModeratorAccount/CreateModerator.cshtml", model);
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"Loi ket noi: {ex.Message}";
+            TempData["Error"] = $"L?i kết nối: {ex.Message}";
             return View("~/Views/Admin/ModeratorAccount/CreateModerator.cshtml", model);
         }
     }
@@ -114,7 +114,7 @@ public class AdminAccountController : Controller
             var result = JsonSerializer.Deserialize<ApiResult<AccountDto>>(json, JsonOpts);
             if (result?.Success != true || result.Data == null)
             {
-                TempData["Error"] = "Khong tim thay Moderator.";
+                TempData["Error"] = "Không t?m th?y Moderator.";
                 return RedirectToAction(nameof(ManageModerators));
             }
 
@@ -122,7 +122,7 @@ public class AdminAccountController : Controller
         }
         catch
         {
-            TempData["Error"] = "Loi ket noi.";
+            TempData["Error"] = "L?i kết nối.";
             return RedirectToAction(nameof(ManageModerators));
         }
     }
@@ -164,12 +164,12 @@ public class AdminAccountController : Controller
                     });
             }
 
-            TempData["Error"] = result?.Message ?? "Cap nhat that bai.";
+            TempData["Error"] = result?.Message ?? "C?p nh?t thất bại.";
             return RedirectToAction(nameof(EditModerator), new { id });
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"Loi ket noi: {ex.Message}";
+            TempData["Error"] = $"L?i kết nối: {ex.Message}";
             return RedirectToAction(nameof(EditModerator), new { id });
         }
     }
@@ -203,12 +203,12 @@ public class AdminAccountController : Controller
                 return RedirectToReturnUrlOrList(returnUrl, toastType, toastMessage);
             }
 
-            TempData["Error"] = result?.Message ?? "Khong the cap nhat trang thai Moderator.";
+            TempData["Error"] = result?.Message ?? "Không th? cập nhật tr?ng th?i Moderator.";
             return RedirectToReturnUrlOrList(returnUrl);
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"Loi ket noi: {ex.Message}";
+            TempData["Error"] = $"L?i kết nối: {ex.Message}";
             return RedirectToReturnUrlOrList(returnUrl);
         }
     }
@@ -228,7 +228,7 @@ public class AdminAccountController : Controller
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"Loi: {ex.Message}";
+            TempData["Error"] = $"L?i: {ex.Message}";
         }
 
         return RedirectToAction(nameof(ManageModerators));

@@ -1,4 +1,4 @@
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace WebSite.Models.Nanny;
 
@@ -144,9 +144,6 @@ public class NannyDetailViewModel : NannyListItemViewModel
     [JsonPropertyName("maxTravelDistance")]
     public int? MaxTravelDistance { get; set; }
 
-    [JsonPropertyName("profileCompleteness")]
-    public int ProfileCompleteness { get; set; }
-
     [JsonPropertyName("verifiedAt")]
     public DateTime? VerifiedAt { get; set; }
 }
@@ -183,3 +180,4 @@ public class NannyAvailabilitySlotViewModel
     [JsonPropertyName("timeSlotLabel")]
     public string TimeSlotLabel { get; set; } = "";
 }
+

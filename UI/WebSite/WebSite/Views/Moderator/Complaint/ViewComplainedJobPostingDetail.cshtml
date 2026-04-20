@@ -6,46 +6,46 @@
     var job = Model.JobPosting;
     var locationLabel = string.Join(", ", new[] { job.Location, job.District, job.City }.Where(x => !string.IsNullOrWhiteSpace(x)));
     var parentDisplayName = string.IsNullOrWhiteSpace(job.ParentName) ? "Phụ huynh" : job.ParentName.Trim();
-    var dayLabels = new[] { "Mo", "Tu", "We", "Th", "Fr", "Sa", "Su" };
-    var rowLabels = new[] { "Morning", "Afternoon", "Evening", "Night" };
+    var dayLabels = new[] { "Hai", "Ba", "Tư", "Năm", "Sáu", "Bảy", "CN" };
+    var rowLabels = new[] { "Sáng", "Chiều", "Tối", "Đêm" };
     var selectedSet = new HashSet<string>((job.ScheduleSlots ?? new()).Select(s => $"{s.DayOfWeek}-{s.TimeSlot}"));
 
     string JobTypeLabel(int type) => type switch
     {
-        1 => "Full-time",
-        2 => "Part-time",
-        3 => "Overnight",
-        _ => "Other"
+        1 => "Toàn thời gian",
+        2 => "Bán thời gian",
+        3 => "Qua đêm",
+        _ => "Khác"
     };
 
     string SalaryLabel()
     {
-        if (job.SalaryNegotiable) return "Negotiable";
+        if (job.SalaryNegotiable) return "Thỏa thuận";
         if (job.SalaryMin.HasValue && job.SalaryMax.HasValue)
-            return $"{job.SalaryMin.Value:N0} - {job.SalaryMax.Value:N0} VND";
-        if (job.SalaryMin.HasValue) return $"From {job.SalaryMin.Value:N0} VND";
-        if (job.SalaryMax.HasValue) return $"Up to {job.SalaryMax.Value:N0} VND";
+            return $"{job.SalaryMin.Value:N0} - {job.SalaryMax.Value:N0} VNĐ";
+        if (job.SalaryMin.HasValue) return $"Từ {job.SalaryMin.Value:N0} VNĐ";
+        if (job.SalaryMax.HasValue) return $"Lên đến {job.SalaryMax.Value:N0} VNĐ";
         return "-";
     }
 }
 
 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
     <div>
-        <span class="section-label">Complaint Moderation</span>
-        <h1 class="page-title mt-2">Complained Job Posting <span class="gradient-text">Detail</span></h1>
-        <p class="page-subtitle">Review full posting information and deactivate if needed.</p>
+        <span class="section-label">Kiểm duyệt khiếu nại</span>
+        <h1 class="page-title mt-2">Tin đăng bị khiếu nại <span class="gradient-text">Chi tiết</span></h1>
+        <p class="page-subtitle">Xem lại thông tin tin đăng và vô hiệu hóa nếu cần.</p>
     </div>
     <div class="flex gap-2">
         @if (Model.ComplaintId.HasValue && Model.ComplaintId.Value != Guid.Empty)
         {
             <a href="@Url.Action("ViewComplaintDetail", "ModeratorComplain", new { id = Model.ComplaintId })" class="btn-outline">
                 <span class="material-icons-round text-base">arrow_back</span>
-                Back to Complaint
+                Quay lại khiếu nại
             </a>
         }
         <a href="@Url.Action("ManageComplaint", "ModeratorComplain")" class="btn-outline">
             <span class="material-icons-round text-base">list</span>
-            Back to List
+            Quay lại danh sách
         </a>
     </div>
 </div>
@@ -140,7 +140,7 @@
         <a href="/Profile/ViewUser?userId=@job.ParentUserId"
            class="w-full py-3 rounded-xl border border-orange-200 text-orange-600 bg-orange-50 hover:bg-orange-100 font-bold text-sm transition-all inline-flex items-center justify-center gap-2">
             <span class="material-icons-round text-base">person</span>
-            <span>Xem chi tiết hồ sơ người đăng</span>
+            <span>Xem chi tiết profile người đăng</span>
         </a>
 
         <form method="post" action="/Moderator/DeactivateComplainedJobPosting" onsubmit="return confirm('Bạn có chắc muốn vô hiệu hóa bài đăng này không?');">
@@ -150,7 +150,7 @@
             <button type="submit"
                     class="w-full py-3 rounded-xl border border-rose-200 text-rose-600 bg-rose-50 hover:bg-rose-100 font-bold text-sm transition-all inline-flex items-center justify-center gap-2">
                 <span class="material-icons-round text-base">block</span>
-                <span>Deactivate bài đăng</span>
+                <span>Vô hiệu hóa bài đăng</span>
             </button>
         </form>
     </div>

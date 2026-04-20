@@ -1,4 +1,4 @@
-@model WebSite.Models.Verification.SubmitVerificationRequestViewModel
+﻿@model WebSite.Models.Verification.SubmitVerificationRequestViewModel
 @{
     ViewData["Title"] = "Gửi yêu cầu xác minh";
 }
@@ -7,7 +7,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
             <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">Gửi yêu cầu xác minh</h1>
-            <p class="text-gray-600 dark:text-gray-400">Vui lòng kiểm tra thông tin và tải lên 3 nhóm tài liệu xác minh riêng biệt.</p>
+            <p class="text-gray-600 dark:text-gray-400">Tách riêng 2 loại yêu cầu: hồ sơ xác minh và giấy khám sức khỏe.</p>
         </div>
         <a href="@Url.Action("NannyGetVerificationRequestList", "NannyVerificationRequest")"
            class="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-medium transition-colors">
@@ -54,8 +54,28 @@
         </div>
 
         <div class="min-w-0">
-            <form asp-action="NannySubmitVerificationRequest" method="post" enctype="multipart/form-data" class="w-full flex flex-col gap-6 bg-white dark:bg-gray-800 rounded-2xl shadow-xl shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-700/50 p-6 sm:p-8 lg:p-10">
+            <form asp-action="NannySubmitProfileVerificationRequest" method="post" enctype="multipart/form-data" class="w-full flex flex-col gap-6 bg-white dark:bg-gray-800 rounded-2xl shadow-xl shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-700/50 p-6 sm:p-8 lg:p-10">
                 @Html.AntiForgeryToken()
+                <ul class="nav nav-tabs mb-2 flex flex-wrap gap-2 border-b-0" id="verificationTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button type="button"
+                                class="nav-link active px-4 py-2 rounded-xl border border-orange-200 bg-orange-100 text-orange-700 font-semibold"
+                                data-target="verification-profile-panel"
+                                aria-selected="true">
+                            Hồ sơ xác minh
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button type="button"
+                                class="nav-link px-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-600 font-semibold"
+                                data-target="health-certificate-panel"
+                                aria-selected="false">
+                            Giấy khám sức khỏe
+                        </button>
+                    </li>
+                </ul>
+
+                <div id="verification-profile-panel" class="tab-panel space-y-6">
 
                 <div class="rounded-2xl border border-orange-200 dark:border-gray-700 bg-orange-50/60 dark:bg-gray-900/30 p-5 sm:p-6" style="order:1;">
                     <div class="flex items-start gap-3">
@@ -99,6 +119,17 @@
                     <div id="certificatePreview" class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
                 </div>
 
+                <div class="pt-4 flex justify-end" style="order:4;">
+                    <button type="submit"
+                            formaction="@Url.Action("NannySubmitProfileVerificationRequest", "NannyVerificationRequest")"
+                            class="bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold px-8 py-3.5 rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:-translate-y-0.5 transition-all text-sm w-full sm:w-auto">
+                        Gửi yêu cầu hồ sơ xác minh
+                    </button>
+                </div>
+
+                </div>
+
+                <div id="health-certificate-panel" class="tab-panel hidden">
                 <div class="rounded-2xl border border-orange-200 dark:border-gray-700 bg-orange-50/60 dark:bg-gray-900/30 p-5 sm:p-6" style="order:2;">
                     <div class="flex items-start gap-3">
                         <span class="material-icons-round text-orange-500 text-2xl">medical_services</span>
@@ -120,10 +151,23 @@
                     <div id="healthCertificatePreview" class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
                 </div>
 
-                <div class="pt-4 flex justify-end" style="order:4;">
-                    <button type="submit" class="bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold px-8 py-3.5 rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:-translate-y-0.5 transition-all text-sm w-full sm:w-auto">
-                        Xác nhận gửi yêu cầu
+                <div class="rounded-2xl border border-orange-200 dark:border-gray-700 bg-orange-50/60 dark:bg-gray-900/30 p-5 sm:p-6">
+                    <label asp-for="HealthCertificateExpiryDate" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                        Ngày hết hạn giấy khám sức khỏe <span class="text-red-500">*</span>
+                    </label>
+                    <input asp-for="HealthCertificateExpiryDate"
+                           type="date"
+                           class="w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100" />
+                    <span asp-validation-for="HealthCertificateExpiryDate" class="mt-2 block text-sm text-red-600"></span>
+                </div>
+
+                <div class="pt-4 flex justify-end">
+                    <button type="submit"
+                            formaction="@Url.Action("NannySubmitHealthCertificateRequest", "NannyVerificationRequest")"
+                            class="bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold px-8 py-3.5 rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:-translate-y-0.5 transition-all text-sm w-full sm:w-auto">
+                        Gửi yêu cầu giấy khám sức khỏe
                     </button>
+                </div>
                 </div>
             </form>
         </div>
@@ -144,6 +188,39 @@
             if (validationErrors.length > 0 && typeof window.showToast === 'function') {
                 window.showToast(validationErrors[0], { type: 'error' });
             }
+        })();
+
+        (() => {
+            const tabButtons = Array.from(document.querySelectorAll("#verificationTabs .nav-link"));
+            const tabPanels = Array.from(document.querySelectorAll(".tab-panel"));
+
+            if (tabButtons.length === 0 || tabPanels.length === 0) {
+                return;
+            }
+
+            const setActiveTab = (targetId) => {
+                tabPanels.forEach((panel) => {
+                    panel.classList.toggle("hidden", panel.id !== targetId);
+                });
+
+                tabButtons.forEach((button) => {
+                    const isActive = button.dataset.target === targetId;
+                    button.classList.toggle("active", isActive);
+                    button.classList.toggle("border-orange-200", isActive);
+                    button.classList.toggle("bg-orange-100", isActive);
+                    button.classList.toggle("text-orange-700", isActive);
+                    button.classList.toggle("border-gray-200", !isActive);
+                    button.classList.toggle("bg-white", !isActive);
+                    button.classList.toggle("text-gray-600", !isActive);
+                    button.setAttribute("aria-selected", isActive ? "true" : "false");
+                });
+            };
+
+            tabButtons.forEach((button) => {
+                button.addEventListener("click", () => setActiveTab(button.dataset.target));
+            });
+
+            setActiveTab("verification-profile-panel");
         })();
 
         const store = {
