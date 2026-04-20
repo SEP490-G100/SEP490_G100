@@ -9,9 +9,17 @@
     <div class="flex items-center justify-between mb-8">
         <div>
             <h1 class="text-2xl font-bold text-gray-800">Đánh giá của tôi</h1>
-            <p class="text-gray-500 text-sm mt-1">Quản lý đánh giá bảo mẫu của bạn</p>
+            <p class="text-gray-500 text-sm mt-1">Xem và gửi đánh giá cho bảo mẫu sau khi hợp đồng hoàn thành.</p>
         </div>
     </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="mb-6 flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
+            <span class="material-icons-round flex-shrink-0 text-xl">error_outline</span>
+            <span class="text-sm font-medium">@TempData["Error"]</span>
+        </div>
+    }
 
     @if (TempData["Success"] != null)
     {
@@ -23,7 +31,6 @@
         </div>
     }
 
-    @* Tabs *@
     <div class="flex gap-2 mb-6 border-b border-gray-200">
         <button id="tabPending" onclick="switchTab('pending')"
                 class="tab-btn px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors">
@@ -43,7 +50,6 @@
         </button>
     </div>
 
-    @* Tab: Chờ đánh giá *@
     <div id="panelPending">
         @if (!Model.Reviewable.Any())
         {
@@ -52,7 +58,7 @@
                     <span class="material-icons-round text-orange-300 text-2xl">star_border</span>
                 </div>
                 <p class="text-gray-600 font-medium">Không có hợp đồng nào cần đánh giá</p>
-                <p class="text-gray-400 text-sm mt-1">Các hợp đồng đã hoàn thành sẽ hiện ở đây</p>
+                <p class="text-gray-400 text-sm mt-1">Các hợp đồng đã hoàn thành sẽ hiển thị ở đây.</p>
             </div>
         }
         else
@@ -63,7 +69,7 @@
                     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
                         @if (!string.IsNullOrEmpty(record.NannyAvatarUrl))
                         {
-                            <img src="@record.NannyAvatarUrl" alt="@record.NannyName"
+                            <img src="@record.NannyAvatarUrl" alt="Ảnh đại diện @record.NannyName"
                                  class="w-14 h-14 rounded-full object-cover flex-shrink-0 ring-2 ring-gray-100" />
                         }
                         else
@@ -81,7 +87,7 @@
                                     <span> – @record.EndDate.Value.ToString("dd/MM/yyyy")</span>
                                 }
                             </p>
-                            <span class="inline-block mt-1 text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-medium">Hoàn thành</span>
+                            <span class="inline-block mt-1 text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-medium">Đã hoàn thành</span>
                         </div>
                         <a href="/Review/Create?hiringRecordId=@record.HiringRecordId"
                            class="flex-shrink-0 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors"
@@ -94,7 +100,6 @@
         }
     </div>
 
-    @* Tab: Đã đánh giá *@
     <div id="panelDone" class="hidden">
         @if (!Model.Submitted.Any())
         {
@@ -113,7 +118,7 @@
                     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-start gap-4">
                         @if (!string.IsNullOrEmpty(r.NannyAvatarUrl))
                         {
-                            <img src="@r.NannyAvatarUrl" alt="@r.NannyName"
+                            <img src="@r.NannyAvatarUrl" alt="Ảnh đại diện @r.NannyName"
                                  class="w-12 h-12 rounded-full object-cover flex-shrink-0 ring-2 ring-gray-100" />
                         }
                         else

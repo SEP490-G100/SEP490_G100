@@ -17,50 +17,50 @@ let suppressNextNannyMapMove = false;
 let currentNannyDetailId = null;
 let currentNannyDetailUserId = null;
 window.currentNannyDetailUserId = null;
-const NANNY_DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
-const NANNY_TIME_LABELS = ['Morning', 'Afternoon', 'Evening', 'Night'];
+const NANNY_DAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+const NANNY_TIME_LABELS = ['Sáng', 'Chiều', 'Tối', 'Đêm'];
 const NANNY_FALLBACK_PROVINCES = [
-    'ThÃ nh phá»‘ HÃ  Ná»™i',
-    'Tá»‰nh Cao Báº±ng',
-    'Tá»‰nh TuyÃªn Quang',
-    'Tá»‰nh Äiá»‡n BiÃªn',
-    'Tá»‰nh Lai ChÃ¢u',
-    'Tá»‰nh SÆ¡n La',
-    'Tá»‰nh LÃ o Cai',
-    'Tá»‰nh ThÃ¡i NguyÃªn',
-    'Tá»‰nh Láº¡ng SÆ¡n',
-    'Tá»‰nh Quáº£ng Ninh',
-    'Tá»‰nh Báº¯c Ninh',
-    'Tá»‰nh PhÃº Thá»',
-    'ThÃ nh phá»‘ Háº£i PhÃ²ng',
-    'Tá»‰nh HÆ°ng YÃªn',
-    'Tá»‰nh Ninh BÃ¬nh',
-    'Tá»‰nh Thanh HÃ³a',
-    'Tá»‰nh Nghá»‡ An',
-    'Tá»‰nh HÃ  TÄ©nh',
-    'Tá»‰nh Quáº£ng Trá»‹',
-    'ThÃ nh phá»‘ Huáº¿',
-    'ThÃ nh phá»‘ ÄÃ  Náºµng',
-    'Tá»‰nh Quáº£ng NgÃ£i',
-    'Tá»‰nh Gia Lai',
-    'Tá»‰nh KhÃ¡nh HÃ²a',
-    'Tá»‰nh Äáº¯k Láº¯k',
-    'Tá»‰nh LÃ¢m Äá»“ng',
-    'Tá»‰nh Äá»“ng Nai',
-    'ThÃ nh phá»‘ Há»“ ChÃ­ Minh',
-    'Tá»‰nh TÃ¢y Ninh',
-    'Tá»‰nh Äá»“ng ThÃ¡p',
-    'Tá»‰nh VÄ©nh Long',
-    'Tá»‰nh An Giang',
-    'ThÃ nh phá»‘ Cáº§n ThÆ¡',
-    'Tá»‰nh CÃ  Mau'
+    'Thành phố Hà Nội',
+    'Tỉnh Cao Bằng',
+    'Tỉnh Tuyên Quang',
+    'Tỉnh Điện Biên',
+    'Tỉnh Lai Châu',
+    'Tỉnh Sơn La',
+    'Tỉnh Lào Cai',
+    'Tỉnh Thái Nguyên',
+    'Tỉnh Lạng Sơn',
+    'Tỉnh Quảng Ninh',
+    'Tỉnh Bắc Ninh',
+    'Tỉnh Phú Thọ',
+    'Thành phố Hải Phòng',
+    'Tỉnh Hưng Yên',
+    'Tỉnh Ninh Bình',
+    'Tỉnh Thanh Hóa',
+    'Tỉnh Nghệ An',
+    'Tỉnh Hà Tĩnh',
+    'Tỉnh Quảng Trị',
+    'Thành phố Huế',
+    'Thành phố Đà Nẵng',
+    'Tỉnh Quảng Ngãi',
+    'Tỉnh Gia Lai',
+    'Tỉnh Khánh Hòa',
+    'Tỉnh Đắk Lắk',
+    'Tỉnh Lâm Đồng',
+    'Tỉnh Đồng Nai',
+    'Thành phố Hồ Chí Minh',
+    'Tỉnh Tây Ninh',
+    'Tỉnh Đồng Tháp',
+    'Tỉnh Vĩnh Long',
+    'Tỉnh An Giang',
+    'Thành phố Cần Thơ',
+    'Tỉnh Cà Mau'
 ];
 const NANNY_FALLBACK_DISTRICTS_BY_CITY = {
   'ho chi minh': [
-    'Quáº­n 1', 'Quáº­n 3', 'Quáº­n 4', 'Quáº­n 5', 'Quáº­n 6', 'Quáº­n 7', 'Quáº­n 8',
+    'Quận 1', 'Quận 3', 'Quận 4', 'Quận 5', 'Quận 6', 'Quận 7', 'Quận 8',
     'Quận 10', 'Quận 11', 'Quận 12', 'Quận Bình Thạnh', 'Quận Gò Vấp',
-    'Quáº­n PhÃº Nhuáº­n', 'Quáº­n TÃ¢n BÃ¬nh', 'Quáº­n TÃ¢n PhÃº', 'ThÃ nh phá»‘ Thá»§ Äá»©c',
-    'Huyá»‡n BÃ¬nh ChÃ¡nh', 'Huyá»‡n Cáº§n Giá»', 'Huyá»‡n Cá»§ Chi', 'Huyá»‡n HÃ³c MÃ´n', 'Huyá»‡n NhÃ  BÃ¨'
+    'Quận Phú Nhuận', 'Quận Tân Bình', 'Quận Tân Phú', 'Thành phố Thủ Đức',
+    'Huyện Bình Chánh', 'Huyện Cần Giờ', 'Huyện Củ Chi', 'Huyện Hóc Môn', 'Huyện Nhà Bè'
   ],
     'ha noi': [
         'Phường Hoàn Kiếm',
@@ -69,77 +69,77 @@ const NANNY_FALLBACK_DISTRICTS_BY_CITY = {
         'Phường Ngọc Hà',
         'Phường Giảng Võ',
         'Phường Kim Mã',
-        'PhÆ°á»ng Äá»‘ng Äa',
-        'PhÆ°á»ng Ã” Chá»£ Dá»«a',
-        'PhÆ°á»ng VÄƒn Miáº¿u - Quá»‘c Tá»­ GiÃ¡m',
+        'Phường Đống Đa',
+        'Phường Ô Chợ Dừa',
+        'Phường Văn Miếu - Quốc Tử Giám',
         'Phường Kim Liên',
         'Phường Láng',
-        'PhÆ°á»ng Ã” Chá»£ Dá»«a',
+        'Phường Ô Chợ Dừa',
         'Phường Hai Bà Trưng',
         'Phường Bạch Mai',
         'Phường Vĩnh Tuy',
         'Phường Thanh Nhàn',
         'Phường Hoàng Mai',
         'Phường Tương Mai',
-        'PhÆ°á»ng Äá»‹nh CÃ´ng',
-        'PhÆ°á»ng HoÃ ng Liá»‡t',
-        'PhÆ°á»ng YÃªn Sá»Ÿ',
+        'Phường Định Công',
+        'Phường Hoàng Liệt',
+        'Phường Yên Sở',
         'Phường Thanh Xuân',
         'Phường Khương Đình',
-        'PhÆ°á»ng PhÆ°Æ¡ng Liá»‡t',
+        'Phường Phương Liệt',
         'Phường Hạ Đình',
         'Phường Cầu Giấy',
         'Phường Nghĩa Đô',
         'Phường Yên Hòa',
-        'PhÆ°á»ng TÃ¢y Há»“',
+        'Phường Tây Hồ',
         'Phường Phú Thượng',
         'Phường Đông Ngạc',
         'Phường Thượng Cát',
-        'PhÆ°á»ng XuÃ¢n Äá»‰nh',
+        'Phường Xuân Đỉnh',
         'Phường Từ Liêm',
         'Phường Tây Tựu',
-        'PhÆ°á»ng Äáº¡i Má»—',
+        'Phường Đại Mỗ',
         'Phường Long Biên',
-        'PhÆ°á»ng Bá»“ Äá»',
-        'PhÆ°á»ng Viá»‡t HÆ°ng',
+        'Phường Bồ Đề',
+        'Phường Việt Hưng',
         'Phường Phúc Lợi',
         'Phường Hà Đông',
-        'PhÆ°á»ng DÆ°Æ¡ng Ná»™i',
+        'Phường Dương Nội',
         'Phường Yên Nghĩa',
         'Phường Phú Lương',
         'Phường Kiến Hưng',
-        'PhÆ°á»ng Thanh Liá»‡t',
+        'Phường Thanh Liệt',
         'Phường Sơn Tây',
-        'PhÆ°á»ng TÃ¹ng Thiá»‡n',
+        'Phường Tùng Thiện',
 
         'Xã Thanh Trì',
         'Xã Đại Thanh',
         'Xã Nam Phù',
-        'XÃ£ Ngá»c Há»“i',
+        'Xã Ngọc Hồi',
         'Xã Thượng Phúc',
         'Xã Thường Tín',
         'Xã Chương Dương',
-        'XÃ£ Há»“ng VÃ¢n',
+        'Xã Hồng Vân',
         'Xã Phú Xuyên',
         'Xã Phượng Dực',
         'Xã Chuyên Mỹ',
         'Xã Vân Đình',
-        'XÃ£ Quáº£ng Bá»‹',
-        'XÃ£ Quá»‘c Oai',
+        'Xã Quảng Bị',
+        'Xã Quốc Oai',
         'Xã Hưng Đạo',
         'Xã Kiều Phú',
         'Xã Phú Cát',
         'Xã Hoài Đức',
         'Xã Dương Hòa',
-        'XÃ£ SÆ¡n Äá»“ng',
+        'Xã Sơn Đồng',
         'Xã An Khánh',
         'Xã Đan Phượng',
         'Xã Tiến Thắng'
     ],
-  'da nang': ['Quáº­n Háº£i ChÃ¢u', 'Quáº­n Thanh KhÃª', 'Quáº­n SÆ¡n TrÃ ', 'Quáº­n NgÅ© HÃ nh SÆ¡n', 'Quáº­n LiÃªn Chiá»ƒu', 'Huyá»‡n HÃ²a Vang'],
-  'can tho': ['Quáº­n Ninh Kiá»u', 'Quáº­n BÃ¬nh Thá»§y', 'Quáº­n CÃ¡i RÄƒng', 'Quáº­n Ã” MÃ´n', 'Quáº­n Thá»‘t Ná»‘t'],
-  'hai phong': ['Quáº­n Há»“ng BÃ ng', 'Quáº­n NgÃ´ Quyá»n', 'Quáº­n LÃª ChÃ¢n', 'Quáº­n Háº£i An', 'Quáº­n Kiáº¿n An', 'Quáº­n DÆ°Æ¡ng Kinh', 'Quáº­n Äá»“ SÆ¡n'],
-  'hue': ['Quáº­n PhÃº XuÃ¢n', 'Quáº­n Thuáº­n HÃ³a', 'Thá»‹ xÃ£ HÆ°Æ¡ng Thá»§y', 'Thá»‹ xÃ£ HÆ°Æ¡ng TrÃ ']
+  'da nang': ['Quận Hải Châu', 'Quận Thanh Khê', 'Quận Sơn Trà', 'Quận Ngũ Hành Sơn', 'Quận Liên Chiểu', 'Huyện Hòa Vang'],
+  'can tho': ['Quận Ninh Kiều', 'Quận Bình Thủy', 'Quận Cái Răng', 'Quận Ô Môn', 'Quận Thốt Nốt'],
+  'hai phong': ['Quận Hồng Bàng', 'Quận Ngô Quyền', 'Quận Lê Chân', 'Quận Hải An', 'Quận Kiến An', 'Quận Dương Kinh', 'Quận Đồ Sơn'],
+  'hue': ['Quận Phú Xuân', 'Quận Thuận Hóa', 'Thị xã Hương Thủy', 'Thị xã Hương Trà']
 };
 
 const NANNY_GEO_DEFAULT = { lat: 16.047, lng: 108.206, zoom: 6 };
@@ -155,7 +155,7 @@ const NANNY_GEO_FALLBACK = {
 
 function escapeHtml(value) {
   return String(value ?? '')
-    .replaceAll('&', '&')
+    .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
@@ -199,14 +199,14 @@ function formatCurrency(value) {
 function formatSalary(min, max) {
   if (min && max) return `${formatCurrency(min)} - ${formatCurrency(max)}`;
   if (min) return `Từ ${formatCurrency(min)}`;
-  if (max) return `Äáº¿n ${formatCurrency(max)}`;
+  if (max) return `Đến ${formatCurrency(max)}`;
   return 'Thỏa thuận';
 }
 
 function getNannyPlanLabel(profile) {
   const code = String(profile?.subscriptionPlanCode || '').trim().toUpperCase();
-  if (code === 'NANNY_PRO') return 'Nanny Pro';
-  if (code === 'NANNY_PLUS') return 'Nanny Plus';
+  if (code === 'NANNY_PRO') return 'Gói Pro';
+  if (code === 'NANNY_PLUS') return 'Gói Plus';
   return '';
 }
 
@@ -219,9 +219,9 @@ function renderNannyBenefitPills(profile) {
   }
 
   if (profile?.searchPriority) {
-    pills.push('<span class="nanny-pill nanny-pill--orange">Uu tien hiển thị</span>');
+    pills.push('<span class="nanny-pill nanny-pill--orange">Ưu tiên hiển thị</span>');
   } else if (profile?.featuredBadge) {
-    pills.push('<span class="nanny-pill">Profile noi bat</span>');
+    pills.push('<span class="nanny-pill">Hồ sơ nổi bật</span>');
   }
 
   return pills.join('');
@@ -251,7 +251,7 @@ function updateNannyFavoriteUi(nannyId, isFavorite) {
   document.querySelectorAll(`.nanny-card-favorite[data-nanny-id="${normalized}"]`).forEach((button) => {
     button.classList.toggle('active', !!isFavorite);
     button.setAttribute('aria-pressed', isFavorite ? 'true' : 'false');
-    button.title = isFavorite ? 'Bo yêu thích' : 'Yêu thích nanny';
+    button.title = isFavorite ? 'Bỏ yêu thích' : 'Yêu thích bảo mẫu';
     const icon = button.querySelector('.material-icons-round');
     if (icon) icon.textContent = isFavorite ? 'favorite' : 'favorite_border';
   });
@@ -262,7 +262,7 @@ function updateNannyFavoriteUi(nannyId, isFavorite) {
   if (detailButton && currentNannyDetailId && normalizeGuid(currentNannyDetailId) === normalized) {
     detailButton.classList.toggle('active', !!isFavorite);
     if (detailIcon) detailIcon.textContent = isFavorite ? 'favorite' : 'favorite_border';
-    if (detailText) detailText.textContent = isFavorite ? 'Bo yêu thích' : 'Yêu thích';
+    if (detailText) detailText.textContent = isFavorite ? 'Bỏ yêu thích' : 'Yêu thích';
   }
 }
 
@@ -286,12 +286,12 @@ async function toggleNannyFavorite(nannyId, event) {
   event?.stopPropagation?.();
 
   if (!isLoggedIn()) {
-    showNannyToast('Vui lòng Login ?? yêu thích nanny.', 'warning');
+    showNannyToast('Vui lòng đăng nhập để yêu thích bảo mẫu.', 'warning');
     return;
   }
 
   if (!isParentRole()) {
-    showNannyToast('Chi Parent moi co quyen yêu thích nanny.', 'warning');
+    showNannyToast('Chỉ phụ huynh mới có quyền yêu thích bảo mẫu.', 'warning');
     return;
   }
 
@@ -302,18 +302,18 @@ async function toggleNannyFavorite(nannyId, event) {
     });
     const json = await response.json();
     if (!json?.success) {
-      showNannyToast(json?.message || 'Không thể cập nhật yêu thích nanny.', 'error');
+      showNannyToast(json?.message || 'Không thể cập nhật yêu thích.', 'error');
       return;
     }
 
     const favoriteState = !!json.isFavorite;
     setNannyFavoriteState(nannyId, favoriteState);
     showNannyToast(
-      json.message || (favoriteState ? 'Da yêu thích nanny.' : 'Da bo yêu thích nanny.'),
+      json.message || (favoriteState ? 'Đã yêu thích bảo mẫu.' : 'Đã bỏ yêu thích.'),
       favoriteState ? 'success' : 'info'
     );
   } catch {
-    showNannyToast('Không thể cập nhật yêu thích nanny.', 'error');
+    showNannyToast('Không thể cập nhật yêu thích.', 'error');
   }
 }
 
@@ -324,17 +324,17 @@ function toggleNannyFavoriteFromDetail(event) {
 
 async function sendContactRequest(nannyProfileId, message) {
   if (!isLoggedIn()) {
-    showNannyToast('Vui lòng Login ?? gui request contact.', 'warning');
+    showNannyToast('Vui lòng đăng nhập để gửi yêu cầu liên hệ.', 'warning');
     return null;
   }
 
   if (!isParentRole()) {
-    showNannyToast('Chi Parent moi co quyen gui request contact.', 'warning');
+    showNannyToast('Chỉ phụ huynh mới có quyền gửi yêu cầu liên hệ.', 'warning');
     return null;
   }
 
   if (!nannyProfileId) {
-    showNannyToast('Không tìm thấy hồ sơ nanny để gửi yêu cầu.', 'error');
+    showNannyToast('Không tìm thấy hồ sơ bảo mẫu để gửi yêu cầu.', 'error');
     return null;
   }
 
@@ -351,15 +351,15 @@ async function sendContactRequest(nannyProfileId, message) {
 
     const json = await response.json();
     if (!response.ok || !json?.success) {
-      showNannyToast(json?.message || 'Không thể gửi yêu cầu liên hệ.', 'error');
+      showNannyToast(json?.message || 'Khong the gui request contact.', 'error');
       return null;
     }
 
-    showNannyToast(json?.message || 'Đã gửi yêu cầu liên hệ thành công.', 'success');
+    showNannyToast(json?.message || 'Da gui request contact thanh cong.', 'success');
     window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
     return json;
   } catch {
-    showNannyToast('Không thể gửi yêu cầu liên hệ.', 'error');
+    showNannyToast('Khong the gui request contact.', 'error');
     return null;
   }
 }
@@ -372,7 +372,7 @@ async function sendContactRequestFromDetail(event) {
   if (contactButton) contactButton.disabled = true;
 
   const defaultMessage = 'Tôi muốn trao đổi thêm về công việc và lịch làm việc.';
-  const message = window.prompt('Nhap loi nhan gui den nanny (co the bo trong):', defaultMessage);
+  const message = window.prompt('Nhập lời nhắn gửi đến bảo mẫu (có thể bỏ trống):', defaultMessage);
   if (message === null) {
     if (contactButton) contactButton.disabled = false;
     return;
@@ -775,7 +775,7 @@ function syncSelectPickerText() {
 }
 
 function attachSkillAndVerificationAutocomplete() {
-  attachSelectPicker('skill', 'nannySkillId', 'nannySkillText', 'Táº¥t cáº£ ká»¹ nÄƒng');
+  attachSelectPicker('skill', 'nannySkillId', 'nannySkillText', 'Tất cả kỹ năng');
   attachSelectPicker('verification', 'nannyVerification', 'nannyVerificationText', 'Tất cả trạng thái');
 }
 
@@ -834,7 +834,7 @@ function applyNannyScheduleFilter(items) {
 function loadLocationData() {
   if (nannyLocationPromise) return nannyLocationPromise;
 
-  // Attach autocomplete ngay, Ä‘á»ƒ ngÆ°á»i dÃ¹ng váº«n chá»n Ä‘Æ°á»£c khi API ngoÃ i cháº­m/lá»—i.
+  // Attach autocomplete ngay, để người dùng vẫn chọn được khi API ngoài chậm/lỗi.
   attachLocationAutocomplete();
 
   nannyLocationPromise = fetch('https://provinces.open-api.vn/api/v2/?depth=2')
@@ -991,15 +991,15 @@ function renderNannyCards(items, options = {}) {
   const count = document.getElementById('nannyResultCount');
   if (!list || !count) return;
 
-  count.textContent = `${items.length} há»“ sÆ¡`;
+  count.textContent = `${items.length} hồ sơ`;
   clearNannyMarkers();
 
   if (!items.length) {
     list.innerHTML = `
       <div class="nanny-empty">
         <span class="material-icons-round">search_off</span>
-        <h3>KhÃ´ng tÃ¬m tháº¥y há»“ sÆ¡ phÃ¹ há»£p</h3>
-        <p>Thá»­ thay Ä‘á»•i tá»« khÃ³a, khu vá»±c hoáº·c ká»¹ nÄƒng Ä‘á»ƒ má»Ÿ rá»™ng káº¿t quáº£.</p>
+        <h3>Không tìm thấy hồ sơ phù hợp</h3>
+        <p>Thử thay đổi từ khóa, khu vực hoặc kỹ năng để mở rộng kết quả.</p>
       </div>`;
     return;
   }
@@ -1014,7 +1014,7 @@ function renderNannyCards(items, options = {}) {
         <div class="nanny-card__body">
           <div class="nanny-card__head">
             <div>
-              <h3>${escapeHtml(profile.fullName || 'Báº£o máº«u')}</h3>
+              <h3>${escapeHtml(profile.fullName || 'Bảo mẫu')}</h3>
               <p>${escapeHtml([profile.district, profile.city].filter(Boolean).join(', ') || 'Chưa cập nhật khu vực')}</p>
             </div>
             <div class="nanny-card__head-actions">
@@ -1024,23 +1024,23 @@ function renderNannyCards(items, options = {}) {
                         class="nanny-card-favorite ${profile.isFavorite ? 'active' : ''}"
                         data-nanny-id="${escapeHtml(normalizeGuid(profile.id))}"
                         aria-pressed="${profile.isFavorite ? 'true' : 'false'}"
-                        title="${profile.isFavorite ? 'Bo yêu thích' : 'Yêu thích nanny'}"
+                        title="${profile.isFavorite ? 'Bỏ yêu thích' : 'Yêu thích bảo mẫu'}"
                         onclick="toggleNannyFavorite('${escapeHtml(profile.id)}', event)">
                   <span class="material-icons-round">${profile.isFavorite ? 'favorite' : 'favorite_border'}</span>
                 </button>` : ''}
             </div>
           </div>
-          <p class="nanny-card__bio">${escapeHtml(profile.bio || 'Há»“ sÆ¡ chÆ°a cÃ³ mÃ´ táº£ giá»›i thiá»‡u.')}</p>
+          <p class="nanny-card__bio">${escapeHtml(profile.bio || 'Hồ sơ chưa có mô tả giới thiệu.')}</p>
           <div class="nanny-card__meta">
             ${renderNannyBenefitPills(profile)}
             <span class="nanny-pill nanny-pill--orange">${escapeHtml(profile.verificationStatusLabel || 'Chưa xác minh')}</span>
-            <span class="nanny-pill">${profile.age ? `${profile.age} tuá»•i` : 'ChÆ°a rÃµ tuá»•i'}</span>
-            <span class="nanny-pill">${profile.yearsOfExperience ? `${profile.yearsOfExperience} nÄƒm KN` : 'ChÆ°a rÃµ KN'}</span>
+            <span class="nanny-pill">${profile.age ? `${profile.age} tuổi` : 'Chưa rõ tuổi'}</span>
+            <span class="nanny-pill">${profile.yearsOfExperience ? `${profile.yearsOfExperience} năm kinh nghiệm` : 'Chưa rõ kinh nghiệm'}</span>
           </div>
           <div class="nanny-card__skills">
             ${topSkills.length
               ? topSkills.map((skill) => `<span class="nanny-skill-chip">${escapeHtml(skill.skillName || '')}</span>`).join('')
-              : '<span class="nanny-card__muted">ChÆ°a cÃ³ ká»¹ nÄƒng ná»•i báº­t</span>'}
+              : '<span class="nanny-card__muted">Chưa có kỹ năng nổi bật</span>'}
           </div>
         </div>
       </article>`;
@@ -1070,7 +1070,7 @@ function renderNannyCards(items, options = {}) {
 
     marker.bindPopup(`
       <div class="text-sm font-semibold text-slate-700">${escapeHtml(profile.fullName || 'Bảo mẫu')}</div>
-      <div class="text-xs text-slate-500 mt-1">${escapeHtml([profile.district, profile.city].filter(Boolean).join(', ') || 'Chưa cập nhật khu vuc')}</div>
+      <div class="text-xs text-slate-500 mt-1">${escapeHtml([profile.district, profile.city].filter(Boolean).join(', ') || 'Chưa cập nhật khu vực')}</div>
     `);
 
     nannyMarkers.push({ marker, circle, point, element: marker.getElement() });
@@ -1145,7 +1145,7 @@ async function doNannySearch() {
 
 function renderAvailability(slots) {
   if (!Array.isArray(slots) || !slots.length) {
-    return '<span class="nanny-card__muted">Chưa cập nhật lich ranh.</span>';
+    return '<span class="nanny-card__muted">Chưa cập nhật lịch rảnh.</span>';
   }
 
   const dayAliases = {
@@ -1155,7 +1155,7 @@ function renderAvailability(slots) {
     th: 3, thu: 3, thur: 3, thurs: 3, thursday: 3, 'thu 5': 3, thunam: 3,
     fr: 4, fri: 4, friday: 4, 'thu 6': 4, thusau: 4,
     sa: 5, sat: 5, saturday: 5, 'thu 7': 5, thubay: 5,
-    su: 6, sun: 6, sunday: 6, cn: 6, 'chu nhất': 6
+    su: 6, sun: 6, sunday: 6, cn: 6, 'chu nhat': 6
   };
   const timeAliases = {
     morning: 0, sang: 0,
@@ -1223,13 +1223,13 @@ async function openNannyDetail(id) {
     if (!detail) return;
 
     document.getElementById('nd-avatar').src = detail.avatarUrl || '/img/nanny-logo.jpg';
-    document.getElementById('nd-name').textContent = detail.fullName || 'Báº£o máº«u';
+    document.getElementById('nd-name').textContent = detail.fullName || 'Bảo mẫu';
     const publicLocation = formatPublicLocation(detail);
-    document.getElementById('nd-location').textContent = publicLocation || 'Chua cap nhat khu vuc';
+    document.getElementById('nd-location').textContent = publicLocation || 'Chưa cập nhật khu vực';
     document.getElementById('nd-verify').textContent = detail.verificationStatusLabel || 'Đang cập nhật';
     document.getElementById('nd-bio').textContent = detail.bio || 'Hồ sơ chưa có mô tả.';
-    document.getElementById('nd-phone').textContent = isParentRole() ? 'Gui request contact de trao doi truc tiep voi nanny' : 'Thong tin lien he chi hien sau khi da ket noi';
-    document.getElementById('nd-address').textContent = publicLocation || 'Chua cap nhat';
+    document.getElementById('nd-phone').textContent = isParentRole() ? 'Gửi yêu cầu liên hệ để trao đổi trực tiếp với bảo mẫu' : 'Thông tin liên hệ chỉ hiện sau khi đã kết nối';
+    document.getElementById('nd-address').textContent = publicLocation || 'Chưa cập nhật';
     document.getElementById('nd-travel').textContent = detail.maxTravelDistance ? `${detail.maxTravelDistance} km` : 'Chưa cập nhật';
     document.getElementById('nd-age').textContent = detail.age ? `${detail.age} tuổi` : 'Chưa rõ tuổi';
     document.getElementById('nd-exp').textContent = detail.yearsOfExperience ? `${detail.yearsOfExperience} năm kinh nghiệm` : 'Chưa rõ kinh nghiệm';
@@ -1239,9 +1239,9 @@ async function openNannyDetail(id) {
     if (planChip) {
       const planLabel = getNannyPlanLabel(detail);
       const planText = detail.searchPriority
-        ? `${planLabel || 'Ho so noi bat'} • Uu tien hien thi`
+        ? `${planLabel || 'Hồ sơ nổi bật'} • Ưu tiên hiển thị`
         : detail.featuredBadge
-          ? (planLabel || 'Ho so noi bat')
+          ? (planLabel || 'Hồ sơ nổi bật')
           : '';
       planChip.textContent = planText;
       planChip.classList.toggle('hidden', !planText);
@@ -1267,7 +1267,7 @@ async function openNannyDetail(id) {
       const icon = favoriteButton.querySelector('.material-icons-round');
       const text = document.getElementById('nd-favoriteBtnText');
       if (icon) icon.textContent = detail.isFavorite ? 'favorite' : 'favorite_border';
-      if (text) text.textContent = detail.isFavorite ? 'Bo yêu thích' : 'Yêu thích';
+      if (text) text.textContent = detail.isFavorite ? 'Bỏ yêu thích' : 'Yêu thích';
     }
 
     const contactButton = document.getElementById('nd-contactBtn');
@@ -1322,5 +1322,3 @@ if (document.readyState === 'loading') {
 } else {
   bootstrapNannyListPage();
 }
-
-

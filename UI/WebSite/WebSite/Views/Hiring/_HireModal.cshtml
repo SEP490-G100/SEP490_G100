@@ -1,53 +1,64 @@
 <div id="hireNannyModal"
      class="fixed inset-0 z-[12000] hidden items-center justify-center bg-black/50 backdrop-blur-sm px-4"
      onclick="if(event.target===this)window.__closeHireModal?.()">
-    <div class="bg-white rounded-[28px] w-full max-w-lg shadow-2xl relative overflow-hidden">
-        <div class="px-6 py-5 border-b border-orange-100 bg-gradient-to-b from-white to-orange-50/60">
-            <button type="button" onclick="window.__closeHireModal?.()"
-                    class="absolute top-4 right-4 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 hover:text-slate-600 transition-colors">
+    <div class="relative w-full max-w-lg overflow-hidden rounded-[28px] bg-white shadow-2xl">
+        <div class="border-b border-orange-100 bg-gradient-to-b from-white to-orange-50/60 px-6 py-5">
+            <button type="button"
+                    onclick="window.__closeHireModal?.()"
+                    class="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 transition-colors hover:text-slate-600">
                 <span class="material-icons-round text-base">close</span>
             </button>
             <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-orange-500">Tuyển dụng</p>
-            <h2 class="mt-1 text-xl font-bold text-slate-900">Thuê Bảo Mẫu</h2>
+            <h2 class="mt-1 text-xl font-bold text-slate-900">Thuê bảo mẫu</h2>
             <p id="hireModalNannyName" class="mt-1 text-sm text-slate-500"></p>
         </div>
 
-        <div class="px-6 py-5 space-y-4">
+        <div class="space-y-4 px-6 py-5">
             <div>
-                <label for="hireStartDate" class="block text-sm font-bold text-slate-700 mb-1">
+                <label for="hireStartDate" class="mb-1 block text-sm font-bold text-slate-700">
                     Ngày bắt đầu <span class="text-rose-500">*</span>
                 </label>
-                <input type="date" id="hireStartDate" required
-                       class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition" />
+                <input type="date"
+                       id="hireStartDate"
+                       required
+                       class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 transition focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100" />
             </div>
 
             <div>
-                <label for="hireEndDate" class="block text-sm font-bold text-slate-700 mb-1">Ngày kết thúc</label>
-                <input type="date" id="hireEndDate"
-                       class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition" />
-                <p class="mt-1 text-xs text-slate-400">Dể trống nếu chưa xác định.</p>
+                <label for="hireEndDate" class="mb-1 block text-sm font-bold text-slate-700">
+                    Ngày kết thúc <span class="text-rose-500">*</span>
+                </label>
+                <input type="date"
+                       id="hireEndDate"
+                       class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 transition focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100" />
+                <p id="hireEndDateInlineError" class="hidden mt-1 text-xs font-semibold text-rose-600"></p>
             </div>
 
             <div>
-                <label for="hireTemplateId" class="block text-sm font-bold text-slate-700 mb-1">
+                <label for="hireTemplateId" class="mb-1 block text-sm font-bold text-slate-700">
                     Mẫu hợp đồng <span class="text-rose-500">*</span>
                 </label>
-                <select id="hireTemplateId" required
-                        class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition bg-white">
+                <select id="hireTemplateId"
+                        required
+                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 transition focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100">
                     <option value="">Đang tải mẫu hợp đồng...</option>
                 </select>
             </div>
 
-            <p id="hireModalError" class="hidden text-sm text-rose-600 font-semibold"></p>
+            <p id="hireModalError" class="hidden text-sm font-semibold text-rose-600"></p>
         </div>
 
-        <div class="px-6 pb-6 flex items-center justify-end gap-3">
-            <button type="button" onclick="window.__closeHireModal?.()"
-                    class="inline-flex items-center justify-center min-h-[42px] px-5 rounded-xl border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 transition-all">
+        <div class="flex items-center justify-end gap-3 px-6 pb-6">
+            <button type="button"
+                    onclick="window.__closeHireModal?.()"
+                    class="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-slate-200 bg-white px-5 font-bold text-slate-600 transition-all hover:bg-slate-50">
                 Hủy
             </button>
-            <button type="button" id="hireConfirmBtn" onclick="window.__submitHiring?.()"
-                    class="inline-flex items-center justify-center gap-2 min-h-[42px] px-6 rounded-xl bg-gradient-to-r from-orange-500 to-orange-400 text-white font-bold shadow-lg shadow-orange-200 hover:from-orange-600 hover:to-orange-500 transition-all">
+            <button type="button"
+                    id="hireConfirmBtn"
+                    onclick="window.__submitHiring?.()"
+                    disabled
+                    class="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-orange-400 px-6 font-bold text-white shadow-lg shadow-orange-200 transition-all hover:from-orange-600 hover:to-orange-500 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:from-orange-500 disabled:hover:to-orange-400">
                 <span class="material-icons-round text-base">handshake</span>
                 Xác nhận thuê
             </button>
@@ -58,77 +69,143 @@
 <script>
 (() => {
     let context = { jobPostingId: null, jobAppId: null, contactRequestId: null };
-    let templatesLoaded = false;
 
     const modal = document.getElementById('hireNannyModal');
     const errorEl = document.getElementById('hireModalError');
+    const endDateInlineErrorEl = document.getElementById('hireEndDateInlineError');
     const confirmBtn = document.getElementById('hireConfirmBtn');
+    const startInput = document.getElementById('hireStartDate');
+    const endInput = document.getElementById('hireEndDate');
+    const templateSelect = document.getElementById('hireTemplateId');
 
-    const show = () => { modal.classList.remove('hidden'); modal.classList.add('flex'); };
-    const hiđ = () => { modal.classList.add('hidden'); modal.classList.remove('flex'); };
-    const setError = (msg) => {
-        errorEl.textContent = msg || '';
-        errorEl.classList.toggle('hidden', !msg);
+    const show = () => {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    };
+
+    const hide = () => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    };
+
+    const setError = (message) => {
+        errorEl.textContent = message || '';
+        errorEl.classList.toggle('hidden', !message);
+    };
+
+    const setEndDateInlineError = (message) => {
+        endDateInlineErrorEl.textContent = message || '';
+        endDateInlineErrorEl.classList.toggle('hidden', !message);
+    };
+
+    const addDays = (dateText, days) => {
+        const date = new Date(dateText);
+        date.setDate(date.getDate() + days);
+        return date.toISOString().slice(0, 10);
+    };
+
+    const escapeHtml = (value) => String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+
+    const getValidationError = () => {
+        const startDate = startInput.value;
+        const endDate = endInput.value;
+        const contractTemplateId = templateSelect.value;
+        const today = new Date().toISOString().slice(0, 10);
+
+        if (!startDate) return 'Vui lòng chọn ngày bắt đầu.';
+        if (!endDate) return 'Vui lòng chọn ngày kết thúc.';
+        if (!contractTemplateId) return 'Vui lòng chọn mẫu hợp đồng.';
+        if (startDate < today) return 'Ngày bắt đầu không được trước ngày tạo hợp đồng.';
+        if (endDate <= startDate) return 'Ngày kết thúc phải lớn hơn ngày bắt đầu.';
+        return '';
+    };
+
+    const updateConfirmState = () => {
+        const hasEndDateOrderError =
+            !!startInput.value &&
+            !!endInput.value &&
+            endInput.value <= startInput.value;
+
+        setEndDateInlineError(hasEndDateOrderError ? 'Ngày kết thúc phải lớn hơn ngày bắt đầu.' : '');
+        confirmBtn.disabled = !!getValidationError();
     };
 
     const loadTemplates = async () => {
-        if (templatesLoaded) return;
+        templateSelect.innerHTML = '<option value="">Đang tải mẫu hợp đồng...</option>';
+        updateConfirmState();
+
         try {
-            const res = await fetch('/Hiring/Templates');
-            const json = await res.json();
-            const select = document.getElementById('hireTemplateId');
-            if (json.success && Array.isArray(json.data) && json.data.length) {
-                select.innerHTML = '<option value="">-- Chọn mẫu hợp đồng --</option>' +
-                    json.data.map(t => `<option value="${t.id}">${t.name} (v${t.version})</option>`).join('');
-                templatesLoaded = true;
+            const response = await fetch('/Hiring/Templates');
+            const data = await response.json();
+
+            if (data.success && Array.isArray(data.data) && data.data.length) {
+                templateSelect.innerHTML = '<option value="">-- Chọn mẫu hợp đồng --</option>' +
+                    data.data.map((template) => {
+                        const inactiveTag = template.isActive ? '' : ' - Inactive';
+                        const disabledAttr = template.isActive ? '' : ' disabled';
+                        return `<option value="${template.id}"${disabledAttr}>${escapeHtml(template.name)} (v${escapeHtml(template.version)})${inactiveTag}</option>`;
+                    }).join('');
             } else {
-                select.innerHTML = '<option value="">Không có mẫu hợp đồng</option>';
+                templateSelect.innerHTML = '<option value="">Không có mẫu hợp đồng</option>';
             }
         } catch {
-            document.getElementById('hireTemplateId').innerHTML = '<option value="">Lỗi tải mẫu</option>';
+            templateSelect.innerHTML = '<option value="">Lỗi tải mẫu</option>';
+        } finally {
+            updateConfirmState();
         }
     };
 
     window.__openHireModal = async (jobPostingId, jobAppId, nannyName, contactRequestId = null) => {
         context = { jobPostingId, jobAppId, contactRequestId };
         document.getElementById('hireModalNannyName').textContent = nannyName ? `Nanny: ${nannyName}` : '';
+
         const today = new Date().toISOString().slice(0, 10);
-        document.getElementById('hireStartDate').value = today;
-        document.getElementById('hireStartDate').setAttribute('min', today);
-        document.getElementById('hireEndDate').value = '';
-        document.getElementById('hireEndDate').setAttribute('min', today);
+        startInput.value = today;
+        startInput.setAttribute('min', today);
+        endInput.value = '';
+        endInput.setAttribute('min', addDays(today, 1));
+        templateSelect.value = '';
+
         setError('');
+        setEndDateInlineError('');
+        updateConfirmState();
         show();
         await loadTemplates();
     };
 
-    window.__closeHireModal = () => hide();
+    window.__closeHireModal = () => {
+        setError('');
+        setEndDateInlineError('');
+        hide();
+    };
 
     window.__submitHiring = async () => {
-        const startDate = document.getElementById('hireStartDate').value;
-        const endDate = document.getElementById('hireEndDate').value;
-        const contractTemplateId = document.getElementById('hireTemplateId').value;
+        const startDate = startInput.value;
+        const endDate = endInput.value;
+        const contractTemplateId = templateSelect.value;
 
-        if (!startDate) { setError('Vui lòng chọn ngày bắt đầu.'); return; }
-        if (!contractTemplateId) { setError('Vui lòng chọn mẫu hợp đồng.'); return; }
-        const today = new Date().toISOString().slice(0, 10);
-        if (startDate < today) { setError('Ngày bắt đầu không được trước ngày tạo hợp đồng.'); return; }
-        if (endDate) {
-            if (endDate <= startDate) {
-                setError('Ngày kết thúc phải lớn hơn ngày bắt đầu.');
-                return;
-            }
+        const validationError = getValidationError();
+        if (validationError) {
+            setError(validationError);
+            updateConfirmState();
+            return;
         }
 
         confirmBtn.disabled = true;
-        confirmBtn.textContent = 'Đang xử lý...';
+        confirmBtn.innerHTML = '<span class="material-icons-round text-base animate-spin">sync</span> Đang xử lý...';
         setError('');
 
         try {
             const endpoint = (context.jobPostingId && context.jobAppId)
                 ? `/Hiring/${context.jobPostingId}/Applicants/${context.jobAppId}/Hire`
                 : `/Hiring/ContactRequests/${context.contactRequestId}/Hire`;
-            const res = await fetch(endpoint, {
+
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -138,22 +215,54 @@
                     contractTemplateId
                 })
             });
-            const json = await res.json();
-            if (!json.success) {
-                setError(json.message || 'Có lỗi xảy ra.');
+
+            const responseText = await response.text();
+            let json = {};
+            if (responseText) {
+                try {
+                    json = JSON.parse(responseText);
+                } catch {
+                    json = {};
+                }
+            }
+
+            if (!response.ok) {
+                setError(json?.message || 'Có lỗi xảy ra.');
+                return;
+            }
+
+            if (json?.success === false) {
+                setError(json?.message || 'Có lỗi xảy ra.');
                 return;
             }
 
             hide();
-            if (json.data?.conversationId) {
+            if (json?.data?.conversationId) {
                 window.location.href = `/Communication?conversationId=${json.data.conversationId}`;
             }
         } catch {
             setError('Lỗi kết nối. Vui lòng thử lại.');
         } finally {
-            confirmBtn.disabled = false;
+            updateConfirmState();
             confirmBtn.innerHTML = '<span class="material-icons-round text-base">handshake</span> Xác nhận thuê';
         }
     };
+
+    startInput.addEventListener('change', () => {
+        if (!startInput.value) {
+            endInput.setAttribute('min', '');
+            updateConfirmState();
+            return;
+        }
+
+        endInput.setAttribute('min', addDays(startInput.value, 1));
+        if (endInput.value && endInput.value <= startInput.value) {
+            endInput.value = '';
+        }
+        updateConfirmState();
+    });
+
+    endInput.addEventListener('change', updateConfirmState);
+    templateSelect.addEventListener('change', updateConfirmState);
 })();
 </script>

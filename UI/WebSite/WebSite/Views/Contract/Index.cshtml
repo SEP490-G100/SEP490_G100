@@ -100,7 +100,7 @@
 
             function badgeHtmlByStatus(status) {
                 if (status === 1) return '<span class="contract-badge active">Đang hoạt động</span>';
-                if (status === 0) return '<span class="contract-badge pending">Đang chờ nanny xác nhận</span>';
+                if (status === 0) return '<span class="contract-badge pending">Đang chờ bảo mẫu xác nhận</span>';
                 return '<span class="contract-badge history">Lịch sử</span>';
             }
 
@@ -115,7 +115,7 @@
 
                 container.innerHTML = list.map((item) => {
                     const isDirectContactHire = String(item.jobTitle || '').toLowerCase() === 'thue nanny truc tiep';
-                    const titleText = isDirectContactHire ? 'Hợp đồng từ contact request' : (item.jobTitle || 'Công việc');
+                    const titleText = isDirectContactHire ? 'Hợp đồng từ yêu cầu liên hệ' : (item.jobTitle || 'Công việc');
                     const signBadge = item.signedByParent && item.signedByNanny
                         ? '<span class="contract-badge active">Đã ký 2 bên</span>'
                         : '<span class="contract-badge pending">Chờ ký hoàn tất</span>';
@@ -155,7 +155,7 @@
             fetch('/Contract/Api/List', { credentials: 'include' })
                 .then(async (res) => {
                     const json = await res.json();
-                    if (!res.ok || !json?.success) throw new Error(json?.message || 'Không tải được dữ liệu.');
+                    if (!res.ok || !json?.success) throw new Error(json?.message || 'Không tải được danh sách hợp đồng.');
                     const data = json.data || {};
 
                     const active = Array.isArray(data.active) ? data.active : [];
@@ -176,7 +176,11 @@
                 })
                 .catch((err) => {
                     stateEl.classList.remove('hidden');
-                    stateEl.textContent = `Không tải được danh sách hợp đồng: ${err.message || 'Lỗi không xác định'}`;
+                    const msg = String(err?.message || '').trim();
+                    const hasVi = /[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]/i.test(msg);
+                    stateEl.textContent = hasVi
+                        ? `Không tải được danh sách hợp đồng: ${msg}`
+                        : 'Không tải được danh sách hợp đồng. Vui lòng thử lại sau.';
                 });
         })();
     </script>

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Nanny_BackEnd.DTOs.Hiring;
 using Nanny_BackEnd.Services;
 
 namespace Nanny_BackEnd.Controllers;
@@ -51,6 +52,96 @@ public class ContractController : ControllerBase
         catch (KeyNotFoundException ex)
         {
             return NotFound(Fail(ex.Message));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, Fail(ex.Message));
+        }
+    }
+
+    [HttpPatch("{contractId:guid}/draft-parent")]
+    public async Task<IActionResult> SaveDraftByParent(Guid contractId, [FromBody] ContractUpsertRequestDto request)
+    {
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue)
+            return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+
+        try
+        {
+            var result = await _service.SaveDraftByParentAsync(contractId, userId.Value, request);
+            return Ok(OkResult(result, "Luu ban nhap hop dong thanh cong."));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(Fail(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(Fail(ex.Message));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, Fail(ex.Message));
+        }
+    }
+
+    [HttpPatch("{contractId:guid}/fill-nanny")]
+    public async Task<IActionResult> FillByNanny(Guid contractId, [FromBody] ContractUpsertRequestDto request)
+    {
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue)
+            return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+
+        try
+        {
+            var result = await _service.FillByNannyAsync(contractId, userId.Value, request);
+            return Ok(OkResult(result, "Nanny submit thong tin hop dong thanh cong."));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(Fail(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(Fail(ex.Message));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, Fail(ex.Message));
+        }
+    }
+
+    [HttpPost("{contractId:guid}/final-confirm-parent")]
+    public async Task<IActionResult> FinalConfirmByParent(Guid contractId)
+    {
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue)
+            return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+
+        try
+        {
+            var result = await _service.FinalConfirmByParentAsync(contractId, userId.Value);
+            return Ok(OkResult(result, "Parent xac nhan hop dong thanh cong."));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(Fail(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(Fail(ex.Message));
         }
         catch (Exception ex)
         {

@@ -1,6 +1,6 @@
 @model WebSite.Models.Nanny.NannyAvailabilityViewModel
 @{
-    ViewData["Title"] = "Nanny Availability";
+    ViewData["Title"] = "Khả năng làm việc của bảo mẫu";
     var dayColumns = Model.Days.Select((d, i) => new { Index = i, d.DayName }).ToList();
     var slotRows = new[]
     {
@@ -20,7 +20,7 @@
     <div class="availability-box">
         <div class="availability-panel">
             <div class="availability-head">
-                <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-orange-500">Nanny onboarding</p>
+                <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-orange-500">Đăng ký bảo mẫu</p>
                 <h1 class="mt-2 text-2xl sm:text-3xl font-bold text-slate-900" style="font-family:'Quicksand',sans-serif">Chọn lịch làm việc</h1>
                 <p class="mt-2 text-sm text-slate-500">Giao diện đồng bộ với lịch trên danh sách bài đăng.</p>
             </div>

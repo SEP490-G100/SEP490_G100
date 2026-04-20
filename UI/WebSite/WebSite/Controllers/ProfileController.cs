@@ -522,7 +522,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
                 : new[] { string.Empty };
 
             foreach (var memberName in memberNames)
-                ModelState.AddModelError(memberName, error.ErrorMessage ?? "Luong khong hop le.");
+                ModelState.AddModelError(memberName, error.ErrorMessage ?? "Lương không hợp lệ.");
         }
     }
 
@@ -530,25 +530,25 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
     {
         var ext = Path.GetExtension(model.AvatarFile.FileName)?.ToLowerInvariant();
         if (ext != ".jpg" && ext != ".jpeg" && ext != ".png")
-            ModelState.AddModelError(nameof(model.AvatarFile), "Chi cho phep anh .jpg, .jpeg hoac .png.");
+            ModelState.AddModelError(nameof(model.AvatarFile), "Chỉ cho phép ảnh .jpg, .jpeg hoặc .png.");
     }
 
     var today = DateOnly.FromDateTime(DateTime.Today);
     if (model.DateOfBirth.HasValue && model.DateOfBirth.Value > today)
     {
-        ModelState.AddModelError(nameof(model.DateOfBirth), "Ngay sinh khong duoc lon hon ngay hien tai.");
+        ModelState.AddModelError(nameof(model.DateOfBirth), "Ngày sinh không được lớn hơn ngày hiện tại.");
     }
 
     if (User.IsInRole("Nanny") && !model.DateOfBirth.HasValue)
     {
-        ModelState.AddModelError(nameof(model.DateOfBirth), "Vui lòng chon ngay sinh.");
+        ModelState.AddModelError(nameof(model.DateOfBirth), "Vui lòng chọn ngày sinh.");
     }
     else if (User.IsInRole("Nanny") && model.DateOfBirth.HasValue)
     {
         var age = today.Year - model.DateOfBirth.Value.Year;
         if (model.DateOfBirth.Value > today.AddYears(-age)) age--;
         if (age <= 30)
-            ModelState.AddModelError(nameof(model.DateOfBirth), "Nanny phai lon hon 30 tuoi.");
+            ModelState.AddModelError(nameof(model.DateOfBirth), "Bảo mẫu phải lớn hơn 30 tuổi.");
     }
 
     if (!ModelState.IsValid)
@@ -567,8 +567,8 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
         var token = GetTokenFromSession();
         if (string.IsNullOrEmpty(token))
         {
-            TempData["Error"] = "Phi?n đăng nhập ?? h?t h?n. Vui lòng đăng nhập l?i.";
-            return RedirectToAction("đăng nhập", "Auth");
+            TempData["Error"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+            return RedirectToAction("Login", "Auth");
         }
 
         _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -581,7 +581,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError(nameof(model.AvatarFile), $"Không th? upload avatar: {ex.Message}");
+                ModelState.AddModelError(nameof(model.AvatarFile), $"Không thể tải ảnh đại diện lên: {ex.Message}");
                 await PopulateAvailableSkillsAsync(model);
                 return View(model);
             }
@@ -616,7 +616,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
 
         if (apiResult == null || !apiResult.Success)
         {
-            ModelState.AddModelError("", apiResult?.Message ?? "C?p nh?t thất bại.");
+            ModelState.AddModelError("", apiResult?.Message ?? "Cập nhật thất bại.");
             await PopulateAvailableSkillsAsync(model);
             return View(model);
         }
@@ -642,7 +642,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
     {
         var token = GetTokenFromSession();
         if (string.IsNullOrEmpty(token))
-            return RedirectToAction("đăng nhập", "Auth");
+            return RedirectToAction("Login", "Auth");
 
         _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var response = await _http.PostAsJsonAsync("/api/profile/certificates", new
@@ -660,7 +660,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
             return RedirectToAction(nameof(Verify));
         }
 
-        TempData["Success"] = "ÄÃ£ thÃªm chá»©ng chá»‰ thÃ nh cÃ´ng.";
+        TempData["Success"] = "Đã thêm chứng chỉ thành công.";
         return RedirectToAction(nameof(Index));
     }
 

@@ -1,4 +1,5 @@
 @model WebSite.Models.Moderator.ModeratorDashboardDto
+@using System.Globalization
 @using System.Text.Json
 @{
     Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
@@ -109,7 +110,7 @@
 
     <div class="content-card p-0 fade-in-up">
         <div class="card-header">
-            <h2>Thác tác nhanh</h2>
+            <h2>Thao tác nhanh</h2>
         </div>
         <div class="p-4 space-y-2.5">
             <a href="/Moderator/ManageNannyVerification"
@@ -277,7 +278,7 @@
            style="color:#F97316;"
            onmouseover="this.style.background='#FFF7ED'"
            onmouseout="this.style.background='transparent'">
-           Xem tất cả ->
+           Xem tất cả →
         </a>
     </div>
 
@@ -293,6 +294,14 @@
         <div class="divide-y divide-gray-50">
             @foreach (var acc in Model.RecentAccounts)
             {
+                var roleLabelVi = acc.PrimaryRole switch
+                {
+                    "Parent" => "Phụ huynh",
+                    "Nanny" => "Bảo mẫu",
+                    "Moderator" => "Kiểm duyệt viên",
+                    "Admin" => "Quản trị viên",
+                    _ => acc.PrimaryRole
+                };
                 var avatarColors = new[] { "#F97316", "#3B82F6", "#8B5CF6", "#10B981", "#F59E0B" };
                 var bg = avatarColors[Math.Abs(acc.Id.GetHashCode()) % avatarColors.Length];
                 <div class="flex items-center gap-3 px-5 py-3.5 hover:bg-orange-50/50 transition-colors">
@@ -309,8 +318,8 @@
                         <p class="text-xs text-gray-400 truncate">@acc.Email</p>
                     </div>
                     <div class="flex flex-col items-end gap-1 flex-shrink-0">
-                        <span class="badge @(acc.PrimaryRole == "Parent" ? "badge-parent" : acc.PrimaryRole == "Nanny" ? "badge-nanny" : "badge-mod")">@acc.PrimaryRole</span>
-                        <span class="text-[10px] text-gray-400">@acc.CreatedAt.ToString("MMM dd, yyyy")</span>
+                        <span class="badge @(acc.PrimaryRole == "Parent" ? "badge-parent" : acc.PrimaryRole == "Nanny" ? "badge-nanny" : "badge-mod")">@roleLabelVi</span>
+                        <span class="text-[10px] text-gray-400">@acc.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy", CultureInfo.GetCultureInfo("vi-VN"))</span>
                     </div>
                 </div>
             }

@@ -1,7 +1,7 @@
 @model WebSite.Models.Verification.VerificationRequestListResponse
 @{
     Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
-    ViewData["Title"] = "Xac minh bao mau";
+    ViewData["Title"] = "Xác minh b?o m?u";
 
     var currentSearch = ViewBag.Search as string ?? "";
     var currentStatus = ViewBag.Status as int?;
@@ -13,14 +13,14 @@
 
 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
     <div>
-        <span class="section-label">Quan ly xac minh</span>
+        <span class="section-label">Qu?n lý xác minh</span>
         <h1 class="page-title mt-2">
-            Danh sach <span class="gradient-text">Yeu cau xac minh</span>
+            Xác minh <span class="gradient-text">B?o m?u</span>
         </h1>
-        <p class="page-subtitle">Moderator xem xet va phe duyet yeu cau xac minh/giay kham suc khoe cua nanny.</p>
+        <p class="page-subtitle">Xem xét h? s? b?o m?u và phê duy?t ho?c t? ch?i yêu c?u xác minh.</p>
     </div>
     <div class="flex gap-2 text-sm">
-        <span class="badge badge-pending px-3 py-1.5">Tong so @(Model?.TotalCount ?? 0)</span>
+        <span class="badge badge-pending px-3 py-1.5">T?ng s? @(Model?.TotalCount ?? 0)</span>
     </div>
 </div>
 
@@ -38,7 +38,7 @@
             <div class="relative flex-1">
                 <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">search</span>
                 <input name="search" type="text" value="@currentSearch"
-                       placeholder="Tim theo ten hoac email..."
+                       placeholder="Tìm theo tên ho?c email..."
                        class="search-input pl-9 w-full border border-gray-200 rounded-xl px-4 py-2 font-medium"
                        onkeydown="if(event.key==='Enter'){this.form.submit();}" />
             </div>
@@ -57,16 +57,16 @@
                 <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">toggle_on</span>
                 <select name="status" onchange="this.form.submit()"
                         class="search-input md:w-44 !pl-9 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
-                    <option value="">Tat ca trang thai</option>
-                    <option value="1" selected="@(currentStatus == 1 ? "selected" : null)">Dang cho</option>
-                    <option value="2" selected="@(currentStatus == 2 ? "selected" : null)">Da duyet</option>
-                    <option value="3" selected="@(currentStatus == 3 ? "selected" : null)">Da tu choi</option>
+                    <option value="">T?t c? tr?ng thái</option>
+                    <option value="1" selected="@(currentStatus == 1 ? "selected" : null)">?ang ch?</option>
+                    <option value="2" selected="@(currentStatus == 2 ? "selected" : null)">?ã duy?t</option>
+                    <option value="3" selected="@(currentStatus == 3 ? "selected" : null)">?ã t? ch?i</option>
                 </select>
             </div>
 
             <button type="submit" class="btn-primary flex-shrink-0 flex items-center gap-1">
                 <span class="material-icons-round text-base">search</span>
-                Tim kiem
+                Tìm ki?m
             </button>
         </div>
     </div>
@@ -75,8 +75,8 @@
 <div class="content-card overflow-hidden fade-in-up" style="animation-delay:.1s;">
     <div class="card-header">
         <span class="text-sm text-gray-500">
-            Hien thi <span class="font-bold text-gray-800">@items.Count</span>
-            tren <span class="font-bold text-gray-800">@(Model?.TotalCount ?? 0)</span> yeu cau
+            Hi?n th? <span class="font-bold text-gray-800">@items.Count</span>
+            trên <span class="font-bold text-gray-800">@(Model?.TotalCount ?? 0)</span> yêu c?u
         </span>
     </div>
 
@@ -85,13 +85,13 @@
             <thead>
                 <tr>
                     <th class="text-left">#</th>
-                    <th class="text-left">Bao mau</th>
+                    <th class="text-left">B?o m?u</th>
                     <th class="text-left">Email</th>
-                    <th class="text-left">Loai ho so</th>
-                    <th class="text-left">Het han</th>
-                    <th class="text-left">Ngay nop</th>
-                    <th class="text-left">Trang thai</th>
-                    <th class="text-center">Hanh dong</th>
+                    <th class="text-left">Lo?i h? s?</th>
+                    <th class="text-left">H?t h?n</th>
+                    <th class="text-left">Ngày n?p</th>
+                    <th class="text-left">Tr?ng thái</th>
+                    <th class="text-center">Hành ??ng</th>
                 </tr>
             </thead>
             <tbody>
@@ -100,8 +100,8 @@
                     <tr>
                         <td colspan="8" class="text-center py-16 text-gray-400">
                             <span class="material-icons-round text-5xl mb-3 block text-gray-200">verified_user</span>
-                            <p class="font-semibold text-gray-400">Khong tim thay yeu cau xac minh.</p>
-                            <p class="text-xs text-gray-300 mt-1">Thu dieu chinh bo loc.</p>
+                            <p class="font-semibold text-gray-400">Không tìm th?y yêu c?u xác minh.</p>
+                            <p class="text-xs text-gray-300 mt-1">Th? ?i?u ch?nh b? l?c.</p>
                         </td>
                     </tr>
                 }
@@ -142,7 +142,7 @@
                             <a href="/Moderator/ViewNannyVerificationDetail/@item.Id"
                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-orange-50 text-orange-600 border border-orange-200 hover:bg-orange-100 transition-all">
                                 <span class="material-icons-round text-sm">visibility</span>
-                                Xem xet
+                                Xem xét
                             </a>
                         </td>
                     </tr>

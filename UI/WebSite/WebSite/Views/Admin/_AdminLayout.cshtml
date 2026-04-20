@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>@ViewData["Title"] - Admin | NannyMatch</title>
+    <title>@ViewData["Title"] - Quản trị | NannyMatch</title>
     <link href="~/css/tailwind.generated.css" rel="stylesheet" asp-append-version="true" />
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
@@ -74,7 +74,7 @@
                     </div>
                     <div class="sidebar-text flex-1 min-w-0">
                         <p class="text-sm font-semibold text-white truncate">
-                            @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? "Admin")
+                            @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? "Quản trị viên")
                         </p>
                         <p class="text-[10px] text-orange-400 uppercase tracking-wider font-bold">Quản Trị Viên</p>
                     </div>
@@ -95,7 +95,7 @@
             <!-- Top Header Bar -->
             <header class="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-gray-100 flex flex-col"
                     style="box-shadow:0 2px 20px rgba(249,115,22,0.07);">
-                <!-- Shimmer accent line — orange -->
+                <!-- Gạch nhấn cam -->
                 <div class="admin-topbar-accent"></div>
                 <!-- Header row -->
                 <div class="flex items-center justify-between px-6" style="height:60px;">
@@ -124,7 +124,7 @@
                                 @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value?.Substring(0, 1).ToUpper() ?? "A")
                             </div>
                             <span class="text-sm font-semibold text-gray-700 hidden sm:block">
-                                @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? "Admin")
+                                @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? "Quản trị viên")
                             </span>
                         </div>
                     </div>

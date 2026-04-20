@@ -200,7 +200,7 @@
                                 <img id="avatarPreview"
                                      class="@((string.IsNullOrWhiteSpace(avatarUrl) ? "hidden " : "") + "avatar-preview-img")"
                                      src="@avatarUrl"
-                                     alt="Avatar preview" />
+                                     alt="Xem trước ảnh đại diện" />
                                 <div id="avatarPlaceholder" class="@((string.IsNullOrWhiteSpace(avatarUrl) ? "" : "hidden ") + "avatar-preview-placeholder")">
                                     Chưa có ảnh
                                 </div>
@@ -208,7 +208,7 @@
                             <input type="hidden" asp-for="AvatarUrl" value="@avatarUrl" />
 
                             <div class="w-full mt-4">
-                                <label class="form-label" for="AvatarFile">Upload ảnh (.jpg, .jpeg, .png)</label>
+                                <label class="form-label" for="AvatarFile">Tải ảnh lên (.jpg, .jpeg, .png)</label>
                                 <input type="file" asp-for="AvatarFile" id="AvatarFile" accept=".jpg,.jpeg,.png" class="hidden" />
                                 <div class="avatar-upload-actions">
                                     <button type="button" id="avatarUploadBtn" class="profile-primary-btn flex-1">Chọn ảnh</button>
@@ -218,7 +218,7 @@
                                 <p id="avatarUploadError" class="hidden text-xs text-red-600 mt-1"></p>
                             </div>
                             <div class="w-full mt-3">
-                                <p id="avatarFileName" class="avatar-file-name">Chưa chọn file nào.</p>
+                                <p id="avatarFileName" class="avatar-file-name">Chưa chọn tệp nào.</p>
                             </div>
                         </div>
                     </div>
@@ -309,7 +309,7 @@
             }
             function setAvatarFileName(value) {
                 if (!avatarFileName) return;
-                avatarFileName.textContent = value || "Chưa chọn file nào.";
+                avatarFileName.textContent = value || "Chưa chọn tệp nào.";
             }
             function restoreInitialAvatar() {
                 clearPreview();
@@ -441,7 +441,7 @@
                 var monthDiff = today.getMonth() - dob.getMonth();
                 if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) age--;
                 if (age <= 30) {
-                    dobError.textContent = "Nanny phải lớn hơn 30 tuổi.";
+                    dobError.textContent = "Bảo mẫu phải lớn hơn 30 tuổi.";
                     dobError.classList.remove("hidden");
                     return false;
                 }

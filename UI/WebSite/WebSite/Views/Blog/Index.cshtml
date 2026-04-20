@@ -2,7 +2,7 @@
 @using WebSite.Models.Blog
 @{
     Layout = "~/Views/Shared/_Layout.cshtml";
-    ViewData["Title"] = "Blog - NannyMatch";
+    ViewData["Title"] = "Bài blog - NannyMatch";
     var categories  = ViewBag.Categories as List<BlogCategoryOption> ?? new();
     var search      = ViewBag.Search as string ?? "";
     var categoryId  = ViewBag.CategoryId as Guid?;

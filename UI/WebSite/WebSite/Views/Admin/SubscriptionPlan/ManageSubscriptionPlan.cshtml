@@ -145,7 +145,7 @@
                                 <span class="text-xs text-gray-400 font-mono">@plan.Code</span>
                             </div>
                         </td>
-                        <td><span class="badge @roleBadge">@plan.TargetRole</span></td>
+                        <td><span class="badge @roleBadge">@(plan.TargetRole == "Parent" ? "Phụ Huynh" : plan.TargetRole == "Nanny" ? "Người Giữ Trẻ" : plan.TargetRole)</span></td>
                         <td class="text-gray-500 text-sm">@plan.Price.ToString("N0") đ</td>
                         <td class="text-gray-500 text-sm">@plan.DurationDays ngày</td>
                         <td>
@@ -161,7 +161,7 @@
                         <td>
                             <div class="flex items-center justify-center gap-1.5">
                                 <a href="/Admin/ViewSubscriptionPlanDetail/@plan.Id"
-                                   title="View detail"
+                                   title="Xem chi tiết"
                                    class="w-8 h-8 rounded-xl hover:bg-orange-50 hover:text-orange-600 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-orange-200">
                                     <span class="material-icons-round text-base">visibility</span>
                                 </a>

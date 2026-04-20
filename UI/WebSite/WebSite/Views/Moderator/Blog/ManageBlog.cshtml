@@ -2,7 +2,7 @@
 @model WebSite.Models.Blog.BlogListResponse
 @{
     Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
-    ViewData["Title"] = "Quản lý Blog";
+    ViewData["Title"] = "Quản lý blog";
     var currentSearch    = ViewBag.Search    as string ?? "";
     var currentStatus    = ViewBag.Status    as string ?? "";
     var currentIsDeleted = ViewBag.IsDeleted as string ?? "";
@@ -27,13 +27,13 @@
 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
     <div>
         <h1 class="page-title mt-2">
-            Quản lý <span class="gradient-text">Blog</span>
+            Quản lý <span class="gradient-text">blog</span>
         </h1>
         <p class="page-subtitle">Thêm mới, cập nhật hoặc quản lý các bài viết blog.</p>
     </div>
     <a href="/Moderator/CreateBlog" class="btn-primary flex-shrink-0">
         <span class="material-icons-round text-base">add_circle_outline</span>
-        Thêm Blog mới
+        Thêm bài viết mới
     </a>
 </div>
 

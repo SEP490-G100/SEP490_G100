@@ -1,9 +1,9 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>@ViewData["Title"] - Moderator | NannyMatch</title>
+    <title>@ViewData["Title"] - Kiểm duyệt viên | NannyMatch</title>
     <link href="~/css/tailwind.generated.css" rel="stylesheet" asp-append-version="true" />
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
@@ -22,7 +22,7 @@
 
             <!-- Brand -->
             <div class="flex items-center gap-3 px-5 py-5 border-b border-white/10">
-                <img src="~/img/nanny-logo.jpg" alt="Logo" class="w-9 h-9 rounded-xl object-cover shadow-lg flex-shrink-0" />
+                <img src="~/img/nanny-logo.jpg" alt="Logo NannyMatch" class="w-9 h-9 rounded-xl object-cover shadow-lg flex-shrink-0" />
                 <div class="sidebar-text overflow-hidden">
                     <span class="text-lg font-bold tracking-tight" style="background:linear-gradient(135deg,#F97316,#FB923C);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">NannyMatch</span>
                     <p class="text-[10px] text-gray-400 -mt-0.5 uppercase tracking-widest">Trang Quản trị viên</p>
@@ -72,19 +72,19 @@
                 <a href="/Moderator/ManageBlog"
                    class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() is "ManageBlog" or "CreateBlog" or "ViewBlogDetail" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">article</span>
-                    <span class="sidebar-text">Quản lý Blog</span>
+                    <span class="sidebar-text">Quản lý blog</span>
                 </a>
 
                 <a href="/Moderator/ManageFAQ"
                    class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() is "ManageFAQ" or "CreateFAQ" or "ViewFAQDetail" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">help_outline</span>
-                    <span class="sidebar-text">Quản lý FAQ</span>
+                    <span class="sidebar-text">Quản lý hỏi đáp</span>
                 </a>
 
                 <a href="/Moderator/ManageBlogCategory"
                    class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() is "ManageBlogCategory" or "CreateBlogCategory" or "ViewBlogCategoryDetail" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">category</span>
-                    <span class="sidebar-text">Danh mục Blog</span>
+                    <span class="sidebar-text">Danh mục blog</span>
                 </a>
             </nav>
 
@@ -96,9 +96,9 @@
                     </div>
                     <div class="sidebar-text flex-1 min-w-0">
                         <p class="text-sm font-semibold text-white truncate">
-                            @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? "Moderator")
+                            @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? "Điều hành viên")
                         </p>
-                        <p class="text-xs text-gray-400 truncate">Moderator</p>
+                        <p class="text-xs text-gray-400 truncate">Kiểm duyệt viên</p>
                     </div>
                     <form asp-controller="Auth" asp-action="Logout" method="post" class="sidebar-text flex-shrink-0">
                         @Html.AntiForgeryToken()
@@ -138,7 +138,7 @@
                             <button type="button"
                                     id="notificationToggle"
                                     class="nm-icon-btn"
-                                    aria-label="Thong bao">
+                                    aria-label="Thông báo">
                                 <span class="material-icons-round text-[20px]">notifications</span>
                                 <span id="notificationBadge" class="nm-badge-dot hidden"></span>
                             </button>
@@ -167,7 +167,7 @@
                                 @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value?.Substring(0, 1).ToUpper() ?? "M")
                             </div>
                             <span class="text-sm font-semibold text-gray-700 hidden sm:block">
-                                @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? "Moderator")
+                                @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? "Kiểm duyệt viên")
                             </span>
                         </div>
                     </div>
@@ -270,6 +270,7 @@
                 const title = normalizeText(item?.title);
                 if (!typeLabel) return false;
                 if (typeLabel.includes('moderator')) return true;
+                if (typeLabel.includes('kiểm duyệt')) return true;
                 return typeLabel !== title;
             };
 
@@ -363,13 +364,13 @@
 
                 switch (type) {
                     case 'verification-request-submitted':
-                        return { message: 'Co yư cư xác minh mới Đang chờ duyệt.', type: 'info' };
+                        return { message: 'Có yêu cầu xác minh mới đang chờ duyệt.', type: 'info' };
                     case 'job-posting-review-required':
-                        return { message: 'Có bài đăng mới đang chờ moderator duyệt.', type: 'info' };
+                        return { message: 'Có bài đăng mới đang chờ kiểm duyệt viên duyệt.', type: 'info' };
                     case 'complain-submitted':
-                        return { message: 'Co bao cao mới can xu ly.', type: 'warning' };
+                        return { message: 'Có báo cáo mới cần xử lý.', type: 'warning' };
                     case 'system-warning':
-                        return { message: 'Co canh bao he thong can xu ly.', type: 'warning' };
+                        return { message: 'Có cảnh báo hệ thống cần xử lý.', type: 'warning' };
                     default:
                         return null;
                 }

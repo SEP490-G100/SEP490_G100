@@ -1,4 +1,4 @@
-@{
+﻿@{
     ViewData["Title"] = "Tin nhắn";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
@@ -743,7 +743,7 @@
                     </div>
                 </div>
                 <div class="chat-header-actions">
-                    <button class="chat-action-btn danger" id="btnBlockConv" title="Chặn">
+                    <button type="button" class="chat-action-btn danger" id="btnBlockConv" title="Khóa hội thoại" aria-label="Khóa hoặc mở khóa hội thoại">
                         <span class="material-icons-round" style="font-size:18px;">block</span>
                     </button>
                 </div>
@@ -781,7 +781,7 @@
         <textarea class="modal-input" id="reportReason" placeholder="Lý do báo cáo..." rows="3" style="resize:none;"></textarea>
         <textarea class="modal-input" id="reportEvidence" placeholder="Bằng chứng / mô tả thêm (tùy chọn)..." rows="2" style="resize:none;"></textarea>
         <div class="modal-actions">
-            <button class="btn-cancel" onclick="closeReportModal()">Huỷ</button>
+            <button class="btn-cancel" onclick="closeReportModal()">Hủy</button>
             <button class="btn-danger" onclick="submitReport()">Gửi báo cáo</button>
         </div>
     </div>
@@ -790,11 +790,11 @@
 <!-- ═══ MODAL: Delete confirm ═════════════════════════════════════════ -->
 <div id="deleteModal" class="modal-backdrop" style="display:none;">
     <div class="modal-card">
-        <div class="modal-title">Xoá tin nhắn</div>
-        <div class="modal-sub">Tin nhắn sẽ bị xoá khỏi cuộc hội thoại này. Hành động này không thể hoàn tác.</div>
+        <div class="modal-title">Xóa tin nhắn</div>
+        <div class="modal-sub">Tin nhắn sẽ bị xóa khỏi cuộc hội thoại này. Hành động này không thể hoàn tác.</div>
         <div class="modal-actions">
-            <button class="btn-cancel" onclick="closeDeleteModal()">Huỷ</button>
-            <button class="btn-danger" onclick="confirmDelete()">Xoá</button>
+            <button class="btn-cancel" onclick="closeDeleteModal()">Hủy</button>
+            <button class="btn-danger" onclick="confirmDelete()">Xóa</button>
         </div>
     </div>
 </div>
@@ -980,7 +980,7 @@
 
                 const ctx = isMine
                     ? `<div class="msg-ctx-menu" id="ctx-${m.id}">
-                        <div class="ctx-item danger" onclick="openDeleteModal('${m.id}')"><span class="material-icons-round" style="font-size:16px;">delete</span>Xoá</div>
+                        <div class="ctx-item danger" onclick="openDeleteModal('${m.id}')"><span class="material-icons-round" style="font-size:16px;">delete</span>Xóa</div>
                        </div>`
                     : `<div class="msg-ctx-menu" id="ctx-${m.id}">
                         <div class="ctx-item danger" onclick="openReportModal('${m.id}')"><span class="material-icons-round" style="font-size:16px;">flag</span>Báo cáo</div>
@@ -1015,7 +1015,7 @@
             const isMine = resolveMessageIsMine(m);
             const initial = (m.senderName || 'U').charAt(0).toUpperCase();
             const ctx = isMine
-                ? `<div class="msg-ctx-menu" id="ctx-${m.id}"><div class="ctx-item danger" onclick="openDeleteModal('${m.id}')"><span class="material-icons-round" style="font-size:16px;">delete</span>Xoá</div></div>`
+                ? `<div class="msg-ctx-menu" id="ctx-${m.id}"><div class="ctx-item danger" onclick="openDeleteModal('${m.id}')"><span class="material-icons-round" style="font-size:16px;">delete</span>Xóa</div></div>`
                 : `<div class="msg-ctx-menu" id="ctx-${m.id}"><div class="ctx-item danger" onclick="openReportModal('${m.id}')"><span class="material-icons-round" style="font-size:16px;">flag</span>Báo cáo</div></div>`;
 
             const row = document.createElement('div');
@@ -1136,14 +1136,26 @@
             const inputArea = document.getElementById('chatInputArea');
             const blockBtn = document.getElementById('btnBlockConv');
             const canUnblock = canCurrentUserUnblock();
+            const blockIcon = '<span class="material-icons-round" style="font-size:18px;">block</span>';
+
             if (isBlocked) {
                 if (banner) banner.style.display = 'flex';
                 if (inputArea) inputArea.style.display = 'none';
-                if (blockBtn) { blockBtn.textContent = canUnblock ? 'Mở khóa' : 'Đã bị khóa'; blockBtn.disabled = !canUnblock; }
+                if (blockBtn) {
+                    blockBtn.innerHTML = blockIcon;
+                    blockBtn.title = canUnblock ? 'Mở khóa hội thoại' : 'Đã khóa — chỉ người khóa mới có thể mở khóa';
+                    blockBtn.setAttribute('aria-label', canUnblock ? 'Mở khóa hội thoại' : 'Không thể mở khóa');
+                    blockBtn.disabled = !canUnblock;
+                }
             } else {
                 if (banner) banner.style.display = 'none';
                 if (inputArea) inputArea.style.display = 'flex';
-                if (blockBtn) { blockBtn.textContent = 'Khóa hội thoại'; blockBtn.disabled = false; }
+                if (blockBtn) {
+                    blockBtn.innerHTML = blockIcon;
+                    blockBtn.title = 'Khóa hội thoại';
+                    blockBtn.setAttribute('aria-label', 'Khóa hội thoại');
+                    blockBtn.disabled = false;
+                }
             }
         }
 
@@ -1209,7 +1221,7 @@
                     headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getAntiForgery() },
                     body: JSON.stringify({ reason, evidence: document.getElementById('reportEvidence').value.trim() })
                 });
-                alert('✅ Báo cáo đã được gửi. Cảm ơn bạn đã giúp giữ gìn cộng đồng!');
+                alert('Báo cáo đã được gửi. Cảm ơn bạn đã giúp giữ gìn cộng đồng.');
             } catch {}
             closeReportModal();
         }
@@ -1256,21 +1268,39 @@
         function applyMessageDeleted(messageId, conversationId) {
             const bubble = document.querySelector(`#msg-${messageId} .msg-bubble`);
             if (bubble) {
-                bubble.textContent = '[Tin nhắn đã bị xoá]';
+                bubble.textContent = '[Tin nhắn đã bị xóa]';
                 bubble.classList.add('deleted');
             }
             if (conversationId) {
                 updateConversationPreview(
-                    { conversationId, content: '[Tin nhắn đã bị xoá]', createdAt: new Date().toISOString() },
+                    { conversationId, content: '[Tin nhắn đã bị xóa]', createdAt: new Date().toISOString() },
                     true
                 );
+            }
+        }
+
+        async function goToContractDetailByHiringRecord(hiringRecordId) {
+            if (!hiringRecordId) return;
+            try {
+                const res = await fetch(`/Hiring/Record?hiringRecordId=${encodeURIComponent(hiringRecordId)}`, {
+                    credentials: 'include'
+                });
+                const json = await res.json();
+                if (!res.ok || !json?.success || !json?.data?.contractId) {
+                    alert(json?.message || 'Khong mo duoc hop dong chi tiet.');
+                    return;
+                }
+
+                window.open(`/Contract/Detail/${json.data.contractId}`, '_blank', 'noopener');
+            } catch {
+                alert('Khong mo duoc hop dong chi tiet.');
             }
         }
 
         function renderHiringOfferCard(message, isMine) {
             const hiringRecordId = message.attachmentUrl || '';
             return `
-            <div class="hiring-offer-card" onclick="window.__openOfferDetail?.('${esc(hiringRecordId)}')" title="Bấm để xem chi tiết đề nghị việc làm">
+            <div class="hiring-offer-card" onclick="goToContractDetailByHiringRecord('${esc(hiringRecordId)}')" title="Bam de xem chi tiet de nghi viec lam">
                 <div class="hiring-offer-card__header">
                     <span class="material-icons-round" style="font-size:20px;">handshake</span>
                     <span>Đề nghị việc làm</span>
@@ -1386,4 +1416,3 @@
 }
 
 <partial name="~/Views/Hiring/_OfferCard.cshtml" />
-<partial name="~/Views/Hiring/_OfferDetailModal.cshtml" />

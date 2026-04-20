@@ -1,6 +1,6 @@
-﻿const JOB_TYPES = { 1: 'Full-time', 2: 'Part-time', 3: 'Qua dem' };
-const MODERATION_LABELS = { 0: 'Dang cho duyet', 1: 'Da bi tu choi', 2: 'Cong khai' };
-const POST_STATUS_LABELS = { 1: 'Cong khai', 2: 'An bai dang' };
+﻿const JOB_TYPES = { 1: 'Toàn thời gian', 2: 'Bán thời gian', 3: 'Qua đêm' };
+const MODERATION_LABELS = { 0: 'Đang chờ duyệt', 1: 'Đã bị từ chối', 2: 'Công khai' };
+const POST_STATUS_LABELS = { 1: 'Công khai', 2: 'Ẩn bài đăng' };
 
 let map;
 let markers = [];
@@ -26,8 +26,8 @@ const ownedJobIds = new Set();
 const appliedJobIds = new Set();
 let ownedJobsLoaded = false;
 
-const DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
-const ROW_LABELS = ['Morning', 'Afternoon', 'Evening', 'Night'];
+const DAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+const ROW_LABELS = ['Sáng', 'Chiều', 'Tối', 'Đêm'];
 
 const GEO_FALLBACK = {
   'Ho Chi Minh': { lat: 10.776, lng: 106.701, radius: 7000, zoom: 11 },
@@ -392,24 +392,24 @@ function escapeJs(value) {
 }
 
 function formatSalary(value) {
-  if (!value) return 'Khong xac dinh';
+  if (!value) return 'Không xác định';
   const number = Number(value);
-  if (!Number.isFinite(number) || number <= 0) return 'Khong xac dinh';
+  if (!Number.isFinite(number) || number <= 0) return 'Không xác định';
   return new Intl.NumberFormat('vi-VN').format(number) + ' VND';
 }
 
 function formatSalaryRange(min, max, negotiable) {
-  if (negotiable) return 'Thuong luong';
+  if (negotiable) return 'Thỏa thuận';
   if (min && max) return `${formatSalary(min)} - ${formatSalary(max)}`;
-  if (min) return `Tu ${formatSalary(min)}`;
-  if (max) return `Den ${formatSalary(max)}`;
-  return 'Khong xac dinh';
+  if (min) return `Từ ${formatSalary(min)}`;
+  if (max) return `Đến ${formatSalary(max)}`;
+  return 'Không xác định';
 }
 
 function getJobPlanLabel(job) {
   const code = String(job?.subscriptionPlanCode || '').trim().toUpperCase();
-  if (code === 'PRO') return 'Parent Pro';
-  if (code === 'PLUS') return 'Parent Plus';
+  if (code === 'PRO') return 'Phụ huynh Pro';
+  if (code === 'PLUS') return 'Phụ huynh Plus';
   return '';
 }
 
@@ -422,9 +422,9 @@ function renderJobBenefitBadges(job) {
   }
 
   if (job?.searchPriority) {
-    badges.push('<span class="px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold">Uu tien tim kiem</span>');
+    badges.push('<span class="px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold">Ưu tiên tìm kiếm</span>');
   } else if (job?.featuredBadge) {
-    badges.push('<span class="px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold">Tin noi bat</span>');
+    badges.push('<span class="px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold">Tin nổi bật</span>');
   }
 
   return badges.join('');
@@ -469,10 +469,10 @@ function initMoneyInputs() {
 }
 
 function formatAgeRange(min, max) {
-  if (min && max) return `${min} - ${max} tuoi`;
-  if (min) return `Tu ${min} tuoi`;
-  if (max) return `Den ${max} tuoi`;
-  return 'Khong yeu cau';
+  if (min && max) return `${min} - ${max} tuổi`;
+  if (min) return `Từ ${min} tuổi`;
+  if (max) return `Đến ${max} tuổi`;
+  return 'Không yêu cầu';
 }
 
 function notifyToast(message, type = 'info') {
@@ -529,7 +529,7 @@ function updateJobFavoriteUi(jobId, isFavorite) {
   document.querySelectorAll(`.job-save-btn[data-job-id="${normalizedId}"]`).forEach((button) => {
     button.classList.toggle('active', !!isFavorite);
     button.setAttribute('aria-pressed', isFavorite ? 'true' : 'false');
-    button.title = isFavorite ? 'Bo luu bai dang' : 'Luu bai dang';
+    button.title = isFavorite ? 'Bỏ lưu bài đăng' : 'Lưu bài đăng';
     button.setAttribute('aria-label', button.title);
     const icon = button.querySelector('.material-icons-round');
     if (icon) icon.textContent = isFavorite ? 'bookmark' : 'bookmark_border';
@@ -549,12 +549,12 @@ async function toggleJobFavorite(jobId, event) {
   event?.stopPropagation?.();
 
   if (!isLoggedIn()) {
-    notifyToast('Vui long dang nhap de luu bai dang.', 'warning');
+    notifyToast('Vui lòng đăng nhập để lưu bài đăng.', 'warning');
     return;
   }
 
   if (!isNannyRole()) {
-    notifyToast('Chi Nanny moi co quyen luu bai dang.', 'warning');
+    notifyToast('Chỉ bảo mẫu mới có quyền lưu bài đăng.', 'warning');
     return;
   }
 
@@ -568,7 +568,7 @@ async function toggleJobFavorite(jobId, event) {
     const isSuccess = !!(json?.success || payload?.success);
 
     if (!isSuccess) {
-      notifyToast(json?.message || 'Khong the cap nhat luu bai dang.', 'error');
+      notifyToast(json?.message || 'Không thể cập nhật lưu bài đăng.', 'error');
       return;
     }
 
@@ -578,11 +578,11 @@ async function toggleJobFavorite(jobId, event) {
 
     setJobFavoriteState(jobId, favoriteState);
     notifyToast(
-      payload?.message || json?.message || (favoriteState ? 'Da luu bai dang.' : 'Da bo luu bai dang.'),
+      payload?.message || json?.message || (favoriteState ? 'Đã lưu bài đăng.' : 'Đã bỏ lưu bài đăng.'),
       favoriteState ? 'success' : 'info'
     );
   } catch {
-    notifyToast('Khong the cap nhat luu bai dang.', 'error');
+    notifyToast('Không thể cập nhật lưu bài đăng.', 'error');
   }
 }
 
@@ -721,18 +721,18 @@ async function uploadComplainMediaFiles(files, endpoint, emptyMessage) {
       result = JSON.parse(raw);
     } catch {
       if (response.redirected && response.url && response.url.includes('/Auth/Login')) {
-        throw new Error('Phien dang nhap da het han. Vui long dang nhap lai.');
+        throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
       }
-      throw new Error('Server tra ve du lieu khong hop le khi upload media.');
+      throw new Error('Máy chủ trả về dữ liệu không hợp lệ khi tải media.');
     }
   }
 
   if (!response.ok) {
-    throw new Error(result?.message || `Upload media that bai (HTTP ${response.status}).`);
+    throw new Error(result?.message || `Tải media thất bại (HTTP ${response.status}).`);
   }
 
   if (!result?.success || !result?.data?.urls || !Array.isArray(result.data.urls) || result.data.urls.length === 0) {
-    throw new Error(result?.message || 'Upload media that bai.');
+    throw new Error(result?.message || 'Tải media thất bại.');
   }
 
   return result.data.urls;
@@ -758,11 +758,11 @@ function uploadSingleComplainImageForTiny(blobInfo) {
       const urls = await uploadComplainMediaFiles(
         [blobInfo.blob()],
         '/Complain/UploadComplainMedia?mediaType=image',
-        'Vui long chon it nhat mot anh.'
+        'Vui lòng chọn ít nhất một ảnh.'
       );
       resolve(urls[0]);
     } catch (error) {
-      reject({ message: error?.message || 'Khong the upload anh.' });
+      reject({ message: error?.message || 'Không thể tải ảnh lên.' });
     }
   });
 }
@@ -780,12 +780,12 @@ function handleComplainTinyFilePicker(callback, meta) {
     if (!file) return;
 
     try {
-      const urls = await uploadComplainMediaFiles([file], endpoint, 'Vui long chon file de upload.');
+      const urls = await uploadComplainMediaFiles([file], endpoint, 'Vui lòng chọn tệp để tải lên.');
       const url = urls[0];
       if (isImage) callback(url, { alt: file.name || 'image' });
       else callback(url, { source2: '', poster: '' });
     } catch (error) {
-      notifyToast(error?.message || 'Khong the upload media.', 'error');
+      notifyToast(error?.message || 'Không thể tải tệp media lên.', 'error');
     }
   });
 }
@@ -794,17 +794,17 @@ const complainMediaUploadConfig = {
   image: {
     accept: 'image/*',
     endpoint: '/Complain/UploadComplainMedia?mediaType=image',
-    emptyMessage: 'Vui long chon it nhat mot anh.',
-    successMessage: 'Upload anh thanh cong.',
-    failedMessage: 'Khong the upload anh.',
-    buildHtml: (url) => `<p><img src="${url}" alt="complain-image" /></p>`
+    emptyMessage: 'Vui lòng chọn ít nhất một ảnh.',
+    successMessage: 'Tải ảnh lên thành công.',
+    failedMessage: 'Không thể tải ảnh lên.',
+    buildHtml: (url) => `<p><img src="${url}" alt="Ảnh kèm khiếu nại" /></p>`
   },
   video: {
     accept: 'video/mp4,video/webm,video/ogg,video/quicktime,.mp4,.webm,.ogg,.mov',
     endpoint: '/Complain/UploadComplainMedia?mediaType=video',
-    emptyMessage: 'Vui long chon it nhat mot video.',
-    successMessage: 'Upload video thanh cong.',
-    failedMessage: 'Khong the upload video.',
+    emptyMessage: 'Vui lòng chọn ít nhất một video.',
+    successMessage: 'Tải video lên thành công.',
+    failedMessage: 'Không thể tải video lên.',
     buildHtml: (url) => `<p><video controls preload="metadata" src="${url}"></video></p>`
   }
 };
@@ -858,13 +858,13 @@ function updatePreviewActionButtons(job) {
       applyBtn.classList.toggle('cursor-not-allowed', applied);
       applyBtn.dataset.jobId = job.id;
       applyBtn.onclick = (event) => applyJob(job.id, event);
-      if (applyTextEl) applyTextEl.textContent = applied ? 'Da ung tuyen' : 'Ung tuyen ngay';
+      if (applyTextEl) applyTextEl.textContent = applied ? 'Đã ứng tuyển' : 'Ứng tuyển ngay';
     } else {
       applyBtn.disabled = false;
       applyBtn.classList.remove('opacity-60', 'cursor-not-allowed');
       applyBtn.onclick = null;
       applyBtn.removeAttribute('data-job-id');
-      if (applyTextEl) applyTextEl.textContent = 'Ung tuyen ngay';
+      if (applyTextEl) applyTextEl.textContent = 'Ứng tuyển ngay';
     }
   }
 
@@ -884,36 +884,36 @@ async function applyJob(jobId, event) {
   event?.stopPropagation?.();
 
   if (!isLoggedIn()) {
-    notifyToast('Vui long dang nhap de ung tuyen bai dang.', 'warning');
+    notifyToast('Vui lòng đăng nhập để ứng tuyển bài đăng.', 'warning');
     window.location.href = '/Auth/Login';
     return;
   }
 
   if (!isNannyRole()) {
-    notifyToast('Chi Nanny moi co quyen ung tuyen bai dang.', 'warning');
+    notifyToast('Chỉ bảo mẫu mới có quyền ứng tuyển bài đăng.', 'warning');
     return;
   }
 
   if (!jobId) {
-    notifyToast('Khong tim thay bai dang de ung tuyen.', 'error');
+    notifyToast('Không tìm thấy bài đăng để ứng tuyển.', 'error');
     return;
   }
 
   if (isJobApplied(jobId)) {
-    notifyToast('Ban da gui don ung tuyen cho bai dang nay.', 'info');
+    notifyToast('Bạn đã gửi đơn ứng tuyển cho bài đăng này.', 'info');
     return;
   }
 
   const applyBtn = document.getElementById('pv-applyBtn');
   const applyTextEl = document.getElementById('pv-applyBtnText');
-  const previousText = applyTextEl?.textContent || 'Ung tuyen ngay';
+  const previousText = applyTextEl?.textContent || 'Ứng tuyển ngay';
 
   try {
     if (applyBtn) {
       applyBtn.disabled = true;
       applyBtn.classList.add('opacity-60', 'cursor-not-allowed');
     }
-    if (applyTextEl) applyTextEl.textContent = 'Dang gui...';
+    if (applyTextEl) applyTextEl.textContent = 'Đang gửi...';
 
     const response = await fetch(`/Search/ApplyJob?jobPostingId=${encodeURIComponent(jobId)}`, {
       method: 'POST',
@@ -924,7 +924,7 @@ async function applyJob(jobId, event) {
     const isSuccess = !!(json?.success || payload?.success);
 
     if (!isSuccess) {
-      notifyToast(json?.message || payload?.message || 'Khong the ung tuyen bai dang.', 'error');
+      notifyToast(json?.message || payload?.message || 'Không thể ứng tuyển bài đăng.', 'error');
       if (applyBtn) {
         applyBtn.disabled = false;
         applyBtn.classList.remove('opacity-60', 'cursor-not-allowed');
@@ -937,10 +937,10 @@ async function applyJob(jobId, event) {
     const activeJob = currentJobs.find((job) => normalizeGuid(job?.id) === normalizeGuid(jobId));
     if (activeJob) updatePreviewActionButtons(activeJob);
 
-    notifyToast('Gui don thanh cong. Vui long cho Parent phan hoi.', 'success');
+    notifyToast('Gửi đơn thành công. Vui lòng chờ phụ huynh phản hồi.', 'success');
     window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
   } catch {
-    notifyToast('Khong the ung tuyen bai dang.', 'error');
+    notifyToast('Không thể ứng tuyển bài đăng.', 'error');
     if (applyBtn) {
       applyBtn.disabled = false;
       applyBtn.classList.remove('opacity-60', 'cursor-not-allowed');
@@ -954,13 +954,13 @@ function openJobComplainModal(job, event) {
   event?.stopPropagation?.();
 
   if (!isLoggedIn()) {
-    notifyToast('Vui long dang nhap de gui phan nan.', 'warning');
+    notifyToast('Vui lòng đăng nhập để gửi khiếu nại.', 'warning');
     window.location.href = '/Auth/Login';
     return;
   }
 
   if (!canComplainJob(job)) {
-    notifyToast('Ban khong the phan nan bai dang cua chinh minh.', 'warning');
+    notifyToast('Bạn không thể khiếu nại bài đăng của chính mình.', 'warning');
     return;
   }
 
@@ -970,7 +970,7 @@ function openJobComplainModal(job, event) {
 
   const targetEl = document.getElementById('jobComplainTarget');
   const jobPostingIdInput = document.getElementById('jobComplainJobPostingId');
-  if (targetEl) targetEl.textContent = job?.title ? `Bai dang: ${job.title}` : 'Bai dang';
+  if (targetEl) targetEl.textContent = job?.title ? `Bài đăng: ${job.title}` : 'Bài đăng';
   if (jobPostingIdInput) jobPostingIdInput.value = job?.id || '';
 
   setComplainEditorContent('jobComplainReason', '');
@@ -979,7 +979,7 @@ function openJobComplainModal(job, event) {
   const submitBtn = document.getElementById('jobComplainSubmitBtn');
   if (submitBtn) {
     submitBtn.disabled = false;
-    submitBtn.textContent = 'Gui phan nan';
+    submitBtn.textContent = 'Gửi khiếu nại';
   }
 
   document.getElementById('jobComplainModal')?.classList.add('show');
@@ -995,7 +995,7 @@ function closeJobComplainModal() {
 
 async function submitJobComplain() {
   if (!pendingComplainJob?.id) {
-    notifyToast('Khong tim thay bai dang can phan nan.', 'error');
+    notifyToast('Không tìm thấy bài đăng cần khiếu nại.', 'error');
     return;
   }
 
@@ -1008,7 +1008,7 @@ async function submitJobComplain() {
   const evidence = String(evidenceHtml || '').trim();
 
   if (reason.length < 5) {
-    notifyToast('Ly do phan nan phai co it nhat 5 ky tu.', 'warning');
+    notifyToast('Lý do khiếu nại phải có ít nhất 5 ký tự.', 'warning');
     if (typeof tinymce !== 'undefined' && tinymce.get('jobComplainReason')) tinymce.get('jobComplainReason').focus();
     else reasonEl?.focus();
     return;
@@ -1019,7 +1019,7 @@ async function submitJobComplain() {
 
   if (submitBtn) {
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Dang gui...';
+    submitBtn.textContent = 'Đang gửi...';
   }
 
   try {
@@ -1038,24 +1038,24 @@ async function submitJobComplain() {
     const isSuccess = !!(json?.success || payload?.success);
 
     if (!isSuccess) {
-      notifyToast(json?.message || payload?.message || 'Khong the gui phan nan bai dang.', 'error');
+      notifyToast(json?.message || payload?.message || 'Không thể gửi khiếu nại bài đăng.', 'error');
       isSubmittingJobComplain = false;
       if (submitBtn) {
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Gui phan nan';
+        submitBtn.textContent = 'Gửi khiếu nại';
       }
       return;
     }
 
     closeJobComplainModal();
-    notifyToast('Gui phan nan thanh cong.', 'success');
+    notifyToast('Gửi khiếu nại thành công.', 'success');
     window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
   } catch {
-    notifyToast('Khong the gui phan nan bai dang.', 'error');
+    notifyToast('Không thể gửi khiếu nại bài đăng.', 'error');
     isSubmittingJobComplain = false;
     if (submitBtn) {
       submitBtn.disabled = false;
-      submitBtn.textContent = 'Gui phan nan';
+      submitBtn.textContent = 'Gửi khiếu nại';
     }
   }
 }
@@ -1176,7 +1176,7 @@ function highlightOnMap(idx) {
 
 function renderReadOnlySchedule(slots) {
   if (!Array.isArray(slots) || !slots.length) {
-    return '<span class="text-sm text-gray-400">Chua chon lich cu the.</span>';
+    return '<span class="text-sm text-gray-400">Chưa chọn lịch cụ thể.</span>';
   }
   const selectedSet = new Set(slots.map((slot) => `${slot.dayOfWeek}-${slot.timeSlot}`));
   let html = '<div class="schedule-grid schedule-grid--readonly"><div></div>';
@@ -1197,15 +1197,15 @@ function renderJobs(jobs) {
   const resultCount = document.getElementById('resultCount');
   if (!list || !resultCount) return;
 
-  resultCount.textContent = `${jobs.length} tin dang`;
+  resultCount.textContent = `${jobs.length} tin đăng`;
   clearMapMarkers();
 
   if (!jobs.length) {
     list.innerHTML = `
       <div class="rounded-[24px] border border-dashed border-slate-200 bg-white px-6 py-16 text-center text-slate-500">
         <span class="material-icons-round text-[34px] text-orange-300">search_off</span>
-        <h3 class="mt-3 text-lg font-bold text-slate-900">Khong tim thay bai dang</h3>
-        <p class="mt-2 text-sm text-slate-500">Thu tim o thanh pho khac hoac doi tu khoa.</p>
+        <h3 class="mt-3 text-lg font-bold text-slate-900">Không tìm thấy bài đăng</h3>
+        <p class="mt-2 text-sm text-slate-500">Thử tìm ở thành phố khác hoặc đổi từ khoá.</p>
       </div>`;
     return;
   }
@@ -1215,8 +1215,8 @@ function renderJobs(jobs) {
              data-idx="${idx}" data-id="${escapeHtml(job.id)}">
       <div class="flex items-start justify-between gap-3">
         <div class="min-w-0">
-          <h3 class="text-[18px] leading-6 font-extrabold text-slate-900">${escapeHtml(job.title || 'Tin dang')}</h3>
-          <p class="mt-2 text-sm font-semibold text-slate-500">${escapeHtml(job.parentName || 'Phu huynh')}</p>
+          <h3 class="text-[18px] leading-6 font-extrabold text-slate-900">${escapeHtml(job.title || 'Tin đăng')}</h3>
+          <p class="mt-2 text-sm font-semibold text-slate-500">${escapeHtml(job.parentName || 'Phụ huynh')}</p>
         </div>
         <div class="job-card__head-right">
           <span class="shrink-0 rounded-full bg-orange-50 px-3 py-1 text-xs font-extrabold text-orange-700">${escapeHtml(formatSalaryRange(job.salaryMin, job.salaryMax, job.salaryNegotiable))}</span>
@@ -1225,21 +1225,21 @@ function renderJobs(jobs) {
                     class="job-save-btn ${job.isFavorite ? 'active' : ''}"
                     data-job-id="${escapeHtml(normalizeGuid(job.id))}"
                     aria-pressed="${job.isFavorite ? 'true' : 'false'}"
-                    aria-label="${job.isFavorite ? 'Bo luu bai dang' : 'Luu bai dang'}"
-                    title="${job.isFavorite ? 'Bo luu bai dang' : 'Luu bai dang'}"
+                    aria-label="${job.isFavorite ? 'Bỏ lưu bài đăng' : 'Lưu bài đăng'}"
+                    title="${job.isFavorite ? 'Bỏ lưu bài đăng' : 'Lưu bài đăng'}"
                     onclick="toggleJobFavorite('${escapeJs(job.id)}', event)">
               <span class="material-icons-round">${job.isFavorite ? 'bookmark' : 'bookmark_border'}</span>
             </button>` : ''}
         </div>
       </div>
-      <p class="mt-3 text-sm font-semibold text-orange-600">${escapeHtml([job.location, job.district, job.city].filter(Boolean).join(', ') || 'Chua cap nhat dia diem')}</p>
-      <p class="mt-3 text-sm leading-6 text-slate-500 line-clamp-2">${escapeHtml(job.description || 'Khong co mo ta.')}</p>
+      <p class="mt-3 text-sm font-semibold text-orange-600">${escapeHtml([job.location, job.district, job.city].filter(Boolean).join(', ') || 'Chưa cập nhật địa điểm')}</p>
+      <p class="mt-3 text-sm leading-6 text-slate-500 line-clamp-2">${escapeHtml(job.description || 'Không có mô tả.')}</p>
       <div class="mt-4 flex flex-wrap gap-2">
         ${renderJobBenefitBadges(job)}
-        <span class="px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold">${escapeHtml(JOB_TYPES[job.jobType] || 'Khac')}</span>
-        <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">${escapeHtml(MODERATION_LABELS[job.moderationStatus] || 'Dang cap nhat')}</span>
-        <span class="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold">${job.numberOfChildren ? `${job.numberOfChildren} be` : 'Chua ro'}</span>
-        ${isNannyRole() && isJobApplied(job.id) ? '<span class="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold">Da ung tuyen</span>' : ''}
+        <span class="px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold">${escapeHtml(JOB_TYPES[job.jobType] || 'Khác')}</span>
+        <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">${escapeHtml(MODERATION_LABELS[job.moderationStatus] || 'Đang cập nhật')}</span>
+        <span class="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold">${job.numberOfChildren ? `${job.numberOfChildren} bé` : 'Chưa rõ'}</span>
+        ${isNannyRole() && isJobApplied(job.id) ? '<span class="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold">Đã ứng tuyển</span>' : ''}
       </div>
     </article>`).join('');
 
@@ -1263,7 +1263,7 @@ function renderJobs(jobs) {
       fillOpacity: 0.1,
       weight: 1
     }).addTo(map);
-    marker.bindPopup(`<div class="text-sm font-semibold text-slate-700">${escapeHtml(job.title || 'Tin dang')}</div><div class="text-xs text-slate-500 mt-1">Khu vuc gan dung</div>`);
+    marker.bindPopup(`<div class="text-sm font-semibold text-slate-700">${escapeHtml(job.title || 'Tin đăng')}</div><div class="text-xs text-slate-500 mt-1">Khu vực gần đúng</div>`);
     markers.push({ marker, circle, point, element: marker.getElement() });
   });
 
@@ -1436,13 +1436,13 @@ function renderCreateExtraChildProfiles() {
       html += `
         <div class="child-profile-panel child-profile-panel--missing">
           <div class="child-profile-panel__head">
-            <p class="child-profile-panel__title">Be thu ${displayIndex}</p>
+            <p class="child-profile-panel__title">Bé thứ ${displayIndex}</p>
           </div>
           <div class="mt-2 mb-3">
-            <label class="form-label">Chon be thu ${displayIndex}</label>
+            <label class="form-label">Chọn bé thứ ${displayIndex}</label>
             <select id="${selectId}" class="form-input">${selectOptions}</select>
           </div>
-          <p class="child-profile-panel__empty">Chua co Child Profile cho be nay. Vui long tao them Child Profile trong Quan ly con em.</p>
+          <p class="child-profile-panel__empty">Chưa có hồ sơ cho bé này. Vui lòng tạo thêm Child Profile trong Quản lý con em.</p>
         </div>`;
       continue;
     }
@@ -1450,25 +1450,25 @@ function renderCreateExtraChildProfiles() {
     html += `
       <div class="child-profile-panel">
         <div class="child-profile-panel__head">
-          <p class="child-profile-panel__title">Be thu ${displayIndex}</p>
-          <span class="child-profile-panel__badge">${escapeHtml(child.label || `Be ${displayIndex}`)}</span>
+          <p class="child-profile-panel__title">Bé thứ ${displayIndex}</p>
+          <span class="child-profile-panel__badge">${escapeHtml(child.label || `Bé ${displayIndex}`)}</span>
         </div>
         <div class="mt-2 mb-3">
-          <label class="form-label">Chon be thu ${displayIndex}</label>
+          <label class="form-label">Chọn bé thứ ${displayIndex}</label>
           <select id="${selectId}" class="form-input">${selectOptions}</select>
         </div>
         <div class="child-profile-grid">
           <div class="child-profile-field">
-            <span class="child-profile-field__label">Dac diem</span>
-            <p class="child-profile-field__value">${escapeHtml(child.characteristic || 'Chua cap nhat')}</p>
+            <span class="child-profile-field__label">Đặc điểm</span>
+            <p class="child-profile-field__value">${escapeHtml(child.characteristic || 'Chưa cập nhật')}</p>
           </div>
           <div class="child-profile-field">
-            <span class="child-profile-field__label">Nhom tuoi</span>
-            <p class="child-profile-field__value">${escapeHtml(child.birthTypeLabel || 'Chua cap nhat')}</p>
+            <span class="child-profile-field__label">Nhóm tuổi</span>
+            <p class="child-profile-field__value">${escapeHtml(child.birthTypeLabel || 'Chưa cập nhật')}</p>
           </div>
           <div class="child-profile-field child-profile-field--full">
-            <span class="child-profile-field__label">Nhu cau dac biet</span>
-            <p class="child-profile-field__value">${escapeHtml(child.specialNeeds || 'Khong co')}</p>
+            <span class="child-profile-field__label">Nhu cầu đặc biệt</span>
+            <p class="child-profile-field__value">${escapeHtml(child.specialNeeds || 'Không có')}</p>
           </div>
         </div>
       </div>`;
@@ -1487,7 +1487,7 @@ function renderChildren(prefix, selectedChildId) {
   const collection = prefix === 'cf' ? createChildren : editChildren;
   select.innerHTML = collection.length
     ? collection.map((child) => `<option value="${escapeHtml(child.id)}">${escapeHtml(child.label)}</option>`).join('')
-    : '<option value="">Chua co Child Profile</option>';
+    : '<option value="">Chưa có hồ sơ bé</option>';
   if (selectedChildId) select.value = selectedChildId;
   syncSelectPickerTexts();
   setProfileFields(prefix, getSelectedChild(prefix));
@@ -1668,33 +1668,33 @@ function getCreatePayload() {
 function validatePayload(payload) {
   const minimumSalary = 8000000;
   const maximumSalary = 50000000;
-  if (!payload.title || payload.title.length < 5) return 'Tieu de bai dang phai tu 5 ky tu tro len.';
-  if (!payload.description || payload.description.length < 10) return 'Mo ta chi tiet phai tu 10 ky tu tro len.';
+  if (!payload.title || payload.title.length < 5) return 'Tiêu đề bài đăng phải từ 5 ký tự trở lên.';
+  if (!payload.description || payload.description.length < 10) return 'Mô tả chi tiết phải từ 10 ký tự trở lên.';
   if (!Number.isFinite(payload.numberOfChildren) || payload.numberOfChildren < 1 || payload.numberOfChildren > 10) {
-    return 'So tre can cham phai tu 1 den 10.';
+    return 'Số trẻ cần chăm phải từ 1 đến 10.';
   }
   if (payload.numberOfChildren > createChildren.length) {
-    return `Ban da chon ${payload.numberOfChildren} tre nhung hien chi co ${createChildren.length} Child Profile. Vui long tao them Child Profile truoc khi dang bai.`;
+    return `Bạn đã chọn ${payload.numberOfChildren} trẻ nhưng hiện chỉ có ${createChildren.length} hồ sơ bé. Vui lòng tạo thêm hồ sơ trước khi đăng bài.`;
   }
   if (!Array.isArray(payload.childProfileIds) || payload.childProfileIds.length !== payload.numberOfChildren) {
-    return 'Danh sach tre duoc chon chua hop le. Vui long chon lai so tre can cham.';
+    return 'Danh sách trẻ được chọn chưa hợp lệ. Vui lòng chọn lại số trẻ cần chăm.';
   }
-  if (!payload.childProfileId) return 'Vui long chon tre tu Child Profile.';
-  if (!payload.salaryNegotiable && payload.salaryMin == null) return 'Vui long nhap luong toi thieu trong khoang 8.000.000 - 50.000.000 VND hoac bat thuong luong.';
+  if (!payload.childProfileId) return 'Vui lòng chọn hồ sơ bé.';
+  if (!payload.salaryNegotiable && payload.salaryMin == null) return 'Vui lòng nhập lương tối thiểu trong khoảng 8.000.000 - 50.000.000 VND hoặc bật lương thỏa thuận.';
   if (payload.salaryMin != null && (!Number.isFinite(payload.salaryMin) || payload.salaryMin < minimumSalary || payload.salaryMin > maximumSalary)) {
-    return 'Luong toi thieu phai trong khoang 8.000.000 - 50.000.000 VND.';
+    return 'Lương tối thiểu phải trong khoảng 8.000.000 - 50.000.000 VND.';
   }
   if (payload.salaryMax != null && (!Number.isFinite(payload.salaryMax) || payload.salaryMax < minimumSalary || payload.salaryMax > maximumSalary)) {
-    return 'Luong toi da phai trong khoang 8.000.000 - 50.000.000 VND.';
+    return 'Lương tối đa phải trong khoảng 8.000.000 - 50.000.000 VND.';
   }
   if (payload.salaryMin != null && payload.salaryMax != null && payload.salaryMin > payload.salaryMax) {
-    return 'Luong toi thieu khong duoc lon hon luong toi da.';
+    return 'Lương tối thiểu không được lớn hơn lương tối đa.';
   }
-  if (!payload.location || payload.location.length < 3) return 'Vui long nhap dia chi chi tiet.';
-  if (!payload.city) return 'Vui long nhap thanh pho.';
-  if (!payload.district) return 'Vui long nhap phuong/xa.';
-  if (!Array.isArray(payload.skills) || !payload.skills.length) return 'Vui long chon it nhat 1 ky nang.';
-  if (!Array.isArray(payload.scheduleSlots) || !payload.scheduleSlots.length) return 'Vui long chon it nhat 1 khung lich.';
+  if (!payload.location || payload.location.length < 3) return 'Vui lòng nhập địa chỉ chi tiết.';
+  if (!payload.city) return 'Vui lòng nhập thành phố.';
+  if (!payload.district) return 'Vui lòng nhập phường/xã.';
+  if (!Array.isArray(payload.skills) || !payload.skills.length) return 'Vui lòng chọn ít nhất 1 kỹ năng.';
+  if (!Array.isArray(payload.scheduleSlots) || !payload.scheduleSlots.length) return 'Vui lòng chọn ít nhất 1 khung lịch.';
   return '';
 }
 
@@ -1716,7 +1716,7 @@ async function submitCreate() {
   const submitBtn = document.querySelector('#createModal .modal-btn-primary');
   if (submitBtn) {
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Dang gui...';
+    submitBtn.textContent = 'Đang gửi...';
   }
 
   try {
@@ -1728,25 +1728,25 @@ async function submitCreate() {
     });
     const json = await res.json();
     if (!json.success) {
-      notifyToast(json.message || 'Dang bai that bai');
+      notifyToast(json.message || 'Đăng bài thất bại');
       isSubmittingCreate = false;
       if (submitBtn) {
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Dang bai';
+        submitBtn.textContent = 'Đăng bài';
       }
       return;
     }
 
     closeCreate();
-    notifyToast('Bai dang da duoc tao va dang cho moderator duyet');
+    notifyToast('Bài đăng đã được tạo và đang chờ kiểm duyệt viên duyệt.');
     window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
     doSearch();
   } catch {
-    notifyToast('Loi ket noi server');
+    notifyToast('Lỗi kết nối máy chủ.');
     isSubmittingCreate = false;
     if (submitBtn) {
       submitBtn.disabled = false;
-      submitBtn.textContent = 'Dang bai';
+      submitBtn.textContent = 'Đăng bài';
     }
   }
 }
@@ -1754,7 +1754,7 @@ async function submitCreate() {
 async function openEdit(job) {
   if (!job?.id) return;
   if (!canEditJob(job)) {
-    notifyToast('Ban khong co quyen chinh sua bai dang nay.');
+    notifyToast('Bạn không có quyền chỉnh sửa bài đăng này.');
     return;
   }
   window.location.href = `/Search/Edit/${job.id}`;
@@ -1768,7 +1768,7 @@ function closeEdit() {
 async function submitEdit() {
   if (editingJobId) {
     if (!ownedJobIds.has(normalizeGuid(editingJobId))) {
-      notifyToast('Ban khong co quyen chinh sua bai dang nay.');
+      notifyToast('Bạn không có quyền chỉnh sửa bài đăng này.');
       return;
     }
     window.location.href = `/Search/Edit/${editingJobId}`;
@@ -1778,22 +1778,22 @@ async function submitEdit() {
 async function deleteJob() {
   if (!editingJobId) return;
   if (!ownedJobIds.has(normalizeGuid(editingJobId))) {
-    notifyToast('Ban khong co quyen xoa bai dang nay.');
+    notifyToast('Bạn không có quyền xóa bài đăng này.');
     return;
   }
-  if (!confirm('Ban co chac muon xoa bai dang nay?')) return;
+  if (!confirm('Bạn có chắc muốn xóa bài đăng này?')) return;
   try {
     const res = await fetch(`/Search/DeleteJob/${editingJobId}`, { method: 'DELETE', credentials: 'same-origin' });
     const json = await res.json();
     if (!json.success) {
-      notifyToast(json.message || 'Xoa that bai');
+      notifyToast(json.message || 'Xóa thất bại');
       return;
     }
     closeEdit();
-    notifyToast('Da xoa bai dang');
+    notifyToast('Đã xóa bài đăng.');
     doSearch();
   } catch {
-    notifyToast('Loi ket noi server');
+    notifyToast('Lỗi kết nối máy chủ.');
   }
 }
 
@@ -1807,7 +1807,7 @@ function renderPreviewChildProfiles(job, childProfilesInput) {
     ? childProfiles
     : (hasAggregateFallback
       ? [{
-          label: 'Be 1',
+          label: 'Bé 1',
           characteristic: job?.characteristic || '',
           birthTypeLabel: job?.birthTypeLabel || '',
           specialNeeds: job?.specialNeeds || ''
@@ -1832,7 +1832,7 @@ function renderPreviewChildProfiles(job, childProfilesInput) {
           <div class="child-profile-panel__head">
           <p class="child-profile-panel__title">Bé thứ ${displayIndex}</p>
           </div>
-          <p class="child-profile-panel__empty">Chưa thấy Child Profile của bé này.</p>
+          <p class="child-profile-panel__empty">Chưa thấy hồ sơ trẻ cho bé này.</p>
         </div>`;
       continue;
     }
@@ -1937,24 +1937,24 @@ function openPreview(job) {
   const childProfiles = Array.isArray(job.children) ? job.children : [];
   const birthTypeText = childProfiles.length > 1
     ? `${childProfiles.length} bé (xem chi tiết bên dưới)`
-    : (childProfiles[0]?.birthTypeLabel || job.birthTypeLabel || 'Chua cap nhat');
-  document.getElementById('pv-title').textContent = job.title || 'Tin dang';
-  document.getElementById('pv-parentName').textContent = job.parentName || 'Phu huynh';
+    : (childProfiles[0]?.birthTypeLabel || job.birthTypeLabel || 'Chưa cập nhật');
+  document.getElementById('pv-title').textContent = job.title || 'Tin đăng';
+  document.getElementById('pv-parentName').textContent = job.parentName || 'Phụ huynh';
   const premiumBadges = document.getElementById('pv-premiumBadges');
   if (premiumBadges) premiumBadges.innerHTML = renderJobBenefitBadges(job);
-  document.getElementById('pv-type').textContent = JOB_TYPES[job.jobType] || 'Khac';
+  document.getElementById('pv-type').textContent = JOB_TYPES[job.jobType] || 'Khác';
   document.getElementById('pv-sal').textContent = formatSalaryRange(job.salaryMin, job.salaryMax, job.salaryNegotiable);
-  document.getElementById('pv-status').textContent = POST_STATUS_LABELS[job.status] || 'Dang cap nhat';
-  document.getElementById('pv-loc').textContent = [job.location, job.district, job.city].filter(Boolean).join(', ') || 'Chua cap nhat';
-  document.getElementById('pv-kids').textContent = job.numberOfChildren ? `${job.numberOfChildren} be` : 'Chua cap nhat';
-  document.getElementById('pv-characteristic').textContent = job.characteristic || 'Chua cap nhat';
+  document.getElementById('pv-status').textContent = POST_STATUS_LABELS[job.status] || 'Đang cập nhật';
+  document.getElementById('pv-loc').textContent = [job.location, job.district, job.city].filter(Boolean).join(', ') || 'Chưa cập nhật';
+  document.getElementById('pv-kids').textContent = job.numberOfChildren ? `${job.numberOfChildren} bé` : 'Chưa cập nhật';
+  document.getElementById('pv-characteristic').textContent = job.characteristic || 'Chưa cập nhật';
   document.getElementById('pv-birthType').textContent = birthTypeText;
-  document.getElementById('pv-specialNeeds').textContent = job.specialNeeds || 'Khong co';
+  document.getElementById('pv-specialNeeds').textContent = job.specialNeeds || 'Không có';
   document.getElementById('pv-ageRange').textContent = formatAgeRange(job.minNannyAge, job.maxNannyAge);
-  document.getElementById('pv-coords').textContent = job.latitude && job.longitude ? `${job.latitude}, ${job.longitude}` : 'Khu vuc gan dung';
-  document.getElementById('pv-distance').textContent = job.distanceKm ? `${job.distanceKm.toFixed(1)} km` : 'Chua xac dinh';
-  document.getElementById('pv-desc').textContent = job.description || 'Khong co mo ta';
-  document.getElementById('pv-moderation').textContent = MODERATION_LABELS[job.moderationStatus] || 'Dang cap nhat';
+  document.getElementById('pv-coords').textContent = job.latitude && job.longitude ? `${job.latitude}, ${job.longitude}` : 'Khu vực gần đúng';
+  document.getElementById('pv-distance').textContent = job.distanceKm ? `${job.distanceKm.toFixed(1)} km` : 'Chưa xác định';
+  document.getElementById('pv-desc').textContent = job.description || 'Không có mô tả';
+  document.getElementById('pv-moderation').textContent = MODERATION_LABELS[job.moderationStatus] || 'Đang cập nhật';
   renderPreviewChildProfiles(job, childProfiles);
   const noteEl = document.getElementById('pv-note');
   noteEl.textContent = job.moderationNote || '';
@@ -1963,7 +1963,7 @@ function openPreview(job) {
   const skillsEl = document.getElementById('pv-skills');
   skillsEl.innerHTML = (job.skills && job.skills.length)
     ? job.skills.map((skill) => `<span class="px-3 py-1 rounded-full bg-white text-orange-700 text-xs font-bold border border-orange-100">${escapeHtml(skill)}</span>`).join('')
-    : '<span class="text-sm text-slate-400">Chua co ky nang yeu cau.</span>';
+    : '<span class="text-sm text-slate-400">Chưa có kỹ năng yêu cầu.</span>';
 
   document.getElementById('pv-schedule').innerHTML = renderReadOnlySchedule(job.scheduleSlots || []);
 

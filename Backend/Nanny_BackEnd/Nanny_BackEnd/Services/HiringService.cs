@@ -3,6 +3,7 @@ using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
+using System.Text.RegularExpressions;
 
 namespace Nanny_BackEnd.Services;
 
@@ -97,6 +98,7 @@ public class HiringService
             ?? throw new InvalidOperationException("Khong tim thay thong tin nanny.");
 
         var now = DateTime.UtcNow;
+        var contractNumber = await GenerateNextContractNumberAsync(now);
 
         var hiringRecord = new HiringRecord
         {
@@ -121,7 +123,7 @@ public class HiringService
             Id = Guid.NewGuid(),
             HiringRecordId = hiringRecord.Id,
             ContractTemplateId = template.Id,
-            ContractContent = RenderTemplate(template.Content, parentProfile, nannyProfile, dto, app),
+            ContractContent = RenderTemplate(template.Content, parentProfile, nannyProfile, dto, app, contractNumber),
             SignedByParent = true,
             SignedByNanny = false,
             Status = 0,
@@ -258,6 +260,7 @@ public class HiringService
             ?? throw new KeyNotFoundException("Mau hop dong khong ton tai hoac khong hoat dong.");
 
         var now = DateTime.UtcNow;
+        var contractNumber = await GenerateNextContractNumberAsync(now);
 
         var directJobPosting = new JobPosting
         {
@@ -324,7 +327,7 @@ public class HiringService
             Id = Guid.NewGuid(),
             HiringRecordId = hiringRecord.Id,
             ContractTemplateId = template.Id,
-            ContractContent = RenderTemplate(template.Content, parentProfile, nannyProfile, dto, directJobApplication),
+            ContractContent = RenderTemplate(template.Content, parentProfile, nannyProfile, dto, directJobApplication, contractNumber),
             SignedByParent = true,
             SignedByNanny = false,
             Status = 0,
@@ -449,7 +452,7 @@ public class HiringService
 
         if (hiringRecord.NannyProfile?.UserId != nannyUserId)
             throw new UnauthorizedAccessException("Ban khong co quyen phan hoi offer nay.");
-        if (hiringRecord.Status != 0)
+        if (hiringRecord.Status != 0 || hiringRecord.NannyConfirmedAt.HasValue)
             throw new InvalidOperationException("Offer nay da duoc xu ly truoc do.");
 
         var contract = await _repo.GetContractByHiringRecordIdAsync(hiringRecordId)
@@ -462,12 +465,13 @@ public class HiringService
 
         if (dto.Action.Equals("accept", StringComparison.OrdinalIgnoreCase))
         {
-            hiringRecord.Status = 1;
+            // Keep hiring in pending until Parent finishes the final contract confirmation step.
+            hiringRecord.Status = 0;
             hiringRecord.NannyConfirmedAt = now;
 
-            contract.SignedByNanny = true;
-            contract.SignedAt = now;
-            contract.Status = 1;
+            contract.SignedByNanny = false;
+            contract.SignedAt = null;
+            contract.Status = 0;
 
             if (jobApp != null)
             {
@@ -504,7 +508,7 @@ public class HiringService
                     Id = Guid.NewGuid(),
                     UserId = parentUserId,
                     Title = "Nanny da chap nhan de nghi!",
-                    Content = $"{GetDisplayName(hiringRecord.NannyProfile?.User)} da chap nhan lam viec cho ban.",
+                    Content = $"{GetDisplayName(hiringRecord.NannyProfile?.User)} da chap nhan de nghi. Vui long vao chi tiet hop dong de xac nhan cuoi cung.",
                     Type = NotificationTypes.HiringAccepted,
                     IsRead = false,
                     RelatedEntityId = hiringRecord.Id,
@@ -604,14 +608,15 @@ public class HiringService
         await _repo.SaveChangesAsync();
     }
 
-    public async Task<List<object>> GetActiveTemplatesAsync()
+    public async Task<List<object>> GetTemplatesForHiringAsync()
     {
-        var templates = await _repo.GetActiveTemplatesAsync();
+        var templates = await _repo.GetTemplatesForHiringAsync();
         return templates.Select(t => (object)new
         {
             t.Id,
             t.Name,
-            t.Version
+            t.Version,
+            t.IsActive
         }).ToList();
     }
 
@@ -634,7 +639,10 @@ public class HiringService
         if (dto.StartDate < today)
             throw new ArgumentException("Ngay bat dau khong duoc truoc ngay tao hop dong.");
 
-        if (dto.EndDate.HasValue && dto.EndDate.Value <= dto.StartDate)
+        if (!dto.EndDate.HasValue)
+            throw new ArgumentException("Vui long chon ngay ket thuc.");
+
+        if (dto.EndDate.Value <= dto.StartDate)
             throw new ArgumentException("Ngay ket thuc phai lon hon ngay bat dau.");
     }
 
@@ -643,28 +651,100 @@ public class HiringService
         ParentProfile parent,
         NannyProfile nanny,
         ConfirmHiringDto dto,
-        JobApplication? app = null)
+        JobApplication? app = null,
+        string? contractNumber = null)
     {
         var posting = app?.JobPosting;
+        var resolvedContractNumber = string.IsNullOrWhiteSpace(contractNumber)
+            ? $"01/{DateTime.UtcNow.Year}/HĐLĐ-TGTG"
+            : contractNumber.Trim();
 
-        return template
-            .Replace("{{ParentName}}", GetDisplayName(parent.User))
-            .Replace("{{NannyName}}", GetDisplayName(nanny.User))
-            .Replace("{{ParentPhone}}", parent.User?.PhoneNumber ?? string.Empty)
-            .Replace("{{NannyPhone}}", nanny.User?.PhoneNumber ?? string.Empty)
+        var content = template
+            .Replace("{{ContractNumber}}", resolvedContractNumber)
             .Replace("{{ParentAddress}}", parent.User?.Address ?? string.Empty)
             .Replace("{{StartDate}}", dto.StartDate.ToString("dd/MM/yyyy"))
             .Replace("{{EndDate}}", dto.EndDate?.ToString("dd/MM/yyyy") ?? "Khong xac dinh")
             .Replace("{{ContractDuration}}", dto.ContractDuration?.ToString() ?? string.Empty)
+            .Replace("{{ContractDurationMonths}}", dto.ContractDuration?.ToString() ?? string.Empty)
             .Replace("{{JobTitle}}", posting?.Title ?? string.Empty)
+            .Replace("{{JobDescription}}", posting?.Description?.Trim() ?? string.Empty)
             .Replace("{{SalaryMin}}", FormatMoney(posting?.SalaryMin))
             .Replace("{{SalaryMax}}", FormatMoney(posting?.SalaryMax))
             .Replace("{{SalaryType}}", MapSalaryType(posting?.SalaryType))
             .Replace("{{NumberOfChildren}}", posting?.NumberOfChildren?.ToString() ?? string.Empty)
             .Replace("{{NannyAddress}}", nanny.User?.Address ?? string.Empty)
-            .Replace("{{NannyEmail}}", nanny.User?.Email ?? string.Empty)
-            .Replace("{{ParentEmail}}", parent.User?.Email ?? string.Empty)
             .Replace("{{CreatedDate}}", DateTime.UtcNow.ToString("dd/MM/yyyy"));
+
+        content = ApplyWorkingTimeSection(content, posting?.JobScheduleRequirements);
+        return ReplaceContractNumberLine(content, resolvedContractNumber);
+    }
+
+    private async Task<string> GenerateNextContractNumberAsync(DateTime nowUtc)
+    {
+        var year = nowUtc.Year;
+        var existingCount = await _repo.CountContractsCreatedInYearAsync(year);
+        var nextIndex = existingCount + 1;
+        var serial = nextIndex < 100 ? nextIndex.ToString("00") : nextIndex.ToString();
+
+        return $"{serial}/{year}/HĐLĐ-TGTG";
+    }
+
+    private static string ReplaceContractNumberLine(string content, string contractNumber)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return content;
+
+        const string pattern = @"(?im)^\s*(Số|So)\s*:\s*.*$";
+        if (!Regex.IsMatch(content, pattern))
+            return content;
+
+        return Regex.Replace(content, pattern, $"Số: {contractNumber}");
+    }
+
+    private static string ApplyWorkingTimeSection(string content, ICollection<JobScheduleRequirement>? requirements)
+    {
+        if (string.IsNullOrWhiteSpace(content) || requirements == null || requirements.Count == 0)
+            return content;
+
+        var slots = requirements
+            .Where(s => !s.IsDeleted && s.IsRequired && s.DayOfWeek >= 0 && s.DayOfWeek <= 6 && s.TimeSlot >= 0 && s.TimeSlot <= 3)
+            .OrderBy(s => s.DayOfWeek)
+            .ThenBy(s => s.TimeSlot)
+            .ToList();
+        if (slots.Count == 0)
+            return content;
+
+        var dayNames = new[] { "Thu 2", "Thu 3", "Thu 4", "Thu 5", "Thu 6", "Thu 7", "Chu nhat" };
+        var slotNames = new[] { "Sang", "Chieu", "Toi", "Dem" };
+        var lines = slots
+            .GroupBy(s => s.DayOfWeek)
+            .Select(group =>
+            {
+                var slotText = string.Join(", ", group.Select(item => slotNames[item.TimeSlot]));
+                return $"- {dayNames[group.Key]}: {slotText}";
+            })
+            .ToList();
+        var sectionBody = string.Join(Environment.NewLine, lines);
+
+        const string sectionPattern = @"(?is)(4\.1\.[^\r\n]*\r?\n)(.*?)(\r?\n\s*4\.2\.)";
+        if (Regex.IsMatch(content, sectionPattern))
+        {
+            return Regex.Replace(
+                content,
+                sectionPattern,
+                match => $"{match.Groups[1].Value}{sectionBody}{match.Groups[3].Value}");
+        }
+
+        const string section41Pattern = @"(?im)^(?<head>\s*4\.1\.[^\r\n]*)(?<tail>\r?\n|$)";
+        if (Regex.IsMatch(content, section41Pattern))
+        {
+            return Regex.Replace(
+                content,
+                section41Pattern,
+                match => $"{match.Groups["head"].Value}{Environment.NewLine}{sectionBody}{match.Groups["tail"].Value}");
+        }
+
+        return content;
     }
 
     private static string MapSalaryType(int? salaryType) =>
