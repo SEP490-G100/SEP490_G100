@@ -35,6 +35,32 @@ public class CommunicationController : ControllerBase
         return Ok(new { success = true, data = result });
     }
 
+    // GET /api/communication/unread-count — tổng tin chưa đọc (navbar)
+    [HttpGet("unread-count")]
+    public async Task<IActionResult> GetUnreadCount()
+    {
+        var userId = getCurrentUserId();
+        if (!userId.HasValue) return Unauthorized(fail("Khong xac dinh duoc nguoi dung."));
+
+        var count = await _service.GetTotalUnreadMessageCountAsync(userId.Value);
+        return Ok(new { success = true, data = new { unreadCount = count } });
+    }
+
+    // POST /api/communication/conversations/{id}/mark-read
+    [HttpPost("conversations/{id:guid}/mark-read")]
+    public async Task<IActionResult> MarkConversationRead(Guid id)
+    {
+        var userId = getCurrentUserId();
+        if (!userId.HasValue) return Unauthorized(fail("Khong xac dinh duoc nguoi dung."));
+
+        try
+        {
+            var marked = await _service.MarkConversationReadAsync(id, userId.Value);
+            return Ok(new { success = true, data = new { markedCount = marked } });
+        }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+    }
+
     // GET /api/communication/conversations/{id}/messages
     [HttpGet("conversations/{id:guid}/messages")]
     public async Task<IActionResult> GetMessages(

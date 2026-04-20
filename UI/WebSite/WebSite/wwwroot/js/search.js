@@ -277,7 +277,7 @@ function bindLocationInputs(prefix) {
   cityInput.addEventListener('change', () => handleCityChange(prefix));
 }
 
-function attachSelectPicker(prefix, kind, selectId, inputId, emptyLabel, onValueChanged) {
+function attachSelectPicker(prefix, kind, selectId, inputId, emptyLabel, onValueChanged, alwaysShowAllOnOpen = false) {
   const select = document.getElementById(selectId);
   const input = document.getElementById(inputId);
   if (!select || !input || input.dataset.acReady === 'true') return;
@@ -333,16 +333,21 @@ function attachSelectPicker(prefix, kind, selectId, inputId, emptyLabel, onValue
     });
   };
 
+  const openPickerQuery = () => {
+    const currentValue = input.value.trim();
+    const shouldOpenAll = alwaysShowAllOnOpen
+      || !currentValue
+      || select.value === ''
+      || normalizeText(currentValue) === normalizedEmptyLabel;
+    return shouldOpenAll ? '' : currentValue;
+  };
+
   syncFromSelect();
   input.addEventListener('focus', () => {
-    const currentValue = input.value.trim();
-    const shouldOpenAll = !currentValue || select.value === '' || normalizeText(currentValue) === normalizedEmptyLabel;
-    renderOptions(shouldOpenAll ? '' : currentValue);
+    renderOptions(openPickerQuery());
   });
   input.addEventListener('click', () => {
-    const currentValue = input.value.trim();
-    const shouldOpenAll = !currentValue || select.value === '' || normalizeText(currentValue) === normalizedEmptyLabel;
-    renderOptions(shouldOpenAll ? '' : currentValue);
+    renderOptions(openPickerQuery());
   });
   input.addEventListener('blur', () => {
     setTimeout(() => {
@@ -358,7 +363,7 @@ function syncSelectPickerTexts() {
 
 function attachCreateSelectPickers() {
   attachSelectPicker('cf', 'typePicker', 'cf-type', 'cf-typeText', 'Chọn loại công việc');
-  attachSelectPicker('cf', 'childPicker', 'cf-childProfileId', 'cf-childProfileText', 'Chọn bé thứ 1', () => handleCreateChildChange());
+  attachSelectPicker('cf', 'childPicker', 'cf-childProfileId', 'cf-childProfileText', 'Chọn bé thứ 1', () => handleCreateChildChange(), true);
   attachSelectPicker('cf', 'skillPicker', 'cf-skillSelect', 'cf-skillSelectText', 'Chọn kỹ năng cần yêu cầu');
 }
 
@@ -1323,15 +1328,37 @@ function getTotalChildProfiles(collection) {
   return Array.isArray(collection) ? collection.length : 0;
 }
 
-function ensureChildrenCountOptions(selectId, preferredValue) {
+/**
+ * @param {string} selectId
+ * @param {number} totalProfiles - số hồ sơ bé đang có (0 = chưa tải / chưa có)
+ * @param {number|string} [preferredValue] - giá trị mong muốn (sẽ clamp trong 1..max)
+ */
+function ensureChildrenCountOptions(selectId, totalProfiles, preferredValue) {
   const select = document.getElementById(selectId);
   if (!select) return;
 
-  const resolvedValue = normalizeChildrenCount(preferredValue ?? select.value ?? 1);
-  select.innerHTML = `<option value="${resolvedValue}">${resolvedValue} bé</option>`;
-  select.value = String(resolvedValue);
-  select.disabled = true;
-  select.setAttribute('aria-readonly', 'true');
+  const total = Number(totalProfiles) || 0;
+  const max = total > 0 ? Math.min(10, total) : 1;
+  const rawPreferred = preferredValue ?? select.value ?? 1;
+  const preferred = normalizeChildrenCount(rawPreferred);
+  const clamped = Math.min(Math.max(preferred, 1), max);
+
+  select.innerHTML = '';
+  for (let i = 1; i <= max; i += 1) {
+    const opt = document.createElement('option');
+    opt.value = String(i);
+    opt.textContent = `${i} bé`;
+    select.appendChild(opt);
+  }
+  select.value = String(clamped);
+
+  if (total <= 0) {
+    select.disabled = true;
+    select.setAttribute('aria-readonly', 'true');
+  } else {
+    select.disabled = false;
+    select.removeAttribute('aria-readonly');
+  }
 }
 
 function getSelectedChild(prefix) {
@@ -1488,20 +1515,27 @@ function renderChildren(prefix, selectedChildId) {
 
 function applyPrefill(prefix, data, selectedChildId) {
   const collection = prefix === 'cf' ? createChildren : editChildren;
-  collection.splice(0, collection.length, ...((data?.children) || []));
+  const rawChildren = data?.children ?? data?.Children;
+  const childrenList = Array.isArray(rawChildren) ? rawChildren : [];
+  collection.splice(0, collection.length, ...childrenList);
   const childrenInput = document.getElementById(`${prefix}-children`);
   if (childrenInput) {
     const totalChildren = getTotalChildProfiles(collection);
-    const preferredCount = totalChildren > 0
-      ? totalChildren
-      : normalizeChildrenCount(data?.numberOfChildren ?? childrenInput.value ?? 1);
     if (prefix === 'cf') {
-      ensureChildrenCountOptions('cf-children', preferredCount);
+      const rawNum = data?.numberOfChildren ?? data?.NumberOfChildren;
+      const preferredFromData = rawNum != null ? normalizeChildrenCount(rawNum) : null;
+      const preferredCount = totalChildren > 0
+        ? (preferredFromData != null ? Math.min(preferredFromData, totalChildren) : totalChildren)
+        : normalizeChildrenCount(rawNum ?? childrenInput.value ?? 1);
+      ensureChildrenCountOptions('cf-children', totalChildren, preferredCount);
     } else {
+      const preferredCount = totalChildren > 0
+        ? totalChildren
+        : normalizeChildrenCount(data?.numberOfChildren ?? data?.NumberOfChildren ?? childrenInput.value ?? 1);
       childrenInput.value = String(normalizeChildrenCount(preferredCount));
     }
   }
-  renderChildren(prefix, selectedChildId || data?.selectedChildProfileId);
+  renderChildren(prefix, selectedChildId || data?.selectedChildProfileId || data?.SelectedChildProfileId);
 }
 
 function handleCreateChildChange() {
@@ -1514,7 +1548,7 @@ function handleCreateChildrenCountChange() {
   if (!countInput) return;
 
   const totalChildren = getTotalChildProfiles(createChildren);
-  ensureChildrenCountOptions('cf-children', totalChildren > 0 ? totalChildren : countInput.value);
+  ensureChildrenCountOptions('cf-children', totalChildren, countInput.value);
   renderCreateExtraChildProfiles();
   setProfileFields('cf', getSelectedChild('cf'));
 }
@@ -1624,7 +1658,7 @@ async function openCreate() {
   createSchedule = [];
   createChildren = [];
   setCreateStatus(1);
-  ensureChildrenCountOptions('cf-children', 1);
+  ensureChildrenCountOptions('cf-children', 0, 1);
   renderSkillCollection('cf-skills', createSkills, 'removeCreateSkill');
   renderScheduleGrid('cf-schedule', createSchedule, 'toggleCreateSchedule');
   applyPrefill('cf', {}, null);
@@ -1632,7 +1666,10 @@ async function openCreate() {
   try {
     const res = await fetch('/Search/Prefill', { credentials: 'same-origin' });
     const json = await res.json();
-    if (json.success && json.data) applyPrefill('cf', json.data, json.data.selectedChildProfileId);
+    if (json.success && json.data) {
+      const d = json.data;
+      applyPrefill('cf', d, d.selectedChildProfileId ?? d.SelectedChildProfileId);
+    }
   } catch { }
 
   handleCreateChildrenCountChange();
@@ -1648,15 +1685,17 @@ function closeCreate() {
 
 function getCreatePayload() {
   const totalChildren = getTotalChildProfiles(createChildren);
-  const numberOfChildren = normalizeChildrenCount(totalChildren || document.getElementById('cf-children')?.value || 1);
-  const selectedChildren = getCreateSelectedChildren(1);
+  const countFromUi = normalizeChildrenCount(document.getElementById('cf-children')?.value || 1);
+  const numberOfChildren = totalChildren > 0 ? Math.min(countFromUi, totalChildren) : countFromUi;
+  const selectedChildren = getCreateSelectedChildren(numberOfChildren);
+  const childProfileIds = selectedChildren.map((c) => c.id).filter(Boolean);
   return {
     title: document.getElementById('cf-title')?.value.trim() || '',
     description: document.getElementById('cf-desc')?.value.trim() || '',
     jobType: Number(document.getElementById('cf-type')?.value || 1),
     numberOfChildren,
     childProfileId: selectedChildren[0]?.id || document.getElementById('cf-childProfileId')?.value || null,
-    childProfileIds: [],
+    childProfileIds,
     salaryMin: parseMoneyInput(document.getElementById('cf-salMin')?.value),
     salaryMax: parseMoneyInput(document.getElementById('cf-salMax')?.value),
     salaryNegotiable: !!document.getElementById('cf-negotiable')?.checked,
@@ -1686,8 +1725,12 @@ function validatePayload(payload) {
   if (!Number.isFinite(payload.numberOfChildren) || payload.numberOfChildren < 1 || payload.numberOfChildren > 10) {
     return 'Số trẻ cần chăm phải từ 1 đến 10.';
   }
-  if (payload.numberOfChildren !== totalChildren) {
-    return `Số trẻ cần chăm được đồng bộ theo tổng hồ sơ bé hiện có (${totalChildren} bé).`;
+  if (payload.numberOfChildren > totalChildren) {
+    return `Số trẻ cần chăm không được vượt quá số hồ sơ bé hiện có (${totalChildren} bé).`;
+  }
+  const selectedForCount = getCreateSelectedChildren(payload.numberOfChildren);
+  if (selectedForCount.length !== payload.numberOfChildren) {
+    return 'Vui lòng chọn đủ hồ sơ bé cho từng trẻ.';
   }
   if (!payload.childProfileId) return 'Vui lòng chọn hồ sơ bé.';
   if (!payload.salaryNegotiable && payload.salaryMin == null) return 'Vui lòng nhập lương tối thiểu trong khoảng 8.000.000 - 50.000.000 VND hoặc bật lương thỏa thuận.';
