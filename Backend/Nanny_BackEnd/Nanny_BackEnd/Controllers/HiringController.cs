@@ -156,7 +156,7 @@ public class HiringController : ControllerBase
     {
         try
         {
-            var result = await _service.GetActiveTemplatesAsync();
+            var result = await _service.GetTemplatesForHiringAsync();
             return Ok(OkResult(result));
         }
         catch (Exception ex) { return StatusCode(500, Fail(ex.Message)); }

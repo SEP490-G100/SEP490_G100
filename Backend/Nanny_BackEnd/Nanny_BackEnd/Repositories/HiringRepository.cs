@@ -94,6 +94,16 @@ public class HiringRepository
             .Where(c => c.HiringRecordId == hiringRecordId && !c.IsDeleted)
             .FirstOrDefaultAsync();
 
+    public async Task<int> CountContractsCreatedInYearAsync(int year)
+    {
+        var start = new DateTime(year, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var end = start.AddYears(1);
+
+        return await _db.Contracts
+            .Where(c => !c.IsDeleted && c.CreatedAt >= start && c.CreatedAt < end)
+            .CountAsync();
+    }
+
     public void AddContract(Contract contract) => _db.Contracts.Add(contract);
 
     public async Task<ParentProfile?> GetParentProfileByUserIdAsync(Guid userId) =>
@@ -102,15 +112,22 @@ public class HiringRepository
             .Include(p => p.User)
             .FirstOrDefaultAsync();
 
+    public async Task<List<ContractTemplate>> GetTemplatesForHiringAsync() =>
+        await _db.ContractTemplates
+            .Where(t => !t.IsDeleted && t.IsActive)
+            .OrderBy(t => t.Name)
+            .ThenByDescending(t => t.UpdatedAt ?? t.CreatedAt)
+            .ToListAsync();
+
     public async Task<List<ContractTemplate>> GetActiveTemplatesAsync() =>
         await _db.ContractTemplates
-            .Where(t => t.IsActive && !t.IsDeleted)
+            .Where(t => !t.IsDeleted && t.IsActive)
             .OrderBy(t => t.Name)
             .ToListAsync();
 
     public async Task<ContractTemplate?> GetTemplateByIdAsync(Guid templateId) =>
         await _db.ContractTemplates
-            .Where(t => t.Id == templateId && t.IsActive && !t.IsDeleted)
+            .Where(t => t.Id == templateId && !t.IsDeleted && t.IsActive)
             .FirstOrDefaultAsync();
 
     public async Task<Conversation?> FindOneToOneConversationAsync(Guid userA, Guid userB) =>

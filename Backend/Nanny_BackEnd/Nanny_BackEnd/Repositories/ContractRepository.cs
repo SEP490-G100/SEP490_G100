@@ -39,6 +39,7 @@ public class ContractRepository
             .Include(c => c.HiringRecord)
                 .ThenInclude(h => h.JobApplication)
                     .ThenInclude(a => a.JobPosting)
+                        .ThenInclude(p => p.JobScheduleRequirements)
             .Include(c => c.HiringRecord)
                 .ThenInclude(h => h.ParentProfile)
                     .ThenInclude(p => p.User)
@@ -46,5 +47,9 @@ public class ContractRepository
                 .ThenInclude(h => h.NannyProfile)
                     .ThenInclude(n => n.User)
             .FirstOrDefaultAsync();
-}
 
+    public Task<Contract?> GetContractForUpdateAsync(Guid contractId) =>
+        GetContractDetailAsync(contractId);
+
+    public Task SaveChangesAsync() => _db.SaveChangesAsync();
+}
