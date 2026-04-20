@@ -22,10 +22,12 @@
             </div>
 
             <div>
-                <label for="hireEndDate" class="block text-sm font-bold text-slate-700 mb-1">Ngay ket thuc</label>
+                <label for="hireEndDate" class="block text-sm font-bold text-slate-700 mb-1">
+                    Ngay ket thuc <span class="text-rose-500">*</span>
+                </label>
                 <input type="date" id="hireEndDate"
                        class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition" />
-                <p class="mt-1 text-xs text-slate-400">De trong neu chua xac dinh.</p>
+                <p class="mt-1 text-xs text-slate-400">Ngay ket thuc phai lon hon ngay bat dau.</p>
             </div>
 
             <div>
@@ -46,8 +48,8 @@
                     class="inline-flex items-center justify-center min-h-[42px] px-5 rounded-xl border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 transition-all">
                 Huy
             </button>
-            <button type="button" id="hireConfirmBtn" onclick="window.__submitHiring?.()"
-                    class="inline-flex items-center justify-center gap-2 min-h-[42px] px-6 rounded-xl bg-gradient-to-r from-orange-500 to-orange-400 text-white font-bold shadow-lg shadow-orange-200 hover:from-orange-600 hover:to-orange-500 transition-all">
+            <button type="button" id="hireConfirmBtn" onclick="window.__submitHiring?.()" disabled
+                    class="inline-flex items-center justify-center gap-2 min-h-[42px] px-6 rounded-xl bg-gradient-to-r from-orange-500 to-orange-400 text-white font-bold shadow-lg shadow-orange-200 hover:from-orange-600 hover:to-orange-500 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:from-orange-500 disabled:hover:to-orange-400">
                 <span class="material-icons-round text-base">handshake</span>
                 Xac nhan thue
             </button>
@@ -58,11 +60,13 @@
 <script>
 (() => {
     let context = { jobPostingId: null, jobAppId: null, contactRequestId: null };
-    let templatesLoaded = false;
 
     const modal = document.getElementById('hireNannyModal');
     const errorEl = document.getElementById('hireModalError');
     const confirmBtn = document.getElementById('hireConfirmBtn');
+    const startInput = document.getElementById('hireStartDate');
+    const endInput = document.getElementById('hireEndDate');
+    const templateSelect = document.getElementById('hireTemplateId');
 
     const show = () => { modal.classList.remove('hidden'); modal.classList.add('flex'); };
     const hide = () => { modal.classList.add('hidden'); modal.classList.remove('flex'); };
@@ -70,22 +74,59 @@
         errorEl.textContent = msg || '';
         errorEl.classList.toggle('hidden', !msg);
     };
+    const addDays = (dateText, days) => {
+        const date = new Date(dateText);
+        date.setDate(date.getDate() + days);
+        return date.toISOString().slice(0, 10);
+    };
+    const escapeHtml = (value) => String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+
+    const getValidationError = () => {
+        const startDate = startInput.value;
+        const endDate = endInput.value;
+        const contractTemplateId = templateSelect.value;
+        const today = new Date().toISOString().slice(0, 10);
+
+        if (!startDate) return 'Vui long chon ngay bat dau.';
+        if (!endDate) return 'Vui long chon ngay ket thuc.';
+        if (!contractTemplateId) return 'Vui long chon mau hop dong.';
+        if (startDate < today) return 'Ngay bat dau khong duoc truoc ngay tao hop dong.';
+        if (endDate <= startDate) return 'Ngay ket thuc phai lon hon ngay bat dau.';
+        return '';
+    };
+
+    const updateConfirmState = () => {
+        const error = getValidationError();
+        confirmBtn.disabled = !!error;
+        return !error;
+    };
 
     const loadTemplates = async () => {
-        if (templatesLoaded) return;
+        templateSelect.innerHTML = '<option value="">Dang tai mau hop dong...</option>';
+        updateConfirmState();
+
         try {
             const res = await fetch('/Hiring/Templates');
             const json = await res.json();
-            const select = document.getElementById('hireTemplateId');
             if (json.success && Array.isArray(json.data) && json.data.length) {
-                select.innerHTML = '<option value="">-- Chon mau hop dong --</option>' +
-                    json.data.map(t => `<option value="${t.id}">${t.name} (v${t.version})</option>`).join('');
-                templatesLoaded = true;
+                templateSelect.innerHTML = '<option value="">-- Chon mau hop dong --</option>' +
+                    json.data.map(t => {
+                        const inactiveTag = t.isActive ? '' : ' - Inactive';
+                        const disabledAttr = t.isActive ? '' : ' disabled';
+                        return `<option value="${t.id}"${disabledAttr}>${escapeHtml(t.name)} (v${escapeHtml(t.version)})${inactiveTag}</option>`;
+                    }).join('');
             } else {
-                select.innerHTML = '<option value="">Khong co mau hop dong</option>';
+                templateSelect.innerHTML = '<option value="">Khong co mau hop dong</option>';
             }
         } catch {
-            document.getElementById('hireTemplateId').innerHTML = '<option value="">Loi tai mau</option>';
+            templateSelect.innerHTML = '<option value="">Loi tai mau</option>';
+        } finally {
+            updateConfirmState();
         }
     };
 
@@ -93,11 +134,13 @@
         context = { jobPostingId, jobAppId, contactRequestId };
         document.getElementById('hireModalNannyName').textContent = nannyName ? `Nanny: ${nannyName}` : '';
         const today = new Date().toISOString().slice(0, 10);
-        document.getElementById('hireStartDate').value = today;
-        document.getElementById('hireStartDate').setAttribute('min', today);
-        document.getElementById('hireEndDate').value = '';
-        document.getElementById('hireEndDate').setAttribute('min', today);
+        startInput.value = today;
+        startInput.setAttribute('min', today);
+        endInput.value = '';
+        endInput.setAttribute('min', addDays(today, 1));
+        templateSelect.value = '';
         setError('');
+        updateConfirmState();
         show();
         await loadTemplates();
     };
@@ -105,19 +148,15 @@
     window.__closeHireModal = () => hide();
 
     window.__submitHiring = async () => {
-        const startDate = document.getElementById('hireStartDate').value;
-        const endDate = document.getElementById('hireEndDate').value;
-        const contractTemplateId = document.getElementById('hireTemplateId').value;
+        const startDate = startInput.value;
+        const endDate = endInput.value;
+        const contractTemplateId = templateSelect.value;
 
-        if (!startDate) { setError('Vui long chon ngay bat dau.'); return; }
-        if (!contractTemplateId) { setError('Vui long chon mau hop dong.'); return; }
-        const today = new Date().toISOString().slice(0, 10);
-        if (startDate < today) { setError('Ngay bat dau khong duoc truoc ngay tao hop dong.'); return; }
-        if (endDate) {
-            if (endDate <= startDate) {
-                setError('Ngay ket thuc phai lon hon ngay bat dau.');
-                return;
-            }
+        const validationError = getValidationError();
+        if (validationError) {
+            setError(validationError);
+            updateConfirmState();
+            return;
         }
 
         confirmBtn.disabled = true;
@@ -151,9 +190,26 @@
         } catch {
             setError('Loi ket noi. Vui long thu lai.');
         } finally {
-            confirmBtn.disabled = false;
+            updateConfirmState();
             confirmBtn.innerHTML = '<span class="material-icons-round text-base">handshake</span> Xac nhan thue';
         }
     };
+
+    startInput.addEventListener('change', () => {
+        if (!startInput.value) {
+            endInput.setAttribute('min', '');
+            updateConfirmState();
+            return;
+        }
+
+        endInput.setAttribute('min', addDays(startInput.value, 1));
+        if (endInput.value && endInput.value <= startInput.value) {
+            endInput.value = '';
+        }
+        updateConfirmState();
+    });
+
+    endInput.addEventListener('change', updateConfirmState);
+    templateSelect.addEventListener('change', updateConfirmState);
 })();
 </script>
