@@ -708,6 +708,9 @@ function attachSelectPicker(kind, selectId, textInputId, emptyLabel) {
   if (!select || !input || input.dataset.acReady === 'true') return;
 
   input.dataset.acReady = 'true';
+  // Non-location pickers are click-to-select only.
+  input.readOnly = true;
+  input.setAttribute('aria-readonly', 'true');
   input.parentElement?.classList.add('autocomplete-field');
   input.classList.add('nanny-filter--picker');
 
@@ -759,7 +762,6 @@ function attachSelectPicker(kind, selectId, textInputId, emptyLabel) {
   syncTextFromSelect();
   input.addEventListener('focus', () => renderOptions(input.value === emptyLabel ? '' : input.value.trim()));
   input.addEventListener('click', () => renderOptions(input.value === emptyLabel ? '' : input.value.trim()));
-  input.addEventListener('input', () => renderOptions(input.value.trim()));
   input.addEventListener('blur', () => {
     setTimeout(() => {
       hideAutocomplete(kind);

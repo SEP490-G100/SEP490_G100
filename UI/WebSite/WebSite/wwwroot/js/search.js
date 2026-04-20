@@ -283,10 +283,9 @@ function attachSelectPicker(prefix, kind, selectId, inputId, emptyLabel, onValue
   if (!select || !input || input.dataset.acReady === 'true') return;
 
   input.dataset.acReady = 'true';
-  if (kind === 'childPicker') {
-    input.readOnly = true;
-    input.setAttribute('aria-readonly', 'true');
-  }
+  // Non-location pickers are click-to-select only.
+  input.readOnly = true;
+  input.setAttribute('aria-readonly', 'true');
   input.parentElement?.classList.add('autocomplete-field');
 
   const dropdown = document.createElement('ul');
@@ -345,7 +344,6 @@ function attachSelectPicker(prefix, kind, selectId, inputId, emptyLabel, onValue
     const shouldOpenAll = !currentValue || select.value === '' || normalizeText(currentValue) === normalizedEmptyLabel;
     renderOptions(shouldOpenAll ? '' : currentValue);
   });
-  input.addEventListener('input', () => renderOptions(input.value.trim()));
   input.addEventListener('blur', () => {
     setTimeout(() => {
       hideAutocomplete(prefix, kind);
@@ -1478,6 +1476,7 @@ function renderCreateExtraChildProfiles() {
 
   container.innerHTML = html;
   container.querySelectorAll('select[id^="cf-extraChildProfileId-"]').forEach((selectEl) => {
+    bindClickOnlySelect(selectEl);
     selectEl.addEventListener('change', renderCreateExtraChildProfiles);
   });
 }
@@ -1999,6 +1998,12 @@ function bindClickOnlySelect(selectElement) {
   });
 }
 
+function bindCreateJobPostingClickOnlySelects() {
+  document.querySelectorAll('#createForm select').forEach((selectElement) => {
+    bindClickOnlySelect(selectElement);
+  });
+}
+
 async function bootstrapSearchPage() {
   ['cf-city', 'cf-district', 'ef-city', 'ef-district', 'cf-typeText', 'cf-childProfileText', 'cf-skillSelectText'].forEach((id) => {
     document.getElementById(id)?.setAttribute('autocomplete', 'off');
@@ -2008,12 +2013,12 @@ async function bootstrapSearchPage() {
   });
 
   attachCreateSelectPickers();
+  bindCreateJobPostingClickOnlySelects();
   const createChildrenInput = document.getElementById('cf-children');
   if (createChildrenInput && createChildrenInput.dataset.bindChildrenCount !== 'true') {
     createChildrenInput.dataset.bindChildrenCount = 'true';
     createChildrenInput.addEventListener('change', renderCreateExtraChildProfiles);
   }
-  bindClickOnlySelect(createChildrenInput);
   initMoneyInputs();
   initMap();
   loadLocationData();

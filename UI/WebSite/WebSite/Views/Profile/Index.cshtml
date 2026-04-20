@@ -447,7 +447,7 @@
                         }
                         else
                         {
-                            <a href="/NannyVerificationRequest/verifyNanny" class="profile-status-btn">Xác minh ngay</a>
+                            <a href="@Url.Action("verifyNanny", "NannyVerificationRequest", new { tab = "verification-profile-panel", returnUrl = currentProfileUrl })" class="profile-status-btn">Xác minh ngay</a>
 
                         }
                     </div>
@@ -462,9 +462,14 @@
                                 ? "Bạn đã upload giấy sức khỏe."
                                 : "Bạn chưa upload giấy sức khỏe.")
                         </p>
-                        <button type="button" class="profile-status-btn @(hasUploadedHealthDocument ? "is-disabled" : "is-coming-soon")" disabled>
-                            @(hasUploadedHealthDocument ? "Đã hoàn thành" : "Sắp mở")
-                        </button>
+                        @if (hasUploadedHealthDocument)
+                        {
+                            <button type="button" class="profile-status-btn is-success-disabled" disabled>Đã hoàn thành</button>
+                        }
+                        else
+                        {
+                            <a href="@Url.Action("verifyNanny", "NannyVerificationRequest", new { tab = "health-certificate-panel", returnUrl = currentProfileUrl })" class="profile-status-btn is-danger">Tạo yêu cầu</a>
+                        }
                     </div>
                 }
 
@@ -1039,6 +1044,3 @@
 {
     <partial name="~/Views/Hiring/_HireModal.cshtml" />
 }
-
-
-
