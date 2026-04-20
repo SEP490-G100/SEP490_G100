@@ -1369,8 +1369,108 @@ function getCreateSelectedChildren(requiredCount) {
 
 function renderCreateExtraChildProfiles() {
   const container = document.getElementById('cf-extraChildProfiles');
-  if (!container) return;
-  container.innerHTML = '';
+  const countInput = document.getElementById('cf-children');
+  if (!container || !countInput) return;
+
+  const requiredCount = normalizeChildrenCount(countInput.value);
+  countInput.value = String(requiredCount);
+  const extraCount = Math.max(requiredCount - 1, 0);
+  if (requiredCount <= 1) {
+    container.innerHTML = '';
+    return;
+  }
+
+  const existingSelections = {};
+  container.querySelectorAll('select[id^="cf-extraChildProfileId-"]').forEach((selectEl) => {
+    existingSelections[selectEl.id] = selectEl.value || '';
+  });
+
+  const firstSelectedId = String(document.getElementById('cf-childProfileId')?.value || '').toLowerCase();
+  const usedIds = new Set(firstSelectedId ? [firstSelectedId] : []);
+  const findChildById = (childId) => {
+    const normalizedId = String(childId || '').toLowerCase();
+    return createChildren.find((child) => String(child.id).toLowerCase() === normalizedId) || null;
+  };
+
+  let html = '';
+
+  for (let idx = 0; idx < extraCount; idx += 1) {
+    const selectId = `cf-extraChildProfileId-${idx}`;
+    const preservedValue = existingSelections[selectId] || '';
+    const preservedChild = findChildById(preservedValue);
+
+    let selectedChild = null;
+    if (preservedChild && !usedIds.has(String(preservedChild.id).toLowerCase())) {
+      selectedChild = preservedChild;
+    } else {
+      selectedChild = createChildren.find((child) => !usedIds.has(String(child.id).toLowerCase())) || null;
+    }
+
+    const selectedChildId = selectedChild ? String(selectedChild.id) : '';
+    if (selectedChild) usedIds.add(String(selectedChild.id).toLowerCase());
+
+    const selectableChildren = createChildren.filter((child) => {
+      const normalizedId = String(child.id).toLowerCase();
+      if (selectedChild && normalizedId === String(selectedChild.id).toLowerCase()) return true;
+      return !usedIds.has(normalizedId);
+    });
+
+    const selectOptions = selectableChildren.length
+      ? selectableChildren.map((child) => `
+          <option value="${escapeHtml(child.id)}" ${String(child.id) === selectedChildId ? 'selected' : ''}>
+            ${escapeHtml(child.label || 'Be')}
+          </option>`).join('')
+      : '<option value="">Chua co Child Profile phu hop</option>';
+
+    const child = selectedChild;
+    const displayIndex = idx + 2;
+
+    if (!child) {
+      html += `
+        <div class="child-profile-panel child-profile-panel--missing">
+          <div class="child-profile-panel__head">
+            <p class="child-profile-panel__title">Bé thứ ${displayIndex}</p>
+          </div>
+          <div class="mt-2 mb-3">
+            <label class="form-label">Chọn bé thứ ${displayIndex}</label>
+            <select id="${selectId}" class="form-input">${selectOptions}</select>
+          </div>
+          <p class="child-profile-panel__empty">Chưa có hồ sơ cho bé này. Vui lòng tạo thêm Child Profile trong Quản lý con em.</p>
+        </div>`;
+      continue;
+    }
+
+    html += `
+      <div class="child-profile-panel">
+        <div class="child-profile-panel__head">
+          <p class="child-profile-panel__title">Bé thứ ${displayIndex}</p>
+          <span class="child-profile-panel__badge">${escapeHtml(child.label || `Bé ${displayIndex}`)}</span>
+        </div>
+        <div class="mt-2 mb-3">
+          <label class="form-label">Chọn bé thứ ${displayIndex}</label>
+          <select id="${selectId}" class="form-input">${selectOptions}</select>
+        </div>
+        <div class="child-profile-grid">
+          <div class="child-profile-field">
+            <span class="child-profile-field__label">Đặc điểm</span>
+            <p class="child-profile-field__value">${escapeHtml(child.characteristic || 'Chưa cập nhật')}</p>
+          </div>
+          <div class="child-profile-field">
+            <span class="child-profile-field__label">Nhóm tuổi</span>
+            <p class="child-profile-field__value">${escapeHtml(child.birthTypeLabel || 'Chưa cập nhật')}</p>
+          </div>
+          <div class="child-profile-field child-profile-field--full">
+            <span class="child-profile-field__label">Nhu cầu đặc biệt</span>
+            <p class="child-profile-field__value">${escapeHtml(child.specialNeeds || 'Không có')}</p>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  container.innerHTML = html;
+  container.querySelectorAll('select[id^="cf-extraChildProfileId-"]').forEach((selectEl) => {
+    selectEl.addEventListener('change', renderCreateExtraChildProfiles);
+  });
 }
 
 function renderChildren(prefix, selectedChildId) {
