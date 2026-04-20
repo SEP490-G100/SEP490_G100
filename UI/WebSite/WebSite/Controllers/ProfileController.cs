@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebSite.Models.Profile;
@@ -60,6 +61,42 @@ public class ProfileController : Controller
         if (!string.IsNullOrWhiteSpace(_apiBaseUrl))
             return _apiBaseUrl + "/" + url.TrimStart('/');
         return url;
+    }
+
+    private async Task RefreshAuthClaimsAsync(EditPersonalInfoViewModel model)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var email = User.FindFirstValue(ClaimTypes.Email) ?? string.Empty;
+        var authProvider = User.FindFirst("AuthProvider")?.Value ?? "email";
+        var roles = User.Claims
+            .Where(c => c.Type == ClaimTypes.Role)
+            .Select(c => c.Value)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (string.IsNullOrWhiteSpace(userId))
+            return;
+
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, userId),
+            new(ClaimTypes.Email, email),
+            new(ClaimTypes.GivenName, model.FirstName ?? string.Empty),
+            new(ClaimTypes.Surname, model.LastName ?? string.Empty),
+            new("AuthProvider", authProvider)
+        };
+
+        var normalizedAvatar = NormalizeAvatarUrl(model.AvatarUrl);
+        if (!string.IsNullOrWhiteSpace(normalizedAvatar))
+            claims.Add(new Claim("AvatarUrl", normalizedAvatar));
+
+        foreach (var role in roles)
+            claims.Add(new Claim(ClaimTypes.Role, role));
+
+        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        await HttpContext.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            new ClaimsPrincipal(identity));
     }
 
     private static TModel? DeserializeApiData<TModel>(ApiResultDto? apiResult) where TModel : class
@@ -415,14 +452,28 @@ public class ProfileController : Controller
             var content = await response.Content.ReadAsStringAsync();
             var apiResult = JsonSerializer.Deserialize<ApiResultDto>(content, JsonOpts);
             EditPersonalInfoViewModel? profile = null;
+            JsonElement? rawProfileElement = null;
+
             if (apiResult?.Success == true && apiResult.Data is JsonElement profileData && profileData.ValueKind == JsonValueKind.Object)
             {
+                rawProfileElement = profileData;
                 profile = JsonSerializer.Deserialize<EditPersonalInfoViewModel>(profileData.GetRawText(), JsonOpts);
             }
             else if (apiResult?.Success == true && apiResult.Data != null)
             {
                 profile = JsonSerializer.Deserialize<EditPersonalInfoViewModel>(
                     JsonSerializer.Serialize(apiResult.Data), JsonOpts);
+            }
+
+            // Fallback: some API payloads still return avatar in nested/alternate keys.
+            if (profile != null && string.IsNullOrWhiteSpace(profile.AvatarUrl) && rawProfileElement.HasValue)
+            {
+                profile.AvatarUrl = ExtractStringFromJson(
+                    rawProfileElement.Value,
+                    "avatarUrl",
+                    "avatar",
+                    "avatarPath",
+                    "avatar_url");
             }
 
             if (profile != null)
@@ -570,6 +621,7 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
             return View(model);
         }
 
+        await RefreshAuthClaimsAsync(model);
         TempData["Success"] = "Cập nhật thông tin thành công.";
         return RedirectToAction("Edit");
     }
@@ -645,26 +697,8 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
                 children = JsonSerializer.Deserialize<List<ChildProfileViewModel>>(element.GetRawText(), JsonOpts) ?? new();
             }
 
-            // Profile may store numberOfChildren even when detailed child profiles are not created yet.
-            // We expose both numbers so UI can avoid showing an inconsistent "0" count.
-            int declaredChildrenCount = 0;
-            var profileResponse = await _http.GetAsync("/api/profile");
-            if (profileResponse.IsSuccessStatusCode)
-            {
-                var profileContent = await profileResponse.Content.ReadAsStringAsync();
-                var profileResult = JsonSerializer.Deserialize<ApiResultDto>(profileContent, JsonOpts);
-                if (profileResult?.Data is JsonElement profileData &&
-                    profileData.ValueKind == JsonValueKind.Object &&
-                    profileData.TryGetProperty("numberOfChildren", out var numberOfChildrenElement) &&
-                    numberOfChildrenElement.ValueKind == JsonValueKind.Number &&
-                    numberOfChildrenElement.TryGetInt32(out var parsedCount))
-                {
-                    declaredChildrenCount = Math.Max(parsedCount, 0);
-                }
-            }
-
-            ViewBag.DeclaredChildrenCount = declaredChildrenCount;
-            ViewBag.DisplayChildrenCount = Math.Max(children.Count, declaredChildrenCount);
+            // Display the real number of child profiles currently available.
+            ViewBag.DisplayChildrenCount = children.Count;
 
             return View(children);
         }

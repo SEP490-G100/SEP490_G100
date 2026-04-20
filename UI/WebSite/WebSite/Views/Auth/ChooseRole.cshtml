@@ -2,6 +2,96 @@
     ViewData["Title"] = "Chọn Vai Trò";
 }
 
+<style>
+.role-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 8px 0 32px;
+}
+.role-label {
+    display: block;
+    cursor: pointer;
+}
+.role-card {
+    position: relative;
+    border: 2px solid #e5e7eb;
+    border-radius: 20px;
+    padding: 28px 24px 24px;
+    background: #fff;
+    transition: border-color .2s, box-shadow .2s, background .2s;
+    user-select: none;
+}
+.role-card:hover {
+    border-color: #fdba74;
+    box-shadow: 0 4px 18px rgba(249,115,22,.10);
+}
+.role-input:checked ~ .role-card {
+    border-color: #f97316;
+    background: #fff8f4;
+    box-shadow: 0 4px 22px rgba(249,115,22,.14);
+}
+/* checkmark badge */
+.role-card__check {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .2s, transform .2s;
+    transform: scale(0.85);
+    opacity: 0;
+}
+.role-card__check .material-icons-round {
+    font-size: 15px;
+    color: #fff;
+}
+.role-input:checked ~ .role-card .role-card__check {
+    background: #f97316;
+    opacity: 1;
+    transform: scale(1);
+}
+/* icon */
+.role-card__icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    background: #fff3eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+}
+.role-card__icon .material-icons-round {
+    font-size: 30px;
+    color: #f97316;
+}
+.role-input:checked ~ .role-card .role-card__icon {
+    background: #ffedd5;
+}
+/* title */
+.role-card__title {
+    font-size: 17px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 8px;
+}
+/* description */
+.role-card__desc {
+    font-size: 13.5px;
+    color: #6b7280;
+    line-height: 1.65;
+}
+@@media (max-width: 540px) {
+    .role-grid { grid-template-columns: 1fr; }
+}
+</style>
+
 <div class="nm-flow-shell">
     <div class="nm-flow-container max-w-5xl">
         <div class="nm-flow-card">
@@ -13,6 +103,7 @@
                         <p class="nm-flow-subtitle">
                             Lựa chọn này quyết định luồng nhập thông tin tiếp theo và các tính năng hệ thống mở cho bạn sau khi vào trang.
                         </p>
+                        <div class="nm-flow-divider" aria-hidden="true"></div>
                     </div>
                 </div>
 
@@ -24,37 +115,39 @@
                 <form asp-action="ChooseRole" method="post" id="chooseRoleForm">
                     @Html.AntiForgeryToken()
 
-                    <div class="nm-choice-grid">
-                        <label class="cursor-pointer">
-                            <input type="radio" name="Role" value="Parent" class="sr-only nm-choice-input" />
-                            <span class="nm-choice-card">
-                                <span class="nm-choice-card__check">
-                                    <span class="material-icons-round text-sm">check</span>
-                                </span>
-                                <span class="nm-choice-card__icon">
-                                    <span class="material-icons-round text-4xl">family_restroom</span>
-                                </span>
-                                <span class="nm-choice-card__title">Phụ Huynh</span>
-                                <span class="nm-choice-card__text">
-                                    Đăng bài tìm nanny, xem hồ sơ, gửi yêu cầu liên hệ và quản lý quá trình tìm người chăm bé.
-                                </span>
-                            </span>
+                    <div class="role-grid">
+                        <!-- Phụ Huynh -->
+                        <label class="role-label">
+                            <input type="radio" name="Role" value="Parent" class="sr-only role-input" />
+                            <div class="role-card">
+                                <div class="role-card__check">
+                                    <span class="material-icons-round">check</span>
+                                </div>
+                                <div class="role-card__icon">
+                                    <span class="material-icons-round">family_restroom</span>
+                                </div>
+                                <div class="role-card__title">Phụ Huynh</div>
+                                <div class="role-card__desc">
+                                    Đăng bài tìm bảo mẫu, xem hồ sơ ứng viên, gửi yêu cầu liên hệ và quản lý toàn bộ quá trình tìm người chăm bé.
+                                </div>
+                            </div>
                         </label>
 
-                        <label class="cursor-pointer">
-                            <input type="radio" name="Role" value="Nanny" class="sr-only nm-choice-input" />
-                            <span class="nm-choice-card">
-                                <span class="nm-choice-card__check">
-                                    <span class="material-icons-round text-sm">check</span>
-                                </span>
-                                <span class="nm-choice-card__icon">
-                                    <span class="material-icons-round text-4xl">child_care</span>
-                                </span>
-                                <span class="nm-choice-card__title">Người Giữ Trẻ</span>
-                                <span class="nm-choice-card__text">
-                                    Tạo hồ sơ nghề nghiệp, cập nhật kỹ năng, lịch rảnh và nhận yêu cầu từ phụ huynh trên hệ thống.
-                                </span>
-                            </span>
+                        <!-- Người Giữ Trẻ -->
+                        <label class="role-label">
+                            <input type="radio" name="Role" value="Nanny" class="sr-only role-input" />
+                            <div class="role-card">
+                                <div class="role-card__check">
+                                    <span class="material-icons-round">check</span>
+                                </div>
+                                <div class="role-card__icon">
+                                    <span class="material-icons-round">child_care</span>
+                                </div>
+                                <div class="role-card__title">Người Giữ Trẻ</div>
+                                <div class="role-card__desc">
+                                    Tạo hồ sơ nghề nghiệp, cập nhật kỹ năng và lịch rảnh, nhận yêu cầu từ phụ huynh trên hệ thống.
+                                </div>
+                            </div>
                         </label>
                     </div>
 
@@ -70,7 +163,7 @@
 
 @section Scripts {
     <script>
-        document.querySelectorAll('input[name="Role"]').forEach(function (radio) {
+        document.querySelectorAll('.role-input').forEach(function (radio) {
             radio.addEventListener('change', function () {
                 document.getElementById('submitBtn').disabled = false;
             });

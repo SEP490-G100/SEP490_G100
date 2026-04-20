@@ -65,7 +65,12 @@
                             </div>
                             <div>
                                 <label class="form-label">Số trẻ cần chăm</label>
-                                <input type="number" id="ef-children" class="form-input bg-gray-50" min="1" max="10" readonly />
+                                <select id="ef-children" class="form-input" disabled>
+                                    @for (var childCount = 1; childCount <= 10; childCount++)
+                                    {
+                                        <option value="@childCount">@childCount bé</option>
+                                    }
+                                </select>
                             </div>
                             <div>
                                 <label class="form-label">Lương tối thiểu</label>
@@ -130,13 +135,13 @@
                         <div class="section-heading">
                             <div>
                                 <p class="section-title">Thông tin từ hồ sơ trẻ</p>
-                                <p class="section-caption">Chọn lại bé nếu cần, hệ thống sẽ cập nhật thông tin hồ sơ trẻ tương ứng.</p>
+                                <p class="section-caption">Số trẻ cần chăm được đồng bộ theo tổng hồ sơ bé hiện có. Chọn bé thứ 1 để hiển thị thông tin chi tiết.</p>
                             </div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div class="md:col-span-2">
-                                <label class="form-label">Chọn trẻ</label>
-                                <input type="text" id="ef-childProfileText" class="form-input form-select-picker-input" autocomplete="off" placeholder="Chọn trẻ" />
+                                <label class="form-label">Chọn bé thứ 1</label>
+                                <input type="text" id="ef-childProfileText" class="form-input form-select-picker-input" autocomplete="off" placeholder="Chọn bé thứ 1" />
                                 <select id="ef-childProfileId" class="form-input form-select-native-hidden"></select>
                             </div>
                             <div>
@@ -303,6 +308,29 @@ function redirectToHistory(jobId) {
 
 function normalizeText(value) {
     return String(value ?? '').toLowerCase().trim();
+}
+
+function normalizeChildrenCount(value) {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return 1;
+    return Math.min(10, Math.max(1, Math.trunc(parsed)));
+}
+
+function getTotalChildProfiles() {
+    return Array.isArray(editChildren) ? editChildren.length : 0;
+}
+
+function syncChildrenCountField() {
+    const childrenSelect = document.getElementById('ef-children');
+    if (!childrenSelect) return 1;
+
+    const totalChildren = getTotalChildProfiles();
+    const resolvedCount = normalizeChildrenCount(totalChildren || childrenSelect.value || 1);
+    childrenSelect.innerHTML = `<option value="${resolvedCount}">${resolvedCount} bé</option>`;
+    childrenSelect.value = String(resolvedCount);
+    childrenSelect.disabled = true;
+    childrenSelect.setAttribute('aria-readonly', 'true');
+    return resolvedCount;
 }
 
 function normalizeLocationName(value) {
@@ -501,12 +529,26 @@ function hideAutocomplete(prefix, kind) {
     dropdown.classList.remove('show');
 }
 
+function bindClickOnlySelect(selectElement) {
+    if (!selectElement || selectElement.dataset.clickOnlyBound === 'true') return;
+
+    selectElement.dataset.clickOnlyBound = 'true';
+    selectElement.style.caretColor = 'transparent';
+    selectElement.addEventListener('keydown', (event) => {
+        if (event.key === 'Tab') return;
+        event.preventDefault();
+    });
+}
+
 function attachSelectPicker(prefix, kind, selectId, inputId, emptyLabel, onValueChanged) {
     const select = document.getElementById(selectId);
     const input = document.getElementById(inputId);
     if (!select || !input || input.dataset.acReady === 'true') return;
 
     input.dataset.acReady = 'true';
+    // Non-location pickers are click-to-select only.
+    input.readOnly = true;
+    input.setAttribute('aria-readonly', 'true');
     input.parentElement?.classList.add('autocomplete-field');
 
     const dropdown = document.createElement('ul');
@@ -566,7 +608,6 @@ function attachSelectPicker(prefix, kind, selectId, inputId, emptyLabel, onValue
         const shouldOpenAll = !currentValue || select.value === '' || normalizeText(currentValue) === normalizedEmptyLabel;
         renderOptions(shouldOpenAll ? '' : currentValue);
     });
-    input.addEventListener('input', () => renderOptions(input.value.trim()));
     input.addEventListener('blur', () => {
         setTimeout(() => {
             hideAutocomplete(prefix, kind);
@@ -582,7 +623,7 @@ function syncSelectPickerTexts() {
 
 function attachEditSelectPickers() {
     attachSelectPicker('ef', 'typePicker', 'ef-type', 'ef-typeText', 'Chọn loại công việc');
-    attachSelectPicker('ef', 'childPicker', 'ef-childProfileId', 'ef-childProfileText', 'Chọn trẻ', () => setProfileFields(getSelectedChild()));
+    attachSelectPicker('ef', 'childPicker', 'ef-childProfileId', 'ef-childProfileText', 'Chọn bé thứ 1', handleEditChildChange);
     attachSelectPicker('ef', 'skillPicker', 'ef-skillSelect', 'ef-skillSelectText', 'Chọn kỹ năng cần yêu cầu');
 }
 
@@ -675,11 +716,12 @@ function normalizeSkillsForCompare(skills) {
 }
 
 function getCurrentFormSignature() {
+    const childrenCount = normalizeChildrenCount(getTotalChildProfiles() || document.getElementById('ef-children')?.value || 1);
     return JSON.stringify({
         title: document.getElementById('ef-title')?.value?.trim() || '',
         description: document.getElementById('ef-desc')?.value?.trim() || '',
         jobType: Number(document.getElementById('ef-type')?.value || 0),
-        numberOfChildren: Number(document.getElementById('ef-children')?.value || 0),
+        numberOfChildren: childrenCount,
         childProfileId: document.getElementById('ef-childProfileId')?.value || '',
         salaryMin: document.getElementById('ef-salMin')?.value?.trim() || '',
         salaryMax: document.getElementById('ef-salMax')?.value?.trim() || '',
@@ -712,6 +754,7 @@ function focusInvalidField(fieldId) {
 function validateEditPayload(payload) {
     const minimumSalary = 8000000;
     const maximumSalary = 50000000;
+    const totalChildren = getTotalChildProfiles();
     const title = String(payload?.title ?? '').trim();
     if (!title || title.length < 5 || title.length > 200) {
         return { message: 'Tiêu đề bài đăng phải từ 5 đến 200 ký tự.', fieldId: 'ef-title' };
@@ -726,9 +769,30 @@ function validateEditPayload(payload) {
         return { message: 'Loại công việc không hợp lệ.', fieldId: 'ef-typeText' };
     }
 
+    if (totalChildren < 1) {
+        return {
+            message: 'Vui lòng tạo ít nhất 1 Child Profile trước khi lưu bài đăng.',
+            fieldId: 'ef-childProfileId'
+        };
+    }
+
+    if (totalChildren > 10) {
+        return {
+            message: 'Tối đa 10 Child Profile có thể được sử dụng cho một bài đăng.',
+            fieldId: 'ef-children'
+        };
+    }
+
     const children = Number(payload?.numberOfChildren || 0);
     if (!Number.isFinite(children) || children < 1 || children > 10) {
         return { message: 'Số trẻ cần chăm phải từ 1 đến 10.', fieldId: 'ef-children' };
+    }
+
+    if (children !== totalChildren) {
+        return {
+            message: `Số trẻ cần chăm được đồng bộ theo tổng hồ sơ bé hiện có (${totalChildren} bé).`,
+            fieldId: 'ef-children'
+        };
     }
 
     if (!payload?.childProfileId) {
@@ -825,19 +889,52 @@ function setProfileFields(child) {
 }
 
 function getSelectedChild() {
-    const childId = document.getElementById('ef-childProfileId').value;
-    return editChildren.find(child => String(child.id).toLowerCase() === String(childId).toLowerCase()) || null;
+    const childId = document.getElementById('ef-childProfileId')?.value || '';
+    return editChildren.find((child) => String(child.id).toLowerCase() === String(childId).toLowerCase()) || null;
+}
+
+function getEditSelectedChildren(requiredCount) {
+    const count = normalizeChildrenCount(requiredCount);
+    if (!Array.isArray(editChildren) || editChildren.length === 0 || count < 1) return [];
+    const selectedChild = getSelectedChild() || editChildren[0] || null;
+    return selectedChild ? [selectedChild] : [];
+}
+
+function getEditSelectedChildIds(requiredCount) {
+    return getEditSelectedChildren(requiredCount).map((child) => String(child.id));
+}
+
+function renderEditExtraChildProfiles() {
+    const container = document.getElementById('ef-extraChildProfiles');
+    if (!container) return;
+    container.innerHTML = '';
+}
+
+function handleEditChildChange() {
+    setProfileFields(getSelectedChild());
+    renderEditExtraChildProfiles();
+    syncChildrenCountField();
 }
 
 function renderChildren(selectedChildId) {
     const select = document.getElementById('ef-childProfileId');
     if (!select) return;
+
     select.innerHTML = editChildren.length
-        ? editChildren.map(child => `<option value="${escapeHtml(child.id)}">${escapeHtml(child.label)}</option>`).join('')
+        ? editChildren.map((child) => `<option value="${escapeHtml(child.id)}">${escapeHtml(child.label)}</option>`).join('')
         : '<option value="">Chưa có hồ sơ trẻ</option>';
-    if (selectedChildId) select.value = selectedChildId;
+
+    const normalizedSelectedId = String(selectedChildId || '').toLowerCase();
+    const hasRequestedChild = normalizedSelectedId
+        && editChildren.some((child) => String(child.id).toLowerCase() === normalizedSelectedId);
+    if (hasRequestedChild) {
+        select.value = selectedChildId;
+    } else if (editChildren.length) {
+        select.value = String(editChildren[0].id);
+    }
+
     syncSelectPickerTexts();
-    setProfileFields(getSelectedChild());
+    handleEditChildChange();
 }
 
 async function loadEditPage() {
@@ -852,13 +949,16 @@ async function loadEditPage() {
         const job = detailJson?.data || detailJson;
         const prefill = prefillJson?.data || {};
 
-        editChildren = Array.isArray(prefill.children) ? prefill.children : [];
-        renderChildren(job.childProfileId || prefill.selectedChildProfileId);
+        const primaryChildId = job.childProfileId || prefill.selectedChildProfileId || '';
+        editChildren = Array.isArray(prefill.children) && prefill.children.length
+            ? prefill.children
+            : (Array.isArray(job.children) ? job.children : []);
+        syncChildrenCountField();
+        renderChildren(primaryChildId);
 
         document.getElementById('ef-title').value = job.title || '';
         document.getElementById('ef-desc').value = job.description || '';
         document.getElementById('ef-type').value = job.jobType || 1;
-        document.getElementById('ef-children').value = job.numberOfChildren || prefill.numberOfChildren || 1;
         document.getElementById('ef-salMin').value = formatMoneyInputValue(job.salaryMin);
         document.getElementById('ef-salMax').value = formatMoneyInputValue(job.salaryMax);
         document.getElementById('ef-negotiable').checked = !!job.salaryNegotiable;
@@ -894,7 +994,11 @@ async function loadEditPage() {
     }
 }
 
-document.getElementById('ef-childProfileId')?.addEventListener('change', () => setProfileFields(getSelectedChild()));
+document.getElementById('ef-childProfileId')?.addEventListener('change', handleEditChildChange);
+document.getElementById('ef-children')?.addEventListener('change', () => {
+    syncChildrenCountField();
+    updateSubmitState();
+});
 document.getElementById('ef-addSkill')?.addEventListener('click', () => {
     const select = document.getElementById('ef-skillSelect');
     const value = select.value.trim();
@@ -930,12 +1034,16 @@ document.getElementById('editPageForm')?.addEventListener('submit', async (event
         showToast('Một số kỹ năng cũ không còn hoạt động, hệ thống đã bỏ qua để bạn lưu được bài đăng.', 'Cảnh báo');
     }
 
+    const numberOfChildren = syncChildrenCountField();
+    const selectedChildren = getEditSelectedChildren(1);
+
     const payload = {
         title: document.getElementById('ef-title').value.trim(),
         description: document.getElementById('ef-desc').value.trim(),
         jobType: Number(document.getElementById('ef-type').value),
-        numberOfChildren: Number(document.getElementById('ef-children').value || 1),
-        childProfileId: document.getElementById('ef-childProfileId').value || null,
+        numberOfChildren,
+        childProfileId: selectedChildren[0]?.id || document.getElementById('ef-childProfileId').value || null,
+        childProfileIds: [],
         salaryMin: parseMoneyInput(document.getElementById('ef-salMin').value),
         salaryMax: parseMoneyInput(document.getElementById('ef-salMax').value),
         salaryNegotiable: document.getElementById('ef-negotiable').checked,
@@ -1019,6 +1127,8 @@ function initializeEditPage() {
     loadLocationTree();
     initMoneyInputs();
     attachEditSelectPickers();
+    bindClickOnlySelect(document.getElementById('ef-children'));
+    syncChildrenCountField();
     updateSubmitState();
     loadEditPage();
 }

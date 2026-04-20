@@ -681,12 +681,6 @@
         autoGeocode();
     }
 
-        districtInput.value = district.name;
-        setDisplayText(districtDisplay, district.name, 'Chọn khu vực');
-        renderDistrictOptions();
-        autoGeocode();
-    }
-
     function autoGeocode() {
         var city = (cityInput && cityInput.value ? cityInput.value : '').trim();
         var dist = (districtInput && districtInput.value ? districtInput.value : '').trim();

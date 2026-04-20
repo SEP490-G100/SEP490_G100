@@ -40,32 +40,33 @@
                                     <div class="nm-col-6">
                                         <div class="nm-field">
                                             <label asp-for="FirstName" class="nm-label">Họ <span class="required">*</span></label>
-                                            <input asp-for="FirstName" class="nm-input" placeholder="Nguyễn" />
-                                            <span asp-validation-for="FirstName" class="nm-error"></span>
+                                            <input asp-for="FirstName" class="nm-input" placeholder="Nguyễn" autocomplete="given-name" />
+                                            <span asp-validation-for="FirstName" id="err-FirstName" class="nm-error"></span>
                                         </div>
                                     </div>
 
                                     <div class="nm-col-6">
                                         <div class="nm-field">
                                             <label asp-for="LastName" class="nm-label">Tên <span class="required">*</span></label>
-                                            <input asp-for="LastName" class="nm-input" placeholder="An" />
-                                            <span asp-validation-for="LastName" class="nm-error"></span>
+                                            <input asp-for="LastName" class="nm-input" placeholder="An" autocomplete="family-name" />
+                                            <span asp-validation-for="LastName" id="err-LastName" class="nm-error"></span>
                                         </div>
                                     </div>
 
                                     <div class="nm-col-12">
                                         <div class="nm-field">
                                             <label asp-for="Email" class="nm-label">Email <span class="required">*</span></label>
-                                            <input asp-for="Email" type="email" class="nm-input" placeholder="email@example.com" />
-                                            <span asp-validation-for="Email" class="nm-error"></span>
+                                            <input asp-for="Email" type="email" class="nm-input" placeholder="email@example.com" autocomplete="email" />
+                                            <span asp-validation-for="Email" id="err-Email" class="nm-error"></span>
                                         </div>
                                     </div>
 
                                     <div class="nm-col-12">
                                         <div class="nm-field">
                                             <label asp-for="PhoneNumber" class="nm-label">Số Điện Thoại</label>
-                                            <input asp-for="PhoneNumber" type="tel" class="nm-input" placeholder="0901234567" />
-                                            <div class="nm-field-hint">Trường này không bắt buộc, bạn có thể cập nhật sau trong hồ sơ.</div>
+                                            <input asp-for="PhoneNumber" type="tel" class="nm-input" placeholder="0901234567" autocomplete="tel" maxlength="11" />
+                                            <div class="nm-field-hint">Không bắt buộc. Nếu nhập phải đúng 10 chữ số, bắt đầu bằng 0.</div>
+                                            <span id="err-PhoneNumber" class="nm-error" style="display:none;"></span>
                                         </div>
                                     </div>
 
@@ -73,20 +74,25 @@
                                         <div class="nm-field">
                                             <label asp-for="Password" class="nm-label">Mật Khẩu <span class="required">*</span></label>
                                             <div class="nm-password-wrap">
-                                                <input asp-for="Password" type="text" id="regPassword" class="nm-input pwd-field" placeholder="Tối thiểu 8 ký tự" />
-                                                <button type="button" onclick="togglePassword('regPassword', this)" class="nm-password-toggle" aria-label="Hiển thị mật khẩu">
+                                                <input asp-for="Password" type="password" id="regPassword" class="nm-input pwd-field" placeholder="Tối thiểu 8 ký tự" autocomplete="new-password" />
+                                                <button type="button" onclick="togglePassword('regPassword', this)" class="nm-password-toggle" aria-label="Hiển thị/ẩn mật khẩu">
                                                     <span class="material-icons-round text-xl">visibility_off</span>
                                                 </button>
                                             </div>
-                                            <span asp-validation-for="Password" class="nm-error"></span>
+<span asp-validation-for="Password" id="err-Password" class="nm-error"></span>
                                         </div>
                                     </div>
 
                                     <div class="nm-col-6">
                                         <div class="nm-field">
                                             <label asp-for="ConfirmPassword" class="nm-label">Xác Nhận Mật Khẩu <span class="required">*</span></label>
-                                            <input asp-for="ConfirmPassword" type="password" class="nm-input" placeholder="Nhập lại mật khẩu" />
-                                            <span asp-validation-for="ConfirmPassword" class="nm-error"></span>
+                                            <div class="nm-password-wrap">
+                                                <input asp-for="ConfirmPassword" type="password" id="regConfirmPassword" class="nm-input pwd-field" placeholder="Nhập lại mật khẩu" autocomplete="new-password" />
+                                                <button type="button" onclick="togglePassword('regConfirmPassword', this)" class="nm-password-toggle" aria-label="Hiển thị/ẩn mật khẩu xác nhận">
+                                                    <span class="material-icons-round text-xl">visibility_off</span>
+                                                </button>
+                                            </div>
+                                            <span asp-validation-for="ConfirmPassword" id="err-ConfirmPassword" class="nm-error"></span>
                                         </div>
                                     </div>
                                 </div>
@@ -127,34 +133,177 @@
 @section Scripts {
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
-        function onGoogleSignIn(response) {
-            var form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '@Url.Action("GoogleLogin")';
+    /* ===== Google Sign-In ===== */
+    function onGoogleSignIn(response) {
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '@Url.Action("GoogleLogin")';
 
-            var token = document.createElement('input');
-            token.type = 'hidden';
-            token.name = 'idToken';
-            token.value = response.credential;
+        var token = document.createElement('input');
+        token.type = 'hidden';
+        token.name = 'idToken';
+        token.value = response.credential;
 
-            var antiForgery = document.querySelector('input[name="__RequestVerificationToken"]');
-            var af = document.createElement('input');
-            af.type = 'hidden';
-            af.name = '__RequestVerificationToken';
-            af.value = antiForgery.value;
+        var antiForgery = document.querySelector('input[name="__RequestVerificationToken"]');
+        var af = document.createElement('input');
+        af.type = 'hidden';
+        af.name = '__RequestVerificationToken';
+        af.value = antiForgery.value;
 
-            form.appendChild(token);
-            form.appendChild(af);
-            document.body.appendChild(form);
-            form.submit();
+        form.appendChild(token);
+        form.appendChild(af);
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    /* ===== Toggle ẩn/hiện mật khẩu ===== */
+    function togglePassword(inputId, btn) {
+        var input = document.getElementById(inputId);
+        var icon = btn.querySelector('.material-icons-round');
+        var isHidden = input.type === 'password';
+        input.type = isHidden ? 'text' : 'password';
+        icon.textContent = isHidden ? 'visibility' : 'visibility_off';
+        btn.setAttribute('aria-label', isHidden ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu');
+    }
+
+    /* ===== Client-side Validation ===== */
+    (function () {
+        'use strict';
+
+        var firstNameInput  = document.getElementById('FirstName');
+        var lastNameInput   = document.getElementById('LastName');
+        var emailInput      = document.getElementById('Email');
+        var phoneInput      = document.getElementById('PhoneNumber');
+        var passwordInput   = document.getElementById('regPassword');
+        var confirmInput    = document.getElementById('regConfirmPassword');
+
+        var firstNameErr    = document.getElementById('err-FirstName');
+        var lastNameErr     = document.getElementById('err-LastName');
+        var emailErr        = document.getElementById('err-Email');
+        var phoneErr        = document.getElementById('err-PhoneNumber');
+        var passwordErr     = document.getElementById('err-Password');
+        var confirmErr      = document.getElementById('err-ConfirmPassword');
+
+        /* --- Hiển thị / xoá lỗi --- */
+        function setError(input, errEl, msg) {
+            if (msg) {
+                input.style.borderColor  = '#ef4444';
+                input.style.boxShadow    = '0 0 0 3px rgba(239,68,68,0.12)';
+                errEl.textContent        = msg;
+                errEl.style.display      = '';
+            } else {
+                input.style.borderColor  = '';
+                input.style.boxShadow    = '';
+                errEl.textContent        = '';
+                errEl.style.display      = 'none';
+            }
         }
 
-        function togglePassword(inputId, btn) {
-            var input = document.getElementById(inputId);
-            var icon = btn.querySelector('.material-icons-round');
-            var isShowing = input.type === 'text';
-            input.type = isShowing ? 'password' : 'text';
-            icon.textContent = isShowing ? 'visibility_off' : 'visibility';
+        /* --- Các hàm validate từng trường --- */
+        function validateFirstName() {
+            var val = firstNameInput.value.trim();
+            if (!val)          { setError(firstNameInput, firstNameErr, 'Họ là bắt buộc.');              return false; }
+            if (val.length > 50) { setError(firstNameInput, firstNameErr, 'Họ không được quá 50 ký tự.'); return false; }
+            setError(firstNameInput, firstNameErr, '');
+            return true;
         }
+
+        function validateLastName() {
+            var val = lastNameInput.value.trim();
+            if (!val)          { setError(lastNameInput, lastNameErr, 'Tên là bắt buộc.');              return false; }
+            if (val.length > 50) { setError(lastNameInput, lastNameErr, 'Tên không được quá 50 ký tự.'); return false; }
+            setError(lastNameInput, lastNameErr, '');
+            return true;
+        }
+
+        function validateEmail() {
+            var val = emailInput.value.trim();
+            if (!val)                            { setError(emailInput, emailErr, 'Email là bắt buộc.');   return false; }
+            if (!/^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/.test(val)) { setError(emailInput, emailErr, 'Email không hợp lệ.'); return false; }
+            setError(emailInput, emailErr, '');
+            return true;
+        }
+
+        function validatePhone() {
+            var val = phoneInput.value.trim();
+            if (!val) { setError(phoneInput, phoneErr, ''); return true; } /* không bắt buộc */
+            if (!/^0\d{9}$/.test(val)) {
+                setError(phoneInput, phoneErr, 'Số điện thoại phải gồm 10 chữ số, bắt đầu bằng 0.');
+                return false;
+            }
+            setError(phoneInput, phoneErr, '');
+            return true;
+        }
+
+        function validatePassword() {
+            var val = passwordInput.value;
+            if (!val)         { setError(passwordInput, passwordErr, 'Mật khẩu là bắt buộc.');              return false; }
+            if (val.length < 8) { setError(passwordInput, passwordErr, 'Mật khẩu phải có ít nhất 8 ký tự.'); return false; }
+            setError(passwordInput, passwordErr, '');
+            return true;
+        }
+
+        function validateConfirm() {
+            var val = confirmInput.value;
+            if (!val)                          { setError(confirmInput, confirmErr, 'Vui lòng xác nhận mật khẩu.');    return false; }
+            if (val !== passwordInput.value)   { setError(confirmInput, confirmErr, 'Mật khẩu xác nhận không khớp.'); return false; }
+            setError(confirmInput, confirmErr, '');
+            return true;
+        }
+
+        /* --- Gắn sự kiện real-time --- */
+        function onInputClear(input, validator) {
+            /* Chỉ tái validate khi đang hiển thị lỗi (tránh validate sớm) */
+            input.addEventListener('input', function () {
+                if (input.style.borderColor === 'rgb(239, 68, 68)') validator();
+            });
+            input.addEventListener('blur', validator);
+        }
+
+        onInputClear(firstNameInput, validateFirstName);
+        onInputClear(lastNameInput,  validateLastName);
+        onInputClear(emailInput,     validateEmail);
+        onInputClear(phoneInput,     validatePhone);
+
+        passwordInput.addEventListener('input', function () {
+            if (passwordInput.style.borderColor === 'rgb(239, 68, 68)') validatePassword();
+            if (confirmInput.value) validateConfirm(); /* đồng bộ confirm nếu đã nhập */
+        });
+        passwordInput.addEventListener('blur', validatePassword);
+
+        confirmInput.addEventListener('input', function () {
+            if (confirmInput.value || confirmInput.style.borderColor === 'rgb(239, 68, 68)') validateConfirm();
+        });
+        confirmInput.addEventListener('blur', validateConfirm);
+
+        /* --- Chặn submit nếu form chưa hợp lệ --- */
+        var form = document.querySelector('form[method="post"]');
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                var results = [
+                    validateFirstName(),
+                    validateLastName(),
+                    validateEmail(),
+                    validatePhone(),
+                    validatePassword(),
+                    validateConfirm()
+                ];
+                var allOk = results.every(Boolean);
+                if (!allOk) {
+                    e.preventDefault();
+                    /* Cuộn đến và focus vào trường lỗi đầu tiên */
+                    var inputs = [firstNameInput, lastNameInput, emailInput, phoneInput, passwordInput, confirmInput];
+                    var valid  = [results[0], results[1], results[2], results[3], results[4], results[5]];
+                    for (var i = 0; i < inputs.length; i++) {
+                        if (!valid[i]) {
+                            inputs[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            inputs[i].focus();
+                            break;
+                        }
+                    }
+                }
+            });
+        }
+    })();
     </script>
 }
