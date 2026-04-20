@@ -1,4 +1,4 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
@@ -10,12 +10,12 @@ using WebSite.Models.Search;
 namespace WebSite.Controllers;
 
 /// <summary>
-/// Proxy mọi request từ browser đến Backend API
-/// GET  /Search          → View trang tìm kiếm
-/// GET  /Search/Jobs     → proxy GET /api/search/jobs
-/// POST /Search/CreateJob → proxy POST /api/job-postings
-/// PUT  /Search/UpdateJob/{id} → proxy PUT /api/job-postings/{id}
-/// DELETE /Search/DeleteJob/{id} → proxy DELETE /api/job-postings/{id}
+/// Proxy má»i request tá»« browser Ä‘áº¿n Backend API
+/// GET  /Search          â†’ View trang tÃ¬m kiáº¿m
+/// GET  /Search/Jobs     â†’ proxy GET /api/search/jobs
+/// POST /Search/CreateJob â†’ proxy POST /api/job-postings
+/// PUT  /Search/UpdateJob/{id} â†’ proxy PUT /api/job-postings/{id}
+/// DELETE /Search/DeleteJob/{id} â†’ proxy DELETE /api/job-postings/{id}
 /// </summary>
 public class SearchController : Controller
 {
@@ -31,7 +31,7 @@ public class SearchController : Controller
         _notificationHub = notificationHub;
     }
 
-    // ── GET /Search ─────────────────────────────────────────
+    // â”€â”€ GET /Search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     [HttpGet]
     public async Task<IActionResult> Index()
     {
@@ -75,7 +75,7 @@ public class SearchController : Controller
         return View();
     }
 
-    // ── GET /Search/Jobs ────────────────────────────────────
+    // â”€â”€ GET /Search/Jobs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     [HttpGet]
     public async Task<IActionResult> Jobs([FromQuery] SearchJobRequest req)
     {

@@ -15,6 +15,9 @@ public class VerificationRequestListDto
 {
     public Guid     Id              { get; set; }
     public Guid     NannyProfileId  { get; set; }
+    public int      RequestType     { get; set; }
+    public List<int> DocumentTypes  { get; set; } = new();
+    public DateTime? ExpiryDate     { get; set; }
     public int      Status          { get; set; }   // 1=Pending, 2=Approved, 3=Rejected
     public DateTime CreatedAt       { get; set; }
     public DateTime? ReviewedAt     { get; set; }
@@ -38,12 +41,15 @@ public class VerificationRequestListDto
         _ => "Đang chờ"
     };
     public string StatusClass => Status switch { 2 => "badge-active", 3 => "badge-inactive", _ => "badge-pending" };
+    public string RequestTypeLabel => RequestType == 2 ? "Giấy khám sức khỏe" : "Hồ sơ xác minh";
+    public string ExpiryDateLabel => ExpiryDate.HasValue ? ExpiryDate.Value.ToString("dd/MM/yyyy") : "-";
 }
 
 public class VerificationRequestDetailDto
 {
     public Guid     Id              { get; set; }
     public Guid     NannyProfileId  { get; set; }
+    public int      RequestType     { get; set; }
     public int      Status          { get; set; }
     public string?  RejectionReason { get; set; }
     public DateTime CreatedAt       { get; set; }
@@ -85,6 +91,7 @@ public class VerificationRequestDetailDto
         _ => "Đang chờ"
     };
     public string StatusClass => Status switch { 2 => "badge-active", 3 => "badge-inactive", _ => "badge-pending" };
+    public string RequestTypeLabel => RequestType == 2 ? "Giấy khám sức khỏe" : "Hồ sơ xác minh";
     public string EducationLabel => EducationLevel switch
     {
         0 => "Trung học",
@@ -147,6 +154,7 @@ public class VerificationDocumentDto
     public string  DocumentUrl  { get; set; } = "";
     public string  FileName     { get; set; } = "";
     public int?    FileSize     { get; set; }
+    public DateTime? ExpiryDate { get; set; }
 
     public string TypeLabel => DocumentType switch
     {

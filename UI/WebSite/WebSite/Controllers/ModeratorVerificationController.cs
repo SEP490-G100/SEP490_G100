@@ -28,13 +28,15 @@ public class ModeratorVerificationController : Controller
 
     // GET /Moderator/ManageNannyVerification
     [HttpGet("ManageNannyVerification")]
-    public async Task<IActionResult> ManageNannyVerification(string? search = null, int? status = null, int page = 1)
+    public async Task<IActionResult> ManageNannyVerification(string? search = null, int? status = null, int? requestType = null, int page = 1)
     {
         ViewBag.Search = search;
         ViewBag.Status = status;
+        ViewBag.RequestType = requestType;
 
         var qs = new List<string> { $"page={page}", "pageSize=3" };
         if (status.HasValue) qs.Add($"status={status.Value}");
+        if (requestType.HasValue) qs.Add($"requestType={requestType.Value}");
         if (!string.IsNullOrWhiteSpace(search)) qs.Add($"search={Uri.EscapeDataString(search)}");
 
         var token = HttpContext.Session.GetString("AccessToken");

@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Http;
 using WebSite.Validation;
 
@@ -54,3 +54,4 @@ namespace WebSite.Models.Profile
         public string Category { get; set; } = string.Empty;
     }
 }
+

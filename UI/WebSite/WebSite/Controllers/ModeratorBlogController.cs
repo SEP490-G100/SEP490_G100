@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
@@ -88,7 +88,7 @@ public class ModeratorBlogController : Controller
             return Json(new
             {
                 success = true,
-                message = uploadedUrls.Count == 1 ? $"Upload {mediaLabel} thanh cong." : $"Upload cac {mediaLabel} thanh cong.",
+                message = uploadedUrls.Count == 1 ? $"Upload {mediaLabel} thành công." : $"Upload cac {mediaLabel} thành công.",
                 data = new
                 {
                     urls = uploadedUrls

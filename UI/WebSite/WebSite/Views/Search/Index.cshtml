@@ -1,4 +1,4 @@
-@{
+﻿@{
     ViewData["Title"] = "Tìm bảo mẫu - NannyMatch";
     Layout = "~/Views/Shared/_Layout.cshtml";
     var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
@@ -17,7 +17,7 @@
 
 <div class="sticky top-[72px] z-40 bg-white/95 backdrop-blur-lg border-b border-gray-100" style="box-shadow:0 2px 8px rgba(0,0,0,.04);">
     <div class="px-6 py-3 flex items-center gap-3 flex-wrap">
-        @* ── Tab bar (hiện với Nanny) — ngoài cùng bên trái ── *@
+        @* Tab bar (hiện với Nanny) - ngoài cùng bên trái *@
         @if (User.IsInRole("Nanny"))
         {
             <div class="rec-tab-bar">
@@ -70,7 +70,7 @@
 <div class="search-body">
     <div class="list-panel">
 
-        @* ── Rec panel (Tab 2) — chỉ render với Nanny ── *@
+        @* Rec panel (Tab 2) - chỉ render với Nanny *@
         @if (User.IsInRole("Nanny"))
         {
             <div id="recJobPanel" class="rec-panel">

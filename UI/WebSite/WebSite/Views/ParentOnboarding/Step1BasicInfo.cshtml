@@ -1,7 +1,8 @@
-@model WebSite.Models.Profile.ParentOnboardingWizardViewModel
+﻿@model WebSite.Models.Profile.ParentOnboardingWizardViewModel
 @{
     ViewData["Title"] = "Phụ huynh - Thông tin cơ bản";
     var todayIso = DateTime.Today.ToString("yyyy-MM-dd");
+    var currentAvatarUrlJson = System.Text.Json.JsonSerializer.Serialize(Model.AvatarUrl ?? "");
 }
 
 <div class="nm-flow-shell">
@@ -30,14 +31,14 @@
                     <div class="nm-form-grid">
                         <div class="nm-col-12">
                             <div class="nm-section-card">
-                                <div class="nm-section-title">Thông tin cá nhân</div>
-                                <div class="nm-section-note">Ảnh đại diện, họ tên và địa chỉ cơ bản sẽ được dùng cho hồ sơ phụ huynh sau khi hoàn tất đăng ký.</div>
+                                <div class="nm-section-title">Thong tin ca nhan</div>
+                                <div class="nm-section-note">Anh dai dien, ho ten va dia chi co ban se duoc dung cho ho so parent sau khi onboarding hoan tat.</div>
 
                                 <div class="nm-form-grid">
                                     <div class="nm-col-12">
                                         <div class="nm-field">
                                             <label asp-for="FullName" class="nm-label">Họ và tên <span class="required">*</span></label>
-                                            <input asp-for="FullName" class="nm-input" placeholder="Tran Van B" />
+                                            <input asp-for="FullName" class="nm-input" placeholder="Trần Văn B" />
                                             <span asp-validation-for="FullName" class="nm-error"></span>
                                         </div>
                                     </div>
@@ -46,7 +47,7 @@
                                         <div class="nm-field">
                                             <label asp-for="PhoneNumber" class="nm-label">Số điện thoại</label>
                                             <input asp-for="PhoneNumber" class="nm-input" placeholder="+84901234567" />
-                                            <div class="nm-field-hint">Nhập 9-15 chữ số, có thể bắt đầu bằng dấu +.</div>
+                                            <div class="nm-field-hint">Nhập đúng 10 số.</div>
                                             <span asp-validation-for="PhoneNumber" class="nm-error"></span>
                                         </div>
                                     </div>
@@ -54,7 +55,7 @@
                                     <div class="nm-col-6">
                                         <div class="nm-field">
                                             <label asp-for="DateOfBirth" class="nm-label">Ngày sinh <span class="required">*</span></label>
-                                            <input asp-for="DateOfBirth" id="DateOfBirth" type="date" class="nm-input" max="@todayIso" />
+                                            <input asp-for="DateOfBirth" asp-format="{0:yyyy-MM-dd}" id="DateOfBirth" type="date" class="nm-input" max="@todayIso" />
                                             <div id="dateOfBirthError" class="nm-error hidden"></div>
                                             <span asp-validation-for="DateOfBirth" class="nm-error"></span>
                                         </div>
@@ -362,7 +363,7 @@
     var avatarErr = document.getElementById('avatarUploadError');
     var avatarPreview = document.getElementById('avatarPreview');
     var avatarPreviewPlaceholder = document.getElementById('avatarPreviewPlaceholder');
-    var currentAvatarUrl = '@(Model.AvatarUrl ?? "")';
+    var currentAvatarUrl = @Html.Raw(currentAvatarUrlJson);
     var objectUrl = null;
 
     var dobInput = document.getElementById('DateOfBirth');
@@ -471,7 +472,7 @@
 
             if (!isAllowedImage(file)) {
                 avatarInput.value = '';
-                showAvatarError('Chỉ cho phép tải ảnh .png, .jpg, .jpeg.');
+                showAvatarError('Chỉ cho phép upload ảnh .png, .jpg, .jpeg.');
                 if (avatarFileName) avatarFileName.textContent = currentAvatarUrl ? 'Đang dùng ảnh hiện tại' : 'Chưa chọn tệp';
                 if (currentAvatarUrl) setPreview(currentAvatarUrl);
                 return;
@@ -680,6 +681,12 @@
         autoGeocode();
     }
 
+        districtInput.value = district.name;
+        setDisplayText(districtDisplay, district.name, 'Chọn khu vực');
+        renderDistrictOptions();
+        autoGeocode();
+    }
+
     function autoGeocode() {
         var city = (cityInput && cityInput.value ? cityInput.value : '').trim();
         var dist = (districtInput && districtInput.value ? districtInput.value : '').trim();
@@ -790,7 +797,7 @@
             isValid = isValid && cityOk;
 
             var districtOk = !!(districtInput && districtInput.value.trim());
-            setValidationMessage('District', districtOk ? '' : 'Vui lòng chọn Quận/Huyện/Phường.');
+            setValidationMessage('District', districtOk ? '' : 'Vui lòng chọn Quận/Phường.');
             isValid = isValid && districtOk;
 
             return isValid;
@@ -806,3 +813,4 @@
     }
 })();
 </script>
+

@@ -1,4 +1,4 @@
-(() => {
+﻿(() => {
   const SKIP_SELECT_CLASSES = new Set([
     'form-select-native-hidden',
     'nanny-filter--native'

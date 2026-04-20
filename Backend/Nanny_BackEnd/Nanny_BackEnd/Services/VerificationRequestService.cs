@@ -82,6 +82,7 @@ public class VerificationRequestService
         {
             Id = request.Id,
             NannyProfileId = request.NannyProfileId,
+            RequestType = request.RequestType,
             Status = request.Status,
             RejectionReason = request.RejectionReason,
             CreatedAt = request.CreatedAt,
@@ -143,7 +144,8 @@ public class VerificationRequestService
                     DocumentType = document.DocumentType,
                     DocumentUrl = document.DocumentUrl,
                     FileName = document.FileName,
-                    FileSize = document.FileSize
+                    FileSize = document.FileSize,
+                    ExpiryDate = document.ExpiryDate
                 }).ToList()
         };
     }
@@ -157,21 +159,33 @@ public class VerificationRequestService
             return (false, "Khong tim thay ho so Nanny.");
         }
 
-        var existingRequests = await _nannyVerificationRequestRepo.GetRequestsByNannyProfileAsync(profile.Id);
-        if (existingRequests.Any(existingRequest => existingRequest.Status == (int)Enums.NannyVerificationRequestStatus.Pending))
-        {
-            return (false, "Ban da co mot yeu cau xac minh dang cho duyet.");
-        }
-
         if (request.Documents == null || !request.Documents.Any())
         {
             return (false, "Ban phai tai len it nhat mot tai lieu.");
+        }
+
+        var requestType = Enum.IsDefined(typeof(VerificationRequestType), request.RequestType)
+            ? (VerificationRequestType)request.RequestType
+            : VerificationRequestType.ProfileVerification;
+
+        var existingRequests = await _nannyVerificationRequestRepo.GetRequestsByNannyProfileAsync(profile.Id);
+        if (existingRequests.Any(existingRequest =>
+                existingRequest.Status == (int)Enums.NannyVerificationRequestStatus.Pending &&
+                existingRequest.RequestType == (int)requestType))
+        {
+            return (false, "Ban da co mot yeu cau dang cho duyet cho loai ho so nay.");
+        }
+
+        if (requestType == VerificationRequestType.HealthCertificate && !request.HealthCertificateExpiryDate.HasValue)
+        {
+            return (false, "Ban phai nhap ngay het han cho giay kham suc khoe.");
         }
 
         var verificationRequest = new Nanny_BackEnd.Models.VerificationRequest
         {
             Id = Guid.NewGuid(),
             NannyProfileId = profile.Id,
+            RequestType = (int)requestType,
             Status = (int)Enums.NannyVerificationRequestStatus.Pending,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = userId
@@ -191,6 +205,7 @@ public class VerificationRequestService
                 DocumentUrl = document.DocumentUrl,
                 FileName = document.FileName,
                 FileSize = document.FileSize,
+                ExpiryDate = document.ExpiryDate,
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = userId
             });
@@ -198,11 +213,14 @@ public class VerificationRequestService
 
         _nannyVerificationRequestRepo.AddRequest(verificationRequest);
 
-        profile.VerificationStatus = (int)VerificationStatus.Pending;
-        profile.VerifiedAt = DateTime.UtcNow;
-        profile.VerifiedBy = null;
-        profile.UpdatedAt = DateTime.UtcNow;
-        profile.UpdatedBy = userId;
+        if (requestType == VerificationRequestType.ProfileVerification)
+        {
+            profile.VerificationStatus = (int)VerificationStatus.Pending;
+            profile.VerifiedAt = DateTime.UtcNow;
+            profile.VerifiedBy = null;
+            profile.UpdatedAt = DateTime.UtcNow;
+            profile.UpdatedBy = userId;
+        }
 
         await _nannyVerificationRequestRepo.SaveChangesAsync();
 
@@ -223,6 +241,17 @@ public class VerificationRequestService
         {
             Id = request.Id,
             NannyProfileId = request.NannyProfileId,
+            RequestType = request.RequestType,
+            DocumentTypes = request.VerificationDocuments
+                .Where(document => !document.IsDeleted)
+                .Select(document => document.DocumentType)
+                .Distinct()
+                .OrderBy(documentType => documentType)
+                .ToList(),
+            ExpiryDate = request.VerificationDocuments
+                .Where(document => !document.IsDeleted && document.ExpiryDate.HasValue)
+                .Select(document => document.ExpiryDate)
+                .Max(),
             Status = request.Status,
             CreatedAt = request.CreatedAt,
             ReviewedAt = request.ReviewedAt,

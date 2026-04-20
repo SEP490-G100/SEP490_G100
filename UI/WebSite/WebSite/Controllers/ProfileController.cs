@@ -1,4 +1,4 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Json;
@@ -53,9 +53,102 @@ public class ProfileController : Controller
     {
         if (string.IsNullOrWhiteSpace(url)) return url;
         if (Uri.TryCreate(url, UriKind.Absolute, out _)) return url;
+        if (url.StartsWith("~/", StringComparison.Ordinal))
+            url = url[1..];
         if (url.StartsWith("/") && !string.IsNullOrWhiteSpace(_apiBaseUrl))
             return _apiBaseUrl + url;
+        if (!string.IsNullOrWhiteSpace(_apiBaseUrl))
+            return _apiBaseUrl + "/" + url.TrimStart('/');
         return url;
+    }
+
+    private static TModel? DeserializeApiData<TModel>(ApiResultDto? apiResult) where TModel : class
+    {
+        if (apiResult?.Success != true || apiResult.Data == null)
+            return null;
+
+        if (apiResult.Data is JsonElement element)
+        {
+            if (element.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+                return null;
+
+            return JsonSerializer.Deserialize<TModel>(element.GetRawText(), JsonOpts);
+        }
+
+        return JsonSerializer.Deserialize<TModel>(
+            JsonSerializer.Serialize(apiResult.Data), JsonOpts);
+    }
+
+    private static bool TryGetNamedPropertyRecursive(
+        JsonElement root,
+        IReadOnlyCollection<string> propertyNames,
+        out JsonElement matchedValue)
+    {
+        var queue = new Queue<JsonElement>();
+        queue.Enqueue(root);
+
+        while (queue.Count > 0)
+        {
+            var current = queue.Dequeue();
+            if (current.ValueKind == JsonValueKind.Object)
+            {
+                foreach (var property in current.EnumerateObject())
+                {
+                    if (propertyNames.Any(name => property.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        matchedValue = property.Value;
+                        return true;
+                    }
+
+                    if (property.Value.ValueKind is JsonValueKind.Object or JsonValueKind.Array)
+                        queue.Enqueue(property.Value);
+                }
+            }
+            else if (current.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in current.EnumerateArray())
+                {
+                    if (item.ValueKind is JsonValueKind.Object or JsonValueKind.Array)
+                        queue.Enqueue(item);
+                }
+            }
+        }
+
+        matchedValue = default;
+        return false;
+    }
+
+    private static string? ExtractStringFromJson(JsonElement root, params string[] propertyNames)
+    {
+        if (!TryGetNamedPropertyRecursive(root, propertyNames, out var valueElement))
+            return null;
+
+        if (valueElement.ValueKind != JsonValueKind.String)
+            return null;
+
+        var value = valueElement.GetString();
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private static DateOnly? ExtractDateOnlyFromJson(JsonElement root, params string[] propertyNames)
+    {
+        if (!TryGetNamedPropertyRecursive(root, propertyNames, out var valueElement))
+            return null;
+
+        if (valueElement.ValueKind != JsonValueKind.String)
+            return null;
+
+        var raw = valueElement.GetString();
+        if (string.IsNullOrWhiteSpace(raw))
+            return null;
+
+        if (DateOnly.TryParse(raw, out var dateOnly))
+            return dateOnly;
+
+        if (DateTime.TryParse(raw, out var dateTime))
+            return DateOnly.FromDateTime(dateTime);
+
+        return null;
     }
 
     private EditPersonalInfoViewModel BuildEditProfileFromClaims()
@@ -128,8 +221,7 @@ public class ProfileController : Controller
                 return View(BuildProfileFromClaims());
             }
 
-            var profile = JsonSerializer.Deserialize<PersonalProfileViewModel>(
-                JsonSerializer.Serialize(apiResult.Data), JsonOpts);
+            var profile = DeserializeApiData<PersonalProfileViewModel>(apiResult);
 
             if (profile != null)
                 profile.AvatarUrl = NormalizeAvatarUrl(profile.AvatarUrl);
@@ -177,8 +269,7 @@ public class ProfileController : Controller
             if (apiResult == null || !apiResult.Success)
                 return RedirectToAction(nameof(Index));
 
-            var profile = JsonSerializer.Deserialize<PersonalProfileViewModel>(
-                JsonSerializer.Serialize(apiResult.Data), JsonOpts) ?? BuildProfileFromClaims();
+            var profile = DeserializeApiData<PersonalProfileViewModel>(apiResult) ?? BuildProfileFromClaims();
 
             profile.AvatarUrl = NormalizeAvatarUrl(profile.AvatarUrl);
             profile.IsReadOnlyView = true;
@@ -250,7 +341,7 @@ public class ProfileController : Controller
         }
         catch
         {
-            // silent — review failure should not block profile load
+            // silent â€” review failure should not block profile load
         }
     }
 
@@ -319,7 +410,7 @@ public class ProfileController : Controller
 
             var response = await _http.GetAsync("/api/profile");
             if (!response.IsSuccessStatusCode)
-                return RedirectToAction("Login", "Auth");
+                return RedirectToAction("đăng nhập", "Auth");
 
             var content = await response.Content.ReadAsStringAsync();
             var apiResult = JsonSerializer.Deserialize<ApiResultDto>(content, JsonOpts);
@@ -338,6 +429,9 @@ public class ProfileController : Controller
                 profile.AvatarUrl = NormalizeAvatarUrl(profile.AvatarUrl);
 
             var vm = profile ?? BuildEditProfileFromClaims();
+            if (vm.Roles.Count == 0)
+                ApplyRolesToEditModel(vm);
+
             if (apiResult?.Data is JsonElement root &&
                 root.TryGetProperty("skills", out var skillsElement) &&
                 skillsElement.ValueKind == JsonValueKind.Array)

@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -28,9 +28,7 @@ public class AddressController : Controller
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
     }
 
-    /// <summary>
-    /// Gợi ý địa điểm tại Việt Nam. Trả về JSON: [{ displayName, latitude, longitude, city, district, ward }].
-    /// </summary>
+
     [AllowAnonymous]
     [HttpGet("Suggest")]
     public async Task<IActionResult> Suggest([FromQuery] string? q, [FromQuery] int limit = 8)
@@ -132,3 +130,4 @@ public class AddressController : Controller
         return Content(json, "application/json", System.Text.Encoding.UTF8);
     }
 }
+

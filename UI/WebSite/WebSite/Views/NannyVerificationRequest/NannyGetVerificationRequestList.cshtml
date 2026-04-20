@@ -62,6 +62,8 @@
                     <tr>
                         <th class="text-left">#</th>
                         <th class="text-left">Ngày nộp</th>
+                        <th class="text-left">Loại hồ sơ</th>
+                        <th class="text-left">Hết hạn</th>
                         <th class="text-left">Trạng thái</th>
                         <th class="text-left">Người duyệt</th>
                         <th class="text-left">Ngày duyệt</th>
@@ -73,7 +75,7 @@
                     @if (!items.Any())
                     {
                         <tr>
-                            <td colspan="7" class="text-center py-16 text-gray-400">
+                            <td colspan="9" class="text-center py-16 text-gray-400">
                                 <span class="material-icons-round text-5xl mb-3 block text-gray-200">verified_user</span>
                                 <p class="font-semibold text-gray-400">Không tìm thấy yêu cầu xác minh nào.</p>
                                 <p class="text-xs text-gray-300 mt-1">Hãy thử bộ lọc khác hoặc gửi yêu cầu mới.</p>
@@ -92,6 +94,19 @@
                                         <span class="font-semibold text-gray-800">@item.CreatedAt.ToString("dd/MM/yyyy")</span>
                                         <span class="text-xs text-gray-400">@item.CreatedAt.ToString("HH:mm")</span>
                                     </div>
+                                </td>
+                                <td class="text-gray-600 text-sm">
+                                    @if (item.RequestType == 2)
+                                    {
+                                        <span class="badge badge-active">Giấy khám sức khỏe</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-pending">Hồ sơ xác minh</span>
+                                    }
+                                </td>
+                                <td class="text-gray-500 text-sm">
+                                    @(item.ExpiryDate.HasValue ? item.ExpiryDate.Value.ToString("dd/MM/yyyy") : "-")
                                 </td>
                                 <td>
                                     <span class="badge @item.StatusClass">@item.StatusLabel</span>

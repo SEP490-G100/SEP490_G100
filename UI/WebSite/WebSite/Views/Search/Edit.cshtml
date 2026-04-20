@@ -79,7 +79,7 @@
                                 Lương hợp lệ từ 8.000.000 đến 50.000.000 VND.
                             </div>
                             <div class="md:col-span-2">
-                                <label class="form-label">Tùy chọn lương</label>
+                                <label class="form-label">Tuy chọn lương</label>
                                 <label class="negotiable-field negotiable-field-large">
                                     <input type="checkbox" id="ef-negotiable" class="rounded accent-orange-500" />
                                     <span class="negotiable-title">Lương thỏa thuận</span>
@@ -119,7 +119,7 @@
                     <div class="section-card schedule-card">
                         <div class="schedule-header">
                             <div>
-                                <p class="section-title">Lịch ngày muốn tuyển</p>
+                                <p class="section-title">Lịch ngày muốn tuyển bảo mẫu</p>
                                 <p class="section-caption">Cập nhật các buổi cần bảo mẫu hỗ trợ trong tuần.</p>
                             </div>
                         </div>
@@ -129,7 +129,7 @@
                     <div class="section-card section-card-soft">
                         <div class="section-heading">
                             <div>
-                                <p class="section-title">Thông tin từ hồ sơ phụ huynh</p>
+                                <p class="section-title">Thông tin từ hồ sơ trẻ</p>
                                 <p class="section-caption">Chọn lại bé nếu cần, hệ thống sẽ cập nhật thông tin hồ sơ trẻ tương ứng.</p>
                             </div>
                         </div>
@@ -144,7 +144,7 @@
                                 <textarea id="ef-characteristic" class="form-input resize-none bg-white/80" rows="2" readonly></textarea>
                             </div>
                             <div>
-                                <label class="form-label">Nhóm tuổi của bé</label>
+                                <label class="form-label">Nhóm tuổi của trẻ</label>
                                 <input type="text" id="ef-birthType" class="form-input bg-white/80" readonly />
                             </div>
                             <div class="md:col-span-2">
@@ -157,7 +157,7 @@
                     <div class="section-card section-card-plain">
                         <div class="section-heading">
                             <div>
-                                <p class="section-title">Kỹ năng yêu cầu</p>
+                                <p class="section-title">Kỹ năng cần yêu cầu</p>
                                 <p class="section-caption">Cập nhật bộ kỹ năng từ danh sách có sẵn trong hệ thống.</p>
                             </div>
                         </div>
@@ -183,12 +183,12 @@
     display: flex;
     justify-content: center;
 ">
-                            <span class="text-center" >Hủy</span>
+                            <span class="text-center" >Huỷ</span>
                         </a>
                         <button type="submit" id="editPageSubmit" class="modal-btn modal-btn-primary flex-1">
                             <span class="modal-btn__content">
                                 <span class="modal-btn__spinner" aria-hidden="true"></span>
-                                <span class="modal-btn__label">Lưu thay đổi</span>
+                                <span class="modal-btn__label">Lưu thay đổi bài đăng</span>
                             </span>
                         </button>
                     </div>
@@ -768,10 +768,10 @@ function validateEditPayload(payload) {
     const minAge = payload?.minNannyAge;
     const maxAge = payload?.maxNannyAge;
     if (minAge != null && (!Number.isFinite(minAge) || minAge < 18 || minAge > 80)) {
-        return { message: 'Độ tuổi bảo mẫu từ phải trong khoảng 18-80.', fieldId: 'ef-minAge' };
+        return { message: 'Độ tuổi bảo mẫu từ phải trong khoảng 18 đến 80.', fieldId: 'ef-minAge' };
     }
     if (maxAge != null && (!Number.isFinite(maxAge) || maxAge < 18 || maxAge > 80)) {
-        return { message: 'Độ tuổi bảo mẫu đến phải trong khoảng 18-80.', fieldId: 'ef-maxAge' };
+        return { message: 'Độ tuổi bảo mẫu đến phải trong khoảng 18 đến 80.', fieldId: 'ef-maxAge' };
     }
     if (minAge != null && maxAge != null && Number(minAge) > Number(maxAge)) {
         return { message: 'Độ tuổi từ không được lớn hơn độ tuổi đến.', fieldId: 'ef-minAge' };
@@ -811,10 +811,10 @@ function updateSubmitState() {
     submitBtn.setAttribute('aria-disabled', disabled ? 'true' : 'false');
     const submitLabel = submitBtn.querySelector('.modal-btn__label');
     if (submitLabel) {
-        submitLabel.textContent = isSubmittingEdit ? 'Đang lưu...' : 'Lưu thay đổi';
+        submitLabel.textContent = isSubmittingEdit ? 'Đang lưu...' : 'Lưu thay đổi bài đăng';
     }
     submitBtn.title = disabled && !isSubmittingEdit
-        ? 'Không có thay đổi để lưu'
+        ? 'Không có thay đổi để lưu bài đăng'
         : '';
 }
 
@@ -878,7 +878,7 @@ async function loadEditPage() {
         setProfileFields(getSelectedChild());
 
         if (Number(job.moderationStatus) === 0) {
-            showNotice('Bài đăng này đang chờ kiểm duyệt. Bạn vẫn có thể chỉnh sửa và lưu lại.', 'warn');
+            showNotice('Bài đăng này đang chờ kiểm duyệt. Bạn vẫn có thể chỉnh sửa và lưu lại bài đăng.', 'warn');
         } else if (Number(job.moderationStatus) === 2) {
             showNotice('Nếu bạn chỉnh sửa bài đăng công khai và lưu lại, bài đăng sẽ quay về trạng thái chờ kiểm duyệt.', 'info');
         }
@@ -888,7 +888,7 @@ async function loadEditPage() {
         hasLoadedEditData = true;
         updateSubmitState();
     } catch {
-        showToast('Không tải được thông tin bài đăng.', 'error');
+        showToast('Không tải được thông tin bài đăng.', 'Lỗi');
         hasLoadedEditData = false;
         updateSubmitState();
     }
@@ -918,7 +918,7 @@ document.getElementById('editPageForm')?.addEventListener('submit', async (event
     event.preventDefault();
     if (!hasLoadedEditData) return;
     if (!isFormDirty()) {
-        showToast('Chưa có thay đổi để lưu.', 'info');
+        showToast('Chưa có thay đổi để lưu bài đăng.', 'Thông báo');
         updateSubmitState();
         return;
     }
@@ -927,7 +927,7 @@ document.getElementById('editPageForm')?.addEventListener('submit', async (event
     if (validSkills.length !== editSkills.length) {
         editSkills = validSkills;
         renderSkillCollection();
-        showToast('Một số kỹ năng cũ không còn hoạt động, hệ thống đã bỏ qua để bạn lưu được bài đăng.', 'warning');
+        showToast('Một số kỹ năng cũ không còn hoạt động, hệ thống đã bỏ qua để bạn lưu được bài đăng.', 'Cảnh báo');
     }
 
     const payload = {

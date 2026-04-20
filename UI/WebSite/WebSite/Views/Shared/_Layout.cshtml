@@ -1,4 +1,4 @@
-@using System.Net.Http.Headers
+﻿@using System.Net.Http.Headers
 @using System.Text.Json
 @using WebSite.Models
 @using WebSite.Models.Profile
@@ -1316,13 +1316,13 @@
                                         case 'verification-rejected':
                                             return { message: 'Yêu cầu xác minh của bạn đã bị từ chối.', type: 'warning' };
                                         case 'job-posting-approved':
-                                            return { message: 'Bài đăng của bạn đã được duyệt.', type: 'success' };
+                                            return { message: 'Bai dang cua ban da duoc duyet.', type: 'success' };
                                         case 'job-posting-rejected':
                                             return { message: 'Bài đăng của bạn đã bị từ chối.', type: 'warning' };
                                         case 'job-posting-pending':
                                             return { message: 'Bài đăng của bạn đang chờ kiểm duyệt viên duyệt.', type: 'success' };
                                         case 'nanny-profile-favorited':
-                                            return { message: 'Hồ sơ của bạn vừa được yêu thích.', type: 'success' };
+                                            return { message: 'Ho so cua ban vua duoc yeu thich.', type: 'success' };
                                         case 'system-warning':
                                             return { message: 'Có cảnh báo hệ thống cần xử lý.', type: 'warning' };
                                         default:
@@ -1535,7 +1535,7 @@
                         <a class="hidden sm:inline-flex nm-auth-link"
                            href="/Auth/Login">Đăng nhập</a>
                         <a class="nm-primary-btn"
-                           href="/Auth/Register">Đăng ký</a>
+                           href="/Auth/Register">Đăng ký miễn phí</a>
                     }
                 </div>
             </div>
@@ -1806,7 +1806,7 @@
                 </div>
 
                 <div class="brand-name">Nanny<span class="accent">Match</span></div>
-                <div class="brand-tag">🏠 Kết nối gia đình – Tin tưởng vào mỗi nụ cười 💕</div>
+                <div class="brand-tag">🏠 Kết nối gia đình - Tin tưởng vào mỗi nụ cười 💕</div>
 
                 <div class="progress-section">
                     <div class="progress-status">

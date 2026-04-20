@@ -847,7 +847,7 @@
             document.getElementById('sendBtn').addEventListener('click', sendMessage);
             document.getElementById('btnBlockConv').addEventListener('click', toggleBlock);
 
-            // Close context menus on outside click
+            // Close context menus on outsiđ click
             document.addEventListener('click', () => {
                 document.querySelectorAll('.msg-ctx-menu.open').forEach(m => m.classList.remove('open'));
             });
@@ -913,7 +913,7 @@
             const conv = document.getElementById(`conv-${id}`);
             if (conv) conv.classList.add('active');
 
-            // Show chat area, hide empty
+            // Show chat area, hiđ empty
             document.getElementById('chatEmpty').style.display = 'none';
             const area = document.getElementById('chatArea');
             area.style.display = 'flex';

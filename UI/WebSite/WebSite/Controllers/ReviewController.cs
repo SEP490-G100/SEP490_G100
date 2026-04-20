@@ -139,7 +139,7 @@ public class ReviewController : Controller
         public T? Data { get; set; }
     }
 
-    // DTO nội bộ: map response của GET /api/hiring/records/{id}
+    // DTO noi bo: map response cua GET /api/hiring/records/{id}
     private sealed class HiringRecordApiResult
     {
         public HiringRecordData? Data { get; set; }

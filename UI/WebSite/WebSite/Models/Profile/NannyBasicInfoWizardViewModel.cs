@@ -1,4 +1,4 @@
-namespace WebSite.Models.Profile
+﻿namespace WebSite.Models.Profile
 {
     public class NannyBasicInfoWizardViewModel
     {

@@ -1,4 +1,4 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
@@ -18,7 +18,7 @@ public class CommunicationController : Controller
         _apiBaseUrl = (config["ApiSettings:BaseUrl"] ?? "").TrimEnd('/');
     }
 
-    // GET /Communication  — Trang chat chính
+    // GET /Communication  â€” Trang chat chÃ­nh
     [HttpGet]
     public IActionResult Index(Guid? conversationId = null)
     {
@@ -28,7 +28,7 @@ public class CommunicationController : Controller
         return View();
     }
 
-    // GET /Communication/Conversations — proxy API
+    // GET /Communication/Conversations â€” proxy API
     [HttpGet]
     public async Task<IActionResult> Conversations()
     {
@@ -93,7 +93,7 @@ public class CommunicationController : Controller
         return await proxy(() => _http.SendAsync(req));
     }
 
-    // ─── Helpers ─────────────────────────────────────────────────────────────
+    // â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private void setAuthHeader()
     {

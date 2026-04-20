@@ -32,6 +32,19 @@
     var hasUploadedHealthDocument = Model.HasHealthCertificate;
     var areaText = string.Join(", ", new[] { Model.Ward, Model.District, Model.City }.Where(v => !string.IsNullOrWhiteSpace(v)));
     var displayEmail = string.IsNullOrWhiteSpace(Model.Email) ? "Chưa cập nhật" : Model.Email;
+    int? ResolveAge(DateOnly? dateOfBirth)
+    {
+        if (!dateOfBirth.HasValue)
+            return null;
+
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var age = today.Year - dateOfBirth.Value.Year;
+        if (dateOfBirth.Value > today.AddYears(-age))
+            age--;
+
+        return age >= 0 ? age : null;
+    }
+    var displayAge = (Model.Age.HasValue && Model.Age.Value >= 0) ? Model.Age : ResolveAge(Model.DateOfBirth);
     var createdChildProfilesCount = Model.Children?.Count ?? 0;
     var declaredChildrenCount = Model.NumberOfChildren ?? (createdChildProfilesCount > 0 ? createdChildProfilesCount : 0);
     var missingChildProfilesCount = Math.Max(declaredChildrenCount - createdChildProfilesCount, 0);
@@ -169,7 +182,7 @@
                 <div class="mt-2 flex items-center gap-2 flex-wrap text-sm text-slate-500 font-semibold">
                     <span class="profile-role-chip">@(isNanny ? "Bảo mẫu" : "Phụ huynh")</span>
                     <span>@(!string.IsNullOrWhiteSpace(Model.City) ? Model.City : "Việt Nam")</span>
-                    <span>@(Model.Age?.ToString() ?? "--") tuổi</span>
+                    <span>@(displayAge?.ToString() ?? "--") tuổi</span>
                     @if (isNanny)
                     {
                         <span class="text-orange-600">⭐ @rating.ToString("0.##") (@(Model.TotalReviews ?? 0) đánh giá)</span>
@@ -220,7 +233,7 @@
                     {
                         <button type="button"
                                 id="complainProfileBtn"
-                                title="Khiếu nại hồ sơ"
+                                title="Phản nàn hồ sơ"
                                 class="inline-flex items-center justify-center h-10 w-10 rounded-full border border-rose-200 bg-white text-rose-500 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-rose-300 hover:bg-rose-50 hover:shadow-md">
                             <span class="material-icons-round text-[20px]">flag</span>
                         </button>
@@ -342,7 +355,7 @@
                             Đánh giá
                             @if (Model.ReviewTotalCount > 0)
                             {
-                                <span class="text-sm font-normal text-slate-500 ml-1">(@Model.ReviewTotalCount đánh giá)</span>
+                                <span class="text-sm font-normal text-slate-500 ml-1">(@Model.ReviewTotalCount nhận xét)</span>
                             }
                         </h3>
                         @if (!Model.Reviews.Any())
@@ -359,7 +372,7 @@
                                             <div class="flex items-center gap-2">
                                                 @if (!string.IsNullOrWhiteSpace(r.ReviewerAvatarUrl))
                                                 {
-                                                    <img src="@r.ReviewerAvatarUrl" class="w-7 h-7 rounded-full object-cover" alt="Ảnh đại diện người đánh giá" />
+                                                    <img src="@r.ReviewerAvatarUrl" class="w-7 h-7 rounded-full object-cover" alt="Ảnh đại diện" />
                                                 }
                                                 <span class="feedback-name">@r.ReviewerName</span>
                                             </div>
@@ -435,6 +448,7 @@
                         else
                         {
                             <a href="/NannyVerificationRequest/verifyNanny" class="profile-status-btn">Xác minh ngay</a>
+
                         }
                     </div>
 
@@ -445,8 +459,8 @@
                         </div>
                         <p class="profile-status-desc">
                             @(hasUploadedHealthDocument
-                                ? "Bạn đã tải lên giấy khám sức khỏe."
-                                : "Bạn chưa tải lên giấy khám sức khỏe.")
+                                ? "Bạn đã upload giấy sức khỏe."
+                                : "Bạn chưa upload giấy sức khỏe.")
                         </p>
                         <button type="button" class="profile-status-btn @(hasUploadedHealthDocument ? "is-disabled" : "is-coming-soon")" disabled>
                             @(hasUploadedHealthDocument ? "Đã hoàn thành" : "Sắp mở")
@@ -579,8 +593,8 @@
                 <input type="hidden" id="profileComplainedUserId" name="ComplainedUserId" value="@Model.UserId" />
                 <input type="hidden" name="ReturnUrl" value="@currentProfileUrl" />
                 <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Lý do khiếu nại <span class="text-red-500">*</span></label>
-                    <textarea id="profileComplainReason" name="Reason" rows="4" class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400" placeholder="Nhập lý do khiếu nại..."></textarea>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Lý do phàn nàn <span class="text-red-500">*</span></label>
+                    <textarea id="profileComplainReason" name="Reason" rows="4" class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400" placeholder="Nhập lý do phàn nàn..."></textarea>
                 </div>
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-2">Bằng chứng (không bắt buộc)</label>
@@ -588,7 +602,7 @@
                 </div>
                 <div class="flex gap-2">
                     <button type="button" onclick="closeProfileComplainModal()" class="modal-btn modal-btn-secondary w-full">Hủy</button>
-                    <button id="profileComplainSubmitBtn" type="submit" class="modal-btn modal-btn-primary w-full">Gửi khiếu nại</button>
+                    <button id="profileComplainSubmitBtn" type="submit" class="modal-btn modal-btn-primary w-full">Gửi phản nàn</button>
                 </div>
             </form>
         </div>
@@ -695,7 +709,7 @@
 
                     messageBtn.disabled = true;
                     var oldText = messageBtn.textContent;
-                    messageBtn.textContent = 'Đang mở hộp thư...';
+                    messageBtn.textContent = 'Đang mở tin nhắn...';
 
                     try {
                         var response = await fetch('/Communication/GetOrCreate', {
@@ -960,7 +974,7 @@
 
                     if (reason.length < 5 || reason.length > 500) {
                         event.preventDefault();
-                        notifyProfileToast('Lý do khiếu nại phải từ 5 đến 500 ký tự.', 'warning');
+                        notifyProfileToast('Lý do phàn nàn phải từ 5 đến 500 ký tự.', 'warning');
                         if (typeof tinymce !== 'undefined' && tinymce.get('profileComplainReason')) {
                             tinymce.get('profileComplainReason').focus();
                         } else if (complainReasonEl) {

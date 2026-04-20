@@ -1,4 +1,4 @@
-@model WebSite.Models.Profile.NannyBasicInfoWizardViewModel
+﻿@model WebSite.Models.Profile.NannyBasicInfoWizardViewModel
 @{
     ViewData["Title"] = "Bảo mẫu - Thông tin cơ bản";
 }
@@ -46,7 +46,7 @@
                                         <div class="nm-field">
                                             <label asp-for="AvatarFile" class="nm-label">Ảnh đại diện</label>
                                             <input type="file" asp-for="AvatarFile" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="nm-file" />
-                                            <div class="nm-field-hint">Nên dùng ảnh rõ mặt, định dạng .jpg, .jpeg hoặc .png.</div>
+                                            <div class="nm-field-hint">Nên dùng ảnh rõ mặt, đúng định dạng .jpg, .jpeg, .png.</div>
                                             <div id="avatarUploadError" class="nm-error hidden"></div>
                                             <div class="mt-3">
                                                 <img id="avatarPreview" class="nm-avatar-preview hidden" alt="Xem trước ảnh đại diện" />
@@ -59,7 +59,7 @@
                                         <div class="nm-field">
                                             <label asp-for="PhoneNumber" class="nm-label">Số điện thoại</label>
                                             <input asp-for="PhoneNumber" class="nm-input" placeholder="+84901234567" />
-                                            <div class="nm-field-hint">Nhập 10 chữ số.</div>
+                                            <div class="nm-field-hint">Nhập 10 số, có thể bắt đầu bằng dấu +.</div>
                                             <span asp-validation-for="PhoneNumber" class="nm-error"></span>
                                         </div>
                                     </div>
@@ -67,7 +67,7 @@
                                     <div class="nm-col-6">
                                         <div class="nm-field">
                                             <label asp-for="DateOfBirth" class="nm-label">Ngày sinh <span class="required">*</span></label>
-                                            <input asp-for="DateOfBirth" type="date" class="nm-input" max="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                                            <input asp-for="DateOfBirth" asp-format="{0:yyyy-MM-dd}" type="date" class="nm-input" max="@DateTime.Today.ToString("yyyy-MM-dd")" />
                                             <span asp-validation-for="DateOfBirth" class="nm-error"></span>
                                             <div id="dateOfBirthClientError" class="nm-error hidden">Ngày sinh không được lớn hơn ngày hiện tại.</div>
                                         </div>
@@ -183,7 +183,7 @@
 
             if (!isAllowedImage(file)) {
                 avatarInput.value = '';
-                showAvatarError('Chỉ được tải ảnh .png, .jpg hoặc .jpeg.');
+                showAvatarError('Chỉ cho phép upload ảnh .png, .jpg, .jpeg.');
                 if (currentAvatarUrl) setPreview(currentAvatarUrl);
                 return;
             }
@@ -264,7 +264,7 @@
         .catch(function () {
             provinces = [];
             setAddressSelectState(true);
-            showAddressLoadError('Không tải được danh sách tỉnh/thành. Vui lòng thử lại sau.');
+            showAddressLoadError('Không tải được danh sách tỉnh thành. Vui lòng thử lại sau.');
         });
 
     function setAddressSelectState(disabled) {

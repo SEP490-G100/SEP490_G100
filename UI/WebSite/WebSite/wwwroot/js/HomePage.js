@@ -1,4 +1,4 @@
-﻿
+
 (function () {
     const HOME_LOADER_SESSION_KEY = 'nm:home-loader-shown';
 

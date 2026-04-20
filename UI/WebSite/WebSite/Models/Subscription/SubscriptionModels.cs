@@ -1,4 +1,4 @@
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace WebSite.Models.Subscription;
 
@@ -226,3 +226,4 @@ public class SubscriptionPageViewModel
     public bool IsNanny => string.Equals(CurrentRole, "Nanny", StringComparison.OrdinalIgnoreCase);
     public bool SupportsSubscription => IsParent || IsNanny;
 }
+

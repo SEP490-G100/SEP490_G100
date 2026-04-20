@@ -313,7 +313,7 @@ public class ModeratorComplainController : Controller
             var token = HttpContext.Session.GetString("AccessToken");
             if (string.IsNullOrWhiteSpace(token))
             {
-                return RedirectToAction("Login", "Auth", new
+                return RedirectToAction("đăng nhập", "Auth", new
                 {
                     toastType = "warning",
                     toastMessage = "Phiên đăng nhập đã hết hạn."

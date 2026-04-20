@@ -226,10 +226,19 @@ public class ProfileService
                     })
                     .ToList();
 
-                var verificationRequests = await _verificationRequestRepo.GetRequestsByNannyProfileAsync(nannyProfile.Id);
-                hasHealthCertificate = verificationRequests
-                    .SelectMany(r => r.VerificationDocuments)
-                    .Any(d => d.DocumentType == (int)Enums.VerificationDocumentType.HealthCertificate && !d.IsDeleted);
+                try
+                {
+                    var verificationRequests = await _verificationRequestRepo.GetRequestsByNannyProfileAsync(nannyProfile.Id);
+                    hasHealthCertificate = verificationRequests
+                        .SelectMany(r => r.VerificationDocuments)
+                        .Any(d => d.DocumentType == (int)Enums.VerificationDocumentType.HealthCertificate && !d.IsDeleted);
+                }
+                catch (Exception ex)
+                {
+                    // Avoid breaking profile page if verification schema is temporarily out of sync.
+                    _logger.LogWarning(ex, "Skip loading verification request summary for NannyProfileId={NannyProfileId}", nannyProfile.Id);
+                    hasHealthCertificate = false;
+                }
             }
             else
             {
@@ -335,7 +344,7 @@ public class ProfileService
         if (dob > today.AddYears(-age))
             age--;
 
-        return age > 0 ? age : null;
+        return age >= 0 ? age : null;
     }
 
     public async Task<PersonalProfileDto> UpdatePersonalInfoAsync(Guid userId, UpdatePersonalInfoRequest request)

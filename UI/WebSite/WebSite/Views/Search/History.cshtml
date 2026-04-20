@@ -670,9 +670,9 @@
         };
 
         const formatDateTime = (value) => {
-            if (!value) return 'Chưa cập nhật';
+            if (!value) return 'Chua cap nhat';
             const parsed = new Date(value);
-            if (Number.isNaN(parsed.getTime())) return 'Chưa cập nhật';
+            if (Number.isNaN(parsed.getTime())) return 'Chua cap nhat';
             return parsed.toLocaleString('vi-VN', {
                 year: 'numeric',
                 month: '2-digit',
@@ -684,7 +684,7 @@
 
         const renderApplicationBadge = (status) => `
             <span class="${applicationBadgeClasses[Number(status)] || 'history-app-badge history-app-badge--pending'}">
-                ${escapeHtml(applicationStatusLabels[status] || 'Đang cập nhật')}
+                ${escapeHtml(applicationStatusLabels[status] || 'Dang cap nhat')}
             </span>`;
 
         const getNameInitial = (fullName) => {
@@ -1000,7 +1000,7 @@
                 return;
             }
             if (Number(action) === 2 && rejectionReason.length < 8) {
-                showHistoryToast('Lý do từ chối cần tối thiểu 8 ký tự.', 'warning');
+                showHistoryToast('Ly do tu choi can toi thieu 8 ky tu.', 'warning');
                 reasonInput?.focus();
                 return;
             }
@@ -1072,8 +1072,8 @@
                 }
 
                 body.innerHTML = jobs.map((job) => {
-                    const moderationLabel = moderationLabels[job.moderationStatus] || 'Đang cập nhật';
-                    const postStatusLabel = postStatusLabels[job.status] || 'Đang cập nhật';
+                    const moderationLabel = moderationLabels[job.moderationStatus] || 'Dang cap nhat';
+                    const postStatusLabel = postStatusLabels[job.status] || 'Dang cap nhat';
                     const showPostStatusBadge = String(moderationLabel).trim().toLowerCase() !== String(postStatusLabel).trim().toLowerCase();
 
                     return `

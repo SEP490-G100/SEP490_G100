@@ -1,4 +1,4 @@
-let nannyMap;
+﻿let nannyMap;
 let nannyMarkers = [];
 let nannyProfiles = [];
 let nannyAllProfiles = [];
@@ -351,15 +351,15 @@ async function sendContactRequest(nannyProfileId, message) {
 
     const json = await response.json();
     if (!response.ok || !json?.success) {
-      showNannyToast(json?.message || 'Không thể gửi yêu cầu liên hệ.', 'error');
+      showNannyToast(json?.message || 'Khong the gui request contact.', 'error');
       return null;
     }
 
-    showNannyToast(json?.message || 'Đã gửi yêu cầu liên hệ thành công.', 'success');
+    showNannyToast(json?.message || 'Da gui request contact thanh cong.', 'success');
     window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
     return json;
   } catch {
-    showNannyToast('Không thể gửi yêu cầu liên hệ.', 'error');
+    showNannyToast('Khong the gui request contact.', 'error');
     return null;
   }
 }
