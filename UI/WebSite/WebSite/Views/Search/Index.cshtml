@@ -129,7 +129,7 @@
                         </div>
                         <div>
                             <label class="form-label">Số trẻ cần chăm</label>
-                            <select id="cf-children" class="form-input">
+                            <select id="cf-children" class="form-input" disabled>
                                 @for (var childCount = 1; childCount <= 10; childCount++)
                                 {
                                     <option value="@childCount">@childCount bé</option>
@@ -197,16 +197,16 @@
                 </div>
 
                 <div class="section-card section-card-soft">
-                    <div class="section-heading">
-                        <div>
-                            <p class="section-title">Thông tin từ hồ sơ phụ huynh</p>
-                            <p class="section-caption">Mặc định sẽ lấy thông tin cho 1 bé. Khi tăng số trẻ, hệ thống sẽ hiển thị thêm bảng thông tin các bé tiếp theo.</p>
+                        <div class="section-heading">
+                            <div>
+                                <p class="section-title">Thông tin từ hồ sơ phụ huynh</p>
+                                <p class="section-caption">Số trẻ cần chăm được đồng bộ theo tổng hồ sơ bé hiện có. Chọn bé thứ 1 để hiển thị thông tin chi tiết.</p>
+                            </div>
                         </div>
-                    </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div class="md:col-span-2">
                             <label class="form-label">Chọn bé thứ 1</label>
-                            <input type="text" id="cf-childProfileText" class="form-input form-select-picker-input" autocomplete="off" placeholder="Chọn trẻ" />
+                            <input type="text" id="cf-childProfileText" class="form-input form-select-picker-input" autocomplete="off" placeholder="Chọn bé thứ 1" />
                             <select id="cf-childProfileId" class="form-input form-select-native-hidden"></select>
                         </div>
                         <div>
@@ -356,15 +356,15 @@
                 </div>
 
                 <div class="section-card section-card-soft">
-                    <div class="section-heading">
-                        <div>
-                            <p class="section-title">Thông tin từ hồ sơ phụ huynh</p>
-                            <p class="section-caption">Chọn lại bé nếu cần, hệ thống sẽ cập nhật hồ sơ trẻ tương ứng.</p>
+                        <div class="section-heading">
+                            <div>
+                                <p class="section-title">Thông tin từ hồ sơ phụ huynh</p>
+                                <p class="section-caption">Chọn lại bé nếu cần, hệ thống sẽ cập nhật hồ sơ trẻ tương ứng.</p>
+                            </div>
                         </div>
-                    </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div class="md:col-span-2">
-                            <label class="form-label">Chọn trẻ</label>
+                            <label class="form-label">Chọn bé thứ 1</label>
                             <select id="ef-childProfileId" class="form-input" onchange="handleEditChildChange()"></select>
                         </div>
                         <div>
@@ -792,4 +792,3 @@ const CURRENT_USER_NAME = '@userName';
 </script>
 <script src="~/js/search.js" asp-append-version="true"></script>
 }
-

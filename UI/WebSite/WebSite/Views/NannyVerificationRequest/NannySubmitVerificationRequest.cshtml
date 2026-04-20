@@ -1,6 +1,12 @@
 ﻿@model WebSite.Models.Verification.SubmitVerificationRequestViewModel
 @{
     ViewData["Title"] = "Gửi yêu cầu xác minh";
+    var returnUrl = Context.Request.Query["returnUrl"].ToString();
+    var backUrl = Url.Action("NannyGetVerificationRequestList", "NannyVerificationRequest") ?? "/NannyVerificationRequest/NannyGetVerificationRequestList";
+    if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+    {
+        backUrl = returnUrl;
+    }
 }
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-10">
@@ -9,7 +15,7 @@
             <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">Gửi yêu cầu xác minh</h1>
             <p class="text-gray-600 dark:text-gray-400">Tách riêng 2 loại yêu cầu: hồ sơ xác minh và giấy khám sức khỏe.</p>
         </div>
-        <a href="@Url.Action("NannyGetVerificationRequestList", "NannyVerificationRequest")"
+        <a href="@backUrl"
            class="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-medium transition-colors">
             <span class="material-icons-round">arrow_back</span>
             Trở về
@@ -81,7 +87,7 @@
                     <div class="flex items-start gap-3">
                         <span class="material-icons-round text-orange-500 text-2xl">badge</span>
                         <div class="min-w-0 flex-1">
-                            <h3 class="text-lg font-bold text-gray-900 dark:text-white">1. Tải lên căn cước công dân <span class="text-red-500">*</span></h3>
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white"> Tải lên căn cước công dân <span class="text-red-500">*</span></h3>
                             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Tải ảnh hoặc file PDF rõ nét của căn cước công dân. Bạn có thể chọn nhiều file nếu cần mặt trước và mặt sau.</p>
                         </div>
                     </div>
@@ -102,7 +108,7 @@
                     <div class="flex items-start gap-3">
                         <span class="material-icons-round text-orange-500 text-2xl">school</span>
                         <div class="min-w-0 flex-1">
-                            <h3 class="text-lg font-bold text-gray-900 dark:text-white">3. Tải lên bằng cấp và chứng chỉ <span class="text-gray-400 text-base">(Tùy chọn)</span></h3>
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white"> Tải lên bằng cấp và chứng chỉ <span class="text-gray-400 text-base">(Tùy chọn)</span></h3>
                             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Mục này không bắt buộc. Nếu có, bạn có thể tải lên ảnh hoặc file PDF bằng cấp/chứng chỉ để hồ sơ đầy đủ hơn.</p>
                         </div>
                     </div>
@@ -134,7 +140,7 @@
                     <div class="flex items-start gap-3">
                         <span class="material-icons-round text-orange-500 text-2xl">medical_services</span>
                         <div class="min-w-0 flex-1">
-                            <h3 class="text-lg font-bold text-gray-900 dark:text-white">2. Tải lên giấy khám sức khỏe <span class="text-red-500">*</span></h3>
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white"> Tải lên giấy khám sức khỏe <span class="text-red-500">*</span></h3>
                             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Đây là tài liệu bắt buộc. Hệ thống chấp nhận ảnh hoặc file PDF rõ nét, tối đa 5MB mỗi file.</p>
                         </div>
                     </div>
@@ -220,7 +226,10 @@
                 button.addEventListener("click", () => setActiveTab(button.dataset.target));
             });
 
-            setActiveTab("verification-profile-panel");
+            const tabParam = new URLSearchParams(window.location.search).get("tab");
+            const availableTabTargets = new Set(tabButtons.map((button) => button.dataset.target));
+            const defaultTab = availableTabTargets.has(tabParam) ? tabParam : "verification-profile-panel";
+            setActiveTab(defaultTab);
         })();
 
         const store = {

@@ -27,6 +27,12 @@
     var nannyVerifyPromptButton = "Xác minh ID ngay";
     var nannyVerifyPromptStatusClass = "is-not-submitted";
     var nannyVerifyPromptStatusText = "Chưa gửi xác minh";
+    var currentUserFirstName = User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? string.Empty;
+    var currentUserLastName = User.FindFirst(System.Security.Claims.ClaimTypes.Surname)?.Value ?? string.Empty;
+    var currentUserInitial = !string.IsNullOrWhiteSpace(currentUserFirstName)
+        ? currentUserFirstName[..1].ToUpperInvariant()
+        : "U";
+    var currentUserAvatar = User.FindFirst("AvatarUrl")?.Value;
 
     if (canCheckNannyVerifyPrompt)
     {
@@ -738,6 +744,14 @@
             flex-shrink: 0;
         }
 
+        .nm-user-sheet__avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: inherit;
+            display: block;
+        }
+
         .nm-user-sheet__name {
             margin: 0;
             font-size: 20px;
@@ -1066,11 +1080,18 @@
                                     aria-controls="dropdownMenu"
                                     aria-expanded="false"
                                     class="flex items-center gap-2 px-3 py-2 rounded-2xl border border-orange-100 bg-white/80 hover:bg-orange-50 dark:hover:bg-gray-800 transition-all">
-                                <div class="w-8 h-8 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                                    @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value?.Substring(0, 1).ToUpper())
+                                <div class="w-8 h-8 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full overflow-hidden flex items-center justify-center text-white text-sm font-bold">
+                                    @if (!string.IsNullOrWhiteSpace(currentUserAvatar))
+                                    {
+                                        <img src="@currentUserAvatar" alt="Avatar" class="w-full h-full object-cover" />
+                                    }
+                                    else
+                                    {
+                                        @currentUserInitial
+                                    }
                                 </div>
                                 <span class="hidden sm:block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                    @User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value
+                                    @currentUserFirstName
                                 </span>
                                 <span class="material-icons-round text-gray-400 text-lg">expand_more</span>
                             </button>
@@ -1084,11 +1105,18 @@
                                 </div>
                                 <div class="nm-user-sheet__profile flex flex-col px-3 py-2 border-b border-gray-100 dark:border-gray-700 mb-1 rounded-md">
                                     <span class="nm-user-sheet__avatar">
-                                        @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value?.Substring(0, 1).ToUpper())
+                                        @if (!string.IsNullOrWhiteSpace(currentUserAvatar))
+                                        {
+                                            <img src="@currentUserAvatar" alt="Avatar" />
+                                        }
+                                        else
+                                        {
+                                            @currentUserInitial
+                                        }
                                     </span>
                                     <div class="nm-user-sheet__profile-meta">
                                         <p class="nm-user-sheet__name">
-                                            @User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value @User.FindFirst(System.Security.Claims.ClaimTypes.Surname)?.Value
+                                            @currentUserFirstName @currentUserLastName
                                         </p>
                                         <p class="nm-user-sheet__email">@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</p>
                                     </div>

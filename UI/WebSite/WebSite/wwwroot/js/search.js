@@ -283,10 +283,9 @@ function attachSelectPicker(prefix, kind, selectId, inputId, emptyLabel, onValue
   if (!select || !input || input.dataset.acReady === 'true') return;
 
   input.dataset.acReady = 'true';
-  if (kind === 'childPicker') {
-    input.readOnly = true;
-    input.setAttribute('aria-readonly', 'true');
-  }
+  // Non-location pickers are click-to-select only.
+  input.readOnly = true;
+  input.setAttribute('aria-readonly', 'true');
   input.parentElement?.classList.add('autocomplete-field');
 
   const dropdown = document.createElement('ul');
@@ -345,7 +344,6 @@ function attachSelectPicker(prefix, kind, selectId, inputId, emptyLabel, onValue
     const shouldOpenAll = !currentValue || select.value === '' || normalizeText(currentValue) === normalizedEmptyLabel;
     renderOptions(shouldOpenAll ? '' : currentValue);
   });
-  input.addEventListener('input', () => renderOptions(input.value.trim()));
   input.addEventListener('blur', () => {
     setTimeout(() => {
       hideAutocomplete(prefix, kind);
@@ -360,7 +358,7 @@ function syncSelectPickerTexts() {
 
 function attachCreateSelectPickers() {
   attachSelectPicker('cf', 'typePicker', 'cf-type', 'cf-typeText', 'Chọn loại công việc');
-  attachSelectPicker('cf', 'childPicker', 'cf-childProfileId', 'cf-childProfileText', 'Chọn trẻ', () => handleCreateChildChange());
+  attachSelectPicker('cf', 'childPicker', 'cf-childProfileId', 'cf-childProfileText', 'Chọn bé thứ 1', () => handleCreateChildChange());
   attachSelectPicker('cf', 'skillPicker', 'cf-skillSelect', 'cf-skillSelectText', 'Chọn kỹ năng cần yêu cầu');
 }
 
@@ -1321,23 +1319,19 @@ function normalizeChildrenCount(value) {
   return Math.min(10, Math.max(1, Math.trunc(parsed)));
 }
 
+function getTotalChildProfiles(collection) {
+  return Array.isArray(collection) ? collection.length : 0;
+}
+
 function ensureChildrenCountOptions(selectId, preferredValue) {
   const select = document.getElementById(selectId);
   if (!select) return;
 
-  const maxChildren = 10;
-  const hasExpectedOptions = select.options.length === maxChildren
-    && Array.from(select.options).every((option, idx) => Number(option.value) === idx + 1);
-
-  if (!hasExpectedOptions) {
-    select.innerHTML = Array.from({ length: maxChildren }, (_, idx) => {
-      const value = idx + 1;
-      return `<option value="${value}">${value} bé</option>`;
-    }).join('');
-  }
-
   const resolvedValue = normalizeChildrenCount(preferredValue ?? select.value ?? 1);
+  select.innerHTML = `<option value="${resolvedValue}">${resolvedValue} bé</option>`;
   select.value = String(resolvedValue);
+  select.disabled = true;
+  select.setAttribute('aria-readonly', 'true');
 }
 
 function getSelectedChild(prefix) {
@@ -1362,9 +1356,6 @@ function getCreateSelectedChildren(requiredCount) {
   };
 
   tryAddChild(document.getElementById('cf-childProfileId')?.value || '');
-  for (let idx = 0; idx < count - 1; idx += 1) {
-    tryAddChild(document.getElementById(`cf-extraChildProfileId-${idx}`)?.value || '');
-  }
 
   for (let idx = 0; idx < createChildren.length && selected.length < count; idx += 1) {
     const fallbackId = String(createChildren[idx]?.id || '').toLowerCase();
@@ -1378,108 +1369,8 @@ function getCreateSelectedChildren(requiredCount) {
 
 function renderCreateExtraChildProfiles() {
   const container = document.getElementById('cf-extraChildProfiles');
-  const countInput = document.getElementById('cf-children');
-  if (!container || !countInput) return;
-
-  const requiredCount = normalizeChildrenCount(countInput.value);
-  countInput.value = String(requiredCount);
-  const extraCount = Math.max(requiredCount - 1, 0);
-  if (requiredCount <= 1) {
-    container.innerHTML = '';
-    return;
-  }
-
-  const existingSelections = {};
-  container.querySelectorAll('select[id^="cf-extraChildProfileId-"]').forEach((selectEl) => {
-    existingSelections[selectEl.id] = selectEl.value || '';
-  });
-
-  const firstSelectedId = String(document.getElementById('cf-childProfileId')?.value || '').toLowerCase();
-  const usedIds = new Set(firstSelectedId ? [firstSelectedId] : []);
-  const findChildById = (childId) => {
-    const normalizedId = String(childId || '').toLowerCase();
-    return createChildren.find((child) => String(child.id).toLowerCase() === normalizedId) || null;
-  };
-
-  let html = '';
-
-  for (let idx = 0; idx < extraCount; idx += 1) {
-    const selectId = `cf-extraChildProfileId-${idx}`;
-    const preservedValue = existingSelections[selectId] || '';
-    const preservedChild = findChildById(preservedValue);
-
-    let selectedChild = null;
-    if (preservedChild && !usedIds.has(String(preservedChild.id).toLowerCase())) {
-      selectedChild = preservedChild;
-    } else {
-      selectedChild = createChildren.find((child) => !usedIds.has(String(child.id).toLowerCase())) || null;
-    }
-
-    const selectedChildId = selectedChild ? String(selectedChild.id) : '';
-    if (selectedChild) usedIds.add(String(selectedChild.id).toLowerCase());
-
-    const selectableChildren = createChildren.filter((child) => {
-      const normalizedId = String(child.id).toLowerCase();
-      if (selectedChild && normalizedId === String(selectedChild.id).toLowerCase()) return true;
-      return !usedIds.has(normalizedId);
-    });
-
-    const selectOptions = selectableChildren.length
-      ? selectableChildren.map((child) => `
-          <option value="${escapeHtml(child.id)}" ${String(child.id) === selectedChildId ? 'selected' : ''}>
-            ${escapeHtml(child.label || 'Be')}
-          </option>`).join('')
-      : '<option value="">Chua co Child Profile phu hop</option>';
-
-    const child = selectedChild;
-    const displayIndex = idx + 2;
-
-    if (!child) {
-      html += `
-        <div class="child-profile-panel child-profile-panel--missing">
-          <div class="child-profile-panel__head">
-            <p class="child-profile-panel__title">Bé thứ ${displayIndex}</p>
-          </div>
-          <div class="mt-2 mb-3">
-            <label class="form-label">Chọn bé thứ ${displayIndex}</label>
-            <select id="${selectId}" class="form-input">${selectOptions}</select>
-          </div>
-          <p class="child-profile-panel__empty">Chưa có hồ sơ cho bé này. Vui lòng tạo thêm Child Profile trong Quản lý con em.</p>
-        </div>`;
-      continue;
-    }
-
-    html += `
-      <div class="child-profile-panel">
-        <div class="child-profile-panel__head">
-          <p class="child-profile-panel__title">Bé thứ ${displayIndex}</p>
-          <span class="child-profile-panel__badge">${escapeHtml(child.label || `Bé ${displayIndex}`)}</span>
-        </div>
-        <div class="mt-2 mb-3">
-          <label class="form-label">Chọn bé thứ ${displayIndex}</label>
-          <select id="${selectId}" class="form-input">${selectOptions}</select>
-        </div>
-        <div class="child-profile-grid">
-          <div class="child-profile-field">
-            <span class="child-profile-field__label">Đặc điểm</span>
-            <p class="child-profile-field__value">${escapeHtml(child.characteristic || 'Chưa cập nhật')}</p>
-          </div>
-          <div class="child-profile-field">
-            <span class="child-profile-field__label">Nhóm tuổi</span>
-            <p class="child-profile-field__value">${escapeHtml(child.birthTypeLabel || 'Chưa cập nhật')}</p>
-          </div>
-          <div class="child-profile-field child-profile-field--full">
-            <span class="child-profile-field__label">Nhu cầu đặc biệt</span>
-            <p class="child-profile-field__value">${escapeHtml(child.specialNeeds || 'Không có')}</p>
-          </div>
-        </div>
-      </div>`;
-  }
-
-  container.innerHTML = html;
-  container.querySelectorAll('select[id^="cf-extraChildProfileId-"]').forEach((selectEl) => {
-    selectEl.addEventListener('change', renderCreateExtraChildProfiles);
-  });
+  if (!container) return;
+  container.innerHTML = '';
 }
 
 function renderChildren(prefix, selectedChildId) {
@@ -1492,27 +1383,40 @@ function renderChildren(prefix, selectedChildId) {
   if (selectedChildId) select.value = selectedChildId;
   syncSelectPickerTexts();
   setProfileFields(prefix, getSelectedChild(prefix));
-  if (prefix === 'cf') renderCreateExtraChildProfiles();
+  if (prefix === 'cf') handleCreateChildrenCountChange();
 }
 
 function applyPrefill(prefix, data, selectedChildId) {
+  const collection = prefix === 'cf' ? createChildren : editChildren;
+  collection.splice(0, collection.length, ...((data?.children) || []));
   const childrenInput = document.getElementById(`${prefix}-children`);
   if (childrenInput) {
-    const preferredCount = data?.numberOfChildren ?? childrenInput.value ?? 1;
+    const totalChildren = getTotalChildProfiles(collection);
+    const preferredCount = totalChildren > 0
+      ? totalChildren
+      : normalizeChildrenCount(data?.numberOfChildren ?? childrenInput.value ?? 1);
     if (prefix === 'cf') {
       ensureChildrenCountOptions('cf-children', preferredCount);
     } else {
       childrenInput.value = String(normalizeChildrenCount(preferredCount));
     }
   }
-  const collection = prefix === 'cf' ? createChildren : editChildren;
-  collection.splice(0, collection.length, ...((data?.children) || []));
   renderChildren(prefix, selectedChildId || data?.selectedChildProfileId);
 }
 
 function handleCreateChildChange() {
   setProfileFields('cf', getSelectedChild('cf'));
+  handleCreateChildrenCountChange();
+}
+
+function handleCreateChildrenCountChange() {
+  const countInput = document.getElementById('cf-children');
+  if (!countInput) return;
+
+  const totalChildren = getTotalChildProfiles(createChildren);
+  ensureChildrenCountOptions('cf-children', totalChildren > 0 ? totalChildren : countInput.value);
   renderCreateExtraChildProfiles();
+  setProfileFields('cf', getSelectedChild('cf'));
 }
 
 function handleEditChildChange() {
@@ -1631,7 +1535,7 @@ async function openCreate() {
     if (json.success && json.data) applyPrefill('cf', json.data, json.data.selectedChildProfileId);
   } catch { }
 
-  renderCreateExtraChildProfiles();
+  handleCreateChildrenCountChange();
 
   syncSelectPickerTexts();
   document.getElementById('createModal')?.classList.add('show');
@@ -1643,15 +1547,16 @@ function closeCreate() {
 }
 
 function getCreatePayload() {
-  const numberOfChildren = normalizeChildrenCount(document.getElementById('cf-children')?.value || 1);
-  const selectedChildren = getCreateSelectedChildren(numberOfChildren);
+  const totalChildren = getTotalChildProfiles(createChildren);
+  const numberOfChildren = normalizeChildrenCount(totalChildren || document.getElementById('cf-children')?.value || 1);
+  const selectedChildren = getCreateSelectedChildren(1);
   return {
     title: document.getElementById('cf-title')?.value.trim() || '',
     description: document.getElementById('cf-desc')?.value.trim() || '',
     jobType: Number(document.getElementById('cf-type')?.value || 1),
     numberOfChildren,
     childProfileId: selectedChildren[0]?.id || document.getElementById('cf-childProfileId')?.value || null,
-    childProfileIds: selectedChildren.map((child) => child.id),
+    childProfileIds: [],
     salaryMin: parseMoneyInput(document.getElementById('cf-salMin')?.value),
     salaryMax: parseMoneyInput(document.getElementById('cf-salMax')?.value),
     salaryNegotiable: !!document.getElementById('cf-negotiable')?.checked,
@@ -1669,16 +1574,20 @@ function getCreatePayload() {
 function validatePayload(payload) {
   const minimumSalary = 8000000;
   const maximumSalary = 50000000;
+  const totalChildren = getTotalChildProfiles(createChildren);
   if (!payload.title || payload.title.length < 5) return 'Tiêu đề bài đăng phải từ 5 ký tự trở lên.';
   if (!payload.description || payload.description.length < 10) return 'Mô tả chi tiết phải từ 10 ký tự trở lên.';
+  if (totalChildren < 1) {
+    return 'Vui lòng tạo ít nhất 1 hồ sơ bé trước khi đăng bài.';
+  }
+  if (totalChildren > 10) {
+    return 'Tối đa 10 hồ sơ bé có thể được sử dụng cho một bài đăng.';
+  }
   if (!Number.isFinite(payload.numberOfChildren) || payload.numberOfChildren < 1 || payload.numberOfChildren > 10) {
     return 'Số trẻ cần chăm phải từ 1 đến 10.';
   }
-  if (payload.numberOfChildren > createChildren.length) {
-    return `Bạn đã chọn ${payload.numberOfChildren} trẻ nhưng hiện chỉ có ${createChildren.length} hồ sơ bé. Vui lòng tạo thêm hồ sơ trước khi đăng bài.`;
-  }
-  if (!Array.isArray(payload.childProfileIds) || payload.childProfileIds.length !== payload.numberOfChildren) {
-    return 'Danh sách trẻ được chọn chưa hợp lệ. Vui lòng chọn lại số trẻ cần chăm.';
+  if (payload.numberOfChildren !== totalChildren) {
+    return `Số trẻ cần chăm được đồng bộ theo tổng hồ sơ bé hiện có (${totalChildren} bé).`;
   }
   if (!payload.childProfileId) return 'Vui lòng chọn hồ sơ bé.';
   if (!payload.salaryNegotiable && payload.salaryMin == null) return 'Vui lòng nhập lương tối thiểu trong khoảng 8.000.000 - 50.000.000 VND hoặc bật lương thỏa thuận.';
@@ -1992,10 +1901,30 @@ function bindClickOnlySelect(selectElement) {
 
   selectElement.dataset.clickOnlyBound = 'true';
   selectElement.style.caretColor = 'transparent';
+  let previousValue = selectElement.value;
+
+  const emitSelectionChangeIfNeeded = () => {
+    if (selectElement.value === previousValue) return;
+    previousValue = selectElement.value;
+    selectElement.dispatchEvent(new Event('input', { bubbles: true }));
+    selectElement.dispatchEvent(new Event('change', { bubbles: true }));
+  };
 
   selectElement.addEventListener('keydown', (event) => {
     if (event.key === 'Tab') return;
     event.preventDefault();
+  });
+  selectElement.addEventListener('mousedown', () => {
+    previousValue = selectElement.value;
+  });
+  selectElement.addEventListener('click', () => {
+    window.setTimeout(emitSelectionChangeIfNeeded, 0);
+  });
+}
+
+function bindCreateJobPostingClickOnlySelects() {
+  document.querySelectorAll('#createForm select').forEach((selectElement) => {
+    bindClickOnlySelect(selectElement);
   });
 }
 
@@ -2008,12 +1937,13 @@ async function bootstrapSearchPage() {
   });
 
   attachCreateSelectPickers();
+  bindCreateJobPostingClickOnlySelects();
   const createChildrenInput = document.getElementById('cf-children');
   if (createChildrenInput && createChildrenInput.dataset.bindChildrenCount !== 'true') {
     createChildrenInput.dataset.bindChildrenCount = 'true';
-    createChildrenInput.addEventListener('change', renderCreateExtraChildProfiles);
+    createChildrenInput.addEventListener('change', handleCreateChildrenCountChange);
+    createChildrenInput.addEventListener('input', handleCreateChildrenCountChange);
   }
-  bindClickOnlySelect(createChildrenInput);
   initMoneyInputs();
   initMap();
   loadLocationData();

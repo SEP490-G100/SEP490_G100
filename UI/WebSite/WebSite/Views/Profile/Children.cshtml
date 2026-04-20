@@ -4,12 +4,9 @@
 @{
     ViewData["Title"] = "Quản lý con em";
     var childCount = Model?.Count ?? 0;
-    var declaredChildrenCount = 0;
-    if (ViewBag.DeclaredChildrenCount is int declaredCountFromBag)
-    {
-        declaredChildrenCount = declaredCountFromBag;
-    }
-    var displayChildrenCount = Math.Max(childCount, declaredChildrenCount);
+    var displayChildrenCount = ViewBag.DisplayChildrenCount is int fromBag
+        ? fromBag
+        : childCount;
 }
 
 <div class="child-page">
@@ -36,7 +33,7 @@
                     </div>
                 </div>
                 <div class="child-hero__right">
-                    <span class="child-chip">@displayChildrenCount trẻ</span>
+                    <span class="child-chip">Tổng hồ sơ trẻ hiện có: @displayChildrenCount</span>
                     <a href="@Url.Action("AddChild", "Profile")" class="child-btn child-btn--primary">
                         <span class="material-icons-round">add</span>
                         Thêm con em
@@ -121,14 +118,7 @@
                             <span class="material-icons-round">child_care</span>
                         </div>
                         <h3>Chưa có hồ sơ trẻ em</h3>
-                        @if (declaredChildrenCount > 0)
-                        {
-                            <p>Bạn đã khai báo <strong>@declaredChildrenCount trẻ</strong> trong hồ sơ, nhưng chưa tạo hồ sơ chi tiết cho từng trẻ.</p>
-                        }
-                        else
-                        {
-                            <p>Bắt đầu bằng cách thêm thông tin con em để hệ thống đề xuất nanny phù hợp hơn.</p>
-                        }
+                        <p>Bắt đầu bằng cách thêm thông tin con em để hệ thống đề xuất nanny phù hợp hơn.</p>
                         <a href="@Url.Action("AddChild", "Profile")" class="child-btn child-btn--primary">
                             <span class="material-icons-round">add_circle</span>
                             Thêm con em ngay

@@ -482,6 +482,10 @@ public class AuthController : Controller
             new("AuthProvider", data.User.AuthProvider),
         };
 
+        var avatarUrl = NormalizeAvatarUrl(data.User.AvatarUrl);
+        if (!string.IsNullOrWhiteSpace(avatarUrl))
+            claims.Add(new Claim("AvatarUrl", avatarUrl));
+
         foreach (var role in normalizedRoles)
             claims.Add(new Claim(ClaimTypes.Role, role));
 
@@ -489,6 +493,26 @@ public class AuthController : Controller
         await HttpContext.SignInAsync(
             CookieAuthenticationDefaults.AuthenticationScheme,
             new ClaimsPrincipal(identity));
+    }
+
+    private string? NormalizeAvatarUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return url;
+
+        if (Uri.TryCreate(url, UriKind.Absolute, out _))
+            return url;
+
+        var apiBaseUrl = (_config["ApiSettings:BaseUrl"] ?? string.Empty).TrimEnd('/');
+        if (string.IsNullOrWhiteSpace(apiBaseUrl))
+            return url;
+
+        if (url.StartsWith("~/", StringComparison.Ordinal))
+            url = url[1..];
+
+        return url.StartsWith("/", StringComparison.Ordinal)
+            ? apiBaseUrl + url
+            : apiBaseUrl + "/" + url.TrimStart('/');
     }
 
     private bool IsGoogleUser() =>
