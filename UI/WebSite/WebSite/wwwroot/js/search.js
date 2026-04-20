@@ -1648,7 +1648,18 @@ async function submitCreate() {
     }
 
     closeCreate();
-    notifyToast('Bài đăng đã được tạo và đang chờ kiểm duyệt viên duyệt.');
+    window.__nmNotificationToastSuppressType = 'job-posting-pending';
+    window.__nmNotificationToastSuppressUntil = Date.now() + 5000;
+    const successToast = 'Bài đăng đã được tạo và đang chờ kiểm duyệt viên duyệt.';
+    const fallbackScheduledAt = Date.now();
+    window.setTimeout(() => {
+      const lastType = String(window.__nmLastRealtimeNotificationType || '').trim().toLowerCase();
+      const lastAt = Number(window.__nmLastRealtimeNotificationAt || 0);
+      const receivedRealtime = lastType === 'job-posting-pending' && lastAt >= fallbackScheduledAt - 3000;
+      if (!receivedRealtime) {
+        notifyToast(successToast);
+      }
+    }, 900);
     window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
     doSearch();
   } catch {

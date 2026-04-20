@@ -1358,6 +1358,19 @@
                                     }
                                 };
 
+                                const shouldSuppressRealtimeToast = (payload) => {
+                                    const incomingType = String(payload?.type || '').trim().toLowerCase();
+                                    const suppressType = String(window.__nmNotificationToastSuppressType || '').trim().toLowerCase();
+                                    const suppressUntil = Number(window.__nmNotificationToastSuppressUntil || 0);
+                                    if (!incomingType || !suppressType) return false;
+                                    if (incomingType !== suppressType) return false;
+                                    if (Date.now() > suppressUntil) return false;
+
+                                    window.__nmNotificationToastSuppressType = '';
+                                    window.__nmNotificationToastSuppressUntil = 0;
+                                    return true;
+                                };
+
                                 const updateBadge = (count) => {
                                     if (!count || count <= 0) {
                                         notificationBadge.textContent = '';
@@ -1470,7 +1483,13 @@
                                         .build();
 
                                     connection.on('notification:new', async (payload) => {
-                                        const toastConfig = getRealtimeToastConfig(payload);
+                                        window.__nmLastRealtimeNotificationType = String(payload?.type || '').trim().toLowerCase();
+                                        window.__nmLastRealtimeNotificationMessage = String(payload?.message || payload?.title || '').trim();
+                                        window.__nmLastRealtimeNotificationAt = Date.now();
+
+                                        const toastConfig = shouldSuppressRealtimeToast(payload)
+                                            ? null
+                                            : getRealtimeToastConfig(payload);
                                         if (toastConfig && typeof window.showToast === 'function') {
                                             window.showToast(toastConfig.message, { type: toastConfig.type });
                                         }
