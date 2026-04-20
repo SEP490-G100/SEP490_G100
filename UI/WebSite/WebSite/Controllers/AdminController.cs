@@ -28,7 +28,7 @@ public class AdminController : Controller
             var response = await _http.SendAsync(request);
             if (!response.IsSuccessStatusCode)
             {
-                TempData["Error"] = $"L?i khi xuat d? li?u: HTTP {(int)response.StatusCode}";
+                TempData["Error"] = $"Lỗi khi xuất dữ liệu: HTTP {(int)response.StatusCode}";
                 return RedirectToAction("Dashboard", "AdminDashboard");
             }
 
@@ -43,7 +43,7 @@ public class AdminController : Controller
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"L?i kết nối khi xuat Excel: {ex.Message}";
+            TempData["Error"] = $"Lỗi kết nối khi xuất Excel: {ex.Message}";
             return RedirectToAction("Dashboard", "AdminDashboard");
         }
     }

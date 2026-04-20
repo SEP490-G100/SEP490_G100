@@ -1,16 +1,17 @@
+@using System.Globalization
 @using System.Net
 @using System.Text.RegularExpressions
 @model WebSite.Models.Moderator.ModeratorComplaintDetailPageModel
 @{
     Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
-    ViewData["Title"] = "Complaint Detail";
+    ViewData["Title"] = "Chi tiết khiếu nại";
 
     var detail = Model.Detail;
     var isMessageComplaint = string.Equals(detail.ReportedEntityType, "Message", StringComparison.OrdinalIgnoreCase);
     var isJobPostingComplaint = string.Equals(detail.ReportedEntityType, "JobPosting", StringComparison.OrdinalIgnoreCase);
     var isProfileComplaint = string.Equals(detail.ReportedEntityType, "Profile", StringComparison.OrdinalIgnoreCase);
     var isCompletedComplaint = detail.Status == 1;
-    var offenderName = string.IsNullOrWhiteSpace(detail.OffenderName) ? "Nguoi dung" : detail.OffenderName;
+    var offenderName = string.IsNullOrWhiteSpace(detail.OffenderName) ? "Người dùng" : detail.OffenderName;
     var messageContent = string.IsNullOrWhiteSpace(detail.ReportedMessageContent) ? "-" : detail.ReportedMessageContent;
     var evidenceRaw = detail.Evidence ?? string.Empty;
     var evidenceUrls = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -105,7 +106,7 @@
                     </div>
                     <div class="field-group">
                         <label class="field-label">Ngày tạo</label>
-                        <div class="field-readonly">@detail.CreatedAt.ToString("dd MMM yyyy, HH:mm")</div>
+                        <div class="field-readonly">@detail.CreatedAt.ToString("dd/MM/yyyy HH:mm", CultureInfo.GetCultureInfo("vi-VN"))</div>
                     </div>
                     <div class="field-group sm:col-span-2">
                         <label class="field-label">Lý do</label>
@@ -130,7 +131,7 @@
                                     @foreach (var imgUrl in imageUrls)
                                     {
                                         <a href="@imgUrl" target="_blank" rel="noopener noreferrer" class="evidence-link">
-                                            <img src="@imgUrl" alt="Complaint evidence image" class="evidence-image" loading="lazy" />
+                                            <img src="@imgUrl" alt="Ảnh minh chứng khiếu nại" class="evidence-image" loading="lazy" />
                                         </a>
                                     }
                                 </div>
@@ -144,7 +145,7 @@
                                         <div class="evidence-video-card">
                                             <video controls preload="metadata" class="evidence-video">
                                                 <source src="@videoUrl" />
-                                                Your browser does not support HTML5 video.
+                                                Trình duyệt của bạn không hỗ trợ video HTML5.
                                             </video>
                                             <a href="@videoUrl" target="_blank" rel="noopener noreferrer" class="text-xs text-blue-600 font-semibold hover:underline mt-1 inline-block">
                                                 Mở video trong tab mới
@@ -188,7 +189,7 @@
                     @if (isProfileComplaint)
                     {
                         <div class="field-group sm:col-span-2">
-                            <label class="field-label">Profile của người bị phàn nàn</label>
+                            <label class="field-label">Hồ sơ người bị phàn nàn</label>
                             <div class="field-readonly flex-wrap justify-between">
                                 <span class="text-sm text-gray-700">@offenderName</span>
                                 <a href="@Url.Action("ViewComplainedProfileDetail", "ModeratorComplain", new { userId = detail.ReportedEntityId, complaintId = detail.Id })"
@@ -247,7 +248,7 @@
                     </div>
 
                     <div>
-                        <label class="field-label">Nhập thông báo đến người bị phàn nàn (optional)</label>
+                        <label class="field-label">Nhập thông báo đến người bị phàn nàn (tùy chọn)</label>
                         <textarea asp-for="Form.OffenderNotificationMessage"
                                   rows="4"
                                   readonly="@(isCompletedComplaint ? "readonly" : null)"
@@ -268,7 +269,7 @@
 
                 <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold">Tên người phàn nàn:</p>
                 <h3 class="font-bold text-gray-900 text-lg mt-1">@detail.ReporterDisplay</h3>
-                <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mt-3">Email người phàn nàn:</p>
+                <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mt-3">Email người khiếu nại:</p>
                 <p class="text-sm text-gray-500 mt-1 break-all">@((string.IsNullOrWhiteSpace(detail.ReporterEmail) ? "-" : detail.ReporterEmail))</p>
 
                 <div class="mt-4">

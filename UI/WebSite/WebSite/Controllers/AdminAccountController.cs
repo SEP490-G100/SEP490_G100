@@ -42,7 +42,7 @@ public class AdminAccountController : Controller
         }
         catch
         {
-            TempData["Error"] = "Không th? tai danh s?ch Moderator.";
+            TempData["Error"] = "Không thể tải danh sách điều hành viên.";
             return View("~/Views/Admin/ModeratorAccount/ManageModerators.cshtml", new AccountListResponse());
         }
     }
@@ -76,7 +76,7 @@ public class AdminAccountController : Controller
             var json = await response.Content.ReadAsStringAsync();
             if (string.IsNullOrWhiteSpace(json))
             {
-                TempData["Error"] = $"API tra ve rong (HTTP {(int)response.StatusCode}).";
+                TempData["Error"] = $"API trả về rỗng (HTTP {(int)response.StatusCode}).";
                 return View("~/Views/Admin/ModeratorAccount/CreateModerator.cshtml", model);
             }
 
@@ -88,16 +88,16 @@ public class AdminAccountController : Controller
                     new
                     {
                         toastType = "success",
-                        toastMessage = result.Message ?? "Tao Moderator thành công."
+                        toastMessage = result.Message ?? "Tạo tài khoản điều hành viên thành công."
                     });
             }
 
-            TempData["Error"] = result?.Message ?? "Tao Moderator thất bại.";
+            TempData["Error"] = result?.Message ?? "Tạo tài khoản điều hành viên thất bại.";
             return View("~/Views/Admin/ModeratorAccount/CreateModerator.cshtml", model);
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"L?i kết nối: {ex.Message}";
+            TempData["Error"] = $"Lỗi kết nối: {ex.Message}";
             return View("~/Views/Admin/ModeratorAccount/CreateModerator.cshtml", model);
         }
     }
@@ -114,7 +114,7 @@ public class AdminAccountController : Controller
             var result = JsonSerializer.Deserialize<ApiResult<AccountDto>>(json, JsonOpts);
             if (result?.Success != true || result.Data == null)
             {
-                TempData["Error"] = "Không t?m th?y Moderator.";
+                TempData["Error"] = "Không tìm thấy điều hành viên.";
                 return RedirectToAction(nameof(ManageModerators));
             }
 
@@ -122,7 +122,7 @@ public class AdminAccountController : Controller
         }
         catch
         {
-            TempData["Error"] = "L?i kết nối.";
+            TempData["Error"] = "Lỗi kết nối.";
             return RedirectToAction(nameof(ManageModerators));
         }
     }
@@ -148,7 +148,7 @@ public class AdminAccountController : Controller
             var json = await response.Content.ReadAsStringAsync();
             if (string.IsNullOrWhiteSpace(json))
             {
-                TempData["Error"] = $"API tra ve rong (HTTP {(int)response.StatusCode}).";
+                TempData["Error"] = $"API trả về rỗng (HTTP {(int)response.StatusCode}).";
                 return RedirectToAction(nameof(EditModerator), new { id });
             }
 
@@ -164,12 +164,12 @@ public class AdminAccountController : Controller
                     });
             }
 
-            TempData["Error"] = result?.Message ?? "C?p nh?t thất bại.";
+            TempData["Error"] = result?.Message ?? "Cập nhật thất bại.";
             return RedirectToAction(nameof(EditModerator), new { id });
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"L?i kết nối: {ex.Message}";
+            TempData["Error"] = $"Lỗi kết nối: {ex.Message}";
             return RedirectToAction(nameof(EditModerator), new { id });
         }
     }
@@ -203,12 +203,12 @@ public class AdminAccountController : Controller
                 return RedirectToReturnUrlOrList(returnUrl, toastType, toastMessage);
             }
 
-            TempData["Error"] = result?.Message ?? "Không th? cập nhật tr?ng th?i Moderator.";
+            TempData["Error"] = result?.Message ?? "Không thể cập nhật trạng thái điều hành viên.";
             return RedirectToReturnUrlOrList(returnUrl);
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"L?i kết nối: {ex.Message}";
+            TempData["Error"] = $"Lỗi kết nối: {ex.Message}";
             return RedirectToReturnUrlOrList(returnUrl);
         }
     }
@@ -224,11 +224,11 @@ public class AdminAccountController : Controller
             var response = await _http.SendAsync(request);
             var json = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<ApiResult>(json, JsonOpts);
-            TempData[result?.Success == true ? "Success" : "Error"] = result?.Message ?? "Da xoa.";
+            TempData[result?.Success == true ? "Success" : "Error"] = result?.Message ?? "Đã xóa.";
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"L?i: {ex.Message}";
+            TempData["Error"] = $"Lỗi: {ex.Message}";
         }
 
         return RedirectToAction(nameof(ManageModerators));

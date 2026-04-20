@@ -72,12 +72,12 @@ public class ModeratorAccountController : Controller
             return Json(new
             {
                 success = result?.Success ?? false,
-                message = result?.Message ?? "Co loi xay ra."
+                message = result?.Message ?? "Đã xảy ra lỗi."
             });
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = $"L?i kết nối: {ex.Message}" });
+            return Json(new { success = false, message = $"Lỗi kết nối: {ex.Message}" });
         }
     }
 
@@ -136,17 +136,17 @@ public class ModeratorAccountController : Controller
                 {
                     toastType = "success",
                     toastMessage = model.Status == 1
-                        ? "Ban da activate account thành công"
-                        : "Ban da deactivate account thành công"
+                        ? "Bạn đã kích hoạt tài khoản thành công"
+                        : "Bạn đã vô hiệu hóa tài khoản thành công"
                 });
             }
 
-            TempData["Error"] = result?.Message ?? "C?p nh?t thất bại.";
+            TempData["Error"] = result?.Message ?? "Cập nhật thất bại.";
             return RedirectToAction(nameof(ManageAccount));
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"L?i kết nối: {ex.Message}";
+            TempData["Error"] = $"Lỗi kết nối: {ex.Message}";
             return RedirectToAction(nameof(ManageAccount));
         }
     }

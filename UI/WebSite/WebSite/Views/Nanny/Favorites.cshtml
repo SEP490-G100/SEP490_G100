@@ -9,16 +9,16 @@
             <div class="px-6 py-6 sm:px-8 border-b border-orange-100 bg-[radial-gradient(circle_at_top_right,rgba(255,237,213,.85),transparent_28%),linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <p class="text-xs font-extrabold uppercase tracking-[0.24em] text-orange-500">Parent zone</p>
-                        <h1 class="mt-2 text-3xl font-bold text-slate-900">Danh sách nanny yêu thích</h1>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.24em] text-orange-500">Khu vực phụ huynh</p>
+                        <h1 class="mt-2 text-3xl font-bold text-slate-900">Danh sách bảo mẫu yêu thích</h1>
                         <p class="mt-2 text-sm leading-6 text-slate-500 max-w-2xl">
-                            Quản lý các hồ sơ nanny bạn đã tìm và bộ lưu để liên hệ nhanh hơn khi cần.
+                            Quản lý các hồ sơ bảo mẫu bạn đã tìm và bộ lưu để liên hệ nhanh hơn khi cần.
                         </p>
                     </div>
                     <div class="flex items-center gap-3">
                         <a href="/Nanny/List"
                            class="inline-flex items-center justify-center min-h-[48px] px-5 rounded-2xl border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 transition-all">
-                                Quay lại tìm nanny
+                                Quay lại tìm bảo mẫu
                         </a>
                     </div>
                 </div>
@@ -26,13 +26,13 @@
 
             <div class="px-6 py-6 sm:px-8">
                 <div class="mb-5 rounded-3xl border border-slate-100 bg-slate-50 px-5 py-4">
-                    <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Tổng nanny yêu thích</p>
+                    <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Tổng bảo mẫu yêu thích</p>
                     <p id="favoriteNannyCount" class="mt-2 text-3xl font-extrabold text-slate-900">0</p>
                 </div>
 
                 <div id="favoriteNannyList" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <div class="rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center text-slate-500 lg:col-span-2">
-                        Đang tải danh sách nanny yêu thích...
+                        Đang tải danh sách bảo mẫu yêu thích...
                     </div>
                 </div>
             </div>
@@ -70,7 +70,7 @@
             if (minText && maxText) return `${minText} - ${maxText}`;
             if (minText) return `Từ ${minText}`;
             if (maxText) return `Đến ${maxText}`;
-            return 'Thương lượng';
+            return 'Thỏa thuận';
         };
 
         async function removeFavorite(nannyId) {
@@ -93,7 +93,7 @@
                 notify('Đã bỏ bảo mẫu khỏi danh sách yêu thích.', 'info');
                 await loadFavorites();
             } catch {
-                notify('Lỗi kết nối server.', 'error');
+                notify('Lỗi kết nối máy chủ.', 'error');
             }
         }
 
@@ -112,17 +112,17 @@
                 const location = [item.district, item.city].filter(Boolean).join(', ') || 'Chưa cập nhật khu vực';
                 const skills = Array.isArray(item.skills) ? item.skills : [];
                 const shownSkills = skills.slice(0, 4)
-                    .map((skill) => `<span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">${escapeHtml(skill.skillName || 'Skill')}</span>`)
+                    .map((skill) => `<span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">${escapeHtml(skill.skillName || 'Kỹ năng')}</span>`)
                     .join('');
 
                 return `
                     <article class="rounded-[24px] border border-orange-100 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,.05)]">
                         <div class="flex items-start justify-between gap-3">
                             <div class="flex items-center gap-3 min-w-0">
-                                <img src="${escapeHtml(item.avatarUrl || '/img/nanny-logo.jpg')}" alt="Avatar"
+                                <img src="${escapeHtml(item.avatarUrl || '/img/nanny-logo.jpg')}" alt="Ảnh đại diện"
                                      class="w-14 h-14 rounded-2xl object-cover border border-orange-100 bg-orange-50" />
                                 <div class="min-w-0">
-                                    <h3 class="text-lg font-extrabold text-slate-900 truncate">${escapeHtml(item.fullName || 'Nanny')}</h3>
+                                    <h3 class="text-lg font-extrabold text-slate-900 truncate">${escapeHtml(item.fullName || 'Bảo mẫu')}</h3>
                                     <p class="text-sm font-semibold text-orange-600 mt-1">${escapeHtml(location)}</p>
                                 </div>
                             </div>
@@ -137,12 +137,12 @@
 
                         <div class="mt-4 flex flex-wrap gap-2">
                             ${item.searchPriority
-                                ? '<span class="px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold">Nanny Pro</span><span class="px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold">Ưu tiên hiển thị</span>'
+                                ? '<span class="px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold">Gói Pro</span><span class="px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold">Ưu tiên hiển thị</span>'
                                 : item.featuredBadge
-                                    ? '<span class="px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold">Nanny Plus</span>'
+                                    ? '<span class="px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold">Gói Plus</span>'
                                     : ''}
                             <span class="px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold">${escapeHtml(formatSalary(item.expectedSalaryMin, item.expectedSalaryMax))}</span>
-                            <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">${item.yearsOfExperience ? `${item.yearsOfExperience} năm KN` : 'Chưa rõ kinh nghiệm'}</span>
+                            <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">${item.yearsOfExperience ? `${item.yearsOfExperience} năm kinh nghiệm` : 'Chưa rõ kinh nghiệm'}</span>
                             <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">${item.age ? `${item.age} tuổi` : 'Chưa rõ tuổi'}</span>
                         </div>
 

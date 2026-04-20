@@ -2,7 +2,7 @@
 @model WebSite.Models.Blog.BlogDto
 @{
     Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
-    ViewData["Title"] = "Chi tiết Blog";
+    ViewData["Title"] = "Chi tiết bài viết";
     var categories = ViewBag.Categories as List<WebSite.Models.Blog.BlogCategoryOption>
                      ?? new List<WebSite.Models.Blog.BlogCategoryOption>();
 }
@@ -10,7 +10,7 @@
 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
     <div>
         <h1 class="page-title mt-2">
-            Sửa <span class="gradient-text">Blog</span>
+            Sửa <span class="gradient-text">bài viết</span>
         </h1>
         <p class="page-subtitle">Cập nhật thông tin chi tiết bài viết và nội dung.</p>
     </div>
@@ -257,7 +257,7 @@ async function uploadMediaFiles(files, endpoint, emptyMessage) {
     var response = await fetch(endpoint, { method: 'POST', body: formData });
     var result = await response.json();
     if (!result.success || !result.data || !Array.isArray(result.data.urls) || result.data.urls.length === 0) {
-        throw new Error(result.message || 'Upload failed.');
+        throw new Error(result.message || 'Tải lên thất bại.');
     }
     return result.data.urls;
 }
@@ -286,11 +286,11 @@ function uploadSingleImageForTiny(blobInfo) {
             var urls = await uploadMediaFiles(
                 [blobInfo.blob()],
                 getBlogMediaEndpoint(true),
-                'Vui lòng chọn it nhất mot anh.'
+                'Vui lòng chọn ít nhất một ảnh.'
             );
             resolve(urls[0]);
         } catch (error) {
-            reject({ message: error.message || 'Không thể tải lên ảnh.' });
+            reject({ message: error.message || 'Không thể tải ảnh lên.' });
         }
     });
 }
@@ -305,19 +305,19 @@ function handleTinyFilePicker(callback, meta) {
     pickLocalFile(accept).then(async function(file) {
         if (!file) return;
         try {
-            var urls = await uploadMediaFiles([file], endpoint, 'Vui lòng chọn file ?? upload.');
+            var urls = await uploadMediaFiles([file], endpoint, 'Vui lòng chọn tệp để tải lên.');
             var url = urls[0];
             if (isImage) {
-                callback(url, { alt: file.name || 'image' });
+                callback(url, { alt: file.name || 'Ảnh' });
             } else {
                 callback(url, { source2: '', poster: '' });
             }
             if (typeof window.showToast === 'function') {
-                window.showToast('Tải media thành công.', { type: 'success' });
+                window.showToast('Đã tải phương tiện lên thành công.', { type: 'success' });
             }
         } catch (error) {
             if (typeof window.showToast === 'function') {
-                window.showToast(error.message || 'Không thể tải lên media.', { type: 'error' });
+                window.showToast(error.message || 'Không thể tải tệp phương tiện lên.', { type: 'error' });
             }
         }
     });
@@ -364,4 +364,3 @@ initTinyMce();
 renderContentPreview();
 </script>
 }
-

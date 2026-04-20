@@ -1,7 +1,7 @@
 @model WebSite.Models.BlogCategory.BlogCategoryListResponse
 @{
     Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
-    ViewData["Title"] = "Quản lý danh mục Blog";
+    ViewData["Title"] = "Quản lý danh mục blog";
     var currentSearch   = ViewBag.Search    as string ?? "";
     var currentIsDeleted = ViewBag.IsDeleted as string ?? "";
     var currentPage     = Model?.Page       ?? 1;
@@ -13,7 +13,7 @@
 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
     <div>
         <h1 class="page-title mt-2">
-            Quản lý <span class="gradient-text">Danh mục Blog</span>
+            Quản lý <span class="gradient-text">danh mục blog</span>
         </h1>
         <p class="page-subtitle">Thêm, sửa hoặc xóa danh mục blog.</p>
     </div>

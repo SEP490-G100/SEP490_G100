@@ -9,7 +9,7 @@
             <div class="px-6 py-6 sm:px-8 border-b border-orange-100 bg-[radial-gradient(circle_at_top_right,rgba(255,237,213,.85),transparent_28%),linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <p class="text-xs font-extrabold uppercase tracking-[0.24em] text-orange-500">Nanny zone</p>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.24em] text-orange-500">Khu vực bảo mẫu</p>
                         <h1 class="mt-2 text-3xl font-bold text-slate-900">Danh sách bài đăng đã lưu</h1>
                         <p class="mt-2 text-sm leading-6 text-slate-500 max-w-2xl">
                             Tất cả các bài đăng bạn đã lưu để theo dõi và ứng tuyển khi cần.
@@ -71,7 +71,7 @@
         };
 
         const formatSalaryRange = (min, max, negotiable) => {
-            if (negotiable) return 'Thương lượng';
+            if (negotiable) return 'Thỏa thuận';
             const minText = formatSalary(min);
             const maxText = formatSalary(max);
             if (minText && maxText) return `${minText} - ${maxText}`;
@@ -100,7 +100,7 @@
                 notify('Đã bỏ bài đăng khỏi danh sách đã lưu.', 'info');
                 await loadSavedJobs();
             } catch {
-                notify('Lỗi kết nối server.', 'error');
+                notify('Lỗi kết nối máy chủ.', 'error');
             }
         }
 
@@ -135,7 +135,7 @@
                                 <button type="button"
                                         onclick="window.__removeSavedJob('${escapeHtml(job.id)}')"
                                         class="inline-flex items-center justify-center min-h-[36px] px-3 rounded-xl border border-slate-200 bg-white text-slate-600 text-xs font-extrabold hover:bg-slate-50 transition-all">
-                                    Bo luu
+                                    Bỏ lưu
                                 </button>
                             </div>
                         </div>

@@ -231,14 +231,14 @@ public class SubscriptionController : Controller
     {
         "Parent" => "Chọn gói đăng tin phù hợp cho gia đình",
         "Nanny" => "Chọn gói ứng tuyển phù hợp cho hồ sơ của bạn",
-        _ => "Subscription của NannyMatch"
+        _ => "Gói đăng ký NannyMatch"
     };
 
     private static string getSummary(string role) => role switch
     {
-        "Parent" => "Các gói subscription được lấy trực tiếp từ hệ thống quản trị, giúp phụ huynh mở rộng quyền đăng tin và tăng khả năng tiếp cận bảo mẫu.",
-        "Nanny" => "Các gói subscription được lấy trực tiếp từ hệ thống quản trị, giúp bảo mẫu tăng quyền ứng tuyển và cải thiện độ nổi bật của hồ sơ.",
-        _ => "Đăng nhập bằng tài khoản Parent hoặc Nanny để xem các gói phù hợp."
+        "Parent" => "Các gói đăng ký được lấy trực tiếp từ hệ thống quản trị, giúp phụ huynh mở rộng quyền đăng tin và tăng khả năng tiếp cận bảo mẫu.",
+        "Nanny" => "Các gói đăng ký được lấy trực tiếp từ hệ thống quản trị, giúp bảo mẫu tăng quyền ứng tuyển và cải thiện độ nổi bật của hồ sơ.",
+        _ => "Đăng nhập bằng tài khoản phụ huynh hoặc bảo mẫu để xem các gói phù hợp."
     };
 
     private static SubscriptionBenefitViewModel getFreeBenefits(string role) => role switch
@@ -266,16 +266,16 @@ public class SubscriptionController : Controller
     {
         "Parent" =>
         [
-            "Tối đa 3 bài đăng đang hoạt động theo thiết lập Free hiện tại",
+            "Tối đa 3 bài đăng đang hoạt động theo thiết lập miễn phí hiện tại",
             "Thời gian hiển thị bài đăng cơ bản 30 ngày",
-            "Không có badge nổi bật",
+            "Không có huy hiệu nổi bật",
             "Không ưu tiên trong kết quả tìm kiếm"
         ],
         "Nanny" =>
         [
-            "Tối đa 2 lượt ứng tuyển mỗi tháng theo thiết lập Free hiện tại",
+            "Tối đa 2 lượt ứng tuyển mỗi tháng theo thiết lập miễn phí hiện tại",
             "Hồ sơ hiển thị cơ bản",
-            "Không có badge nổi bật",
+            "Không có huy hiệu nổi bật",
             "Không ưu tiên trong kết quả tìm kiếm"
         ],
         _ => []

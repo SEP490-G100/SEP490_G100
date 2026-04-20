@@ -19,7 +19,7 @@
                         <p class="text-xs font-extrabold uppercase tracking-[0.24em] text-orange-500">Cập nhật bài đăng</p>
                         <h1 class="mt-2 text-3xl font-bold text-slate-900">Chỉnh sửa bài đăng</h1>
                         <p class="mt-2 text-sm leading-6 text-slate-500 max-w-2xl">
-                            Khi lưu thay đổi, bài đăng công khai sẽ quay về trạng thái chờ moderator duyệt lại.
+                            Khi lưu thay đổi, bài đăng công khai sẽ quay về trạng thái chờ kiểm duyệt lại.
                         </p>
                     </div>
                     <div class="flex items-center gap-3">
@@ -42,7 +42,7 @@
                         <div class="section-heading">
                             <div>
                                 <p class="section-title">Thông tin cơ bản</p>
-                                <p class="section-caption">Cập nhật nội dung, lương, địa điểm và độ tuổi nanny mong muốn.</p>
+                                <p class="section-caption">Cập nhật nội dung, lương, địa điểm và độ tuổi bảo mẫu mong muốn.</p>
                             </div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -58,8 +58,8 @@
                                 <label class="form-label">Loại công việc</label>
                                 <input type="text" id="ef-typeText" class="form-input form-select-picker-input" autocomplete="off" placeholder="Chọn loại công việc" />
                                 <select id="ef-type" class="form-input form-select-native-hidden">
-                                    <option value="1">Full-time</option>
-                                    <option value="2">Part-time</option>
+                                    <option value="1">Toàn thời gian</option>
+                                    <option value="2">Bán thời gian</option>
                                     <option value="3">Qua đêm</option>
                                 </select>
                             </div>
@@ -79,11 +79,11 @@
                                 Lương hợp lệ từ 8.000.000 đến 50.000.000 VND.
                             </div>
                             <div class="md:col-span-2">
-                                <label class="form-label">Tùy chọn lương</label>
+                                <label class="form-label">Tuy chọn lương</label>
                                 <label class="negotiable-field negotiable-field-large">
                                     <input type="checkbox" id="ef-negotiable" class="rounded accent-orange-500" />
-                                    <span class="negotiable-title">Lương thương lượng</span>
-                                    <span class="negotiable-caption">Bật nếu bạn muốn trao đổi mức lương trực tiếp với nanny.</span>
+                                    <span class="negotiable-title">Lương thỏa thuận</span>
+                                    <span class="negotiable-caption">Bật nếu bạn muốn trao đổi mức lương trực tiếp với bảo mẫu.</span>
                                 </label>
                             </div>
                             <div class="md:col-span-2">
@@ -119,8 +119,8 @@
                     <div class="section-card schedule-card">
                         <div class="schedule-header">
                             <div>
-                                <p class="section-title">Lịch ngày muốn tuyển</p>
-                                <p class="section-caption">Cập nhật các buổi cần nanny hỗ trợ trong tuần.</p>
+                                <p class="section-title">Lịch ngày muốn tuyển bảo mẫu</p>
+                                <p class="section-caption">Cập nhật các buổi cần bảo mẫu hỗ trợ trong tuần.</p>
                             </div>
                         </div>
                         <div id="ef-schedule" class="schedule-grid"></div>
@@ -129,8 +129,8 @@
                     <div class="section-card section-card-soft">
                         <div class="section-heading">
                             <div>
-                                <p class="section-title">Thông tin từ hồ sơ phụ huynh</p>
-                                <p class="section-caption">Chọn lại bé nếu cần, hệ thống sẽ cập nhật thông tin Hồ sơ trẻ tương ứng.</p>
+                                <p class="section-title">Thông tin từ hồ sơ trẻ</p>
+                                <p class="section-caption">Chọn lại bé nếu cần, hệ thống sẽ cập nhật thông tin hồ sơ trẻ tương ứng.</p>
                             </div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -144,7 +144,7 @@
                                 <textarea id="ef-characteristic" class="form-input resize-none bg-white/80" rows="2" readonly></textarea>
                             </div>
                             <div>
-                                <label class="form-label">Nhóm tuổi của bé</label>
+                                <label class="form-label">Nhóm tuổi của trẻ</label>
                                 <input type="text" id="ef-birthType" class="form-input bg-white/80" readonly />
                             </div>
                             <div class="md:col-span-2">
@@ -157,8 +157,8 @@
                     <div class="section-card section-card-plain">
                         <div class="section-heading">
                             <div>
-                                <p class="section-title">Kỹ năng yêu cầu</p>
-                                <p class="section-caption">Cập nhật bộ kỹ năng bằng danh sách skill có sẵn trong hệ thống.</p>
+                                <p class="section-title">Kỹ năng cần yêu cầu</p>
+                                <p class="section-caption">Cập nhật bộ kỹ năng từ danh sách có sẵn trong hệ thống.</p>
                             </div>
                         </div>
                         <div class="flex gap-2 items-center">
@@ -183,12 +183,12 @@
     display: flex;
     justify-content: center;
 ">
-                            <span class="text-center" >Hủy</span>
+                            <span class="text-center" >Huỷ</span>
                         </a>
                         <button type="submit" id="editPageSubmit" class="modal-btn modal-btn-primary flex-1">
                             <span class="modal-btn__content">
                                 <span class="modal-btn__spinner" aria-hidden="true"></span>
-                                <span class="modal-btn__label">Luu thay doi</span>
+                                <span class="modal-btn__label">Lưu thay đổi bài đăng</span>
                             </span>
                         </button>
                     </div>
@@ -213,8 +213,8 @@ let currentModerationStatus = null;
 let locationTree = [];
 let locationTreePromise = null;
 
-const DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
-const ROW_LABELS = ['Morning', 'Afternoon', 'Evening', 'Night'];
+const DAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+const ROW_LABELS = ['Sáng', 'Chiều', 'Tối', 'Đêm'];
 
 function escapeHtml(value) {
     return String(value ?? '')
@@ -723,16 +723,16 @@ function validateEditPayload(payload) {
     }
 
     if (![1, 2, 3].includes(Number(payload?.jobType))) {
-        return { message: 'Loai cong viec không hop le.', fieldId: 'ef-typeText' };
+        return { message: 'Loại công việc không hợp lệ.', fieldId: 'ef-typeText' };
     }
 
     const children = Number(payload?.numberOfChildren || 0);
     if (!Number.isFinite(children) || children < 1 || children > 10) {
-        return { message: 'So tre can cham phai tu 1 den 10.', fieldId: 'ef-children' };
+        return { message: 'Số trẻ cần chăm phải từ 1 đến 10.', fieldId: 'ef-children' };
     }
 
     if (!payload?.childProfileId) {
-        return { message: 'Vui lòng chọn tre tu Hồ sơ trẻ.', fieldId: 'ef-childProfileText' };
+        return { message: 'Vui lòng chọn trẻ từ hồ sơ trẻ.', fieldId: 'ef-childProfileText' };
     }
 
     const location = String(payload?.location ?? '').trim();
@@ -753,13 +753,13 @@ function validateEditPayload(payload) {
     const salaryMin = payload?.salaryMin;
     const salaryMax = payload?.salaryMax;
     if (!payload?.salaryNegotiable && salaryMin == null) {
-        return { message: 'Vui lòng nhập luong toi thiếu trong khoang 8.000.000 - 50.000.000 VND hoac bat thuong luong.', fieldId: 'ef-salMin' };
+        return { message: 'Vui lòng nhập lương tối thiểu trong khoảng 8.000.000 - 50.000.000 VND hoặc bật lương thỏa thuận.', fieldId: 'ef-salMin' };
     }
     if (salaryMin != null && (!Number.isFinite(salaryMin) || salaryMin < minimumSalary || salaryMin > maximumSalary)) {
-        return { message: 'Luong toi thiếu phai trong khoang 8.000.000 - 50.000.000 VND.', fieldId: 'ef-salMin' };
+        return { message: 'Lương tối thiểu phải trong khoảng 8.000.000 - 50.000.000 VND.', fieldId: 'ef-salMin' };
     }
     if (salaryMax != null && (!Number.isFinite(salaryMax) || salaryMax < minimumSalary || salaryMax > maximumSalary)) {
-        return { message: 'Luong toi da phai trong khoang 8.000.000 - 50.000.000 VND.', fieldId: 'ef-salMax' };
+        return { message: 'Lương tối đa phải trong khoảng 8.000.000 - 50.000.000 VND.', fieldId: 'ef-salMax' };
     }
     if (salaryMin != null && salaryMax != null && Number(salaryMin) > Number(salaryMax)) {
         return { message: 'Lương tối thiểu không được lớn hơn lương tối đa.', fieldId: 'ef-salMin' };
@@ -768,24 +768,24 @@ function validateEditPayload(payload) {
     const minAge = payload?.minNannyAge;
     const maxAge = payload?.maxNannyAge;
     if (minAge != null && (!Number.isFinite(minAge) || minAge < 18 || minAge > 80)) {
-        return { message: 'Độ tuổi bảo mẫu từ phai trong khoang 18-80.', fieldId: 'ef-minAge' };
+        return { message: 'Độ tuổi bảo mẫu từ phải trong khoảng 18 đến 80.', fieldId: 'ef-minAge' };
     }
     if (maxAge != null && (!Number.isFinite(maxAge) || maxAge < 18 || maxAge > 80)) {
-        return { message: 'Độ tuổi bảo mẫu đến phai trong khoang 18-80.', fieldId: 'ef-maxAge' };
+        return { message: 'Độ tuổi bảo mẫu đến phải trong khoảng 18 đến 80.', fieldId: 'ef-maxAge' };
     }
     if (minAge != null && maxAge != null && Number(minAge) > Number(maxAge)) {
         return { message: 'Độ tuổi từ không được lớn hơn độ tuổi đến.', fieldId: 'ef-minAge' };
     }
 
     if (!Array.isArray(payload?.skills) || payload.skills.length < 1) {
-        return { message: 'Vui lòng chọn it nhất 1 kỹ năng.', fieldId: 'ef-skillSelectText' };
+        return { message: 'Vui lòng chọn ít nhất 1 kỹ năng.', fieldId: 'ef-skillSelectText' };
     }
     if (payload.skills.length > 20) {
-        return { message: 'Toi da 20 kỹ năng cho mới bài đăng.', fieldId: 'ef-skillSelectText' };
+        return { message: 'Tối đa 20 kỹ năng cho mỗi bài đăng.', fieldId: 'ef-skillSelectText' };
     }
 
     if (!Array.isArray(payload?.scheduleSlots) || payload.scheduleSlots.length < 1) {
-        return { message: 'Vui lòng chọn it nhất 1 khung lich.', fieldId: 'ef-schedule' };
+        return { message: 'Vui lòng chọn ít nhất 1 khung lịch.', fieldId: 'ef-schedule' };
     }
 
     if (![1, 2].includes(Number(payload?.status))) {
@@ -811,10 +811,10 @@ function updateSubmitState() {
     submitBtn.setAttribute('aria-disabled', disabled ? 'true' : 'false');
     const submitLabel = submitBtn.querySelector('.modal-btn__label');
     if (submitLabel) {
-        submitLabel.textContent = isSubmittingEdit ? 'Dang luu...' : 'Luu thay doi';
+        submitLabel.textContent = isSubmittingEdit ? 'Đang lưu...' : 'Lưu thay đổi bài đăng';
     }
     submitBtn.title = disabled && !isSubmittingEdit
-        ? 'Không có thay doi ?? luu'
+        ? 'Không có thay đổi để lưu bài đăng'
         : '';
 }
 
@@ -834,7 +834,7 @@ function renderChildren(selectedChildId) {
     if (!select) return;
     select.innerHTML = editChildren.length
         ? editChildren.map(child => `<option value="${escapeHtml(child.id)}">${escapeHtml(child.label)}</option>`).join('')
-        : '<option value="">Chưa có Profile trẻ</option>';
+        : '<option value="">Chưa có hồ sơ trẻ</option>';
     if (selectedChildId) select.value = selectedChildId;
     syncSelectPickerTexts();
     setProfileFields(getSelectedChild());
@@ -878,9 +878,9 @@ async function loadEditPage() {
         setProfileFields(getSelectedChild());
 
         if (Number(job.moderationStatus) === 0) {
-            showNotice('Bài đăng này đang chờ moderator duyệt. Bạn vẫn có thể chỉnh sửa và lưu lại.', 'warn');
+            showNotice('Bài đăng này đang chờ kiểm duyệt. Bạn vẫn có thể chỉnh sửa và lưu lại bài đăng.', 'warn');
         } else if (Number(job.moderationStatus) === 2) {
-            showNotice('Nếu bạn chỉnh sửa bài đăng công khai và lưu lại, bài đăng sẽ quay về trạng thái chờ duyệt.', 'info');
+            showNotice('Nếu bạn chỉnh sửa bài đăng công khai và lưu lại, bài đăng sẽ quay về trạng thái chờ kiểm duyệt.', 'info');
         }
         currentModerationStatus = Number(job.moderationStatus);
 
@@ -888,7 +888,7 @@ async function loadEditPage() {
         hasLoadedEditData = true;
         updateSubmitState();
     } catch {
-        showToast('Không tải được thông tin bài đăng', 'error');
+        showToast('Không tải được thông tin bài đăng.', 'Lỗi');
         hasLoadedEditData = false;
         updateSubmitState();
     }
@@ -918,7 +918,7 @@ document.getElementById('editPageForm')?.addEventListener('submit', async (event
     event.preventDefault();
     if (!hasLoadedEditData) return;
     if (!isFormDirty()) {
-        showToast('Chưa co thay doi ?? luu.', 'info');
+        showToast('Chưa có thay đổi để lưu bài đăng.', 'Thông báo');
         updateSubmitState();
         return;
     }
@@ -927,7 +927,7 @@ document.getElementById('editPageForm')?.addEventListener('submit', async (event
     if (validSkills.length !== editSkills.length) {
         editSkills = validSkills;
         renderSkillCollection();
-        showToast('Một số kỹ năng cũ không còn hoạt động, hệ thống đã bỏ qua để bạn lưu được bài đăng.', 'warning');
+        showToast('Một số kỹ năng cũ không còn hoạt động, hệ thống đã bỏ qua để bạn lưu được bài đăng.', 'Cảnh báo');
     }
 
     const payload = {
@@ -978,7 +978,7 @@ document.getElementById('editPageForm')?.addEventListener('submit', async (event
             json = await res.json();
         } else {
             const text = await res.text();
-            json = { success: false, message: text || 'Phan hoi không hop le tu server.' };
+            json = { success: false, message: text || 'Phản hồi không hợp lệ từ máy chủ.' };
         }
 
         const payloadResult = json?.raw && typeof json.raw === 'object' ? json.raw : json;
@@ -987,21 +987,21 @@ document.getElementById('editPageForm')?.addEventListener('submit', async (event
             const firstError = json?.errors && typeof json.errors === 'object'
                 ? Object.values(json.errors).flat().find(Boolean)
                 : null;
-            showToast(firstError || payloadResult?.message || json?.message || 'Cập nhật thất bại', 'error');
+            showToast(firstError || payloadResult?.message || json?.message || 'Cập nhật thất bại.', 'error');
             return;
         }
 
         const successMessage = currentModerationStatus === 0
-            ? 'Da cập nhật bai Đang Đang chờ duyệt.'
-            : (payloadResult?.message || 'Cập nhật thành công. Bài đăng đã được gửi moderator duyệt lại');
+            ? 'Đã cập nhật bài đăng đang chờ kiểm duyệt.'
+            : (payloadResult?.message || 'Cập nhật thành công. Bài đăng đã được gửi kiểm duyệt lại.');
         pushHistoryToast(successMessage, 'success');
         shouldKeepDisabledForRedirect = true;
         redirectToHistory(JOB_ID);
     } catch (error) {
         if (error?.name === 'AbortError') {
-            showToast('Het thời gian cho luu thay doi. Vui lòng thử lại.', 'error');
+            showToast('Hết thời gian chờ lưu thay đổi. Vui lòng thử lại.', 'error');
         } else {
-            showToast('Lỗi kết nối server', 'error');
+            showToast('Lỗi kết nối máy chủ.', 'error');
         }
     } finally {
         if (!shouldKeepDisabledForRedirect) {

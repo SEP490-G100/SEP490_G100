@@ -1,6 +1,6 @@
 ﻿@model WebSite.Models.Profile.NannyBasicInfoWizardViewModel
 @{
-    ViewData["Title"] = "Nanny - Thông tin cơ bản";
+    ViewData["Title"] = "Bảo mẫu - Thông tin cơ bản";
 }
 
 <div class="nm-flow-shell nm-flow-shell--homepage">
@@ -9,10 +9,10 @@
             <div class="nm-flow-card__inner">
                 <div class="nm-flow-header">
                     <div class="nm-flow-header__content">
-                        <span class="nm-flow-badge">Nanny onboarding</span>
-                        <h1 class="nm-flow-title">Hoan thien profile cơ bản</h1>
+                        <span class="nm-flow-badge">Khởi tạo hồ sơ bảo mẫu</span>
+                        <h1 class="nm-flow-title">Hoàn thiện hồ sơ cơ bản</h1>
                         <p class="nm-flow-subtitle">
-                            Day la thong tin nen ban dau ?? profile nanny hiển thị tot hon trong tim kiem va ?? parent nhan dien nhanh kha nang phu hop.
+                            Đây là thông tin nền để hồ sơ bảo mẫu hiển thị rõ trong tìm kiếm và giúp phụ huynh đánh giá nhanh mức độ phù hợp.
                         </p>
                         <div class="nm-flow-divider" aria-hidden="true"></div>
                     </div>
@@ -49,7 +49,7 @@
                                             <div class="nm-field-hint">Nên dùng ảnh rõ mặt, đúng định dạng .jpg, .jpeg, .png.</div>
                                             <div id="avatarUploadError" class="nm-error hidden"></div>
                                             <div class="mt-3">
-                                                <img id="avatarPreview" class="nm-avatar-preview hidden" alt="Avatar preview" />
+                                                <img id="avatarPreview" class="nm-avatar-preview hidden" alt="Xem trước ảnh đại diện" />
                                             </div>
                                             <span asp-validation-for="AvatarFile" class="nm-error"></span>
                                         </div>
@@ -59,7 +59,7 @@
                                         <div class="nm-field">
                                             <label asp-for="PhoneNumber" class="nm-label">Số điện thoại</label>
                                             <input asp-for="PhoneNumber" class="nm-input" placeholder="+84901234567" />
-                                            <div class="nm-field-hint">Nhập 9-15 chữ số, có thể bắt đầu bằng dấu +.</div>
+                                            <div class="nm-field-hint">Nhập 10 số, có thể bắt đầu bằng dấu +.</div>
                                             <span asp-validation-for="PhoneNumber" class="nm-error"></span>
                                         </div>
                                     </div>
@@ -283,7 +283,7 @@
             .toLowerCase()
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '')
-            .replace(/Ä‘/g, 'd')
+            .replace(/đ/g, 'd')
             .trim();
     }
 
@@ -377,5 +377,3 @@
     }
 })();
 </script>
-
-

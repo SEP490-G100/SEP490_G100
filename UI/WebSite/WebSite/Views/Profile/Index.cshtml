@@ -163,7 +163,7 @@
             <div class="profile-avatar">
                 @if (avatar != null)
                 {
-                    <img src="@avatar" alt="Avatar" />
+                    <img src="@avatar" alt="Ảnh đại diện" />
                 }
                 else
                 {
@@ -180,12 +180,12 @@
                     </h1>
                 </div>
                 <div class="mt-2 flex items-center gap-2 flex-wrap text-sm text-slate-500 font-semibold">
-                    <span class="profile-role-chip">@(isNanny ? "Nanny" : "Phụ huynh")</span>
+                    <span class="profile-role-chip">@(isNanny ? "Bảo mẫu" : "Phụ huynh")</span>
                     <span>@(!string.IsNullOrWhiteSpace(Model.City) ? Model.City : "Việt Nam")</span>
                     <span>@(displayAge?.ToString() ?? "--") tuổi</span>
                     @if (isNanny)
                     {
-                        <span class="text-orange-600">Rating @rating.ToString("0.##") (@(Model.TotalReviews ?? 0))</span>
+                        <span class="text-orange-600">⭐ @rating.ToString("0.##") (@(Model.TotalReviews ?? 0) đánh giá)</span>
                     }
                 </div>
             </div>
@@ -213,7 +213,7 @@
                                 id="favoriteNannyBtn"
                                 data-favorite="false"
                                 aria-pressed="false"
-                                title="Lưu nanny yêu thích"
+                                title="Lưu bảo mẫu yêu thích"
                                 class="profile-favorite-btn inline-flex items-center justify-center h-10 w-10 rounded-full border border-orange-200 bg-white text-orange-500 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-orange-300 hover:bg-orange-50 hover:shadow-md">
                             <span class="material-icons-round text-[20px]">favorite_border</span>
                         </button>
@@ -252,7 +252,7 @@
                     @if (canHireInHiringFlow || canHireInContactFlow)
                     {
                         <button type="button" id="hireNannyBtn" class="profile-primary-btn">
-                            Thuê
+                            Thuê bảo mẫu
                         </button>
                     }
                 </div>
@@ -271,7 +271,7 @@
                 @if (isNanny)
                 {
                     <div class="profile-card profile-card-soft">
-                        <h3>Thông tin nanny</h3>
+                        <h3>Thông tin bảo mẫu</h3>
                         <div class="profile-detail-grid">
                             <div class="profile-detail-item">
                                 <div class="label">Kinh nghiệm</div>
@@ -305,7 +305,7 @@
                                 </div>
                             </div>
                             <div class="profile-detail-item">
-                                <div class="label">Rating trung bình</div>
+                                <div class="label">Điểm đánh giá trung bình</div>
                                 <div class="value">@rating.ToString("0.##")</div>
                             </div>
                         </div>
@@ -372,12 +372,12 @@
                                             <div class="flex items-center gap-2">
                                                 @if (!string.IsNullOrWhiteSpace(r.ReviewerAvatarUrl))
                                                 {
-                                                    <img src="@r.ReviewerAvatarUrl" class="w-7 h-7 rounded-full object-cover" alt="avatar" />
+                                                    <img src="@r.ReviewerAvatarUrl" class="w-7 h-7 rounded-full object-cover" alt="Ảnh đại diện" />
                                                 }
                                                 <span class="feedback-name">@r.ReviewerName</span>
                                             </div>
                                             <div class="flex items-center gap-2">
-                                                <span class="feedback-star text-orange-400">@r.Stars</span>
+                                                <span class="feedback-star text-orange-400">⭐ @r.Stars</span>
                                                 <span class="text-xs text-slate-400">@r.CreatedAt.ToString("dd/MM/yyyy")</span>
                                             </div>
                                         </div>
@@ -422,7 +422,7 @@
                             {
                                 <div class="flex items-center gap-2 rounded-xl px-3 py-2.5 bg-green-50 border border-green-200">
                                     <span class="material-icons-round text-green-600" style="font-size:18px">health_and_safety</span>
-                                    <span class="text-sm font-semibold text-green-700">Đã upload giấy khám sức khỏe</span>
+                                    <span class="text-sm font-semibold text-green-700">Đã tải lên giấy khám sức khỏe</span>
                                 </div>
                             }
                         </div>
@@ -455,7 +455,7 @@
                     <div class="profile-status-card @(hasUploadedHealthDocument ? "is-complete" : "is-pending")">
                         <div class="profile-status-head">
                             <h3 class="!mb-0">Giấy sức khỏe</h3>
-                            <span class="profile-status-pill">@(hasUploadedHealthDocument ? "Đã upload" : "Chưa upload")</span>
+                            <span class="profile-status-pill">@(hasUploadedHealthDocument ? "Đã tải lên" : "Chưa tải lên")</span>
                         </div>
                         <p class="profile-status-desc">
                             @(hasUploadedHealthDocument
@@ -583,7 +583,7 @@
         <div class="nmodal-box bg-white rounded-2xl w-full max-w-xl shadow-2xl relative">
             <div class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
                 <div>
-                    <h2 class="text-lg font-bold text-gray-900">Gửi phản nàn hồ sơ</h2>
+                    <h2 class="text-lg font-bold text-gray-900">Gửi khiếu nại hồ sơ</h2>
                     <p class="text-xs text-gray-400 font-semibold mt-0.5">Hồ sơ: @Model.FirstName @Model.LastName</p>
                 </div>
                 <button type="button" onclick="closeProfileComplainModal()" class="text-gray-300 hover:text-gray-700 material-icons-round text-2xl transition-colors">close</button>
@@ -622,7 +622,7 @@
                 function renderFavoriteState(isFavorite) {
                     favoriteBtn.dataset.favorite = isFavorite ? 'true' : 'false';
                     favoriteBtn.setAttribute('aria-pressed', isFavorite ? 'true' : 'false');
-                    favoriteBtn.title = isFavorite ? 'Đã lưu nanny yêu thích' : 'Lưu nanny yêu thích';
+                    favoriteBtn.title = isFavorite ? 'Đã lưu bảo mẫu yêu thích' : 'Lưu bảo mẫu yêu thích';
                     favoriteBtn.classList.toggle('bg-orange-500', isFavorite);
                     favoriteBtn.classList.toggle('text-white', isFavorite);
                     favoriteBtn.classList.toggle('border-orange-500', isFavorite);
@@ -657,7 +657,7 @@
                     var nannyProfileId = requestBtn.getAttribute('data-nanny-profile-id');
                     if (!nannyProfileId) {
                         if (typeof window.showToast === 'function') {
-                            window.showToast('Không tìm thấy nanny profile để gửi yêu cầu liên hệ.', { type: 'warning' });
+                            window.showToast('Không tìm thấy hồ sơ bảo mẫu để gửi yêu cầu liên hệ.', { type: 'warning' });
                         }
                         return;
                     }
@@ -709,7 +709,7 @@
 
                     messageBtn.disabled = true;
                     var oldText = messageBtn.textContent;
-                    messageBtn.textContent = 'Đang mở chat...';
+                    messageBtn.textContent = 'Đang mở tin nhắn...';
 
                     try {
                         var response = await fetch('/Communication/GetOrCreate', {
@@ -755,7 +755,7 @@
                     }
                     if (!hasHiringContext) {
                         if (typeof window.showToast === 'function') {
-                            window.showToast('Không tìm thấy Contact Request hợp lệ để tạo hiring record.', { type: 'warning' });
+                            window.showToast('Không tìm thấy yêu cầu liên hệ hợp lệ để tạo bản ghi thuê.', { type: 'warning' });
                         }
                     }
                 });
@@ -824,16 +824,16 @@
                         if (response.redirected && response.url && response.url.includes('/Auth/Login')) {
                             throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
                         }
-                        throw new Error('Server trả về dữ liệu không hợp lệ khi tải media.');
+                        throw new Error('Máy chủ trả về dữ liệu không hợp lệ khi tải lên tệp.');
                     }
                 }
 
                 if (!response.ok) {
-                    throw new Error((result && result.message) || ('Tải media thất bại (HTTP ' + response.status + ').'));
+                    throw new Error((result && result.message) || ('Tải lên tệp thất bại (HTTP ' + response.status + ').'));
                 }
 
                 if (!result || !result.success || !result.data || !Array.isArray(result.data.urls) || result.data.urls.length === 0) {
-                    throw new Error((result && result.message) || 'Tải media thất bại.');
+                    throw new Error((result && result.message) || 'Tải lên tệp thất bại.');
                 }
 
                 return result.data.urls;
@@ -862,7 +862,7 @@
                             'Vui lòng chọn ít nhất một ảnh.');
                         resolve(urls[0]);
                     } catch (error) {
-                        reject({ message: (error && error.message) || 'Không thể upload ảnh.' });
+                        reject({ message: (error && error.message) || 'Không thể tải ảnh lên.' });
                     }
                 });
             }
@@ -879,12 +879,12 @@
                 pickProfileComplainFile(accept, false).then(async function (file) {
                     if (!file) return;
                     try {
-                        var urls = await uploadProfileComplainMediaFiles([file], endpoint, 'Vui lòng chọn file để upload.');
+                        var urls = await uploadProfileComplainMediaFiles([file], endpoint, 'Vui lòng chọn tệp để tải lên.');
                         var url = urls[0];
-                        if (isImage) callback(url, { alt: file.name || 'image' });
+                        if (isImage) callback(url, { alt: file.name || 'Ảnh' });
                         else callback(url, { source2: '', poster: '' });
                     } catch (error) {
-                        notifyProfileToast((error && error.message) || 'Không thể tải media.', 'error');
+                        notifyProfileToast((error && error.message) || 'Không thể tải phương tiện lên.', 'error');
                     }
                 });
             }
@@ -937,7 +937,7 @@
                 isSubmittingProfileComplain = false;
                 if (complainSubmitBtn) {
                     complainSubmitBtn.disabled = false;
-                    complainSubmitBtn.textContent = 'Gửi phản nàn';
+                    complainSubmitBtn.textContent = 'Gửi khiếu nại';
                 }
                 complainModal.classList.add('show');
             }
@@ -947,7 +947,7 @@
                 isSubmittingProfileComplain = false;
                 if (complainSubmitBtn) {
                     complainSubmitBtn.disabled = false;
-                    complainSubmitBtn.textContent = 'Gửi phản nàn';
+                    complainSubmitBtn.textContent = 'Gửi khiếu nại';
                 }
             };
 
@@ -961,7 +961,7 @@
                     var complainedUserId = complainedUserIdInput ? String(complainedUserIdInput.value || '').trim() : '';
                     if (!complainedUserId) {
                         event.preventDefault();
-                        notifyProfileToast('Không tìm thấy hồ sơ cần phản nàn.', 'error');
+                        notifyProfileToast('Không tìm thấy hồ sơ cần khiếu nại.', 'error');
                         return;
                     }
 
@@ -1039,6 +1039,4 @@
 {
     <partial name="~/Views/Hiring/_HireModal.cshtml" />
 }
-
-
 

@@ -23,7 +23,7 @@
                     <div class="w-24 h-24 mx-auto bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden mb-4 border-4 border-white dark:border-gray-800 shadow-lg">
                         @if (!string.IsNullOrEmpty(Model.NannyAvatarUrl))
                         {
-                            <img src="@Model.NannyAvatarUrl" alt="Avatar" class="w-full h-full object-cover" />
+                            <img src="@Model.NannyAvatarUrl" alt="Ảnh đại diện" class="w-full h-full object-cover" />
                         }
                         else
                         {
@@ -81,7 +81,7 @@
                     <div class="flex items-start gap-3">
                         <span class="material-icons-round text-orange-500 text-2xl">badge</span>
                         <div class="min-w-0 flex-1">
-                            <h3 class="text-lg font-bold text-gray-900 dark:text-white">1. Upload căn cước công dân <span class="text-red-500">*</span></h3>
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white">1. Tải lên căn cước công dân <span class="text-red-500">*</span></h3>
                             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Tải ảnh hoặc file PDF rõ nét của căn cước công dân. Bạn có thể chọn nhiều file nếu cần mặt trước và mặt sau.</p>
                         </div>
                     </div>
@@ -102,7 +102,7 @@
                     <div class="flex items-start gap-3">
                         <span class="material-icons-round text-orange-500 text-2xl">school</span>
                         <div class="min-w-0 flex-1">
-                            <h3 class="text-lg font-bold text-gray-900 dark:text-white">3. Upload bằng cấp và chứng chỉ <span class="text-gray-400 text-base">(Tùy chọn)</span></h3>
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white">3. Tải lên bằng cấp và chứng chỉ <span class="text-gray-400 text-base">(Tùy chọn)</span></h3>
                             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Mục này không bắt buộc. Nếu có, bạn có thể tải lên ảnh hoặc file PDF bằng cấp/chứng chỉ để hồ sơ đầy đủ hơn.</p>
                         </div>
                     </div>
@@ -134,7 +134,7 @@
                     <div class="flex items-start gap-3">
                         <span class="material-icons-round text-orange-500 text-2xl">medical_services</span>
                         <div class="min-w-0 flex-1">
-                            <h3 class="text-lg font-bold text-gray-900 dark:text-white">2. Upload giấy khám sức khỏe <span class="text-red-500">*</span></h3>
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white">2. Tải lên giấy khám sức khỏe <span class="text-red-500">*</span></h3>
                             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Đây là tài liệu bắt buộc. Hệ thống chấp nhận ảnh hoặc file PDF rõ nét, tối đa 5MB mỗi file.</p>
                         </div>
                     </div>
@@ -317,11 +317,11 @@
                 || file.type === "application/pdf";
 
             if (!isValidExtension || !isSupportedContentType) {
-                return "Bạn phải upload file định dạng ảnh hoặc pdf.";
+                return "Bạn phải tải lên tệp định dạng ảnh hoặc PDF.";
             }
 
             if (file.size > maxFileSize) {
-                return "Bạn chỉ đc upload file kích thước tối đa 5mb.";
+                return "Bạn chỉ được tải lên tệp có dung lượng tối đa 5MB.";
             }
 
             return "";

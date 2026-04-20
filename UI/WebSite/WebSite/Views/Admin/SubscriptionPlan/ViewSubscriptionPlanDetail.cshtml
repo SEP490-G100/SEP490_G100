@@ -14,7 +14,7 @@
                 <p class="page-subtitle">Xem chi tiết gói, cập nhật cấu hình, hoặc thay đổi trạng thái hiển thị.</p>
                 <div class="flex flex-wrap items-center gap-2 mt-4">
                     <span class="badge @(Model.IsActive ? "badge-active" : "badge-inactive")">@(Model.IsActive ? "Hoạt Động" : "Vô Hiệu Hóa")</span>
-                    <span class="badge @(Model.TargetRole == "Parent" ? "badge-parent" : "badge-nanny")">@Model.TargetRole</span>
+                    <span class="badge @(Model.TargetRole == "Parent" ? "badge-parent" : "badge-nanny")">@(Model.TargetRole == "Parent" ? "Phụ Huynh" : Model.TargetRole == "Nanny" ? "Người Giữ Trẻ" : Model.TargetRole)</span>
                     <span class="badge badge-mod">@Model.Code</span>
                     <span class="badge badge-pending">@Model.GetFeatures().Count tính năng</span>
                     <span class="badge badge-pending">@Model.ActiveSubscriberCount người đăng ký đang hoạt động</span>
@@ -150,15 +150,15 @@
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:col-span-2">
                     <label class="field-readonly !justify-between cursor-pointer">
-                        <span>Huy Hiệu Nổi Bật</span>
+                        <span>Huy hiệu nổi bật</span>
                         <input asp-for="FeaturedBadge" type="checkbox" class="w-4 h-4 accent-orange-500" />
                     </label>
                     <label class="field-readonly !justify-between cursor-pointer">
-                        <span>ƯU Tiên Tìm Kiếm</span>
+                        <span>Ưu tiên tìm kiếm</span>
                         <input asp-for="SearchPriority" type="checkbox" class="w-4 h-4 accent-orange-500" />
                     </label>
                     <label class="field-readonly !justify-between cursor-pointer">
-                        <span>Có Thể Dùng Gợi Ý (AI)</span>
+                        <span>Có thể dùng gợi ý (AI)</span>
                         <input asp-for="CanUseRecommendation" type="checkbox" class="w-4 h-4 accent-orange-500" />
                     </label>
                 </div>

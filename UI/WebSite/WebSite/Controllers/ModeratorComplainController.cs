@@ -161,8 +161,8 @@ public class ModeratorComplainController : Controller
                 await _notificationHub.Clients.Group($"user:{detail.ReporterUserId}").SendAsync("notification:new", new
                 {
                     type = "complaint-resolved",
-                    title = "Thong bao tu Moderator",
-                    message = "Chúng tôi đã xử lí yêu cầu phàn nàn của bạn",
+                    title = "Thông báo từ điều hành viên",
+                    message = "Chúng tôi đã xử lý yêu cầu khiếu nại của bạn",
                     toastType = "success"
                 });
 
@@ -173,7 +173,7 @@ public class ModeratorComplainController : Controller
                     await _notificationHub.Clients.Group($"user:{detail.OffenderUserId.Value}").SendAsync("notification:new", new
                     {
                         type = "complaint-reviewed",
-                        title = "Thong bao tu Moderator",
+                        title = "Thông báo từ điều hành viên",
                         message = form.OffenderNotificationMessage.Trim(),
                         toastType = "info"
                     });
@@ -181,11 +181,11 @@ public class ModeratorComplainController : Controller
 
                 var listUrl = Url.Action(nameof(ManageComplaint), "ModeratorComplain")
                               ?? "/Moderator/ManageComplaint";
-                var toastMessage = Uri.EscapeDataString("Bạn đã xử lí yêu cầu phàn nàn thành công");
+                var toastMessage = Uri.EscapeDataString("Bạn đã xử lý yêu cầu khiếu nại thành công");
                 return Redirect($"{listUrl}?toastType=success&toastMessage={toastMessage}");
             }
 
-            TempData["Error"] = result?.Message ?? "Failed to resolve complaint.";
+            TempData["Error"] = result?.Message ?? "Không thể giải quyết khiếu nại.";
             var failedModel = new ModeratorComplaintDetailPageModel
             {
                 Detail = detail,
@@ -195,7 +195,7 @@ public class ModeratorComplainController : Controller
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"Connection error: {ex.Message}";
+            TempData["Error"] = $"Lỗi kết nối: {ex.Message}";
             var failedModel = new ModeratorComplaintDetailPageModel
             {
                 Detail = detail,
@@ -209,7 +209,7 @@ public class ModeratorComplainController : Controller
     public async Task<IActionResult> ViewComplainedJobPostingDetail(Guid jobPostingId, Guid? complaintId = null)
     {
         if (jobPostingId == Guid.Empty)
-            return RedirectToAction(nameof(ManageComplaint), new { toastType = "error", toastMessage = "Không t?m th?y bai dang." });
+            return RedirectToAction(nameof(ManageComplaint), new { toastType = "error", toastMessage = "Không tìm thấy bài đăng." });
 
         var token = HttpContext.Session.GetString("AccessToken");
         _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -225,7 +225,7 @@ public class ModeratorComplainController : Controller
                 return RedirectToAction(nameof(ManageComplaint), new
                 {
                     toastType = "error",
-                    toastMessage = result?.Message ?? "Không th? tai chi tiết bài đăng bi phàn nàn."
+                    toastMessage = result?.Message ?? "Không thể tải chi tiết bài đăng bị phàn nàn."
                 });
             }
 
@@ -242,7 +242,7 @@ public class ModeratorComplainController : Controller
             return RedirectToAction(nameof(ManageComplaint), new
             {
                 toastType = "error",
-                toastMessage = "Không th? tai chi tiết bài đăng bi phàn nàn."
+                toastMessage = "Không thể tải chi tiết bài đăng bị phàn nàn."
             });
         }
     }
@@ -252,7 +252,7 @@ public class ModeratorComplainController : Controller
     public async Task<IActionResult> DeactivateComplainedJobPosting(Guid jobPostingId, Guid? complaintId = null)
     {
         if (jobPostingId == Guid.Empty)
-            return RedirectToAction(nameof(ManageComplaint), new { toastType = "error", toastMessage = "Không t?m th?y bai dang." });
+            return RedirectToAction(nameof(ManageComplaint), new { toastType = "error", toastMessage = "Không tìm thấy bài đăng." });
 
         var token = HttpContext.Session.GetString("AccessToken");
         _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -271,14 +271,14 @@ public class ModeratorComplainController : Controller
                     {
                         id = complaintId.Value,
                         toastType = "success",
-                        toastMessage = "Da vo hieu hoa bai dang"
+                        toastMessage = "Đã vô hiệu hóa bài đăng"
                     });
                 }
 
                 return RedirectToAction(nameof(ManageComplaint), new
                 {
                     toastType = "success",
-                    toastMessage = "Da vo hieu hoa bai dang"
+                    toastMessage = "Đã vô hiệu hóa bài đăng"
                 });
             }
 
@@ -287,7 +287,7 @@ public class ModeratorComplainController : Controller
                 jobPostingId,
                 complaintId,
                 toastType = "error",
-                toastMessage = result?.Message ?? "Không th? vo hieu hoa bai dang."
+                toastMessage = result?.Message ?? "Không thể vô hiệu hóa bài đăng."
             });
         }
         catch
@@ -297,7 +297,7 @@ public class ModeratorComplainController : Controller
                 jobPostingId,
                 complaintId,
                 toastType = "error",
-                toastMessage = "Không th? vo hieu hoa bai dang."
+                toastMessage = "Không thể vô hiệu hóa bài đăng."
             });
         }
     }
@@ -306,7 +306,7 @@ public class ModeratorComplainController : Controller
     public async Task<IActionResult> ViewComplainedProfileDetail(Guid userId, Guid? complaintId = null)
     {
         if (userId == Guid.Empty)
-            return RedirectToAction(nameof(ManageComplaint), new { toastType = "error", toastMessage = "Không t?m th?y profile." });
+            return RedirectToAction(nameof(ManageComplaint), new { toastType = "error", toastMessage = "Không tìm thấy hồ sơ." });
 
         try
         {
@@ -316,7 +316,7 @@ public class ModeratorComplainController : Controller
                 return RedirectToAction("đăng nhập", "Auth", new
                 {
                     toastType = "warning",
-                    toastMessage = "Phi?n đăng nhập da het han."
+                    toastMessage = "Phiên đăng nhập đã hết hạn."
                 });
             }
 
@@ -328,7 +328,7 @@ public class ModeratorComplainController : Controller
                 return RedirectToAction(nameof(ManageComplaint), new
                 {
                     toastType = "error",
-                    toastMessage = "Không th? tai profile bi phàn nàn."
+                    toastMessage = "Không thể tải hồ sơ bị phàn nàn."
                 });
             }
 
@@ -339,7 +339,7 @@ public class ModeratorComplainController : Controller
                 return RedirectToAction(nameof(ManageComplaint), new
                 {
                     toastType = "error",
-                    toastMessage = result?.Message ?? "Không th? tai profile bi phàn nàn."
+                    toastMessage = result?.Message ?? "Không thể tải hồ sơ bị phàn nàn."
                 });
             }
 
@@ -358,7 +358,7 @@ public class ModeratorComplainController : Controller
             return RedirectToAction(nameof(ManageComplaint), new
             {
                 toastType = "error",
-                toastMessage = "Không th? tai profile bi phàn nàn."
+                toastMessage = "Không thể tải hồ sơ bị phàn nàn."
             });
         }
     }
@@ -392,14 +392,14 @@ public class ModeratorComplainController : Controller
                 success = isSuccess,
                 message = isSuccess
                     ? (isActive
-                        ? "Bạn đã kích hoạt phàn nàn thành công"
-                        : "Bạn đã vô hiệu hóa phàn nàn thành công")
-                    : (result?.Message ?? "Operation failed.")
+                        ? "Bạn đã kích hoạt khiếu nại thành công"
+                        : "Bạn đã vô hiệu hóa khiếu nại thành công")
+                    : (result?.Message ?? "Thao tác thất bại.")
             });
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = $"Connection error: {ex.Message}" });
+            return Json(new { success = false, message = $"Lỗi kết nối: {ex.Message}" });
         }
     }
 
