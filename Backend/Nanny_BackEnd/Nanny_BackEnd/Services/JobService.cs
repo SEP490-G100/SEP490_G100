@@ -97,10 +97,15 @@ public class JobService
     {
         var parentProfile = await _jobRepo.getParentProfileSnapshot(parentProfileId)
             ?? throw new KeyNotFoundException("Khong tim thay ho so phu huynh.");
+        var activeChildren = parentProfile.ChildProfiles
+            .Where(c => !c.IsDeleted)
+            .OrderBy(c => c.CreatedAt)
+            .ToList();
+        var totalChildren = activeChildren.Count;
         var selectedChildren = ChildProfileSnapshotHelper.ResolveChildren(
             parentProfile,
             null,
-            parentProfile.NumberOfChildren ?? 1);
+            totalChildren);
         var selectedChild = selectedChildren.FirstOrDefault();
         var childSnapshot = ChildProfileSnapshotHelper.BuildSnapshot(
             selectedChildren,
@@ -108,7 +113,7 @@ public class JobService
 
         return new JobPostingPrefillResponse
         {
-            NumberOfChildren = parentProfile.NumberOfChildren ?? parentProfile.ChildProfiles.Count(c => !c.IsDeleted),
+            NumberOfChildren = totalChildren,
             SelectedChildProfileId = selectedChild?.Id,
             Characteristic = childSnapshot.Characteristic,
             BirthType = childSnapshot.BirthType,
@@ -117,9 +122,7 @@ public class JobService
                 : null,
             SpecialNeeds = childSnapshot.SpecialNeeds,
             Skills = [],
-            Children = parentProfile.ChildProfiles
-                .Where(c => !c.IsDeleted)
-                .OrderBy(c => c.CreatedAt)
+            Children = activeChildren
                 .Select((child, index) => new JobPostingPrefillChildResponse
                 {
                     Id = child.Id,
@@ -174,7 +177,7 @@ public class JobService
         if (req.SalaryMin.HasValue && req.SalaryMax.HasValue && req.SalaryMin > req.SalaryMax)
             throw new InvalidOperationException("Luong toi thieu khong duoc lon hon luong toi da.");
 
-        var profileSnapshot = buildProfileSnapshot(parentProfile, selectedChildren, req.NumberOfChildren);
+        var profileSnapshot = buildProfileSnapshot(parentProfile, selectedChildren);
 
         decimal? lat = null;
         decimal? lng = null;
@@ -280,7 +283,7 @@ public class JobService
             }
         }
 
-        var profileSnapshot = buildProfileSnapshot(parentProfile, selectedChildren, req.NumberOfChildren);
+        var profileSnapshot = buildProfileSnapshot(parentProfile, selectedChildren);
         var nowUtc = DateTime.UtcNow;
 
         job.Title = req.Title.Trim();
@@ -478,11 +481,10 @@ public class JobService
 
     private static (int? NumberOfChildren, string? Characteristic, int? BirthType, string? SpecialNeeds) buildProfileSnapshot(
         ParentProfile parentProfile,
-        List<ChildProfile> selectedChildren,
-        int? requestedChildren)
+        List<ChildProfile> selectedChildren)
     {
         var childSnapshot = ChildProfileSnapshotHelper.BuildSnapshot(selectedChildren, parentProfile.FamilyDescription);
-        int? numberOfChildren = requestedChildren ?? selectedChildren.Count;
+        int? numberOfChildren = selectedChildren.Count;
         if (!numberOfChildren.HasValue || numberOfChildren <= 0)
             numberOfChildren = 1;
 

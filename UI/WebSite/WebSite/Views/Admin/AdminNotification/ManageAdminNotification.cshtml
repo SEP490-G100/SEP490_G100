@@ -62,10 +62,10 @@
             <div class="relative">
                 <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">toggle_on</span>
                 <select name="isDeleted" onchange="this.form.submit()"
-                        class="search-input search-input--with-icon md:w-44 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
-                    <option value="">Tất cả</option>
-                    <option value="false" selected="@(currentDeleted == false ? "selected" : null)">Hoạt động</option>
-                    <option value="true" selected="@(currentDeleted == true ? "selected" : null)">Đã vô hiệu hóa</option>
+                        class="search-input admin-filter-select md:w-44 !pl-9 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
+                    <option value="">Tất Cả</option>
+                    <option value="false" selected="@(currentDeleted == false ? "selected" : null)">Hoạt Động</option>
+                    <option value="true" selected="@(currentDeleted == true ? "selected" : null)">Đã Vô Hiệu Hóa</option>
                 </select>
             </div>
 
