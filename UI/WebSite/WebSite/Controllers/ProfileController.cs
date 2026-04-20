@@ -697,26 +697,8 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
                 children = JsonSerializer.Deserialize<List<ChildProfileViewModel>>(element.GetRawText(), JsonOpts) ?? new();
             }
 
-            // Profile may store numberOfChildren even when detailed child profiles are not created yet.
-            // We expose both numbers so UI can avoid showing an inconsistent "0" count.
-            int declaredChildrenCount = 0;
-            var profileResponse = await _http.GetAsync("/api/profile");
-            if (profileResponse.IsSuccessStatusCode)
-            {
-                var profileContent = await profileResponse.Content.ReadAsStringAsync();
-                var profileResult = JsonSerializer.Deserialize<ApiResultDto>(profileContent, JsonOpts);
-                if (profileResult?.Data is JsonElement profileData &&
-                    profileData.ValueKind == JsonValueKind.Object &&
-                    profileData.TryGetProperty("numberOfChildren", out var numberOfChildrenElement) &&
-                    numberOfChildrenElement.ValueKind == JsonValueKind.Number &&
-                    numberOfChildrenElement.TryGetInt32(out var parsedCount))
-                {
-                    declaredChildrenCount = Math.Max(parsedCount, 0);
-                }
-            }
-
-            ViewBag.DeclaredChildrenCount = declaredChildrenCount;
-            ViewBag.DisplayChildrenCount = Math.Max(children.Count, declaredChildrenCount);
+            // Display the real number of child profiles currently available.
+            ViewBag.DisplayChildrenCount = children.Count;
 
             return View(children);
         }

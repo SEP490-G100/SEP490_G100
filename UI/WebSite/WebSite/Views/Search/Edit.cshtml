@@ -65,7 +65,7 @@
                             </div>
                             <div>
                                 <label class="form-label">Số trẻ cần chăm</label>
-                                <select id="ef-children" class="form-input">
+                                <select id="ef-children" class="form-input" disabled>
                                     @for (var childCount = 1; childCount <= 10; childCount++)
                                     {
                                         <option value="@childCount">@childCount bé</option>
@@ -135,13 +135,13 @@
                         <div class="section-heading">
                             <div>
                                 <p class="section-title">Thông tin từ hồ sơ trẻ</p>
-                                <p class="section-caption">Chọn lại bé nếu cần, hệ thống sẽ cập nhật thông tin hồ sơ trẻ tương ứng.</p>
+                                <p class="section-caption">Số trẻ cần chăm được đồng bộ theo tổng hồ sơ bé hiện có. Chọn bé thứ 1 để hiển thị thông tin chi tiết.</p>
                             </div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div class="md:col-span-2">
-                                <label class="form-label">Chọn trẻ</label>
-                                <input type="text" id="ef-childProfileText" class="form-input form-select-picker-input" autocomplete="off" placeholder="Chọn trẻ" />
+                                <label class="form-label">Chọn bé thứ 1</label>
+                                <input type="text" id="ef-childProfileText" class="form-input form-select-picker-input" autocomplete="off" placeholder="Chọn bé thứ 1" />
                                 <select id="ef-childProfileId" class="form-input form-select-native-hidden"></select>
                             </div>
                             <div>
@@ -157,7 +157,6 @@
                                 <textarea id="ef-specialNeeds" class="form-input resize-none bg-white/80" rows="2" readonly></textarea>
                             </div>
                         </div>
-                        <div id="ef-extraChildProfiles" class="child-profile-stack"></div>
                     </div>
 
                     <div class="section-card section-card-plain">
@@ -315,6 +314,23 @@ function normalizeChildrenCount(value) {
     const parsed = Number(value);
     if (!Number.isFinite(parsed)) return 1;
     return Math.min(10, Math.max(1, Math.trunc(parsed)));
+}
+
+function getTotalChildProfiles() {
+    return Array.isArray(editChildren) ? editChildren.length : 0;
+}
+
+function syncChildrenCountField() {
+    const childrenSelect = document.getElementById('ef-children');
+    if (!childrenSelect) return 1;
+
+    const totalChildren = getTotalChildProfiles();
+    const resolvedCount = normalizeChildrenCount(totalChildren || childrenSelect.value || 1);
+    childrenSelect.innerHTML = `<option value="${resolvedCount}">${resolvedCount} bé</option>`;
+    childrenSelect.value = String(resolvedCount);
+    childrenSelect.disabled = true;
+    childrenSelect.setAttribute('aria-readonly', 'true');
+    return resolvedCount;
 }
 
 function normalizeLocationName(value) {
@@ -607,7 +623,7 @@ function syncSelectPickerTexts() {
 
 function attachEditSelectPickers() {
     attachSelectPicker('ef', 'typePicker', 'ef-type', 'ef-typeText', 'Chọn loại công việc');
-    attachSelectPicker('ef', 'childPicker', 'ef-childProfileId', 'ef-childProfileText', 'Chọn trẻ', handleEditChildChange);
+    attachSelectPicker('ef', 'childPicker', 'ef-childProfileId', 'ef-childProfileText', 'Chọn bé thứ 1', handleEditChildChange);
     attachSelectPicker('ef', 'skillPicker', 'ef-skillSelect', 'ef-skillSelectText', 'Chọn kỹ năng cần yêu cầu');
 }
 
@@ -700,15 +716,13 @@ function normalizeSkillsForCompare(skills) {
 }
 
 function getCurrentFormSignature() {
-    const childrenCount = normalizeChildrenCount(document.getElementById('ef-children')?.value || 1);
-    const childProfileIds = getEditSelectedChildIds(childrenCount).join('|');
+    const childrenCount = normalizeChildrenCount(getTotalChildProfiles() || document.getElementById('ef-children')?.value || 1);
     return JSON.stringify({
         title: document.getElementById('ef-title')?.value?.trim() || '',
         description: document.getElementById('ef-desc')?.value?.trim() || '',
         jobType: Number(document.getElementById('ef-type')?.value || 0),
         numberOfChildren: childrenCount,
         childProfileId: document.getElementById('ef-childProfileId')?.value || '',
-        childProfileIds,
         salaryMin: document.getElementById('ef-salMin')?.value?.trim() || '',
         salaryMax: document.getElementById('ef-salMax')?.value?.trim() || '',
         salaryNegotiable: !!document.getElementById('ef-negotiable')?.checked,
@@ -740,6 +754,7 @@ function focusInvalidField(fieldId) {
 function validateEditPayload(payload) {
     const minimumSalary = 8000000;
     const maximumSalary = 50000000;
+    const totalChildren = getTotalChildProfiles();
     const title = String(payload?.title ?? '').trim();
     if (!title || title.length < 5 || title.length > 200) {
         return { message: 'Tiêu đề bài đăng phải từ 5 đến 200 ký tự.', fieldId: 'ef-title' };
@@ -754,29 +769,30 @@ function validateEditPayload(payload) {
         return { message: 'Loại công việc không hợp lệ.', fieldId: 'ef-typeText' };
     }
 
+    if (totalChildren < 1) {
+        return {
+            message: 'Vui lòng tạo ít nhất 1 Child Profile trước khi lưu bài đăng.',
+            fieldId: 'ef-childProfileId'
+        };
+    }
+
+    if (totalChildren > 10) {
+        return {
+            message: 'Tối đa 10 Child Profile có thể được sử dụng cho một bài đăng.',
+            fieldId: 'ef-children'
+        };
+    }
+
     const children = Number(payload?.numberOfChildren || 0);
     if (!Number.isFinite(children) || children < 1 || children > 10) {
         return { message: 'Số trẻ cần chăm phải từ 1 đến 10.', fieldId: 'ef-children' };
     }
 
-    if (children > editChildren.length) {
+    if (children !== totalChildren) {
         return {
-            message: `Ban da chon ${children} tre nhung hien chi co ${editChildren.length} Child Profile. Vui long tao them Child Profile truoc khi luu.`,
+            message: `Số trẻ cần chăm được đồng bộ theo tổng hồ sơ bé hiện có (${totalChildren} bé).`,
             fieldId: 'ef-children'
         };
-    }
-
-    if (!Array.isArray(payload?.childProfileIds) || payload.childProfileIds.length !== children) {
-        return { message: 'Danh sach tre duoc chon chua hop le. Vui long chon lai so tre can cham.', fieldId: 'ef-children' };
-    }
-
-    const uniqueChildIds = new Set(
-        payload.childProfileIds
-            .map((id) => String(id || '').toLowerCase())
-            .filter((id) => !!id)
-    );
-    if (uniqueChildIds.size !== children) {
-        return { message: 'Danh sach tre duoc chon dang bi trung. Vui long chon lai.', fieldId: 'ef-children' };
     }
 
     if (!payload?.childProfileId) {
@@ -879,32 +895,9 @@ function getSelectedChild() {
 
 function getEditSelectedChildren(requiredCount) {
     const count = normalizeChildrenCount(requiredCount);
-    if (!Array.isArray(editChildren) || editChildren.length === 0) return [];
-
-    const selected = [];
-    const selectedIds = new Set();
-    const tryAddChild = (childId) => {
-        const normalizedId = String(childId || '').toLowerCase();
-        if (!normalizedId || selectedIds.has(normalizedId)) return;
-        const child = editChildren.find((item) => String(item.id).toLowerCase() === normalizedId);
-        if (!child) return;
-        selectedIds.add(normalizedId);
-        selected.push(child);
-    };
-
-    tryAddChild(document.getElementById('ef-childProfileId')?.value || '');
-    for (let idx = 0; idx < count - 1; idx += 1) {
-        tryAddChild(document.getElementById(`ef-extraChildProfileId-${idx}`)?.value || '');
-    }
-
-    for (let idx = 0; idx < editChildren.length && selected.length < count; idx += 1) {
-        const fallbackId = String(editChildren[idx]?.id || '').toLowerCase();
-        if (!fallbackId || selectedIds.has(fallbackId)) continue;
-        selectedIds.add(fallbackId);
-        selected.push(editChildren[idx]);
-    }
-
-    return selected;
+    if (!Array.isArray(editChildren) || editChildren.length === 0 || count < 1) return [];
+    const selectedChild = getSelectedChild() || editChildren[0] || null;
+    return selectedChild ? [selectedChild] : [];
 }
 
 function getEditSelectedChildIds(requiredCount) {
@@ -913,114 +906,14 @@ function getEditSelectedChildIds(requiredCount) {
 
 function renderEditExtraChildProfiles() {
     const container = document.getElementById('ef-extraChildProfiles');
-    const countInput = document.getElementById('ef-children');
-    if (!container || !countInput) return;
-
-    const requiredCount = normalizeChildrenCount(countInput.value);
-    countInput.value = String(requiredCount);
-    const extraCount = Math.max(requiredCount - 1, 0);
-    if (requiredCount <= 1) {
-        container.innerHTML = '';
-        return;
-    }
-
-    const existingSelections = {};
-    container.querySelectorAll('select[id^="ef-extraChildProfileId-"]').forEach((selectEl) => {
-        existingSelections[selectEl.id] = selectEl.value || '';
-    });
-
-    const firstSelectedId = String(document.getElementById('ef-childProfileId')?.value || '').toLowerCase();
-    const usedIds = new Set(firstSelectedId ? [firstSelectedId] : []);
-    const findChildById = (childId) => {
-        const normalizedId = String(childId || '').toLowerCase();
-        return editChildren.find((child) => String(child.id).toLowerCase() === normalizedId) || null;
-    };
-
-    let html = '';
-    for (let idx = 0; idx < extraCount; idx += 1) {
-        const selectId = `ef-extraChildProfileId-${idx}`;
-        const preservedValue = existingSelections[selectId] || '';
-        const preservedChild = findChildById(preservedValue);
-
-        let selectedChild = null;
-        if (preservedChild && !usedIds.has(String(preservedChild.id).toLowerCase())) {
-            selectedChild = preservedChild;
-        } else {
-            selectedChild = editChildren.find((child) => !usedIds.has(String(child.id).toLowerCase())) || null;
-        }
-
-        const selectedChildId = selectedChild ? String(selectedChild.id) : '';
-        if (selectedChild) usedIds.add(String(selectedChild.id).toLowerCase());
-
-        const selectableChildren = editChildren.filter((child) => {
-            const normalizedId = String(child.id).toLowerCase();
-            if (selectedChild && normalizedId === String(selectedChild.id).toLowerCase()) return true;
-            return !usedIds.has(normalizedId);
-        });
-
-        const selectOptions = selectableChildren.length
-            ? selectableChildren.map((child) => `
-                <option value="${escapeHtml(child.id)}" ${String(child.id) === selectedChildId ? 'selected' : ''}>
-                    ${escapeHtml(child.label || 'Be')}
-                </option>`).join('')
-            : '<option value="">Chua co Child Profile phu hop</option>';
-
-        const child = selectedChild;
-        const displayIndex = idx + 2;
-        if (!child) {
-            html += `
-                <div class="child-profile-panel child-profile-panel--missing">
-                    <div class="child-profile-panel__head">
-                        <p class="child-profile-panel__title">Be thu ${displayIndex}</p>
-                    </div>
-                    <div class="mt-2 mb-3">
-                        <label class="form-label">Chon be thu ${displayIndex}</label>
-                        <select id="${selectId}" class="form-input">${selectOptions}</select>
-                    </div>
-                    <p class="child-profile-panel__empty">Chua co Child Profile cho be nay. Vui long tao them Child Profile trong Quan ly con em.</p>
-                </div>`;
-            continue;
-        }
-
-        html += `
-            <div class="child-profile-panel">
-                <div class="child-profile-panel__head">
-                    <p class="child-profile-panel__title">Be thu ${displayIndex}</p>
-                    <span class="child-profile-panel__badge">${escapeHtml(child.label || `Be ${displayIndex}`)}</span>
-                </div>
-                <div class="mt-2 mb-3">
-                    <label class="form-label">Chon be thu ${displayIndex}</label>
-                    <select id="${selectId}" class="form-input">${selectOptions}</select>
-                </div>
-                <div class="child-profile-grid">
-                    <div class="child-profile-field">
-                        <span class="child-profile-field__label">Dac diem</span>
-                        <p class="child-profile-field__value">${escapeHtml(child.characteristic || 'Chua cap nhat')}</p>
-                    </div>
-                    <div class="child-profile-field">
-                        <span class="child-profile-field__label">Nhom tuoi</span>
-                        <p class="child-profile-field__value">${escapeHtml(child.birthTypeLabel || 'Chua cap nhat')}</p>
-                    </div>
-                    <div class="child-profile-field child-profile-field--full">
-                        <span class="child-profile-field__label">Nhu cau dac biet</span>
-                        <p class="child-profile-field__value">${escapeHtml(child.specialNeeds || 'Khong co')}</p>
-                    </div>
-                </div>
-            </div>`;
-    }
-
-    container.innerHTML = html;
-    container.querySelectorAll('select[id^="ef-extraChildProfileId-"]').forEach((selectEl) => {
-        selectEl.addEventListener('change', () => {
-            renderEditExtraChildProfiles();
-            updateSubmitState();
-        });
-    });
+    if (!container) return;
+    container.innerHTML = '';
 }
 
 function handleEditChildChange() {
     setProfileFields(getSelectedChild());
     renderEditExtraChildProfiles();
+    syncChildrenCountField();
 }
 
 function renderChildren(selectedChildId) {
@@ -1056,23 +949,12 @@ async function loadEditPage() {
         const job = detailJson?.data || detailJson;
         const prefill = prefillJson?.data || {};
 
-        const requestedChildren = normalizeChildrenCount(job.numberOfChildren || prefill.numberOfChildren || 1);
         const primaryChildId = job.childProfileId || prefill.selectedChildProfileId || '';
-        const initialSelectedChildren = Array.isArray(job.children)
-            ? job.children.map((child) => String(child?.id || '')).filter((id) => !!id)
-            : [];
-
-        editChildren = Array.isArray(prefill.children) ? prefill.children : [];
-        document.getElementById('ef-children').value = String(requestedChildren);
+        editChildren = Array.isArray(prefill.children) && prefill.children.length
+            ? prefill.children
+            : (Array.isArray(job.children) ? job.children : []);
+        syncChildrenCountField();
         renderChildren(primaryChildId);
-
-        if (initialSelectedChildren.length > 1) {
-            for (let idx = 1; idx < initialSelectedChildren.length; idx += 1) {
-                const extraSelect = document.getElementById(`ef-extraChildProfileId-${idx - 1}`);
-                if (extraSelect) extraSelect.value = initialSelectedChildren[idx];
-            }
-            renderEditExtraChildProfiles();
-        }
 
         document.getElementById('ef-title').value = job.title || '';
         document.getElementById('ef-desc').value = job.description || '';
@@ -1114,7 +996,7 @@ async function loadEditPage() {
 
 document.getElementById('ef-childProfileId')?.addEventListener('change', handleEditChildChange);
 document.getElementById('ef-children')?.addEventListener('change', () => {
-    renderEditExtraChildProfiles();
+    syncChildrenCountField();
     updateSubmitState();
 });
 document.getElementById('ef-addSkill')?.addEventListener('click', () => {
@@ -1152,8 +1034,8 @@ document.getElementById('editPageForm')?.addEventListener('submit', async (event
         showToast('Một số kỹ năng cũ không còn hoạt động, hệ thống đã bỏ qua để bạn lưu được bài đăng.', 'Cảnh báo');
     }
 
-    const numberOfChildren = normalizeChildrenCount(document.getElementById('ef-children').value || 1);
-    const selectedChildren = getEditSelectedChildren(numberOfChildren);
+    const numberOfChildren = syncChildrenCountField();
+    const selectedChildren = getEditSelectedChildren(1);
 
     const payload = {
         title: document.getElementById('ef-title').value.trim(),
@@ -1161,7 +1043,7 @@ document.getElementById('editPageForm')?.addEventListener('submit', async (event
         jobType: Number(document.getElementById('ef-type').value),
         numberOfChildren,
         childProfileId: selectedChildren[0]?.id || document.getElementById('ef-childProfileId').value || null,
-        childProfileIds: selectedChildren.map((child) => child.id),
+        childProfileIds: [],
         salaryMin: parseMoneyInput(document.getElementById('ef-salMin').value),
         salaryMax: parseMoneyInput(document.getElementById('ef-salMax').value),
         salaryNegotiable: document.getElementById('ef-negotiable').checked,
@@ -1246,6 +1128,7 @@ function initializeEditPage() {
     initMoneyInputs();
     attachEditSelectPickers();
     bindClickOnlySelect(document.getElementById('ef-children'));
+    syncChildrenCountField();
     updateSubmitState();
     loadEditPage();
 }
