@@ -1,0 +1,1502 @@
+@model WebSite.Models.Contract.ContractDetailPageViewModel
+@{
+    ViewData["Title"] = "Chi tiet hop dong";
+}
+
+<section class="mx-auto max-w-6xl px-4 py-8 md:py-10">
+    <div class="rounded-3xl border border-orange-100 bg-white shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-orange-100 px-5 py-5 md:px-7">
+            <div>
+                <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-orange-500">Contract Detail</p>
+                <h1 class="mt-1 text-2xl font-bold text-slate-900">Chi tiet hop dong</h1>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="/Contract" class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">Quay lai</a>
+                <button type="button" id="printContractBtn" onclick="window.print()" class="hidden inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-orange-500 to-orange-400 px-4 py-2 text-sm font-bold text-white hover:from-orange-600 hover:to-orange-500">In hop dong</button>
+            </div>
+        </div>
+
+        <div class="px-5 pb-6 pt-5 md:px-7">
+            <div id="detailLoadState" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm font-semibold text-slate-500">
+                Dang tai thong tin hop dong...
+            </div>
+
+            <div id="detailContent" class="hidden space-y-4">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span id="hiringStatus" class="detail-badge"></span>
+                        <span id="signStatus" class="detail-badge"></span>
+                        <span id="workflowStatus" class="detail-badge"></span>
+                    </div>
+                    <p id="signedAt" class="mt-2 text-sm font-semibold text-slate-600"></p>
+                    <p id="jobMeta" class="mt-1 text-sm text-slate-600"></p>
+                </div>
+
+                <div id="workflowBar" class="hidden sticky top-20 z-20 rounded-2xl border border-orange-200 bg-amber-50/90 backdrop-blur-sm p-4 shadow-sm">
+                    <p id="workflowHint" class="text-sm font-semibold text-slate-700"></p>
+                    <p id="workflowError" class="mt-2 hidden text-sm font-semibold text-rose-600"></p>
+                    <div id="signatureConfirmWrap" class="mt-3 hidden flex flex-wrap items-center gap-2">
+                        <label id="parentSignLabel" class="inline-sign-confirm hidden">
+                            <input type="checkbox" id="contractSignCheckboxParentWorkflow" />
+                            Tôi (bên A) xác nhận ký hợp đồng
+                        </label>
+                        <label id="nannySignLabel" class="inline-sign-confirm hidden">
+                            <input type="checkbox" id="contractSignCheckboxNannyWorkflow" />
+                            Tôi (bên B) xác nhận ký hợp đồng
+                        </label>
+                    </div>
+                    <div id="workflowActions" class="mt-3 hidden flex flex-wrap items-center gap-2">
+                        <button type="button" id="saveDraftBtn" class="hidden inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2 text-sm font-bold text-white hover:from-orange-600 hover:to-orange-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                            Xác nhận thông tin hợp đồng
+                        </button>
+                        <button type="button" id="submitNannyBtn" class="hidden inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2 text-sm font-bold text-white hover:from-orange-600 hover:to-orange-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                            Xác nhận thông tin hợp đồng
+                        </button>
+                        <button type="button" id="finalConfirmBtn" class="hidden inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-bold text-white shadow-sm" style="background: linear-gradient(135deg, #059669, #047857);">
+                            Xác nhận hoàn thành hợp đồng
+                        </button>
+                    </div>
+                </div>
+
+                <div class="rounded-2xl border border-orange-100 bg-orange-50/30 p-4">
+                    <p class="text-xs font-extrabold uppercase tracking-wider text-orange-500">Noi dung hop dong</p>
+                    <div class="mt-3 rounded-xl border border-slate-200 bg-white p-4">
+                        <div id="contractContentEditor" class="contract-content-editor"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .detail-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: 11px;
+        font-weight: 800;
+        background: #e2e8f0;
+        color: #334155;
+    }
+
+    .contract-content-editor {
+        white-space: normal;
+        word-break: break-word;
+        font-size: 14px;
+        line-height: 1.7;
+        color: #334155;
+    }
+
+    .inline-editor {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 220px;
+        margin: 0 2px;
+        vertical-align: middle;
+    }
+
+    .inline-editor .wf-input {
+        width: 100%;
+        border: 1px solid #d1d5db;
+        border-radius: 10px;
+        padding: 6px 8px;
+        font-size: 13px;
+        color: #111827;
+        background: #fff;
+    }
+
+    .inline-editor .wf-input.input-error {
+        border-color: #ef4444;
+        background: #fff1f2;
+    }
+
+    .inline-editor--sm {
+        min-width: 120px;
+    }
+
+    .inline-editor--email {
+        min-width: 360px;
+    }
+
+    .inline-editor--email .wf-input {
+        min-width: 320px;
+    }
+
+    .inline-radio {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin: 0 4px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #374151;
+    }
+
+    .inline-note-token {
+        display: inline-block;
+        padding: 1px 6px;
+        border-radius: 999px;
+        border: 1px dashed #f59e0b;
+        color: #b45309;
+        background: #fffbeb;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .inline-empty-value {
+        display: inline-block;
+        padding: 0 4px;
+        color: #64748b;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .wf-error {
+        display: none;
+        color: #dc2626;
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 1.2;
+        white-space: normal;
+        max-width: 220px;
+    }
+
+    .wf-error.show {
+        display: inline;
+    }
+
+    .inline-sign-confirm {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-left: 8px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid #86efac;
+        background: #ecfdf5;
+        color: #166534;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .inline-sign-confirm input[type="checkbox"] {
+        width: 14px;
+        height: 14px;
+        accent-color: #16a34a;
+    }
+
+    .contract-working-time {
+        margin-top: 12px;
+        border: 1px solid #e5e7eb;
+        border-radius: 24px;
+        background: #f8fafc;
+        padding: 14px 16px;
+    }
+
+    .contract-working-time-title {
+        font-size: 1.45rem;
+        font-weight: 800;
+        color: #1f2937;
+        margin-bottom: 14px;
+        line-height: 1.2;
+    }
+
+    .schedule-grid {
+        display: grid;
+        grid-template-columns: 110px repeat(7, minmax(34px, 1fr));
+        gap: .6rem;
+        align-items: center;
+        padding: .75rem;
+        border-radius: 1.1rem;
+        background: rgba(255,255,255,.78);
+        border: 1px solid rgba(254, 215, 170, .75);
+        overflow-x: auto;
+    }
+
+    .schedule-col-label {
+        font-size: .76rem;
+        font-weight: 800;
+        color: #374151;
+        text-align: center;
+        padding-bottom: .2rem;
+    }
+
+    .schedule-row-label {
+        font-size: .86rem;
+        font-weight: 700;
+        color: #374151;
+        padding-left: .2rem;
+    }
+
+    .schedule-cell {
+        width: 34px;
+        height: 34px;
+        border-radius: .95rem;
+        border: 1px solid #d8dee8;
+        background: linear-gradient(180deg, #ffffff, #f6f8fb);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: .18s ease;
+        margin: 0 auto;
+        box-shadow: inset 0 1px 2px rgba(15, 23, 42, .04);
+    }
+
+    .schedule-cell:hover {
+        border-color: #fb923c;
+        background: #fff1df;
+        transform: translateY(-1px);
+    }
+
+    .schedule-cell.active {
+        background: linear-gradient(135deg, #fb923c, #f97316);
+        border-color: #ea580c;
+        color: #fff;
+        box-shadow: 0 10px 20px rgba(249, 115, 22, .25);
+    }
+
+    .schedule-grid--readonly .schedule-cell {
+        width: 42px;
+        height: 42px;
+        border-radius: 999px;
+        pointer-events: none;
+        cursor: default;
+    }
+
+    .schedule-grid--readonly .schedule-cell:hover {
+        transform: none;
+        border-color: #d8dee8;
+        background: linear-gradient(180deg, #ffffff, #f6f8fb);
+    }
+
+    .schedule-grid--readonly .schedule-cell.active:hover {
+        background: linear-gradient(135deg, #fb923c, #f97316);
+        border-color: #ea580c;
+    }
+
+    .schedule-check {
+        font-size: 14px;
+        font-weight: 900;
+        line-height: 1;
+    }
+
+    @@media print {
+        nav, footer, button, a {
+            display: none !important;
+        }
+        body { background: #fff !important; }
+        #detailContent { display: block !important; }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        (() => {
+            const contractId = '@Model.ContractId';
+            const state = { detail: null, signMode: null };
+
+            const loadState = document.getElementById('detailLoadState');
+            const detailContent = document.getElementById('detailContent');
+            const contentEditor = document.getElementById('contractContentEditor');
+            const workflowBar = document.getElementById('workflowBar');
+            const workflowHint = document.getElementById('workflowHint');
+            const workflowError = document.getElementById('workflowError');
+            const signatureConfirmWrap = document.getElementById('signatureConfirmWrap');
+            const signatureParentCheckbox = document.getElementById('contractSignCheckboxParentWorkflow');
+            const signatureNannyCheckbox = document.getElementById('contractSignCheckboxNannyWorkflow');
+            const parentSignLabel = document.getElementById('parentSignLabel');
+            const nannySignLabel = document.getElementById('nannySignLabel');
+            const workflowActions = document.getElementById('workflowActions');
+            const saveDraftBtn = document.getElementById('saveDraftBtn');
+            const submitNannyBtn = document.getElementById('submitNannyBtn');
+            const finalConfirmBtn = document.getElementById('finalConfirmBtn');
+
+            const paymentFieldKeys = new Set(['PaymentMethod', 'PaymentMethodCashChecked', 'PaymentMethodBankChecked', 'BankAccountNumber', 'BankName']);
+            const numericPositiveFieldKeys = new Set([
+                'SalaryAmount',
+                'ProbationSalaryAmount',
+                'SecurityAmount',
+                'TotalSalaryAmount',
+                'AllowanceAmount'
+            ]);
+            const phoneFieldKeys = new Set(['ParentPhone', 'NannyPhone']);
+            const emailFieldKeys = new Set(['ParentEmail', 'NannyEmail']);
+            const alphaNumericFieldKeys = new Set(['ParentIdentityNumber', 'NannyIdentityNumber', 'BankAccountNumber']);
+            const noSpecialFieldKeys = new Set([
+                'ChildName',
+                'BankName'
+            ]);
+            const dobFieldKeys = new Set(['ParentDOB', 'ChildDOB', 'NannyDOB']);
+            const issueDateFieldKeys = new Set(['ParentIdentityIssueDate', 'NannyIdentityIssueDate']);
+
+            const fieldLabels = {
+                ParentName: 'Parent Name',
+                ParentPhone: 'Parent Phone',
+                ParentEmail: 'Parent Email',
+                ParentDOB: 'Parent DOB',
+                ParentIdentityNumber: 'Parent Identity Number',
+                ParentIdentityIssueDate: 'Parent Identity Issue Date',
+                ParentIdentityIssuePlace: 'Parent Identity Issue Place',
+                ParentPermanentAddress: 'Parent Permanent Address',
+                ParentCurrentAddress: 'Parent Current Address',
+                ChildName: 'Child Name',
+                ChildDOB: 'Child DOB',
+                ContractDurationMonths: 'Contract Duration (Months)',
+                ProbationStartDate: 'Probation Start Date',
+                ProbationEndDate: 'Probation End Date',
+                WorkAddress: 'Work Address',
+                SalaryAmount: 'Salary Amount',
+                ProbationSalaryAmount: 'Probation Salary Amount',
+                SecurityAmount: 'Security Amount',
+                TotalSalaryAmount: 'Total Salary Amount',
+                AllowanceAmount: 'Allowance Amount',
+                SalaryReceivedDate: 'Salary Received Date',
+                MealPerDay: 'Meal Per Day',
+                NannyName: 'Nanny Name',
+                NannyPhone: 'Nanny Phone',
+                NannyEmail: 'Nanny Email',
+                NannyDOB: 'Nanny DOB',
+                NannyIdentityNumber: 'Nanny Identity Number',
+                NannyIdentityIssueDate: 'Nanny Identity Issue Date',
+                NannyIdentityIssuePlace: 'Nanny Identity Issue Place',
+                NannyPermanentAddress: 'Nanny Permanent Address',
+                NannyCurrentAddress: 'Nanny Current Address',
+                BankAccountNumber: 'Bank Account Number',
+                BankName: 'Bank Name'
+            };
+            const dayLabels = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+            const rowLabels = ['Morning', 'Afternoon', 'Evening', 'Night'];
+            const workingScheduleState = { slots: [] };
+
+            const escHtml = (value) => String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+
+            const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+            const fmtDate = (value) => value ? new Date(value).toLocaleString('vi-VN') : 'Chua xac dinh';
+            const fmtDateOnly = (value) => value ? new Date(value + 'T00:00:00').toLocaleDateString('vi-VN') : 'Chua xac dinh';
+
+            const toast = (message, type = 'success') => {
+                if (typeof window.showToast === 'function') window.showToast(message, { type });
+                else alert(message);
+            };
+
+            const hiringStatusText = (status) => {
+                if (status === 1) return 'Dang hoat dong';
+                if (status === 0) return 'Dang cho';
+                if (status === 2) return 'Da tu choi';
+                if (status === 3) return 'Da huy';
+                if (status === 4) return 'Da hoan thanh';
+                return 'Khong xac dinh';
+            };
+
+            const contractStatusText = (status) => {
+                if (status === 0) return 'Parent Draft';
+                if (status === 1) return 'Parent Saved';
+                if (status === 2) return 'Nanny Filled';
+                if (status === 3) return 'Active';
+                return `Status ${status}`;
+            };
+
+            const getInputTypeByKey = (key) => {
+                if (key === 'SalaryReceivedDate' || key === 'ContractDurationMonths' || key === 'MealPerDay')
+                    return 'number';
+                const normalized = String(key || '').toLowerCase();
+                if (normalized.includes('date') || normalized.includes('dob'))
+                    return 'date';
+                return 'text';
+            };
+
+            const buildInlineInputHtml = (key) => {
+                const label = fieldLabels[key] || key;
+                const type = getInputTypeByKey(key);
+                const isBankField = key === 'BankAccountNumber' || key === 'BankName';
+                const isEmailField = key === 'ParentEmail' || key === 'NannyEmail';
+                const numericAttr = type === 'number'
+                    ? (key === 'SalaryReceivedDate'
+                        ? 'min="1" max="31" step="1" inputmode="numeric"'
+                        : 'min="1" step="1" inputmode="numeric"')
+                    : (numericPositiveFieldKeys.has(key) ? 'inputmode="numeric"' : '');
+                return `
+                    <span class="inline-editor ${isBankField ? 'inline-editor--sm bank-field-wrap' : ''} ${isEmailField ? 'inline-editor--email' : ''}" title="${escHtml(label)}">
+                        <input class="wf-input ${isBankField ? 'bank-field' : ''}" data-field-key="${escHtml(key)}" data-auto-width="${isEmailField ? 'email' : ''}" type="${type}" placeholder="${escHtml(label)}" ${numericAttr} />
+                        <span class="wf-error" data-field-error="${escHtml(key)}"></span>
+                    </span>
+                `;
+            };
+
+            const toDateInputValue = (value) => {
+                if (!value) return '';
+                const raw = String(value).trim();
+                if (!raw) return '';
+                if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+
+                const vnMatch = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+                if (vnMatch) {
+                    const day = vnMatch[1].padStart(2, '0');
+                    const month = vnMatch[2].padStart(2, '0');
+                    const year = vnMatch[3];
+                    return `${year}-${month}-${day}`;
+                }
+
+                const date = new Date(raw);
+                if (Number.isNaN(date.getTime())) return '';
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
+
+            const getDefaultFieldValue = (detail, key) => {
+                const source = {
+                    ParentName: detail?.parentName || '',
+                    ParentPhone: detail?.parentPhone || '',
+                    ParentEmail: detail?.parentEmail || '',
+                    NannyName: detail?.nannyName || '',
+                    NannyPhone: detail?.nannyPhone || '',
+                    NannyEmail: detail?.nannyEmail || '',
+                    ParentDOB: toDateInputValue(detail?.parentDob),
+                    ChildDOB: toDateInputValue(detail?.childDob),
+                    NannyDOB: toDateInputValue(detail?.nannyDob)
+                };
+                return source[key] ?? '';
+            };
+
+            const toDisplayDateValue = (value) => {
+                const iso = toDateInputValue(value);
+                if (!iso) return '';
+                const [year, month, day] = iso.split('-');
+                return `${day}/${month}/${year}`;
+            };
+
+            const getReadonlyTokenFallbackValue = (detail, key) => {
+                const source = {
+                    ParentName: detail?.parentName || '',
+                    ParentPhone: detail?.parentPhone || '',
+                    ParentEmail: detail?.parentEmail || '',
+                    NannyName: detail?.nannyName || '',
+                    NannyPhone: detail?.nannyPhone || '',
+                    NannyEmail: detail?.nannyEmail || '',
+                    StartDate: toDisplayDateValue(detail?.startDate),
+                    EndDate: toDisplayDateValue(detail?.endDate),
+                    ContractDurationMonths: detail?.contractDuration == null ? '' : String(detail.contractDuration)
+                };
+                return String(source[key] ?? '').trim();
+            };
+
+            const applyDefaultInputValues = (detail) => {
+                const draftValues = detail?.draftFieldValues || {};
+                contentEditor.querySelectorAll('[data-field-key]').forEach((input) => {
+                    const key = input.dataset.fieldKey || '';
+                    if (!key) return;
+                    const current = (input.value || '').trim();
+                    if (current) return;
+
+                    const draftValueRaw = draftValues[key];
+                    const draftValue = draftValueRaw == null ? '' : String(draftValueRaw).trim();
+                    if (draftValue) {
+                        input.value = input.type === 'date'
+                            ? toDateInputValue(draftValue)
+                            : draftValue;
+                        return;
+                    }
+
+                    const fallback = String(getDefaultFieldValue(detail, key) || '').trim();
+                    if (!fallback) return;
+                    input.value = fallback;
+                });
+            };
+
+            const autoSizeInlineInput = (input) => {
+                if (!input || input.dataset.autoWidth !== 'email') return;
+                const textLength = Math.max((input.value || '').length, (input.placeholder || '').length, 24);
+                const widthCh = Math.min(Math.max(textLength + 2, 28), 68);
+                input.style.width = `${widthCh}ch`;
+            };
+
+            const applyAutoSizedInputs = () => {
+                contentEditor.querySelectorAll('[data-auto-width="email"]').forEach((input) => {
+                    autoSizeInlineInput(input);
+                });
+            };
+
+            const normalizeScheduleSlots = (slots) => {
+                if (!Array.isArray(slots)) return [];
+                const unique = new Set();
+                const normalized = [];
+                for (const slot of slots) {
+                    const dayOfWeek = Number(slot?.dayOfWeek);
+                    const timeSlot = Number(slot?.timeSlot);
+                    if (!Number.isInteger(dayOfWeek) || dayOfWeek < 0 || dayOfWeek > 6) continue;
+                    if (!Number.isInteger(timeSlot) || timeSlot < 0 || timeSlot > 3) continue;
+                    const key = `${dayOfWeek}-${timeSlot}`;
+                    if (unique.has(key)) continue;
+                    unique.add(key);
+                    normalized.push({ dayOfWeek, timeSlot });
+                }
+
+                return normalized.sort((a, b) => (a.dayOfWeek - b.dayOfWeek) || (a.timeSlot - b.timeSlot));
+            };
+
+            const scheduleKey = (dayOfWeek, timeSlot) => `${dayOfWeek}-${timeSlot}`;
+
+            const serializeWorkingScheduleSlots = (slots) =>
+                normalizeScheduleSlots(slots).map((slot) => scheduleKey(slot.dayOfWeek, slot.timeSlot)).join(',');
+
+            const toggleWorkingScheduleSlot = (dayOfWeek, timeSlot) => {
+                const current = normalizeScheduleSlots(workingScheduleState.slots);
+                const key = scheduleKey(dayOfWeek, timeSlot);
+                const index = current.findIndex((slot) => scheduleKey(slot.dayOfWeek, slot.timeSlot) === key);
+                if (index >= 0) current.splice(index, 1);
+                else current.push({ dayOfWeek, timeSlot });
+
+                workingScheduleState.slots = normalizeScheduleSlots(current);
+            };
+
+            const renderWorkingScheduleGridHtml = (slots, isEditable) => {
+                const selectedSet = new Set(normalizeScheduleSlots(slots).map((slot) => scheduleKey(slot.dayOfWeek, slot.timeSlot)));
+                let html = `<div class="schedule-grid ${isEditable ? '' : 'schedule-grid--readonly'}"><div></div>`;
+                dayLabels.forEach((label) => { html += `<div class="schedule-col-label">${escHtml(label)}</div>`; });
+                rowLabels.forEach((rowLabel, timeSlot) => {
+                    html += `<div class="schedule-row-label">${escHtml(rowLabel)}</div>`;
+                    for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek += 1) {
+                        const active = selectedSet.has(scheduleKey(dayOfWeek, timeSlot));
+                        if (isEditable) {
+                            html += `<button type="button" class="schedule-cell ${active ? 'active' : ''}" data-schedule-toggle="true" data-day="${dayOfWeek}" data-slot="${timeSlot}"><span class="schedule-check">${active ? '&#10003;' : ''}</span></button>`;
+                        } else {
+                            html += `<div class="schedule-cell ${active ? 'active' : ''}" aria-hidden="true"><span class="schedule-check">${active ? '&#10003;' : ''}</span></div>`;
+                        }
+                    }
+                });
+                html += '</div>';
+                return html;
+            };
+
+            const getMountElementForWorkingSchedule = () => document.getElementById('wf_schedule_editor_mount');
+
+            const renderWorkingScheduleEditor = (detail) => {
+                const mount = getMountElementForWorkingSchedule();
+                if (!mount) return;
+
+                const role = String(detail?.currentUserRole || '').toLowerCase();
+                const status = Number(detail?.contractStatus);
+                const isEditable = role === 'parent' && status !== 3;
+                workingScheduleState.slots = normalizeScheduleSlots(detail?.scheduleSlots || []);
+                const renderMount = () => {
+                    mount.innerHTML = `
+                        <div class="contract-working-time">
+                            <div class="contract-working-time-title">Lich ngay muon tuyen</div>
+                            ${renderWorkingScheduleGridHtml(workingScheduleState.slots, isEditable)}
+                        </div>
+                    `;
+                };
+
+                renderMount();
+                if (!isEditable) {
+                    mount.onclick = null;
+                    return;
+                }
+
+                mount.onclick = (event) => {
+                    const button = event.target.closest('[data-schedule-toggle="true"]');
+                    if (!button || !mount.contains(button)) return;
+
+                    const day = Number(button.dataset.day);
+                    const slot = Number(button.dataset.slot);
+                    if (!Number.isInteger(day) || !Number.isInteger(slot)) return;
+
+                    toggleWorkingScheduleSlot(day, slot);
+                    renderMount();
+                };
+            };
+
+            const normalizeInlineEditorLineBreaks = () => {
+                const inlineTargets = contentEditor.querySelectorAll('.inline-editor, .inline-radio, .inline-sign-confirm');
+                inlineTargets.forEach((target) => {
+                    let prev = target.previousSibling;
+                    while (prev) {
+                        if (prev.nodeType === Node.TEXT_NODE && !prev.textContent?.trim()) {
+                            const toRemove = prev;
+                            prev = prev.previousSibling;
+                            toRemove.remove();
+                            continue;
+                        }
+
+                        if (prev.nodeType === Node.ELEMENT_NODE && prev.nodeName === 'BR') {
+                            const toRemove = prev;
+                            prev = prev.previousSibling;
+                            toRemove.remove();
+                            continue;
+                        }
+
+                        break;
+                    }
+                });
+            };
+
+            const replacePaymentMarkers = (text, editableSet) => {
+                const needPayment = editableSet.has('PaymentMethod') || editableSet.has('PaymentMethodCashChecked') || editableSet.has('PaymentMethodBankChecked');
+                if (!needPayment) return text;
+
+                const cashChecked =
+                    /(Trả\s*lương\s*bằng\s*:\s*)\[\s*x\s*\]\s*Tiền\s*mặt/i.test(text) ||
+                    /(Tra\s*luong\s*bang\s*:\s*)\[\s*x\s*\]\s*Tien\s*mat/i.test(text);
+                const bankChecked =
+                    /Tiền\s*mặt\s*\.\s*\[\s*x\s*\]\s*Chuyển\s*khoản\s*:/i.test(text) ||
+                    /Tien\s*mat\s*\.\s*\[\s*x\s*\]\s*Chuyen\s*khoan\s*:/i.test(text);
+
+                const markerRegex = /\((?:(?!\)).)*checkbox(?:(?!\)).)*\)/gi;
+                let replaced = 0;
+                let result = text.replace(markerRegex, () => {
+                    replaced += 1;
+                    if (replaced === 1) return '[[__PM_CASH__]]';
+                    if (replaced === 2) return '[[__PM_BANK__]]';
+                    return '';
+                });
+
+                if (replaced < 2) {
+                    if (!result.includes('[[__PM_CASH__]]')) {
+                        result = result
+                            .replace(/(Trả\s*lương\s*bằng\s*:\s*)(?:\[[xX ]\]\s*)?(Tiền\s*mặt)/i, '$1[[__PM_CASH__]] $2')
+                            .replace(/(Tra\s*luong\s*bang\s*:\s*)(?:\[[xX ]\]\s*)?(Tien\s*mat)/i, '$1[[__PM_CASH__]] $2');
+                    }
+
+                    if (!result.includes('[[__PM_BANK__]]')) {
+                        const before = result;
+                        result = result
+                            .replace(/(\.\s*)(?:\[[xX ]\]\s*)?(Chuyển\s*khoản\s*:)/i, '$1[[__PM_BANK__]] $2')
+                            .replace(/(\.\s*)(?:\[[xX ]\]\s*)?(Chuyen\s*khoan\s*:)/i, '$1[[__PM_BANK__]] $2');
+
+                        if (result === before) {
+                            result = result
+                                .replace(/(\s+)(?:\[[xX ]\]\s*)?(Chuyển\s*khoản\s*:)/i, '$1[[__PM_BANK__]] $2')
+                                .replace(/(\s+)(?:\[[xX ]\]\s*)?(Chuyen\s*khoan\s*:)/i, '$1[[__PM_BANK__]] $2');
+                        }
+                    }
+                }
+
+                if (cashChecked) {
+                    result = result.replace('[[__PM_CASH__]]', '[[__PM_CASH_CHECKED__]]');
+                }
+
+                if (bankChecked) {
+                    result = result.replace('[[__PM_BANK__]]', '[[__PM_BANK_CHECKED__]]');
+                }
+
+                return result;
+            };
+
+            const renderContractInlineEditor = (detail) => {
+                const rawContent = detail.contractContent || '';
+                const editableFields = Array.isArray(detail.editableFields) ? detail.editableFields : [];
+                const editableSet = new Set(editableFields);
+
+                let content = replacePaymentMarkers(rawContent, editableSet);
+                const tokenKeys = [];
+
+                content = content.replace(/\{\{\s*([A-Za-z0-9_]+)\s*\}\}/g, (match, key) => {
+                    if (editableSet.has(key)) {
+                        const marker = `[[__FIELD_${tokenKeys.length}__]]`;
+                        tokenKeys.push(key);
+                        return marker;
+                    }
+
+                    return match;
+                });
+
+                if (false) {
+                    let signIndex = 0;
+                    content = content.replace(/\(Ký,\s*ghi rõ họ tên\)/g, (matched) => {
+                        signIndex += 1;
+                        const isTarget =
+                            (role === 'parent' && signIndex === 1) ||
+                            (role === 'nanny' && signIndex === 2);
+                        return isTarget ? `${matched} [[__SIGN_CONFIRM__]]` : matched;
+                    });
+
+                    if (!content.includes('[[__SIGN_CONFIRM__]]')) {
+                        content += '\n[[__SIGN_CONFIRM__]]';
+                    }
+                }
+
+                // Normalize line layout: if a label line ends with ":" and the next non-empty line is an editor marker,
+                // merge them into one line -> "Label: [input]".
+                const markerOnlyRegex = /^\[\[__(?:FIELD_\d+|PM_CASH|PM_BANK|PM_CASH_CHECKED|PM_BANK_CHECKED)__\]\]$/;
+                const rawLines = content.split(/\r?\n/);
+                const mergedLines = [];
+                for (let i = 0; i < rawLines.length; i += 1) {
+                    let line = rawLines[i] ?? '';
+                    const trimmed = line.trimEnd();
+
+                    if (/[:：]\s*$/.test(trimmed)) {
+                        let j = i + 1;
+                        while (j < rawLines.length && !rawLines[j].trim()) j += 1;
+                        if (j < rawLines.length && markerOnlyRegex.test(rawLines[j].trim())) {
+                            line = `${trimmed} ${rawLines[j].trim()}`;
+                            i = j;
+                        }
+                    }
+
+                    mergedLines.push(line);
+                }
+
+                content = mergedLines.join('\n');
+                const workingTimePattern = /(4\.1\.[^\r\n]*\r?\n)([\s\S]*?)(\r?\n\s*4\.2\.)/i;
+                if (workingTimePattern.test(content)) {
+                    content = content.replace(workingTimePattern, '$1[[__WORKING_TIME__]]$3');
+                } else if (/4\.1\.[^\r\n]*/i.test(content)) {
+                    content = content.replace(/(4\.1\.[^\r\n]*)/i, '$1\n[[__WORKING_TIME__]]');
+                } else {
+                    content += '\n[[__WORKING_TIME__]]';
+                }
+
+                let html = escHtml(content).replace(/\r?\n/g, '<br>');
+
+                html = html
+                    .replace(/\[\[__PM_CASH_CHECKED__\]\]/g, `<label class="inline-radio"><input type="radio" name="wf_paymentMethod" value="Cash" checked></label>`)
+                    .replace(/\[\[__PM_BANK_CHECKED__\]\]/g, `<label class="inline-radio"><input type="radio" name="wf_paymentMethod" value="BankTransfer" checked></label><span class="wf-error" id="wf_payment_error_inline"></span>`)
+                    .replace(/\[\[__PM_CASH__\]\]/g, `<label class="inline-radio"><input type="radio" name="wf_paymentMethod" value="Cash"></label>`)
+                    .replace(/\[\[__PM_BANK__\]\]/g, `<label class="inline-radio"><input type="radio" name="wf_paymentMethod" value="BankTransfer"></label><span class="wf-error" id="wf_payment_error_inline"></span>`);
+
+                tokenKeys.forEach((key, idx) => {
+                    html = html.replace(`[[__FIELD_${idx}__]]`, buildInlineInputHtml(key));
+                });
+
+                const draftValues = detail?.draftFieldValues || {};
+                html = html.replace(/\{\{\s*([A-Za-z0-9_]+)\s*\}\}/g, (_m, key) => {
+                    const draftRaw = draftValues[key];
+                    const draftValue = draftRaw == null ? '' : String(draftRaw).trim();
+                    const fallbackValue = getReadonlyTokenFallbackValue(detail, key);
+                    const finalValue = draftValue || fallbackValue || '...';
+                    return `<span class="inline-empty-value">${escHtml(finalValue)}</span>`;
+                });
+                html = html.replace('[[__WORKING_TIME__]]', '<div id="wf_schedule_editor_mount"></div>');
+
+                // Fallback: keep editable inputs close to labels even if legacy content still has extra breaks.
+                html = html.replace(/:\s*(?:<br>\s*)+((?:<span class="inline-editor[\s\S]*?<\/span>)|(?:<label class="inline-radio"[\s\S]*?<\/label>)|(?:<label class="inline-sign-confirm"[\s\S]*?<\/label>))/g, ': $1');
+                // Hard fallback: any stray line-break right before inline input -> collapse to inline.
+                html = html.replace(/(?:<br>\s*)+(<span class="inline-editor[\s\S]*?<\/span>)/g, ' $1');
+
+                contentEditor.innerHTML = html;
+                normalizeInlineEditorLineBreaks();
+                applyDefaultInputValues(detail);
+                applyAutoSizedInputs();
+                renderWorkingScheduleEditor(detail);
+
+                contentEditor.querySelectorAll('input[name="wf_paymentMethod"]').forEach((radio) => {
+                    radio.addEventListener('change', () => toggleBankFields());
+                });
+                toggleBankFields();
+                attachInlineFieldValidation();
+
+                const signCheckbox = null;
+                if (signCheckbox) {
+                    signCheckbox.addEventListener('change', () => {
+                        const isChecked = signCheckbox.checked;
+                        if (isChecked) {
+                            toast('Bạn đã kí thành công', 'success');
+                        }
+
+                        if (!submitNannyBtn.classList.contains('hidden')) {
+                            submitNannyBtn.disabled = !isChecked;
+                        }
+
+                        if (!finalConfirmBtn.classList.contains('hidden')) {
+                            finalConfirmBtn.disabled = !isChecked;
+                        }
+                    });
+                }
+            };
+
+            const toggleBankFields = () => {
+                const selected = contentEditor.querySelector('input[name="wf_paymentMethod"]:checked')?.value;
+                const showBank = selected === 'BankTransfer';
+                contentEditor.querySelectorAll('.bank-field-wrap').forEach((wrap) => {
+                    wrap.style.display = showBank ? 'inline-block' : 'none';
+                });
+                if (!showBank) {
+                    const bankAccountInput = getFieldInput('BankAccountNumber');
+                    const bankNameInput = getFieldInput('BankName');
+                    if (bankAccountInput) bankAccountInput.value = '';
+                    if (bankNameInput) bankNameInput.value = '';
+                    clearFieldError('BankAccountNumber');
+                    clearFieldError('BankName');
+                }
+            };
+
+            const getFieldInput = (key) => {
+                return Array.from(contentEditor.querySelectorAll('[data-field-key]'))
+                    .find((el) => el.dataset.fieldKey === key) || null;
+            };
+
+            const getFieldErrorElement = (key) => {
+                return Array.from(contentEditor.querySelectorAll('[data-field-error]'))
+                    .find((el) => el.dataset.fieldError === key) || null;
+            };
+
+            const getPaymentErrorElement = () => document.getElementById('wf_payment_error_inline');
+
+            const setFieldError = (key, message) => {
+                const input = getFieldInput(key);
+                const errorElement = getFieldErrorElement(key);
+                if (!input || !errorElement) return;
+
+                if (!message) {
+                    input.classList.remove('input-error');
+                    errorElement.classList.remove('show');
+                    errorElement.textContent = '';
+                    return;
+                }
+
+                input.classList.add('input-error');
+                errorElement.textContent = message;
+                errorElement.classList.add('show');
+            };
+
+            const clearFieldError = (key) => setFieldError(key, '');
+
+            const clearAllFieldErrors = () => {
+                contentEditor.querySelectorAll('[data-field-key]').forEach((input) => {
+                    input.classList.remove('input-error');
+                });
+                contentEditor.querySelectorAll('[data-field-error]').forEach((errorElement) => {
+                    errorElement.classList.remove('show');
+                    errorElement.textContent = '';
+                });
+                setPaymentError('');
+            };
+
+            const setPaymentError = (message) => {
+                const paymentError = getPaymentErrorElement();
+                if (!paymentError) return;
+
+                if (!message) {
+                    paymentError.classList.remove('show');
+                    paymentError.textContent = '';
+                    return;
+                }
+
+                paymentError.textContent = message;
+                paymentError.classList.add('show');
+            };
+
+            const parseDateInput = (value) => {
+                if (!value || typeof value !== 'string') return null;
+                const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+                if (!match) return null;
+                const year = Number(match[1]);
+                const month = Number(match[2]);
+                const day = Number(match[3]);
+                const date = new Date(year, month - 1, day);
+                if (
+                    Number.isNaN(date.getTime()) ||
+                    date.getFullYear() !== year ||
+                    date.getMonth() !== month - 1 ||
+                    date.getDate() !== day
+                ) {
+                    return null;
+                }
+
+                date.setHours(0, 0, 0, 0);
+                return date;
+            };
+
+            const isFutureDateInput = (value) => {
+                const parsed = parseDateInput(value);
+                if (!parsed) return false;
+
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                return parsed.getTime() > today.getTime();
+            };
+
+            const isLettersAndSpacesOnly = (value) => /^[\p{L}\s]+$/u.test(value);
+            const isAlphaNumericOnly = (value) => /^[\p{L}\p{N}]+$/u.test(value);
+            const isNoSpecialText = (value) => /^[\p{L}\p{N}\s]+$/u.test(value);
+            const isValidEmail = (value) => /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/.test(value);
+
+            const validateFieldValue = (key, rawValue) => {
+                const value = (rawValue || '').trim();
+                const label = fieldLabels[key] || key;
+
+                if (!value) {
+                    return `${label} khong duoc de trong.`;
+                }
+
+                if (numericPositiveFieldKeys.has(key)) {
+                    if (!/^\d+$/.test(value)) {
+                        return `${label} phai la so duong, khong chua chu hoac ky tu dac biet.`;
+                    }
+
+                    const numeric = Number(value);
+                    if (!Number.isFinite(numeric) || numeric <= 0) {
+                        return `${label} phai lon hon 0.`;
+                    }
+                }
+
+                if (phoneFieldKeys.has(key)) {
+                    if (!/^\d{10,11}$/.test(value)) {
+                        return `${label} phai la chuoi so gom 10 den 11 ky tu.`;
+                    }
+                }
+
+                if (emailFieldKeys.has(key)) {
+                    if (!isValidEmail(value)) {
+                        return `${label} khong dung dinh dang email hop le.`;
+                    }
+                }
+
+                if (key === 'ParentName' || key === 'NannyName') {
+                    if (!isLettersAndSpacesOnly(value)) {
+                        return `${label} chi duoc chua chu cai va khoang trang.`;
+                    }
+                }
+
+                if (alphaNumericFieldKeys.has(key)) {
+                    if (!isAlphaNumericOnly(value)) {
+                        return `${label} khong duoc chua ky tu dac biet.`;
+                    }
+                }
+
+                if (noSpecialFieldKeys.has(key)) {
+                    if (!isNoSpecialText(value)) {
+                        return `${label} khong duoc chua ky tu dac biet.`;
+                    }
+                }
+
+                if (key === 'SalaryReceivedDate') {
+                    if (!/^\d+$/.test(value)) {
+                        return 'Salary Received Date chi chap nhan so tu 1 den 31.';
+                    }
+
+                    const day = Number(value);
+                    if (day < 1 || day > 31) {
+                        return 'Salary Received Date chi chap nhan so tu 1 den 31.';
+                    }
+                }
+
+                if (key === 'ContractDurationMonths') {
+                    if (!/^\d+$/.test(value)) {
+                        return 'Contract Duration (Months) phai la so tu 1 den 12.';
+                    }
+
+                    const months = Number(value);
+                    if (months < 1 || months > 12) {
+                        return 'Contract Duration (Months) phai trong khoang 1 den 12.';
+                    }
+                }
+
+                if (key === 'MealPerDay') {
+                    if (!/^\d+$/.test(value)) {
+                        return 'Meal Per Day phai la so tu nhien, khong duoc chua chu cai.';
+                    }
+
+                    const mealCount = Number(value);
+                    if (mealCount <= 0) {
+                        return 'Meal Per Day phai lon hon 0.';
+                    }
+                }
+
+                if (dobFieldKeys.has(key)) {
+                    if (!parseDateInput(value)) {
+                        return `${label} khong hop le.`;
+                    }
+
+                    if (isFutureDateInput(value)) {
+                        return 'Ngay sinh khong duoc la ngay trong tuong lai.';
+                    }
+                }
+
+                if (issueDateFieldKeys.has(key)) {
+                    if (!parseDateInput(value)) {
+                        return `${label} khong hop le.`;
+                    }
+
+                    if (isFutureDateInput(value)) {
+                        return 'Cap ngay khong duoc la ngay trong tuong lai.';
+                    }
+                }
+
+                if (key === 'ProbationStartDate' || key === 'ProbationEndDate') {
+                    if (!parseDateInput(value)) {
+                        return `${label} khong hop le.`;
+                    }
+                }
+
+                return null;
+            };
+
+            const validateSingleField = (key) => {
+                const input = getFieldInput(key);
+                if (!input) return true;
+                const error = validateFieldValue(key, input.value);
+                setFieldError(key, error || '');
+                return !error;
+            };
+
+            const attachInlineFieldValidation = () => {
+                contentEditor.querySelectorAll('[data-field-key]').forEach((input) => {
+                    const key = input.dataset.fieldKey || '';
+                    if (!key) return;
+
+                    const runValidate = () => {
+                        autoSizeInlineInput(input);
+                        return validateSingleField(key);
+                    };
+                    input.addEventListener('input', runValidate);
+                    input.addEventListener('change', runValidate);
+                    input.addEventListener('blur', runValidate);
+                });
+
+                contentEditor.querySelectorAll('input[name="wf_paymentMethod"]').forEach((radio) => {
+                    radio.addEventListener('change', () => setPaymentError(''));
+                });
+            };
+
+            const getRequiredSignCheckbox = () => {
+                if (state.signMode === 'parent-draft') return signatureParentCheckbox;
+                if (state.signMode === 'nanny-submit') return signatureNannyCheckbox;
+                return null;
+            };
+
+            const collectInlinePayload = () => {
+                const detail = state.detail;
+                if (!detail) return { ok: false, message: 'Khong tim thay du lieu hop dong.' };
+
+                const editable = Array.isArray(detail.editableFields) ? detail.editableFields : [];
+                const payload = { fieldValues: {}, paymentMethod: null, bankAccountNumber: null, bankName: null, isSignedByActor: false };
+                clearAllFieldErrors();
+                let firstError = null;
+
+                for (const key of editable) {
+                    if (paymentFieldKeys.has(key)) continue;
+                    const input = getFieldInput(key);
+                    if (!input) return { ok: false, message: `Khong tim thay o nhap cho ${fieldLabels[key] || key}.` };
+                    const value = (input.value || '').trim();
+                    const fieldError = validateFieldValue(key, value);
+                    if (fieldError) {
+                        setFieldError(key, fieldError);
+                        firstError ??= fieldError;
+                        continue;
+                    }
+                    payload.fieldValues[key] = value;
+                }
+
+                const probationStart = payload.fieldValues.ProbationStartDate ?? (getFieldInput('ProbationStartDate')?.value || '').trim();
+                const probationEnd = payload.fieldValues.ProbationEndDate ?? (getFieldInput('ProbationEndDate')?.value || '').trim();
+                if (probationStart && probationEnd) {
+                    const probationStartDate = parseDateInput(probationStart);
+                    const probationEndDate = parseDateInput(probationEnd);
+                    if (!probationStartDate) {
+                        const message = 'Probation Start Date khong hop le.';
+                        setFieldError('ProbationStartDate', message);
+                        firstError ??= message;
+                    }
+                    if (!probationEndDate) {
+                        const message = 'Probation End Date khong hop le.';
+                        setFieldError('ProbationEndDate', message);
+                        firstError ??= message;
+                    }
+                    if (probationStartDate && probationEndDate) {
+                        if (probationEndDate.getTime() < probationStartDate.getTime()) {
+                            const message = 'Probation End Date phai lon hon hoac bang Probation Start Date.';
+                            setFieldError('ProbationStartDate', message);
+                            setFieldError('ProbationEndDate', message);
+                            firstError ??= message;
+                        } else {
+                            const diffDays = Math.floor((probationEndDate.getTime() - probationStartDate.getTime()) / 86400000);
+                            if (diffDays > 6) {
+                                const message = 'Thoi gian thu viec chi duoc cach nhau toi da 6 ngay.';
+                                setFieldError('ProbationStartDate', message);
+                                setFieldError('ProbationEndDate', message);
+                                firstError ??= message;
+                            }
+                        }
+                    }
+                }
+
+                const hasPaymentEditable = editable.some((key) => paymentFieldKeys.has(key)) ||
+                    contentEditor.querySelectorAll('input[name="wf_paymentMethod"]').length > 0;
+                if (hasPaymentEditable) {
+                    const checked = contentEditor.querySelector('input[name="wf_paymentMethod"]:checked');
+                    if (!checked) {
+                        const paymentErrorMessage = 'Vui long chon hinh thuc tra luong.';
+                        setPaymentError(paymentErrorMessage);
+                        firstError ??= paymentErrorMessage;
+                    } else {
+                        payload.paymentMethod = checked.value;
+                        if (checked.value === 'BankTransfer') {
+                            const bankAcc = getFieldInput('BankAccountNumber');
+                            const bankName = getFieldInput('BankName');
+                            const bankAccValue = (bankAcc?.value || '').trim();
+                            const bankNameValue = (bankName?.value || '').trim();
+
+                            const bankAccError = validateFieldValue('BankAccountNumber', bankAccValue);
+                            const bankNameError = validateFieldValue('BankName', bankNameValue);
+
+                            if (bankAccError) {
+                                setFieldError('BankAccountNumber', bankAccError);
+                                firstError ??= bankAccError;
+                            } else {
+                                payload.bankAccountNumber = bankAccValue;
+                            }
+
+                            if (bankNameError) {
+                                setFieldError('BankName', bankNameError);
+                                firstError ??= bankNameError;
+                            } else {
+                                payload.bankName = bankNameValue;
+                            }
+                        }
+                    }
+                }
+
+                const role = String(detail.currentUserRole || '').toLowerCase();
+                if (role === 'parent' && Number(detail.contractStatus) !== 3) {
+                    payload.fieldValues.WorkingTimeSlots = serializeWorkingScheduleSlots(workingScheduleState.slots);
+                }
+
+                if (state.signMode === 'parent-draft')
+                    payload.isSignedByActor = !!signatureParentCheckbox?.checked;
+                if (state.signMode === 'nanny-submit')
+                    payload.isSignedByActor = !!signatureNannyCheckbox?.checked;
+
+                if (firstError) {
+                    return { ok: false, message: firstError };
+                }
+
+                return { ok: true, payload };
+            };
+
+            const setWorkflowError = (message) => {
+                if (!message) {
+                    workflowError.classList.add('hidden');
+                    workflowError.textContent = '';
+                    return;
+                }
+
+                workflowError.textContent = message;
+                workflowError.classList.remove('hidden');
+            };
+
+            const resetSignatureConfirmation = (detail) => {
+                if (signatureParentCheckbox) {
+                    signatureParentCheckbox.checked = !!detail?.signedByParent;
+                    signatureParentCheckbox.disabled = true;
+                }
+
+                if (signatureNannyCheckbox) {
+                    signatureNannyCheckbox.checked = !!detail?.signedByNanny;
+                    signatureNannyCheckbox.disabled = true;
+                }
+            };
+
+            const syncSignatureButtonState = () => {
+                const detail = state.detail || {};
+
+                if (state.signMode === 'parent-draft') {
+                    const isSigned = !!detail.signedByParent || !!signatureParentCheckbox?.checked;
+                    saveDraftBtn.disabled = !isSigned;
+                    return;
+                }
+
+                if (state.signMode === 'nanny-submit') {
+                    const isSigned = !!detail.signedByNanny || !!signatureNannyCheckbox?.checked;
+                    submitNannyBtn.disabled = !isSigned;
+                }
+            };
+
+            const applySignatureRequirement = (mode, detail) => {
+                state.signMode = mode;
+                resetSignatureConfirmation(detail);
+                if (signatureConfirmWrap) signatureConfirmWrap.classList.remove('hidden');
+
+                if (mode === 'parent-draft' && signatureParentCheckbox) {
+                    signatureParentCheckbox.disabled = !!detail?.signedByParent;
+                    if (!detail?.signedByParent) signatureParentCheckbox.checked = false;
+                    if (parentSignLabel) parentSignLabel.classList.remove('hidden');
+                }
+
+                if (mode === 'nanny-submit' && signatureNannyCheckbox) {
+                    signatureNannyCheckbox.disabled = !!detail?.signedByNanny;
+                    if (!detail?.signedByNanny) signatureNannyCheckbox.checked = false;
+                    if (nannySignLabel) nannySignLabel.classList.remove('hidden');
+                }
+
+                syncSignatureButtonState();
+            };
+
+            const renderWorkflowActions = (detail) => {
+                workflowBar.classList.remove('hidden');
+                workflowActions.classList.add('hidden');
+                if (signatureConfirmWrap) signatureConfirmWrap.classList.add('hidden');
+                if (parentSignLabel) parentSignLabel.classList.add('hidden');
+                if (nannySignLabel) nannySignLabel.classList.add('hidden');
+                state.signMode = null;
+                saveDraftBtn.classList.add('hidden');
+                submitNannyBtn.classList.add('hidden');
+                finalConfirmBtn.classList.add('hidden');
+                resetSignatureConfirmation(detail);
+
+                const role = (detail.currentUserRole || '').toLowerCase();
+                const status = Number(detail.contractStatus);
+                const canNannySubmit = !!detail.canSubmitByNanny;
+                const canParentFinalConfirm = !!detail.canFinalConfirmByParent;
+
+                if (status === 3) {
+                    workflowHint.textContent = 'Hop dong da hoan thanh. Tat ca thong tin chi doc.';
+                    return;
+                }
+
+                if (role === 'parent') {
+                    if (status === 0) {
+                        workflowHint.textContent = 'Ben A dien thong tin, tick ky hop dong, sau do bam "Xac nhan thong tin hop dong".';
+                        workflowActions.classList.remove('hidden');
+                        saveDraftBtn.classList.remove('hidden');
+                        applySignatureRequirement('parent-draft', detail);
+                        return;
+                    }
+
+                    if (status === 1) {
+                        workflowHint.textContent = 'Parent da xac nhan thong tin. Ban van co the sua va xac nhan lai thong tin moi nhat trong khi cho Nanny.';
+                        workflowActions.classList.remove('hidden');
+                        saveDraftBtn.classList.remove('hidden');
+                        applySignatureRequirement('parent-draft', detail);
+                        return;
+                    }
+
+                    if (status === 2) {
+                        workflowHint.textContent = 'Nanny da xac nhan thong tin. Parent co the tiep tuc sua, xac nhan lai, hoac xac nhan hoan thanh hop dong.';
+                        workflowActions.classList.remove('hidden');
+                        saveDraftBtn.classList.remove('hidden');
+                        applySignatureRequirement('parent-draft', detail);
+                        finalConfirmBtn.classList.remove('hidden');
+                        finalConfirmBtn.disabled = !canParentFinalConfirm;
+                        return;
+                    }
+
+                    workflowHint.textContent = 'Hop dong dang cho xu ly.';
+                    return;
+                }
+
+                if (role === 'nanny') {
+                    if (status === 0) {
+                        workflowHint.textContent = 'Dang cho Parent xac nhan thong tin hop dong.';
+                        return;
+                    }
+
+                    if (status === 1 || status === 2) {
+                        if (!canNannySubmit) {
+                            workflowHint.textContent = 'Dang cho Parent hoan tat thong tin truoc khi Nanny xac nhan.';
+                            return;
+                        }
+
+                        workflowActions.classList.remove('hidden');
+                        submitNannyBtn.classList.remove('hidden');
+                        applySignatureRequirement('nanny-submit', detail);
+                        workflowHint.textContent = status === 1
+                            ? 'Nanny dien thong tin, tick ky hop dong, sau do bam "Xac nhan thong tin hop dong".'
+                            : 'Nanny van co the sua va xac nhan lai thong tin moi nhat truoc khi Parent chot hop dong.';
+                        return;
+                    }
+
+                    workflowHint.textContent = 'Hop dong dang cho xu ly.';
+                    return;
+                }
+
+                workflowHint.textContent = 'Hop dong dang cho xu ly.';
+                return;
+
+                const editable = Array.isArray(detail.editableFields) ? detail.editableFields : [];
+                const hasEditable = editable.length > 0;
+
+                // Status=3: hop dong hoan thanh, tat ca la readonly, khong co action
+                if (status === 3) {
+                    workflowHint.textContent = 'Hợp đồng đã được xác nhận hoàn thành và đang hoạt động. Tất cả thông tin chỉ được xem.';
+                    return;
+                }
+
+                // Parent - Status=0: dien thong tin, tick ky, xac nhan thong tin
+                if (role === 'parent' && status === 0) {
+                    workflowHint.textContent = hasEditable
+                        ? 'Bên A (Parent): Điền thông tin trực tiếp vào hợp đồng, tích xác nhận ký, sau đó nhấn "Xác nhận thông tin hợp đồng".'
+                        : 'Bên A đã điền xong. Đang chờ bên B (Nanny) xác nhận thông tin.';
+                    workflowActions.classList.remove('hidden');
+                    saveDraftBtn.classList.remove('hidden');
+                    if (signatureConfirmWrap) signatureConfirmWrap.classList.remove('hidden');
+                    applySignatureRequirement('parent-draft', detail);
+                    return;
+                }
+
+                // Nanny - Status=1: dien thong tin, tick ky, xac nhan thong tin
+                if (role === 'nanny' && status === 1) {
+                    workflowHint.textContent = detail.canSubmitByNanny
+                        ? 'Bên B (Nanny): Điền thông tin của bạn vào hợp đồng, tích xác nhận ký, sau đó nhấn "Xác nhận thông tin hợp đồng".'
+                        : 'Đang chờ bên A (Parent) hoàn tất thông tin trước khi bên B có thể xác nhận.';
+                    if (detail.canSubmitByNanny) {
+                        workflowActions.classList.remove('hidden');
+                        submitNannyBtn.classList.remove('hidden');
+                        if (signatureConfirmWrap) signatureConfirmWrap.classList.remove('hidden');
+                        applySignatureRequirement('nanny-submit', detail);
+                    }
+                    return;
+                }
+
+                // Parent - Status=2: nanny da xac nhan, parent xem lai va bam xac nhan hoan thanh
+                if (role === 'parent' && status === 2) {
+                    workflowHint.textContent = 'Bên B đã xác nhận thông tin hợp đồng. Bên A xem lại và nhấn "Xác nhận hoàn thành hợp đồng" nếu thông tin đã chính xác.';
+                    workflowActions.classList.remove('hidden');
+                    saveDraftBtn.classList.remove('hidden');
+                    if (signatureConfirmWrap) signatureConfirmWrap.classList.remove('hidden');
+                    applySignatureRequirement('parent-draft', detail);
+                    finalConfirmBtn.classList.remove('hidden');
+                    finalConfirmBtn.disabled = !detail.canFinalConfirmByParent;
+                    return;
+                }
+
+                // Parent - Status=1: da xac nhan, cho nanny
+                if (role === 'parent' && status === 1) {
+                    workflowActions.classList.remove('hidden');
+                    saveDraftBtn.classList.remove('hidden');
+                    if (signatureConfirmWrap) signatureConfirmWrap.classList.remove('hidden');
+                    applySignatureRequirement('parent-draft', detail);
+                    workflowHint.textContent = 'Bạn đã xác nhận thông tin hợp đồng. Đang chờ bên B (Nanny) xác nhận thông tin.';
+                    return;
+                }
+
+                // Nanny - Status=2: da xac nhan, cho parent hoan thanh
+                if (role === 'nanny' && status === 2) {
+                    if (detail.canSubmitByNanny) {
+                        workflowActions.classList.remove('hidden');
+                        submitNannyBtn.classList.remove('hidden');
+                        if (signatureConfirmWrap) signatureConfirmWrap.classList.remove('hidden');
+                        applySignatureRequirement('nanny-submit', detail);
+                    }
+                    workflowHint.textContent = 'Bạn đã xác nhận thông tin hợp đồng. Đang chờ bên A (Parent) xác nhận hoàn thành.';
+                    return;
+                }
+
+                workflowHint.textContent = 'Hợp đồng đang ở trạng thái chờ xử lý.';
+            };
+
+            const loadDetail = async () => {
+                loadState.classList.remove('hidden');
+                detailContent.classList.add('hidden');
+                setWorkflowError('');
+
+                try {
+                    const response = await fetch(`/Contract/Api/Detail/${contractId}`, { credentials: 'include' });
+                    const json = await response.json();
+                    if (!response.ok || !json?.success) throw new Error(json?.message || 'Khong tai duoc hop dong.');
+
+                    const detail = json.data || {};
+                    state.detail = detail;
+
+                    document.getElementById('hiringStatus').textContent = hiringStatusText(Number(detail.hiringStatus));
+                    document.getElementById('signStatus').textContent = (detail.signedByParent && detail.signedByNanny) ? 'Da ky 2 ben' : 'Cho ky hoan tat';
+                    document.getElementById('workflowStatus').textContent = contractStatusText(Number(detail.contractStatus));
+                    document.getElementById('signedAt').textContent = `Ngay ky: ${fmtDate(detail.signedAt)}`;
+                    document.getElementById('jobMeta').textContent = `${detail.jobTitle || '-'} | ${fmtDateOnly(detail.startDate)} - ${fmtDateOnly(detail.endDate)}`;
+                    document.getElementById('printContractBtn')?.classList.toggle('hidden', !detail.signedByNanny);
+
+                    renderContractInlineEditor(detail);
+                    renderWorkflowActions(detail);
+
+                    loadState.classList.add('hidden');
+                    detailContent.classList.remove('hidden');
+                } catch (error) {
+                    loadState.textContent = `Khong tai duoc hop dong: ${error.message || 'Unknown error'}`;
+                    detailContent.classList.add('hidden');
+                }
+            };
+
+            const callWorkflowApi = async (url, method, successMessage) => {
+                let body = null;
+                if (method !== 'POST') {
+                    const collected = collectInlinePayload();
+                    if (!collected.ok) {
+                        setWorkflowError(collected.message);
+                        return;
+                    }
+                    body = JSON.stringify(collected.payload);
+                } else {
+                    setWorkflowError('');
+                }
+
+                const response = await fetch(url, {
+                    method,
+                    credentials: 'include',
+                    headers: body ? { 'Content-Type': 'application/json' } : undefined,
+                    body: body || undefined
+                });
+                const json = await response.json();
+                if (!response.ok || !json?.success) {
+                    setWorkflowError(json?.message || 'Co loi xay ra.');
+                    return;
+                }
+
+                toast(successMessage, 'success');
+                await loadDetail();
+            };
+
+            saveDraftBtn.addEventListener('click', async () => {
+                // Neu button disabled (chua tick checkbox) thi bo qua
+                if (saveDraftBtn.disabled) return;
+                saveDraftBtn.disabled = true;
+                try {
+                    await callWorkflowApi(`/Contract/Api/Detail/${contractId}/DraftParent`, 'PATCH', 'Xác nhận thông tin hợp đồng thành công.');
+                } finally {
+                    // Re-enable de user co the sua loi va thu lai
+                    // Neu API thanh cong, loadDetail() se render lai UI va button se duoc an/hien dung
+                    saveDraftBtn.disabled = false;
+                }
+            });
+
+            submitNannyBtn.addEventListener('click', async () => {
+                if (submitNannyBtn.disabled) return;
+                submitNannyBtn.disabled = true;
+                try {
+                    await callWorkflowApi(`/Contract/Api/Detail/${contractId}/FillNanny`, 'PATCH', 'Xác nhận thông tin hợp đồng thành công.');
+                } finally {
+                    // Re-enable de user co the sua loi va thu lai
+                    submitNannyBtn.disabled = false;
+                }
+            });
+
+            finalConfirmBtn.addEventListener('click', async () => {
+                finalConfirmBtn.disabled = true;
+                try {
+                    await callWorkflowApi(`/Contract/Api/Detail/${contractId}/FinalConfirmParent`, 'POST', 'Xác nhận hoàn thành hợp đồng thành công.');
+                } finally {
+                    finalConfirmBtn.disabled = false;
+                }
+            });
+
+            signatureParentCheckbox?.addEventListener('change', () => {
+                if (!signatureParentCheckbox.disabled && signatureParentCheckbox.checked) {
+                    toast('Bạn đã xác nhận ký hợp đồng', 'success');
+                }
+                syncSignatureButtonState();
+            });
+
+            signatureNannyCheckbox?.addEventListener('change', () => {
+                if (!signatureNannyCheckbox.disabled && signatureNannyCheckbox.checked) {
+                    toast('Bạn đã xác nhận ký hợp đồng', 'success');
+                }
+                syncSignatureButtonState();
+            });
+
+            loadDetail();
+        })();
+    </script>
+}

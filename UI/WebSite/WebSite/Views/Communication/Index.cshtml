@@ -1267,10 +1267,28 @@
             }
         }
 
+        async function goToContractDetailByHiringRecord(hiringRecordId) {
+            if (!hiringRecordId) return;
+            try {
+                const res = await fetch(`/Hiring/Record?hiringRecordId=${encodeURIComponent(hiringRecordId)}`, {
+                    credentials: 'include'
+                });
+                const json = await res.json();
+                if (!res.ok || !json?.success || !json?.data?.contractId) {
+                    alert(json?.message || 'Khong mo duoc hop dong chi tiet.');
+                    return;
+                }
+
+                window.open(`/Contract/Detail/${json.data.contractId}`, '_blank', 'noopener');
+            } catch {
+                alert('Khong mo duoc hop dong chi tiet.');
+            }
+        }
+
         function renderHiringOfferCard(message, isMine) {
             const hiringRecordId = message.attachmentUrl || '';
             return `
-            <div class="hiring-offer-card" onclick="window.__openOfferDetail?.('${esc(hiringRecordId)}')" title="Bấm để xem chi tiết đề nghị việc làm">
+            <div class="hiring-offer-card" onclick="goToContractDetailByHiringRecord('${esc(hiringRecordId)}')" title="Bam de xem chi tiet de nghi viec lam">
                 <div class="hiring-offer-card__header">
                     <span class="material-icons-round" style="font-size:20px;">handshake</span>
                     <span>Đề nghị việc làm</span>
@@ -1386,4 +1404,3 @@
 }
 
 <partial name="~/Views/Hiring/_OfferCard.cshtml" />
-<partial name="~/Views/Hiring/_OfferDetailModal.cshtml" />
