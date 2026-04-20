@@ -15,7 +15,7 @@
         var isFailed = !isCancelled && Model.PaymentStatus?.TransactionStatus == 3;
         var state = isCancelled ? "cancelled" : isSuccess ? "success" : isFailed ? "failed" : "pending";
         var statusLabel = Model.PaymentStatus?.TransactionStatusLabel ?? (isCancelled ? "Đã hủy" : "Chờ thanh toán");
-        var planLabel = Model.PaymentStatus?.PlanName ?? "Subscription";
+        var planLabel = Model.PaymentStatus?.PlanName ?? "Gói đăng ký";
         var resultTitle = isCancelled
             ? "Bạn đã hủy giao dịch"
             : isSuccess
@@ -24,12 +24,12 @@
                     ? "Thanh toán thất bại"
                     : "Chờ thanh toán";
         var resultDescription = isCancelled
-            ? "Giao dịch chưa hoàn tất. Bạn có thể quay lại trang subscription để tạo giao dịch mới."
+            ? "Giao dịch chưa hoàn tất. Bạn có thể quay lại trang gói đăng ký để tạo giao dịch mới."
             : isSuccess
-                ? "Gói subscription của bạn đã được kích hoạt và sẵn sàng sử dụng."
+                ? "Gói đăng ký của bạn đã được kích hoạt và sẵn sàng sử dụng."
                 : isFailed
-                    ? "Hệ thống đối soát callback nội bộ không thành công. Bạn có thể tạo giao dịch mới."
-                    : "Hệ thống sẽ tự động kiểm tra kết quả thanh toán từ PayOS. Nếu callback đến chậm, trạng thái sẽ được cập nhật tiếp trong ít giây.";
+                    ? "Hệ thống xác nhận thanh toán nội bộ không thành công. Bạn có thể tạo giao dịch mới."
+                    : "Hệ thống sẽ tự động kiểm tra kết quả thanh toán từ PayOS. Nếu thông báo thanh toán về chậm, trạng thái sẽ được cập nhật trong ít giây.";
     }
 
     <section class="sub-result-hero">
@@ -42,7 +42,7 @@
                 <span id="paymentResultStatusBadge" class="sub-result-status-pill sub-result-status-pill--@state">
                     <span id="paymentResultStatus">@statusLabel</span>
                 </span>
-                <span class="sub-result-plan-pill">Goi: <b id="paymentResultPlan">@planLabel</b></span>
+                <span class="sub-result-plan-pill">Gói: <b id="paymentResultPlan">@planLabel</b></span>
             </div>
         </article>
 
@@ -57,7 +57,7 @@
         <div class="sub-result-action-head">
             <span class="sub-section-label">Thanh toán</span>
             <h2>Thông tin giao dịch</h2>
-            <p>Nếu callback đến chậm, trang sẽ tiếp tục kiểm tra và cập nhật kết quả cho bạn.</p>
+            <p>Nếu thông báo thanh toán về chậm, trang sẽ tiếp tục kiểm tra và cập nhật kết quả cho bạn.</p>
         </div>
 
         <div class="sub-result-facts">
@@ -66,14 +66,14 @@
                 <b id="paymentResultStatusText">@statusLabel</b>
             </div>
             <div class="sub-result-fact">
-                <span>Gói subscription</span>
+                <span>Gói đăng ký</span>
                 <b id="paymentResultPlanText">@planLabel</b>
             </div>
         </div>
 
         <div class="sub-result-actions">
-            <a href="@Url.Action("Index", "Subscription")" class="sub-primary-btn sub-result-btn">Quay lai trang goi</a>
-            <a href="@Url.Action("Index", "Home")" class="sub-secondary-btn sub-result-btn">Ve trang chu</a>
+            <a href="@Url.Action("Index", "Subscription")" class="sub-primary-btn sub-result-btn">Quay lại trang gói</a>
+            <a href="@Url.Action("Index", "Home")" class="sub-secondary-btn sub-result-btn">Về trang chủ</a>
         </div>
     </section>
 </div>
@@ -119,7 +119,7 @@
                     if (!data) return false;
 
                     const status = data.transactionStatusLabel || 'Đang chờ đối soát';
-                    const plan = data.planName || 'Subscription';
+                    const plan = data.planName || 'Gói đăng ký';
 
                     if (resultStatus) resultStatus.textContent = status;
                     if (resultPlan) resultPlan.textContent = plan;
@@ -130,14 +130,14 @@
                     if (data.subscriptionActivated) {
                         setVisualState('success');
                         if (resultTitle) resultTitle.textContent = 'Thanh toán thành công';
-                        if (resultDescription) resultDescription.textContent = 'Gói subscription của bạn đã được kích hoạt.';
+                        if (resultDescription) resultDescription.textContent = 'Gói đăng ký của bạn đã được kích hoạt.';
                         return true;
                     }
 
                     if (data.transactionStatus === 3) {
                         setVisualState('failed');
                         if (resultTitle) resultTitle.textContent = 'Thanh toán thất bại';
-                        if (resultDescription) resultDescription.textContent = 'Hệ thống đối soát callback nội bộ không thành công.';
+                        if (resultDescription) resultDescription.textContent = 'Hệ thống xác nhận thanh toán nội bộ không thành công.';
                         return true;
                     }
 

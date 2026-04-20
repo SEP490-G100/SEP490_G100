@@ -1,7 +1,7 @@
 @model WebSite.Models.Moderator.ModeratorComplainedJobPostingDetailPageModel
 @{
     Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
-    ViewData["Title"] = "Complained Job Posting Detail";
+    ViewData["Title"] = "Chi tiết bài đăng bị khiếu nại";
 
     var job = Model.JobPosting;
     var locationLabel = string.Join(", ", new[] { job.Location, job.District, job.City }.Where(x => !string.IsNullOrWhiteSpace(x)));

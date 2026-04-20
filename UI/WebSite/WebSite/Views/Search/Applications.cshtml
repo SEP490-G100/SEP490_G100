@@ -322,7 +322,7 @@
             <div class="px-6 py-6 sm:px-8 border-b border-orange-100 bg-[radial-gradient(circle_at_top_right,rgba(255,237,213,.85),transparent_28%),linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <p class="text-xs font-extrabold uppercase tracking-[0.24em] text-orange-500">Nanny zone</p>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.24em] text-orange-500">Khu vực bảo mẫu</p>
                         <h1 class="app-page-title mt-2 text-3xl font-bold text-slate-900">Lịch sử ứng tuyển</h1>
                         <p class="mt-2 text-sm leading-6 text-slate-500 max-w-2xl">
                             Theo dõi các đơn đã gửi cho Phụ huynh, xem trạng thái và hủy đơn khi đơn đang chờ duyệt.
@@ -469,7 +469,7 @@
                 notify(json?.message || 'Đã hủy đơn ứng tuyển.', 'success');
                 await loadApplications();
             } catch {
-                notify('Lỗi kết nối server.', 'error');
+                notify('Lỗi kết nối máy chủ.', 'error');
             }
         }
 

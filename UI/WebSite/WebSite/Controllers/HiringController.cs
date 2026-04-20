@@ -123,9 +123,9 @@ public class HiringController : Controller
                 StatusCode = (int)response.StatusCode
             };
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            return new JsonResult(new { success = false, message = ex.Message }) { StatusCode = 500 };
+            return new JsonResult(new { success = false, message = "Không thể kết nối máy chủ lúc này. Vui lòng thử lại." }) { StatusCode = 500 };
         }
     }
 }

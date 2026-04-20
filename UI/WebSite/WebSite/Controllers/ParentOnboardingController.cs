@@ -226,15 +226,15 @@ public class ParentOnboardingController : Controller
             return View(model);
 
         if (string.IsNullOrWhiteSpace(model.FullName))
-            ModelState.AddModelError(nameof(model.FullName), "Vui long nhap ho ten.");
+            ModelState.AddModelError(nameof(model.FullName), "Vui lòng nhập họ tên.");
 
         if (!model.DateOfBirth.HasValue)
         {
-            ModelState.AddModelError(nameof(model.DateOfBirth), "Vui long chon ngay sinh.");
+            ModelState.AddModelError(nameof(model.DateOfBirth), "Vui lòng chọn ngày sinh.");
         }
         else if (model.DateOfBirth.Value > DateOnly.FromDateTime(DateTime.Today))
         {
-            ModelState.AddModelError(nameof(model.DateOfBirth), "Ngay sinh khong duoc lon hon ngay hien tai.");
+            ModelState.AddModelError(nameof(model.DateOfBirth), "Ngày sinh không được lớn hơn ngày hiện tại.");
         }
         else
         {
@@ -243,37 +243,37 @@ public class ParentOnboardingController : Controller
             if (model.DateOfBirth.Value > today.AddYears(-age))
                 age--;
             if (age < 18)
-                ModelState.AddModelError(nameof(model.DateOfBirth), "Parent phai du 18 tuoi tro len.");
+                ModelState.AddModelError(nameof(model.DateOfBirth), "Phụ huynh phải đủ 18 tuổi trở lên.");
         }
 
         if (!string.IsNullOrWhiteSpace(model.PhoneNumber) && !IsValidPhoneNumber(model.PhoneNumber))
-            ModelState.AddModelError(nameof(model.PhoneNumber), "So dien thoai khong hop le (9-15 chu so, cho phep dau +).");
+            ModelState.AddModelError(nameof(model.PhoneNumber), "Số điện thoại không hợp lệ (10 chữ số).");
 
         if (model.AvatarFile != null && model.AvatarFile.Length > 0)
         {
             var ext = Path.GetExtension(model.AvatarFile.FileName)?.ToLowerInvariant();
             var allowedExt = new[] { ".jpg", ".jpeg", ".png" };
             if (string.IsNullOrWhiteSpace(ext) || !allowedExt.Contains(ext))
-                ModelState.AddModelError(nameof(model.AvatarFile), "Anh dai dien chi chap nhan .jpg, .jpeg hoac .png.");
+                ModelState.AddModelError(nameof(model.AvatarFile), "Ảnh đại diện chỉ chấp nhận .jpg, .jpeg hoặc .png.");
 
             const long maxSizeBytes = 5 * 1024 * 1024;
             if (model.AvatarFile.Length > maxSizeBytes)
-                ModelState.AddModelError(nameof(model.AvatarFile), "Anh dai dien khong duoc vuot qua 5MB.");
+                ModelState.AddModelError(nameof(model.AvatarFile), "Ảnh đại diện không được vượt quá 5MB.");
 
             var contentType = model.AvatarFile.ContentType?.ToLowerInvariant();
             if (!string.IsNullOrWhiteSpace(contentType))
             {
                 var allowedTypes = new[] { "image/jpeg", "image/jpg", "image/png" };
                 if (!allowedTypes.Contains(contentType))
-                    ModelState.AddModelError(nameof(model.AvatarFile), "Dinh dang tep anh khong hop le.");
+                    ModelState.AddModelError(nameof(model.AvatarFile), "Định dạng tệp ảnh không hợp lệ.");
             }
         }
 
         if (string.IsNullOrWhiteSpace(model.Address))
-            ModelState.AddModelError(nameof(model.Address), "Vui long nhap dia chi chi tiet.");
+            ModelState.AddModelError(nameof(model.Address), "Vui lòng nhập địa chỉ chi tiết.");
 
         if (string.IsNullOrWhiteSpace(model.City) || string.IsNullOrWhiteSpace(model.District))
-            ModelState.AddModelError(string.Empty, "Vui long chon day du Tinh/Thanh va Quan/Huyen/Phuong.");
+            ModelState.AddModelError(string.Empty, "Vui lòng chọn đầy đủ Tỉnh/Thành và Quận/Phường.");
 
         if (!ModelState.IsValid)
             return View(model);
@@ -281,7 +281,7 @@ public class ParentOnboardingController : Controller
         var success = await SaveBasicUserInfoAsync(model);
         if (!success)
         {
-            ModelState.AddModelError(string.Empty, "Luu thong tin that bai. Vui long thu lai.");
+            ModelState.AddModelError(string.Empty, "Lưu thông tin thất bại. Vui lòng thử lại.");
             return View(model);
         }
 
@@ -305,13 +305,13 @@ public class ParentOnboardingController : Controller
             return View(model);
 
         if (string.IsNullOrWhiteSpace(model.FamilyDescription))
-            ModelState.AddModelError(nameof(model.FamilyDescription), "Vui long mo ta gia dinh.");
+            ModelState.AddModelError(nameof(model.FamilyDescription), "Vui lòng mô tả gia đình.");
 
         if (!model.NumberOfChildren.HasValue || model.NumberOfChildren < 1)
-            ModelState.AddModelError(nameof(model.NumberOfChildren), "Vui long nhap so luong con.");
+            ModelState.AddModelError(nameof(model.NumberOfChildren), "Vui lòng nhập số lượng con.");
 
         if (!model.ChildAgeGroup.HasValue)
-            ModelState.AddModelError(nameof(model.ChildAgeGroup), "Vui long chon nhom tuoi cua tre.");
+            ModelState.AddModelError(nameof(model.ChildAgeGroup), "Vui lòng chọn nhóm tuổi của trẻ.");
 
         if (!ModelState.IsValid)
             return View(model);
@@ -319,14 +319,14 @@ public class ParentOnboardingController : Controller
         var parentSaveResult = await SaveParentProfileAsync(model);
         if (!parentSaveResult.Success)
         {
-            ModelState.AddModelError(string.Empty, parentSaveResult.Message ?? "Luu thong tin gia dinh that bai.");
+            ModelState.AddModelError(string.Empty, parentSaveResult.Message ?? "Lưu thông tin gia đình thất bại.");
             return View(model);
         }
 
         var childSuccess = await CreateChildAsync(model);
         if (!childSuccess)
         {
-            ModelState.AddModelError(string.Empty, "Tao ho so con that bai. Vui long kiem tra thong tin va thu lai.");
+            ModelState.AddModelError(string.Empty, "Tạo hồ sơ con thất bại. Vui lòng kiểm tra thông tin và thử lại.");
             return View(model);
         }
 

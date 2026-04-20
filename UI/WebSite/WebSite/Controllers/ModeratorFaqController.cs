@@ -117,12 +117,12 @@ public class ModeratorFaqController : Controller
                 });
             }
 
-            ModelState.AddModelError(nameof(model.Question), result?.Message ?? "Tao FAQ thất bại.");
+            ModelState.AddModelError(nameof(model.Question), result?.Message ?? "Tạo FAQ thất bại.");
             return View("~/Views/Moderator/FAQ/CreateFAQ.cshtml", model);
         }
         catch (Exception ex)
         {
-            ModelState.AddModelError(nameof(model.Question), $"L?i kết nối: {ex.Message}");
+            ModelState.AddModelError(nameof(model.Question), $"Lỗi kết nối: {ex.Message}");
             return View("~/Views/Moderator/FAQ/CreateFAQ.cshtml", model);
         }
     }
@@ -196,11 +196,11 @@ public class ModeratorFaqController : Controller
                 });
             }
 
-            ModelState.AddModelError(nameof(model.Question), result?.Message ?? "C?p nh?t FAQ thất bại.");
+            ModelState.AddModelError(nameof(model.Question), result?.Message ?? "Cập nhật FAQ thất bại.");
         }
         catch (Exception ex)
         {
-            ModelState.AddModelError(nameof(model.Question), $"L?i kết nối: {ex.Message}");
+            ModelState.AddModelError(nameof(model.Question), $"Lỗi kết nối: {ex.Message}");
         }
 
         var failedVm = await BuildFaqDetailViewModelForInvalidPost(id, model);
@@ -225,29 +225,29 @@ public class ModeratorFaqController : Controller
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = $"L?i kết nối: {ex.Message}" });
+            return Json(new { success = false, message = $"Lỗi kết nối: {ex.Message}" });
         }
     }
 
     private void ValidateCreateFaq(CreateFaqRequest model)
     {
         if (string.IsNullOrWhiteSpace(model.Question))
-            ModelState.AddModelError(nameof(model.Question), "Question is required.");
+            ModelState.AddModelError(nameof(model.Question), "Vui lòng nhập câu hỏi.");
 
         if (string.IsNullOrWhiteSpace(model.Answer))
-            ModelState.AddModelError(nameof(model.Answer), "Answer is required.");
+            ModelState.AddModelError(nameof(model.Answer), "Vui lòng nhập câu trả lời.");
 
         if (string.IsNullOrWhiteSpace(model.Category))
-            ModelState.AddModelError(nameof(model.Category), "Category is required.");
+            ModelState.AddModelError(nameof(model.Category), "Vui lòng chọn danh mục.");
     }
 
     private void ValidateUpdateFaq(UpdateFaqRequest model)
     {
         if (string.IsNullOrWhiteSpace(model.Question))
-            ModelState.AddModelError(nameof(model.Question), "Question is required.");
+            ModelState.AddModelError(nameof(model.Question), "Vui lòng nhập câu hỏi.");
 
         if (string.IsNullOrWhiteSpace(model.Answer))
-            ModelState.AddModelError(nameof(model.Answer), "Answer is required.");
+            ModelState.AddModelError(nameof(model.Answer), "Vui lòng nhập câu trả lời.");
     }
 
     private async Task<FaqDto> BuildFaqDetailViewModelForInvalidPost(Guid id, UpdateFaqRequest model)

@@ -6,7 +6,7 @@
     var avatarBg = avatarColors[Math.Abs(Model.NannyUserId.GetHashCode()) % avatarColors.Length];
     var fullAddress = string.Join(", ", new[] { Model.NannyAddress, Model.NannyWard, Model.NannyDistrict, Model.NannyCity }
         .Where(value => !string.IsNullOrWhiteSpace(value)));
-    var genderLabel = Model.NannyGender switch { 1 => "Nam", 2 => "Nữ", _ => "Chưa xác định" };
+    var genderLabel = Model.NannyGender switch { 0 => "Nam", 1 => "Nữ", 2 => "Khác", _ => "Chưa xác định" };
     var salaryTypeLabel = Model.SalaryType == 1 ? "Theo giờ" : "Theo tháng";
     var skillGroups = Model.Skills
         .GroupBy(skill => string.IsNullOrWhiteSpace(skill.SkillCategory) ? "Kỹ năng khác" : skill.SkillCategory)
@@ -52,12 +52,12 @@
 
             <div class="flex flex-col sm:flex-row gap-3 lg:justify-end">
                 <div class="rounded-2xl bg-white/90 border border-orange-100 px-4 py-3 min-w-[180px]">
-                    <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Ngày Gửi</p>
-                    <p class="font-bold text-gray-800 mt-1">@Model.CreatedAt.ToString("MMM dd, yyyy HH:mm")</p>
+                    <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Ngày gửi</p>
+                    <p class="font-bold text-gray-800 mt-1">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</p>
                 </div>
                 <div class="rounded-2xl bg-white/90 border border-orange-100 px-4 py-3 min-w-[180px]">
-                    <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Ngày Duyệt</p>
-                    <p class="font-bold text-gray-800 mt-1">@(Model.ReviewedAt.HasValue ? Model.ReviewedAt.Value.ToString("MMM dd, yyyy HH:mm") : "Chưa duyệt")</p>
+                    <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Ngày duyệt</p>
+                    <p class="font-bold text-gray-800 mt-1">@(Model.ReviewedAt.HasValue ? Model.ReviewedAt.Value.ToString("dd/MM/yyyy HH:mm") : "Chưa duyệt")</p>
                 </div>
                 <a href="/NannyVerificationRequest/NannyGetVerificationRequestList" class="btn-outline self-start whitespace-nowrap px-4 py-3 min-h-[52px] inline-flex items-center justify-center">
                     <span class="material-icons-round text-base">arrow_back</span>
@@ -155,7 +155,7 @@
                 <div class="content-card p-5 fade-in-up border-l-4 @(Model.Status == 3 ? "border-red-400" : "border-orange-400")">
                     <div class="flex items-center gap-2 mb-3">
                         <span class="material-icons-round @(Model.Status == 3 ? "text-red-500" : "text-orange-500") text-lg">comment</span>
-                        <h2 class="font-bold @(Model.Status == 3 ? "text-red-600" : "text-orange-600")">Phản hồi từ ban quản trị</h2>
+                        <h2 class="font-bold @(Model.Status == 3 ? "text-red-600" : "text-orange-600")">Phản hồi từ kiểm duyệt viên</h2>
                     </div>
                     <p class="text-sm leading-7 text-gray-600">@Model.RejectionReason</p>
                 </div>

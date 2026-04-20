@@ -85,11 +85,11 @@ public class BlogCategoryController : Controller
                     toastMessage = "Bạn đã tạo thể loại blog thành công"
                 });
             }
-            ModelState.AddModelError(nameof(model.Name), result?.Message ?? "Tao danh muc thất bại.");
+            ModelState.AddModelError(nameof(model.Name), result?.Message ?? "Tạo danh mục thất bại.");
         }
         catch (Exception ex)
         {
-            ModelState.AddModelError(nameof(model.Name), $"L?i kết nối: {ex.Message}");
+            ModelState.AddModelError(nameof(model.Name), $"Lỗi kết nối: {ex.Message}");
         }
 
         return View("~/Views/Moderator/BlogCategory/CreateBlogCategory.cshtml", model);
@@ -141,11 +141,11 @@ public class BlogCategoryController : Controller
                     toastMessage = "Bạn đã chỉnh sửa thể loại blog thành công"
                 });
             }
-            ModelState.AddModelError(nameof(model.Name), result?.Message ?? "C?p nh?t danh muc thất bại.");
+            ModelState.AddModelError(nameof(model.Name), result?.Message ?? "Cập nhật danh mục thất bại.");
         }
         catch (Exception ex)
         {
-            ModelState.AddModelError(nameof(model.Name), $"L?i kết nối: {ex.Message}");
+            ModelState.AddModelError(nameof(model.Name), $"Lỗi kết nối: {ex.Message}");
         }
 
         var failedVm = await BuildCategoryDetailViewModelForInvalidPost(id, model);
@@ -173,16 +173,16 @@ public class BlogCategoryController : Controller
                 {
                     toastType = activate ? "success" : "warning",
                     toastMessage = activate
-                        ? "Activate blog category thành công"
-                        : "Deactivate blog category thành công"
+                        ? "Đã kích hoạt danh mục blog thành công"
+                        : "Đã vô hiệu hóa danh mục blog thành công"
                 });
             }
 
-            TempData["Error"] = result?.Message ?? "Thao tac thất bại.";
+            TempData["Error"] = result?.Message ?? "Thao tác thất bại.";
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"L?i kết nối: {ex.Message}";
+            TempData["Error"] = $"Lỗi kết nối: {ex.Message}";
         }
 
         return RedirectToAction(nameof(ManageBlogCategory));
@@ -191,10 +191,10 @@ public class BlogCategoryController : Controller
     private void ValidateCategoryForm(string? name, string? slug)
     {
         if (string.IsNullOrWhiteSpace(name))
-            ModelState.AddModelError(nameof(CreateBlogCategoryRequest.Name), "Name is required.");
+            ModelState.AddModelError(nameof(CreateBlogCategoryRequest.Name), "Vui lòng nhập tên.");
 
         if (string.IsNullOrWhiteSpace(slug))
-            ModelState.AddModelError(nameof(CreateBlogCategoryRequest.Slug), "Slug is required.");
+            ModelState.AddModelError(nameof(CreateBlogCategoryRequest.Slug), "Vui lòng nhập đường dẫn (slug).");
     }
 
     private async Task<BlogCategoryDto?> FetchCategoryByIdAsync(Guid id)

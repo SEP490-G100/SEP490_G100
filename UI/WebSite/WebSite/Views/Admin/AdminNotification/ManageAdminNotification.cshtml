@@ -1,7 +1,7 @@
 @model WebSite.Models.Admin.AdminNotificationListResponse
 @{
     Layout = "~/Views/Admin/_AdminLayout.cshtml";
-    ViewData["Title"] = "Quản Lý Thông Báo";
+    ViewData["Title"] = "Quản lý thông báo";
 
     var currentSearch = ViewBag.Search as string ?? "";
     var currentDeleted = ViewBag.IsDeleted as bool?;
@@ -23,13 +23,13 @@
 
 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
     <div>
-        <span class="section-label">Quản Lý Thông Báo</span>
-        <h1 class="page-title mt-2">Quản Lý <span class="gradient-text">Thông Báo</span></h1>
+        <span class="section-label">Quản lý thông báo</span>
+        <h1 class="page-title mt-2">Quản lý <span class="gradient-text">thông báo</span></h1>
         <p class="page-subtitle">Gửi thông báo đến toàn bộ người dùng hoặc nhóm vai trò cụ thể, và kiểm tra trạng thái hiển thị của chúng.</p>
     </div>
     <a href="/Admin/CreateAdminNotification" class="btn-primary flex-shrink-0">
         <span class="material-icons-round text-base">add_circle</span>
-        Tạo Thông Báo Mới
+        Tạo thông báo mới
     </a>
 </div>
 
@@ -71,7 +71,7 @@
 
             <button type="submit" class="btn-primary flex-shrink-0 flex items-center gap-1">
                 <span class="material-icons-round text-base">search</span>
-                Tìm Kiếm
+                Tìm kiếm
             </button>
         </div>
     </div>
@@ -85,10 +85,10 @@
         </span>
         <div class="flex items-center gap-4 text-xs text-gray-400">
             <div class="flex items-center gap-1.5">
-                <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-emerald-100"></div>Hoạt Động
+                <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-emerald-100"></div>Hoạt động
             </div>
             <div class="flex items-center gap-1.5">
-                <div class="w-2.5 h-2.5 rounded-full bg-red-400 ring-2 ring-red-100"></div>Vô Hiệu Hóa
+                <div class="w-2.5 h-2.5 rounded-full bg-red-400 ring-2 ring-red-100"></div>Vô hiệu hóa
             </div>
         </div>
     </div>
@@ -98,12 +98,12 @@
             <thead>
                 <tr>
                     <th class="text-left">#</th>
-                    <th class="text-left">Thông Báo</th>
-                    <th class="text-left">Mục Tiêu</th>
-                    <th class="text-left">Người Nhận</th>
-                    <th class="text-left">Đã Tạo</th>
-                    <th class="text-left">Trạng Thái</th>
-                    <th class="text-center">Hành Động</th>
+                    <th class="text-left">Thông báo</th>
+                    <th class="text-left">Mục tiêu</th>
+                    <th class="text-left">Người nhận</th>
+                    <th class="text-left">Ngày tạo</th>
+                    <th class="text-left">Trạng thái</th>
+                    <th class="text-center">Thao tác</th>
                 </tr>
             </thead>
             <tbody>
@@ -122,8 +122,10 @@
                 @foreach (var item in notifications)
                 {
                     var statusBadge = item.IsDeleted ? "badge-inactive" : "badge-active";
-                    var statusLabel = item.IsDeleted ? "Vô Hiệu Hóa" : "Hoạt Động";
-                    var targetLabel = item.TargetType == "Role" ? item.TargetRole : "All Roles";
+                    var statusLabel = item.IsDeleted ? "Vô hiệu hóa" : "Hoạt động";
+                    var targetLabel = item.TargetType == "Role"
+                        ? (item.TargetRole switch { "Parent" => "Phụ huynh", "Nanny" => "Bảo mẫu", "Moderator" => "Kiểm duyệt viên", _ => item.TargetRole })
+                        : "Tất cả vai trò";
                     var targetBadge = item.TargetType == "Role"
                         ? (item.TargetRole == "Parent" ? "badge-parent" : item.TargetRole == "Nanny" ? "badge-nanny" : "badge-mod")
                         : "badge-pending";
@@ -138,7 +140,7 @@
                         </td>
                         <td><span class="badge @targetBadge">@targetLabel</span></td>
                         <td class="text-gray-500 text-sm">@item.RecipientCount người nhận</td>
-                        <td class="text-gray-500 text-sm">@item.CreatedAt.ToString("MMM dd, yyyy")</td>
+                        <td class="text-gray-500 text-sm">@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
                         <td>
                             <div class="flex items-center gap-1.5">
                                 <div class="w-2 h-2 rounded-full @(item.IsDeleted ? "bg-red-400 ring-2 ring-red-100" : "bg-emerald-400 ring-2 ring-emerald-100")"></div>
@@ -148,14 +150,14 @@
                         <td>
                             <div class="flex items-center justify-center gap-1.5">
                                 <a href="/Admin/ViewAdminNotificationDetail/@item.Id"
-                                   title="View detail"
+                                   title="Xem chi tiết"
                                    class="w-8 h-8 rounded-xl hover:bg-orange-50 hover:text-orange-600 flex items-center justify-center text-gray-300 transition-all border border-gray-100 hover:border-orange-200">
                                     <span class="material-icons-round text-base">visibility</span>
                                 </a>
 
                                 <button type="button"
                                         onclick="openToggleNotificationModal('@item.Id', @(!item.IsDeleted ? "true" : "false"))"
-                                        title="@(item.IsDeleted ? "Kích Hoạt" : "Vô Hiệu Hóa")"
+                                        title="@(item.IsDeleted ? "Kích hoạt" : "Vô hiệu hóa")"
                                         class="w-8 h-8 rounded-xl @(item.IsDeleted ? "hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200" : "hover:bg-red-50 hover:text-red-500 hover:border-red-200") flex items-center justify-center text-gray-300 transition-all border border-gray-100">
                                     <span class="material-icons-round text-base">@(item.IsDeleted ? "check_circle_outline" : "block")</span>
                                 </button>
@@ -243,7 +245,7 @@
             const token = document.querySelector('#toggleNotificationCsrfForm input[name="__RequestVerificationToken"]').value;
             const returnUrl = '@(currentUrl.Replace("'", "\\'"))';
             const btnClass = activate ? 'btn-success' : 'btn-danger';
-            const btnText = activate ? 'Xác Nhận Kích Hoạt' : 'Xác Nhận Vô Hiệu Hóa';
+            const btnText = activate ? 'Xác nhận kích hoạt' : 'Xác nhận vô hiệu hóa';
 
             document.getElementById('toggleNotificationFormContainer').innerHTML =
                 '<button type="button" onclick="closeToggleNotificationModal()" class="btn-outline flex-1 justify-center">Hủy</button>' +

@@ -61,7 +61,7 @@
     closeButton.type = 'button';
     closeButton.className = 'nm-toast__close material-icons-round';
     closeButton.textContent = 'close';
-    closeButton.setAttribute('aria-label', 'Dong thong bao');
+    closeButton.setAttribute('aria-label', 'Đóng thông báo');
     closeButton.hidden = !dismissible;
 
     toast.appendChild(icon);

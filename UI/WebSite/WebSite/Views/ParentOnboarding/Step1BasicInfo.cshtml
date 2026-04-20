@@ -1,6 +1,6 @@
 ﻿@model WebSite.Models.Profile.ParentOnboardingWizardViewModel
 @{
-    ViewData["Title"] = "Parent - Thông tin cơ bản";
+    ViewData["Title"] = "Phụ huynh - Thông tin cơ bản";
     var todayIso = DateTime.Today.ToString("yyyy-MM-dd");
     var currentAvatarUrlJson = System.Text.Json.JsonSerializer.Serialize(Model.AvatarUrl ?? "");
 }
@@ -11,10 +11,10 @@
             <div class="nm-flow-card__inner">
                 <div class="nm-flow-header">
                     <div class="nm-flow-header__content">
-                        <span class="nm-flow-badge">Parent onboarding</span>
+                        <span class="nm-flow-badge">Đăng ký phụ huynh</span>
                         <h1 class="nm-flow-title">Thông tin cơ bản</h1>
                         <p class="nm-flow-subtitle">
-                            Đây là thông tin nền để hệ thống gợi ý nanny phù hợp và hiển thị khu vực của bạn chính xác hơn trong các luồng tìm kiếm.
+                            Đây là thông tin nền để hệ thống gợi ý bảo mẫu phù hợp và hiển thị khu vực của bạn chính xác hơn trong các luồng tìm kiếm.
                         </p>
                     </div>
                 </div>
@@ -31,8 +31,8 @@
                     <div class="nm-form-grid">
                         <div class="nm-col-12">
                             <div class="nm-section-card">
-                                <div class="nm-section-title">Thông tin cá nhân</div>
-                                <div class="nm-section-note">Ảnh đại diện, họ tên và địa chỉ cơ bản sẽ được dùng cho hồ sơ parent sau khi onboarding hoàn tất.</div>
+                                <div class="nm-section-title">Thong tin ca nhan</div>
+                                <div class="nm-section-note">Anh dai dien, ho ten va dia chi co ban se duoc dung cho ho so parent sau khi onboarding hoan tat.</div>
 
                                 <div class="nm-form-grid">
                                     <div class="nm-col-12">
@@ -47,7 +47,7 @@
                                         <div class="nm-field">
                                             <label asp-for="PhoneNumber" class="nm-label">Số điện thoại</label>
                                             <input asp-for="PhoneNumber" class="nm-input" placeholder="+84901234567" />
-                                            <div class="nm-field-hint">Nhập 9-15 chữ số, có thể bắt đầu bằng dấu +.</div>
+                                            <div class="nm-field-hint">Nhập đúng 10 số.</div>
                                             <span asp-validation-for="PhoneNumber" class="nm-error"></span>
                                         </div>
                                     </div>
@@ -66,7 +66,7 @@
                                             <label asp-for="AvatarFile" class="nm-label">Ảnh đại diện</label>
                                             <div class="nm-avatar-upload">
                                                 <div class="nm-avatar-preview-frame">
-                                                    <img id="avatarPreview" class="nm-avatar-preview hidden" alt="Avatar preview" />
+                                                    <img id="avatarPreview" class="nm-avatar-preview hidden" alt="Xem trước ảnh đại diện" />
                                                     <div id="avatarPreviewPlaceholder" class="nm-avatar-placeholder">
                                                         <span class="material-icons-round">person</span>
                                                     </div>
@@ -520,7 +520,7 @@
             .toLowerCase()
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '')
-            .replace(/Ä‘/g, 'd')
+            .replace(/đ/g, 'd')
             .trim();
     }
 
@@ -682,7 +682,7 @@
     }
 
         districtInput.value = district.name;
-        setDisplayText(districtDisplay, district.name, 'Chon khu vuc');
+        setDisplayText(districtDisplay, district.name, 'Chọn khu vực');
         renderDistrictOptions();
         autoGeocode();
     }
@@ -797,7 +797,7 @@
             isValid = isValid && cityOk;
 
             var districtOk = !!(districtInput && districtInput.value.trim());
-            setValidationMessage('District', districtOk ? '' : 'Vui lòng chọn Quận/Huyện/Phường.');
+            setValidationMessage('District', districtOk ? '' : 'Vui lòng chọn Quận/Phường.');
             isValid = isValid && districtOk;
 
             return isValid;

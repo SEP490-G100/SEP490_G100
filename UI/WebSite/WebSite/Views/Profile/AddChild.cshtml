@@ -2,48 +2,48 @@
 @model CreateChildProfileViewModel
 
 @{
-    ViewData["Title"] = "Them con em";
+    ViewData["Title"] = "Thêm con em";
 }
 
 <div class="child-page">
     <div class="child-shell">
-        <h1 class="child-title">Them ho so con em</h1>
+        <h1 class="child-title">Thêm hồ sơ con em</h1>
 
         <form method="post" class="child-form">
             @Html.AntiForgeryToken()
             <div asp-validation-summary="ModelOnly" class="child-summary"></div>
 
             <div class="child-field">
-                <label asp-for="ChildAgeGroup" class="child-label">Nhom tuoi</label>
+                <label asp-for="ChildAgeGroup" class="child-label">Nhóm tuổi</label>
                 <select asp-for="ChildAgeGroup"
                         asp-items="Html.GetEnumSelectList<WebSite.Enums.ChildAgeGroup>()"
                         class="child-input">
-                    <option value="">-- Chon nhom tuoi --</option>
+                    <option value="">-- Chọn nhóm tuổi --</option>
                 </select>
                 @Html.ValidationMessageFor(m => m.ChildAgeGroup, "", new { @class = "child-error" })
             </div>
 
             <div class="child-field">
-                <label asp-for="Characteristic" class="child-label">Dac diem tinh cach</label>
-                <textarea asp-for="Characteristic" rows="3" class="child-input child-textarea" placeholder="Mo ta tinh cach cua tre..."></textarea>
+                <label asp-for="Characteristic" class="child-label">Đặc điểm tính cách</label>
+                <textarea asp-for="Characteristic" rows="3" class="child-input child-textarea" placeholder="Mô tả tính cách của trẻ..."></textarea>
                 @Html.ValidationMessageFor(m => m.Characteristic, "", new { @class = "child-error" })
             </div>
 
             <div class="child-field">
-                <label asp-for="SpecialNeeds" class="child-label">Nhu cau dac biet</label>
-                <textarea asp-for="SpecialNeeds" rows="3" class="child-input child-textarea" placeholder="Mo ta nhu cau dac biet neu co..."></textarea>
+                <label asp-for="SpecialNeeds" class="child-label">Nhu cầu đặc biệt</label>
+                <textarea asp-for="SpecialNeeds" rows="3" class="child-input child-textarea" placeholder="Mô tả nhu cầu đặc biệt nếu có..."></textarea>
                 @Html.ValidationMessageFor(m => m.SpecialNeeds, "", new { @class = "child-error" })
             </div>
 
             <div class="child-field">
-                <label asp-for="Notes" class="child-label">Ghi chu</label>
-                <textarea asp-for="Notes" rows="3" class="child-input child-textarea" placeholder="Thong tin bo sung..."></textarea>
+                <label asp-for="Notes" class="child-label">Ghi chú</label>
+                <textarea asp-for="Notes" rows="3" class="child-input child-textarea" placeholder="Thông tin bổ sung..."></textarea>
                 @Html.ValidationMessageFor(m => m.Notes, "", new { @class = "child-error" })
             </div>
 
             <div class="child-actions">
-                <button type="submit" class="btn-primary">Luu ho so con em</button>
-                <a href="@Url.Action("Children", "Profile")" class="btn-secondary">Huy</a>
+                <button type="submit" class="btn-primary">Lưu hồ sơ con em</button>
+                <a href="@Url.Action("Children", "Profile")" class="btn-secondary">Hủy</a>
             </div>
         </form>
     </div>

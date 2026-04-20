@@ -9,14 +9,14 @@
     string FormatMoney(decimal? amount) =>
         amount.HasValue && amount.Value > 0
             ? $"{amount.Value.ToString("N0", viVn)} VND"
-            : "Thoa thuan";
+            : "Thỏa thuận";
 
     string FormatSalary(decimal? min, decimal? max)
     {
         if (min.HasValue && max.HasValue) return $"{FormatMoney(min)} - {FormatMoney(max)}";
-        if (min.HasValue) return $"Tu {FormatMoney(min)}";
-        if (max.HasValue) return $"Den {FormatMoney(max)}";
-        return "Thoa thuan";
+        if (min.HasValue) return $"Từ {FormatMoney(min)}";
+        if (max.HasValue) return $"Đến {FormatMoney(max)}";
+        return "Thỏa thuận";
     }
 }
 
@@ -49,18 +49,18 @@
                            asp-action="List"
                            asp-route-detailId="@nanny.Id">
                             <div class="relative mb-4">
-                                <img alt="Nanny Profile" class="w-full aspect-square object-cover rounded-xl"
+                                <img alt="Ảnh hồ sơ bảo mẫu" class="w-full aspect-square object-cover rounded-xl"
                                      src="@(string.IsNullOrWhiteSpace(nanny.AvatarUrl) ? "/img/nanny-logo.jpg" : nanny.AvatarUrl)" />
                                 @if (nanny.FeaturedBadge || nanny.SearchPriority)
                                 {
                                     <div class="absolute top-2 left-2 flex flex-wrap gap-2">
                                         @if (nanny.SearchPriority)
                                         {
-                                            <span class="rounded-full bg-slate-900/85 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.14em] text-white">Nanny Pro</span>
+                                            <span class="rounded-full bg-slate-900/85 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.14em] text-white">Gói Pro</span>
                                         }
                                         else if (nanny.FeaturedBadge)
                                         {
-                                            <span class="rounded-full bg-orange-500/90 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.14em] text-white">Nanny Plus</span>
+                                            <span class="rounded-full bg-orange-500/90 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.14em] text-white">Gói Plus</span>
                                         }
                                     </div>
                                 }
@@ -99,7 +99,7 @@
         else
         {
             <div class="sec-reveal text-center bg-white rounded-2xl border border-gray-100 p-10 shadow-sm">
-                <p class="text-gray-500">Chưa co d? liư nanny ?? hiển thị.</p>
+                <p class="text-gray-500">Chưa có dữ liệu bảo mẫu để hiển thị.</p>
             </div>
         }
 

@@ -50,11 +50,11 @@ namespace WebSite.Controllers
             }
             catch (OperationCanceledException)
             {
-                _logger.LogWarning("Homepage nanny data skipped — backend not reachable within 5s.");
+                _logger.LogWarning("Bỏ qua dữ liệu bảo mẫu trang chủ — không kết nối được backend trong 5 giây.");
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to load homepage featured nanny data.");
+                _logger.LogWarning(ex, "Không tải được dữ liệu bảo mẫu nổi bật cho trang chủ.");
             }
 
             return View("_Services", vm);

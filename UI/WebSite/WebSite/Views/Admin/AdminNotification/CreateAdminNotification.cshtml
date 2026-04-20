@@ -1,19 +1,19 @@
 @model WebSite.Models.Admin.AdminNotificationFormViewModel
 @{
     Layout = "~/Views/Admin/_AdminLayout.cshtml";
-    ViewData["Title"] = "Tạo Thông Báo";
+    ViewData["Title"] = "Tạo thông báo";
     var availableRoles = ViewBag.AdminNotificationRoles as List<string> ?? new List<string>();
 }
 
 <div class="flex items-center justify-between gap-4 mb-7 fade-in-up">
     <div>
-        <span class="section-label">Quản Lý Thông Báo</span>
-        <h1 class="page-title mt-2">Tạo <span class="gradient-text">Thông Báo</span></h1>
+        <span class="section-label">Quản lý thông báo</span>
+        <h1 class="page-title mt-2">Tạo <span class="gradient-text">thông báo</span></h1>
         <p class="page-subtitle">Gửi thông báo đến toàn bộ người dùng hoặc một nhóm vai trò cụ thể với chuông và toast thời gian thực.</p>
     </div>
     <a href="/Admin/ManageAdminNotification" class="btn-outline">
         <span class="material-icons-round text-base">arrow_back</span>
-        Quay Lại Danh Sách
+        Quay lại danh sách
     </a>
 </div>
 
@@ -30,12 +30,13 @@
             </div>
 
             <div class="field-group lg:col-span-2">
-                <label asp-for="TargetRole" class="field-label">Vai Trò Nhận Thông Báo</label>
+                <label asp-for="TargetRole" class="field-label">Vai trò nhận thông báo</label>
                 <select asp-for="TargetRole" class="search-input !pl-4" id="targetRoleSelect" required>
-                    <option value="All">Tất Cả Vai Trò</option>
+                    <option value="All">Tất cả vai trò</option>
                     @foreach (var role in availableRoles)
                     {
-                        <option value="@role">@role</option>
+                        var roleLabel = role switch { "Parent" => "Phụ huynh", "Nanny" => "Bảo mẫu", "Moderator" => "Kiểm duyệt viên", _ => role };
+                        <option value="@role">@roleLabel</option>
                     }
                 </select>
                 <span asp-validation-for="TargetRole" class="text-xs text-red-500"></span>
@@ -53,7 +54,7 @@
         <a href="/Admin/ManageAdminNotification" class="btn-outline">Hủy</a>
         <button type="submit" class="btn-primary">
             <span class="material-icons-round text-base">campaign</span>
-            Tạo Thông Báo
+            Tạo thông báo
         </button>
     </div>
 </form>

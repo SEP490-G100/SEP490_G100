@@ -142,12 +142,12 @@ public class AdminSubscriptionPlanFormViewModel
     [StringLength(100, MinimumLength = 2)]
     public string Name { get; set; } = "";
 
-    [Required(ErrorMessage = "Description is required.")]
-    [StringLength(500, ErrorMessage = "Description must be at most 500 characters.")]
+    [Required(ErrorMessage = "Vui lòng nhập mô tả.")]
+    [StringLength(500, ErrorMessage = "Mô tả không được vượt quá 500 ký tự.")]
     public string Description { get; set; } = "";
 
     [Required]
-    [RegularExpression("^(Parent|Nanny)$", ErrorMessage = "Target role must be Parent or Nanny.")]
+    [RegularExpression("^(Parent|Nanny)$", ErrorMessage = "Vai trò mục tiêu phải là Phụ huynh hoặc Bảo mẫu (Parent / Nanny).")]
     public string TargetRole { get; set; } = "Parent";
 
     [Range(typeof(decimal), "1000", "999999999")]

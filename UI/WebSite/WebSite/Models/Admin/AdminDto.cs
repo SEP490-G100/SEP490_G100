@@ -85,8 +85,8 @@ public class RecentTransactionDto
     public string? UserName { get; set; }
     public string? UserEmail { get; set; }
 
-    public string StatusLabel => Status switch { 1 => "Completed", 0 => "Pending", _ => "Failed" };
-    public string TypeLabel => Type switch { 1 => "Subscription", 2 => "Refund", _ => "Payment" };
+    public string StatusLabel => Status switch { 1 => "Hoàn thành", 0 => "Chờ xử lý", _ => "Thất bại" };
+    public string TypeLabel => Type switch { 1 => "Gói đăng ký", 2 => "Hoàn tiền", _ => "Thanh toán" };
 }
 
 public class ApiDashboardStatsDto

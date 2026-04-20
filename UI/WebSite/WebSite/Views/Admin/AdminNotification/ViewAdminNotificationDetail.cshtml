@@ -1,23 +1,26 @@
 @model WebSite.Models.Admin.AdminNotificationFormViewModel
 @{
     Layout = "~/Views/Admin/_AdminLayout.cshtml";
-    ViewData["Title"] = "Chi Tiết Thông Báo";
+    ViewData["Title"] = "Chi tiết thông báo";
+    string adminNotifTargetRoleLabel() => Model.TargetType == "Role"
+        ? (Model.TargetRole switch { "Parent" => "Phụ huynh", "Nanny" => "Bảo mẫu", "Moderator" => "Kiểm duyệt viên", _ => Model.TargetRole ?? "" })
+        : "Tất cả";
 }
 
 <div class="flex flex-col gap-6 fade-in-up">
     <div class="content-card p-6">
-        <span class="section-label">Thông Báo Quản Trị Viên</span>
+        <span class="section-label">Thông báo quản trị</span>
 
         <div class="mt-2 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
             <div class="min-w-0 lg:flex-1">
                 <h1 class="page-title">@Model.Title</h1>
                 <p class="page-subtitle">Xem nội dung thông báo, phạm vi người nhận và trạng thái hiển thị hiện tại.</p>
                 <div class="flex flex-wrap items-center gap-2 mt-4">
-                    <span class="badge @(Model.IsDeleted ? "badge-inactive" : "badge-active")">@(Model.IsDeleted ? "Vô Hiệu Hóa" : "Hoạt Động")</span>
+                    <span class="badge @(Model.IsDeleted ? "badge-inactive" : "badge-active")">@(Model.IsDeleted ? "Vô hiệu hóa" : "Hoạt động")</span>
                     <span class="badge @(Model.TargetType == "Role"
                         ? (Model.TargetRole == "Parent" ? "badge-parent" : Model.TargetRole == "Nanny" ? "badge-nanny" : "badge-mod")
                         : "badge-pending")">
-                        @(Model.TargetType == "Role" ? Model.TargetRole : "All")
+                        @adminNotifTargetRoleLabel()
                     </span>
                     <span class="badge badge-pending">@Model.RecipientCount người nhận</span>
                 </div>
@@ -27,7 +30,7 @@
                 <div class="flex flex-wrap lg:flex-nowrap items-center justify-start lg:justify-end gap-3">
                     <a href="/Admin/ManageAdminNotification" class="btn-outline whitespace-nowrap">
                         <span class="material-icons-round text-base">arrow_back</span>
-                        Quay Lại Danh Sách
+                        Quay lại danh sách
                     </a>
                     <form method="post" action="/Admin/ToggleAdminNotificationStatus" class="inline" onsubmit="return confirm('@(Model.IsDeleted ? "Kích hoạt" : "Vô hiệu hóa") thông báo này?');">
                         @Html.AntiForgeryToken()
@@ -36,12 +39,12 @@
                         <input type="hidden" name="returnUrl" value="/Admin/ViewAdminNotificationDetail/@Model.Id" />
                         <button type="submit" class="btn-outline whitespace-nowrap">
                             <span class="material-icons-round text-base">@(Model.IsDeleted ? "check_circle_outline" : "block")</span>
-                            @(Model.IsDeleted ? "Kích Hoạt" : "Vô Hiệu Hóa")
+                            @(Model.IsDeleted ? "Kích hoạt" : "Vô hiệu hóa")
                         </button>
                     </form>
                     <button type="submit" form="adminNotificationDetailForm" class="btn-primary whitespace-nowrap">
                         <span class="material-icons-round text-base">save</span>
-                        Lưu Thay Đổi
+                        Lưu thay đổi
                     </button>
                 </div>
             </div>
@@ -49,16 +52,16 @@
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5">
             <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100 min-w-[150px]">
-                <p class="text-xs text-gray-400 font-bold uppercase tracking-wide mb-1">Vai Trò Nhận Thông Báo</p>
-                <p class="font-bold text-gray-800">@(Model.TargetType == "Role" ? Model.TargetRole : "All")</p>
+                <p class="text-xs text-gray-400 font-bold uppercase tracking-wide mb-1">Vai trò nhận thông báo</p>
+                <p class="font-bold text-gray-800">@adminNotifTargetRoleLabel()</p>
             </div>
             <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100 min-w-[150px]">
-                <p class="text-xs text-gray-400 font-bold uppercase tracking-wide mb-1">Đã Tạo</p>
-                <p class="font-bold text-gray-800">@Model.CreatedAt.ToString("MMM dd, yyyy HH:mm")</p>
+                <p class="text-xs text-gray-400 font-bold uppercase tracking-wide mb-1">Ngày tạo</p>
+                <p class="font-bold text-gray-800">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</p>
             </div>
             <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100 min-w-[150px]">
-                <p class="text-xs text-gray-400 font-bold uppercase tracking-wide mb-1">Đã Cập Nhật</p>
-                <p class="font-bold text-gray-800">@(Model.UpdatedAt?.ToString("MMM dd, yyyy HH:mm") ?? "Chưa cập nhật")</p>
+                <p class="text-xs text-gray-400 font-bold uppercase tracking-wide mb-1">Cập nhật lần cuối</p>
+                <p class="font-bold text-gray-800">@(Model.UpdatedAt?.ToString("dd/MM/yyyy HH:mm") ?? "Chưa cập nhật")</p>
             </div>
         </div>
     </div>
@@ -90,24 +93,24 @@
         <div asp-validation-summary="All" class="text-sm text-red-600"></div>
 
         <div class="field-group">
-            <label class="field-label">Tiêu Đề</label>
+            <label class="field-label">Tiêu đề</label>
             <input asp-for="Title" class="search-input !pl-4" maxlength="200" required />
             <span asp-validation-for="Title" class="text-xs text-red-500"></span>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div class="field-group">
-                <label class="field-label">Vai Trò Nhận Thông Báo</label>
-                <div class="field-readonly">@(Model.TargetType == "Role" ? Model.TargetRole : "All")</div>
+                <label class="field-label">Vai trò nhận thông báo</label>
+                <div class="field-readonly">@adminNotifTargetRoleLabel()</div>
             </div>
             <div class="field-group">
-                <label class="field-label">Số Người Nhận</label>
+                <label class="field-label">Số người nhận</label>
                 <div class="field-readonly">@Model.RecipientCount người nhận</div>
             </div>
         </div>
 
         <div class="field-group">
-            <label class="field-label">Nội Dung</label>
+            <label class="field-label">Nội dung</label>
             <textarea asp-for="Content" class="search-input !pl-4 !h-56 py-3" maxlength="1000" required></textarea>
             <span asp-validation-for="Content" class="text-xs text-red-500"></span>
         </div>

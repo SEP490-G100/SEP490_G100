@@ -1,7 +1,7 @@
 ﻿@model WebSite.Models.Moderator.ModeratorComplainedProfileDetailPageModel
 @{
     Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
-    ViewData["Title"] = "Complained Profile Detail";
+    ViewData["Title"] = "Chi tiết hồ sơ bị khiếu nại";
 
     var p = Model.Profile;
     var avatar = string.IsNullOrWhiteSpace(p.AvatarUrl) ? null : p.AvatarUrl.Trim();
@@ -201,7 +201,7 @@
                                 {
                                     <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
                                         <div class="font-semibold">Hồ sơ trẻ</div>
-                                        <div class="text-xs text-slate-500 mt-1">@(child.ChildAgeGroup?.ToString() ?? "Unknown age group")</div>
+                                        <div class="text-xs text-slate-500 mt-1">@(child.ChildAgeGroup?.ToString() ?? "Chưa xác định nhóm tuổi")</div>
                                         <div class="text-xs text-slate-500 mt-1">@(string.IsNullOrWhiteSpace(child.Characteristic) ? "-" : child.Characteristic)</div>
                                     </div>
                                 }

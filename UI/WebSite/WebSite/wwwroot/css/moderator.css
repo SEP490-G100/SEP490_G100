@@ -150,6 +150,22 @@
 /* ============================================================
    TABLE
    ============================================================ */
+.mod-table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+/* Danh sách bài đăng việc (moderator): cố định bố cục cột, tránh lệch ô so với header */
+.mod-table-job-postings {
+    table-layout: fixed;
+}
+.mod-table-job-postings col.mod-col-index { width: 3.25rem; }
+.mod-table-job-postings col.mod-col-title { width: 34%; }
+.mod-table-job-postings col.mod-col-parent { width: 18%; }
+.mod-table-job-postings col.mod-col-status { width: 12%; }
+.mod-table-job-postings col.mod-col-mod { width: 12%; }
+.mod-table-job-postings col.mod-col-action { width: 14%; }
+
 .mod-table th {
     font-size: 0.72rem;
     text-transform: uppercase;

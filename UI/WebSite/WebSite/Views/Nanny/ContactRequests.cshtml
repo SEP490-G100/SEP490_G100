@@ -9,7 +9,7 @@
             <div class="px-6 py-6 sm:px-8 border-b border-orange-100 bg-[radial-gradient(circle_at_top_right,rgba(255,237,213,.82),transparent_32%),linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-orange-500">Parent zone</p>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-orange-500">Khu vực phụ huynh</p>
                         <h1 class="cr-page-title mt-2 text-3xl font-bold text-slate-900">Lịch sử yêu cầu liên hệ</h1>
                         <p class="mt-2 text-sm leading-6 text-slate-500 max-w-2xl">
                             Theo dõi các yêu cầu bạn đã gửi đến bảo mẫu, trạng thái phản hồi và lý do từ chối (nếu có).
@@ -38,7 +38,7 @@
                     </div>
                     <div class="cr-stat-card cr-stat-card--accepted rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
                         <span class="material-icons-round cr-stat-icon">verified</span>
-                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-emerald-600">Chấp nhận</p>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-emerald-600">Đã chấp nhận</p>
                         <p id="summaryAccepted" class="mt-2 text-2xl font-extrabold text-emerald-700">0</p>
                     </div>
                     <div class="cr-stat-card cr-stat-card--rejected rounded-2xl border border-rose-200 bg-rose-50 px-4 py-4">
@@ -577,13 +577,13 @@
             }
 
             listEl.innerHTML = items.map((item) => {
-                const nannyName = item?.nanny?.fullName || 'Nanny';
+                const nannyName = item?.nanny?.fullName || 'Bảo mẫu';
                 const nannyLocation = [item?.nanny?.district, item?.nanny?.city].filter(Boolean).join(', ') || 'Chưa cập nhật khu vực';
                 const salaryMin = Number(item?.nanny?.expectedSalaryMin ?? 0);
                 const salaryMax = Number(item?.nanny?.expectedSalaryMax ?? 0);
                 const salaryText = salaryMin > 0 || salaryMax > 0
                     ? `${salaryMin > 0 ? new Intl.NumberFormat('vi-VN').format(salaryMin) : '0'} - ${salaryMax > 0 ? new Intl.NumberFormat('vi-VN').format(salaryMax) : '0'} VND`
-                    : 'Thương lượng';
+                    : 'Thỏa thuận';
 
                 return `
                     <article class="cr-list-card ${getCardToneClass(Number(item?.status ?? 0))} p-5">

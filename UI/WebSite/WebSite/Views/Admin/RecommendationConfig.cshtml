@@ -12,7 +12,7 @@
         <h1 class="page-title mt-2">
             Cấu Hình <span class="gradient-text">Gợi Ý</span>
         </h1>
-        <p class="page-subtitle">Tiếnh chỉnh trọng số điểm và quản lý vector embedding. Thay đổi có hiệu lực trong vòng 5 phút.</p>
+        <p class="page-subtitle">Tinh chỉnh trọng số điểm và quản lý vector embedding. Thay đổi có hiệu lực trong vòng 5 phút.</p>
     </div>
 </div>
 
@@ -33,7 +33,7 @@
             </div>
             <div>
                 <h2 class="font-bold text-gray-800">Trọng Số Điểm</h2>
-                <p class="text-xs text-gray-400">semantic + salary + distance phải cộng bằng 1.0</p>
+                <p class="text-xs text-gray-400">Tổng ngữ nghĩa + lương + khoảng cách phải bằng 1,0</p>
             </div>
         </div>
 
@@ -43,7 +43,7 @@
             <div class="weight-row p-4 rounded-2xl border border-gray-100 bg-gray-50/50">
                 <div class="flex items-center justify-between mb-2">
                     <div>
-                        <span class="font-semibold text-sm text-gray-700">Ngữ Nghĩa (Cosine Similarity)</span>
+                        <span class="font-semibold text-sm text-gray-700">Ngữ nghĩa (độ tương đồng cosine)</span>
                         <span class="ml-2 text-xs text-gray-400">rec:semantic_weight</span>
                     </div>
                     <span id="lbl-semantic" class="font-bold text-orange-500 text-sm">@Model.SemanticWeight.ToString("P0")</span>
@@ -155,8 +155,8 @@
                     <span class="material-icons-round text-blue-500 text-2xl">auto_fix_high</span>
                 </div>
                 <div>
-                    <h2 class="font-bold text-gray-800">Embedding (Vector)</h2>
-                    <p class="text-xs text-gray-400">Tạo vector embedding thông qua Azure AI</p>
+                    <h2 class="font-bold text-gray-800">Vector nhúng (embedding)</h2>
+                    <p class="text-xs text-gray-400">Tạo vector nhúng qua Azure AI</p>
                 </div>
             </div>
 
@@ -164,12 +164,12 @@
                 <button onclick="reembed(false)"
                         class="w-full flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white py-2.5 rounded-xl font-semibold text-sm transition-all">
                     <span class="material-icons-round text-base">play_circle_outline</span>
-                    Chỉ Embed Mấu Chưa Xử Lý
+                    Chỉ nhúng các mục chưa xử lý
                 </button>
                 <button onclick="reembed(true)"
                         class="w-full flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-800 text-white py-2.5 rounded-xl font-semibold text-sm transition-all">
                     <span class="material-icons-round text-base">refresh</span>
-                    Buộc Embed Lại Tất Cả
+                    Buộc nhúng lại toàn bộ
                 </button>
             </div>
 
@@ -223,7 +223,7 @@
         document.getElementById('sumOk').classList.toggle('hidden', !ok);
         document.getElementById('sumWarning').classList.toggle('hidden', ok);
         if (!ok) document.getElementById('sumText').textContent =
-            `semantic + salary + distance = ${sum.toFixed(2)} (should be 1.00)`;
+            `Ngữ nghĩa + lương + khoảng cách = ${sum.toFixed(2)} (cần bằng 1,00)`;
     }
 
     async function saveWeight(key, name) {
@@ -252,7 +252,7 @@
             for (const p of pairs) {
                 const val = parseFloat(document.getElementById('inp-' + p.name).value);
                 if (isNaN(val) || val < 0 || val > 1) {
-                    showToast(`Giá trị không hợp lệ cho ${p.key}`, false); return;
+                    showToast(`Giá trị không hợp lệ (${p.key})`, false); return;
                 }
             }
             const results = await Promise.all(pairs.map(p => saveWeight(p.key, p.name)));
@@ -280,17 +280,17 @@
             el.classList.remove('hidden');
             if (data.success) {
                 el.className = 'mt-4 text-sm rounded-xl p-3 border bg-green-50 border-green-200 text-green-700';
-                el.innerHTML = `Đã embed <strong>${data.nanniesEmbedded}</strong> người giữ trẻ, <strong>${data.jobsEmbedded}</strong> việc làm${force ? ' (buộc)' : ''}.`;
+                el.innerHTML = `Đã tạo vector cho <strong>${data.nanniesEmbedded}</strong> bảo mẫu, <strong>${data.jobsEmbedded}</strong> việc làm${force ? ' (buộc)' : ''}.`;
             } else {
                 el.className = 'mt-4 text-sm rounded-xl p-3 border bg-red-50 border-red-200 text-red-700';
-                el.textContent = data.message || 'Embed thất bại.';
+                el.textContent = data.message || 'Tạo vector nhúng thất bại.';
             }
         } catch { showToast('Lỗi kết nối mạng', false); }
         finally {
             btn.disabled = false;
             btn.innerHTML = force
-                ? '<span class="material-icons-round text-base">refresh</span> Buộc Embed Lại Tất Cả'
-                : '<span class="material-icons-round text-base">play_circle_outline</span> Chỉ Embed Mấu Chưa Xử Lý';
+                ? '<span class="material-icons-round text-base">refresh</span> Buộc nhúng lại toàn bộ'
+                : '<span class="material-icons-round text-base">play_circle_outline</span> Chỉ nhúng các mục chưa xử lý';
         }
     }
 

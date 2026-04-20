@@ -33,9 +33,15 @@ public class VerificationRequestListDto
     public string? NannyCity      { get; set; }
 
     public string FullName    => $"{NannyFirstName} {NannyLastName}".Trim();
-    public string StatusLabel => Status switch { 2 => "Da duyet", 3 => "Da tu choi", _ => "Dang cho" };
+    public string StatusLabel => Status switch
+    {
+        2 => "Đã duyệt",
+        3 => "Từ chối",
+        1 => "Đang chờ",
+        _ => "Đang chờ"
+    };
     public string StatusClass => Status switch { 2 => "badge-active", 3 => "badge-inactive", _ => "badge-pending" };
-    public string RequestTypeLabel => RequestType == 2 ? "Giay kham suc khoe" : "Ho so xac minh";
+    public string RequestTypeLabel => RequestType == 2 ? "Giấy khám sức khỏe" : "Hồ sơ xác minh";
     public string ExpiryDateLabel => ExpiryDate.HasValue ? ExpiryDate.Value.ToString("dd/MM/yyyy") : "-";
 }
 
@@ -77,17 +83,23 @@ public class VerificationRequestDetailDto
     public List<VerificationDocumentDto> Documents { get; set; } = new();
 
     public string FullName    => $"{NannyFirstName} {NannyLastName}".Trim();
-    public string StatusLabel => Status switch { 2 => "Da duyet", 3 => "Da tu choi", _ => "Dang cho" };
+    public string StatusLabel => Status switch
+    {
+        2 => "Đã duyệt",
+        3 => "Từ chối",
+        1 => "Đang chờ",
+        _ => "Đang chờ"
+    };
     public string StatusClass => Status switch { 2 => "badge-active", 3 => "badge-inactive", _ => "badge-pending" };
-    public string RequestTypeLabel => RequestType == 2 ? "Giay kham suc khoe" : "Ho so xac minh";
+    public string RequestTypeLabel => RequestType == 2 ? "Giấy khám sức khỏe" : "Hồ sơ xác minh";
     public string EducationLabel => EducationLevel switch
     {
-        0 => "Khong chinh quy",
-        1 => "Trung hoc pho thong",
-        2 => "Cao dang",
-        3 => "Dai hoc",
-        4 => "Thac si",
-        _ => "Khac"
+        0 => "Trung học",
+        1 => "Cao đẳng",
+        2 => "Đại học",
+        3 => "Thạc sĩ",
+        4 => "Khác",
+        _ => "Chưa cập nhật"
     };
 }
 
@@ -101,10 +113,10 @@ public class VerificationSkillDto
 
     public string ProficiencyLabel => ProficiencyLevel switch
     {
-        1 => "Co ban",
-        2 => "Trung binh",
-        3 => "Nang cao",
-        _ => "Chua xac dinh"
+        1 => "Cơ bản",
+        2 => "Trung cấp",
+        3 => "Nâng cao",
+        _ => "Chưa cập nhật"
     };
 }
 
@@ -120,10 +132,10 @@ public class VerificationCertificateDto
 
     public string VerificationStatusLabel => VerificationStatus switch
     {
-        1 => "Dang cho",
-        2 => "Da duyet",
-        3 => "Da tu choi",
-        _ => "Chua gui"
+        1 => "Đang chờ duyệt",
+        2 => "Đã duyệt",
+        3 => "Từ chối",
+        _ => "Chưa nộp"
     };
 
     public string VerificationStatusClass => VerificationStatus switch
@@ -146,10 +158,10 @@ public class VerificationDocumentDto
 
     public string TypeLabel => DocumentType switch
     {
-        (int)VerificationDocumentType.IdentityCard => "Can cuoc cong dan",
-        (int)VerificationDocumentType.DegreeCertificate => "Bang cap / Chung chi",
-        (int)VerificationDocumentType.HealthCertificate => "Giay kham suc khoe",
-        _ => "Tai lieu"
+        (int)VerificationDocumentType.IdentityCard => "Căn cước công dân",
+        (int)VerificationDocumentType.DegreeCertificate => "Bằng cấp / Chứng chỉ",
+        (int)VerificationDocumentType.HealthCertificate => "Giấy khám sức khỏe",
+        _ => "Tài liệu"
     };
 
     public string TypeIcon => DocumentType switch
