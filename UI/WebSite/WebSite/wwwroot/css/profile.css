@@ -336,6 +336,11 @@
     background: linear-gradient(180deg, #ffffff, #f8fafc);
 }
 
+.avatar-preview-img.hidden,
+.avatar-preview-placeholder.hidden {
+    display: none !important;
+}
+
 .avatar-upload-actions {
     margin-top: 10px;
     display: flex;
@@ -501,6 +506,24 @@
     border-color: #cbd5e1;
     background: #f8fafc;
     color: #64748b;
+    pointer-events: none;
+    box-shadow: none;
+}
+
+.profile-status-btn.is-danger {
+    border-color: #ef4444;
+    background: linear-gradient(135deg, #f87171, #ef4444);
+    color: #fff;
+}
+
+.profile-status-btn.is-danger:hover {
+    box-shadow: 0 10px 20px rgba(239, 68, 68, .28);
+}
+
+.profile-status-btn.is-success-disabled {
+    border-color: #86efac;
+    background: linear-gradient(135deg, #34d399, #16a34a);
+    color: #fff;
     pointer-events: none;
     box-shadow: none;
 }
