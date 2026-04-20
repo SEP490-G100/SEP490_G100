@@ -61,9 +61,9 @@
             </div>
 
             <div class="relative">
-                <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">group</span>
+                <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">person_outline</span>
                 <select name="targetRole" onchange="this.form.submit()"
-                        class="search-input search-input--with-icon md:w-44 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
+                        class="search-input admin-filter-select md:w-44 !pl-9 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
                     <option value="">Tất Cả Vai Trò</option>
                     <option value="Parent" selected="@(currentTargetRole == "Parent" ? "selected" : null)">Phụ Huynh</option>
                     <option value="Nanny" selected="@(currentTargetRole == "Nanny" ? "selected" : null)">Người Giữ Trẻ</option>
@@ -73,7 +73,7 @@
             <div class="relative">
                 <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">toggle_on</span>
                 <select name="isActive" onchange="this.form.submit()"
-                        class="search-input search-input--with-icon md:w-44 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
+                        class="search-input admin-filter-select md:w-44 !pl-9 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
                     <option value="">Tất Cả Trạng Thái</option>
                     <option value="true" selected="@(currentStatus == true ? "selected" : null)">Hoạt Động</option>
                     <option value="false" selected="@(currentStatus == false ? "selected" : null)">Vô Hiệu Hóa</option>
