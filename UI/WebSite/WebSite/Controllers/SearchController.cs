@@ -324,7 +324,7 @@ public class SearchController : Controller
             var json = await response.Content.ReadAsStringAsync();
 
             if (response.IsSuccessStatusCode &&
-                tryParseApplyEventPayload(json, out var parentUserId, out var nannyUserId))
+                tryParseApplyEventPayload(json, out var parentUserId, out _))
             {
                 if (parentUserId != Guid.Empty)
                 {
@@ -337,17 +337,6 @@ public class SearchController : Controller
                     });
                 }
 
-                if (nannyUserId != Guid.Empty)
-                {
-                    await _notificationHub.Clients.User(nannyUserId.ToString()).SendAsync("notification:new", new
-                    {
-                        title = "Bạn đã gửi đơn ứng tuyển",
-                        message = "Đơn ứng tuyển đã được gửi. Vui lòng chờ phụ huynh phản hồi.",
-                        type = "job-application-submitted",
-                        toastType = "success",
-                        relatedId = jobPostingId
-                    });
-                }
             }
 
             return new ContentResult

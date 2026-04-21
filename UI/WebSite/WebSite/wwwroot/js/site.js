@@ -7,6 +7,23 @@
     warning: 'warning_amber',
     error: 'error'
   };
+  const TYPE_ALIASES = {
+    info: 'info',
+    'thong bao': 'info',
+    thongbao: 'info',
+    notification: 'info',
+    success: 'success',
+    ok: 'success',
+    'thanh cong': 'success',
+    thanhcong: 'success',
+    warning: 'warning',
+    warn: 'warning',
+    'canh bao': 'warning',
+    canhbao: 'warning',
+    error: 'error',
+    err: 'error',
+    loi: 'error'
+  };
 
   function ensureRoot() {
     let root = document.getElementById(ROOT_ID);
@@ -24,9 +41,18 @@
     return options || {};
   }
 
-  function getType(rawType) {
+  function normalizeTypeKey(rawType) {
     const type = String(rawType || 'info').trim().toLowerCase();
-    return Object.prototype.hasOwnProperty.call(ICON_BY_TYPE, type) ? type : 'info';
+    const normalized = typeof type.normalize === 'function'
+      ? type.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      : type;
+
+    return normalized.replace(/\s+/g, ' ');
+  }
+
+  function getType(rawType) {
+    const typeKey = normalizeTypeKey(rawType);
+    return TYPE_ALIASES[typeKey] || 'info';
   }
 
   function getDuration(rawDuration) {
@@ -61,7 +87,7 @@
     closeButton.type = 'button';
     closeButton.className = 'nm-toast__close material-icons-round';
     closeButton.textContent = 'close';
-    closeButton.setAttribute('aria-label', 'Đóng thông báo');
+    closeButton.setAttribute('aria-label', '\u0110\u00f3ng th\u00f4ng b\u00e1o');
     closeButton.hidden = !dismissible;
 
     toast.appendChild(icon);

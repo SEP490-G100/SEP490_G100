@@ -11,12 +11,14 @@
     var canShowFavoriteHeart = User.IsInRole("Parent") && isNanny && !suppressEngagementActions;
     var canContactNanny = isReadOnly && User.IsInRole("Parent") && isNanny && Model.UserId != Guid.Empty;
     var isContactAccepted = (bool?)ViewBag.IsContactAccepted == true;
+    var isContactRequestPending = (bool?)ViewBag.IsContactRequestPending == true;
     var hasHiringContext = (bool?)ViewBag.HasHiringContext == true;
     var hiringJobPostingId = (ViewBag.HiringJobPostingId as string) ?? "";
     var hiringJobApplicationId = (ViewBag.HiringJobApplicationId as string) ?? "";
     var contactRequestId = (ViewBag.ContactRequestId as string) ?? "";
     var canHireInHiringFlow = canContactNanny && hasHiringContext && !string.IsNullOrWhiteSpace(hiringJobPostingId) && !string.IsNullOrWhiteSpace(hiringJobApplicationId);
-    var canSendContactRequest = !suppressEngagementActions && canContactNanny && !hasHiringContext && Model.ContactNannyProfileId.HasValue && Model.ContactNannyProfileId.Value != Guid.Empty && !isContactAccepted;
+    var canShowContactRequestButton = !suppressEngagementActions && canContactNanny && !hasHiringContext && Model.ContactNannyProfileId.HasValue && Model.ContactNannyProfileId.Value != Guid.Empty && !isContactAccepted;
+    var canSendContactRequest = canShowContactRequestButton && !isContactRequestPending;
     var canMessageInContactFlow = canContactNanny && !hasHiringContext && isContactAccepted;
     var canHireInContactFlow = canMessageInContactFlow && !string.IsNullOrWhiteSpace(contactRequestId);
     var canMessageInHiringFlow = canContactNanny && hasHiringContext;
@@ -219,12 +221,14 @@
                         </button>
                     }
 
-                    @if (canSendContactRequest)
+                    @if (canShowContactRequestButton)
                     {
                         <button type="button"
                                 id="contactRequestBtn"
                                 data-nanny-profile-id="@(Model.ContactNannyProfileId?.ToString() ?? string.Empty)"
-                                class="profile-primary-btn">
+                                class="profile-primary-btn @(isContactRequestPending ? "opacity-70 cursor-not-allowed" : string.Empty)"
+                                disabled="@(isContactRequestPending ? "disabled" : null)"
+                                aria-disabled="@(isContactRequestPending ? "true" : "false")">
                             Gửi yêu cầu liên hệ
                         </button>
                     }
@@ -658,7 +662,29 @@
 
             var requestBtn = document.getElementById('contactRequestBtn');
             if (requestBtn) {
+                var setRequestButtonPendingState = function () {
+                    requestBtn.disabled = true;
+                    requestBtn.textContent = 'Đã gửi yêu cầu';
+                    requestBtn.classList.add('opacity-70', 'cursor-not-allowed');
+                    requestBtn.setAttribute('aria-disabled', 'true');
+                };
+
+                var restoreRequestButtonReadyState = function (label) {
+                    requestBtn.disabled = false;
+                    requestBtn.textContent = label || 'Gửi yêu cầu liên hệ';
+                    requestBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+                    requestBtn.setAttribute('aria-disabled', 'false');
+                };
+
+                if (requestBtn.disabled) {
+                    setRequestButtonPendingState();
+                }
+
                 requestBtn.addEventListener('click', async function () {
+                    if (requestBtn.disabled) {
+                        return;
+                    }
+
                     var nannyProfileId = requestBtn.getAttribute('data-nanny-profile-id');
                     if (!nannyProfileId) {
                         if (typeof window.showToast === 'function') {
@@ -669,6 +695,7 @@
 
                     requestBtn.disabled = true;
                     var oldText = requestBtn.textContent;
+                    var requestSent = false;
                     requestBtn.textContent = 'Đang gửi yêu cầu...';
 
                     try {
@@ -693,15 +720,17 @@
                         if (typeof window.showToast === 'function') {
                             window.showToast(json?.message || 'Đã gửi yêu cầu liên hệ thành công.', { type: 'success' });
                         }
+                        requestSent = true;
+                        setRequestButtonPendingState();
                         window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
-                        setTimeout(function () { window.location.reload(); }, 700);
                     } catch {
                         if (typeof window.showToast === 'function') {
                             window.showToast('Không thể gửi yêu cầu liên hệ.', { type: 'error' });
                         }
                     } finally {
-                        requestBtn.disabled = false;
-                        requestBtn.textContent = oldText;
+                        if (!requestSent) {
+                            restoreRequestButtonReadyState(oldText);
+                        }
                     }
                 });
             }
@@ -1044,4 +1073,3 @@
 {
     <partial name="~/Views/Hiring/_HireModal.cshtml" />
 }
-

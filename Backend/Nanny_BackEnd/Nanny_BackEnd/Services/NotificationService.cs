@@ -443,6 +443,9 @@ public class NotificationService
         if (!notification.CreatedBy.HasValue)
             return notification.Type == NotificationTypes.AdminBroadcast ? "Admin he thong" : "He thong";
 
+        if (notification.CreatedBy.Value == notification.UserId)
+            return string.Empty;
+
         return senderMap.TryGetValue(notification.CreatedBy.Value, out var senderName)
             ? senderName
             : "Nguoi dung";
