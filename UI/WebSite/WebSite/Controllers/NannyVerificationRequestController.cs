@@ -168,7 +168,7 @@ public class NannyVerificationRequestController : Controller
                 includeHealthCertificate: false,
                 includeDegreeCertificate: true);
 
-            return await SubmitVerificationPayloadAsync(payload, "Ban da gui yeu cau xac minh ho so thanh cong.");
+            return await SubmitVerificationPayloadAsync(payload, "Bạn đã gửi yêu cầu xác minh hồ sơ thành công.");
         }
         catch (InvalidOperationException ex)
         {
@@ -183,7 +183,7 @@ public class NannyVerificationRequestController : Controller
             return RedirectToAction(nameof(NannySubmitVerificationRequest), new
             {
                 toastType = "error",
-                toastMessage = "Không th? upload tai lieu len Azure Blob Storage. Vui lòng thử lại sau."
+                toastMessage = "Không thể upload tài liệu lên Azure Blob Storage. Vui lòng thử lại sau."
             });
         }
     }
@@ -204,16 +204,16 @@ public class NannyVerificationRequestController : Controller
         ValidateUploadSection(
             model.HealthCertificateFiles,
             nameof(model.HealthCertificateFiles),
-            "Ban phai upload anh cho muc giay kham suc khoe.",
+            "Bạn phải upload ảnh cho mục giấy khám sức khỏe.",
             isRequired: true);
 
         if (!model.HealthCertificateExpiryDate.HasValue)
         {
-            ModelState.AddModelError(nameof(model.HealthCertificateExpiryDate), "Ban phai chon ngay het han cho giay kham suc khoe.");
+            ModelState.AddModelError(nameof(model.HealthCertificateExpiryDate), "Bạn phải chọn ngày hết hạn cho giấy khám sức khỏe.");
         }
         else if (model.HealthCertificateExpiryDate.Value.Date <= DateTime.UtcNow.Date)
         {
-            ModelState.AddModelError(nameof(model.HealthCertificateExpiryDate), "Ngay het han phai lon hon ngay hien tai.");
+            ModelState.AddModelError(nameof(model.HealthCertificateExpiryDate), "Ngày hết hạn phải lớn hơn ngày hiện tại.");
         }
 
         if (!ModelState.IsValid)
@@ -230,7 +230,7 @@ public class NannyVerificationRequestController : Controller
                 includeHealthCertificate: true,
                 includeDegreeCertificate: false);
 
-            return await SubmitVerificationPayloadAsync(payload, "Ban da gui yeu cau giay kham suc khoe thanh cong.");
+            return await SubmitVerificationPayloadAsync(payload, "Bạn đã gửi yêu cầu giấy khám sức khỏe thành công.");
         }
         catch (InvalidOperationException ex)
         {

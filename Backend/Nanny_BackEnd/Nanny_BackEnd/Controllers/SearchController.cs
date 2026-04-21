@@ -69,17 +69,17 @@ public class SearchController : ControllerBase
         try
         {
             if (!User.IsInRole("Nanny"))
-                return StatusCode(403, Fail("Chi nanny moi co quyen luu bai dang."));
+                return StatusCode(403, Fail("Chỉ bảo mẫu mới có quyền lưu bài đăng."));
 
             var userId = GetCurrentUserId();
             var nannyProfile = await _db.NannyProfiles
                 .FirstOrDefaultAsync(n => n.UserId == userId && !n.IsDeleted);
 
             if (nannyProfile == null)
-                return BadRequest(Fail("Tai khoan khong phai nanny."));
+                return BadRequest(Fail("Tài khoản không phải bảo mẫu."));
 
             await _jobSvc.addFavoriteJob(nannyProfile.Id, jobPostingId);
-            return Ok(new { success = true, message = "Da luu bai dang." });
+            return Ok(new { success = true, message = "Đã lưu bài đăng." });
         }
         catch (InvalidOperationException ex)
         {
@@ -98,14 +98,14 @@ public class SearchController : ControllerBase
         try
         {
             if (!User.IsInRole("Nanny"))
-                return StatusCode(403, Fail("Chi nanny moi co quyen xem bai dang da luu."));
+                return StatusCode(403, Fail("Chỉ bảo mẫu mới có quyền xem bài đăng đã lưu."));
 
             var userId = GetCurrentUserId();
             var nannyProfile = await _db.NannyProfiles
                 .FirstOrDefaultAsync(n => n.UserId == userId && !n.IsDeleted);
 
             if (nannyProfile == null)
-                return BadRequest(Fail("Tai khoan khong phai nanny."));
+                return BadRequest(Fail("Tài khoản không phải bảo mẫu."));
 
             var result = await _jobSvc.getFavoriteJobs(nannyProfile.Id, page, pageSize, userId);
             return Ok(new
@@ -130,21 +130,21 @@ public class SearchController : ControllerBase
         try
         {
             if (!User.IsInRole("Nanny"))
-                return StatusCode(403, Fail("Chi nanny moi co quyen luu bai dang."));
+                return StatusCode(403, Fail("Chỉ bảo mẫu mới có quyền lưu bài đăng."));
 
             var userId = GetCurrentUserId();
             var nannyProfile = await _db.NannyProfiles
                 .FirstOrDefaultAsync(n => n.UserId == userId && !n.IsDeleted);
 
             if (nannyProfile == null)
-                return BadRequest(Fail("Tai khoan khong phai nanny."));
+                return BadRequest(Fail("Tài khoản không phải bảo mẫu."));
 
             var isFavorite = await _jobSvc.toggleFavoriteJob(nannyProfile.Id, jobPostingId, userId);
             return Ok(new
             {
                 success = true,
                 isFavorite,
-                message = isFavorite ? "Da luu bai dang." : "Da bo luu bai dang."
+                message = isFavorite ? "Đã lưu bài đăng." : "Đã bỏ lưu bài đăng."
             });
         }
         catch (KeyNotFoundException ex)
@@ -168,7 +168,7 @@ public class SearchController : ControllerBase
         try
         {
             if (!User.IsInRole("Nanny"))
-                return StatusCode(403, Fail("Chi nanny moi co quyen ung tuyen bai dang."));
+                return StatusCode(403, Fail("Chỉ bảo mẫu mới có quyền ứng tuyển bài đăng."));
 
             var userId = GetCurrentUserId();
             var nannyProfile = await _db.NannyProfiles
@@ -176,7 +176,7 @@ public class SearchController : ControllerBase
                 .FirstOrDefaultAsync(n => n.UserId == userId && !n.IsDeleted);
 
             if (nannyProfile == null)
-                return BadRequest(Fail("Tai khoan khong phai nanny."));
+                return BadRequest(Fail("Tài khoản không phải bảo mẫu."));
 
             var job = await _db.JobPostings
                 .Include(j => j.ParentProfile)
@@ -184,14 +184,14 @@ public class SearchController : ControllerBase
                 .FirstOrDefaultAsync(j => j.Id == jobPostingId && !j.IsDeleted);
 
             if (job == null)
-                return NotFound(Fail("Khong tim thay bai dang."));
+                return NotFound(Fail("Không tìm thấy bài đăng."));
 
             if (job.Status != (int)JobPostingStatus.Public ||
                 job.ModerationStatus != (int)JobPostingModerationStatus.Approved)
-                return BadRequest(Fail("Bai dang hien khong san sang de ung tuyen."));
+                return BadRequest(Fail("Bài đăng hiện không sẵn sàng để ứng tuyển."));
 
             if (job.ParentProfile?.UserId == userId)
-                return BadRequest(Fail("Ban khong the ung tuyen bai dang cua chinh minh."));
+                return BadRequest(Fail("Bạn không thể ứng tuyển bài đăng của chính mình."));
 
             var nowUtc = DateTime.UtcNow;
             var existingApplication = await _db.JobApplications
@@ -213,7 +213,7 @@ public class SearchController : ControllerBase
                 if (willConsumeMonthlyQuota && appliedThisMonth >= monthlyApplicationLimit)
                 {
                     return BadRequest(Fail(
-                        $"Ban da dat gioi han {monthlyApplicationLimit} luot ung tuyen trong thang nay. Vui long nang cap goi de ung tuyen them."));
+                        $"Bạn đã đạt giới hạn {monthlyApplicationLimit} lượt ứng tuyển trong tháng này. Vui lòng nâng cấp gói để ứng tuyển thêm."));
                 }
             }
 
@@ -222,7 +222,7 @@ public class SearchController : ControllerBase
             if (existingApplication != null)
             {
                 if (existingApplication.Status != 3)
-                    return Conflict(Fail("Ban da gui don ung tuyen cho bai dang nay."));
+                    return Conflict(Fail("Bạn đã gửi đơn ứng tuyển cho bài đăng này."));
 
                 existingApplication.Status = 0;
                 existingApplication.WithdrawnAt = null;
@@ -259,15 +259,15 @@ public class SearchController : ControllerBase
             await _db.SaveChangesAsync();
 
             var nannyName = $"{nannyProfile.User?.FirstName} {nannyProfile.User?.LastName}".Trim();
-            if (string.IsNullOrWhiteSpace(nannyName)) nannyName = "Mot nanny";
+            if (string.IsNullOrWhiteSpace(nannyName)) nannyName = "Một bảo mẫu";
 
             var parentUserId = job.ParentProfile?.UserId ?? Guid.Empty;
             if (parentUserId != Guid.Empty)
             {
                 await _notificationService.createNotification(
                     parentUserId,
-                    "Co nanny vua ung tuyen bai dang cua ban",
-                    $"{nannyName} vua gui don ung tuyen cho bai dang \"{job.Title}\".",
+                    "Có bảo mẫu vừa ứng tuyển bài đăng của bạn",
+                    $"{nannyName} vừa gửi đơn ứng tuyển cho bài đăng \"{job.Title}\".",
                     NotificationTypes.JobApplicationReceived,
                     job.Id,
                     "JobPosting",
@@ -276,8 +276,8 @@ public class SearchController : ControllerBase
 
             await _notificationService.createNotification(
                 userId,
-                "Ban da gui don ung tuyen",
-                $"Don ung tuyen cua ban cho bai dang \"{job.Title}\" da duoc gui. Vui long cho Parent phan hoi.",
+                "Bạn đã gửi đơn ứng tuyển",
+                $"Đơn ứng tuyển của bạn cho bài đăng \"{job.Title}\" đã được gửi. Vui lòng chờ phụ huynh phản hồi.",
                 NotificationTypes.JobApplicationSubmitted,
                 application.Id,
                 "JobApplication",
@@ -294,8 +294,8 @@ public class SearchController : ControllerBase
                     nannyUserId = userId
                 },
                 message = isReapplied
-                    ? "Ban da gui lai don ung tuyen. Vui long cho Parent phan hoi."
-                    : "Ban da ung tuyen thanh cong. Vui long cho Parent phan hoi."
+                    ? "Bạn đã gửi lại đơn ứng tuyển. Vui lòng chờ phụ huynh phản hồi."
+                    : "Bạn đã ứng tuyển thành công. Vui lòng chờ phụ huynh phản hồi."
             });
         }
         catch (Exception ex)
@@ -311,7 +311,7 @@ public class SearchController : ControllerBase
         try
         {
             if (!User.IsInRole("Nanny"))
-                return StatusCode(403, Fail("Chi nanny moi co quyen xem lich su ung tuyen."));
+                return StatusCode(403, Fail("Chỉ bảo mẫu mới có quyền xem lịch sử ứng tuyển."));
 
             page = page < 1 ? 1 : page;
             pageSize = pageSize < 1 ? 20 : Math.Min(pageSize, 50);
@@ -320,7 +320,7 @@ public class SearchController : ControllerBase
             var nannyProfile = await _db.NannyProfiles
                 .FirstOrDefaultAsync(n => n.UserId == userId && !n.IsDeleted);
             if (nannyProfile == null)
-                return BadRequest(Fail("Tai khoan khong phai nanny."));
+                return BadRequest(Fail("Tài khoản không phải bảo mẫu."));
 
             var baseQuery = _db.JobApplications
                 .Where(a => a.NannyProfileId == nannyProfile.Id && !a.IsDeleted)
@@ -340,7 +340,7 @@ public class SearchController : ControllerBase
             {
                 id = a.Id,
                 jobPostingId = a.JobPostingId,
-                jobTitle = a.JobPosting?.Title ?? "Tin dang",
+                jobTitle = a.JobPosting?.Title ?? "Tin đăng",
                 parentName = $"{a.JobPosting?.ParentProfile?.User?.FirstName} {a.JobPosting?.ParentProfile?.User?.LastName}".Trim(),
                 city = a.JobPosting?.City,
                 district = a.JobPosting?.District,
@@ -375,13 +375,13 @@ public class SearchController : ControllerBase
         try
         {
             if (!User.IsInRole("Nanny"))
-                return StatusCode(403, Fail("Chi nanny moi co quyen huy don ung tuyen."));
+                return StatusCode(403, Fail("Chỉ bảo mẫu mới có quyền hủy đơn ứng tuyển."));
 
             var userId = GetCurrentUserId();
             var nannyProfile = await _db.NannyProfiles
                 .FirstOrDefaultAsync(n => n.UserId == userId && !n.IsDeleted);
             if (nannyProfile == null)
-                return BadRequest(Fail("Tai khoan khong phai nanny."));
+                return BadRequest(Fail("Tài khoản không phải bảo mẫu."));
 
             var application = await _db.JobApplications
                 .FirstOrDefaultAsync(a =>
@@ -390,10 +390,10 @@ public class SearchController : ControllerBase
                     !a.IsDeleted);
 
             if (application == null)
-                return NotFound(Fail("Khong tim thay don ung tuyen."));
+                return NotFound(Fail("Không tìm thấy đơn ứng tuyển."));
 
             if (application.Status != 0)
-                return BadRequest(Fail("Chi don dang cho duyet moi co the huy."));
+                return BadRequest(Fail("Chỉ đơn đang chờ duyệt mới có thể hủy."));
 
             var nowUtc = DateTime.UtcNow;
             application.Status = 3; // Withdrawn
@@ -406,7 +406,7 @@ public class SearchController : ControllerBase
             return Ok(new
             {
                 success = true,
-                message = "Ban da huy don ung tuyen."
+                message = "Bạn đã hủy đơn ứng tuyển."
             });
         }
         catch (Exception ex)
@@ -422,10 +422,10 @@ public class SearchController : ControllerBase
         try
         {
             if (!User.IsInRole("Parent"))
-                return StatusCode(403, Fail("Chi parent moi co quyen xem request ung tuyen."));
+                return StatusCode(403, Fail("Chỉ phụ huynh mới có quyền xem đơn ứng tuyển."));
 
             if (status.HasValue && (status.Value < 0 || status.Value > 3))
-                return BadRequest(Fail("Trang thai don ung tuyen khong hop le."));
+                return BadRequest(Fail("Trạng thái đơn ứng tuyển không hợp lệ."));
 
             var userId = GetCurrentUserId();
             var parentProfileId = await _db.ParentProfiles
@@ -434,7 +434,7 @@ public class SearchController : ControllerBase
                 .FirstOrDefaultAsync();
 
             if (!parentProfileId.HasValue)
-                return BadRequest(Fail("Tai khoan khong phai parent."));
+                return BadRequest(Fail("Tài khoản không phải phụ huynh."));
 
             var job = await _db.JobPostings
                 .AsNoTracking()
@@ -444,7 +444,7 @@ public class SearchController : ControllerBase
                     !j.IsDeleted);
 
             if (job == null)
-                return NotFound(Fail("Khong tim thay bai dang hoac ban khong co quyen truy cap."));
+                return NotFound(Fail("Không tìm thấy bài đăng hoặc bạn không có quyền truy cập."));
 
             IQueryable<JobApplication> query = _db.JobApplications
                 .Where(a => a.JobPostingId == jobPostingId && !a.IsDeleted)
@@ -530,16 +530,16 @@ public class SearchController : ControllerBase
         try
         {
             if (!User.IsInRole("Parent"))
-                return StatusCode(403, Fail("Chi parent moi co quyen duyet request ung tuyen."));
+                return StatusCode(403, Fail("Chỉ phụ huynh mới có quyền duyệt đơn ứng tuyển."));
 
             if (request == null)
-                return BadRequest(Fail("Du lieu review khong hop le."));
+                return BadRequest(Fail("Dữ liệu duyệt đơn không hợp lệ."));
 
             if (request.Action is not 1 and not 2)
-                return BadRequest(Fail("Action khong hop le. Dung 1 (accept) hoac 2 (reject)."));
+                return BadRequest(Fail("Thao tác không hợp lệ. Dùng 1 (chấp nhận) hoặc 2 (từ chối)."));
 
             if (request.Action == 2 && string.IsNullOrWhiteSpace(request.RejectionReason))
-                return BadRequest(Fail("Vui long nhap ly do khi tu choi request."));
+                return BadRequest(Fail("Vui lòng nhập lý do khi từ chối đơn."));
 
             var userId = GetCurrentUserId();
             var parentProfileId = await _db.ParentProfiles
@@ -548,7 +548,7 @@ public class SearchController : ControllerBase
                 .FirstOrDefaultAsync();
 
             if (!parentProfileId.HasValue)
-                return BadRequest(Fail("Tai khoan khong phai parent."));
+                return BadRequest(Fail("Tài khoản không phải phụ huynh."));
 
             var application = await _db.JobApplications
                 .Include(a => a.JobPosting)
@@ -557,20 +557,20 @@ public class SearchController : ControllerBase
                 .FirstOrDefaultAsync(a => a.Id == applicationId && !a.IsDeleted);
 
             if (application == null)
-                return NotFound(Fail("Khong tim thay request ung tuyen."));
+                return NotFound(Fail("Không tìm thấy đơn ứng tuyển."));
 
             if (application.JobPosting == null || application.JobPosting.IsDeleted ||
                 application.JobPosting.ParentProfileId != parentProfileId.Value)
-                return NotFound(Fail("Khong tim thay request ung tuyen hoac ban khong co quyen xu ly."));
+                return NotFound(Fail("Không tìm thấy đơn ứng tuyển hoặc bạn không có quyền xử lý."));
 
             if (application.Status == 3)
-                return BadRequest(Fail("Request nay da duoc nanny huy."));
+                return BadRequest(Fail("Đơn ứng tuyển này đã được bảo mẫu hủy."));
 
             if (application.Status is 1 or 2)
-                return BadRequest(Fail("Request nay da duoc xu ly truoc do."));
+                return BadRequest(Fail("Đơn ứng tuyển này đã được xử lý trước đó."));
 
             if (application.Status != 0)
-                return BadRequest(Fail("Chi request dang cho duyet moi co the xu ly."));
+                return BadRequest(Fail("Chỉ đơn đang chờ duyệt mới có thể xử lý."));
 
             var nowUtc = DateTime.UtcNow;
             var isApproved = request.Action == 1;
@@ -587,8 +587,8 @@ public class SearchController : ControllerBase
             var nannyUserId = application.NannyProfile?.UserId ?? Guid.Empty;
             if (nannyUserId != Guid.Empty && !isApproved)
             {
-                var title = "Don ung tuyen bi tu choi";
-                var content = $"Parent da tu choi don ung tuyen cua ban cho bai dang \"{application.JobPosting.Title}\". Ly do: {application.RejectionReason}";
+                var title = "Đơn ứng tuyển bị từ chối";
+                var content = $"Phụ huynh đã từ chối đơn ứng tuyển của bạn cho bài đăng \"{application.JobPosting.Title}\". Lý do: {application.RejectionReason}";
 
                 await _notificationService.createNotification(
                     nannyUserId,
@@ -615,8 +615,8 @@ public class SearchController : ControllerBase
                     nannyUserId = nannyUserId
                 },
                 message = isApproved
-                    ? "Ban da chap nhan request ung tuyen."
-                    : "Ban da tu choi request ung tuyen."
+                    ? "Bạn đã chấp nhận đơn ứng tuyển."
+                    : "Bạn đã từ chối đơn ứng tuyển."
             });
         }
         catch (Exception ex)
@@ -657,11 +657,11 @@ public class SearchController : ControllerBase
     {
         return status switch
         {
-            0 => "Dang cho duyet",
-            1 => "Da duoc chap nhan",
-            2 => "Da bi tu choi",
-            3 => "Da huy",
-            _ => "Dang cap nhat"
+            0 => "Đang chờ duyệt",
+            1 => "Đã được chấp nhận",
+            2 => "Đã bị từ chối",
+            3 => "Đã hủy",
+            _ => "Đang cập nhật"
         };
     }
 

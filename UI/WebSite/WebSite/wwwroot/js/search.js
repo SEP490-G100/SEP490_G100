@@ -888,6 +888,8 @@ async function applyJob(jobId, event) {
   event?.preventDefault?.();
   event?.stopPropagation?.();
 
+  const realtimeToastType = 'job-application-submitted';
+
   if (!isLoggedIn()) {
     notifyToast('Vui lòng đăng nhập để ứng tuyển bài đăng.', 'warning');
     window.location.href = '/Auth/Login';
@@ -920,6 +922,9 @@ async function applyJob(jobId, event) {
     }
     if (applyTextEl) applyTextEl.textContent = 'Đang gửi...';
 
+    window.__nmNotificationToastSuppressType = realtimeToastType;
+    window.__nmNotificationToastSuppressUntil = Date.now() + 5000;
+
     const response = await fetch(`/Search/ApplyJob?jobPostingId=${encodeURIComponent(jobId)}`, {
       method: 'POST',
       credentials: 'same-origin'
@@ -929,6 +934,10 @@ async function applyJob(jobId, event) {
     const isSuccess = !!(json?.success || payload?.success);
 
     if (!isSuccess) {
+      if (String(window.__nmNotificationToastSuppressType || '').trim().toLowerCase() === realtimeToastType) {
+        window.__nmNotificationToastSuppressType = '';
+        window.__nmNotificationToastSuppressUntil = 0;
+      }
       notifyToast(json?.message || payload?.message || 'Không thể ứng tuyển bài đăng.', 'error');
       if (applyBtn) {
         applyBtn.disabled = false;
@@ -942,9 +951,13 @@ async function applyJob(jobId, event) {
     const activeJob = currentJobs.find((job) => normalizeGuid(job?.id) === normalizeGuid(jobId));
     if (activeJob) updatePreviewActionButtons(activeJob);
 
-    notifyToast('Gửi đơn thành công. Vui lòng chờ phụ huynh phản hồi.', 'success');
+    notifyToast(payload?.message || json?.message || 'Gửi đơn thành công. Vui lòng chờ phụ huynh phản hồi.', 'success');
     window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
   } catch {
+    if (String(window.__nmNotificationToastSuppressType || '').trim().toLowerCase() === realtimeToastType) {
+      window.__nmNotificationToastSuppressType = '';
+      window.__nmNotificationToastSuppressUntil = 0;
+    }
     notifyToast('Không thể ứng tuyển bài đăng.', 'error');
     if (applyBtn) {
       applyBtn.disabled = false;

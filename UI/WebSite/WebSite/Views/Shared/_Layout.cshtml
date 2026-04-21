@@ -1144,10 +1144,13 @@
                                     Gói của tôi
                                 </a>
 
-                                <a href="/Search/History" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                    <span class="material-icons-round text-base">history</span>
-                                    Lịch sử bài đăng
-                                </a>
+                                @if (User.IsInRole("Parent"))
+                                {
+                                    <a href="/Search/History" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        <span class="material-icons-round text-base">history</span>
+                                        Lịch sử bài đăng
+                                    </a>
+                                }
 
                                 @if (User.IsInRole("Parent") || User.IsInRole("Nanny"))
                                 {
@@ -1346,13 +1349,13 @@
                                         case 'verification-rejected':
                                             return { message: 'Yêu cầu xác minh của bạn đã bị từ chối.', type: 'warning' };
                                         case 'job-posting-approved':
-                                            return { message: 'Bai dang cua ban da duoc duyet.', type: 'success' };
+                                            return { message: 'Bài đăng của bạn đã được duyệt.', type: 'success' };
                                         case 'job-posting-rejected':
                                             return { message: 'Bài đăng của bạn đã bị từ chối.', type: 'warning' };
                                         case 'job-posting-pending':
                                             return { message: 'Bài đăng của bạn đang chờ kiểm duyệt viên duyệt.', type: 'success' };
                                         case 'nanny-profile-favorited':
-                                            return { message: 'Ho so cua ban vua duoc yeu thich.', type: 'success' };
+                                            return { message: 'Hồ sơ của bạn vừa được yêu thích.', type: 'success' };
                                         case 'system-warning':
                                             return { message: 'Có cảnh báo hệ thống cần xử lý.', type: 'warning' };
                                         default:

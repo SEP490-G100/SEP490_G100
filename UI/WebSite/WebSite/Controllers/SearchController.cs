@@ -41,7 +41,16 @@ public class SearchController : Controller
 
     [HttpGet]
     [Authorize]
-    public IActionResult History() => View();
+    public IActionResult History()
+    {
+        if (isParentRole())
+            return View();
+
+        if (isNannyRole())
+            return RedirectToAction(nameof(Applications));
+
+        return RedirectToAction(nameof(Index));
+    }
 
     [HttpGet]
     [Authorize]
@@ -112,6 +121,9 @@ public class SearchController : Controller
     [Authorize]
     public async Task<IActionResult> MyJobs()
     {
+        if (!isParentRole())
+            return StatusCode(403, new { success = false, total = 0, data = Array.Empty<object>(), message = "Bạn không có quyền xem lịch sử bài đăng." });
+
         SetAuthHeader();
         try
         {
@@ -332,6 +344,7 @@ public class SearchController : Controller
                         title = "Bạn đã gửi đơn ứng tuyển",
                         message = "Đơn ứng tuyển đã được gửi. Vui lòng chờ phụ huynh phản hồi.",
                         type = "job-application-submitted",
+                        toastType = "success",
                         relatedId = jobPostingId
                     });
                 }
