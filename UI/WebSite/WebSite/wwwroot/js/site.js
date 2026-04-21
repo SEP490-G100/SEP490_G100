@@ -110,5 +110,59 @@
     return removeToast;
   }
 
+  function syncCurrentUserAvatarSlot(slot, avatarUrl) {
+    if (!slot) return;
+
+    const nextUrl = typeof avatarUrl === 'string' ? avatarUrl.trim() : '';
+    const fallback = slot.querySelector('[data-current-user-avatar-fallback]');
+    let image = slot.querySelector('[data-current-user-avatar-img]');
+    const imageClassName = slot.getAttribute('data-current-user-avatar-img-class') || '';
+
+    if (nextUrl) {
+      if (!image) {
+        image = document.createElement('img');
+        image.alt = 'Avatar';
+        image.setAttribute('data-current-user-avatar-img', '');
+        if (imageClassName) {
+          image.className = imageClassName;
+        }
+
+        slot.insertBefore(image, fallback || null);
+      } else if (imageClassName) {
+        image.className = imageClassName;
+      }
+
+      image.src = nextUrl;
+      image.hidden = false;
+
+      if (fallback) {
+        fallback.classList.add('hidden');
+      }
+
+      return;
+    }
+
+    if (image) {
+      image.remove();
+    }
+
+    if (fallback) {
+      if (!fallback.textContent || !fallback.textContent.trim()) {
+        fallback.textContent = slot.getAttribute('data-current-user-avatar-initial') || 'U';
+      }
+
+      fallback.classList.remove('hidden');
+    }
+  }
+
+  function updateCurrentUserAvatar(avatarUrl) {
+    document.querySelectorAll('[data-current-user-avatar-slot]').forEach((slot) => {
+      syncCurrentUserAvatarSlot(slot, avatarUrl);
+    });
+
+    return typeof avatarUrl === 'string' ? avatarUrl.trim() : '';
+  }
+
   window.showToast = showToast;
+  window.updateCurrentUserAvatar = updateCurrentUserAvatar;
 })();

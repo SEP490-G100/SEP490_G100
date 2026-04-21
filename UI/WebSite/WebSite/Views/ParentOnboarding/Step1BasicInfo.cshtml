@@ -450,6 +450,10 @@
         if (avatarFileName) {
             avatarFileName.textContent = 'Đang dùng ảnh hiện tại';
         }
+
+        if (typeof window.updateCurrentUserAvatar === 'function') {
+            window.updateCurrentUserAvatar(currentAvatarUrl);
+        }
     }
 
     if (avatarPickBtn && avatarInput) {
@@ -807,4 +811,3 @@
     }
 })();
 </script>
-

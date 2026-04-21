@@ -319,6 +319,10 @@
 
             restoreInitialAvatar();
 
+            if (currentAvatarUrl && typeof window.updateCurrentUserAvatar === "function") {
+                window.updateCurrentUserAvatar(currentAvatarUrl);
+            }
+
             avatarUploadBtn.addEventListener("click", function () {
                 avatarInput.click();
             });
