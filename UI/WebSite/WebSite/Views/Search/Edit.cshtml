@@ -540,7 +540,7 @@ function bindClickOnlySelect(selectElement) {
     });
 }
 
-function attachSelectPicker(prefix, kind, selectId, inputId, emptyLabel, onValueChanged) {
+function attachSelectPicker(prefix, kind, selectId, inputId, emptyLabel, onValueChanged, alwaysShowAllOnOpen = false) {
     const select = document.getElementById(selectId);
     const input = document.getElementById(inputId);
     if (!select || !input || input.dataset.acReady === 'true') return;
@@ -597,16 +597,21 @@ function attachSelectPicker(prefix, kind, selectId, inputId, emptyLabel, onValue
         });
     };
 
+    const openPickerQuery = () => {
+        const currentValue = input.value.trim();
+        const shouldOpenAll = alwaysShowAllOnOpen
+            || !currentValue
+            || select.value === ''
+            || normalizeText(currentValue) === normalizedEmptyLabel;
+        return shouldOpenAll ? '' : currentValue;
+    };
+
     syncFromSelect();
     input.addEventListener('focus', () => {
-        const currentValue = input.value.trim();
-        const shouldOpenAll = !currentValue || select.value === '' || normalizeText(currentValue) === normalizedEmptyLabel;
-        renderOptions(shouldOpenAll ? '' : currentValue);
+        renderOptions(openPickerQuery());
     });
     input.addEventListener('click', () => {
-        const currentValue = input.value.trim();
-        const shouldOpenAll = !currentValue || select.value === '' || normalizeText(currentValue) === normalizedEmptyLabel;
-        renderOptions(shouldOpenAll ? '' : currentValue);
+        renderOptions(openPickerQuery());
     });
     input.addEventListener('blur', () => {
         setTimeout(() => {
@@ -623,7 +628,7 @@ function syncSelectPickerTexts() {
 
 function attachEditSelectPickers() {
     attachSelectPicker('ef', 'typePicker', 'ef-type', 'ef-typeText', 'Chọn loại công việc');
-    attachSelectPicker('ef', 'childPicker', 'ef-childProfileId', 'ef-childProfileText', 'Chọn bé thứ 1', handleEditChildChange);
+    attachSelectPicker('ef', 'childPicker', 'ef-childProfileId', 'ef-childProfileText', 'Chọn bé thứ 1', handleEditChildChange, true);
     attachSelectPicker('ef', 'skillPicker', 'ef-skillSelect', 'ef-skillSelectText', 'Chọn kỹ năng cần yêu cầu');
 }
 
@@ -922,7 +927,7 @@ function renderChildren(selectedChildId) {
 
     select.innerHTML = editChildren.length
         ? editChildren.map((child) => `<option value="${escapeHtml(child.id)}">${escapeHtml(child.label)}</option>`).join('')
-        : '<option value="">Chua co Child Profile</option>';
+        : '<option value="">Chưa có hồ sơ trẻ</option>';
 
     const normalizedSelectedId = String(selectedChildId || '').toLowerCase();
     const hasRequestedChild = normalizedSelectedId
@@ -949,9 +954,10 @@ async function loadEditPage() {
         const job = detailJson?.data || detailJson;
         const prefill = prefillJson?.data || {};
 
-        const primaryChildId = job.childProfileId || prefill.selectedChildProfileId || '';
-        editChildren = Array.isArray(prefill.children) && prefill.children.length
-            ? prefill.children
+        const prefillKids = prefill.children ?? prefill.Children;
+        const primaryChildId = job.childProfileId || prefill.selectedChildProfileId || prefill.SelectedChildProfileId || '';
+        editChildren = Array.isArray(prefillKids) && prefillKids.length
+            ? prefillKids
             : (Array.isArray(job.children) ? job.children : []);
         syncChildrenCountField();
         renderChildren(primaryChildId);

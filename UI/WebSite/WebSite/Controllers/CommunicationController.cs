@@ -36,6 +36,26 @@ public class CommunicationController : Controller
         return await proxy(() => _http.GetAsync("/api/communication/conversations"));
     }
 
+    /// <summary>GET /Communication/UnreadCount — badge tin nhắn trên header (giống Notification/UnreadCount).</summary>
+    [HttpGet]
+    public async Task<IActionResult> UnreadCount()
+    {
+        var token = HttpContext.Session.GetString("AccessToken");
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return Json(new { success = true, data = new { unreadCount = 0 } });
+        }
+
+        setAuthHeader();
+        var result = await proxy(() => _http.GetAsync("/api/communication/unread-count"));
+        if (result is ContentResult { StatusCode: 401 })
+        {
+            return Json(new { success = true, data = new { unreadCount = 0 } });
+        }
+
+        return result;
+    }
+
     // GET /Communication/Messages?conversationId=...&page=...&pageSize=...
     [HttpGet]
     public async Task<IActionResult> Messages(Guid conversationId, int page = 1, int pageSize = 30)
@@ -43,6 +63,15 @@ public class CommunicationController : Controller
         setAuthHeader();
         return await proxy(() =>
             _http.GetAsync($"/api/communication/conversations/{conversationId}/messages?page={page}&pageSize={pageSize}"));
+    }
+
+    /// <summary>POST /Communication/MarkRead?conversationId= — đánh dấu đã đọc mọi tin trong hội thoại (đồng bộ badge).</summary>
+    [HttpPost]
+    public async Task<IActionResult> MarkRead([FromQuery] Guid conversationId)
+    {
+        setAuthHeader();
+        return await proxy(() =>
+            _http.PostAsync($"/api/communication/conversations/{conversationId}/mark-read", null));
     }
 
     // POST /Communication/GetOrCreate

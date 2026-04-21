@@ -78,7 +78,7 @@ public class AuthController : Controller
 
         if (result == null || !result.Success)
         {
-            ModelState.AddModelError("", result?.Message ?? "ÄÄƒng nháº­p tháº¥t báº¡i.");
+            ModelState.AddModelError("", result?.Message ?? "Đăng nhập thất bại.");
             SetGoogleClientId();
             return View(model);
         }
@@ -113,12 +113,12 @@ public class AuthController : Controller
         if (hasRole(normalizedRoles, "Moderator"))
             return Redirect("/Moderator/Dashboard");
 
-        // Náº¿u user chÆ°a cÃ³ role (Ä‘áº·c biá»‡t case Ä‘Äƒng kÃ½/Ä‘Äƒng nháº­p Google láº§n Ä‘áº§u),
-        // luÃ´n báº¯t buá»™c chá»n role trÆ°á»›c khi cháº¡y onboarding theo role.
+        // Nếu user chưa có role (đặc biệt case đăng ký/đăng nhập Google lần đầu),
+        // luôn bắt buộc chọn role trước khi chạy onboarding theo role.
         if (!normalizedRoles.Any())
             return RedirectToAction("ChooseRole", "Auth");
 
-        // Sau khi Ä‘Äƒng nháº­p, kiá»ƒm tra tráº¡ng thÃ¡i onboarding (kÃ¨m Bearer token)
+        // Sau khi đăng nhập, kiểm tra trạng thái onboarding (kèm Bearer token)
         try
         {
             var obRequest = new HttpRequestMessage(HttpMethod.Get, "/api/onboarding/status")
@@ -133,7 +133,7 @@ public class AuthController : Controller
         }
         catch
         {
-            // Náº¿u cÃ³ lá»—i khi gá»i onboarding, bá» qua vÃ  cho vÃ o trang Ä‘Ã­ch máº·c Ä‘á»‹nh
+            // Nếu có lỗi khi gọi onboarding, bỏ qua và cho vào trang đích mặc định
         }
 
         return LocalRedirect(returnUrl ?? "/");
@@ -163,7 +163,7 @@ public class AuthController : Controller
 
             if (result == null || !result.Success)
             {
-                ModelState.AddModelError("", result?.Message ?? "ÄÄƒng kÃ½ tháº¥t báº¡i.");
+                ModelState.AddModelError("", result?.Message ?? "Đăng ký thất bại.");
                 SetGoogleClientId();
                 return View(model);
             }
@@ -172,7 +172,7 @@ public class AuthController : Controller
         }
         catch (HttpRequestException)
         {
-            ModelState.AddModelError("", "KhÃ´ng thá»ƒ káº¿t ná»‘i Ä‘áº¿n mÃ¡y chá»§. Vui lÃ²ng thá»­ láº¡i sau.");
+            ModelState.AddModelError("", "Không thể kết nối đến máy chủ. Vui lòng thử lại sau.");
             SetGoogleClientId();
             return View(model);
         }
@@ -187,7 +187,7 @@ public class AuthController : Controller
 
         if (result == null || !result.Success)
         {
-            TempData["Error"] = result?.Message ?? "ÄÄƒng nháº­p Google tháº¥t báº¡i.";
+            TempData["Error"] = result?.Message ?? "Đăng nhập Google thất bại.";
             return RedirectToAction("Login");
         }
 
@@ -221,8 +221,8 @@ public class AuthController : Controller
         if (hasRole(normalizedRoles, "Moderator"))
             return Redirect("/Moderator/Dashboard");
 
-        // Náº¿u user chÆ°a cÃ³ role (Ä‘áº·c biá»‡t case Ä‘Äƒng kÃ½ Google láº§n Ä‘áº§u),
-        // luÃ´n báº¯t buá»™c chá»n role trÆ°á»›c khi cháº¡y onboarding theo role.
+        // Nếu user chưa có role (đặc biệt case đăng ký Google lần đầu),
+        // luôn bắt buộc chọn role trước khi chạy onboarding theo role.
         if (!normalizedRoles.Any())
             return RedirectToAction("ChooseRole", "Auth");
 
@@ -257,7 +257,7 @@ public class AuthController : Controller
 
         if (result == null || !result.Success)
         {
-            ModelState.AddModelError("", result?.Message ?? "CÃ³ lá»—i xáº£y ra.");
+            ModelState.AddModelError("", result?.Message ?? "Có lỗi xảy ra.");
             return View(model);
         }
 
@@ -270,7 +270,7 @@ public class AuthController : Controller
     {
         if (string.IsNullOrWhiteSpace(email))
         {
-            TempData["Error"] = "KhÃ´ng xÃ¡c Ä‘á»‹nh Ä‘Æ°á»£c email. Vui lÃ²ng thá»­ láº¡i tá»« Ä‘áº§u.";
+            TempData["Error"] = "Không xác định được email. Vui lòng thử lại từ đầu.";
             return RedirectToAction("ForgotPassword");
         }
 
@@ -280,7 +280,7 @@ public class AuthController : Controller
         if (result == null || !result.Success)
             TempData["Error"] = result?.Message ?? "Gửi lại mã OTP thất bại. Vui lòng thử lại.";
         else
-            TempData["Success"] = "ÄÃ£ gá»­i láº¡i mÃ£ OTP. Vui lÃ²ng kiá»ƒm tra email (ká»ƒ cáº£ há»™p thÆ° spam).";
+            TempData["Success"] = "Đã gửi lại mã OTP. Vui lòng kiểm tra email (kể cả hộp thư spam).";
 
         return RedirectToAction("ResetPassword", new { email });
     }
@@ -303,11 +303,11 @@ public class AuthController : Controller
 
         if (result == null || !result.Success)
         {
-            ModelState.AddModelError("", result?.Message ?? "Äáº·t láº¡i máº­t kháº©u tháº¥t báº¡i.");
+            ModelState.AddModelError("", result?.Message ?? "Đặt lại mật khẩu thất bại.");
             return View(model);
         }
 
-        TempData["Success"] = "Äáº·t láº¡i máº­t kháº©u thÃ nh cÃ´ng. Vui lÃ²ng Ä‘Äƒng nháº­p.";
+        TempData["Success"] = "Đặt lại mật khẩu thành công. Vui lòng đăng nhập.";
         return RedirectToAction("Login");
     }
 
@@ -320,7 +320,7 @@ public class AuthController : Controller
     {
         if (string.IsNullOrWhiteSpace(email))
         {
-            TempData["Error"] = "KhÃ´ng xÃ¡c Ä‘á»‹nh Ä‘Æ°á»£c email. Vui lÃ²ng Ä‘Äƒng kÃ½ láº¡i.";
+            TempData["Error"] = "Không xác định được email. Vui lòng đăng ký lại.";
             return RedirectToAction("Register");
         }
 
@@ -330,7 +330,7 @@ public class AuthController : Controller
         if (result == null || !result.Success)
             TempData["Error"] = result?.Message ?? "Gửi lại mã OTP thất bại. Vui lòng thử lại.";
         else
-            TempData["Success"] = "ÄÃ£ gá»­i láº¡i mÃ£ OTP. Vui lÃ²ng kiá»ƒm tra email.";
+            TempData["Success"] = "Đã gửi lại mã OTP. Vui lòng kiểm tra email.";
 
         return RedirectToAction("VerifyEmail", new { email });
     }
@@ -349,17 +349,17 @@ public class AuthController : Controller
             return View(model);
         }
 
-        // XoÃ¡ session Ä‘ang giá»¯ token Pending Ä‘á»ƒ buá»™c Ä‘Äƒng nháº­p láº¡i vá»›i token má»›i (Ä‘Ã£ kÃ­ch hoáº¡t)
-        // Náº¿u khÃ´ng lÃ m bÆ°á»›c nÃ y, đăng nhập GET sáº½ phÃ¡t hiá»‡n cookie cÅ© vÃ  redirect tháº³ng "/" bá» qua onboarding
+        // Xóa session đang giữ token Pending để buộc đăng nhập lại với token mới (đã kích hoạt)
+        // Nếu không làm bước này, đăng nhập GET sẽ phát hiện cookie cũ và redirect thẳng "/" bỏ qua onboarding
         HttpContext.Session.Clear();
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
-        TempData["Success"] = "XÃ¡c thá»±c email thÃ nh cÃ´ng! Vui lÃ²ng Ä‘Äƒng nháº­p Ä‘á»ƒ tiáº¿p tá»¥c.";
+        TempData["Success"] = "Xác thực email thành công! Vui lòng đăng nhập để tiếp tục.";
         return RedirectToAction("Login");
     }
 
     /// <summary>
-    /// Cho phÃ©p user chá»n vai trÃ² (Nanny hoáº·c Parent) khi láº§n Ä‘áº§u tiÃªn Ä‘Äƒng nháº­p
+    /// Cho phép user chọn vai trò (Nanny hoặc Parent) khi lần đầu tiên đăng nhập
     /// </summary>
     [Authorize, HttpGet]
     public IActionResult ChooseRole() => View();
@@ -369,14 +369,14 @@ public class AuthController : Controller
     {
         if (string.IsNullOrEmpty(role) || (role != "Nanny" && role != "Parent"))
         {
-            ModelState.AddModelError("", "Vui lÃ²ng chá»n má»™t vai trÃ² há»£p lá»‡.");
+            ModelState.AddModelError("", "Vui lòng chọn một vai trò hợp lệ.");
             return View();
         }
 
         var token = HttpContext.Session.GetString("AccessToken");
         if (string.IsNullOrEmpty(token))
         {
-            TempData["Error"] = "PhiÃªn Ä‘Äƒng nháº­p háº¿t háº¡n. Vui lÃ²ng Ä‘Äƒng nháº­p láº¡i.";
+            TempData["Error"] = "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.";
             return RedirectToAction("Login");
         }
 
@@ -393,22 +393,22 @@ public class AuthController : Controller
 
             if (result == null || !result.Success)
             {
-                ModelState.AddModelError("", result?.Message ?? "Lá»—i khi cáº­p nháº­t vai trÃ². Vui lÃ²ng thá»­ láº¡i.");
+                ModelState.AddModelError("", result?.Message ?? "Lỗi khi cập nhật vai trò. Vui lòng thử lại.");
                 return View();
             }
 
-            // Backend tráº£ vá» token má»›i chá»©a role Ä‘Ã£ cáº­p nháº­t â†’ refresh session + cookie claims
+            // Backend trả về token mới chứa role đã cập nhật -> refresh session + cookie claims
             if (result.Data != null)
             {
                 await SignInUserAsync(result.Data);
             }
 
-            // Sau khi set role thÃ nh cÃ´ng, chuyá»ƒn hÆ°á»›ng tá»›i Onboarding/Start
+            // Sau khi set role thành công, chuyển hướng tới Onboarding/Start
             return RedirectToAction("Start", "Onboarding");
         }
         catch (Exception ex)
         {
-            ModelState.AddModelError("", $"CÃ³ lá»—i xáº£y ra: {ex.Message}");
+            ModelState.AddModelError("", $"Có lỗi xảy ra: {ex.Message}");
             return View();
         }
     }
@@ -431,7 +431,7 @@ public class AuthController : Controller
 
         if (string.IsNullOrEmpty(HttpContext.Session.GetString("AccessToken")))
         {
-            ModelState.AddModelError("", "PhiÃªn Ä‘Äƒng nháº­p háº¿t háº¡n. Vui lÃ²ng Ä‘Äƒng nháº­p láº¡i.");
+            ModelState.AddModelError("", "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.");
             return View(model);
         }
 
@@ -441,11 +441,11 @@ public class AuthController : Controller
 
         if (result == null || !result.Success)
         {
-            ModelState.AddModelError("", result?.Message ?? "Äá»•i máº­t kháº©u tháº¥t báº¡i.");
+            ModelState.AddModelError("", result?.Message ?? "Đổi mật khẩu thất bại.");
             return View(model);
         }
 
-        TempData["Success"] = "Äá»•i máº­t kháº©u thÃ nh cÃ´ng!";
+        TempData["Success"] = "Đổi mật khẩu thành công!";
         return RedirectToAction("ChangePassword");
     }
 
@@ -588,7 +588,7 @@ public class AuthController : Controller
     }
 
     /// <summary>
-    /// Tá»± Ä‘á»™ng refresh AccessToken náº¿u cÃ²n dÆ°á»›i 2 phÃºt háº¿t háº¡n.
+    /// Tự động refresh AccessToken nếu còn dưới 2 phút hết hạn.
     /// </summary>
     private async Task EnsureTokenFreshAsync()
     {
@@ -613,7 +613,7 @@ public class AuthController : Controller
             if (result?.Success == true && result.Data != null)
                 await SignInUserAsync(result.Data);
         }
-        catch { /* silent â€” khÃ´ng block main flow */ }
+        catch { /* silent - không block main flow */ }
     }
 
     private static async Task<ApiResult?> ReadApiResult(HttpResponseMessage response) =>
@@ -628,7 +628,7 @@ public class AuthController : Controller
         }
         catch
         {
-            return new ApiResult<T> { Success = false, Message = $"Lá»—i server (HTTP {(int)response.StatusCode})." };
+            return new ApiResult<T> { Success = false, Message = $"Lỗi server (HTTP {(int)response.StatusCode})." };
         }
     }
 }

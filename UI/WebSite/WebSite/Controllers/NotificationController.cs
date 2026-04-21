@@ -31,8 +31,31 @@ public class NotificationController : Controller
     [HttpGet]
     public async Task<IActionResult> UnreadCount()
     {
+        var token = HttpContext.Session.GetString("AccessToken");
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return Json(new
+            {
+                success = true,
+                data = new { unreadCount = 0 }
+            });
+        }
+
         setAuthHeader();
-        return await proxy(() => _http.GetAsync("/api/notifications/unread-count"));
+        var result = await proxy(() => _http.GetAsync("/api/notifications/unread-count"));
+
+        // Keep navbar polling resilient when backend token is expired/invalid.
+        // Returning zero prevents noisy 401 logs while user remains on current page.
+        if (result is ContentResult { StatusCode: 401 })
+        {
+            return Json(new
+            {
+                success = true,
+                data = new { unreadCount = 0 }
+            });
+        }
+
+        return result;
     }
 
     [HttpPost]

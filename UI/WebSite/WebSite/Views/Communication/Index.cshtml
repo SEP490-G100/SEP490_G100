@@ -815,6 +815,31 @@
         let hubConnection = null;
         let joinedConvId = null;
 
+        function notifyHeaderChatUnread() {
+            try {
+                window.dispatchEvent(new CustomEvent('nm:chat-unread-refresh'));
+            } catch { /* ignore */ }
+        }
+
+        /** Đồng bộ DB (ReadAt) — badge header / danh sách hội thoại cập nhật đúng. */
+        async function markConversationReadOnServer(convId) {
+            if (!convId) return;
+            try {
+                const res = await fetch(`/Communication/MarkRead?conversationId=${encodeURIComponent(convId)}`, {
+                    method: 'POST',
+                    credentials: 'same-origin'
+                });
+                if (res.ok) {
+                    const conv = allConversations.find(c => String(c.id) === String(convId));
+                    if (conv) {
+                        conv.unreadCount = 0;
+                        renderConversations(allConversations);
+                    }
+                }
+            } catch { /* ignore */ }
+            notifyHeaderChatUnread();
+        }
+
         // ════════════════════════════════════════════════════════════════════
         //  INIT
         // ════════════════════════════════════════════════════════════════════
@@ -862,6 +887,7 @@
                 const json = await res.json();
                 allConversations = json.data ?? [];
                 renderConversations(allConversations);
+                notifyHeaderChatUnread();
             } catch {
                 document.getElementById('convList').innerHTML = '<p style="text-align:center;color:#9ca3af;padding:20px;font-size:14px;">Không thể tải danh sách.</p>';
             }
@@ -951,6 +977,7 @@
 
                 updateBlockUI(data.isBlocked);
                 renderMessages(data.messages ?? []);
+                await markConversationReadOnServer(convId);
             } catch {
                 document.getElementById('chatMessages').innerHTML = '<p style="text-align:center;color:#9ca3af;padding:20px;">Không thể tải tin nhắn.</p>';
             }
@@ -1331,14 +1358,18 @@
                 .withAutomaticReconnect()
                 .build();
 
-            hubConnection.on('ReceiveMessage', message => {
+            hubConnection.on('ReceiveMessage', async (message) => {
                 if (!message || !message.conversationId) return;
                 if (String(message.conversationId) === String(activeConvId)) {
                     const isMine = resolveMessageIsMine(message);
                     appendMessage({ ...message, isMine });
+                    if (!isMine) {
+                        await markConversationReadOnServer(message.conversationId);
+                    }
                 } else {
                     const isMine = typeof message.isMine === 'boolean' ? message.isMine : false;
                     updateConversationPreview(message, isMine);
+                    notifyHeaderChatUnread();
                 }
             });
 
