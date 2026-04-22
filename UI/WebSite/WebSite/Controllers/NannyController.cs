@@ -182,7 +182,7 @@ public class NannyController : Controller
 
             var json = await response.Content.ReadAsStringAsync();
             if (response.IsSuccessStatusCode &&
-                tryParseContactRequestEventPayload(json, out var requestId, out var parentUserId, out var nannyUserId))
+                tryParseContactRequestEventPayload(json, out var requestId, out _, out var nannyUserId))
             {
                 if (nannyUserId != Guid.Empty)
                 {
@@ -195,16 +195,6 @@ public class NannyController : Controller
                     });
                 }
 
-                if (parentUserId != Guid.Empty)
-                {
-                    await _notificationHub.Clients.User(parentUserId.ToString()).SendAsync("notification:new", new
-                    {
-                        title = "Bạn đã gửi yêu cầu liên hệ",
-                        message = "Yêu cầu liên hệ đã được gửi thành công.",
-                        type = "contact-request-submitted",
-                        relatedId = requestId
-                    });
-                }
             }
 
             return new ContentResult
@@ -709,5 +699,4 @@ public class NannyController : Controller
         public string? ResponseMessage { get; set; }
     }
 }
-
 

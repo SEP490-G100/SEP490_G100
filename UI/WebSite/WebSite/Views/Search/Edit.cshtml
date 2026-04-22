@@ -994,7 +994,7 @@ async function loadEditPage() {
         hasLoadedEditData = true;
         updateSubmitState();
     } catch {
-        showToast('Không tải được thông tin bài đăng.', 'Lỗi');
+                    showToast('Không tải được thông tin bài đăng.', 'error');
         hasLoadedEditData = false;
         updateSubmitState();
     }
@@ -1028,7 +1028,7 @@ document.getElementById('editPageForm')?.addEventListener('submit', async (event
     event.preventDefault();
     if (!hasLoadedEditData) return;
     if (!isFormDirty()) {
-        showToast('Chưa có thay đổi để lưu bài đăng.', 'Thông báo');
+                showToast('Chưa có thay đổi để lưu bài đăng.', 'info');
         updateSubmitState();
         return;
     }
@@ -1037,7 +1037,7 @@ document.getElementById('editPageForm')?.addEventListener('submit', async (event
     if (validSkills.length !== editSkills.length) {
         editSkills = validSkills;
         renderSkillCollection();
-        showToast('Một số kỹ năng cũ không còn hoạt động, hệ thống đã bỏ qua để bạn lưu được bài đăng.', 'Cảnh báo');
+                    showToast('Một số kỹ năng cũ không còn hoạt động, hệ thống đã bỏ qua để bạn lưu được bài đăng.', 'warning');
     }
 
     const numberOfChildren = syncChildrenCountField();

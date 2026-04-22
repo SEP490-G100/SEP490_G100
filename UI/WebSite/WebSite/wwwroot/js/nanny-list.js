@@ -351,15 +351,15 @@ async function sendContactRequest(nannyProfileId, message) {
 
     const json = await response.json();
     if (!response.ok || !json?.success) {
-      showNannyToast(json?.message || 'Khong the gui request contact.', 'error');
+      showNannyToast(json?.message || 'Không thể gửi yêu cầu liên hệ.', 'error');
       return null;
     }
 
-    showNannyToast(json?.message || 'Da gui request contact thanh cong.', 'success');
+    showNannyToast(json?.message || 'Đã gửi yêu cầu liên hệ thành công.', 'success');
     window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
     return json;
   } catch {
-    showNannyToast('Khong the gui request contact.', 'error');
+    showNannyToast('Không thể gửi yêu cầu liên hệ.', 'error');
     return null;
   }
 }

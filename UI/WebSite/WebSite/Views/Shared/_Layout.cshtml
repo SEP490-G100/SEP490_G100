@@ -106,6 +106,7 @@
     <link href="~/css/onboarding.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/verification-prompt.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/unified-dropdown.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/toast.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/homepage.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&amp;display=swap"
           rel="stylesheet" />
@@ -530,96 +531,6 @@
             margin-bottom: 10px;
         }
 
-        .nm-toast-root {
-            position: fixed;
-            right: 18px;
-            bottom: 18px;
-            z-index: 12050;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 10px;
-            pointer-events: none;
-        }
-
-        .nm-toast {
-            width: min(420px, calc(100vw - 24px));
-            display: grid;
-            grid-template-columns: auto 1fr auto;
-            align-items: center;
-            gap: 9px;
-            padding: 12px 14px;
-            border-radius: 15px;
-            border: 1px solid rgba(255, 255, 255, .14);
-            box-shadow: 0 18px 36px rgba(15, 23, 42, .2);
-            color: #fff;
-            transform: translateY(12px) scale(.98);
-            opacity: 0;
-            transition: opacity .22s ease, transform .22s ease;
-            pointer-events: auto;
-            backdrop-filter: blur(6px);
-        }
-
-        .nm-toast.show {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
-
-        .nm-toast__icon {
-            width: 22px;
-            height: 22px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            border-radius: 999px;
-            background: rgba(255,255,255,.78);
-            color: rgba(15,23,42,.68);
-        }
-
-        .nm-toast__text {
-            font-size: 13px;
-            line-height: 1.45;
-            font-weight: 800;
-            word-break: break-word;
-        }
-
-        .nm-toast__close {
-            width: 22px;
-            height: 22px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 999px;
-            border: none;
-            background: rgba(255, 255, 255, .22);
-            color: #fff;
-            cursor: pointer;
-            font-size: 17px;
-            transition: background .18s ease, transform .18s ease;
-        }
-
-        .nm-toast__close:hover {
-            background: rgba(255, 255, 255, .35);
-            transform: scale(1.03);
-        }
-
-        .nm-toast--info {
-            background: linear-gradient(135deg, rgba(15,23,42,.94), rgba(30,41,59,.94));
-        }
-
-        .nm-toast--success {
-            background: linear-gradient(135deg, #0f8c67, #10946d);
-        }
-
-        .nm-toast--warning {
-            background: linear-gradient(135deg, #c56a09, #ea580c);
-        }
-
-        .nm-toast--error {
-            background: linear-gradient(135deg, #c22525, #dc2626);
-        }
-
         .nm-user-sheet-backdrop {
             position: fixed;
             top: 0;
@@ -966,17 +877,6 @@
                 width: min(360px, calc(100vw - 16px));
             }
 
-            .nm-toast-root {
-                right: 10px;
-                left: 10px;
-                bottom: 12px;
-                align-items: stretch;
-            }
-
-            .nm-toast {
-                width: 100%;
-            }
-
             .nm-user-sheet {
                 width: min(370px, calc(100vw - 8px));
             }
@@ -1082,15 +982,19 @@
                                     aria-controls="dropdownMenu"
                                     aria-expanded="false"
                                     class="flex items-center gap-2 px-3 py-2 rounded-2xl border border-orange-100 bg-white/80 hover:bg-orange-50 dark:hover:bg-gray-800 transition-all">
-                                <div class="w-8 h-8 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full overflow-hidden flex items-center justify-center text-white text-sm font-bold">
+                                <div class="w-8 h-8 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full overflow-hidden flex items-center justify-center text-white text-sm font-bold"
+                                     data-current-user-avatar-slot
+                                     data-current-user-avatar-img-class="w-full h-full object-cover"
+                                     data-current-user-avatar-initial="@currentUserInitial">
                                     @if (!string.IsNullOrWhiteSpace(currentUserAvatar))
                                     {
-                                        <img src="@currentUserAvatar" alt="Avatar" class="w-full h-full object-cover" />
+                                        <img src="@currentUserAvatar"
+                                             alt="Avatar"
+                                             class="w-full h-full object-cover"
+                                             data-current-user-avatar-img />
                                     }
-                                    else
-                                    {
-                                        @currentUserInitial
-                                    }
+                                    <span data-current-user-avatar-fallback
+                                          class="@(string.IsNullOrWhiteSpace(currentUserAvatar) ? string.Empty : "hidden")">@currentUserInitial</span>
                                 </div>
                                 <span class="hidden sm:block text-sm font-semibold text-gray-700 dark:text-gray-300">
                                     @currentUserFirstName
@@ -1106,15 +1010,15 @@
                                     </button>
                                 </div>
                                 <div class="nm-user-sheet__profile flex flex-col px-3 py-2 border-b border-gray-100 dark:border-gray-700 mb-1 rounded-md">
-                                    <span class="nm-user-sheet__avatar">
+                                    <span class="nm-user-sheet__avatar"
+                                          data-current-user-avatar-slot
+                                          data-current-user-avatar-initial="@currentUserInitial">
                                         @if (!string.IsNullOrWhiteSpace(currentUserAvatar))
                                         {
-                                            <img src="@currentUserAvatar" alt="Avatar" />
+                                            <img src="@currentUserAvatar" alt="Avatar" data-current-user-avatar-img />
                                         }
-                                        else
-                                        {
-                                            @currentUserInitial
-                                        }
+                                        <span data-current-user-avatar-fallback
+                                              class="@(string.IsNullOrWhiteSpace(currentUserAvatar) ? string.Empty : "hidden")">@currentUserInitial</span>
                                     </span>
                                     <div class="nm-user-sheet__profile-meta">
                                         <p class="nm-user-sheet__name">
@@ -1144,10 +1048,13 @@
                                     Gói của tôi
                                 </a>
 
-                                <a href="/Search/History" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                    <span class="material-icons-round text-base">history</span>
-                                    Lịch sử bài đăng
-                                </a>
+                                @if (User.IsInRole("Parent"))
+                                {
+                                    <a href="/Search/History" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        <span class="material-icons-round text-base">history</span>
+                                        Lịch sử bài đăng
+                                    </a>
+                                }
 
                                 @if (User.IsInRole("Parent") || User.IsInRole("Nanny"))
                                 {
@@ -1346,13 +1253,13 @@
                                         case 'verification-rejected':
                                             return { message: 'Yêu cầu xác minh của bạn đã bị từ chối.', type: 'warning' };
                                         case 'job-posting-approved':
-                                            return { message: 'Bai dang cua ban da duoc duyet.', type: 'success' };
+                                            return { message: 'Bài đăng của bạn đã được duyệt.', type: 'success' };
                                         case 'job-posting-rejected':
                                             return { message: 'Bài đăng của bạn đã bị từ chối.', type: 'warning' };
                                         case 'job-posting-pending':
                                             return { message: 'Bài đăng của bạn đang chờ kiểm duyệt viên duyệt.', type: 'success' };
                                         case 'nanny-profile-favorited':
-                                            return { message: 'Ho so cua ban vua duoc yeu thich.', type: 'success' };
+                                            return { message: 'Hồ sơ của bạn vừa được yêu thích.', type: 'success' };
                                         case 'system-warning':
                                             return { message: 'Có cảnh báo hệ thống cần xử lý.', type: 'warning' };
                                         default:

@@ -20,7 +20,7 @@ public class ContractController : ControllerBase
     {
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
-            return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+            return Unauthorized(Fail("Không xác định được người dùng."));
 
         try
         {
@@ -38,7 +38,7 @@ public class ContractController : ControllerBase
     {
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
-            return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+            return Unauthorized(Fail("Không xác định được người dùng."));
 
         try
         {
@@ -64,12 +64,12 @@ public class ContractController : ControllerBase
     {
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
-            return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+            return Unauthorized(Fail("Không xác định được người dùng."));
 
         try
         {
             var result = await _service.SaveDraftByParentAsync(contractId, userId.Value, request);
-            return Ok(OkResult(result, "Luu ban nhap hop dong thanh cong."));
+            return Ok(OkResult(result, "Lưu bản nháp hợp đồng thành công."));
         }
         catch (UnauthorizedAccessException)
         {
@@ -94,12 +94,12 @@ public class ContractController : ControllerBase
     {
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
-            return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+            return Unauthorized(Fail("Không xác định được người dùng."));
 
         try
         {
             var result = await _service.FillByNannyAsync(contractId, userId.Value, request);
-            return Ok(OkResult(result, "Nanny submit thong tin hop dong thanh cong."));
+            return Ok(OkResult(result, "Bảo mẫu gửi thông tin hợp đồng thành công."));
         }
         catch (UnauthorizedAccessException)
         {
@@ -124,12 +124,12 @@ public class ContractController : ControllerBase
     {
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
-            return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+            return Unauthorized(Fail("Không xác định được người dùng."));
 
         try
         {
             var result = await _service.FinalConfirmByParentAsync(contractId, userId.Value);
-            return Ok(OkResult(result, "Parent xac nhan hop dong thanh cong."));
+            return Ok(OkResult(result, "Phụ huynh xác nhận hợp đồng thành công."));
         }
         catch (UnauthorizedAccessException)
         {

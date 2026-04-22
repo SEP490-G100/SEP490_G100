@@ -78,14 +78,14 @@ public class SubscriptionService : ISubscriptionService
         await expireOldSubscriptions(userId);
 
         var plan = await _subscriptionRepo.findPlanById(request.SubscriptionPlanId)
-            ?? throw new KeyNotFoundException("Khong tim thay goi subscription hoac goi da ngung hoat dong.");
+            ?? throw new KeyNotFoundException("Không tìm thấy gói subscription hoặc gói đã ngừng hoạt động.");
 
         var planResponse = mapPlan(plan);
         await validatePlanOwnership(userId, planResponse.TargetRole);
 
         var currentSubscription = await _subscriptionRepo.findCurrentSubscription(userId, DateTime.UtcNow);
         if (currentSubscription != null)
-            throw new InvalidOperationException("Ban dang co goi subscription con hieu luc. Vui long huy hoac cho goi hien tai het han.");
+            throw new InvalidOperationException("Bạn đang có gói subscription còn hiệu lực. Vui lòng hủy hoặc chờ gói hiện tại hết hạn.");
 
         var nowUtc = DateTime.UtcNow;
         var transaction = new Transaction
@@ -130,14 +130,14 @@ public class SubscriptionService : ISubscriptionService
         await expirePendingTransactions(userId);
 
         var plan = await _subscriptionRepo.findPlanById(request.SubscriptionPlanId)
-            ?? throw new KeyNotFoundException("Khong tim thay goi subscription hoac goi da ngung hoat dong.");
+            ?? throw new KeyNotFoundException("Không tìm thấy gói subscription hoặc gói đã ngừng hoạt động.");
 
         var planResponse = mapPlan(plan);
         await validatePlanOwnership(userId, planResponse.TargetRole);
 
         var currentSubscription = await _subscriptionRepo.findCurrentSubscription(userId, DateTime.UtcNow);
         if (currentSubscription != null)
-            throw new InvalidOperationException("Ban dang co goi subscription con hieu luc. Vui long huy hoac cho goi hien tai het han.");
+            throw new InvalidOperationException("Bạn đang có gói subscription còn hiệu lực. Vui lòng hủy hoặc chờ gói hiện tại hết hạn.");
 
         var existingPendingTransaction = await findReusablePendingTransaction(userId, planResponse.Code);
         if (existingPendingTransaction != null)
@@ -179,7 +179,7 @@ public class SubscriptionService : ISubscriptionService
     public async Task<SubscriptionPaymentStatusResponse> getPaymentStatus(Guid userId, Guid transactionId)
     {
         var transaction = await _subscriptionRepo.findTransactionById(transactionId, userId)
-            ?? throw new KeyNotFoundException("Khong tim thay giao dich thanh toan.");
+            ?? throw new KeyNotFoundException("Không tìm thấy giao dịch thanh toán.");
 
         await reconcilePendingTransaction(transaction);
 
@@ -207,10 +207,10 @@ public class SubscriptionService : ISubscriptionService
     public async Task<MarkSubscriptionTransferredResponse> markTransferred(Guid userId, Guid transactionId)
     {
         var transaction = await _subscriptionRepo.findTransactionById(transactionId, userId)
-            ?? throw new KeyNotFoundException("Khong tim thay giao dich thanh toan.");
+            ?? throw new KeyNotFoundException("Không tìm thấy giao dịch thanh toán.");
 
         if (transaction.Type != 1)
-            throw new InvalidOperationException("Chi ho tro xac nhan giao dich subscription.");
+            throw new InvalidOperationException("Chỉ hỗ trợ xác nhận giao dịch subscription.");
 
         if (await _subscriptionRepo.hasAnySubscriptionLinkedToTransaction(transaction.Id) || transaction.Status == 2)
         {
@@ -219,18 +219,18 @@ public class SubscriptionService : ISubscriptionService
                 TransactionId = transaction.Id,
                 TransactionStatus = 2,
                 TransactionStatusLabel = getTransactionStatusLabel(2),
-                Message = "Giao dich da thanh cong truoc do."
+                Message = "Giao dịch đã thành công trước đó."
             };
         }
 
         if (transaction.Status == 3)
-            throw new InvalidOperationException("Giao dich da that bai hoac het han. Vui long tao giao dich moi.");
+            throw new InvalidOperationException("Giao dịch đã thất bại hoặc hết hạn. Vui lòng tạo giao dịch mới.");
 
         if (transaction.Status == 1 && isPendingTransactionExpired(transaction, DateTime.UtcNow))
         {
             markTransactionFailed(transaction, DateTime.UtcNow);
             await _subscriptionRepo.saveChanges();
-            throw new InvalidOperationException("Giao dich da het han. Vui long tao QR moi.");
+            throw new InvalidOperationException("Giao dịch đã hết hạn. Vui lòng tạo QR mới.");
         }
 
         var nowUtc = DateTime.UtcNow;
@@ -256,8 +256,8 @@ public class SubscriptionService : ISubscriptionService
             TransactionStatus = transaction.Status,
             TransactionStatusLabel = getTransactionStatusLabel(transaction.Status),
             Message = transaction.Status == 2
-                ? "He thong da doi soat va kich hoat goi subscription."
-                : "Da ghi nhan ban xac nhan chuyen khoan va dang doi doi soat."
+                ? "Hệ thống đã đối soát và kích hoạt gói subscription."
+                : "Đã ghi nhận bạn xác nhận chuyển khoản và đang đợi đối soát."
         };
     }
 
@@ -342,7 +342,7 @@ public class SubscriptionService : ISubscriptionService
         await expireOldSubscriptions(userId);
 
         var subscription = await _subscriptionRepo.findCurrentSubscription(userId, DateTime.UtcNow)
-            ?? throw new KeyNotFoundException("Ban khong co goi subscription dang hoat dong.");
+            ?? throw new KeyNotFoundException("Bạn không có gói subscription đang hoạt động.");
 
         var nowUtc = DateTime.UtcNow;
         subscription.Status = 2;
@@ -455,7 +455,7 @@ public class SubscriptionService : ISubscriptionService
 
         var normalizedName = request.Name.Trim();
         if (await _subscriptionRepo.existsPlanNameIncludingDeleted(normalizedName))
-            throw new InvalidOperationException("Ten goi subscription da ton tai.");
+            throw new InvalidOperationException("Tên gói subscription đã tồn tại.");
 
         var nowUtc = DateTime.UtcNow;
         var nextSortOrder = await _subscriptionRepo.getNextSubscriptionPlanSortOrder();
@@ -479,7 +479,7 @@ public class SubscriptionService : ISubscriptionService
         await _subscriptionRepo.saveChanges();
 
         return await getAdminPlanDetail(plan.Id)
-            ?? throw new InvalidOperationException("Khong the tao goi subscription.");
+            ?? throw new InvalidOperationException("Không thể tạo gói subscription.");
     }
 
     public async Task<AdminSubscriptionPlanDetailResponse> updateAdminPlan(Guid id, Guid adminUserId, AdminSubscriptionPlanUpsertRequest request)
@@ -487,11 +487,11 @@ public class SubscriptionService : ISubscriptionService
         validateAdminPlanRequest(request);
 
         var plan = await _subscriptionRepo.findAdminPlanByIdIncludingDeleted(id)
-            ?? throw new KeyNotFoundException("Khong tim thay goi subscription.");
+            ?? throw new KeyNotFoundException("Không tìm thấy gói subscription.");
 
         var normalizedName = request.Name.Trim();
         if (await _subscriptionRepo.existsPlanNameIncludingDeleted(normalizedName, id))
-            throw new InvalidOperationException("Ten goi subscription da ton tai.");
+            throw new InvalidOperationException("Tên gói subscription đã tồn tại.");
 
         plan.Name = normalizedName;
         plan.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
@@ -506,13 +506,13 @@ public class SubscriptionService : ISubscriptionService
         await _subscriptionRepo.saveChanges();
 
         return await getAdminPlanDetail(plan.Id)
-            ?? throw new InvalidOperationException("Khong the cap nhat goi subscription.");
+            ?? throw new InvalidOperationException("Không thể cập nhật gói subscription.");
     }
 
     public async Task toggleAdminPlanStatus(Guid id, Guid adminUserId, bool isActive)
     {
         var plan = await _subscriptionRepo.findAdminPlanByIdIncludingDeleted(id)
-            ?? throw new KeyNotFoundException("Khong tim thay goi subscription.");
+            ?? throw new KeyNotFoundException("Không tìm thấy gói subscription.");
 
         var targetIsDeleted = !isActive;
         if (plan.IsActive == isActive && plan.IsDeleted == targetIsDeleted)
@@ -626,7 +626,7 @@ public class SubscriptionService : ISubscriptionService
         int orderCode)
     {
         if (orderCode <= 0)
-            throw new InvalidOperationException("Ma giao dich PayOS khong hop le.");
+            throw new InvalidOperationException("Mã giao dịch PayOS không hợp lệ.");
 
         var existingInstruction = await _payOsService.getPaymentInstruction(orderCode);
         if (existingInstruction != null)
@@ -705,7 +705,7 @@ public class SubscriptionService : ISubscriptionService
             return new TransferConfirmationResult
             {
                 Status = "NOT_FOUND",
-                Message = "Khong tim thay giao dich thanh toan."
+                Message = "Không tìm thấy giao dịch thanh toán."
             };
         }
 
@@ -719,14 +719,14 @@ public class SubscriptionService : ISubscriptionService
             result.IsSuccess = true;
             result.SubscriptionActivated = true;
             result.Status = "ALREADY_PROCESSED";
-            result.Message = "Giao dich da duoc xu ly truoc do.";
+            result.Message = "Giao dịch đã được xử lý trước đó.";
             return result;
         }
 
         if (transaction.Status == 3)
         {
             result.Status = "FAILED";
-            result.Message = "Giao dich da o trang thai that bai.";
+            result.Message = "Giao dịch đã ở trạng thái thất bại.";
             return result;
         }
 
@@ -737,7 +737,7 @@ public class SubscriptionService : ISubscriptionService
             await _subscriptionRepo.saveChanges();
 
             result.Status = "FAILED";
-            result.Message = "Callback noi bo tra ve trang thai that bai.";
+            result.Message = "Callback nội bộ trả về trạng thái thất bại.";
             return result;
         }
 
@@ -749,7 +749,7 @@ public class SubscriptionService : ISubscriptionService
             await _subscriptionRepo.saveChanges();
 
             result.Status = "AMOUNT_MISMATCH";
-            result.Message = "So tien callback khong khop voi giao dich dang cho.";
+            result.Message = "Số tiền callback không khớp với giao dịch đang chờ.";
             return result;
         }
 
@@ -766,7 +766,7 @@ public class SubscriptionService : ISubscriptionService
             await _subscriptionRepo.saveChanges();
 
             result.Status = "ACTIVATION_FAILED";
-            result.Message = "Khong kich hoat duoc goi subscription tu callback noi bo.";
+            result.Message = "Không kích hoạt được gói subscription từ callback nội bộ.";
             return result;
         }
 
@@ -775,7 +775,7 @@ public class SubscriptionService : ISubscriptionService
         result.IsSuccess = true;
         result.SubscriptionActivated = true;
         result.Status = "SUCCESS";
-        result.Message = "Da kich hoat subscription tu callback noi bo.";
+        result.Message = "Đã kích hoạt subscription từ callback nội bộ.";
         return result;
     }
 
@@ -817,8 +817,8 @@ public class SubscriptionService : ISubscriptionService
 
         await _notificationService.createNotification(
             transaction.UserId,
-            $"Dang ky goi {plan.Name} thanh cong",
-            $"Ban da thanh toan thanh cong goi {plan.Name}. Goi cua ban co hieu luc den {subscription.EndDate:dd/MM/yyyy}.",
+            $"Đăng ký gói {plan.Name} thành công",
+            $"Bạn đã thanh toán thành công gói {plan.Name}. Gói của bạn có hiệu lực đến {subscription.EndDate:dd/MM/yyyy}.",
             NotificationTypes.SubscriptionPurchased,
             subscription.Id,
             "UserSubscription",
@@ -1012,27 +1012,27 @@ public class SubscriptionService : ISubscriptionService
 
     private static string getSubscriptionStatusLabel(int status) => status switch
     {
-        (int)UserSubscriptionStatus.Active    => "Dang hoat dong",
-        (int)UserSubscriptionStatus.Cancelled => "Da huy",
-        (int)UserSubscriptionStatus.Inactive  => "Het han",
-        _ => "Khong xac dinh"
+        (int)UserSubscriptionStatus.Active    => "Đang hoạt động",
+        (int)UserSubscriptionStatus.Cancelled => "Đã hủy",
+        (int)UserSubscriptionStatus.Inactive  => "Hết hạn",
+        _ => "Không xác định"
     };
 
     private static string getTransactionStatusLabel(int status) => status switch
     {
-        1 => "Cho thanh toan",
-        5 => "Dang xu ly thanh toan",
-        2 => "Thanh cong",
-        3 => "That bai",
-        4 => "Da hoan tien",
-        _ => "Khong xac dinh"
+        1 => "Chờ thanh toán",
+        5 => "Đang xử lý thanh toán",
+        2 => "Thành công",
+        3 => "Thất bại",
+        4 => "Đã hoàn tiền",
+        _ => "Không xác định"
     };
 
     private static string getTransactionTypeLabel(int type) => type switch
     {
-        0 => "Nap tien",
-        1 => "Thanh toan subscription",
-        _ => "Khac"
+        0 => "Nạp tiền",
+        1 => "Thanh toán subscription",
+        _ => "Khác"
     };
 
     private static int generateOrderCode()
@@ -1054,7 +1054,7 @@ public class SubscriptionService : ISubscriptionService
             await Task.Delay(5);
         }
 
-        throw new InvalidOperationException("Khong tao duoc ma giao dich thanh toan duy nhat. Vui long thu lai.");
+        throw new InvalidOperationException("Không tạo được mã giao dịch thanh toán duy nhất. Vui lòng thử lại.");
     }
 
     private static string buildPaymentContent(string planCode, int orderCode) => $"NM {planCode} {orderCode}";
@@ -1092,7 +1092,7 @@ public class SubscriptionService : ISubscriptionService
         request.Features = SubscriptionPlanMetadataHelper.NormalizeFeatures(request.Features);
 
         if (request.Features.Count == 0)
-            throw new InvalidOperationException("Phai co it nhat 1 feature cho goi subscription.");
+            throw new InvalidOperationException("Phải có ít nhất 1 feature cho gói subscription.");
     }
 
     private static List<string>? tryParseJsonFeatures(string features)
@@ -1112,7 +1112,7 @@ public class SubscriptionService : ISubscriptionService
         if (string.Equals(targetRole, "Parent", StringComparison.OrdinalIgnoreCase))
         {
             if (!await _subscriptionRepo.hasParentProfile(userId))
-                throw new InvalidOperationException("Tai khoan hien tai khong phai Parent nen khong the mua goi nay.");
+                throw new InvalidOperationException("Tài khoản hiện tại không phải Parent nên không thể mua gói này.");
 
             return;
         }
@@ -1120,13 +1120,13 @@ public class SubscriptionService : ISubscriptionService
         if (string.Equals(targetRole, "Nanny", StringComparison.OrdinalIgnoreCase))
         {
             if (!await _subscriptionRepo.hasNannyProfile(userId))
-                throw new InvalidOperationException("Tai khoan hien tai khong phai Nanny nen khong the mua goi nay.");
+                throw new InvalidOperationException("Tài khoản hiện tại không phải Nanny nên không thể mua gói này.");
 
             return;
         }
 
         if (!await _subscriptionRepo.hasParentProfile(userId) && !await _subscriptionRepo.hasNannyProfile(userId))
-            throw new InvalidOperationException("Tai khoan hien tai khong hop le de mua goi subscription.");
+            throw new InvalidOperationException("Tài khoản hiện tại không hợp lệ để mua gói subscription.");
     }
 
     private static SubscriptionBenefitResponse inferBenefits(

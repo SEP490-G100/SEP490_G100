@@ -34,17 +34,17 @@ public class ReportService : IReportService
     public async Task<Guid> ReportJobPostingAsync(Guid jobPostingId, Guid reporterUserId, CreateReportRequest request)
     {
         var job = await _reportRepo.GetJobPostingForReportAsync(jobPostingId)
-            ?? throw new KeyNotFoundException("Khong tim thay tin dang hoac tin da bi xoa.");
+            ?? throw new KeyNotFoundException("Không tìm thấy tin đăng hoặc tin đã bị xóa.");
 
         if (job.ParentProfile?.UserId == reporterUserId)
-            throw new InvalidOperationException("Ban khong the bao cao bai dang cua chinh minh.");
+            throw new InvalidOperationException("Bạn không thể báo cáo bài đăng của chính mình.");
 
         var report = await createReportAsync(reporterUserId, jobPostingId, "JobPosting", request);
 
         var reporter = await _userRepo.FindByIdAsync(reporterUserId);
         await _notificationService.createNotificationForModerators(
-            "Co bao cao bai dang moi",
-            $"{getDisplayName(reporter)} vua gui bao cao cho bai dang \"{job.Title}\".",
+            "Có báo cáo bài đăng mới",
+            $"{getDisplayName(reporter)} vừa gửi báo cáo cho bài đăng \"{job.Title}\".",
             NotificationTypes.ReportSubmitted,
             report.Id,
             "Report",
@@ -56,17 +56,17 @@ public class ReportService : IReportService
     public async Task<Guid> ReportProfileAsync(Guid profileUserId, Guid reporterUserId, CreateReportRequest request)
     {
         var targetUser = await _reportRepo.GetUserForProfileReportAsync(profileUserId)
-            ?? throw new KeyNotFoundException("Khong tim thay ho so can bao cao.");
+            ?? throw new KeyNotFoundException("Không tìm thấy hồ sơ cần báo cáo.");
 
         if (targetUser.Id == reporterUserId)
-            throw new InvalidOperationException("Ban khong the bao cao ho so cua chinh minh.");
+            throw new InvalidOperationException("Bạn không thể báo cáo hồ sơ của chính mình.");
 
         var report = await createReportAsync(reporterUserId, targetUser.Id, "Profile", request);
 
         var reporter = await _userRepo.FindByIdAsync(reporterUserId);
         await _notificationService.createNotificationForModerators(
-            "Co bao cao ho so moi",
-            $"{getDisplayName(reporter)} vua gui bao cao ho so nguoi dung.",
+            "Có báo cáo hồ sơ mới",
+            $"{getDisplayName(reporter)} vừa gửi báo cáo hồ sơ người dùng.",
             NotificationTypes.ReportSubmitted,
             report.Id,
             "Report",
@@ -211,11 +211,11 @@ public class ReportService : IReportService
 
         var reason = request.Reason?.Trim();
         if (string.IsNullOrWhiteSpace(reason))
-            throw new InvalidOperationException("Ly do bao cao la bat buoc.");
+            throw new InvalidOperationException("Lý do báo cáo là bắt buộc.");
 
         var hasPending = await _reportRepo.HasPendingReportAsync(reporterUserId, reportedEntityId, reportedEntityType);
         if (hasPending)
-            throw new InvalidOperationException("Ban da gui bao cao nay va dang cho xu ly.");
+            throw new InvalidOperationException("Bạn đã gửi báo cáo này và đang chờ xử lý.");
 
         var nowUtc = DateTime.UtcNow;
 
@@ -261,7 +261,7 @@ public class ReportService : IReportService
 
         throw new RateLimitExceededException(
             "REPORT_TARGET_COOLDOWN",
-            "Ban vua bao cao doi tuong nay. Vui long thu lai sau 10 gio.",
+            "Bạn vừa báo cáo đối tượng này. Vui lòng thử lại sau 10 giờ.",
             cooldownUntil);
     }
 
@@ -276,7 +276,7 @@ public class ReportService : IReportService
 
             throw new RateLimitExceededException(
                 "REPORT_RATE_LIMIT_HOURLY",
-                "Ban da vuot qua gioi han 3 bao cao trong 1 gio. Vui long thu lai sau.",
+                "Bạn đã vượt quá giới hạn 3 báo cáo trong 1 giờ. Vui lòng thử lại sau.",
                 cooldownUntil);
         }
 
@@ -289,7 +289,7 @@ public class ReportService : IReportService
 
             throw new RateLimitExceededException(
                 "REPORT_RATE_LIMIT_DAILY",
-                "Ban da vuot qua gioi han 10 bao cao trong 24 gio. Vui long thu lai sau.",
+                "Bạn đã vượt quá giới hạn 10 báo cáo trong 24 giờ. Vui lòng thử lại sau.",
                 cooldownUntil);
         }
     }
@@ -414,7 +414,7 @@ public class ReportService : IReportService
         if (ok)
             return null;
 
-        return results.FirstOrDefault()?.ErrorMessage ?? "Du lieu bao cao khong hop le.";
+        return results.FirstOrDefault()?.ErrorMessage ?? "Dữ liệu báo cáo không hợp lệ.";
     }
 
     private static string? validateResolveReportRequest(ResolveReportRequest request)
@@ -425,6 +425,6 @@ public class ReportService : IReportService
         if (ok)
             return null;
 
-        return results.FirstOrDefault()?.ErrorMessage ?? "Du lieu xu ly bao cao khong hop le.";
+        return results.FirstOrDefault()?.ErrorMessage ?? "Dữ liệu xử lý báo cáo không hợp lệ.";
     }
 }

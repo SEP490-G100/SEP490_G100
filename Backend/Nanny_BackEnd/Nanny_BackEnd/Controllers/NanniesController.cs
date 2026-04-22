@@ -74,12 +74,12 @@ public class NanniesController : ControllerBase
         try
         {
             if (!User.IsInRole("Parent"))
-                return StatusCode(403, Fail("Chi parent moi co quyen xem danh sach nanny yeu thich."));
+                return StatusCode(403, Fail("Chỉ phụ huynh mới có quyền xem danh sách bảo mẫu yêu thích."));
 
             var userId = GetCurrentUserId();
             var parentProfile = await _profileService.GetParentProfileByUserIdAsync(userId);
             if (parentProfile == null)
-                return BadRequest(Fail("Tai khoan khong phai parent."));
+                return BadRequest(Fail("Tài khoản không phải phụ huynh."));
 
             var result = await _nannyService.GetFavoritesAsync(parentProfile.Id, page, pageSize);
             return Ok(new
@@ -104,12 +104,12 @@ public class NanniesController : ControllerBase
         try
         {
             if (!User.IsInRole("Parent"))
-                return StatusCode(403, Fail("Chi parent moi co quyen yeu thich nanny."));
+                return StatusCode(403, Fail("Chỉ phụ huynh mới có quyền yêu thích bảo mẫu."));
 
             var userId = GetCurrentUserId();
             var parentProfile = await _profileService.GetParentProfileByUserIdAsync(userId);
             if (parentProfile == null)
-                return BadRequest(Fail("Tai khoan khong phai parent."));
+                return BadRequest(Fail("Tài khoản không phải phụ huynh."));
 
             var favoriteResult = await _nannyService.ToggleFavoriteAsync(parentProfile.Id, nannyProfileId, userId);
             return Ok(new
@@ -117,7 +117,7 @@ public class NanniesController : ControllerBase
                 success = true,
                 isFavorite = favoriteResult.IsFavorite,
                 nannyUserId = favoriteResult.NannyUserId,
-                message = favoriteResult.IsFavorite ? "Da yeu thich nanny." : "Da bo yeu thich nanny."
+                message = favoriteResult.IsFavorite ? "Đã yêu thích bảo mẫu." : "Đã bỏ yêu thích bảo mẫu."
             });
         }
         catch (KeyNotFoundException ex)
@@ -141,7 +141,7 @@ public class NanniesController : ControllerBase
         try
         {
             if (!User.IsInRole("Parent"))
-                return StatusCode(403, Fail("Chi parent moi co quyen gui request contact."));
+                return StatusCode(403, Fail("Chỉ phụ huynh mới có quyền gửi yêu cầu liên hệ."));
 
             var userId = GetCurrentUserId();
             var r = await _contactRequestService.SendAsync(userId, nannyProfileId, request?.Message);
@@ -160,7 +160,7 @@ public class NanniesController : ControllerBase
         try
         {
             if (!User.IsInRole("Nanny"))
-                return StatusCode(403, Fail("Chi nanny moi co quyen xem request contact da nhan."));
+                return StatusCode(403, Fail("Chỉ bảo mẫu mới có quyền xem yêu cầu liên hệ đã nhận."));
 
             var userId = GetCurrentUserId();
             var r = await _contactRequestService.GetReceivedAsync(userId, status);
@@ -179,7 +179,7 @@ public class NanniesController : ControllerBase
         try
         {
             if (!User.IsInRole("Parent"))
-                return StatusCode(403, Fail("Chi parent moi co quyen xem request contact da gui."));
+                return StatusCode(403, Fail("Chỉ phụ huynh mới có quyền xem yêu cầu liên hệ đã gửi."));
 
             var userId = GetCurrentUserId();
             var r = await _contactRequestService.GetSentAsync(userId, status);
@@ -216,10 +216,10 @@ public class NanniesController : ControllerBase
         try
         {
             if (!User.IsInRole("Nanny"))
-                return StatusCode(403, Fail("Chi nanny moi co quyen xu ly request contact."));
+                return StatusCode(403, Fail("Chỉ bảo mẫu mới có quyền xử lý yêu cầu liên hệ."));
 
             if (request == null)
-                return BadRequest(Fail("Du lieu xu ly request contact khong hop le."));
+                return BadRequest(Fail("Dữ liệu xử lý yêu cầu liên hệ không hợp lệ."));
 
             var userId = GetCurrentUserId();
             var r = await _contactRequestService.ReviewAsync(userId, contactRequestId, request.Action, request.ResponseMessage);

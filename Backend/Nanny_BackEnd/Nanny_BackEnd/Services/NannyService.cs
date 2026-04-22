@@ -47,7 +47,7 @@ public class NannyService : INannyService
     public async Task<NannyDetailResponse> GetDetailAsync(Guid nannyProfileId, Guid? currentParentProfileId = null)
     {
         var nanny = await _nannyProfileRepository.GetDetailAsync(nannyProfileId)
-            ?? throw new KeyNotFoundException("Khong tim thay ho so nanny.");
+            ?? throw new KeyNotFoundException("Không tìm thấy hồ sơ bảo mẫu.");
 
         var isFavorite = currentParentProfileId.HasValue &&
                          await _favoriteRepository.isFavoriteNanny(currentParentProfileId.Value, nannyProfileId);
@@ -75,18 +75,18 @@ public class NannyService : INannyService
     public async Task<(bool IsFavorite, Guid NannyUserId)> ToggleFavoriteAsync(Guid parentProfileId, Guid nannyProfileId, Guid actorUserId)
     {
         var nanny = await _nannyProfileRepository.GetDetailAsync(nannyProfileId)
-            ?? throw new KeyNotFoundException("Khong tim thay ho so nanny.");
+            ?? throw new KeyNotFoundException("Không tìm thấy hồ sơ bảo mẫu.");
 
         if (nanny.IsDeleted || nanny.User.IsDeleted)
-            throw new InvalidOperationException("Ho so nanny khong hop le.");
+            throw new InvalidOperationException("Hồ sơ bảo mẫu không hợp lệ.");
 
         var isFavorite = await _favoriteRepository.toggleFavoriteNanny(parentProfileId, nannyProfileId, actorUserId);
         if (isFavorite)
         {
             await _notificationService.createNotification(
                 nanny.UserId,
-                "Ho so cua ban vua duoc yeu thich",
-                "Co mot phu huynh vua tim ho so cua ban.",
+                "Hồ sơ của bạn vừa được yêu thích",
+                "Có một phụ huynh vừa tìm hồ sơ của bạn.",
                 NotificationTypes.NannyProfileFavorited,
                 nannyProfileId,
                 "NannyProfile",

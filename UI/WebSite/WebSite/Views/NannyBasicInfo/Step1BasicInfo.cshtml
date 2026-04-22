@@ -168,6 +168,10 @@
 
     if (currentAvatarUrl) {
         setPreview(currentAvatarUrl);
+
+        if (typeof window.updateCurrentUserAvatar === 'function') {
+            window.updateCurrentUserAvatar(currentAvatarUrl);
+        }
     }
 
     if (avatarInput) {

@@ -55,7 +55,7 @@ public class SearchController : ControllerBase
         try
         {
             if (!User.IsInRole("Nanny"))
-                return StatusCode(403, Fail("Chi nanny moi co quyen luu bai dang."));
+                return StatusCode(403, Fail("Chỉ bảo mẫu mới có quyền lưu bài đăng."));
 
             var userId = GetCurrentUserId();
             var nannyProfileId = await _searchSvc.GetNannyProfileIdByUserIdAsync(userId);
@@ -82,7 +82,7 @@ public class SearchController : ControllerBase
         try
         {
             if (!User.IsInRole("Nanny"))
-                return StatusCode(403, Fail("Chi nanny moi co quyen xem bai dang da luu."));
+                return StatusCode(403, Fail("Chỉ bảo mẫu mới có quyền xem bài đăng đã lưu."));
 
             var userId = GetCurrentUserId();
             var nannyProfileId = await _searchSvc.GetNannyProfileIdByUserIdAsync(userId);
@@ -112,7 +112,7 @@ public class SearchController : ControllerBase
         try
         {
             if (!User.IsInRole("Nanny"))
-                return StatusCode(403, Fail("Chi nanny moi co quyen luu bai dang."));
+                return StatusCode(403, Fail("Chỉ bảo mẫu mới có quyền lưu bài đăng."));
 
             var userId = GetCurrentUserId();
             var nannyProfileId = await _searchSvc.GetNannyProfileIdByUserIdAsync(userId);
@@ -124,7 +124,7 @@ public class SearchController : ControllerBase
             {
                 success = true,
                 isFavorite,
-                message = isFavorite ? "Da luu bai dang." : "Da bo luu bai dang."
+                message = isFavorite ? "Đã lưu bài đăng." : "Đã bỏ lưu bài đăng."
             });
         }
         catch (KeyNotFoundException ex)
@@ -148,7 +148,7 @@ public class SearchController : ControllerBase
         try
         {
             if (!User.IsInRole("Nanny"))
-                return StatusCode(403, Fail("Chi nanny moi co quyen ung tuyen bai dang."));
+                return StatusCode(403, Fail("Chỉ bảo mẫu mới có quyền ứng tuyển bài đăng."));
 
             var userId = GetCurrentUserId();
             var result = await _searchSvc.ApplyToJobAsync(userId, jobPostingId);
@@ -199,7 +199,7 @@ public class SearchController : ControllerBase
         try
         {
             if (!User.IsInRole("Nanny"))
-                return StatusCode(403, Fail("Chi nanny moi co quyen xem lich su ung tuyen."));
+                return StatusCode(403, Fail("Chỉ bảo mẫu mới có quyền xem lịch sử ứng tuyển."));
 
             var userId = GetCurrentUserId();
             var list   = await _searchSvc.GetMyApplicationsAsync(userId, page, pageSize);
@@ -228,7 +228,7 @@ public class SearchController : ControllerBase
         try
         {
             if (!User.IsInRole("Nanny"))
-                return StatusCode(403, Fail("Chi nanny moi co quyen huy don ung tuyen."));
+                return StatusCode(403, Fail("Chỉ bảo mẫu mới có quyền hủy đơn ứng tuyển."));
 
             var userId = GetCurrentUserId();
             var r      = await _searchSvc.WithdrawApplicationAsync(userId, applicationId);
@@ -260,7 +260,7 @@ public class SearchController : ControllerBase
         try
         {
             if (!User.IsInRole("Parent"))
-                return StatusCode(403, Fail("Chi parent moi co quyen xem request ung tuyen."));
+                return StatusCode(403, Fail("Chỉ phụ huynh mới có quyền xem đơn ứng tuyển."));
 
             var userId = GetCurrentUserId();
             var (err, errMsg, data) = await _searchSvc.GetJobApplicationsForParentAsync(userId, jobPostingId, status);
@@ -333,7 +333,7 @@ public class SearchController : ControllerBase
         try
         {
             if (!User.IsInRole("Parent"))
-                return StatusCode(403, Fail("Chi parent moi co quyen duyet request ung tuyen."));
+                return StatusCode(403, Fail("Chỉ phụ huynh mới có quyền duyệt đơn ứng tuyển."));
 
             var userId = GetCurrentUserId();
             var r      = await _searchSvc.ReviewJobApplicationAsync(userId, applicationId, request);

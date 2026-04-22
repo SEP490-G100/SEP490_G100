@@ -32,7 +32,7 @@ public class JobPostingController : ControllerBase
     public async Task<IActionResult> GetMyJobs()
     {
         var parent = await getParent();
-        if (parent is null) return BadRequest(Fail("Tai khoan hien tai khong phai Phu Huynh."));
+        if (parent is null) return BadRequest(Fail("Tài khoản hiện tại không phải Phụ huynh."));
 
         var result = await _jobSvc.getMyJobs(parent.Id);
         return Ok(Success(result, result.Count));
@@ -43,7 +43,7 @@ public class JobPostingController : ControllerBase
     public async Task<IActionResult> GetPrefill()
     {
         var parent = await getParent();
-        if (parent is null) return BadRequest(Fail("Tai khoan hien tai khong phai Phu Huynh."));
+        if (parent is null) return BadRequest(Fail("Tài khoản hiện tại không phải Phụ huynh."));
 
         var result = await _jobSvc.getCreatePrefill(parent.Id);
         return Ok(Success(result));
@@ -81,7 +81,7 @@ public class JobPostingController : ControllerBase
 
         var userId = getCurrentUserId();
         if (!userId.HasValue)
-            return Unauthorized(Fail("Khong xac dinh duoc nguoi dung hien tai."));
+            return Unauthorized(Fail("Không xác định được người dùng hiện tại."));
 
         try
         {
@@ -89,7 +89,7 @@ public class JobPostingController : ControllerBase
             return Ok(new
             {
                 success = true,
-                message = "Bao cao bai dang da duoc gui thanh cong.",
+                message = "Báo cáo bài đăng đã được gửi thành công.",
                 data = new { reportId, jobPostingId = id }
             });
         }
@@ -117,7 +117,7 @@ public class JobPostingController : ControllerBase
             return BadRequest(FailValidation(ModelState));
 
         var parent = await getParent();
-        if (parent is null) return BadRequest(Fail("Tai khoan hien tai khong phai Phu Huynh."));
+        if (parent is null) return BadRequest(Fail("Tài khoản hiện tại không phải Phụ huynh."));
 
         try
         {
@@ -125,7 +125,7 @@ public class JobPostingController : ControllerBase
             return Ok(new
             {
                 success = true,
-                message = "Tao tin dang thanh cong. Bai dang dang o trang thai cho duyet.",
+                message = "Tạo tin đăng thành công. Bài đăng đang ở trạng thái chờ duyệt.",
                 data = new { id = jobId }
             });
         }
@@ -141,7 +141,7 @@ public class JobPostingController : ControllerBase
             return BadRequest(FailValidation(ModelState));
 
         var parent = await getParent();
-        if (parent is null) return BadRequest(Fail("Tai khoan hien tai khong phai Phu Huynh."));
+        if (parent is null) return BadRequest(Fail("Tài khoản hiện tại không phải Phụ huynh."));
 
         try
         {
@@ -149,7 +149,7 @@ public class JobPostingController : ControllerBase
             return Ok(new
             {
                 success = true,
-                message = "Cap nhat tin dang thanh cong. Bai dang da duoc dua ve trang thai cho duyet."
+                message = "Cập nhật tin đăng thành công. Bài đăng đã được đưa về trạng thái chờ duyệt."
             });
         }
         catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
@@ -162,12 +162,12 @@ public class JobPostingController : ControllerBase
     public async Task<IActionResult> deleteJobPosting(Guid id)
     {
         var parent = await getParent();
-        if (parent is null) return BadRequest(Fail("Tai khoan hien tai khong phai Phu Huynh."));
+        if (parent is null) return BadRequest(Fail("Tài khoản hiện tại không phải Phụ huynh."));
 
         try
         {
             await _jobSvc.deletePost(id, parent.Id);
-            return Ok(new { success = true, message = "Xoa tin dang thanh cong." });
+            return Ok(new { success = true, message = "Xóa tin đăng thành công." });
         }
         catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
         catch (UnauthorizedAccessException ex) { return StatusCode(403, Fail(ex.Message)); }
@@ -179,12 +179,12 @@ public class JobPostingController : ControllerBase
     public async Task<IActionResult> Approve(Guid id, [FromBody] ModerateJobPostingRequest request)
     {
         var moderatorId = getCurrentUserId();
-        if (!moderatorId.HasValue) return Unauthorized(Fail("Khong xac dinh duoc moderator hien tai."));
+        if (!moderatorId.HasValue) return Unauthorized(Fail("Không xác định được điều hành viên hiện tại."));
 
         try
         {
             await _jobSvc.moderateJob(id, moderatorId.Value, true, request.Note);
-            return Ok(new { success = true, message = "Da duyet bai dang thanh cong." });
+            return Ok(new { success = true, message = "Đã duyệt bài đăng thành công." });
         }
         catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
     }
@@ -194,12 +194,12 @@ public class JobPostingController : ControllerBase
     public async Task<IActionResult> Reject(Guid id, [FromBody] ModerateJobPostingRequest request)
     {
         var moderatorId = getCurrentUserId();
-        if (!moderatorId.HasValue) return Unauthorized(Fail("Khong xac dinh duoc moderator hien tai."));
+        if (!moderatorId.HasValue) return Unauthorized(Fail("Không xác định được điều hành viên hiện tại."));
 
         try
         {
             await _jobSvc.moderateJob(id, moderatorId.Value, false, request.Note);
-            return Ok(new { success = true, message = "Da tu choi bai dang." });
+            return Ok(new { success = true, message = "Đã từ chối bài đăng." });
         }
         catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
     }
@@ -231,7 +231,7 @@ public class JobPostingController : ControllerBase
         new
         {
             success = false,
-            message = "Du lieu khong hop le. Vui long kiem tra lai.",
+            message = "Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.",
             errors = modelState
                 .Where(e => e.Value?.Errors.Count > 0)
                 .ToDictionary(

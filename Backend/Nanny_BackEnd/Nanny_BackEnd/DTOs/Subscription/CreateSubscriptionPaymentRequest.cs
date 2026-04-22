@@ -4,7 +4,7 @@ namespace Nanny_BackEnd.DTOs.Subscription;
 
 public class CreateSubscriptionPaymentRequest
 {
-    [Required(ErrorMessage = "Goi subscription khong duoc de trong.")]
+    [Required(ErrorMessage = "Gói subscription không được để trống.")]
     public Guid SubscriptionPlanId { get; set; }
 
     public string? ClientIp { get; set; }
