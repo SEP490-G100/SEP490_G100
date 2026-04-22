@@ -2,7 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nanny_BackEnd.DTOs.Profile;
-using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Controllers;
 
@@ -11,9 +11,9 @@ namespace Nanny_BackEnd.Controllers;
 [Authorize]
 public class ProfileController : ControllerBase
 {
-    private readonly ProfileService _profileService;
+    private readonly IProfileService _profileService;
 
-    public ProfileController(ProfileService profileService)
+    public ProfileController(IProfileService profileService)
     {
         _profileService = profileService;
     }
@@ -29,7 +29,7 @@ public class ProfileController : ControllerBase
         }
         catch (UnauthorizedAccessException)
         {
-            return Unauthorized(Fail("Phien dang nhap khong hop le."));
+            return Unauthorized(Fail("Phiên đăng nhập không hợp lệ."));
         }
         catch (InvalidOperationException ex)
         {
@@ -48,7 +48,7 @@ public class ProfileController : ControllerBase
         }
         catch (UnauthorizedAccessException)
         {
-            return Unauthorized(Fail("Phien dang nhap khong hop le."));
+            return Unauthorized(Fail("Phiên đăng nhập không hợp lệ."));
         }
         catch (InvalidOperationException ex)
         {
@@ -63,11 +63,11 @@ public class ProfileController : ControllerBase
         {
             var userId = GetCurrentUserId();
             var profile = await _profileService.UpdatePersonalInfoAsync(userId, request);
-            return Ok(new { success = true, message = "Cap nhat thong tin ca nhan thanh cong.", data = profile });
+            return Ok(new { success = true, message = "Cập nhật thông tin cá nhân thành công.", data = profile });
         }
         catch (UnauthorizedAccessException)
         {
-            return Unauthorized(Fail("Phien dang nhap khong hop le."));
+            return Unauthorized(Fail("Phiên đăng nhập không hợp lệ."));
         }
         catch (InvalidOperationException ex)
         {
@@ -79,17 +79,17 @@ public class ProfileController : ControllerBase
     public async Task<IActionResult> UploadAvatar(IFormFile file)
     {
         if (file == null || file.Length == 0)
-            return BadRequest(Fail("Vui long chon file anh."));
+            return BadRequest(Fail("Vui lòng chọn file ảnh."));
 
         try
         {
             var userId = GetCurrentUserId();
             var avatarUrl = await _profileService.UploadAvatarAsync(userId, file);
-            return Ok(new { success = true, message = "Cap nhat anh dai dien thanh cong.", data = avatarUrl });
+            return Ok(new { success = true, message = "Cập nhật ảnh đại diện thành công.", data = avatarUrl });
         }
         catch (UnauthorizedAccessException)
         {
-            return Unauthorized(Fail("Phien dang nhap khong hop le."));
+            return Unauthorized(Fail("Phiên đăng nhập không hợp lệ."));
         }
         catch (InvalidOperationException ex)
         {
@@ -104,11 +104,11 @@ public class ProfileController : ControllerBase
         {
             var userId = GetCurrentUserId();
             await _profileService.AddNannyCertificateAsync(userId, request);
-            return Ok(new { success = true, message = "Them chung chi thanh cong." });
+            return Ok(new { success = true, message = "Thêm chứng chỉ thành công." });
         }
         catch (UnauthorizedAccessException)
         {
-            return Unauthorized(Fail("Phien dang nhap khong hop le."));
+            return Unauthorized(Fail("Phiên đăng nhập không hợp lệ."));
         }
         catch (InvalidOperationException ex)
         {
@@ -142,7 +142,7 @@ public class ProfileController : ControllerBase
         {
             var userId = GetCurrentUserId();
             var child = await _profileService.CreateChildProfileAsync(userId, request);
-            return CreatedAtAction(nameof(GetChildProfiles), new { }, new { success = true, message = "Them con em thanh cong.", data = child });
+            return CreatedAtAction(nameof(GetChildProfiles), new { }, new { success = true, message = "Thêm con em thành công.", data = child });
         }
         catch (UnauthorizedAccessException)
         {
@@ -161,7 +161,7 @@ public class ProfileController : ControllerBase
         {
             var userId = GetCurrentUserId();
             var child = await _profileService.UpdateChildProfileAsync(userId, childId, request);
-            return Ok(new { success = true, message = "Cap nhat thong tin con em thanh cong.", data = child });
+            return Ok(new { success = true, message = "Cập nhật thông tin con em thành công.", data = child });
         }
         catch (UnauthorizedAccessException)
         {
@@ -180,7 +180,7 @@ public class ProfileController : ControllerBase
         {
             var userId = GetCurrentUserId();
             await _profileService.DeleteChildProfileAsync(userId, childId);
-            return Ok(new { success = true, message = "Xoa con em thanh cong." });
+            return Ok(new { success = true, message = "Xóa con em thành công." });
         }
         catch (UnauthorizedAccessException)
         {
@@ -198,7 +198,7 @@ public class ProfileController : ControllerBase
                ?? User.FindFirst("sub")?.Value;
 
         if (string.IsNullOrWhiteSpace(sub) || !Guid.TryParse(sub, out var userId))
-            throw new UnauthorizedAccessException("Token khong hop le.");
+            throw new UnauthorizedAccessException("Token không hợp lệ.");
 
         return userId;
     }

@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
+using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Models;
 
 namespace Nanny_BackEnd.Repositories;
 
-public class BlogCategoryRepository
+public class BlogCategoryRepository : IBlogCategoryRepository
 {
     private readonly Sep490NannyDbContext _db;
     public BlogCategoryRepository(Sep490NannyDbContext db) => _db = db;

@@ -5,15 +5,17 @@ using Microsoft.Extensions.Options;
 using Nanny_BackEnd.DTOs.Recommendation;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
+using Nanny_BackEnd.Services.Interfaces;
 using OpenAI.Embeddings;
 
 namespace Nanny_BackEnd.Services;
 
-public class EmbeddingService
+public class EmbeddingService : IEmbeddingService
 {
     private readonly AzureOpenAIClient _azureClient;
     private readonly AzureOpenAIOptions _options;
-    private readonly RecommendationRepository _repo;
+    private readonly IRecommendationRepository _repo;
     private readonly ILogger<EmbeddingService> _logger;
 
     private static readonly string[] EducationLabels =
@@ -29,7 +31,7 @@ public class EmbeddingService
 
     public EmbeddingService(
         IOptions<AzureOpenAIOptions> options,
-        RecommendationRepository repo,
+        IRecommendationRepository repo,
         ILogger<EmbeddingService> logger)
     {
         _options = options.Value;

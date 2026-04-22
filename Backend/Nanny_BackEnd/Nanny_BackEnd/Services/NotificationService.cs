@@ -2,16 +2,18 @@ using Nanny_BackEnd.DTOs.Notification;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class NotificationService
+public class NotificationService : INotificationService
 {
     private const string AdminNotificationScopePrefix = "AdminNotification";
-    private readonly SubscriptionRepository _subscriptionRepo;
-    private readonly UserRepository _userRepo;
+    private readonly ISubscriptionRepository _subscriptionRepo;
+    private readonly IUserRepository _userRepo;
 
-    public NotificationService(SubscriptionRepository subscriptionRepo, UserRepository userRepo)
+    public NotificationService(ISubscriptionRepository subscriptionRepo, IUserRepository userRepo)
     {
         _subscriptionRepo = subscriptionRepo;
         _userRepo = userRepo;
@@ -43,7 +45,7 @@ public class NotificationService
     public async Task<NotificationResponse> markAsRead(Guid userId, Guid notificationId)
     {
         var notification = await _subscriptionRepo.findNotificationById(notificationId, userId)
-            ?? throw new KeyNotFoundException("Khong tim thay thong bao can cap nhat.");
+            ?? throw new KeyNotFoundException("Không tìm thấy thông báo cần cập nhật.");
 
         if (!notification.IsRead)
         {
@@ -91,7 +93,7 @@ public class NotificationService
         return createdCount;
     }
 
-    public async Task createNotification(
+    public virtual async Task createNotification(
         Guid userId,
         string title,
         string content,
@@ -156,7 +158,7 @@ public class NotificationService
         await _subscriptionRepo.saveChanges();
     }
 
-    public async Task createNotificationForModerators(
+    public virtual async Task createNotificationForModerators(
         string title,
         string content,
         int type,
@@ -251,7 +253,7 @@ public class NotificationService
 
         var recipientIds = await resolveAdminNotificationRecipients(targetType, targetRole);
         if (recipientIds.Count == 0)
-            throw new InvalidOperationException("Khong tim thay nguoi nhan phu hop de gui thong bao.");
+            throw new InvalidOperationException("Không tìm thấy người nhận phù hợp để gửi thông báo.");
 
         var broadcastId = Guid.NewGuid();
         await createNotificationForUsers(
@@ -273,7 +275,7 @@ public class NotificationService
     {
         var rows = await _subscriptionRepo.getAdminNotificationRowsByBroadcastId(broadcastId);
         if (rows.Count == 0)
-            throw new KeyNotFoundException("Khong tim thay thong bao admin can cap nhat.");
+            throw new KeyNotFoundException("Không tìm thấy thông báo admin cần cập nhật.");
 
         var title = request.Title.Trim();
         var content = request.Content.Trim();
@@ -298,7 +300,7 @@ public class NotificationService
     {
         var rows = await _subscriptionRepo.getAdminNotificationRowsByBroadcastId(broadcastId);
         if (rows.Count == 0)
-            throw new KeyNotFoundException("Khong tim thay thong bao admin can cap nhat.");
+            throw new KeyNotFoundException("Không tìm thấy thông báo admin cần cập nhật.");
 
         var nowUtc = DateTime.UtcNow;
         foreach (var row in rows)
@@ -322,16 +324,16 @@ public class NotificationService
         foreach (var subscription in subscriptions)
         {
             var title = daysBeforeExpiry == 1
-                ? "Goi subscription cua ban se het han sau 1 ngay"
-                : $"Goi subscription cua ban se het han sau {daysBeforeExpiry} ngay";
+                ? "Gói subscription của bạn sẽ hết hạn sau 1 ngày"
+                : $"Gói subscription của bạn sẽ hết hạn sau {daysBeforeExpiry} ngày";
 
             var exists = await _subscriptionRepo.hasNotificationForSubscription(subscription.UserId, subscription.Id, title);
             if (exists)
                 continue;
 
-            var planName = subscription.SubscriptionPlan?.Name ?? "hien tai";
+            var planName = subscription.SubscriptionPlan?.Name ?? "hiện tại";
             var content =
-                $"Goi {planName} cua ban se het han vao ngay {subscription.EndDate:dd/MM/yyyy}. Vui long gia han neu ban muon tiep tuc su dung quyen loi hien tai.";
+                $"Gói {planName} của bạn sẽ hết hạn vào ngày {subscription.EndDate:dd/MM/yyyy}. Vui lòng gia hạn nếu bạn muốn tiếp tục sử dụng quyền lợi hiện tại.";
 
             _subscriptionRepo.addNotification(new Notification
             {
@@ -442,6 +444,9 @@ public class NotificationService
     {
         if (!notification.CreatedBy.HasValue)
             return notification.Type == NotificationTypes.AdminBroadcast ? "Admin he thong" : "He thong";
+
+        if (notification.CreatedBy.Value == notification.UserId)
+            return string.Empty;
 
         return senderMap.TryGetValue(notification.CreatedBy.Value, out var senderName)
             ? senderName

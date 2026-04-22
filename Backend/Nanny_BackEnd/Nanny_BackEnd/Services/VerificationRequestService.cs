@@ -2,19 +2,21 @@ using Nanny_BackEnd.DTOs.Verification;
 using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class VerificationRequestService
+public class VerificationRequestService : IVerificationRequestService
 {
-    private readonly VerificationRequestRepository _nannyVerificationRequestRepo;
+    private readonly IVerificationRequestRepository _nannyVerificationRequestRepo;
     private readonly Microsoft.AspNetCore.Hosting.IWebHostEnvironment _env;
-    private readonly NotificationService _notificationService;
+    private readonly INotificationService _notificationService;
 
     public VerificationRequestService(
-        VerificationRequestRepository nannyVerificationRequestRepo,
+        IVerificationRequestRepository nannyVerificationRequestRepo,
         Microsoft.AspNetCore.Hosting.IWebHostEnvironment env,
-        NotificationService notificationService)
+        INotificationService notificationService)
     {
         _nannyVerificationRequestRepo = nannyVerificationRequestRepo;
         _env = env;

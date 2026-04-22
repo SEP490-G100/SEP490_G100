@@ -4,11 +4,11 @@ namespace Nanny_BackEnd.DTOs.Report;
 
 public class CreateReportRequest
 {
-    [Required(ErrorMessage = "Ly do bao cao la bat buoc.")]
-    [StringLength(500, MinimumLength = 5, ErrorMessage = "Ly do bao cao phai tu 5 den 500 ky tu.")]
+    [Required(ErrorMessage = "Lý do báo cáo là bắt buộc.")]
+    [StringLength(500, MinimumLength = 5, ErrorMessage = "Lý do báo cáo phải từ 5 đến 500 ký tự.")]
     public string Reason { get; set; } = null!;
 
-    [StringLength(2000, ErrorMessage = "Noi dung bang chung khong duoc vuot qua 2000 ky tu.")]
+    [StringLength(2000, ErrorMessage = "Nội dung bằng chứng không được vượt quá 2000 ký tự.")]
     public string? Evidence { get; set; }
 }
 

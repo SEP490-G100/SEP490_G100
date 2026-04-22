@@ -7,9 +7,11 @@ using System.Text.Json.Serialization;
 using Microsoft.Extensions.Options;
 using Nanny_BackEnd.DTOs.Subscription;
 
+using Nanny_BackEnd.Services.Interfaces;
+
 namespace Nanny_BackEnd.Services;
 
-public class PayOsService
+public class PayOsService : IPayOsService
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {

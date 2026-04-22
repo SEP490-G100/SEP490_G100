@@ -1,10 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
+using Nanny_BackEnd.Enums;
+using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Models;
 
 namespace Nanny_BackEnd.Repositories;
 
-public class HiringRepository
+public class HiringRepository : IHiringRepository
 {
     private readonly Sep490NannyDbContext _db;
 
@@ -78,6 +80,21 @@ public class HiringRepository
             .Include(h => h.NannyProfile)
                 .ThenInclude(n => n.User)
             .FirstOrDefaultAsync();
+
+    public async Task<List<HiringRecord>> GetCompletedUnreviewedHiringsForParentAsync(
+        Guid parentUserId,
+        IReadOnlyCollection<Guid> reviewedHiringRecordIds) =>
+        await _db.HiringRecords
+            .Where(h =>
+                h.ParentProfile.UserId == parentUserId &&
+                h.Status == (int)HiringRecordStatus.Completed &&
+                !h.IsDeleted &&
+                !reviewedHiringRecordIds.Contains(h.Id))
+            .Include(h => h.NannyProfile)
+                .ThenInclude(n => n.User)
+            .Include(h => h.ParentProfile)
+            .OrderByDescending(h => h.EndDate)
+            .ToListAsync();
 
     public async Task<HiringRecord?> GetLatestHiringRecordByJobApplicationIdAsync(Guid jobApplicationId) =>
         await _db.HiringRecords

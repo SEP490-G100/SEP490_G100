@@ -1,12 +1,13 @@
+using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Models;
 
 namespace Nanny_BackEnd.Repositories;
 
-public class ModeratorJobRepository
+public class ModeratorJobRepository : IModeratorJobRepository
 {
-    private readonly JobRepository _jobRepository;
+    private readonly IJobRepository _jobRepository;
 
-    public ModeratorJobRepository(JobRepository jobRepository)
+    public ModeratorJobRepository(IJobRepository jobRepository)
     {
         _jobRepository = jobRepository;
     }

@@ -7,25 +7,27 @@ using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class JobService
+public class JobService : IJobService
 {
-    private readonly JobRepository _jobRepo;
-    private readonly FavoriteRepository _favoriteRepo;
-    private readonly GeocodingService _geo;
-    private readonly SubscriptionService _subscriptionService;
-    private readonly NotificationService _notificationService;
+    private readonly IJobRepository _jobRepo;
+    private readonly IFavoriteRepository _favoriteRepo;
+    private readonly IGeocodingService _geo;
+    private readonly ISubscriptionService _subscriptionService;
+    private readonly INotificationService _notificationService;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<JobService> _logger;
 
     public JobService(
-        JobRepository jobRepo,
-        FavoriteRepository favoriteRepo,
-        GeocodingService geo,
-        SubscriptionService subscriptionService,
-        NotificationService notificationService,
+        IJobRepository jobRepo,
+        IFavoriteRepository favoriteRepo,
+        IGeocodingService geo,
+        ISubscriptionService subscriptionService,
+        INotificationService notificationService,
         IServiceScopeFactory scopeFactory,
         ILogger<JobService> logger)
     {
@@ -89,14 +91,14 @@ public class JobService
     {
         await _jobRepo.hideExpiredPostings();
         var job = await _jobRepo.viewDetailPosting(jobId)
-            ?? throw new KeyNotFoundException("Khong tim thay tin dang hoac tin da bi xoa.");
+            ?? throw new KeyNotFoundException("Không tìm thấy tin đăng hoặc tin đã bị xóa.");
         return mapToDetail(job);
     }
 
     public async Task<JobPostingPrefillResponse> getCreatePrefill(Guid parentProfileId)
     {
         var parentProfile = await _jobRepo.getParentProfileSnapshot(parentProfileId)
-            ?? throw new KeyNotFoundException("Khong tim thay ho so phu huynh.");
+            ?? throw new KeyNotFoundException("Không tìm thấy hồ sơ phụ huynh.");
         var activeChildren = parentProfile.ChildProfiles
             .Where(c => !c.IsDeleted)
             .OrderBy(c => c.CreatedAt)
@@ -143,14 +145,14 @@ public class JobService
         const int freeParentActivePostingLimit = 3;
         var benefits = await _subscriptionService.getBenefitsForParentProfile(parentProfileId);
         var parentProfile = await _jobRepo.getParentProfileSnapshot(parentProfileId)
-            ?? throw new KeyNotFoundException("Khong tim thay ho so phu huynh.");
+            ?? throw new KeyNotFoundException("Không tìm thấy hồ sơ phụ huynh.");
 
         validateAgeRange(req.MinNannyAge, req.MaxNannyAge);
         var salaryValidationError = SalaryValidationRules.GetFirstError(
             req.SalaryMin,
             req.SalaryMax,
-            "Luong toi thieu",
-            "Luong toi da");
+            "Lương tối thiểu",
+            "Lương tối đa");
         if (!string.IsNullOrWhiteSpace(salaryValidationError))
             throw new InvalidOperationException(salaryValidationError);
         var selectedChildren = resolveSelectedChildren(parentProfile, req.ChildProfileId, req.ChildProfileIds, req.NumberOfChildren);
@@ -161,21 +163,21 @@ public class JobService
         {
             var activePostingCount = await _jobRepo.countActiveJobPostings(parentProfileId);
             if (activePostingCount >= freeParentActivePostingLimit)
-                throw new InvalidOperationException($"Tai khoan Parent mien phi chi duoc dang toi da {freeParentActivePostingLimit} bai dang. Vui long mua goi de dang them.");
+                throw new InvalidOperationException($"Tài khoản phụ huynh miễn phí chỉ được đăng tối đa {freeParentActivePostingLimit} bài đăng. Vui lòng mua gói để đăng thêm.");
 
             // Với free user: giới hạn tháng theo FreeParent benefits
             var countThisMonth = await _jobRepo.countJobPostingsInCurrentMonth(parentProfileId);
             var freeMonthlyLimit = Nanny_BackEnd.DTOs.Subscription.SubscriptionBenefitResponse.FreeParent.MonthlyJobPostLimit;
             if (countThisMonth >= freeMonthlyLimit)
-                throw new InvalidOperationException($"Ban chi duoc dang toi da {freeMonthlyLimit} bai viet trong 1 thang. Vui long mua goi de tang gioi han.");
+                throw new InvalidOperationException($"Bạn chỉ được đăng tối đa {freeMonthlyLimit} bài viết trong 1 tháng. Vui lòng mua gói để tăng giới hạn.");
         }
         // Paid users: không giới hạn bài đăng tháng ở đây
         // (plan benefits được apply khi tính ExpiresAt và FeaturedBadge)
 
         if (!req.SalaryNegotiable && req.SalaryMin == null)
-            throw new InvalidOperationException("Phai nhap muc luong toi thieu hoac chon 'Thuong luong'.");
+            throw new InvalidOperationException("Phải nhập mức lương tối thiểu hoặc chọn 'Thương lượng'.");
         if (req.SalaryMin.HasValue && req.SalaryMax.HasValue && req.SalaryMin > req.SalaryMax)
-            throw new InvalidOperationException("Luong toi thieu khong duoc lon hon luong toi da.");
+            throw new InvalidOperationException("Lương tối thiểu không được lớn hơn lương tối đa.");
 
         var profileSnapshot = buildProfileSnapshot(parentProfile, selectedChildren);
 
@@ -223,15 +225,15 @@ public class JobService
         await syncScheduleRequirements(job, req.ScheduleSlots, parentProfile.UserId);
         await _notificationService.createNotification(
             parentProfile.UserId,
-            "Bai dang cua ban dang cho moderator duyet",
-            $"Bai dang \"{job.Title}\" da duoc gui thanh cong va hien dang cho moderator duyet.",
+            "Bài đăng của bạn đang chờ điều hành viên duyệt",
+            $"Bài đăng \"{job.Title}\" đã được gửi thành công và hiện đang chờ điều hành viên duyệt.",
             NotificationTypes.JobPostingPending,
             job.Id,
             "JobPosting",
             null);
         await _notificationService.createNotificationForModerators(
-            "Co bai dang moi can duyet",
-            $"Phu huynh {getDisplayName(parentProfile.User)} vua gui bai dang \"{job.Title}\" de moderator xem xet.",
+            "Có bài đăng mới cần duyệt",
+            $"Phụ huynh {getDisplayName(parentProfile.User)} vừa gửi bài đăng \"{job.Title}\" để điều hành viên xem xét.",
             NotificationTypes.JobPostingReviewRequired,
             job.Id,
             "JobPosting",
@@ -247,28 +249,28 @@ public class JobService
     {
         var benefits = await _subscriptionService.getBenefitsForParentProfile(parentProfileId);
         var job = await _jobRepo.viewDetailPosting(jobId)
-            ?? throw new KeyNotFoundException("Khong tim thay tin dang hoac tin da bi xoa.");
+            ?? throw new KeyNotFoundException("Không tìm thấy tin đăng hoặc tin đã bị xóa.");
         var parentProfile = await _jobRepo.getParentProfileSnapshot(parentProfileId)
-            ?? throw new KeyNotFoundException("Khong tim thay ho so phu huynh.");
+            ?? throw new KeyNotFoundException("Không tìm thấy hồ sơ phụ huynh.");
 
         if (job.ParentProfileId != parentProfileId)
-            throw new UnauthorizedAccessException("Ban khong co quyen chinh sua tin dang nay.");
+            throw new UnauthorizedAccessException("Bạn không có quyền chỉnh sửa tin đăng này.");
 
         validateAgeRange(req.MinNannyAge, req.MaxNannyAge);
         var salaryValidationError = SalaryValidationRules.GetFirstError(
             req.SalaryMin,
             req.SalaryMax,
-            "Luong toi thieu",
-            "Luong toi da");
+            "Lương tối thiểu",
+            "Lương tối đa");
         if (!string.IsNullOrWhiteSpace(salaryValidationError))
             throw new InvalidOperationException(salaryValidationError);
         var selectedChildren = resolveSelectedChildren(parentProfile, req.ChildProfileId, req.ChildProfileIds, req.NumberOfChildren);
         var primaryChild = selectedChildren.FirstOrDefault();
 
         if (!req.SalaryNegotiable && req.SalaryMin == null)
-            throw new InvalidOperationException("Phai nhap muc luong toi thieu hoac chon 'Thuong luong'.");
+            throw new InvalidOperationException("Phải nhập mức lương tối thiểu hoặc chọn 'Thương lượng'.");
         if (req.SalaryMin.HasValue && req.SalaryMax.HasValue && req.SalaryMin > req.SalaryMax)
-            throw new InvalidOperationException("Luong toi thieu khong duoc lon hon luong toi da.");
+            throw new InvalidOperationException("Lương tối thiểu không được lớn hơn lương tối đa.");
 
         var addrChanged = req.Location != job.Location
                        || req.City != job.City
@@ -329,7 +331,7 @@ public class JobService
     public async Task moderateJob(Guid jobId, Guid moderatorUserId, bool approved, string? note)
     {
         var job = await _jobRepo.viewDetailPosting(jobId)
-            ?? throw new KeyNotFoundException("Khong tim thay tin dang hoac tin da bi xoa.");
+            ?? throw new KeyNotFoundException("Không tìm thấy tin đăng hoặc tin đã bị xóa.");
 
         var nowUtc = DateTime.UtcNow;
         job.ModerationStatus = approved
@@ -347,11 +349,11 @@ public class JobService
         await _jobRepo.updateJobPosting(job);
 
         var title = approved
-            ? "Bai dang cua ban da duoc duyet"
-            : "Bai dang cua ban da bi tu choi";
+            ? "Bài đăng của bạn đã được duyệt"
+            : "Bài đăng của bạn đã bị từ chối";
         var content = approved
-            ? $"Bai dang \"{job.Title}\" da duoc moderator duyet va se hien thi tren he thong."
-            : $"Bai dang \"{job.Title}\" da bi tu choi.{(string.IsNullOrWhiteSpace(job.ModerationNote) ? "" : $" Ly do: {job.ModerationNote}")}";
+            ? $"Bài đăng \"{job.Title}\" đã được điều hành viên duyệt và sẽ hiển thị trên hệ thống."
+            : $"Bài đăng \"{job.Title}\" đã bị từ chối.{(string.IsNullOrWhiteSpace(job.ModerationNote) ? "" : $" Lý do: {job.ModerationNote}")}";
 
         await _notificationService.createNotification(
             job.ParentProfile!.UserId,
@@ -366,14 +368,14 @@ public class JobService
     public async Task deletePost(Guid jobId, Guid parentProfileId)
     {
         var job = await _jobRepo.viewDetailPosting(jobId)
-            ?? throw new KeyNotFoundException("Khong tim thay tin dang hoac tin da bi xoa.");
+            ?? throw new KeyNotFoundException("Không tìm thấy tin đăng hoặc tin đã bị xóa.");
 
         if (job.ParentProfileId != parentProfileId)
-            throw new UnauthorizedAccessException("Ban khong co quyen xoa tin dang nay.");
+            throw new UnauthorizedAccessException("Bạn không có quyền xóa tin đăng này.");
 
         var hasPending = job.JobApplications.Any(a => a.Status == 0);
         if (hasPending)
-            throw new InvalidOperationException("Khong the xoa tin dang co don ung tuyen cho xet duyet. Vui long xu ly cac don truoc.");
+            throw new InvalidOperationException("Không thể xóa tin đăng có đơn ứng tuyển chờ xét duyệt. Vui lòng xử lý các đơn trước.");
 
         await _jobRepo.deleteJobPosting(job);
     }
@@ -381,11 +383,11 @@ public class JobService
     public async Task addFavoriteJob(Guid nannyProfileId, Guid jobPostingId)
     {
         var job = await _jobRepo.viewDetailPosting(jobPostingId)
-            ?? throw new KeyNotFoundException("Tin dang khong ton tai.");
+            ?? throw new KeyNotFoundException("Tin đăng không tồn tại.");
 
         var alreadySaved = await _favoriteRepo.isFavoriteJob(nannyProfileId, jobPostingId);
         if (alreadySaved)
-            throw new InvalidOperationException("Ban da luu tin nay truoc do roi.");
+            throw new InvalidOperationException("Bạn đã lưu tin này trước đó rồi.");
 
         await _favoriteRepo.addFavoriteJob(nannyProfileId, jobPostingId);
     }
@@ -393,10 +395,10 @@ public class JobService
     public async Task<bool> toggleFavoriteJob(Guid nannyProfileId, Guid jobPostingId, Guid actorUserId)
     {
         var job = await _jobRepo.viewDetailPosting(jobPostingId)
-            ?? throw new KeyNotFoundException("Tin dang khong ton tai.");
+            ?? throw new KeyNotFoundException("Tin đăng không tồn tại.");
 
         if (job.IsDeleted || job.ModerationStatus != (int)JobPostingModerationStatus.Approved)
-            throw new InvalidOperationException("Khong the luu tin dang nay.");
+            throw new InvalidOperationException("Không thể lưu tin đăng này.");
 
         return await _favoriteRepo.toggleFavoriteJob(nannyProfileId, jobPostingId, actorUserId);
     }
@@ -427,7 +429,7 @@ public class JobService
             .ToList();
 
         if (missingSkills.Count > 0)
-            throw new InvalidOperationException("Ky nang yeu cau khong hop le. Vui long chon tu danh sach ky nang co san.");
+            throw new InvalidOperationException("Kỹ năng yêu cầu không hợp lệ. Vui lòng chọn từ danh sách kỹ năng có sẵn.");
 
         var requirements = normalized.Select(name => new JobRequirement
         {
@@ -499,7 +501,7 @@ public class JobService
     private static void validateAgeRange(int? minNannyAge, int? maxNannyAge)
     {
         if (minNannyAge.HasValue && maxNannyAge.HasValue && minNannyAge > maxNannyAge)
-            throw new InvalidOperationException("Do tuoi toi thieu khong duoc lon hon do tuoi toi da cua bao mau.");
+            throw new InvalidOperationException("Độ tuổi tối thiểu không được lớn hơn độ tuổi tối đa của bảo mẫu.");
     }
 
     private static string getDisplayName(User? user)
@@ -693,7 +695,7 @@ public class JobService
             .OrderBy(c => c.CreatedAt)
             .ToList();
         if (children.Count == 0)
-            throw new InvalidOperationException("Vui long tao it nhat 1 Child Profile truoc khi dang bai.");
+            throw new InvalidOperationException("Vui lòng tạo ít nhất 1 Child Profile trước khi đăng bài.");
 
         var explicitIds = (childProfileIds ?? [])
             .Where(id => id != Guid.Empty)
@@ -703,15 +705,15 @@ public class JobService
         {
             if (requestedChildren.HasValue && requestedChildren.Value != explicitIds.Count)
                 throw new InvalidOperationException(
-                    "So luong tre khai bao phai trung voi danh sach Child Profile duoc chon.");
+                    "Số lượng trẻ khai báo phải trùng với danh sách Child Profile được chọn.");
 
             if (explicitIds.Count > children.Count)
                 throw new InvalidOperationException(
-                    $"Ban da chon {explicitIds.Count} tre nhung hien chi co {children.Count} Child Profile.");
+                    $"Bạn đã chọn {explicitIds.Count} trẻ nhưng hiện chỉ có {children.Count} Child Profile.");
 
             var childMap = children.ToDictionary(child => child.Id, child => child);
             if (explicitIds.Any(id => !childMap.ContainsKey(id)))
-                throw new InvalidOperationException("Co Child Profile khong thuoc ho so phu huynh hien tai.");
+                throw new InvalidOperationException("Có Child Profile không thuộc hồ sơ phụ huynh hiện tại.");
 
             return explicitIds.Select(id => childMap[id]).ToList();
         }
@@ -719,10 +721,10 @@ public class JobService
         var requestedCount = Math.Max(1, requestedChildren ?? 1);
         if (requestedCount > children.Count)
             throw new InvalidOperationException(
-                $"Ban da chon {requestedCount} tre nhung hien chi co {children.Count} Child Profile.");
+                $"Bạn đã chọn {requestedCount} trẻ nhưng hiện chỉ có {children.Count} Child Profile.");
 
         if (primaryChildId.HasValue && children.All(child => child.Id != primaryChildId.Value))
-            throw new InvalidOperationException("Tre duoc chon khong thuoc ho so phu huynh hien tai.");
+            throw new InvalidOperationException("Trẻ được chọn không thuộc hồ sơ phụ huynh hiện tại.");
 
         return ChildProfileSnapshotHelper.ResolveChildren(parentProfile, primaryChildId, requestedCount);
     }
@@ -778,7 +780,7 @@ public class JobService
     public async Task ReviewJobAsync(Guid jobId, Guid moderatorUserId, int moderationStatus, string? note)
     {
         var job = await _jobRepo.viewDetailPosting(jobId)
-            ?? throw new KeyNotFoundException("Khong tim thay tin dang hoac tin da bi xoa.");
+            ?? throw new KeyNotFoundException("Không tìm thấy tin đăng hoặc tin đã bị xóa.");
 
         var nowUtc = DateTime.UtcNow;
         job.ModerationStatus = moderationStatus;
@@ -802,10 +804,10 @@ public class JobService
 
         // Notifications
         var isApproved = moderationStatus == (int)JobPostingModerationStatus.Approved;
-        var title = isApproved ? "Bai dang cua ban da duoc duyet" : "Bai dang cua ban da bi tu choi";
+        var title = isApproved ? "Bài đăng của bạn đã được duyệt" : "Bài đăng của bạn đã bị từ chối";
         var content = isApproved 
-            ? $"Bai dang \"{job.Title}\" da duoc moderator duyet." 
-            : $"Bai dang \"{job.Title}\" da bi tu choi.{(string.IsNullOrWhiteSpace(job.ModerationNote) ? "" : $" Ly do: {job.ModerationNote}")}";
+            ? $"Bài đăng \"{job.Title}\" đã được điều hành viên duyệt." 
+            : $"Bài đăng \"{job.Title}\" đã bị từ chối.{(string.IsNullOrWhiteSpace(job.ModerationNote) ? "" : $" Lý do: {job.ModerationNote}")}";
 
         var notifType = isApproved ? NotificationTypes.JobPostingApproved : NotificationTypes.JobPostingRejected;
 
@@ -825,7 +827,7 @@ public class JobService
     public async Task DeactivateJobAsync(Guid jobId, Guid moderatorUserId)
     {
         var job = await _jobRepo.viewDetailPosting(jobId)
-            ?? throw new KeyNotFoundException("Khong tim thay tin dang hoac tin da bi xoa.");
+            ?? throw new KeyNotFoundException("Không tìm thấy tin đăng hoặc tin đã bị xóa.");
 
         if (job.IsDeleted)
             return;
@@ -843,8 +845,8 @@ public class JobService
         {
             await _notificationService.createNotification(
                 job.ParentProfile.UserId,
-                "Bai dang da bi vo hieu hoa",
-                $"Bai dang \"{job.Title}\" da bi moderator vo hieu hoa.",
+                "Bài đăng đã bị vô hiệu hóa",
+                $"Bài đăng \"{job.Title}\" đã bị điều hành viên vô hiệu hóa.",
                 NotificationTypes.JobPostingRejected,
                 job.Id,
                 "JobPosting",
@@ -858,7 +860,7 @@ public class JobService
         try
         {
             using var scope = _scopeFactory.CreateScope();
-            var embedService = scope.ServiceProvider.GetRequiredService<EmbeddingService>();
+            var embedService = scope.ServiceProvider.GetRequiredService<IEmbeddingService>();
             await embedService.EmbedJobAsync(jobId);
         }
         catch (Exception ex)

@@ -1,4 +1,4 @@
-﻿@using WebSite.Models.Profile
+@using WebSite.Models.Profile
 @model EditPersonalInfoViewModel
 
 @{
@@ -147,6 +147,65 @@
                         </div>
                     }
 
+                    @if (isNanny)
+                    {
+                        var availDays = Model.Availability;
+                        var availSlots = new[]
+                        {
+                            new { Slot = 0, Label = "Buổi sáng",  Name = "Morning"   },
+                            new { Slot = 1, Label = "Buổi chiều", Name = "Afternoon" },
+                            new { Slot = 2, Label = "Buổi tối",  Name = "Evening"   },
+                            new { Slot = 3, Label = "Ban đêm",   Name = "Night"     }
+                        };
+                        <div class="profile-card profile-card-soft">
+                            <h3>Lịch làm việc</h3>
+                            <p class="text-sm text-slate-500 mb-4">Chọn các khung giờ bạn có thể nhận việc trong tuần.</p>
+
+                            @for (var i = 0; i < availDays.Count; i++)
+                            {
+                                <input type="hidden" name="Availability[@i].DayName"  value="@availDays[i].DayName" />
+                                <input type="hidden" name="Availability[@i].DayOfWeek" value="@availDays[i].DayOfWeek" />
+                            }
+
+                            <div class="schedule-grid" id="availabilityEditGrid">
+                                <div></div>
+                                @foreach (var day in availDays)
+                                {
+                                    <div class="schedule-col-label">@day.DayName</div>
+                                }
+
+                                @foreach (var row in availSlots)
+                                {
+                                    <div class="schedule-row-label">@row.Label</div>
+                                    @for (var i = 0; i < availDays.Count; i++)
+                                    {
+                                        var inputId  = $"avail-{i}-slot-{row.Slot}";
+                                        var inputName = $"Availability[{i}].{row.Name}";
+                                        var isActive = row.Slot switch
+                                        {
+                                            0 => availDays[i].Morning,
+                                            1 => availDays[i].Afternoon,
+                                            2 => availDays[i].Evening,
+                                            _ => availDays[i].Night
+                                        };
+                                        <input type="checkbox"
+                                               id="@inputId"
+                                               name="@inputName"
+                                               value="true"
+                                               class="availability-checkbox"
+                                               @(isActive ? "checked" : null) />
+                                        <button type="button"
+                                                class="schedule-cell @(isActive ? "active" : "")"
+                                                data-input-id="@inputId"
+                                                aria-pressed="@(isActive ? "true" : "false")">
+                                            <span class="schedule-check">@(isActive ? Html.Raw("&#10003;") : Html.Raw(""))</span>
+                                        </button>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    }
+
                     <div class="profile-card">
                         <h3>Địa chỉ và bản đồ</h3>
                         <div class="space-y-4">
@@ -236,13 +295,12 @@
     </div>
 </section>
 
-<div id="profileToast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] rounded-xl border border-orange-200 bg-orange-500 text-white px-4 py-3 text-sm font-bold shadow-xl">
-    @((TempData["Success"] ?? "").ToString())
-</div>
-
 @section Scripts {
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        var profileSuccessToastMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["Success"]?.ToString()));
+        var profileErrorToastMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["Error"]?.ToString()));
+
         document.addEventListener("DOMContentLoaded", function () {
             var isNanny = @(isNanny ? "true" : "false");
             var form = document.getElementById("editProfileForm");
@@ -319,6 +377,10 @@
             }
 
             restoreInitialAvatar();
+
+            if (currentAvatarUrl && typeof window.updateCurrentUserAvatar === "function") {
+                window.updateCurrentUserAvatar(currentAvatarUrl);
+            }
 
             avatarUploadBtn.addEventListener("click", function () {
                 avatarInput.click();
@@ -466,6 +528,24 @@
                 });
             });
             dobInput.addEventListener("change", validateNannyDob);
+
+            var availGrid = document.getElementById("availabilityEditGrid");
+            if (availGrid) {
+                availGrid.querySelectorAll(".schedule-cell[data-input-id]").forEach(function (cell) {
+                    cell.addEventListener("click", function () {
+                        var inputId = cell.getAttribute("data-input-id");
+                        if (!inputId) return;
+                        var checkbox = document.getElementById(inputId);
+                        if (!checkbox) return;
+                        checkbox.checked = !checkbox.checked;
+                        var active = checkbox.checked;
+                        cell.classList.toggle("active", active);
+                        cell.setAttribute("aria-pressed", active ? "true" : "false");
+                        var check = cell.querySelector(".schedule-check");
+                        if (check) check.innerHTML = active ? "&#10003;" : "";
+                    });
+                });
+            }
 
             var toast = document.getElementById("profileToast");
             if (toast && toast.textContent.trim()) {

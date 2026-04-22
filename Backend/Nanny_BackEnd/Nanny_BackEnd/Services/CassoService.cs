@@ -3,9 +3,11 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 
+using Nanny_BackEnd.Services.Interfaces;
+
 namespace Nanny_BackEnd.Services;
 
-public class CassoService
+public class CassoService : ICassoService
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {

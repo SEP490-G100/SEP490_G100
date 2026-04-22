@@ -3,10 +3,11 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Caching.Memory;
 using Nanny_BackEnd.DTOs.Address;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class LocationService
+public class LocationService : ILocationService
 {
     private const string CacheKey = "address-location-tree";
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -219,15 +220,5 @@ public class LocationService
         }
 
         return sb.ToString().Normalize(NormalizationForm.FormC).Replace("đ", "d");
-    }
-
-    public class LocationApproxSuggestion
-    {
-        public string DisplayName { get; set; } = "";
-        public decimal Latitude { get; set; }
-        public decimal Longitude { get; set; }
-        public string? City { get; set; }
-        public string? District { get; set; }
-        public string? Ward { get; set; }
     }
 }

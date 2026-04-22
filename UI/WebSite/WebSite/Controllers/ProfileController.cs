@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Json;
@@ -329,6 +329,7 @@ public class ProfileController : Controller
                 profile.ContactNannyProfileId = resolvedNannyProfileId;
 
             var isContactAccepted = false;
+            var isContactRequestPending = false;
             Guid? resolvedContactRequestId = contactRequestId;
             if (User.IsInRole("Parent")
                 && profile.IsNanny
@@ -336,13 +337,15 @@ public class ProfileController : Controller
                 && profile.ContactNannyProfileId.HasValue
                 && profile.ContactNannyProfileId.Value != Guid.Empty)
             {
-                var (accepted, foundRequestId) = await IsContactAcceptedAsync(profile.ContactNannyProfileId.Value);
-                isContactAccepted = accepted;
+                var (contactRequestStatus, foundRequestId) = await GetContactRequestStateAsync(profile.ContactNannyProfileId.Value);
+                isContactAccepted = contactRequestStatus == 1;
+                isContactRequestPending = contactRequestStatus == 0;
                 resolvedContactRequestId ??= foundRequestId;
             }
 
             ViewBag.HasHiringContext = hasHiringContext;
             ViewBag.IsContactAccepted = isContactAccepted;
+            ViewBag.IsContactRequestPending = isContactRequestPending;
             ViewBag.HiringJobPostingId = hasHiringContext ? jobPostingId!.Value.ToString() : "";
             ViewBag.HiringJobApplicationId = hasHiringContext ? jobApplicationId!.Value.ToString() : "";
             ViewBag.ContactRequestId = resolvedContactRequestId?.ToString() ?? "";
@@ -382,24 +385,24 @@ public class ProfileController : Controller
         }
     }
 
-    private async Task<(bool Accepted, Guid? ContactRequestId)> IsContactAcceptedAsync(Guid nannyProfileId)
+    private async Task<(int? Status, Guid? ContactRequestId)> GetContactRequestStateAsync(Guid nannyProfileId)
     {
         var response = await _http.GetAsync("/api/nannies/contact-requests/sent");
         if (!response.IsSuccessStatusCode)
-            return (false, null);
+            return (null, null);
 
         var json = await response.Content.ReadAsStringAsync();
         if (string.IsNullOrWhiteSpace(json))
-            return (false, null);
+            return (null, null);
 
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
         if (!root.TryGetProperty("success", out var successEl) || successEl.ValueKind != JsonValueKind.True)
-            return (false, null);
+            return (null, null);
         if (!root.TryGetProperty("data", out var dataEl) || dataEl.ValueKind != JsonValueKind.Object)
-            return (false, null);
+            return (null, null);
         if (!dataEl.TryGetProperty("requests", out var requestsEl) || requestsEl.ValueKind != JsonValueKind.Array)
-            return (false, null);
+            return (null, null);
 
         foreach (var requestEl in requestsEl.EnumerateArray())
         {
@@ -415,20 +418,20 @@ public class ProfileController : Controller
                 continue;
 
             if (!requestEl.TryGetProperty("status", out var statusEl) || statusEl.ValueKind != JsonValueKind.Number)
-                return (false, null);
+                return (null, null);
 
-            if (!statusEl.TryGetInt32(out var status) || status != 1)
-                return (false, null);
+            if (!statusEl.TryGetInt32(out var status))
+                return (null, null);
 
             Guid? requestId = null;
             if (requestEl.TryGetProperty("id", out var idEl) && idEl.ValueKind == JsonValueKind.String)
                 if (Guid.TryParse(idEl.GetString(), out var parsedId))
                     requestId = parsedId;
 
-            return (true, requestId);
+            return (status, requestId);
         }
 
-        return (false, null);
+        return (null, null);
     }
 
     // Edit personal information
@@ -494,6 +497,24 @@ public class ProfileController : Controller
                     .ToList();
             }
             await PopulateAvailableSkillsAsync(vm);
+
+            if (vm.IsNanny &&
+                apiResult?.Data is JsonElement availRoot &&
+                availRoot.TryGetProperty("availabilities", out var availElement) &&
+                availElement.ValueKind == JsonValueKind.Array)
+            {
+                var rawAvailabilities = JsonSerializer.Deserialize<List<NannyAvailabilityItemViewModel>>(
+                    availElement.GetRawText(), JsonOpts) ?? new();
+
+                foreach (var day in vm.Availability)
+                {
+                    day.Morning   = rawAvailabilities.Any(a => a.DayOfWeek == day.DayOfWeek && a.IsAvailable && a.TimeSlot == 0);
+                    day.Afternoon = rawAvailabilities.Any(a => a.DayOfWeek == day.DayOfWeek && a.IsAvailable && a.TimeSlot == 1);
+                    day.Evening   = rawAvailabilities.Any(a => a.DayOfWeek == day.DayOfWeek && a.IsAvailable && a.TimeSlot == 2);
+                    day.Night     = rawAvailabilities.Any(a => a.DayOfWeek == day.DayOfWeek && a.IsAvailable && a.TimeSlot == 3);
+                }
+            }
+
             return View(vm);
         }
         catch (Exception ex)
@@ -621,6 +642,22 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
             return View(model);
         }
 
+        if (model.IsNanny && model.Availability.Count > 0)
+        {
+            var availPayload = new
+            {
+                Days = model.Availability.Select(d => new
+                {
+                    d.DayOfWeek,
+                    d.Morning,
+                    d.Afternoon,
+                    d.Evening,
+                    d.Night
+                }).ToList()
+            };
+            await _http.PutAsJsonAsync("/api/onboarding/nanny/availability", availPayload);
+        }
+
         await RefreshAuthClaimsAsync(model);
         TempData["Success"] = "Cập nhật thông tin thành công.";
         return RedirectToAction("Edit");
@@ -743,8 +780,11 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
                 return View(model);
             }
 
-            TempData["Success"] = "Thêm trẻ em thành công.";
-            return RedirectToAction("Children");
+            return RedirectToAction("Children", new
+            {
+                toastType = "success",
+                toastMessage = "Thêm trẻ em thành công."
+            });
         }
         catch (Exception ex)
         {
@@ -794,8 +834,11 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
         }
         catch (Exception ex)
         {
-            TempData["Error"] = "Lỗi khi tải thông tin trẻ em: " + ex.Message;
-            return RedirectToAction("Children");
+            return RedirectToAction("Children", new
+            {
+                toastType = "error",
+                toastMessage = "Lỗi khi tải thông tin trẻ em: " + ex.Message
+            });
         }
     }
 
@@ -834,8 +877,11 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
                 return View(model);
             }
 
-            TempData["Success"] = "Cập nhật thông tin trẻ em thành công.";
-            return RedirectToAction("Children");
+            return RedirectToAction("Children", new
+            {
+                toastType = "success",
+                toastMessage = "Cập nhật thông tin trẻ em thành công."
+            });
         }
         catch (Exception ex)
         {
@@ -865,17 +911,26 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
 
             if (apiResult == null || !apiResult.Success)
             {
-                TempData["Error"] = apiResult?.Message ?? "Xóa thất bại.";
-                return RedirectToAction("Children");
+                return RedirectToAction("Children", new
+                {
+                    toastType = "error",
+                    toastMessage = apiResult?.Message ?? "Xóa thất bại."
+                });
             }
 
-            TempData["Success"] = "Xóa trẻ em thành công.";
-            return RedirectToAction("Children");
+            return RedirectToAction("Children", new
+            {
+                toastType = "success",
+                toastMessage = "Xóa trẻ em thành công."
+            });
         }
         catch (Exception ex)
         {
-            TempData["Error"] = "Lỗi khi xóa: " + ex.Message;
-            return RedirectToAction("Children");
+            return RedirectToAction("Children", new
+            {
+                toastType = "error",
+                toastMessage = "Lỗi khi xóa: " + ex.Message
+            });
         }
     }
 }

@@ -1,4 +1,4 @@
-using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
@@ -24,7 +24,7 @@ public class OtpCleanupService : BackgroundService
             {
                 using var scope = _scopeFactory.CreateScope();
 
-                var otpRepo = scope.ServiceProvider.GetRequiredService<OtpRepository>();
+                var otpRepo = scope.ServiceProvider.GetRequiredService<IOtpRepository>();
 
                 await otpRepo.CleanupExpiredAsync();
                 await otpRepo.SaveChangesAsync();

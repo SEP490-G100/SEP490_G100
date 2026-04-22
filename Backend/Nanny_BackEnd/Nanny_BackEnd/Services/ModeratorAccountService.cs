@@ -1,16 +1,18 @@
 using Nanny_BackEnd.DTOs.Account;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class ModeratorAccountService
+public class ModeratorAccountService : IModeratorAccountService
 {
     private static readonly string[] ExcludedRoles = ["Moderator", "Admin"];
     private static readonly string[] AllowedRoles = ["Parent", "Nanny"];
 
-    private readonly ModeratorAccountRepository _moderatorAccountRepository;
+    private readonly IModeratorAccountRepository _moderatorAccountRepository;
 
-    public ModeratorAccountService(ModeratorAccountRepository moderatorAccountRepository)
+    public ModeratorAccountService(IModeratorAccountRepository moderatorAccountRepository)
     {
         _moderatorAccountRepository = moderatorAccountRepository;
     }

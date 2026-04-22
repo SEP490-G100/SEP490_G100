@@ -1,12 +1,13 @@
+using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Models;
 
 namespace Nanny_BackEnd.Repositories;
 
-public class AdminSubcriptionPlanRepository
+public class AdminSubcriptionPlanRepository : IAdminSubcriptionPlanRepository
 {
-    private readonly SubscriptionRepository _subscriptionRepository;
+    private readonly ISubscriptionRepository _subscriptionRepository;
 
-    public AdminSubcriptionPlanRepository(SubscriptionRepository subscriptionRepository)
+    public AdminSubcriptionPlanRepository(ISubscriptionRepository subscriptionRepository)
     {
         _subscriptionRepository = subscriptionRepository;
     }

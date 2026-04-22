@@ -1,31 +1,31 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Nanny_BackEnd.Data;
 using Nanny_BackEnd.DTOs.Profile;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
-using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Enums;
+
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class OnboardingService
+public class OnboardingService : IOnboardingService
 {
-    private readonly UserRepository _userRepo;
-    private readonly ParentRepository _parentRepo;
-    private readonly ChildRepository _childRepo;
-    private readonly NannyProfileRepository _nannyProfileRepo;
-    private readonly NannySkillRepository _nannySkillRepo;
-    private readonly NannyAvailabilityRepository _nannyAvailabilityRepo;
-    private readonly Sep490NannyDbContext _db;
+    private readonly IUserRepository _userRepo;
+    private readonly IParentRepository _parentRepo;
+    private readonly IChildRepository _childRepo;
+    private readonly INannyProfileRepository _nannyProfileRepo;
+    private readonly INannySkillRepository _nannySkillRepo;
+    private readonly INannyAvailabilityRepository _nannyAvailabilityRepo;
+    private readonly IJobRepository _jobRepo;
 
     public OnboardingService(
-        UserRepository userRepo,
-        ParentRepository parentRepo,
-        ChildRepository childRepo,
-        NannyProfileRepository nannyProfileRepo,
-        NannySkillRepository nannySkillRepo,
-        NannyAvailabilityRepository nannyAvailabilityRepo,
-        Sep490NannyDbContext db)
+        IUserRepository userRepo,
+        IParentRepository parentRepo,
+        IChildRepository childRepo,
+        INannyProfileRepository nannyProfileRepo,
+        INannySkillRepository nannySkillRepo,
+        INannyAvailabilityRepository nannyAvailabilityRepo,
+        IJobRepository jobRepo)
     {
         _userRepo = userRepo;
         _parentRepo = parentRepo;
@@ -33,7 +33,7 @@ public class OnboardingService
         _nannyProfileRepo = nannyProfileRepo;
         _nannySkillRepo = nannySkillRepo;
         _nannyAvailabilityRepo = nannyAvailabilityRepo;
-        _db = db;
+        _jobRepo = jobRepo;
     }
 
     public async Task<OnboardingStatusDto> GetStatusAsync(Guid userId)
@@ -159,11 +159,7 @@ public class OnboardingService
 
     public async Task<List<SkillSelectionDto>> GetAllSkillsAsync()
     {
-        var skills = await _db.Skills
-            .Where(s => s.IsActive && !s.IsDeleted)
-            .OrderBy(s => s.SortOrder)
-            .ThenBy(s => s.Name)
-            .ToListAsync();
+        var skills = await _jobRepo.getActiveSkills();
 
         return skills.Select(s => new SkillSelectionDto
         {

@@ -2,10 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
 using Nanny_BackEnd.DTOs.Dashboard;
 using Nanny_BackEnd.Enums;
+using Nanny_BackEnd.Repositories.Interfaces;
 
 namespace Nanny_BackEnd.Repositories;
 
-public class AdminDashboardRepository
+public class AdminDashboardRepository : IAdminDashboardRepository
 {
     private readonly Sep490NannyDbContext _db;
 

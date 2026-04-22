@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Json;
@@ -107,18 +107,14 @@ public class AuthController : Controller
             return RedirectToAction(nameof(AccessDenied), new { returnUrl });
         }
 
-        // --- Staff roles: skip onboarding, redirect directly to their dashboards ---
         if (hasRole(normalizedRoles, "Admin"))
             return Redirect("/Admin/Dashboard");
         if (hasRole(normalizedRoles, "Moderator"))
             return Redirect("/Moderator/Dashboard");
 
-        // Nếu user chưa có role (đặc biệt case đăng ký/đăng nhập Google lần đầu),
-        // luôn bắt buộc chọn role trước khi chạy onboarding theo role.
+   
         if (!normalizedRoles.Any())
             return RedirectToAction("ChooseRole", "Auth");
-
-        // Sau khi đăng nhập, kiểm tra trạng thái onboarding (kèm Bearer token)
         try
         {
             var obRequest = new HttpRequestMessage(HttpMethod.Get, "/api/onboarding/status")
@@ -133,7 +129,6 @@ public class AuthController : Controller
         }
         catch
         {
-            // Nếu có lỗi khi gọi onboarding, bỏ qua và cho vào trang đích mặc định
         }
 
         return LocalRedirect(returnUrl ?? "/");
@@ -187,7 +182,7 @@ public class AuthController : Controller
 
         if (result == null || !result.Success)
         {
-            TempData["Error"] = result?.Message ?? "Đăng nhập Google thất bại.";
+            TempData["AuthError"] = result?.Message ?? "Đăng nhập Google thất bại.";
             return RedirectToAction("Login");
         }
 
@@ -215,14 +210,12 @@ public class AuthController : Controller
             return RedirectToAction(nameof(AccessDenied), new { returnUrl });
         }
 
-        // --- Staff roles: skip onboarding, redirect directly to their dashboards ---
         if (hasRole(normalizedRoles, "Admin"))
             return Redirect("/Admin/Dashboard");
         if (hasRole(normalizedRoles, "Moderator"))
             return Redirect("/Moderator/Dashboard");
 
-        // Nếu user chưa có role (đặc biệt case đăng ký Google lần đầu),
-        // luôn bắt buộc chọn role trước khi chạy onboarding theo role.
+   
         if (!normalizedRoles.Any())
             return RedirectToAction("ChooseRole", "Auth");
 
@@ -307,7 +300,7 @@ public class AuthController : Controller
             return View(model);
         }
 
-        TempData["Success"] = "Đặt lại mật khẩu thành công. Vui lòng đăng nhập.";
+        TempData["AuthSuccess"] = "Đặt lại mật khẩu thành công. Vui lòng đăng nhập.";
         return RedirectToAction("Login");
     }
 
@@ -354,7 +347,7 @@ public class AuthController : Controller
         HttpContext.Session.Clear();
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
-        TempData["Success"] = "Xác thực email thành công! Vui lòng đăng nhập để tiếp tục.";
+        TempData["AuthSuccess"] = "Xác thực email thành công! Vui lòng đăng nhập để tiếp tục.";
         return RedirectToAction("Login");
     }
 
@@ -376,7 +369,7 @@ public class AuthController : Controller
         var token = HttpContext.Session.GetString("AccessToken");
         if (string.IsNullOrEmpty(token))
         {
-            TempData["Error"] = "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.";
+            TempData["AuthError"] = "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.";
             return RedirectToAction("Login");
         }
 

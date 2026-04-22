@@ -1,14 +1,17 @@
 using Nanny_BackEnd.DTOs.Blog;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Enums;
+
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class BlogService
+public class BlogService : IBlogService
 {
-    private readonly BlogRepository _repo;
-    public BlogService(BlogRepository repo) => _repo = repo;
+    private readonly IBlogRepository _repo;
+    public BlogService(IBlogRepository repo) => _repo = repo;
 
     public async Task<List<BlogCategoryOptionDto>> GetActiveCategoriesAsync()
     {

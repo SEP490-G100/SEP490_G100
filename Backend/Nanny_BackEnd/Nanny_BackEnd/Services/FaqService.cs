@@ -1,14 +1,16 @@
 using Nanny_BackEnd.DTOs.FAQ;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class FaqService
+public class FaqService : IFaqService
 {
-    private readonly FaqRepository _faqRepository;
+    private readonly IFaqRepository _faqRepository;
 
-    public FaqService(FaqRepository faqRepository)
+    public FaqService(IFaqRepository faqRepository)
     {
         _faqRepository = faqRepository;
     }

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nanny_BackEnd.DTOs.Account;
-using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Controllers;
 
@@ -10,9 +10,9 @@ namespace Nanny_BackEnd.Controllers;
 [Authorize(Roles = "Moderator")]
 public class ModeratorAccountController : ControllerBase
 {
-    private readonly ModeratorAccountService _moderatorAccountService;
+    private readonly IModeratorAccountService _moderatorAccountService;
 
-    public ModeratorAccountController(ModeratorAccountService moderatorAccountService)
+    public ModeratorAccountController(IModeratorAccountService moderatorAccountService)
     {
         _moderatorAccountService = moderatorAccountService;
     }
