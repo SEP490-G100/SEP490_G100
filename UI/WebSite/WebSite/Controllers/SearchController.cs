@@ -195,7 +195,7 @@ public class SearchController : Controller
         return Json(new { success = skills.Count > 0, data = skills });
     }
 
-    // ── POST /Search/CreateJob ──────────────────────────────
+   
     [HttpPost]
     [Authorize]
     public async Task<IActionResult> CreateJob([FromBody] JsonElement body)
