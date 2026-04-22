@@ -2,12 +2,10 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Microsoft.EntityFrameworkCore;
-using Nanny_BackEnd.Data;
 using Nanny_BackEnd.DTOs.JobPosting;
 using Nanny_BackEnd.DTOs.Report;
 using Nanny_BackEnd.Exceptions;
-using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Controllers;
 
@@ -15,15 +13,18 @@ namespace Nanny_BackEnd.Controllers;
 [Route("api/job-postings")]
 public class JobPostingController : ControllerBase
 {
-    private readonly JobService _jobSvc;
-    private readonly ReportService _reportService;
-    private readonly Sep490NannyDbContext _db;
+    private readonly IJobService _jobSvc;
+    private readonly IReportService _reportService;
+    private readonly IProfileService _profileService;
 
-    public JobPostingController(JobService jobSvc, ReportService reportService, Sep490NannyDbContext db)
+    public JobPostingController(
+        IJobService jobSvc,
+        IReportService reportService,
+        IProfileService profileService)
     {
         _jobSvc = jobSvc;
         _reportService = reportService;
-        _db = db;
+        _profileService = profileService;
     }
 
     [Authorize]
@@ -209,8 +210,7 @@ public class JobPostingController : ControllerBase
         if (!userId.HasValue)
             return null;
 
-        return await _db.ParentProfiles
-            .FirstOrDefaultAsync(p => p.UserId == userId.Value && !p.IsDeleted);
+        return await _profileService.GetParentProfileByUserIdAsync(userId.Value);
     }
 
     private Guid? getCurrentUserId()

@@ -1,13 +1,15 @@
 using ClosedXML.Excel;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class ExportService
+public class ExportService : IExportService
 {
-    private readonly ExportRepository _exportRepository;
+    private readonly IExportRepository _exportRepository;
 
-    public ExportService(ExportRepository exportRepository)
+    public ExportService(IExportRepository exportRepository)
     {
         _exportRepository = exportRepository;
     }

@@ -6,7 +6,7 @@ using Nanny_BackEnd.DTOs.Communication;
 using Nanny_BackEnd.DTOs.Report;
 using Nanny_BackEnd.Exceptions;
 using Nanny_BackEnd.Hubs;
-using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Controllers;
 
@@ -15,10 +15,10 @@ namespace Nanny_BackEnd.Controllers;
 [Route("api/communication")]
 public class CommunicationController : ControllerBase
 {
-    private readonly CommunicationService _service;
+    private readonly ICommunicationService _service;
     private readonly IHubContext<ChatHub> _hubContext;
 
-    public CommunicationController(CommunicationService service, IHubContext<ChatHub> hubContext)
+    public CommunicationController(ICommunicationService service, IHubContext<ChatHub> hubContext)
     {
         _service = service;
         _hubContext = hubContext;

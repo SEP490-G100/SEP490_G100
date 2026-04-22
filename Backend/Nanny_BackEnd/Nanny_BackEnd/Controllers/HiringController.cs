@@ -2,7 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nanny_BackEnd.DTOs.Hiring;
-using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Controllers;
 
@@ -11,9 +11,9 @@ namespace Nanny_BackEnd.Controllers;
 [Route("api/hiring")]
 public class HiringController : ControllerBase
 {
-    private readonly HiringService _service;
+    private readonly IHiringService _service;
 
-    public HiringController(HiringService service) => _service = service;
+    public HiringController(IHiringService service) => _service = service;
 
     [HttpGet("{jobPostingId:guid}/applicants")]
     public async Task<IActionResult> GetApplicants(Guid jobPostingId)

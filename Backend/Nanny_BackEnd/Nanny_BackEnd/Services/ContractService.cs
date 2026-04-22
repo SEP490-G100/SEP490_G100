@@ -5,10 +5,12 @@ using Nanny_BackEnd.DTOs.Hiring;
 using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class ContractService
+public class ContractService : IContractService
 {
     private static readonly HashSet<string> ParentEditableFields = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -105,9 +107,9 @@ public class ContractService
     private const string PaymentMethodCash = "Cash";
     private const string PaymentMethodBankTransfer = "BankTransfer";
 
-    private readonly ContractRepository _repo;
+    private readonly IContractRepository _repo;
 
-    public ContractService(ContractRepository repo) => _repo = repo;
+    public ContractService(IContractRepository repo) => _repo = repo;
 
     public async Task<ContractListResponseDto> GetMyContractsAsync(Guid userId)
     {

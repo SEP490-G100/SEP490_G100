@@ -1,21 +1,35 @@
 using Nanny_BackEnd.DTOs.Recommendation;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class RecommendationService
+public class RecommendationService : IRecommendationService
 {
-    private readonly RecommendationRepository _repo;
-    private readonly RecommendationConfigRepository _configRepo;
+    private readonly IRecommendationRepository _repo;
+    private readonly IRecommendationConfigRepository _configRepo;
+    private readonly IParentRepository _parentRepo;
+    private readonly INannyProfileRepository _nannyRepo;
+    private readonly IJobRepository _jobRepo;
+    private readonly ISubscriptionService _subscriptionService;
     private readonly ILogger<RecommendationService> _logger;
 
     public RecommendationService(
-        RecommendationRepository repo,
-        RecommendationConfigRepository configRepo,
+        IRecommendationRepository repo,
+        IRecommendationConfigRepository configRepo,
+        IParentRepository parentRepo,
+        INannyProfileRepository nannyRepo,
+        IJobRepository jobRepo,
+        ISubscriptionService subscriptionService,
         ILogger<RecommendationService> logger)
     {
         _repo = repo;
         _configRepo = configRepo;
+        _parentRepo = parentRepo;
+        _nannyRepo = nannyRepo;
+        _jobRepo = jobRepo;
+        _subscriptionService = subscriptionService;
         _logger = logger;
     }
 
@@ -189,6 +203,122 @@ public class RecommendationService
             .OrderByDescending(r => r.FinalScore)
             .Take(topK)
             .ToList();
+    }
+
+    public Task<NannyReadModelDto?> GetNannyReadModelForAdminAsync(Guid nannyProfileId) =>
+        _repo.GetNannyReadModelAsync(nannyProfileId);
+
+    public Task<JobReadModelDto?> GetJobReadModelForAdminAsync(Guid jobId) =>
+        _repo.GetJobReadModelAsync(jobId);
+
+    public Task<List<NannyReadModelDto>> GetPendingEmbedNanniesForAdminAsync() =>
+        _repo.GetPendingEmbedNanniesAsync();
+
+    public Task<List<JobReadModelDto>> GetPendingEmbedJobsForAdminAsync() =>
+        _repo.GetPendingEmbedJobsAsync();
+
+    public Task<ScoringWeights> GetRecommendationConfigWeightsAsync() =>
+        _configRepo.GetWeightsAsync();
+
+    public Task UpdateRecommendationConfigWeightAsync(string key, double value, Guid updatedBy) =>
+        _configRepo.UpdateWeightAsync(key, value, updatedBy);
+
+    public async Task<NanniesForJobGatingResult> ValidateNanniesForJobGatingAsync(
+        Guid? userId,
+        Guid jobId,
+        bool isAdminOrModerator)
+    {
+        if (!userId.HasValue)
+        {
+            return new NanniesForJobGatingResult
+            {
+                IsAllowed = false,
+                HttpStatus = 401,
+                ErrorMessage = "Không xác định được người dùng."
+            };
+        }
+
+        if (isAdminOrModerator)
+        {
+            return new NanniesForJobGatingResult { IsAllowed = true, HttpStatus = 200 };
+        }
+
+        var parent = await _parentRepo.FindByUserIdAsync(userId.Value);
+        if (parent == null)
+        {
+            return new NanniesForJobGatingResult
+            {
+                IsAllowed = false,
+                HttpStatus = 403,
+                ErrorMessage = null
+            };
+        }
+
+        var benefits = await _subscriptionService.getBenefitsForParentProfile(parent.Id);
+        if (!benefits.CanUseRecommendation)
+        {
+            return new NanniesForJobGatingResult
+            {
+                IsAllowed = false,
+                HttpStatus = 402,
+                ErrorMessage = "Tính năng gợi ý AI yêu cầu gói Plus hoặc Pro."
+            };
+        }
+
+        var jobExists = await _jobRepo.JobPostingExistsForParentAsync(jobId, parent.Id);
+        if (!jobExists)
+        {
+            return new NanniesForJobGatingResult
+            {
+                IsAllowed = false,
+                HttpStatus = 404,
+                ErrorMessage = "Không tìm thấy job posting."
+            };
+        }
+
+        return new NanniesForJobGatingResult { IsAllowed = true, HttpStatus = 200 };
+    }
+
+    public async Task<JobsForNannyGatingResult> ValidateJobsForNannyGatingAsync(Guid? userId)
+    {
+        if (!userId.HasValue)
+        {
+            return new JobsForNannyGatingResult
+            {
+                IsAllowed = false,
+                HttpStatus = 401,
+                ErrorMessage = "Không xác định được người dùng."
+            };
+        }
+
+        var nanny = await _nannyRepo.FindByUserIdAsync(userId.Value);
+        if (nanny == null)
+        {
+            return new JobsForNannyGatingResult
+            {
+                IsAllowed = false,
+                HttpStatus = 404,
+                ErrorMessage = "Không tìm thấy nanny profile."
+            };
+        }
+
+        var benefits = await _subscriptionService.getBenefitsForNannyProfile(nanny.Id);
+        if (!benefits.CanUseRecommendation)
+        {
+            return new JobsForNannyGatingResult
+            {
+                IsAllowed = false,
+                HttpStatus = 402,
+                ErrorMessage = "Tính năng gợi ý AI yêu cầu gói Plus hoặc Pro."
+            };
+        }
+
+        return new JobsForNannyGatingResult
+        {
+            IsAllowed = true,
+            HttpStatus = 200,
+            NannyProfileId = nanny.Id
+        };
     }
 
     // ──────────────────────────────────────────────────────────────

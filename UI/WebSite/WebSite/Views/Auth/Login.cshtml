@@ -11,18 +11,20 @@
                 <p class="text-gray-500 dark:text-gray-400 mt-2">Chào mừng bạn quay lại NannyMatch</p>
             </div>
 
-            @if (TempData["Success"] != null)
+            @if (TempData["AuthSuccess"] != null)
             {
                 <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl mb-4 text-sm">
-                    @TempData["Success"]
+                    @TempData["AuthSuccess"]
                 </div>
             }
-            @if (TempData["Error"] != null)
+            @if (TempData["AuthError"] != null)
             {
                 <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 text-sm">
-                    @TempData["Error"]
+                    @TempData["AuthError"]
                 </div>
             }
+            @* Consume TempData["Success"]/["Error"] to prevent general messages from other pages leaking here *@
+            @{ var _ = TempData["Success"]; var __ = TempData["Error"]; }
 
             @if (!ViewData.ModelState.IsValid)
             {

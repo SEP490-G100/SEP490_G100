@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nanny_BackEnd.DTOs.Account;
-using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Controllers;
 
@@ -10,9 +10,9 @@ namespace Nanny_BackEnd.Controllers;
 [Authorize(Roles = "Admin")]
 public class AdminAccountController : ControllerBase
 {
-    private readonly AdminAccountService _adminAccountService;
+    private readonly IAdminAccountService _adminAccountService;
 
-    public AdminAccountController(AdminAccountService adminAccountService)
+    public AdminAccountController(IAdminAccountService adminAccountService)
     {
         _adminAccountService = adminAccountService;
     }

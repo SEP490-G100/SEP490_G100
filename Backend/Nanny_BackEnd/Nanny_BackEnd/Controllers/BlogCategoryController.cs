@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nanny_BackEnd.DTOs.BlogCategory;
 using Nanny_BackEnd.Models;
-using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 using System.Security.Claims;
 
 
@@ -13,8 +13,8 @@ namespace Nanny_BackEnd.Controllers;
 [Authorize(Roles = "Moderator")]
 public class BlogCategoryController : ControllerBase
 {
-    private readonly BlogCategoryService _blogCategoryService;
-    public BlogCategoryController(BlogCategoryService blogCategoryService) {
+    private readonly IBlogCategoryService _blogCategoryService;
+    public BlogCategoryController(IBlogCategoryService blogCategoryService) {
         _blogCategoryService = blogCategoryService;
     }  
     // GET /api/BlogCategory?search=...&page=1&pageSize=3&isDeleted=false

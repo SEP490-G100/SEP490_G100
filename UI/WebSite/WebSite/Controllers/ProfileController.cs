@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Json;
@@ -497,6 +497,24 @@ public class ProfileController : Controller
                     .ToList();
             }
             await PopulateAvailableSkillsAsync(vm);
+
+            if (vm.IsNanny &&
+                apiResult?.Data is JsonElement availRoot &&
+                availRoot.TryGetProperty("availabilities", out var availElement) &&
+                availElement.ValueKind == JsonValueKind.Array)
+            {
+                var rawAvailabilities = JsonSerializer.Deserialize<List<NannyAvailabilityItemViewModel>>(
+                    availElement.GetRawText(), JsonOpts) ?? new();
+
+                foreach (var day in vm.Availability)
+                {
+                    day.Morning   = rawAvailabilities.Any(a => a.DayOfWeek == day.DayOfWeek && a.IsAvailable && a.TimeSlot == 0);
+                    day.Afternoon = rawAvailabilities.Any(a => a.DayOfWeek == day.DayOfWeek && a.IsAvailable && a.TimeSlot == 1);
+                    day.Evening   = rawAvailabilities.Any(a => a.DayOfWeek == day.DayOfWeek && a.IsAvailable && a.TimeSlot == 2);
+                    day.Night     = rawAvailabilities.Any(a => a.DayOfWeek == day.DayOfWeek && a.IsAvailable && a.TimeSlot == 3);
+                }
+            }
+
             return View(vm);
         }
         catch (Exception ex)
@@ -622,6 +640,22 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
             ModelState.AddModelError("", apiResult?.Message ?? "Cập nhật thất bại.");
             await PopulateAvailableSkillsAsync(model);
             return View(model);
+        }
+
+        if (model.IsNanny && model.Availability.Count > 0)
+        {
+            var availPayload = new
+            {
+                Days = model.Availability.Select(d => new
+                {
+                    d.DayOfWeek,
+                    d.Morning,
+                    d.Afternoon,
+                    d.Evening,
+                    d.Night
+                }).ToList()
+            };
+            await _http.PutAsJsonAsync("/api/onboarding/nanny/availability", availPayload);
         }
 
         await RefreshAuthClaimsAsync(model);

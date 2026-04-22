@@ -7,14 +7,16 @@ using Nanny_BackEnd.DTOs.Subscription;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class AdminSubcriptionPlanService
+public class AdminSubcriptionPlanService : IAdminSubcriptionPlanService
 {
-    private readonly AdminSubcriptionPlanRepository _adminSubcriptionPlanRepository;
+    private readonly IAdminSubcriptionPlanRepository _adminSubcriptionPlanRepository;
 
-    public AdminSubcriptionPlanService(AdminSubcriptionPlanRepository adminSubcriptionPlanRepository)
+    public AdminSubcriptionPlanService(IAdminSubcriptionPlanRepository adminSubcriptionPlanRepository)
     {
         _adminSubcriptionPlanRepository = adminSubcriptionPlanRepository;
     }

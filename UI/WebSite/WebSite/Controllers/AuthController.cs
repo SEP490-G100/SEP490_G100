@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Json;
@@ -182,7 +182,7 @@ public class AuthController : Controller
 
         if (result == null || !result.Success)
         {
-            TempData["Error"] = result?.Message ?? "Đăng nhập Google thất bại.";
+            TempData["AuthError"] = result?.Message ?? "Đăng nhập Google thất bại.";
             return RedirectToAction("Login");
         }
 
@@ -300,7 +300,7 @@ public class AuthController : Controller
             return View(model);
         }
 
-        TempData["Success"] = "Đặt lại mật khẩu thành công. Vui lòng đăng nhập.";
+        TempData["AuthSuccess"] = "Đặt lại mật khẩu thành công. Vui lòng đăng nhập.";
         return RedirectToAction("Login");
     }
 
@@ -347,7 +347,7 @@ public class AuthController : Controller
         HttpContext.Session.Clear();
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
-        TempData["Success"] = "Xác thực email thành công! Vui lòng đăng nhập để tiếp tục.";
+        TempData["AuthSuccess"] = "Xác thực email thành công! Vui lòng đăng nhập để tiếp tục.";
         return RedirectToAction("Login");
     }
 
@@ -369,7 +369,7 @@ public class AuthController : Controller
         var token = HttpContext.Session.GetString("AccessToken");
         if (string.IsNullOrEmpty(token))
         {
-            TempData["Error"] = "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.";
+            TempData["AuthError"] = "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.";
             return RedirectToAction("Login");
         }
 

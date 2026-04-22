@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nanny_BackEnd.DTOs.FAQ;
-using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 using System.Security.Claims;
 
 namespace Nanny_BackEnd.Controllers;
@@ -11,9 +11,9 @@ namespace Nanny_BackEnd.Controllers;
 [Authorize(Roles = "Moderator")]
 public class FaqController : ControllerBase
 {
-    private readonly FaqService _faqService;
+    private readonly IFaqService _faqService;
 
-    public FaqController(FaqService faqService)
+    public FaqController(IFaqService faqService)
     {
         _faqService = faqService;
     }

@@ -2,11 +2,12 @@ using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
 using Nanny_BackEnd.DTOs.Search;
 using Nanny_BackEnd.Enums;
+using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Models;
 
 namespace Nanny_BackEnd.Repositories;
 
-public class JobRepository
+public class JobRepository : IJobRepository
 {
     private readonly Sep490NannyDbContext _db;
 
@@ -143,6 +144,10 @@ public class JobRepository
             .Include(j => j.ParentProfile).ThenInclude(p => p.ChildProfiles.Where(c => !c.IsDeleted))
             .Include(j => j.JobApplications)
             .FirstOrDefaultAsync();
+
+    public async Task<bool> JobPostingExistsForParentAsync(Guid jobId, Guid parentProfileId) =>
+        await _db.JobPostings
+            .AnyAsync(j => j.Id == jobId && j.ParentProfileId == parentProfileId && !j.IsDeleted);
 
     public async Task<ParentProfile?> getParentProfileSnapshot(Guid parentProfileId) =>
         await _db.ParentProfiles

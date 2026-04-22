@@ -1,39 +1,41 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Nanny_BackEnd.DTOs.Profile;
 using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class ProfileService
+public class ProfileService : IProfileService
 {
-    private readonly UserRepository _userRepo;
-    private readonly ParentRepository _parentRepo;
-    private readonly ChildRepository _childRepo;
-    private readonly NannyProfileRepository _nannyProfileRepo;
-    private readonly NannySkillRepository _nannySkillRepo;
-    private readonly NannyCertificateRepository _nannyCertificateRepo;
-    private readonly NannyAvailabilityRepository _nannyAvailabilityRepo;
-    private readonly VerificationRequestRepository _verificationRequestRepo;
+    private readonly IUserRepository _userRepo;
+    private readonly IParentRepository _parentRepo;
+    private readonly IChildRepository _childRepo;
+    private readonly INannyProfileRepository _nannyProfileRepo;
+    private readonly INannySkillRepository _nannySkillRepo;
+    private readonly INannyCertificateRepository _nannyCertificateRepo;
+    private readonly INannyAvailabilityRepository _nannyAvailabilityRepo;
+    private readonly IVerificationRequestRepository _verificationRequestRepo;
     private readonly IWebHostEnvironment _env;
-    private readonly GeocodingService _geo;
+    private readonly IGeocodingService _geo;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<ProfileService> _logger;
 
     public ProfileService(
-        UserRepository userRepo,
-        ParentRepository parentRepo,
-        ChildRepository childRepo,
-        NannyProfileRepository nannyProfileRepo,
-        NannySkillRepository nannySkillRepo,
-        NannyCertificateRepository nannyCertificateRepo,
-        NannyAvailabilityRepository nannyAvailabilityRepo,
-        VerificationRequestRepository verificationRequestRepo,
+        IUserRepository userRepo,
+        IParentRepository parentRepo,
+        IChildRepository childRepo,
+        INannyProfileRepository nannyProfileRepo,
+        INannySkillRepository nannySkillRepo,
+        INannyCertificateRepository nannyCertificateRepo,
+        INannyAvailabilityRepository nannyAvailabilityRepo,
+        IVerificationRequestRepository verificationRequestRepo,
         IWebHostEnvironment env,
-        GeocodingService geo,
+        IGeocodingService geo,
         IServiceScopeFactory scopeFactory,
         ILogger<ProfileService> logger)
     {
@@ -655,6 +657,52 @@ public class ProfileService
         await _childRepo.SaveChangesAsync();
     }
 
+    public Task<ParentProfile?> GetParentProfileByUserIdAsync(Guid userId) =>
+        _parentRepo.FindByUserIdAsync(userId);
+
+    public async Task<Guid?> GetParentProfileIdByUserIdAsync(Guid userId)
+    {
+        var p = await _parentRepo.FindByUserIdAsync(userId);
+        return p?.Id;
+    }
+
+    public async Task UpdateParentOnboardingProfileAsync(Guid userId, UpdateParentProfileRequest request)
+    {
+        if (request.NumberOfChildren.HasValue && request.NumberOfChildren.Value < 1)
+            throw new InvalidOperationException("So luong tre phai lon hon hoac bang 1.");
+
+        var parentProfile = await _parentRepo.FindByUserIdAsync(userId);
+        if (parentProfile == null)
+        {
+            parentProfile = new ParentProfile
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = userId
+            };
+            _parentRepo.Add(parentProfile);
+        }
+
+        var createdChildrenCount = (await _childRepo.GetByParentProfileIdAsync(parentProfile.Id)).Count;
+        if (request.NumberOfChildren.HasValue && request.NumberOfChildren.Value < createdChildrenCount)
+        {
+            throw new InvalidOperationException(
+                $"Khong the giam tong so tre xuong {request.NumberOfChildren.Value} vi ban da tao {createdChildrenCount} ho so tre.");
+        }
+
+        parentProfile.FamilyDescription = request.FamilyDescription;
+        if (request.NumberOfChildren.HasValue)
+            parentProfile.NumberOfChildren = request.NumberOfChildren.Value;
+        else if (!parentProfile.NumberOfChildren.HasValue && createdChildrenCount > 0)
+            parentProfile.NumberOfChildren = createdChildrenCount;
+
+        parentProfile.UpdatedAt = DateTime.UtcNow;
+        parentProfile.UpdatedBy = userId;
+
+        await _parentRepo.SaveChangesAsync();
+    }
+
     private ChildProfileDto MapToChildDto(ChildProfile c) => new ChildProfileDto
     {
         Id = c.Id,
@@ -707,7 +755,7 @@ public class ProfileService
         try
         {
             using var scope = _scopeFactory.CreateScope();
-            var embedService = scope.ServiceProvider.GetRequiredService<EmbeddingService>();
+            var embedService = scope.ServiceProvider.GetRequiredService<IEmbeddingService>();
             await embedService.EmbedNannyAsync(nannyProfileId);
         }
         catch (Exception ex)

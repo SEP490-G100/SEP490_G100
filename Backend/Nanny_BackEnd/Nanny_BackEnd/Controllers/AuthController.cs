@@ -2,7 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nanny_BackEnd.DTOs.Auth;
-using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Controllers;
 
@@ -10,10 +10,10 @@ namespace Nanny_BackEnd.Controllers;
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
-    private readonly AuthService _auth;
+    private readonly IAuthService _auth;
     private readonly ILogger<AuthController> _logger;
 
-    public AuthController(AuthService auth, ILogger<AuthController> logger)
+    public AuthController(IAuthService auth, ILogger<AuthController> logger)
     {
         _auth = auth;
         _logger = logger;

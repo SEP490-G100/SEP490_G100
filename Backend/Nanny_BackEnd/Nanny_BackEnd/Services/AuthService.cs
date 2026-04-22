@@ -3,26 +3,28 @@ using Nanny_BackEnd.DTOs.Auth;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
+using Nanny_BackEnd.Services.Interfaces;
 using Nanny_BackEnd.Validations;
 
 namespace Nanny_BackEnd.Services;
 
-public class AuthService
+public class AuthService : IAuthService
 {
-    private readonly UserRepository _userRepo;
-    private readonly RefreshTokenRepository _tokenRepo;
-    private readonly JwtService _jwt;
-    private readonly OtpService _otp;
-    private readonly EmailService _email;
+    private readonly IUserRepository _userRepo;
+    private readonly IRefreshTokenRepository _tokenRepo;
+    private readonly IJwtService _jwt;
+    private readonly IOtpService _otp;
+    private readonly IEmailService _email;
     private readonly PasswordValidator _pwdValidator;
     private readonly IConfiguration _config;
 
     public AuthService(
-        UserRepository userRepo,
-        RefreshTokenRepository tokenRepo,
-        JwtService jwt,
-        OtpService otp,
-        EmailService email,
+        IUserRepository userRepo,
+        IRefreshTokenRepository tokenRepo,
+        IJwtService jwt,
+        IOtpService otp,
+        IEmailService email,
         PasswordValidator pwdValidator,
         IConfiguration config)
     {
@@ -138,12 +140,16 @@ public class AuthService
 
     public async Task<LoginResponse> GoogleLoginAsync(GoogleLoginRequest request)
     {
-        var payload = await GoogleJsonWebSignature.ValidateAsync(request.IdToken, new GoogleJsonWebSignature.ValidationSettings
+        var payload = await ValidateGoogleTokenAsync(request.IdToken);
+        return await ProcessGoogleLoginAsync(payload);
+    }
+
+    protected virtual async Task<GoogleJsonWebSignature.Payload> ValidateGoogleTokenAsync(string idToken)
+    {
+        return await GoogleJsonWebSignature.ValidateAsync(idToken, new GoogleJsonWebSignature.ValidationSettings
         {
             Audience = new[] { _config["Google:ClientId"] }
         });
-
-        return await ProcessGoogleLoginAsync(payload);
     }
 
     public async Task ChangePasswordAsync(Guid userId, ChangePasswordRequest request)

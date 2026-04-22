@@ -2,16 +2,18 @@ using Nanny_BackEnd.DTOs.Notification;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class NotificationService
+public class NotificationService : INotificationService
 {
     private const string AdminNotificationScopePrefix = "AdminNotification";
-    private readonly SubscriptionRepository _subscriptionRepo;
-    private readonly UserRepository _userRepo;
+    private readonly ISubscriptionRepository _subscriptionRepo;
+    private readonly IUserRepository _userRepo;
 
-    public NotificationService(SubscriptionRepository subscriptionRepo, UserRepository userRepo)
+    public NotificationService(ISubscriptionRepository subscriptionRepo, IUserRepository userRepo)
     {
         _subscriptionRepo = subscriptionRepo;
         _userRepo = userRepo;
@@ -91,7 +93,7 @@ public class NotificationService
         return createdCount;
     }
 
-    public async Task createNotification(
+    public virtual async Task createNotification(
         Guid userId,
         string title,
         string content,
@@ -156,7 +158,7 @@ public class NotificationService
         await _subscriptionRepo.saveChanges();
     }
 
-    public async Task createNotificationForModerators(
+    public virtual async Task createNotificationForModerators(
         string title,
         string content,
         int type,

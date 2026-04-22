@@ -8,22 +8,24 @@ using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class SubscriptionService
+public class SubscriptionService : ISubscriptionService
 {
-    private readonly SubscriptionRepository _subscriptionRepo;
-    private readonly NotificationService _notificationService;
-    private readonly CassoService _cassoService;
-    private readonly PayOsService _payOsService;
+    private readonly ISubscriptionRepository _subscriptionRepo;
+    private readonly INotificationService _notificationService;
+    private readonly ICassoService _cassoService;
+    private readonly IPayOsService _payOsService;
     private readonly PayOsOptions _payOsOptions;
 
     public SubscriptionService(
-        SubscriptionRepository subscriptionRepo,
-        NotificationService notificationService,
-        CassoService cassoService,
-        PayOsService payOsService,
+        ISubscriptionRepository subscriptionRepo,
+        INotificationService notificationService,
+        ICassoService cassoService,
+        IPayOsService payOsService,
         IOptions<PayOsOptions> payOsOptions)
     {
         _subscriptionRepo = subscriptionRepo;
@@ -300,7 +302,7 @@ public class SubscriptionService
         return result.IsSuccess ? 1 : 0;
     }
 
-    public async Task<SubscriptionBenefitResponse> getBenefitsForParentProfile(Guid parentProfileId)
+    public virtual async Task<SubscriptionBenefitResponse> getBenefitsForParentProfile(Guid parentProfileId)
     {
         var subscription = await _subscriptionRepo.findCurrentSubscriptionByParentProfile(parentProfileId, DateTime.UtcNow);
         if (subscription?.SubscriptionPlan == null)
@@ -312,7 +314,7 @@ public class SubscriptionService
             : SubscriptionBenefitResponse.FreeParent;
     }
 
-    public async Task<SubscriptionBenefitResponse> getBenefitsForNannyProfile(Guid nannyProfileId)
+    public virtual async Task<SubscriptionBenefitResponse> getBenefitsForNannyProfile(Guid nannyProfileId)
     {
         var subscription = await _subscriptionRepo.findCurrentSubscriptionByNannyProfile(nannyProfileId, DateTime.UtcNow);
         if (subscription?.SubscriptionPlan == null)
@@ -324,7 +326,7 @@ public class SubscriptionService
             : SubscriptionBenefitResponse.FreeNanny;
     }
 
-    public async Task<bool> hasActiveParentSubscription(Guid parentProfileId)
+    public virtual async Task<bool> hasActiveParentSubscription(Guid parentProfileId)
     {
         var subscription = await _subscriptionRepo.findCurrentSubscriptionByParentProfile(parentProfileId, DateTime.UtcNow);
         if (subscription?.SubscriptionPlan == null)

@@ -2,16 +2,18 @@ using System.Security.Cryptography;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class OtpService
+public class OtpService : IOtpService
 {
-    private readonly OtpRepository _otpRepo;
+    private readonly IOtpRepository _otpRepo;
 
-    public OtpService(OtpRepository otpRepo) => _otpRepo = otpRepo;
+    public OtpService(IOtpRepository otpRepo) => _otpRepo = otpRepo;
 
-    public async Task<string> GenerateAsync(string email, OtpPurpose purpose, Guid? userId = null)
+    public virtual async Task<string> GenerateAsync(string email, OtpPurpose purpose, Guid? userId = null)
     {
         await _otpRepo.MarkPreviousAsUsedAsync(email, purpose);
 
@@ -32,7 +34,7 @@ public class OtpService
         return code;
     }
 
-    public async Task<OtpCode?> ValidateAsync(string email, string code, OtpPurpose purpose)
+    public virtual async Task<OtpCode?> ValidateAsync(string email, string code, OtpPurpose purpose)
     {
         var otp = await _otpRepo.FindActiveAsync(email, purpose);
         if (otp == null) return null;

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nanny_BackEnd.DTOs.Verification;
-using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 using System.Security.Claims;
 
 namespace Nanny_BackEnd.Controllers;
@@ -11,9 +11,9 @@ namespace Nanny_BackEnd.Controllers;
 [Authorize(Roles = "Moderator")]
 public class ModeratorVerificationController : ControllerBase
 {
-    private readonly ModeratorVerificationService _moderatorVerificationService;
+    private readonly IModeratorVerificationService _moderatorVerificationService;
 
-    public ModeratorVerificationController(ModeratorVerificationService moderatorVerificationService)
+    public ModeratorVerificationController(IModeratorVerificationService moderatorVerificationService)
     {
         _moderatorVerificationService = moderatorVerificationService;
     }

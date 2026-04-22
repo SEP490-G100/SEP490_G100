@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Controllers;
 
@@ -9,9 +9,9 @@ namespace Nanny_BackEnd.Controllers;
 [Authorize(Roles = "Admin")]
 public class AdminDashboardController : ControllerBase
 {
-    private readonly AdminDashboardService _adminDashboardService;
+    private readonly IAdminDashboardService _adminDashboardService;
 
-    public AdminDashboardController(AdminDashboardService adminDashboardService)
+    public AdminDashboardController(IAdminDashboardService adminDashboardService)
     {
         _adminDashboardService = adminDashboardService;
     }

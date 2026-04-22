@@ -3,10 +3,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Nanny_BackEnd.Data;
 using Nanny_BackEnd.DTOs.Recommendation;
+using Nanny_BackEnd.Repositories.Interfaces;
 
 namespace Nanny_BackEnd.Repositories;
 
-public class RecommendationConfigRepository
+public class RecommendationConfigRepository : IRecommendationConfigRepository
 {
     private readonly Sep490NannyDbContext _db;
     private readonly IMemoryCache _cache;

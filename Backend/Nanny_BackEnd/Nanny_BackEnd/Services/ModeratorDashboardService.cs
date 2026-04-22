@@ -2,15 +2,17 @@ using Nanny_BackEnd.DTOs.Dashboard;
 using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class ModeratorDashboardService
+public class ModeratorDashboardService : IModeratorDashboardService
 {
-    private readonly ModeratorDashboardRepository _moderatorDashboardRepo;
+    private readonly IModeratorDashboardRepository _moderatorDashboardRepo;
 
     public ModeratorDashboardService(
-        ModeratorDashboardRepository moderatorDashboardRepo)
+        IModeratorDashboardRepository moderatorDashboardRepo)
     {
         _moderatorDashboardRepo = moderatorDashboardRepo;
     }
