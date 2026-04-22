@@ -1036,9 +1036,11 @@
                     @if (User.Identity != null && User.Identity.IsAuthenticated)
                     {
                         <a href="/Communication"
-                           class="nm-icon-btn nm-icon-btn--mini"
+                           class="nm-icon-btn"
+                           id="chatNavLink"
                            aria-label="Tin nhắn">
-                            <span class="material-icons-round text-[18px]">chat_bubble_outline</span>
+                            <span class="material-icons-round text-[20px]">chat_bubble_outline</span>
+                            <span id="chatUnreadBadge" class="nm-badge-dot hidden" aria-hidden="true"></span>
                         </a>
 
 
@@ -1508,6 +1510,35 @@
 
                                 loadUnreadCount();
                                 connectNotificationRealtime();
+                            })();
+
+                            (() => {
+                                const chatBadge = document.getElementById('chatUnreadBadge');
+                                if (!chatBadge) return;
+
+                                const updateChatBadge = (count) => {
+                                    if (!count || count <= 0) {
+                                        chatBadge.textContent = '';
+                                        chatBadge.classList.add('hidden');
+                                        return;
+                                    }
+                                    chatBadge.textContent = count > 99 ? '99+' : String(count);
+                                    chatBadge.classList.remove('hidden');
+                                };
+
+                                const loadChatUnread = async () => {
+                                    try {
+                                        const response = await fetch('/Communication/UnreadCount', { credentials: 'same-origin' });
+                                        const result = await response.json();
+                                        updateChatBadge(result?.data?.unreadCount ?? 0);
+                                    } catch {
+                                        updateChatBadge(0);
+                                    }
+                                };
+
+                                window.addEventListener('nm:chat-unread-refresh', () => { loadChatUnread(); });
+                                loadChatUnread();
+                                window.setInterval(loadChatUnread, 90000);
                             })();
 
                             (() => {
