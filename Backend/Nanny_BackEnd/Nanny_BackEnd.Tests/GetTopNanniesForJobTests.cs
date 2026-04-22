@@ -1,9 +1,10 @@
-using Moq;
-using FluentAssertions;
 using System.Text.Json;
+using Moq;
+using Microsoft.Extensions.Logging.Abstractions;
 using Nanny_BackEnd.DTOs.Recommendation;
 using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Tests;
 
@@ -19,10 +20,32 @@ public class GetTopNanniesForJobTests
 
     public GetTopNanniesForJobTests()
     {
-        var b = RecommendationServiceTestBuilder.Create();
+        var b = CreateSut();
         _mockRepo = b.Repo;
         _mockConfig = b.Config;
         _sut = b.Sut;
+    }
+
+    private static (
+        Mock<IRecommendationRepository> Repo,
+        Mock<IRecommendationConfigRepository> Config,
+        RecommendationService Sut) CreateSut()
+    {
+        var mockRepo   = new Mock<IRecommendationRepository>();
+        var mockConfig = new Mock<IRecommendationConfigRepository>();
+        var mockParent = new Mock<IParentRepository>();
+        var mockNanny  = new Mock<INannyProfileRepository>();
+        var mockJob    = new Mock<IJobRepository>();
+        var mockSub    = new Mock<ISubscriptionService>();
+        var sut = new RecommendationService(
+            mockRepo.Object,
+            mockConfig.Object,
+            mockParent.Object,
+            mockNanny.Object,
+            mockJob.Object,
+            mockSub.Object,
+            NullLogger<RecommendationService>.Instance);
+        return (mockRepo, mockConfig, sut);
     }
 
     // ── Helper: tạo NannyCandidate tối giản ─────────────────────────────
@@ -80,7 +103,7 @@ public class GetTopNanniesForJobTests
 
         var result = await _sut.GetTopNanniesForJobAsync(jobId);
 
-        result.Should().BeEmpty();
+        Assert.Empty(result);
 
         // GetJobReadModelAsync và GetWeightsAsync không nên được gọi
         _mockRepo.Verify(r => r.GetJobReadModelAsync(It.IsAny<Guid>()), Times.Never);
@@ -102,10 +125,10 @@ public class GetTopNanniesForJobTests
 
         var result = await _sut.GetTopNanniesForJobAsync(jobId);
 
-        result.Should().HaveCount(1);
-        result[0].EmbeddingWasNull.Should().BeFalse();
-        result[0].SemanticScore.Should().BeApproximately(1.0, precision: 0.001);
-        result[0].FinalScore.Should().BeGreaterThan(0);
+        Assert.Single(result);
+        Assert.False(result[0].EmbeddingWasNull);
+        Assert.InRange(result[0].SemanticScore, 0.999, 1.001);
+        Assert.True(result[0].FinalScore > 0);
     }
 
     // ── TC3: Embedding null → dùng ColdStart thay cosine ────────────────
@@ -122,9 +145,9 @@ public class GetTopNanniesForJobTests
 
         var result = await _sut.GetTopNanniesForJobAsync(jobId);
 
-        result.Should().HaveCount(1);
-        result[0].EmbeddingWasNull.Should().BeTrue();
-        result[0].SemanticScore.Should().BeApproximately(DefaultWeights.ColdStart, precision: 0.001);
+        Assert.Single(result);
+        Assert.True(result[0].EmbeddingWasNull);
+        Assert.InRange(result[0].SemanticScore, DefaultWeights.ColdStart - 0.001, DefaultWeights.ColdStart + 0.001);
     }
 
     // ── TC4: topK giới hạn kết quả, kết quả sắp xếp theo FinalScore ─────
@@ -149,16 +172,10 @@ public class GetTopNanniesForJobTests
 
         var result = await _sut.GetTopNanniesForJobAsync(jobId, topK: 2);
 
-        result.Should().HaveCount(2);
-
-        // Thứ tự: FinalScore giảm dần
-        result[0].FinalScore.Should().BeGreaterThan(result[1].FinalScore);
-
-        // Top 1 phải là nannyA (rating 5.0 → boost cao nhất)
-        result[0].NannyProfileId.Should().Be(nannyA.NannyProfileId);
-
-        // Top 2 phải là nannyB (rating 4.0 > null)
-        result[1].NannyProfileId.Should().Be(nannyB.NannyProfileId);
+        Assert.Equal(2, result.Count);
+        Assert.True(result[0].FinalScore > result[1].FinalScore);
+        Assert.Equal(nannyA.NannyProfileId, result[0].NannyProfileId);
+        Assert.Equal(nannyB.NannyProfileId, result[1].NannyProfileId);
     }
 
     // ── TC5: overrideLat/Lng từ client → thay tọa độ job trong DB ────────
@@ -191,8 +208,6 @@ public class GetTopNanniesForJobTests
             overrideLat: 10.7,
             overrideLng: 106.7);
 
-        withOverride[0].DistanceScore.Should().BeGreaterThan(
-            withoutOverride[0].DistanceScore,
-            because: "overriding to nanny's own location should give a much higher distance score");
+        Assert.True(withOverride[0].DistanceScore > withoutOverride[0].DistanceScore);
     }
 }

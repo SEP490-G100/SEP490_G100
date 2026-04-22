@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Configuration;
 using Moq;
-using FluentAssertions;
 using Nanny_BackEnd.DTOs.Auth;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
@@ -79,14 +78,12 @@ public class LoginTests
         _mockUserRepo.Setup(r => r.FindByEmailAsync("notfound@mail.com"))
                      .ReturnsAsync((User?)null);
 
-        var act = () => _sut.LoginAsync(new LoginRequest
+        var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _sut.LoginAsync(new LoginRequest
         {
             Email    = "notfound@mail.com",
             Password = "anything"
-        });
-
-        await act.Should().ThrowAsync<UnauthorizedAccessException>()
-                 .WithMessage("Email hoặc mật khẩu không đúng.");
+        }));
+        Assert.Equal("Email hoặc mật khẩu không đúng.", ex.Message);
     }
 
     // ── TC2: Tài khoản đăng ký bằng Google đăng nhập bằng mật khẩu ──────
@@ -97,14 +94,12 @@ public class LoginTests
         _mockUserRepo.Setup(r => r.FindByEmailAsync(user.Email))
                      .ReturnsAsync(user);
 
-        var act = () => _sut.LoginAsync(new LoginRequest
+        var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _sut.LoginAsync(new LoginRequest
         {
             Email    = user.Email,
             Password = "Password@123"
-        });
-
-        await act.Should().ThrowAsync<UnauthorizedAccessException>()
-                 .WithMessage("Email hoặc mật khẩu không đúng.");
+        }));
+        Assert.Equal("Email hoặc mật khẩu không đúng.", ex.Message);
     }
 
     // ── TC3: Sai mật khẩu ────────────────────────────────────────────────
@@ -115,14 +110,12 @@ public class LoginTests
         _mockUserRepo.Setup(r => r.FindByEmailAsync(user.Email))
                      .ReturnsAsync(user);
 
-        var act = () => _sut.LoginAsync(new LoginRequest
+        var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _sut.LoginAsync(new LoginRequest
         {
             Email    = user.Email,
             Password = "Wrong@999"
-        });
-
-        await act.Should().ThrowAsync<UnauthorizedAccessException>()
-                 .WithMessage("Email hoặc mật khẩu không đúng.");
+        }));
+        Assert.Equal("Email hoặc mật khẩu không đúng.", ex.Message);
     }
 
     // ── TC4: Tài khoản Pending (chưa xác minh email) ─────────────────────
@@ -143,8 +136,8 @@ public class LoginTests
             Password = "Password@123"
         });
 
-        isPending.Should().BeTrue();
-        response.Should().BeNull();
+        Assert.True(isPending);
+        Assert.Null(response);
         _mockOtp.Verify(
             o => o.GenerateAsync(user.Email, OtpPurpose.VerifyEmail, user.Id),
             Times.Once);
@@ -158,14 +151,12 @@ public class LoginTests
         _mockUserRepo.Setup(r => r.FindByEmailAsync(user.Email))
                      .ReturnsAsync(user);
 
-        var act = () => _sut.LoginAsync(new LoginRequest
+        var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _sut.LoginAsync(new LoginRequest
         {
             Email    = user.Email,
             Password = "Password@123"
-        });
-
-        await act.Should().ThrowAsync<UnauthorizedAccessException>()
-                 .WithMessage("Tài khoản đã bị khóa. Vui lòng liên hệ hỗ trợ.");
+        }));
+        Assert.Equal("Tài khoản đã bị khóa. Vui lòng liên hệ hỗ trợ.", ex.Message);
     }
 
     // ── TC6: Tài khoản bị vô hiệu hóa (Inactive) ────────────────────────
@@ -176,14 +167,12 @@ public class LoginTests
         _mockUserRepo.Setup(r => r.FindByEmailAsync(user.Email))
                      .ReturnsAsync(user);
 
-        var act = () => _sut.LoginAsync(new LoginRequest
+        var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _sut.LoginAsync(new LoginRequest
         {
             Email    = user.Email,
             Password = "Password@123"
-        });
-
-        await act.Should().ThrowAsync<UnauthorizedAccessException>()
-                 .WithMessage("Tài khoản đã bị vô hiệu hóa.");
+        }));
+        Assert.Equal("Tài khoản đã bị vô hiệu hóa.", ex.Message);
     }
 
     // ── TC7: Đăng nhập thành công ────────────────────────────────────────
@@ -210,11 +199,11 @@ public class LoginTests
             Password = "Password@123"
         });
 
-        isPending.Should().BeFalse();
-        response.Should().NotBeNull();
-        response!.AccessToken.Should().Be("fake-access-token");
-        response.RefreshToken.Should().Be("fake-refresh-token");
-        response.User.Email.Should().Be(user.Email);
-        response.User.Roles.Should().Contain("Parent");
+        Assert.False(isPending);
+        Assert.NotNull(response);
+        Assert.Equal("fake-access-token", response!.AccessToken);
+        Assert.Equal("fake-refresh-token", response.RefreshToken);
+        Assert.Equal(user.Email, response.User.Email);
+        Assert.Contains("Parent", response.User.Roles);
     }
 }

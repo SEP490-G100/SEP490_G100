@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
-using FluentAssertions;
 using Nanny_BackEnd.DTOs.Search;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
@@ -84,8 +83,8 @@ public class FindJobsTests
 
         var result = await _sut.findJobs(DefaultFilters(), currentNannyProfileId: null);
 
-        result.Should().HaveCount(1);
-        result[0].IsFavorite.Should().BeFalse();
+        Assert.Single(result);
+        Assert.False(result[0].IsFavorite);
 
         _mockFavRepo.Verify(r => r.getFavoriteJobIds(
             It.IsAny<Guid>(), It.IsAny<IEnumerable<Guid>>()),
@@ -108,7 +107,7 @@ public class FindJobsTests
 
         var result = await _sut.findJobs(DefaultFilters(), currentNannyProfileId: nannyProfile);
 
-        result.Should().HaveCount(1);
-        result[0].IsFavorite.Should().BeTrue();
+        Assert.Single(result);
+        Assert.True(result[0].IsFavorite);
     }
 }

@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Configuration;
 using Moq;
-using FluentAssertions;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
@@ -59,9 +58,8 @@ public class LogoutTests
         _mockTokenRepo.Setup(t => t.FindByTokenAsync("invalid-token"))
                       .ReturnsAsync((RefreshToken?)null);
 
-        var act = () => _sut.LogoutAsync("invalid-token");
-
-        await act.Should().NotThrowAsync();
+        var ex = await Record.ExceptionAsync(() => _sut.LogoutAsync("invalid-token"));
+        Assert.Null(ex);
 
         // Không revoke hay save khi token không tồn tại
         _mockTokenRepo.Verify(t => t.RevokeAllForUserAsync(It.IsAny<Guid>()), Times.Never);

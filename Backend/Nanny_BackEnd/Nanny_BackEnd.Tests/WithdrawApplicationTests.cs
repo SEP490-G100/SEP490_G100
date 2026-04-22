@@ -1,5 +1,4 @@
 using Moq;
-using FluentAssertions;
 using Nanny_BackEnd.DTOs.Search;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories.Interfaces;
@@ -35,8 +34,8 @@ public class WithdrawApplicationTests
 
         var r = await _sut.WithdrawApplicationAsync(_nannyUserId, Guid.NewGuid());
 
-        r.IsSuccess.Should().BeFalse();
-        r.Failure.Should().Be(WithdrawForNannyFailure.NotNanny);
+        Assert.False(r.IsSuccess);
+        Assert.Equal(WithdrawForNannyFailure.NotNanny, r.Failure);
     }
 
     [Fact]
@@ -49,8 +48,8 @@ public class WithdrawApplicationTests
 
         var r = await _sut.WithdrawApplicationAsync(_nannyUserId, Guid.NewGuid());
 
-        r.IsSuccess.Should().BeFalse();
-        r.Failure.Should().Be(WithdrawForNannyFailure.NotFound);
+        Assert.False(r.IsSuccess);
+        Assert.Equal(WithdrawForNannyFailure.NotFound, r.Failure);
     }
 
     [Fact]
@@ -68,8 +67,8 @@ public class WithdrawApplicationTests
 
         var r = await _sut.WithdrawApplicationAsync(_nannyUserId, Guid.NewGuid());
 
-        r.IsSuccess.Should().BeFalse();
-        r.Failure.Should().Be(WithdrawForNannyFailure.NotPending);
+        Assert.False(r.IsSuccess);
+        Assert.Equal(WithdrawForNannyFailure.NotPending, r.Failure);
     }
 
     [Fact]
@@ -91,9 +90,9 @@ public class WithdrawApplicationTests
 
         var r = await _sut.WithdrawApplicationAsync(_nannyUserId, app.Id);
 
-        r.IsSuccess.Should().BeTrue();
-        app.Status.Should().Be(3);
-        app.WithdrawnAt.Should().NotBeNull();
+        Assert.True(r.IsSuccess);
+        Assert.Equal(3, app.Status);
+        Assert.NotNull(app.WithdrawnAt);
         _mockAppRepo.Verify(x => x.SaveChangesAsync(), Times.Once);
     }
 }

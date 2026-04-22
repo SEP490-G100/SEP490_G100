@@ -1,5 +1,4 @@
 using Moq;
-using FluentAssertions;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Services;
@@ -34,7 +33,7 @@ public class MyApplicationsTests
 
         var result = await _sut.GetMyApplicationsAsync(_nannyUserId, 1, 20);
 
-        result.Should().BeNull();
+        Assert.Null(result);
     }
 
     [Fact]
@@ -51,8 +50,8 @@ public class MyApplicationsTests
 
         var result = await _sut.GetMyApplicationsAsync(_nannyUserId, page: 1, pageSize: 100);
 
-        result.Should().NotBeNull();
-        result!.PageSize.Should().Be(50);
+        Assert.NotNull(result);
+        Assert.Equal(50, result!.PageSize);
         _mockAppRepo.Verify(r => r.GetPagedApplicationsForNannyAsync(_nannyProfileId, 0, 50), Times.Once);
     }
 
@@ -113,10 +112,10 @@ public class MyApplicationsTests
 
         var result = await _sut.GetMyApplicationsAsync(_nannyUserId, 1, 20);
 
-        result.Should().NotBeNull();
-        result!.Total.Should().Be(2);
-        result.Items.Should().HaveCount(2);
-        result.Items.Should().Contain(i => i.Status == 0 && i.CanWithdraw);
-        result.Items.Should().Contain(i => i.Status == 1 && !i.CanWithdraw);
+        Assert.NotNull(result);
+        Assert.Equal(2, result!.Total);
+        Assert.Equal(2, result.Items.Count);
+        Assert.Contains(result.Items, i => i.Status == 0 && i.CanWithdraw);
+        Assert.Contains(result.Items, i => i.Status == 1 && !i.CanWithdraw);
     }
 }
