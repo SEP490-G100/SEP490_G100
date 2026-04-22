@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
@@ -7,7 +8,7 @@ namespace Nanny_BackEnd.Services;
 /// Dùng OpenStreetMap Nominatim (miễn phí, không cần API key).
 /// Rate limit: 1 req/giây — đủ dùng cho tạo/cập nhật bài đăng.
 /// </summary>
-public class GeocodingService
+public class GeocodingService : IGeocodingService
 {
     private readonly HttpClient _http;
     private static readonly JsonSerializerOptions Opts = new() { PropertyNameCaseInsensitive = true };
@@ -21,7 +22,7 @@ public class GeocodingService
     /// Geocode địa chỉ → (latitude, longitude). Trả null nếu không tìm thấy.
     /// Ưu tiên: Location đầy đủ → City+District → City.
     /// </summary>
-    public async Task<(decimal Lat, decimal Lng)?> geocode(
+    public virtual async Task<(decimal Lat, decimal Lng)?> geocode(
         string? location, string? city, string? district)
     {
         // Ưu tiên địa chỉ đầy đủ nhất

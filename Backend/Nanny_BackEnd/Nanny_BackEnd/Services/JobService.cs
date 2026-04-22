@@ -7,25 +7,27 @@ using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class JobService
+public class JobService : IJobService
 {
-    private readonly JobRepository _jobRepo;
-    private readonly FavoriteRepository _favoriteRepo;
-    private readonly GeocodingService _geo;
-    private readonly SubscriptionService _subscriptionService;
-    private readonly NotificationService _notificationService;
+    private readonly IJobRepository _jobRepo;
+    private readonly IFavoriteRepository _favoriteRepo;
+    private readonly IGeocodingService _geo;
+    private readonly ISubscriptionService _subscriptionService;
+    private readonly INotificationService _notificationService;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<JobService> _logger;
 
     public JobService(
-        JobRepository jobRepo,
-        FavoriteRepository favoriteRepo,
-        GeocodingService geo,
-        SubscriptionService subscriptionService,
-        NotificationService notificationService,
+        IJobRepository jobRepo,
+        IFavoriteRepository favoriteRepo,
+        IGeocodingService geo,
+        ISubscriptionService subscriptionService,
+        INotificationService notificationService,
         IServiceScopeFactory scopeFactory,
         ILogger<JobService> logger)
     {
@@ -858,7 +860,7 @@ public class JobService
         try
         {
             using var scope = _scopeFactory.CreateScope();
-            var embedService = scope.ServiceProvider.GetRequiredService<EmbeddingService>();
+            var embedService = scope.ServiceProvider.GetRequiredService<IEmbeddingService>();
             await embedService.EmbedJobAsync(jobId);
         }
         catch (Exception ex)

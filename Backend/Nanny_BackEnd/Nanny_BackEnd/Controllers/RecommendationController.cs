@@ -1,11 +1,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Nanny_BackEnd.Data;
 using Nanny_BackEnd.DTOs.Recommendation;
-using Nanny_BackEnd.Repositories;
-using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Controllers;
 
@@ -13,27 +10,15 @@ namespace Nanny_BackEnd.Controllers;
 [Route("api/recommendation")]
 public class RecommendationController : ControllerBase
 {
-    private readonly RecommendationService _recSvc;
-    private readonly EmbeddingService _embedSvc;
-    private readonly RecommendationRepository _repo;
-    private readonly RecommendationConfigRepository _configRepo;
-    private readonly Sep490NannyDbContext _db;
-    private readonly SubscriptionService _subscriptionService;
+    private readonly IRecommendationService _recSvc;
+    private readonly IEmbeddingService _embedSvc;
 
     public RecommendationController(
-        RecommendationService recSvc,
-        EmbeddingService embedSvc,
-        RecommendationRepository repo,
-        RecommendationConfigRepository configRepo,
-        Sep490NannyDbContext db,
-        SubscriptionService subscriptionService)
+        IRecommendationService recSvc,
+        IEmbeddingService embedSvc)
     {
         _recSvc = recSvc;
         _embedSvc = embedSvc;
-        _repo = repo;
-        _configRepo = configRepo;
-        _db = db;
-        _subscriptionService = subscriptionService;
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -44,7 +29,7 @@ public class RecommendationController : ControllerBase
     [HttpGet("read-model/nanny/{nannyProfileId:guid}")]
     public async Task<IActionResult> GetNannyReadModel(Guid nannyProfileId)
     {
-        var model = await _repo.GetNannyReadModelAsync(nannyProfileId);
+        var model = await _recSvc.GetNannyReadModelForAdminAsync(nannyProfileId);
         if (model == null) return NotFound(Fail("Không tìm thấy nanny profile."));
         return Ok(Success(model));
     }
@@ -53,7 +38,7 @@ public class RecommendationController : ControllerBase
     [HttpGet("read-model/job/{jobId:guid}")]
     public async Task<IActionResult> GetJobReadModel(Guid jobId)
     {
-        var model = await _repo.GetJobReadModelAsync(jobId);
+        var model = await _recSvc.GetJobReadModelForAdminAsync(jobId);
         if (model == null) return NotFound(Fail("Không tìm thấy job posting."));
         return Ok(Success(model));
     }
@@ -62,7 +47,7 @@ public class RecommendationController : ControllerBase
     [HttpGet("read-model/nannies/pending-embed")]
     public async Task<IActionResult> GetPendingEmbedNannies()
     {
-        var list = await _repo.GetPendingEmbedNanniesAsync();
+        var list = await _recSvc.GetPendingEmbedNanniesForAdminAsync();
         return Ok(Success(list, list.Count));
     }
 
@@ -70,7 +55,7 @@ public class RecommendationController : ControllerBase
     [HttpGet("read-model/jobs/pending-embed")]
     public async Task<IActionResult> GetPendingEmbedJobs()
     {
-        var list = await _repo.GetPendingEmbedJobsAsync();
+        var list = await _recSvc.GetPendingEmbedJobsForAdminAsync();
         return Ok(Success(list, list.Count));
     }
 
@@ -108,15 +93,7 @@ public class RecommendationController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Batch embed tất cả nanny + job có Embedding = NULL.
-    /// </summary>
     [Authorize(Roles = "Admin,Moderator")]
-    /// <summary>
-    /// Batch embed.
-    /// ?force=false (mặc định): chỉ embed record có Embedding IS NULL.
-    /// ?force=true: re-embed TẤT CẢ (dùng sau khi đổi template).
-    /// </summary>
     [HttpPost("reembed/batch")]
     public async Task<IActionResult> ReembedBatch([FromQuery] bool force = false)
     {
@@ -154,10 +131,6 @@ public class RecommendationController : ControllerBase
     // 3. Recommendation Endpoints
     // ──────────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Parent/Admin xem top K nanny phù hợp với một job posting.
-    /// GET /api/recommendation/nannies-for-job/{jobId}?topK=5&amp;lat=10.7&amp;lng=106.7
-    /// </summary>
     [Authorize]
     [HttpGet("nannies-for-job/{jobId:guid}")]
     public async Task<IActionResult> GetNanniesForJob(
@@ -168,35 +141,20 @@ public class RecommendationController : ControllerBase
     {
         topK = Math.Clamp(topK, 1, 50);
 
-        // Kiểm tra job tồn tại và thuộc về parent hiện tại (hoặc Admin)
         var userId = GetCurrentUserId();
-        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
-
         var isAdmin = User.IsInRole("Admin") || User.IsInRole("Moderator");
-        if (!isAdmin)
+        var g = await _recSvc.ValidateNanniesForJobGatingAsync(userId, jobId, isAdmin);
+        if (!g.IsAllowed)
         {
-            var parent = await _db.ParentProfiles
-                .FirstOrDefaultAsync(p => p.UserId == userId.Value && !p.IsDeleted);
-            if (parent == null) return Forbid();
-
-            var benefits = await _subscriptionService.getBenefitsForParentProfile(parent.Id);
-            if (!benefits.CanUseRecommendation)
-                return StatusCode(StatusCodes.Status402PaymentRequired, Fail("Tính năng gợi ý AI yêu cầu gói Plus hoặc Pro."));
-
-            var jobExists = await _db.JobPostings
-                .AnyAsync(j => j.Id == jobId && j.ParentProfileId == parent.Id && !j.IsDeleted);
-            if (!jobExists) return NotFound(Fail("Không tìm thấy job posting."));
+            if (g.HttpStatus == 403) return Forbid();
+            if (g.HttpStatus == 401) return Unauthorized(Fail(g.ErrorMessage ?? ""));
+            return StatusCode(g.HttpStatus, Fail(g.ErrorMessage ?? ""));
         }
 
         var results = await _recSvc.GetTopNanniesForJobAsync(jobId, topK, lat, lng);
-        // lat/lng từ client override tọa độ job trong DB để tính khoảng cách chính xác hơn
         return Ok(Success(results, results.Count));
     }
 
-    /// <summary>
-    /// Nanny xem top K job phù hợp với bản thân.
-    /// GET /api/recommendation/jobs-for-nanny?topK=5
-    /// </summary>
     [Authorize(Roles = "Nanny")]
     [HttpGet("jobs-for-nanny")]
     public async Task<IActionResult> GetJobsForNanny([FromQuery] int topK = 10)
@@ -204,17 +162,14 @@ public class RecommendationController : ControllerBase
         topK = Math.Clamp(topK, 1, 50);
 
         var userId = GetCurrentUserId();
-        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
+        var g = await _recSvc.ValidateJobsForNannyGatingAsync(userId);
+        if (!g.IsAllowed)
+        {
+            if (g.HttpStatus == 401) return Unauthorized(Fail(g.ErrorMessage ?? ""));
+            return StatusCode(g.HttpStatus, Fail(g.ErrorMessage ?? ""));
+        }
 
-        var nanny = await _db.NannyProfiles
-            .FirstOrDefaultAsync(n => n.UserId == userId.Value && !n.IsDeleted);
-        if (nanny == null) return NotFound(Fail("Không tìm thấy nanny profile."));
-
-        var benefits = await _subscriptionService.getBenefitsForNannyProfile(nanny.Id);
-        if (!benefits.CanUseRecommendation)
-            return StatusCode(StatusCodes.Status402PaymentRequired, Fail("Tính năng gợi ý AI yêu cầu gói Plus hoặc Pro."));
-
-        var results = await _recSvc.GetTopJobsForNannyAsync(nanny.Id, topK);
+        var results = await _recSvc.GetTopJobsForNannyAsync(g.NannyProfileId!.Value, topK);
         return Ok(Success(results, results.Count));
     }
 
@@ -226,7 +181,7 @@ public class RecommendationController : ControllerBase
     [HttpGet("config/weights")]
     public async Task<IActionResult> GetWeights()
     {
-        var w = await _configRepo.GetWeightsAsync();
+        var w = await _recSvc.GetRecommendationConfigWeightsAsync();
         return Ok(Success(new
         {
             semantic_weight  = w.Semantic,
@@ -252,7 +207,7 @@ public class RecommendationController : ControllerBase
 
         try
         {
-            await _configRepo.UpdateWeightAsync(request.Key, request.Value, userId.Value);
+            await _recSvc.UpdateRecommendationConfigWeightAsync(request.Key, request.Value, userId.Value);
             return Ok(new { success = true, message = $"Đã cập nhật {request.Key} = {request.Value}." });
         }
         catch (InvalidOperationException ex)

@@ -1,18 +1,20 @@
 using Nanny_BackEnd.DTOs.Account;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
 using System.Text.RegularExpressions;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
 /// <summary>
 /// Handles account management operations used by Moderator (and potentially Admin).
-/// Works with Users and UserRoles tables via UserRepository.
+/// Works with Users and UserRoles tables via IUserRepository.
 /// </summary>
-public class UserService
+public class UserService : IUserService
 {
-    private readonly UserRepository _userRepo;
+    private readonly IUserRepository _userRepo;
 
-    public UserService(UserRepository userRepo)
+    public UserService(IUserRepository userRepo)
     {
         _userRepo = userRepo;
     }

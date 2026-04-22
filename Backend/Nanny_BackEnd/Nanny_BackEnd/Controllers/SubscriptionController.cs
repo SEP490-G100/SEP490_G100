@@ -2,7 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nanny_BackEnd.DTOs.Subscription;
-using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Controllers;
 
@@ -10,14 +10,14 @@ namespace Nanny_BackEnd.Controllers;
 [Route("api/subscriptions")]
 public class SubscriptionController : ControllerBase
 {
-    private readonly SubscriptionService _subscriptionService;
-    private readonly CassoService _cassoService;
-    private readonly PayOsService _payOsService;
+    private readonly ISubscriptionService _subscriptionService;
+    private readonly ICassoService _cassoService;
+    private readonly IPayOsService _payOsService;
 
     public SubscriptionController(
-        SubscriptionService subscriptionService,
-        CassoService cassoService,
-        PayOsService payOsService)
+        ISubscriptionService subscriptionService,
+        ICassoService cassoService,
+        IPayOsService payOsService)
     {
         _subscriptionService = subscriptionService;
         _cassoService = cassoService;

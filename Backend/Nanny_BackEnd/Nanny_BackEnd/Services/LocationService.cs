@@ -3,10 +3,11 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Caching.Memory;
 using Nanny_BackEnd.DTOs.Address;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class LocationService
+public class LocationService : ILocationService
 {
     private const string CacheKey = "address-location-tree";
     private static readonly JsonSerializerOptions JsonOptions = new()

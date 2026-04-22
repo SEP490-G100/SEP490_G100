@@ -2,11 +2,12 @@ using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
 using Nanny_BackEnd.DTOs.Nanny;
 using Nanny_BackEnd.Helpers;
+using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Models;
 
 namespace Nanny_BackEnd.Repositories;
 
-public class NannyProfileRepository
+public class NannyProfileRepository : INannyProfileRepository
 {
     private readonly Sep490NannyDbContext _db;
 
@@ -14,6 +15,11 @@ public class NannyProfileRepository
 
     public async Task<NannyProfile?> FindByUserIdAsync(Guid userId) =>
         await _db.NannyProfiles.FirstOrDefaultAsync(n => n.UserId == userId && !n.IsDeleted);
+
+    public async Task<NannyProfile?> FindByIdWithUserAsync(Guid nannyProfileId) =>
+        await _db.NannyProfiles
+            .Include(n => n.User)
+            .FirstOrDefaultAsync(n => n.Id == nannyProfileId && !n.IsDeleted);
 
     public IQueryable<NannyProfile> GetSearchQuery() =>
         _db.NannyProfiles

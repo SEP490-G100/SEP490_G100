@@ -5,17 +5,19 @@ using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class ModeratorJobService
+public class ModeratorJobService : IModeratorJobService
 {
-    private readonly ModeratorJobRepository _moderatorJobRepository;
-    private readonly NotificationService _notificationService;
+    private readonly IModeratorJobRepository _moderatorJobRepository;
+    private readonly INotificationService _notificationService;
 
     public ModeratorJobService(
-        ModeratorJobRepository moderatorJobRepository,
-        NotificationService notificationService)
+        IModeratorJobRepository moderatorJobRepository,
+        INotificationService notificationService)
     {
         _moderatorJobRepository = moderatorJobRepository;
         _notificationService = notificationService;

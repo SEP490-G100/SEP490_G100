@@ -3,16 +3,18 @@ using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
 using System.Text.RegularExpressions;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class HiringService
+public class HiringService : IHiringService
 {
-    private readonly HiringRepository _repo;
-    private readonly CommunicationService _communication;
+    private readonly IHiringRepository _repo;
+    private readonly ICommunicationService _communication;
 
-    public HiringService(HiringRepository repo, CommunicationService communication)
+    public HiringService(IHiringRepository repo, ICommunicationService communication)
     {
         _repo = repo;
         _communication = communication;

@@ -4,10 +4,12 @@ using Nanny_BackEnd.Exceptions;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class ReportService
+public class ReportService : IReportService
 {
     private static readonly TimeSpan HourlyWindow = TimeSpan.FromHours(1);
     private static readonly TimeSpan DailyWindow = TimeSpan.FromDays(1);
@@ -15,14 +17,14 @@ public class ReportService
     private const int MaxReportsPerHour = 3;
     private const int MaxReportsPerDay = 10;
 
-    private readonly ReportRepository _reportRepo;
-    private readonly UserRepository _userRepo;
-    private readonly NotificationService _notificationService;
+    private readonly IReportRepository _reportRepo;
+    private readonly IUserRepository _userRepo;
+    private readonly INotificationService _notificationService;
 
     public ReportService(
-        ReportRepository reportRepo,
-        UserRepository userRepo,
-        NotificationService notificationService)
+        IReportRepository reportRepo,
+        IUserRepository userRepo,
+        INotificationService notificationService)
     {
         _reportRepo = reportRepo;
         _userRepo = userRepo;

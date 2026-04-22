@@ -2,16 +2,16 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Nanny_BackEnd.DTOs.Communication;
-using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Hubs;
 
 [Authorize]
 public class ChatHub : Hub
 {
-    private readonly CommunicationService _chatService;
+    private readonly ICommunicationService _chatService;
 
-    public ChatHub(CommunicationService chatService) => _chatService = chatService;
+    public ChatHub(ICommunicationService chatService) => _chatService = chatService;
 
     // ─── Kết nối: thêm user vào group cá nhân ────────────────────────────────
 

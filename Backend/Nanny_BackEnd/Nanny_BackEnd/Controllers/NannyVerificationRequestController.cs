@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nanny_BackEnd.DTOs.Verification;
 using Nanny_BackEnd.Enums;
-using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Controllers;
 
@@ -11,9 +11,9 @@ namespace Nanny_BackEnd.Controllers;
 [ApiController]
 public class NannyVerificationRequestController : ControllerBase
 {
-    private readonly VerificationRequestService _verificationService;
+    private readonly IVerificationRequestService _verificationService;
 
-    public NannyVerificationRequestController(VerificationRequestService verificationService)
+    public NannyVerificationRequestController(IVerificationRequestService verificationService)
     {
         _verificationService = verificationService;
     }

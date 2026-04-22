@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
 using Nanny_BackEnd.Enums;
+using Nanny_BackEnd.Repositories.Interfaces;
 
 namespace Nanny_BackEnd.Repositories;
 
-public class UserSubscriptionRepository
+public class UserSubscriptionRepository : IUserSubscriptionRepository
 {
     private readonly Sep490NannyDbContext _db;
 

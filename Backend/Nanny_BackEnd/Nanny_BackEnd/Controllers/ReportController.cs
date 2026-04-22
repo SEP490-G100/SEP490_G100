@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nanny_BackEnd.DTOs.Report;
 using Nanny_BackEnd.Exceptions;
-using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Controllers;
 
@@ -12,9 +12,9 @@ namespace Nanny_BackEnd.Controllers;
 [Route("api/reports")]
 public class ReportController : ControllerBase
 {
-    private readonly ReportService _reportService;
+    private readonly IReportService _reportService;
 
-    public ReportController(ReportService reportService)
+    public ReportController(IReportService reportService)
     {
         _reportService = reportService;
     }

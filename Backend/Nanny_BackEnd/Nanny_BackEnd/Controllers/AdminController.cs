@@ -2,7 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nanny_BackEnd.DTOs.Notification;
-using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Controllers;
 
@@ -11,12 +11,12 @@ namespace Nanny_BackEnd.Controllers;
 [Authorize(Roles = "Admin")]
 public class AdminController : ControllerBase
 {
-    private readonly ExportService _exportService;
-    private readonly AdminNotificationService _adminNotificationService;
+    private readonly IExportService _exportService;
+    private readonly IAdminNotificationService _adminNotificationService;
 
     public AdminController(
-        ExportService exportService,
-        AdminNotificationService adminNotificationService)
+        IExportService exportService,
+        IAdminNotificationService adminNotificationService)
     {
         _exportService = exportService;
         _adminNotificationService = adminNotificationService;

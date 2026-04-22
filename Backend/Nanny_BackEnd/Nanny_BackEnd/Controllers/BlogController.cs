@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nanny_BackEnd.DTOs.Blog;
-using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 using System.Security.Claims;
 
 namespace Nanny_BackEnd.Controllers;
@@ -10,8 +10,8 @@ namespace Nanny_BackEnd.Controllers;
 [Route("api/[controller]")]
 public class BlogController : ControllerBase
 {
-    private readonly BlogService _blogService;
-    public BlogController(BlogService blogService)
+    private readonly IBlogService _blogService;
+    public BlogController(IBlogService blogService)
     {
         _blogService = blogService;
     }

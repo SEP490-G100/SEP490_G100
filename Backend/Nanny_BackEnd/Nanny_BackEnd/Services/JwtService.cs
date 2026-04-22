@@ -6,15 +6,17 @@ using Microsoft.IdentityModel.Tokens;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 
+using Nanny_BackEnd.Services.Interfaces;
+
 namespace Nanny_BackEnd.Services;
 
-public class JwtService
+public class JwtService : IJwtService
 {
     private readonly IConfiguration _config;
 
     public JwtService(IConfiguration config) => _config = config;
 
-    public (string Token, DateTime ExpiresAt, string JwtId) GenerateAccessToken(User user, List<string> roles)
+    public virtual (string Token, DateTime ExpiresAt, string JwtId) GenerateAccessToken(User user, List<string> roles)
     {
         var jwtId = Guid.NewGuid().ToString();
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
@@ -47,7 +49,7 @@ public class JwtService
         return (new JwtSecurityTokenHandler().WriteToken(token), expiresAt, jwtId);
     }
 
-    public string GenerateRefreshToken()
+    public virtual string GenerateRefreshToken()
     {
         var bytes = new byte[64];
         using var rng = RandomNumberGenerator.Create();

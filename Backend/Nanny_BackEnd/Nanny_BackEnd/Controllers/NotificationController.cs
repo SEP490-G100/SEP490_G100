@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Controllers;
 
@@ -10,9 +10,9 @@ namespace Nanny_BackEnd.Controllers;
 [Route("api/notifications")]
 public class NotificationController : ControllerBase
 {
-    private readonly NotificationService _notificationService;
+    private readonly INotificationService _notificationService;
 
-    public NotificationController(NotificationService notificationService)
+    public NotificationController(INotificationService notificationService)
     {
         _notificationService = notificationService;
     }

@@ -3,15 +3,17 @@ using System.Text.RegularExpressions;
 using Nanny_BackEnd.DTOs.Account;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class AdminAccountService
+public class AdminAccountService : IAdminAccountService
 {
     private const string ModeratorRole = "Moderator";
-    private readonly AdminAccountRepository _adminAccountRepository;
+    private readonly IAdminAccountRepository _adminAccountRepository;
 
-    public AdminAccountService(AdminAccountRepository adminAccountRepository)
+    public AdminAccountService(IAdminAccountRepository adminAccountRepository)
     {
         _adminAccountRepository = adminAccountRepository;
     }

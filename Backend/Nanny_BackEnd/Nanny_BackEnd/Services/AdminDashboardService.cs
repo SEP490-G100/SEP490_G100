@@ -2,14 +2,16 @@ using Nanny_BackEnd.DTOs.Dashboard;
 using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class AdminDashboardService
+public class AdminDashboardService : IAdminDashboardService
 {
-    private readonly AdminDashboardRepository _adminDashboardRepo;
+    private readonly IAdminDashboardRepository _adminDashboardRepo;
 
-    public AdminDashboardService(AdminDashboardRepository adminDashboardRepo)
+    public AdminDashboardService(IAdminDashboardRepository adminDashboardRepo)
     {
         _adminDashboardRepo = adminDashboardRepo;
     }

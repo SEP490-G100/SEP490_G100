@@ -4,19 +4,21 @@ using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class NannyService
+public class NannyService : INannyService
 {
-    private readonly NannyProfileRepository _nannyProfileRepository;
-    private readonly FavoriteRepository _favoriteRepository;
-    private readonly NotificationService _notificationService;
+    private readonly INannyProfileRepository _nannyProfileRepository;
+    private readonly IFavoriteRepository _favoriteRepository;
+    private readonly INotificationService _notificationService;
 
     public NannyService(
-        NannyProfileRepository nannyProfileRepository,
-        FavoriteRepository favoriteRepository,
-        NotificationService notificationService)
+        INannyProfileRepository nannyProfileRepository,
+        IFavoriteRepository favoriteRepository,
+        INotificationService notificationService)
     {
         _nannyProfileRepository = nannyProfileRepository;
         _favoriteRepository = favoriteRepository;

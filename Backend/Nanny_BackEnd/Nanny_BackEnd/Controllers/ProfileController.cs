@@ -2,7 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nanny_BackEnd.DTOs.Profile;
-using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Controllers;
 
@@ -11,9 +11,9 @@ namespace Nanny_BackEnd.Controllers;
 [Authorize]
 public class ProfileController : ControllerBase
 {
-    private readonly ProfileService _profileService;
+    private readonly IProfileService _profileService;
 
-    public ProfileController(ProfileService profileService)
+    public ProfileController(IProfileService profileService)
     {
         _profileService = profileService;
     }

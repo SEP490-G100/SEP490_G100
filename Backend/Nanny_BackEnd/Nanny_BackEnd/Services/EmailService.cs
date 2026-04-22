@@ -1,9 +1,11 @@
 using MailKit.Net.Smtp;
 using MimeKit;
 
+using Nanny_BackEnd.Services.Interfaces;
+
 namespace Nanny_BackEnd.Services;
 
-public class EmailService
+public class EmailService : IEmailService
 {
     private readonly string _fromName;
     private readonly string _fromEmail;
@@ -23,7 +25,7 @@ public class EmailService
         _smtpPassword = s["SmtpPassword"]!;
     }
 
-    public async Task SendOtpEmailAsync(string toEmail, string otpCode, string purpose)
+    public virtual async Task SendOtpEmailAsync(string toEmail, string otpCode, string purpose)
     {
         var subject = purpose switch
         {

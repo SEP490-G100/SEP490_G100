@@ -1,14 +1,16 @@
 using Nanny_BackEnd.DTOs.BlogCategory;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class BlogCategoryService
+public class BlogCategoryService : IBlogCategoryService
 {
-    private readonly BlogCategoryRepository _repo;
+    private readonly IBlogCategoryRepository _repo;
 
-    public BlogCategoryService(BlogCategoryRepository repo) => _repo = repo;
+    public BlogCategoryService(IBlogCategoryRepository repo) => _repo = repo;
 
     // ── List (paged) ──────────────────────────────────────────────────────
     public async Task<BlogCategoryListResponse> ModeratorViewBlogCategoryListAsync(

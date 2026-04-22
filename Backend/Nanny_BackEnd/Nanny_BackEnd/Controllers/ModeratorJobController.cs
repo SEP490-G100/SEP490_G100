@@ -2,7 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nanny_BackEnd.DTOs.JobPosting;
-using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Controllers;
 
@@ -11,9 +11,9 @@ namespace Nanny_BackEnd.Controllers;
 [Authorize(Roles = "Moderator")]
 public class ModeratorJobController : ControllerBase
 {
-    private readonly ModeratorJobService _moderatorJobService;
+    private readonly IModeratorJobService _moderatorJobService;
 
-    public ModeratorJobController(ModeratorJobService moderatorJobService)
+    public ModeratorJobController(IModeratorJobService moderatorJobService)
     {
         _moderatorJobService = moderatorJobService;
     }

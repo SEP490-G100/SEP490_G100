@@ -3,15 +3,17 @@ using Nanny_BackEnd.DTOs.Notification;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class AdminNotificationService
+public class AdminNotificationService : IAdminNotificationService
 {
     private const string AdminNotificationScopePrefix = "AdminNotification";
-    private readonly AdminNotificationRepository _adminNotificationRepository;
+    private readonly IAdminNotificationRepository _adminNotificationRepository;
 
-    public AdminNotificationService(AdminNotificationRepository adminNotificationRepository)
+    public AdminNotificationService(IAdminNotificationRepository adminNotificationRepository)
     {
         _adminNotificationRepository = adminNotificationRepository;
     }

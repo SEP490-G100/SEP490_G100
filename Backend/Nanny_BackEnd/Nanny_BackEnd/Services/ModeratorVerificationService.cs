@@ -2,17 +2,19 @@ using Nanny_BackEnd.DTOs.Verification;
 using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class ModeratorVerificationService
+public class ModeratorVerificationService : IModeratorVerificationService
 {
-    private readonly ModeratorVerificationRepository _moderatorVerificationRepo;
-    private readonly NotificationService _notificationService;
+    private readonly IModeratorVerificationRepository _moderatorVerificationRepo;
+    private readonly INotificationService _notificationService;
 
     public ModeratorVerificationService(
-        ModeratorVerificationRepository moderatorVerificationRepo,
-        NotificationService notificationService)
+        IModeratorVerificationRepository moderatorVerificationRepo,
+        INotificationService notificationService)
     {
         _moderatorVerificationRepo = moderatorVerificationRepo;
         _notificationService = notificationService;
