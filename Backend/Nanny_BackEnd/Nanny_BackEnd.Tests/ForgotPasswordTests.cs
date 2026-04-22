@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Configuration;
 using Moq;
-using FluentAssertions;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
@@ -62,8 +61,8 @@ public class ForgotPasswordTests
 
         var (success, message) = await _sut.ForgotPasswordAsync("notfound@mail.com");
 
-        success.Should().BeTrue();
-        message.Should().Be("Nếu email tồn tại, mã OTP đã được gửi.");
+        Assert.True(success);
+        Assert.Equal("Nếu email tồn tại, mã OTP đã được gửi.", message);
 
         // Không gửi OTP khi email không tồn tại
         _mockOtp.Verify(o => o.GenerateAsync(It.IsAny<string>(), It.IsAny<OtpPurpose>(), It.IsAny<Guid?>()), Times.Never);
@@ -87,8 +86,8 @@ public class ForgotPasswordTests
 
         var (success, message) = await _sut.ForgotPasswordAsync("google@mail.com");
 
-        success.Should().BeTrue();
-        message.Should().Be("Nếu email tồn tại, mã OTP đã được gửi.");
+        Assert.True(success);
+        Assert.Equal("Nếu email tồn tại, mã OTP đã được gửi.", message);
 
         _mockOtp.Verify(o => o.GenerateAsync(It.IsAny<string>(), It.IsAny<OtpPurpose>(), It.IsAny<Guid?>()), Times.Never);
     }
@@ -114,8 +113,8 @@ public class ForgotPasswordTests
 
         var (success, message) = await _sut.ForgotPasswordAsync("user@mail.com");
 
-        success.Should().BeTrue();
-        message.Should().Be("Mã OTP đã được gửi đến email của bạn.");
+        Assert.True(success);
+        Assert.Equal("Mã OTP đã được gửi đến email của bạn.", message);
 
         _mockOtp.Verify(o => o.GenerateAsync("user@mail.com", OtpPurpose.ForgotPassword, user.Id), Times.Once);
     }
@@ -141,7 +140,7 @@ public class ForgotPasswordTests
 
         var (success, message) = await _sut.ForgotPasswordAsync("user@mail.com");
 
-        success.Should().BeFalse();
-        message.Should().Be("Không thể gửi email lúc này. Vui lòng thử lại sau.");
+        Assert.False(success);
+        Assert.Equal("Không thể gửi email lúc này. Vui lòng thử lại sau.", message);
     }
 }

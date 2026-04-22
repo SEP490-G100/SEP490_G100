@@ -1,5 +1,4 @@
 using Moq;
-using FluentAssertions;
 using Nanny_BackEnd.DTOs.Search;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories.Interfaces;
@@ -73,8 +72,8 @@ public class ReviewJobApplicationTests
             Guid.NewGuid(),
             new ReviewJobApplicationRequestDto { Action = 99 });
 
-        r.IsSuccess.Should().BeFalse();
-        r.Failure.Should().Be(ReviewJobParentFailure.BadInput);
+        Assert.False(r.IsSuccess);
+        Assert.Equal(ReviewJobParentFailure.BadInput, r.Failure);
     }
 
     [Fact]
@@ -85,8 +84,8 @@ public class ReviewJobApplicationTests
             Guid.NewGuid(),
             new ReviewJobApplicationRequestDto { Action = 2, RejectionReason = "  " });
 
-        r.IsSuccess.Should().BeFalse();
-        r.Failure.Should().Be(ReviewJobParentFailure.BadInput);
+        Assert.False(r.IsSuccess);
+        Assert.Equal(ReviewJobParentFailure.BadInput, r.Failure);
     }
 
     [Fact]
@@ -102,8 +101,8 @@ public class ReviewJobApplicationTests
             Guid.NewGuid(),
             new ReviewJobApplicationRequestDto { Action = 1 });
 
-        r.IsSuccess.Should().BeFalse();
-        r.Failure.Should().Be(ReviewJobParentFailure.ApplicationNotFound);
+        Assert.False(r.IsSuccess);
+        Assert.Equal(ReviewJobParentFailure.ApplicationNotFound, r.Failure);
     }
 
     [Fact]
@@ -121,8 +120,8 @@ public class ReviewJobApplicationTests
             app.Id,
             new ReviewJobApplicationRequestDto { Action = 1 });
 
-        r.IsSuccess.Should().BeFalse();
-        r.Failure.Should().Be(ReviewJobParentFailure.AlreadyProcessed);
+        Assert.False(r.IsSuccess);
+        Assert.Equal(ReviewJobParentFailure.AlreadyProcessed, r.Failure);
     }
 
     [Fact]
@@ -139,9 +138,9 @@ public class ReviewJobApplicationTests
             app.Id,
             new ReviewJobApplicationRequestDto { Action = 1 });
 
-        r.IsSuccess.Should().BeTrue();
-        app.Status.Should().Be(1);
-        app.ReviewedAt.Should().NotBeNull();
+        Assert.True(r.IsSuccess);
+        Assert.Equal(1, app.Status);
+        Assert.NotNull(app.ReviewedAt);
         _mockAppRepo.Verify(x => x.SaveChangesAsync(), Times.Once);
         _mockNotif.Verify(n => n.createNotification(
             It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(),
@@ -163,9 +162,9 @@ public class ReviewJobApplicationTests
             app.Id,
             new ReviewJobApplicationRequestDto { Action = 2, RejectionReason = "Khong phu hop" });
 
-        r.IsSuccess.Should().BeTrue();
-        app.Status.Should().Be(2);
-        app.RejectionReason.Should().Be("Khong phu hop");
+        Assert.True(r.IsSuccess);
+        Assert.Equal(2, app.Status);
+        Assert.Equal("Khong phu hop", app.RejectionReason);
         _mockNotif.Verify(n => n.createNotification(
             _nannyUserId, It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<int>(), It.IsAny<Guid?>(), It.IsAny<string?>(), It.IsAny<Guid?>()),

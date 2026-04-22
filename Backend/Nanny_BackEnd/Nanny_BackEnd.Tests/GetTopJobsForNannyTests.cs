@@ -1,9 +1,10 @@
-using Moq;
-using FluentAssertions;
 using System.Text.Json;
+using Moq;
+using Microsoft.Extensions.Logging.Abstractions;
 using Nanny_BackEnd.DTOs.Recommendation;
 using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Tests;
 
@@ -18,10 +19,32 @@ public class GetTopJobsForNannyTests
 
     public GetTopJobsForNannyTests()
     {
-        var b = RecommendationServiceTestBuilder.Create();
+        var b = CreateSut();
         _mockRepo = b.Repo;
         _mockConfig = b.Config;
         _sut = b.Sut;
+    }
+
+    private static (
+        Mock<IRecommendationRepository> Repo,
+        Mock<IRecommendationConfigRepository> Config,
+        RecommendationService Sut) CreateSut()
+    {
+        var mockRepo   = new Mock<IRecommendationRepository>();
+        var mockConfig = new Mock<IRecommendationConfigRepository>();
+        var mockParent = new Mock<IParentRepository>();
+        var mockNanny  = new Mock<INannyProfileRepository>();
+        var mockJob    = new Mock<IJobRepository>();
+        var mockSub    = new Mock<ISubscriptionService>();
+        var sut = new RecommendationService(
+            mockRepo.Object,
+            mockConfig.Object,
+            mockParent.Object,
+            mockNanny.Object,
+            mockJob.Object,
+            mockSub.Object,
+            NullLogger<RecommendationService>.Instance);
+        return (mockRepo, mockConfig, sut);
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────
@@ -74,7 +97,7 @@ public class GetTopJobsForNannyTests
 
         var result = await _sut.GetTopJobsForNannyAsync(nannyId);
 
-        result.Should().BeEmpty();
+        Assert.Empty(result);
 
         // Không cần lấy NannyReadModel hay Weights nếu không có ứng viên
         _mockRepo.Verify(r => r.GetNannyReadModelAsync(It.IsAny<Guid>()), Times.Never);
@@ -96,10 +119,10 @@ public class GetTopJobsForNannyTests
 
         var result = await _sut.GetTopJobsForNannyAsync(nannyId);
 
-        result.Should().HaveCount(1);
-        result[0].EmbeddingWasNull.Should().BeFalse();
-        result[0].SemanticScore.Should().BeApproximately(1.0, precision: 0.001);
-        result[0].FinalScore.Should().BeGreaterThan(0);
+        Assert.Single(result);
+        Assert.False(result[0].EmbeddingWasNull);
+        Assert.InRange(result[0].SemanticScore, 0.999, 1.001);
+        Assert.True(result[0].FinalScore > 0);
     }
 
     // ── TC3: Embedding null → dùng ColdStart thay cosine ────────────────
@@ -116,9 +139,9 @@ public class GetTopJobsForNannyTests
 
         var result = await _sut.GetTopJobsForNannyAsync(nannyId);
 
-        result.Should().HaveCount(1);
-        result[0].EmbeddingWasNull.Should().BeTrue();
-        result[0].SemanticScore.Should().BeApproximately(DefaultWeights.ColdStart, precision: 0.001);
+        Assert.Single(result);
+        Assert.True(result[0].EmbeddingWasNull);
+        Assert.InRange(result[0].SemanticScore, DefaultWeights.ColdStart - 0.001, DefaultWeights.ColdStart + 0.001);
     }
 
     // ── TC4: topK giới hạn kết quả, sắp xếp theo FinalScore ─────────────
@@ -142,16 +165,10 @@ public class GetTopJobsForNannyTests
 
         var result = await _sut.GetTopJobsForNannyAsync(nannyId, topK: 2);
 
-        result.Should().HaveCount(2);
-
-        // Thứ tự FinalScore giảm dần
-        result[0].FinalScore.Should().BeGreaterThan(result[1].FinalScore);
-
-        // Top 1: jobHigh (cosine = 1.0)
-        result[0].JobId.Should().Be(jobHigh.JobId);
-
-        // Top 2: jobMid (ColdStart = 0.75 > cosine 0.0)
-        result[1].JobId.Should().Be(jobMid.JobId);
+        Assert.Equal(2, result.Count);
+        Assert.True(result[0].FinalScore > result[1].FinalScore);
+        Assert.Equal(jobHigh.JobId, result[0].JobId);
+        Assert.Equal(jobMid.JobId, result[1].JobId);
     }
 
     // ── TC5: Có tọa độ cả 2 phía → distKm được tính, DistanceScore < 0.8 ─
@@ -175,10 +192,8 @@ public class GetTopJobsForNannyTests
 
         var result = await _sut.GetTopJobsForNannyAsync(nannyId);
 
-        result.Should().HaveCount(1);
-
-        // Khoảng cách ~1100km >> maxTravel 10km → distanceScore chạm sàn 0.1
-        result[0].DistanceKm.Should().BeGreaterThan(1000);
-        result[0].DistanceScore.Should().BeApproximately(0.1, precision: 0.01);
+        Assert.Single(result);
+        Assert.True(result[0].DistanceKm > 1000);
+        Assert.InRange(result[0].DistanceScore, 0.09, 0.11);
     }
 }

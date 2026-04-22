@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Configuration;
 using Moq;
-using FluentAssertions;
 using Nanny_BackEnd.DTOs.Auth;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
@@ -45,34 +44,30 @@ public class RefreshTokenTests
     }
 
     [Fact]
-    public void InvalidAccessTokenClaims_Throws()
+    public async Task InvalidAccessTokenClaims_Throws()
     {
         _jwt.Setup(j => j.GetTokenClaims(It.IsAny<string>()))
             .Returns((null, null));
 
-        var act = () => _sut.RefreshTokenAsync(new RefreshTokenRequest
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _sut.RefreshTokenAsync(new RefreshTokenRequest
         {
             AccessToken  = "bad",
             RefreshToken = "ref"
-        });
-
-        act.Should().ThrowAsync<UnauthorizedAccessException>();
+        }));
     }
 
     [Fact]
-    public void RefreshTokenNotInStore_Throws()
+    public async Task RefreshTokenNotInStore_Throws()
     {
         var uid = Guid.NewGuid();
         _jwt.Setup(j => j.GetTokenClaims(It.IsAny<string>())).Returns((uid, "jid"));
         _tokenRepo.Setup(t => t.FindByTokenAsync("missing")).ReturnsAsync((RefreshToken?)null);
 
-        var act = () => _sut.RefreshTokenAsync(new RefreshTokenRequest
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _sut.RefreshTokenAsync(new RefreshTokenRequest
         {
             AccessToken  = "a",
             RefreshToken = "missing"
-        });
-
-        act.Should().ThrowAsync<UnauthorizedAccessException>();
+        }));
     }
 
     [Fact]
@@ -115,9 +110,9 @@ public class RefreshTokenTests
             RefreshToken = storedT
         });
 
-        response.AccessToken.Should().Be("new-access");
-        response.RefreshToken.Should().Be("new-refresh");
-        stored.IsUsed.Should().BeTrue();
+        Assert.Equal("new-access", response.AccessToken);
+        Assert.Equal("new-refresh", response.RefreshToken);
+        Assert.True(stored.IsUsed);
         /* BuildLoginResponse + cuối RefreshTokenAsync mỗi nơi gọi SaveChangesAsync */
         _tokenRepo.Verify(t => t.SaveChangesAsync(), Times.Exactly(2));
     }

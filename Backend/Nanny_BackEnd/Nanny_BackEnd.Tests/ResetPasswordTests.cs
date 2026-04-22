@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Configuration;
 using Moq;
-using FluentAssertions;
 using Nanny_BackEnd.DTOs.Auth;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
@@ -60,15 +59,13 @@ public class ResetPasswordTests
         _mockOtp.Setup(o => o.ValidateAsync("user@mail.com", "000000", OtpPurpose.ForgotPassword))
                 .ReturnsAsync((OtpCode?)null);
 
-        var act = () => _sut.ResetPasswordAsync(new ResetPasswordRequest
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.ResetPasswordAsync(new ResetPasswordRequest
         {
             Email       = "user@mail.com",
             OtpCode     = "000000",
             NewPassword = "New@Password1"
-        });
-
-        await act.Should().ThrowAsync<InvalidOperationException>()
-                 .WithMessage("Mã OTP không hợp lệ hoặc đã hết hạn.");
+        }));
+        Assert.Equal("Mã OTP không hợp lệ hoặc đã hết hạn.", ex.Message);
     }
 
     // ── TC2: Tài khoản Google không dùng mật khẩu ────────────────────────
@@ -87,15 +84,13 @@ public class ResetPasswordTests
         _mockUserRepo.Setup(r => r.FindByEmailAsync("google@mail.com"))
                      .ReturnsAsync(user);
 
-        var act = () => _sut.ResetPasswordAsync(new ResetPasswordRequest
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.ResetPasswordAsync(new ResetPasswordRequest
         {
             Email       = "google@mail.com",
             OtpCode     = "123456",
             NewPassword = "New@Password1"
-        });
-
-        await act.Should().ThrowAsync<InvalidOperationException>()
-                 .WithMessage("Tài khoản Google không sử dụng mật khẩu.");
+        }));
+        Assert.Equal("Tài khoản Google không sử dụng mật khẩu.", ex.Message);
     }
 
     // ── TC3: Mật khẩu mới không hợp lệ ──────────────────────────────────
@@ -114,14 +109,12 @@ public class ResetPasswordTests
         _mockUserRepo.Setup(r => r.FindByEmailAsync("user@mail.com"))
                      .ReturnsAsync(user);
 
-        var act = () => _sut.ResetPasswordAsync(new ResetPasswordRequest
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.ResetPasswordAsync(new ResetPasswordRequest
         {
             Email       = "user@mail.com",
             OtpCode     = "123456",
             NewPassword = "weak"          // quá ngắn
-        });
-
-        await act.Should().ThrowAsync<InvalidOperationException>();
+        }));
     }
 
     // ── TC4: Đặt lại mật khẩu thành công ─────────────────────────────────
@@ -151,7 +144,7 @@ public class ResetPasswordTests
         });
 
         // PasswordHash phải được cập nhật sang hash mới
-        BCrypt.Net.BCrypt.Verify("New@Password1", user.PasswordHash).Should().BeTrue();
+        Assert.True(BCrypt.Net.BCrypt.Verify("New@Password1", user.PasswordHash));
         _mockUserRepo.Verify(r => r.SaveChangesAsync(), Times.Once);
     }
 }

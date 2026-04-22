@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
-using FluentAssertions;
 using Nanny_BackEnd.DTOs.JobPosting;
 using Nanny_BackEnd.DTOs.Subscription;
 using Nanny_BackEnd.Models;
@@ -88,10 +87,9 @@ public class CreateJobTests
         _mockJobRepo.Setup(r => r.getParentProfileSnapshot(parentId))
                     .ReturnsAsync((ParentProfile?)null);
 
-        var act = () => _sut.createJob(parentId, ValidRequest());
-
-        await act.Should().ThrowAsync<KeyNotFoundException>()
-                 .WithMessage("*Khong tim thay ho so phu huynh*");
+        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _sut.createJob(parentId, ValidRequest()));
+        Assert.Contains("tìm thấy hồ sơ phụ huynh", ex.Message);
     }
 
     // ── TC2: Free user đã đạt giới hạn 3 bài đăng đang active ───────────
@@ -108,10 +106,9 @@ public class CreateJobTests
         _mockJobRepo.Setup(r => r.countActiveJobPostings(parentId))
                     .ReturnsAsync(3);   // == freeParentActivePostingLimit
 
-        var act = () => _sut.createJob(parentId, ValidRequest());
-
-        await act.Should().ThrowAsync<InvalidOperationException>()
-                 .WithMessage("*mien phi*toi da 3 bai dang*");
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _sut.createJob(parentId, ValidRequest()));
+        Assert.Contains("tối đa 3 bài đăng", ex.Message);
     }
 
     // ── TC3: Free user đã đạt giới hạn bài đăng trong tháng ─────────────
@@ -130,10 +127,9 @@ public class CreateJobTests
         _mockJobRepo.Setup(r => r.countJobPostingsInCurrentMonth(parentId))
                     .ReturnsAsync(3);   // == MonthlyJobPostLimit = 3
 
-        var act = () => _sut.createJob(parentId, ValidRequest());
-
-        await act.Should().ThrowAsync<InvalidOperationException>()
-                 .WithMessage("*toi da 3 bai viet trong 1 thang*");
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _sut.createJob(parentId, ValidRequest()));
+        Assert.Contains("tối đa 3 bài viết trong 1 tháng", ex.Message);
     }
 
     // ── TC4: Paid user, tất cả hợp lệ → trả về JobId ────────────────────
@@ -163,7 +159,7 @@ public class CreateJobTests
 
         var jobId = await _sut.createJob(parentId, ValidRequest());
 
-        jobId.Should().NotBe(Guid.Empty);
+        Assert.NotEqual(Guid.Empty, jobId);
         _mockJobRepo.Verify(r => r.createJobPosting(It.IsAny<JobPosting>()), Times.Once);
     }
 
@@ -202,7 +198,7 @@ public class CreateJobTests
 
         var jobId = await _sut.createJob(parentId, ValidRequest());
 
-        jobId.Should().NotBe(Guid.Empty);
+        Assert.NotEqual(Guid.Empty, jobId);
     }
 
     // ── Boundary TC2: monthly = 2 (ngay dưới giới hạn 3) → vẫn tạo được ─
@@ -216,6 +212,6 @@ public class CreateJobTests
 
         var jobId = await _sut.createJob(parentId, ValidRequest());
 
-        jobId.Should().NotBe(Guid.Empty);
+        Assert.NotEqual(Guid.Empty, jobId);
     }
 }

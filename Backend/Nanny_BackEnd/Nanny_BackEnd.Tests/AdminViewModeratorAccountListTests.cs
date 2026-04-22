@@ -1,5 +1,5 @@
+using System.Linq;
 using Moq;
-using FluentAssertions;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
 using Nanny_BackEnd.Repositories.Interfaces;
@@ -42,10 +42,10 @@ public class AdminViewModeratorAccountListTests
 
         var result = await _sut.AdminViewModeratorAccountListAsync(null, null, 1, 10);
 
-        result.Items.Should().BeEmpty();
-        result.TotalCount.Should().Be(0);
-        result.Page.Should().Be(1);
-        result.PageSize.Should().Be(10);
+        Assert.Empty(result.Items);
+        Assert.Equal(0, result.TotalCount);
+        Assert.Equal(1, result.Page);
+        Assert.Equal(10, result.PageSize);
     }
 
     // ── TC2: Có 2 moderator → Items đủ số, mapping Id và Email đúng ──────
@@ -60,12 +60,16 @@ public class AdminViewModeratorAccountListTests
 
         var result = await _sut.AdminViewModeratorAccountListAsync(null, null, 1, 10);
 
-        result.TotalCount.Should().Be(2);
-        result.Items.Should().HaveCount(2);
-        result.Items.Select(i => i.Id).Should().BeEquivalentTo(new[] { mod1.Id, mod2.Id });
-        result.Items.Select(i => i.Email).Should().BeEquivalentTo(new[] { mod1.Email, mod2.Email });
+        Assert.Equal(2, result.TotalCount);
+        Assert.Equal(2, result.Items.Count);
+        Assert.Equal(
+            new[] { mod1.Id, mod2.Id }.OrderBy(x => x),
+            result.Items.Select(i => i.Id).OrderBy(x => x));
+        Assert.Equal(
+            new[] { mod1.Email, mod2.Email }.OrderBy(x => x),
+            result.Items.Select(i => i.Email).OrderBy(x => x));
         // Role được map từ UserRoles
-        result.Items.First(i => i.Id == mod1.Id).Roles.Should().Contain("Moderator");
+        Assert.Contains("Moderator", result.Items.First(i => i.Id == mod1.Id).Roles);
     }
 
     // ── TC3: page < 1 → clamp về 1, repo được gọi với page = 1 ──────────
@@ -77,7 +81,7 @@ public class AdminViewModeratorAccountListTests
 
         var result = await _sut.AdminViewModeratorAccountListAsync(null, null, page: 0, pageSize: 10);
 
-        result.Page.Should().Be(1);
+        Assert.Equal(1, result.Page);
         _mockRepo.Verify(r => r.GetPagedModeratorAccountsAsync(null, null, 1, 10), Times.Once);
     }
 
@@ -90,7 +94,7 @@ public class AdminViewModeratorAccountListTests
 
         var result = await _sut.AdminViewModeratorAccountListAsync(null, null, page: 1, pageSize: 200);
 
-        result.PageSize.Should().Be(10);
+        Assert.Equal(10, result.PageSize);
         _mockRepo.Verify(r => r.GetPagedModeratorAccountsAsync(null, null, 1, 10), Times.Once);
     }
 }

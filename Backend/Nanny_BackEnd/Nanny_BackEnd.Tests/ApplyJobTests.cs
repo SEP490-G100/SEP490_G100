@@ -1,5 +1,4 @@
 using Moq;
-using FluentAssertions;
 using Nanny_BackEnd.DTOs.Search;
 using Nanny_BackEnd.DTOs.Subscription;
 using Nanny_BackEnd.Enums;
@@ -78,8 +77,8 @@ public class ApplyJobTests
 
         var result = await _sut.ApplyToJobAsync(_nannyUserId, Guid.NewGuid());
 
-        result.IsSuccess.Should().BeFalse();
-        result.Failure.Should().Be(ApplyToJobFailure.NotFound);
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ApplyToJobFailure.NotFound, result.Failure);
     }
 
     [Fact]
@@ -92,8 +91,8 @@ public class ApplyJobTests
 
         var result = await _sut.ApplyToJobAsync(_nannyUserId, _jobId);
 
-        result.IsSuccess.Should().BeFalse();
-        result.Failure.Should().Be(ApplyToJobFailure.JobNotOpen);
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ApplyToJobFailure.JobNotOpen, result.Failure);
     }
 
     [Fact]
@@ -111,8 +110,8 @@ public class ApplyJobTests
 
         var result = await _sut.ApplyToJobAsync(_nannyUserId, _jobId);
 
-        result.IsSuccess.Should().BeFalse();
-        result.Failure.Should().Be(ApplyToJobFailure.AlreadyApplied);
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ApplyToJobFailure.AlreadyApplied, result.Failure);
     }
 
     [Fact]
@@ -130,8 +129,8 @@ public class ApplyJobTests
 
         var result = await _sut.ApplyToJobAsync(_nannyUserId, _jobId);
 
-        result.IsSuccess.Should().BeFalse();
-        result.Failure.Should().Be(ApplyToJobFailure.MonthlyLimit);
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ApplyToJobFailure.MonthlyLimit, result.Failure);
     }
 
     [Fact]
@@ -147,7 +146,7 @@ public class ApplyJobTests
 
         var result = await _sut.ApplyToJobAsync(_nannyUserId, _jobId);
 
-        result.IsSuccess.Should().BeTrue();
+        Assert.True(result.IsSuccess);
         _mockAppRepo.Verify(r => r.AddApplication(It.IsAny<JobApplication>()), Times.Once);
         _mockAppRepo.Verify(r => r.SaveChangesAsync(), Times.Once);
         _mockNotif.Verify(n => n.createNotification(

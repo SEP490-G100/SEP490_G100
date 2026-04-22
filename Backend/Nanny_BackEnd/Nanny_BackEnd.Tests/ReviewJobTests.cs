@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
-using FluentAssertions;
 using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
@@ -73,11 +72,9 @@ public class ReviewJobTests
         _mockJobRepo.Setup(r => r.viewDetailPosting(jobId))
                     .ReturnsAsync((JobPosting?)null);
 
-        var act = () => _sut.ReviewJobAsync(jobId, Guid.NewGuid(),
-            (int)JobPostingModerationStatus.Approved, null);
-
-        await act.Should().ThrowAsync<KeyNotFoundException>()
-                 .WithMessage("*Khong tim thay tin dang*");
+        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.ReviewJobAsync(jobId, Guid.NewGuid(),
+            (int)JobPostingModerationStatus.Approved, null));
+        Assert.Contains("tìm thấy tin đăng", ex.Message);
     }
 
     // ── TC2: Approved + Status=Public → PublishedAt được set ─────────────
@@ -96,10 +93,10 @@ public class ReviewJobTests
         await _sut.ReviewJobAsync(job.Id, moderatorId,
             (int)JobPostingModerationStatus.Approved, null);
 
-        job.ModerationStatus.Should().Be((int)JobPostingModerationStatus.Approved);
-        job.PublishedAt.Should().NotBeNull();
-        job.ClosedAt.Should().BeNull();
-        job.ModeratedBy.Should().Be(moderatorId);
+        Assert.Equal((int)JobPostingModerationStatus.Approved, job.ModerationStatus);
+        Assert.NotNull(job.PublishedAt);
+        Assert.Null(job.ClosedAt);
+        Assert.Equal(moderatorId, job.ModeratedBy);
 
         // Thông báo gửi cho parent
         _mockNotif.Verify(n => n.createNotification(
@@ -123,8 +120,8 @@ public class ReviewJobTests
         await _sut.ReviewJobAsync(job.Id, Guid.NewGuid(),
             (int)JobPostingModerationStatus.Approved, null);
 
-        job.PublishedAt.Should().BeNull();
-        job.ClosedAt.Should().NotBeNull();
+        Assert.Null(job.PublishedAt);
+        Assert.NotNull(job.ClosedAt);
     }
 
     // ── TC4: Rejected + có note → ClosedAt set, note được trim ───────────
@@ -142,9 +139,9 @@ public class ReviewJobTests
         await _sut.ReviewJobAsync(job.Id, Guid.NewGuid(),
             (int)JobPostingModerationStatus.Rejected, "  Nội dung vi phạm  ");
 
-        job.ModerationStatus.Should().Be((int)JobPostingModerationStatus.Rejected);
-        job.PublishedAt.Should().BeNull();
-        job.ClosedAt.Should().NotBeNull();
-        job.ModerationNote.Should().Be("Nội dung vi phạm");   // đã trim
+        Assert.Equal((int)JobPostingModerationStatus.Rejected, job.ModerationStatus);
+        Assert.Null(job.PublishedAt);
+        Assert.NotNull(job.ClosedAt);
+        Assert.Equal("Nội dung vi phạm", job.ModerationNote);
     }
 }

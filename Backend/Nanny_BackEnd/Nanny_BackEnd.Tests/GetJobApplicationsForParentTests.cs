@@ -1,5 +1,4 @@
 using Moq;
-using FluentAssertions;
 using Nanny_BackEnd.DTOs.Search;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories.Interfaces;
@@ -33,7 +32,7 @@ public class GetJobApplicationsForParentTests
         var (err, _, _) = await _sut.GetJobApplicationsForParentAsync(
             _parentUserId, _jobId, status: 5);
 
-        err.Should().Be(GetParentJobApplicationsFailure.InvalidStatusFilter);
+        Assert.Equal(GetParentJobApplicationsFailure.InvalidStatusFilter, err);
     }
 
     [Fact]
@@ -45,8 +44,8 @@ public class GetJobApplicationsForParentTests
         var (err, _, data) = await _sut.GetJobApplicationsForParentAsync(
             _parentUserId, _jobId, null);
 
-        err.Should().Be(GetParentJobApplicationsFailure.NotParent);
-        data.Should().BeNull();
+        Assert.Equal(GetParentJobApplicationsFailure.NotParent, err);
+        Assert.Null(data);
     }
 
     [Fact]
@@ -60,8 +59,8 @@ public class GetJobApplicationsForParentTests
         var (err, _, data) = await _sut.GetJobApplicationsForParentAsync(
             _parentUserId, _jobId, null);
 
-        err.Should().Be(GetParentJobApplicationsFailure.JobNotFound);
-        data.Should().BeNull();
+        Assert.Equal(GetParentJobApplicationsFailure.JobNotFound, err);
+        Assert.Null(data);
     }
 
     [Fact]
@@ -115,10 +114,10 @@ public class GetJobApplicationsForParentTests
         var (err, errMsg, data) = await _sut.GetJobApplicationsForParentAsync(
             _parentUserId, _jobId, null);
 
-        err.Should().BeNull();
-        data.Should().NotBeNull();
-        data!.Job.Title.Should().Be("Tuyen nanny");
-        data.Applications.Should().HaveCount(1);
-        data.Applications[0].Nanny.FullName.Should().Be("N 1");
+        Assert.Null(err);
+        Assert.NotNull(data);
+        Assert.Equal("Tuyen nanny", data!.Job.Title);
+        Assert.Single(data.Applications);
+        Assert.Equal("N 1", data.Applications[0].Nanny.FullName);
     }
 }
