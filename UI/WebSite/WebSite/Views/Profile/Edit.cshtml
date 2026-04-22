@@ -236,13 +236,12 @@
     </div>
 </section>
 
-<div id="profileToast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] rounded-xl border border-orange-200 bg-orange-500 text-white px-4 py-3 text-sm font-bold shadow-xl">
-    @((TempData["Success"] ?? "").ToString())
-</div>
-
 @section Scripts {
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        var profileSuccessToastMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["Success"]?.ToString()));
+        var profileErrorToastMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["Error"]?.ToString()));
+
         document.addEventListener("DOMContentLoaded", function () {
             var isNanny = @(isNanny ? "true" : "false");
             var form = document.getElementById("editProfileForm");
@@ -319,6 +318,10 @@
             }
 
             restoreInitialAvatar();
+
+            if (currentAvatarUrl && typeof window.updateCurrentUserAvatar === "function") {
+                window.updateCurrentUserAvatar(currentAvatarUrl);
+            }
 
             avatarUploadBtn.addEventListener("click", function () {
                 avatarInput.click();
@@ -467,12 +470,12 @@
             });
             dobInput.addEventListener("change", validateNannyDob);
 
-            var toast = document.getElementById("profileToast");
-            if (toast && toast.textContent.trim()) {
-                toast.classList.remove("hidden");
-                setTimeout(function () {
-                    toast.classList.add("hidden");
-                }, 2500);
+            if (typeof window.showToast === "function") {
+                if (profileErrorToastMessage) {
+                    window.showToast(profileErrorToastMessage, { type: "error" });
+                } else if (profileSuccessToastMessage) {
+                    window.showToast(profileSuccessToastMessage, { type: "success" });
+                }
             }
 
             var initialLat = parseFloat(document.getElementById("Latitude").value) || 21.0285;

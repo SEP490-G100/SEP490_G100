@@ -72,7 +72,7 @@ public class SubscriptionController : ControllerBase
     {
         var userId = getCurrentUserId();
         if (!userId.HasValue)
-            return Unauthorized(fail("Khong xac dinh duoc nguoi dung hien tai."));
+            return Unauthorized(fail("Không xác định được người dùng hiện tại."));
 
         var history = await _subscriptionService.getTransactionHistory(userId.Value);
         return Ok(success(history, history.Count));
@@ -112,7 +112,7 @@ public class SubscriptionController : ControllerBase
 
         var userId = getCurrentUserId();
         if (!userId.HasValue)
-            return Unauthorized(fail("Khong xac dinh duoc nguoi dung hien tai."));
+            return Unauthorized(fail("Không xác định được người dùng hiện tại."));
 
         request.ClientIp ??= HttpContext.Connection.RemoteIpAddress?.ToString();
 
@@ -122,7 +122,7 @@ public class SubscriptionController : ControllerBase
             return Ok(new
             {
                 success = true,
-                message = "Da tao phien thanh toan subscription thanh cong.",
+                message = "Đã tạo phiên thanh toán subscription thành công.",
                 data = session
             });
         }
@@ -136,7 +136,7 @@ public class SubscriptionController : ControllerBase
     {
         var userId = getCurrentUserId();
         if (!userId.HasValue)
-            return Unauthorized(fail("Khong xac dinh duoc nguoi dung hien tai."));
+            return Unauthorized(fail("Không xác định được người dùng hiện tại."));
 
         try
         {
@@ -152,7 +152,7 @@ public class SubscriptionController : ControllerBase
     {
         var userId = getCurrentUserId();
         if (!userId.HasValue)
-            return Unauthorized(fail("Khong xac dinh duoc nguoi dung hien tai."));
+            return Unauthorized(fail("Không xác định được người dùng hiện tại."));
 
         try
         {
@@ -168,7 +168,7 @@ public class SubscriptionController : ControllerBase
     public async Task<IActionResult> PayOsWebhook([FromBody] PayOsWebhookRequest request)
     {
         if (!_payOsService.isWebhookValid(request))
-            return Unauthorized(fail("PayOS signature khong hop le."));
+            return Unauthorized(fail("Chữ ký PayOS không hợp lệ."));
 
         var processed = await _subscriptionService.handlePayOsWebhook(request);
         return Ok(new { success = true, processed });
@@ -180,7 +180,7 @@ public class SubscriptionController : ControllerBase
     {
         var secureToken = Request.Headers["secure-token"].FirstOrDefault();
         if (!_cassoService.isWebhookAuthorized(secureToken))
-            return Unauthorized(fail("Casso secure token khong hop le."));
+            return Unauthorized(fail("Secure token của Casso không hợp lệ."));
 
         var processed = await _subscriptionService.handleCassoWebhook(request);
         return Ok(new { success = true, processed });

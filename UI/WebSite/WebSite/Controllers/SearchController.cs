@@ -41,7 +41,16 @@ public class SearchController : Controller
 
     [HttpGet]
     [Authorize]
-    public IActionResult History() => View();
+    public IActionResult History()
+    {
+        if (isParentRole())
+            return View();
+
+        if (isNannyRole())
+            return RedirectToAction(nameof(Applications));
+
+        return RedirectToAction(nameof(Index));
+    }
 
     [HttpGet]
     [Authorize]
@@ -112,6 +121,9 @@ public class SearchController : Controller
     [Authorize]
     public async Task<IActionResult> MyJobs()
     {
+        if (!isParentRole())
+            return StatusCode(403, new { success = false, total = 0, data = Array.Empty<object>(), message = "Bạn không có quyền xem lịch sử bài đăng." });
+
         SetAuthHeader();
         try
         {
@@ -183,7 +195,7 @@ public class SearchController : Controller
         return Json(new { success = skills.Count > 0, data = skills });
     }
 
-    // ── POST /Search/CreateJob ──────────────────────────────
+   
     [HttpPost]
     [Authorize]
     public async Task<IActionResult> CreateJob([FromBody] JsonElement body)
@@ -312,7 +324,7 @@ public class SearchController : Controller
             var json = await response.Content.ReadAsStringAsync();
 
             if (response.IsSuccessStatusCode &&
-                tryParseApplyEventPayload(json, out var parentUserId, out var nannyUserId))
+                tryParseApplyEventPayload(json, out var parentUserId, out _))
             {
                 if (parentUserId != Guid.Empty)
                 {
@@ -325,16 +337,6 @@ public class SearchController : Controller
                     });
                 }
 
-                if (nannyUserId != Guid.Empty)
-                {
-                    await _notificationHub.Clients.User(nannyUserId.ToString()).SendAsync("notification:new", new
-                    {
-                        title = "Bạn đã gửi đơn ứng tuyển",
-                        message = "Đơn ứng tuyển đã được gửi. Vui lòng chờ phụ huynh phản hồi.",
-                        type = "job-application-submitted",
-                        relatedId = jobPostingId
-                    });
-                }
             }
 
             return new ContentResult

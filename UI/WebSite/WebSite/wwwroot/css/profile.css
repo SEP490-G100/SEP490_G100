@@ -85,6 +85,18 @@
     box-shadow: 0 18px 34px rgba(249, 115, 22, .3);
 }
 
+.profile-primary-btn:disabled {
+    opacity: .72;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.profile-primary-btn:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
 .profile-header-actions {
     margin-left: auto;
     display: inline-flex;

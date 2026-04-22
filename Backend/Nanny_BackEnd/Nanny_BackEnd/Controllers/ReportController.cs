@@ -25,7 +25,7 @@ public class ReportController : ControllerBase
     {
         var userId = getCurrentUserId();
         if (!userId.HasValue)
-            return Unauthorized(Fail("Khong xac dinh duoc nguoi dung hien tai."));
+            return Unauthorized(Fail("Không xác định được người dùng hiện tại."));
 
         try
         {
@@ -33,7 +33,7 @@ public class ReportController : ControllerBase
             return Ok(new
             {
                 success = true,
-                message = "Bao cao bai dang da duoc gui thanh cong.",
+                message = "Báo cáo bài đăng đã được gửi thành công.",
                 data = new { reportId, jobPostingId = id }
             });
         }
@@ -48,7 +48,7 @@ public class ReportController : ControllerBase
     {
         var userId = getCurrentUserId();
         if (!userId.HasValue)
-            return Unauthorized(Fail("Khong xac dinh duoc nguoi dung hien tai."));
+            return Unauthorized(Fail("Không xác định được người dùng hiện tại."));
 
         try
         {
@@ -56,7 +56,7 @@ public class ReportController : ControllerBase
             return Ok(new
             {
                 success = true,
-                message = "Bao cao ho so da duoc gui thanh cong.",
+                message = "Báo cáo hồ sơ đã được gửi thành công.",
                 data = new { reportId, profileUserId = id }
             });
         }

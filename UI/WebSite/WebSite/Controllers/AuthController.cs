@@ -107,18 +107,14 @@ public class AuthController : Controller
             return RedirectToAction(nameof(AccessDenied), new { returnUrl });
         }
 
-        // --- Staff roles: skip onboarding, redirect directly to their dashboards ---
         if (hasRole(normalizedRoles, "Admin"))
             return Redirect("/Admin/Dashboard");
         if (hasRole(normalizedRoles, "Moderator"))
             return Redirect("/Moderator/Dashboard");
 
-        // Nếu user chưa có role (đặc biệt case đăng ký/đăng nhập Google lần đầu),
-        // luôn bắt buộc chọn role trước khi chạy onboarding theo role.
+   
         if (!normalizedRoles.Any())
             return RedirectToAction("ChooseRole", "Auth");
-
-        // Sau khi đăng nhập, kiểm tra trạng thái onboarding (kèm Bearer token)
         try
         {
             var obRequest = new HttpRequestMessage(HttpMethod.Get, "/api/onboarding/status")
@@ -133,7 +129,6 @@ public class AuthController : Controller
         }
         catch
         {
-            // Nếu có lỗi khi gọi onboarding, bỏ qua và cho vào trang đích mặc định
         }
 
         return LocalRedirect(returnUrl ?? "/");
@@ -215,14 +210,12 @@ public class AuthController : Controller
             return RedirectToAction(nameof(AccessDenied), new { returnUrl });
         }
 
-        // --- Staff roles: skip onboarding, redirect directly to their dashboards ---
         if (hasRole(normalizedRoles, "Admin"))
             return Redirect("/Admin/Dashboard");
         if (hasRole(normalizedRoles, "Moderator"))
             return Redirect("/Moderator/Dashboard");
 
-        // Nếu user chưa có role (đặc biệt case đăng ký Google lần đầu),
-        // luôn bắt buộc chọn role trước khi chạy onboarding theo role.
+   
         if (!normalizedRoles.Any())
             return RedirectToAction("ChooseRole", "Auth");
 

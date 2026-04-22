@@ -81,12 +81,12 @@ public class NanniesController : ControllerBase
         try
         {
             if (!User.IsInRole("Parent"))
-                return StatusCode(403, Fail("Chi parent moi co quyen xem danh sach nanny yeu thich."));
+                return StatusCode(403, Fail("Chỉ phụ huynh mới có quyền xem danh sách bảo mẫu yêu thích."));
 
             var userId = GetCurrentUserId();
             var parentProfile = await _parentRepository.FindByUserIdAsync(userId);
             if (parentProfile == null)
-                return BadRequest(Fail("Tai khoan khong phai parent."));
+                return BadRequest(Fail("Tài khoản không phải phụ huynh."));
 
             var result = await _nannyService.GetFavoritesAsync(parentProfile.Id, page, pageSize);
             return Ok(new
@@ -111,12 +111,12 @@ public class NanniesController : ControllerBase
         try
         {
             if (!User.IsInRole("Parent"))
-                return StatusCode(403, Fail("Chi parent moi co quyen yeu thich nanny."));
+                return StatusCode(403, Fail("Chỉ phụ huynh mới có quyền yêu thích bảo mẫu."));
 
             var userId = GetCurrentUserId();
             var parentProfile = await _parentRepository.FindByUserIdAsync(userId);
             if (parentProfile == null)
-                return BadRequest(Fail("Tai khoan khong phai parent."));
+                return BadRequest(Fail("Tài khoản không phải phụ huynh."));
 
             var favoriteResult = await _nannyService.ToggleFavoriteAsync(parentProfile.Id, nannyProfileId, userId);
             return Ok(new
@@ -124,7 +124,7 @@ public class NanniesController : ControllerBase
                 success = true,
                 isFavorite = favoriteResult.IsFavorite,
                 nannyUserId = favoriteResult.NannyUserId,
-                message = favoriteResult.IsFavorite ? "Da yeu thich nanny." : "Da bo yeu thich nanny."
+                message = favoriteResult.IsFavorite ? "Đã yêu thích bảo mẫu." : "Đã bỏ yêu thích bảo mẫu."
             });
         }
         catch (KeyNotFoundException ex)
@@ -148,7 +148,7 @@ public class NanniesController : ControllerBase
         try
         {
             if (!User.IsInRole("Parent"))
-                return StatusCode(403, Fail("Chi parent moi co quyen gui request contact."));
+                return StatusCode(403, Fail("Chỉ phụ huynh mới có quyền gửi yêu cầu liên hệ."));
 
             var userId = GetCurrentUserId();
             var parentProfile = await _db.ParentProfiles
@@ -156,21 +156,21 @@ public class NanniesController : ControllerBase
                 .FirstOrDefaultAsync(p => p.UserId == userId && !p.IsDeleted);
 
             if (parentProfile == null)
-                return BadRequest(Fail("Tai khoan khong phai parent."));
+                return BadRequest(Fail("Tài khoản không phải phụ huynh."));
 
             var nannyProfile = await _db.NannyProfiles
                 .Include(n => n.User)
                 .FirstOrDefaultAsync(n => n.Id == nannyProfileId && !n.IsDeleted);
 
             if (nannyProfile == null)
-                return NotFound(Fail("Khong tim thay ho so nanny."));
+                return NotFound(Fail("Không tìm thấy hồ sơ bảo mẫu."));
 
             if (nannyProfile.UserId == userId)
-                return BadRequest(Fail("Ban khong the gui request contact cho chinh minh."));
+                return BadRequest(Fail("Bạn không thể gửi yêu cầu liên hệ cho chính mình."));
 
             var message = request?.Message?.Trim();
             if (!string.IsNullOrWhiteSpace(message) && message.Length > 1000)
-                return BadRequest(Fail("Noi dung request contact khong duoc vuot qua 1000 ky tu."));
+                return BadRequest(Fail("Nội dung yêu cầu liên hệ không được vượt quá 1000 ký tự."));
 
             var nowUtc = DateTime.UtcNow;
             var existingRequest = await _db.ContactRequests
@@ -183,7 +183,7 @@ public class NanniesController : ControllerBase
             if (existingRequest != null)
             {
                 if (existingRequest.Status == 0)
-                    return Conflict(Fail("Ban da gui request contact den nanny nay va dang cho phan hoi."));
+                    return Conflict(Fail("Bạn đã gửi yêu cầu liên hệ đến bảo mẫu này và đang chờ phản hồi."));
 
                 existingRequest.Status = 0;
                 existingRequest.Message = message;
@@ -219,12 +219,12 @@ public class NanniesController : ControllerBase
 
             var parentName = $"{parentProfile.User?.FirstName} {parentProfile.User?.LastName}".Trim();
             if (string.IsNullOrWhiteSpace(parentName))
-                parentName = "Mot parent";
+                parentName = "Một phụ huynh";
 
             await _notificationService.createNotification(
                 nannyProfile.UserId,
-                "Ban vua nhan duoc request contact",
-                $"{parentName} vua gui request contact cho ho so cua ban.",
+                "Bạn vừa nhận được yêu cầu liên hệ",
+                $"{parentName} vừa gửi yêu cầu liên hệ cho hồ sơ của bạn.",
                 NotificationTypes.ContactRequestReceived,
                 existingRequest.Id,
                 "ContactRequest",
@@ -243,8 +243,8 @@ public class NanniesController : ControllerBase
                     createdAt = existingRequest.CreatedAt
                 },
                 message = isResubmitted
-                    ? "Ban da gui lai request contact. Vui long cho nanny phan hoi."
-                    : "Ban da gui request contact thanh cong. Vui long cho nanny phan hoi."
+                    ? "Bạn đã gửi lại yêu cầu liên hệ. Vui lòng chờ bảo mẫu phản hồi."
+                    : "Bạn đã gửi yêu cầu liên hệ thành công. Vui lòng chờ bảo mẫu phản hồi."
             });
         }
         catch (Exception ex)
@@ -260,16 +260,16 @@ public class NanniesController : ControllerBase
         try
         {
             if (!User.IsInRole("Nanny"))
-                return StatusCode(403, Fail("Chi nanny moi co quyen xem request contact da nhan."));
+                return StatusCode(403, Fail("Chỉ bảo mẫu mới có quyền xem yêu cầu liên hệ đã nhận."));
 
             if (status.HasValue && (status.Value < 0 || status.Value > 2))
-                return BadRequest(Fail("Trang thai request contact khong hop le."));
+                return BadRequest(Fail("Trạng thái yêu cầu liên hệ không hợp lệ."));
 
             var userId = GetCurrentUserId();
             var nannyProfile = await _db.NannyProfiles
                 .FirstOrDefaultAsync(n => n.UserId == userId && !n.IsDeleted);
             if (nannyProfile == null)
-                return BadRequest(Fail("Tai khoan khong phai nanny."));
+                return BadRequest(Fail("Tài khoản không phải bảo mẫu."));
 
             var baseQuery = _db.ContactRequests
                 .Where(r => r.NannyProfileId == nannyProfile.Id && !r.IsDeleted)
@@ -348,16 +348,16 @@ public class NanniesController : ControllerBase
         try
         {
             if (!User.IsInRole("Parent"))
-                return StatusCode(403, Fail("Chi parent moi co quyen xem request contact da gui."));
+                return StatusCode(403, Fail("Chỉ phụ huynh mới có quyền xem yêu cầu liên hệ đã gửi."));
 
             if (status.HasValue && (status.Value < 0 || status.Value > 2))
-                return BadRequest(Fail("Trang thai request contact khong hop le."));
+                return BadRequest(Fail("Trạng thái yêu cầu liên hệ không hợp lệ."));
 
             var userId = GetCurrentUserId();
             var parentProfile = await _db.ParentProfiles
                 .FirstOrDefaultAsync(p => p.UserId == userId && !p.IsDeleted);
             if (parentProfile == null)
-                return BadRequest(Fail("Tai khoan khong phai parent."));
+                return BadRequest(Fail("Tài khoản không phải phụ huynh."));
 
             var baseQuery = _db.ContactRequests
                 .Where(r => r.ParentProfileId == parentProfile.Id && !r.IsDeleted)
@@ -440,7 +440,7 @@ public class NanniesController : ControllerBase
             var isParent = User.IsInRole("Parent");
             var isNanny = User.IsInRole("Nanny");
             if (!isParent && !isNanny)
-                return StatusCode(403, Fail("Ban khong co quyen xem chi tiet request contact."));
+                return StatusCode(403, Fail("Bạn không có quyền xem chi tiết yêu cầu liên hệ."));
 
             var userId = GetCurrentUserId();
             var request = await _db.ContactRequests
@@ -452,13 +452,13 @@ public class NanniesController : ControllerBase
                 .FirstOrDefaultAsync(r => r.Id == contactRequestId && !r.IsDeleted);
 
             if (request == null)
-                return NotFound(Fail("Khong tim thay request contact."));
+                return NotFound(Fail("Không tìm thấy yêu cầu liên hệ."));
 
             if (isParent && request.ParentProfile?.UserId != userId)
-                return NotFound(Fail("Khong tim thay request contact hoac ban khong co quyen truy cap."));
+                return NotFound(Fail("Không tìm thấy yêu cầu liên hệ hoặc bạn không có quyền truy cập."));
 
             if (isNanny && request.NannyProfile?.UserId != userId)
-                return NotFound(Fail("Khong tim thay request contact hoac ban khong co quyen truy cap."));
+                return NotFound(Fail("Không tìm thấy yêu cầu liên hệ hoặc bạn không có quyền truy cập."));
 
             var parentUser = request.ParentProfile?.User;
             var nannyUser = request.NannyProfile?.User;
@@ -525,20 +525,20 @@ public class NanniesController : ControllerBase
         try
         {
             if (!User.IsInRole("Nanny"))
-                return StatusCode(403, Fail("Chi nanny moi co quyen xu ly request contact."));
+                return StatusCode(403, Fail("Chỉ bảo mẫu mới có quyền xử lý yêu cầu liên hệ."));
 
             if (request == null)
-                return BadRequest(Fail("Du lieu xu ly request contact khong hop le."));
+                return BadRequest(Fail("Dữ liệu xử lý yêu cầu liên hệ không hợp lệ."));
 
             if (request.Action is not 1 and not 2)
-                return BadRequest(Fail("Action khong hop le. Dung 1 (accept) hoac 2 (reject)."));
+                return BadRequest(Fail("Thao tác không hợp lệ. Dùng 1 (chấp nhận) hoặc 2 (từ chối)."));
 
             var responseMessage = request.ResponseMessage?.Trim();
             if (request.Action == 2 && string.IsNullOrWhiteSpace(responseMessage))
-                return BadRequest(Fail("Vui long nhap ly do khi tu choi request contact."));
+                return BadRequest(Fail("Vui lòng nhập lý do khi từ chối yêu cầu liên hệ."));
 
             if (!string.IsNullOrWhiteSpace(responseMessage) && responseMessage.Length > 1000)
-                return BadRequest(Fail("Noi dung phan hoi khong duoc vuot qua 1000 ky tu."));
+                return BadRequest(Fail("Nội dung phản hồi không được vượt quá 1000 ký tự."));
 
             var userId = GetCurrentUserId();
             var nannyProfileId = await _db.NannyProfiles
@@ -547,7 +547,7 @@ public class NanniesController : ControllerBase
                 .FirstOrDefaultAsync();
 
             if (!nannyProfileId.HasValue)
-                return BadRequest(Fail("Tai khoan khong phai nanny."));
+                return BadRequest(Fail("Tài khoản không phải bảo mẫu."));
 
             var contactRequest = await _db.ContactRequests
                 .Include(r => r.ParentProfile)
@@ -557,13 +557,13 @@ public class NanniesController : ControllerBase
                 .FirstOrDefaultAsync(r => r.Id == contactRequestId && !r.IsDeleted);
 
             if (contactRequest == null || contactRequest.NannyProfileId != nannyProfileId.Value)
-                return NotFound(Fail("Khong tim thay request contact hoac ban khong co quyen xu ly."));
+                return NotFound(Fail("Không tìm thấy yêu cầu liên hệ hoặc bạn không có quyền xử lý."));
 
             if (contactRequest.Status is 1 or 2)
-                return BadRequest(Fail("Request contact nay da duoc xu ly truoc do."));
+                return BadRequest(Fail("Yêu cầu liên hệ này đã được xử lý trước đó."));
 
             if (contactRequest.Status != 0)
-                return BadRequest(Fail("Chi request contact dang cho duyet moi co the xu ly."));
+                return BadRequest(Fail("Chỉ yêu cầu liên hệ đang chờ duyệt mới có thể xử lý."));
 
             var nowUtc = DateTime.UtcNow;
             var isApproved = request.Action == 1;
@@ -585,12 +585,12 @@ public class NanniesController : ControllerBase
                     nannyName = "Nanny";
 
                 var title = isApproved
-                    ? "Request contact da duoc chap nhan"
-                    : "Request contact bi tu choi";
+                    ? "Yêu cầu liên hệ đã được chấp nhận"
+                    : "Yêu cầu liên hệ bị từ chối";
 
                 var content = isApproved
-                    ? $"{nannyName} da chap nhan request contact cua ban."
-                    : $"{nannyName} da tu choi request contact cua ban. Ly do: {responseMessage}";
+                    ? $"{nannyName} đã chấp nhận yêu cầu liên hệ của bạn."
+                    : $"{nannyName} đã từ chối yêu cầu liên hệ của bạn. Lý do: {responseMessage}";
 
                 await _notificationService.createNotification(
                     parentUserId,
@@ -616,8 +616,8 @@ public class NanniesController : ControllerBase
                     respondedAt = contactRequest.RespondedAt
                 },
                 message = isApproved
-                    ? "Ban da chap nhan request contact."
-                    : "Ban da tu choi request contact."
+                    ? "Bạn đã chấp nhận yêu cầu liên hệ."
+                    : "Bạn đã từ chối yêu cầu liên hệ."
             });
         }
         catch (Exception ex)
@@ -653,10 +653,10 @@ public class NanniesController : ControllerBase
 
     private static string getContactRequestStatusLabel(int status) => status switch
     {
-        0 => "Dang cho duyet",
-        1 => "Da duoc chap nhan",
-        2 => "Da bi tu choi",
-        _ => "Dang cap nhat"
+        0 => "Đang chờ duyệt",
+        1 => "Đã được chấp nhận",
+        2 => "Đã bị từ chối",
+        _ => "Đang cập nhật"
     };
 
     public sealed class SendContactRequestPayload

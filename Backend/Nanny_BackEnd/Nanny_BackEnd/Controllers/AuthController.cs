@@ -47,7 +47,7 @@ public class AuthController : ControllerBase
         {
             _logger.LogError(ex, "Unexpected login error for email {Email}", request.Email);
             return StatusCode(StatusCodes.Status500InternalServerError,
-                Fail("Dang nhap that bai do loi may chu. Vui long thu lai sau."));
+                Fail("Đăng nhập thất bại do lỗi máy chủ. Vui lòng thử lại sau."));
         }
     }
 
