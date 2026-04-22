@@ -22,7 +22,7 @@ public class NannySearchRequestViewModel
     public int? TimeSlot { get; set; }
     public string? SkillIds { get; set; }
     public int Page { get; set; } = 1;
-    public int PageSize { get; set; } = 20;
+    public int PageSize { get; set; } = 100;
 }
 
 public class NannyBrowseApiResponse

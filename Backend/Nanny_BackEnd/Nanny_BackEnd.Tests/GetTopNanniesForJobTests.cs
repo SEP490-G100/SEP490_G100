@@ -2,7 +2,6 @@ using Moq;
 using FluentAssertions;
 using System.Text.Json;
 using Nanny_BackEnd.DTOs.Recommendation;
-using Nanny_BackEnd.Repositories;
 using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Services;
 
@@ -27,7 +26,7 @@ public class GetTopNanniesForJobTests
     }
 
     // ── Helper: tạo NannyCandidate tối giản ─────────────────────────────
-    private static RecommendationRepository.NannyCandidate MakeCandidate(
+    private static NannyCandidate MakeCandidate(
         string?  embeddingJson   = null,
         decimal? rating          = null,
         decimal? lat             = null,
@@ -77,7 +76,7 @@ public class GetTopNanniesForJobTests
     {
         var jobId = Guid.NewGuid();
         _mockRepo.Setup(r => r.GetNannyCandidatesAsync(jobId))
-                 .ReturnsAsync(new List<RecommendationRepository.NannyCandidate>());
+                 .ReturnsAsync(new List<NannyCandidate>());
 
         var result = await _sut.GetTopNanniesForJobAsync(jobId);
 

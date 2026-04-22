@@ -1100,7 +1100,7 @@ function renderNannyCards(items, options = {}) {
 async function doNannySearch() {
   const params = new URLSearchParams({
     page: '1',
-    pageSize: '20'
+    pageSize: '100'
   });
 
   const keyword = document.getElementById('nannyKeyword')?.value.trim();
