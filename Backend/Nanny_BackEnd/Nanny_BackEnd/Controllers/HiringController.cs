@@ -19,7 +19,7 @@ public class HiringController : ControllerBase
     public async Task<IActionResult> GetApplicants(Guid jobPostingId)
     {
         var userId = GetCurrentUserId();
-        if (!userId.HasValue) return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
 
         try
         {
@@ -35,12 +35,12 @@ public class HiringController : ControllerBase
     public async Task<IActionResult> ApproveApplicant(Guid jobPostingId, Guid jobAppId)
     {
         var userId = GetCurrentUserId();
-        if (!userId.HasValue) return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
 
         try
         {
             await _service.ApproveApplicantAsync(jobPostingId, jobAppId, userId.Value);
-            return Ok(OkResult("Da dong y ung vien. Vui long vao ho so nanny de chon thue."));
+            return Ok(OkResult("Đã đồng ý ứng viên. Vui lòng vào hồ sơ bảo mẫu để chọn thuê."));
         }
         catch (UnauthorizedAccessException) { return Forbid(); }
         catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
@@ -53,7 +53,7 @@ public class HiringController : ControllerBase
     public async Task<IActionResult> GetNannyContext(Guid jobPostingId, Guid jobAppId)
     {
         var userId = GetCurrentUserId();
-        if (!userId.HasValue) return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
 
         try
         {
@@ -68,7 +68,7 @@ public class HiringController : ControllerBase
     public async Task<IActionResult> HireApplicant(Guid jobPostingId, Guid jobAppId, [FromBody] ConfirmHiringDto dto)
     {
         var userId = GetCurrentUserId();
-        if (!userId.HasValue) return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
 
         try
         {
@@ -86,7 +86,7 @@ public class HiringController : ControllerBase
     public async Task<IActionResult> HireByContactRequest(Guid contactRequestId, [FromBody] ConfirmHiringDto dto)
     {
         var userId = GetCurrentUserId();
-        if (!userId.HasValue) return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
 
         try
         {
@@ -104,7 +104,7 @@ public class HiringController : ControllerBase
     public async Task<IActionResult> GetHiringOfferDetail(Guid hiringRecordId)
     {
         var userId = GetCurrentUserId();
-        if (!userId.HasValue) return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
 
         try
         {
@@ -120,12 +120,12 @@ public class HiringController : ControllerBase
     public async Task<IActionResult> RespondToOffer(Guid hiringRecordId, [FromBody] RespondToOfferDto dto)
     {
         var userId = GetCurrentUserId();
-        if (!userId.HasValue) return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
 
         try
         {
             await _service.RespondToOfferAsync(hiringRecordId, userId.Value, dto);
-            return Ok(OkResult("Phan hoi thanh cong."));
+            return Ok(OkResult("Phản hồi thành công."));
         }
         catch (UnauthorizedAccessException) { return Forbid(); }
         catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
@@ -138,12 +138,12 @@ public class HiringController : ControllerBase
     public async Task<IActionResult> CompleteHiring(Guid hiringRecordId)
     {
         var userId = GetCurrentUserId();
-        if (!userId.HasValue) return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
 
         try
         {
             await _service.CompleteHiringAsync(hiringRecordId, userId.Value);
-            return Ok(OkResult("Hop dong da duoc danh dau hoan thanh."));
+            return Ok(OkResult("Hợp đồng đã được đánh dấu hoàn thành."));
         }
         catch (UnauthorizedAccessException) { return Forbid(); }
         catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }

@@ -44,7 +44,7 @@ public class ModeratorJobService : IModeratorJobService
     public async Task<JobPostingDetailResponse> ModeratorViewJobDetailAsync(Guid jobId)
     {
         var job = await _moderatorJobRepository.ModeratorViewJobDetailAsync(jobId)
-            ?? throw new KeyNotFoundException("Khong tim thay tin dang hoac tin da bi xoa.");
+            ?? throw new KeyNotFoundException("Không tìm thấy tin đăng hoặc tin đã bị xóa.");
 
         return mapToDetail(job);
     }
@@ -52,7 +52,7 @@ public class ModeratorJobService : IModeratorJobService
     public async Task ModeratorReviewJobAsync(Guid jobId, Guid moderatorUserId, ModerateJobPostingRequest request)
     {
         var job = await _moderatorJobRepository.ModeratorViewJobDetailAsync(jobId)
-            ?? throw new KeyNotFoundException("Khong tim thay tin dang hoac tin da bi xoa.");
+            ?? throw new KeyNotFoundException("Không tìm thấy tin đăng hoặc tin đã bị xóa.");
 
         var nowUtc = DateTime.UtcNow;
         job.ModerationStatus = request.Action;
@@ -75,10 +75,10 @@ public class ModeratorJobService : IModeratorJobService
         await _moderatorJobRepository.SaveModeratedJobAsync(job);
 
         var isApproved = request.Action == (int)JobPostingModerationStatus.Approved;
-        var title = isApproved ? "Bai dang cua ban da duoc duyet" : "Bai dang cua ban da bi tu choi";
+        var title = isApproved ? "Bài đăng của bạn đã được duyệt" : "Bài đăng của bạn đã bị từ chối";
         var content = isApproved
-            ? $"Bai dang \"{job.Title}\" da duoc moderator duyet."
-            : $"Bai dang \"{job.Title}\" da bi tu choi.{(string.IsNullOrWhiteSpace(job.ModerationNote) ? "" : $" Ly do: {job.ModerationNote}")}";
+            ? $"Bài đăng \"{job.Title}\" đã được điều hành viên duyệt."
+            : $"Bài đăng \"{job.Title}\" đã bị từ chối.{(string.IsNullOrWhiteSpace(job.ModerationNote) ? "" : $" Lý do: {job.ModerationNote}")}";
 
         var notificationType = isApproved
             ? NotificationTypes.JobPostingApproved
@@ -100,7 +100,7 @@ public class ModeratorJobService : IModeratorJobService
     public async Task ModeratorDeactivateJobAsync(Guid jobId, Guid moderatorUserId)
     {
         var job = await _moderatorJobRepository.ModeratorViewJobDetailAsync(jobId)
-            ?? throw new KeyNotFoundException("Khong tim thay tin dang hoac tin da bi xoa.");
+            ?? throw new KeyNotFoundException("Không tìm thấy tin đăng hoặc tin đã bị xóa.");
 
         if (job.IsDeleted)
             return;
@@ -118,8 +118,8 @@ public class ModeratorJobService : IModeratorJobService
         {
             await _notificationService.createNotification(
                 job.ParentProfile.UserId,
-                "Bai dang da bi vo hieu hoa",
-                $"Bai dang \"{job.Title}\" da bi moderator vo hieu hoa.",
+                "Bài đăng đã bị vô hiệu hóa",
+                $"Bài đăng \"{job.Title}\" đã bị điều hành viên vô hiệu hóa.",
                 NotificationTypes.JobPostingRejected,
                 job.Id,
                 "JobPosting",

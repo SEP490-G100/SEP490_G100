@@ -12,17 +12,17 @@ public static class SalaryValidationRules
     public static string? GetFirstError(
         decimal? minSalary,
         decimal? maxSalary,
-        string minLabel = "Luong toi thieu",
-        string maxLabel = "Luong toi da")
+        string minLabel = "Lương tối thiểu",
+        string maxLabel = "Lương tối đa")
     {
         if (minSalary.HasValue && !IsWithinAllowedRange(minSalary.Value))
-            return $"{minLabel} phai trong khoang {SalaryRangeText}.";
+            return $"{minLabel} phải trong khoảng {SalaryRangeText}.";
 
         if (maxSalary.HasValue && !IsWithinAllowedRange(maxSalary.Value))
-            return $"{maxLabel} phai trong khoang {SalaryRangeText}.";
+            return $"{maxLabel} phải trong khoảng {SalaryRangeText}.";
 
         if (minSalary.HasValue && maxSalary.HasValue && minSalary.Value > maxSalary.Value)
-            return $"{minLabel} khong duoc lon hon {maxLabel}.";
+            return $"{minLabel} không được lớn hơn {maxLabel}.";
 
         return null;
     }

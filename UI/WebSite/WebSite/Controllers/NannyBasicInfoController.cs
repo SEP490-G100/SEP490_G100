@@ -6,6 +6,10 @@ using WebSite.Models;
 using WebSite.Models.Profile;
 using WebSite.Services;
 
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+
 namespace WebSite.Controllers;
 
 [Authorize(Roles = "Nanny")]
@@ -33,6 +37,61 @@ public class NannyBasicInfoController : Controller
         if (url.StartsWith("/") && !string.IsNullOrWhiteSpace(_apiBaseUrl))
             return _apiBaseUrl + url;
         return url;
+    }
+
+    private static (string FirstName, string LastName) SplitFullName(
+        string? fullName,
+        string fallbackFirstName,
+        string fallbackLastName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName))
+            return (fallbackFirstName, fallbackLastName);
+
+        var parts = fullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0)
+            return (fallbackFirstName, fallbackLastName);
+
+        if (parts.Length == 1)
+            return (fallbackFirstName, parts[0]);
+
+        return (string.Join(" ", parts[..^1]), parts[^1]);
+    }
+
+    private async Task RefreshAuthClaimsAsync(string? fullName, string? avatarUrl)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(userId))
+            return;
+
+        var email = User.FindFirstValue(ClaimTypes.Email) ?? string.Empty;
+        var authProvider = User.FindFirst("AuthProvider")?.Value ?? "email";
+        var roles = User.Claims
+            .Where(c => c.Type == ClaimTypes.Role)
+            .Select(c => c.Value)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var (firstName, lastName) = SplitFullName(fullName, "Nanny", "User");
+
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, userId),
+            new(ClaimTypes.Email, email),
+            new(ClaimTypes.GivenName, firstName),
+            new(ClaimTypes.Surname, lastName),
+            new("AuthProvider", authProvider)
+        };
+
+        var normalizedAvatar = NormalizeAvatarUrl(avatarUrl);
+        if (!string.IsNullOrWhiteSpace(normalizedAvatar))
+            claims.Add(new Claim("AvatarUrl", normalizedAvatar));
+
+        foreach (var role in roles)
+            claims.Add(new Claim(ClaimTypes.Role, role));
+
+        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        await HttpContext.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            new ClaimsPrincipal(identity));
     }
 
     private string? GetToken() => HttpContext.Session.GetString("AccessToken");
@@ -101,27 +160,12 @@ public class NannyBasicInfoController : Controller
             }
         }
 
-        var firstName = string.Empty;
-        var lastName = string.Empty;
-
-        if (!string.IsNullOrWhiteSpace(model.FullName))
-        {
-            var parts = model.FullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length == 1)
-            {
-                lastName = parts[0];
-            }
-            else
-            {
-                firstName = string.Join(" ", parts[..^1]);
-                lastName = parts[^1];
-            }
-        }
+        var (firstName, lastName) = SplitFullName(model.FullName, "Nanny", "User");
 
         var updateRequest = new
         {
-            FirstName = string.IsNullOrWhiteSpace(firstName) ? "Nanny" : firstName,
-            LastName = string.IsNullOrWhiteSpace(lastName) ? "User" : lastName,
+            FirstName = firstName,
+            LastName = lastName,
             PhoneNumber = NormalizePhoneNumber(model.PhoneNumber),
             AvatarUrl = model.AvatarUrl,
             model.DateOfBirth,
@@ -207,6 +251,7 @@ public class NannyBasicInfoController : Controller
                 return View(model);
             }
 
+            await RefreshAuthClaimsAsync(model.FullName, model.AvatarUrl);
             return RedirectToAction("Start", "Onboarding");
         }
 

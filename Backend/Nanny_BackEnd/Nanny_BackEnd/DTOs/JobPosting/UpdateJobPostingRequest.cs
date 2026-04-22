@@ -4,15 +4,15 @@ namespace Nanny_BackEnd.DTOs.JobPosting;
 
 public class UpdateJobPostingRequest
 {
-    [Required(ErrorMessage = "Tieu de khong duoc de trong.")]
+    [Required(ErrorMessage = "Tiêu đề không được để trống.")]
     [StringLength(200, MinimumLength = 5, ErrorMessage = "Tieu de phai tu 5 den 200 ky tu.")]
     public string Title { get; set; } = "";
 
-    [Required(ErrorMessage = "Mo ta khong duoc de trong.")]
+    [Required(ErrorMessage = "Mô tả không được để trống.")]
     [StringLength(3000, MinimumLength = 10, ErrorMessage = "Mo ta phai tu 10 den 3000 ky tu.")]
     public string Description { get; set; } = "";
 
-    [Required(ErrorMessage = "Loai cong viec khong duoc de trong.")]
+    [Required(ErrorMessage = "Loại công việc không được để trống.")]
     [Range(1, 3, ErrorMessage = "JobType phai la 1, 2, hoac 3.")]
     public int JobType { get; set; }
 
@@ -54,7 +54,7 @@ public class UpdateJobPostingRequest
     [Range(18, 80, ErrorMessage = "Do tuoi toi da cua bao mau phai tu 18 den 80.")]
     public int? MaxNannyAge { get; set; }
 
-    [MaxLength(20, ErrorMessage = "Toi da 20 ky nang cho moi bai dang.")]
+    [MaxLength(20, ErrorMessage = "Tối đa 20 kỹ năng cho mỗi bài đăng.")]
     public List<string> Skills { get; set; } = [];
 
     public List<JobScheduleSlotRequest> ScheduleSlots { get; set; } = [];
