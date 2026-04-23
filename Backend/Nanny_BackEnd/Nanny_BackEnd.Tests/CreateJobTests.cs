@@ -214,4 +214,77 @@ public class CreateJobTests
 
         Assert.NotEqual(Guid.Empty, jobId);
     }
+
+    // ── Validation request (ít nhánh, bổ sung coverage createJob) ───────
+
+    [Fact]
+    public async Task NannyAgeMinGreaterThanMax_Throws()
+    {
+        var parentId = Guid.NewGuid();
+        _mockSubService.Setup(s => s.getBenefitsForParentProfile(parentId))
+            .ReturnsAsync(PaidBenefits);
+        _mockJobRepo.Setup(r => r.getParentProfileSnapshot(parentId))
+            .ReturnsAsync(MakeParent(parentId));
+
+        var req = ValidRequest();
+        req.MinNannyAge = 50;
+        req.MaxNannyAge = 20;
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.createJob(parentId, req));
+        Assert.Contains("Độ tuổi tối thiểu", ex.Message);
+    }
+
+    [Fact]
+    public async Task SalaryMinOutOfVndRange_Throws()
+    {
+        var parentId = Guid.NewGuid();
+        _mockSubService.Setup(s => s.getBenefitsForParentProfile(parentId))
+            .ReturnsAsync(PaidBenefits);
+        _mockJobRepo.Setup(r => r.getParentProfileSnapshot(parentId))
+            .ReturnsAsync(MakeParent(parentId));
+
+        var req = ValidRequest();
+        req.SalaryMin = 1_000_000m;
+        req.SalaryMax = 9_000_000m;
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.createJob(parentId, req));
+        Assert.Contains("8.000.000", ex.Message);
+    }
+
+    [Fact]
+    public async Task SalaryMinGreaterThanMax_Throws()
+    {
+        var parentId = Guid.NewGuid();
+        _mockSubService.Setup(s => s.getBenefitsForParentProfile(parentId))
+            .ReturnsAsync(PaidBenefits);
+        _mockJobRepo.Setup(r => r.getParentProfileSnapshot(parentId))
+            .ReturnsAsync(MakeParent(parentId));
+
+        var req = ValidRequest();
+        req.SalaryMin = 20_000_000m;
+        req.SalaryMax = 10_000_000m;
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.createJob(parentId, req));
+        Assert.Contains("Lương tối thiểu không được lớn hơn", ex.Message);
+    }
+
+    [Fact]
+    public async Task NotNegotiable_RequiresMinSalary_Throws()
+    {
+        var parentId = Guid.NewGuid();
+        _mockSubService.Setup(s => s.getBenefitsForParentProfile(parentId))
+            .ReturnsAsync(PaidBenefits);
+        _mockJobRepo.Setup(r => r.getParentProfileSnapshot(parentId))
+            .ReturnsAsync(MakeParent(parentId));
+        _mockSubService.Setup(s => s.hasActiveParentSubscription(parentId))
+            .ReturnsAsync(true);
+
+        var req = ValidRequest();
+        req.SalaryNegotiable = false;
+        req.SalaryMin = null;
+        req.SalaryMax = null;
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.createJob(parentId, req));
+        Assert.Contains("Thương lượng", ex.Message);
+    }
 }
