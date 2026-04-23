@@ -92,6 +92,22 @@
         return date.toISOString().slice(0, 10);
     };
 
+    const decodeHtmlEntities = (value) => {
+        const raw = String(value ?? '').trim();
+        if (!raw) return '';
+
+        const helper = document.createElement('textarea');
+        let decoded = raw;
+        for (let i = 0; i < 2; i++) {
+            helper.innerHTML = decoded;
+            const next = helper.value;
+            if (next === decoded) break;
+            decoded = next;
+        }
+
+        return decoded.replace(/\s+/g, ' ').trim();
+    };
+
     const getValidationError = () => {
         const startDate = startInput.value;
         const endDate = endInput.value;
@@ -116,9 +132,14 @@
 
     window.__openHireModal = async (jobPostingId, jobAppId, nannyName, contactRequestId = null) => {
         context = { jobPostingId, jobAppId, contactRequestId };
-        document.getElementById('hireModalNannyName').textContent = nannyName ? `Bảo mẫu: ${nannyName}` : '';
 
         const today = new Date().toISOString().slice(0, 10);
+        const hireNannyNameEl = document.getElementById('hireModalNannyName');
+        if (hireNannyNameEl) {
+            const normalizedNannyName = decodeHtmlEntities(nannyName);
+            hireNannyNameEl.textContent = normalizedNannyName ? `Bảo mẫu: ${normalizedNannyName}` : '';
+        }
+
         startInput.value = today;
         startInput.setAttribute('min', today);
         endInput.value = '';

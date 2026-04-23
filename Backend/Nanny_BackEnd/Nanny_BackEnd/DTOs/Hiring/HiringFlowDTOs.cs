@@ -9,7 +9,6 @@ public class ConfirmHiringDto
 public class RespondToOfferDto
 {
     public string Action { get; set; } = string.Empty;
-    public string? DeclineReason { get; set; }
 }
 
 public class JobApplicantDto

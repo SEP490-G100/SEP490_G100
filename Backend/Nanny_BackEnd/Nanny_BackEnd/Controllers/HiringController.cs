@@ -125,7 +125,7 @@ public class HiringController : ControllerBase
         try
         {
             await _service.RespondToOfferAsync(hiringRecordId, userId.Value, dto);
-            return Ok(OkResult("Phan hoi thanh cong."));
+            return Ok(OkResult("Bao mau da chap nhan de nghi viec lam."));
         }
         catch (UnauthorizedAccessException) { return Forbid(); }
         catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
@@ -144,23 +144,6 @@ public class HiringController : ControllerBase
         {
             await _service.CompleteHiringAsync(hiringRecordId, userId.Value);
             return Ok(OkResult("Hop dong da duoc danh dau hoan thanh."));
-        }
-        catch (UnauthorizedAccessException) { return Forbid(); }
-        catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
-        catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
-        catch (Exception ex) { return StatusCode(500, Fail(ex.Message)); }
-    }
-
-    [HttpPost("records/{hiringRecordId:guid}/cancel")]
-    public async Task<IActionResult> CancelHiring(Guid hiringRecordId)
-    {
-        var userId = GetCurrentUserId();
-        if (!userId.HasValue) return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
-
-        try
-        {
-            await _service.CancelHiringAsync(hiringRecordId, userId.Value);
-            return Ok(OkResult("Da huy de nghi viec lam."));
         }
         catch (UnauthorizedAccessException) { return Forbid(); }
         catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }

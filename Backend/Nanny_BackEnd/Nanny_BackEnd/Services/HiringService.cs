@@ -441,8 +441,13 @@ public class HiringService : IHiringService
 
         if (hiringRecord.NannyProfile?.UserId != nannyUserId)
             throw new UnauthorizedAccessException("Ban khong co quyen phan hoi de nghi nay.");
-        if (hiringRecord.Status != (int)HiringRecordStatus.Pending || hiringRecord.NannyConfirmedAt.HasValue)
-            throw new InvalidOperationException("De nghi nay da duoc xu ly truoc do.");
+
+        var action = (dto.Action ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(action))
+            throw new ArgumentException("Hanh dong khong hop le. Vui long chon 'accept'.");
+
+        if (hiringRecord.Status != (int)HiringRecordStatus.Pending)
+            throw new InvalidOperationException("Đề nghị này đã được xử lý trước đó.");
 
         var contract = await _repo.GetContractByHiringRecordIdAsync(hiringRecordId)
             ?? throw new InvalidOperationException("Khong tim thay hop dong lien quan.");
@@ -452,7 +457,7 @@ public class HiringService : IHiringService
         var jobApp = hiringRecord.JobApplication;
         var jobPosting = jobApp?.JobPosting;
 
-        if (dto.Action.Equals("accept", StringComparison.OrdinalIgnoreCase))
+        if (action.Equals("accept", StringComparison.OrdinalIgnoreCase))
         {
             hiringRecord.Status = (int)HiringRecordStatus.Active;
             hiringRecord.NannyConfirmedAt = now;
@@ -507,93 +512,15 @@ public class HiringService : IHiringService
                 });
             }
         }
-        else if (dto.Action.Equals("decline", StringComparison.OrdinalIgnoreCase))
-        {
-            hiringRecord.Status = (int)HiringRecordStatus.Declined;
-
-            if (jobApp != null)
-            {
-                jobApp.Status = 4;
-                jobApp.RejectionReason = string.IsNullOrWhiteSpace(dto.DeclineReason)
-                    ? "Bao mau da tu choi de nghi."
-                    : dto.DeclineReason.Trim();
-                jobApp.UpdatedAt = now;
-                jobApp.UpdatedBy = nannyUserId;
-            }
-
-            if (jobPosting != null)
-            {
-                jobPosting.Status = 1;
-                jobPosting.ClosedAt = null;
-                jobPosting.UpdatedAt = now;
-                jobPosting.UpdatedBy = nannyUserId;
-            }
-
-            if (parentUserId != Guid.Empty)
-            {
-                _repo.AddNotification(new Notification
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = parentUserId,
-                    Title = "Bao mau da tu choi de nghi",
-                    Content = $"{GetDisplayName(hiringRecord.NannyProfile?.User)} da tu choi. Vi tri da duoc mo lai.",
-                    Type = NotificationTypes.HiringDeclined,
-                    IsRead = false,
-                    RelatedEntityId = hiringRecord.Id,
-                    RelatedEntityType = "HiringRecord",
-                    CreatedAt = now,
-                    CreatedBy = nannyUserId,
-                    IsDeleted = false
-                });
-            }
-        }
         else
         {
-            throw new ArgumentException("Hanh dong khong hop le. Vui long chon 'accept' hoac 'decline'.");
+            throw new ArgumentException("Hanh dong khong hop le. Vui long chon 'accept'.");
         }
 
         hiringRecord.UpdatedAt = now;
         hiringRecord.UpdatedBy = nannyUserId;
         contract.UpdatedAt = now;
         contract.UpdatedBy = nannyUserId;
-
-        await _repo.SaveChangesAsync();
-    }
-
-    public async Task CancelHiringAsync(Guid hiringRecordId, Guid parentUserId)
-    {
-        var hiringRecord = await _repo.GetHiringRecordByIdAsync(hiringRecordId)
-            ?? throw new KeyNotFoundException("Khong tim thay hop dong.");
-
-        if (hiringRecord.ParentProfile?.UserId != parentUserId)
-            throw new UnauthorizedAccessException("Ban khong co quyen huy de nghi nay.");
-
-        if (hiringRecord.Status != (int)HiringRecordStatus.Pending || hiringRecord.NannyConfirmedAt.HasValue)
-            throw new InvalidOperationException("Chi co the huy de nghi dang cho phan hoi tu bao mau.");
-
-        var now = DateTime.UtcNow;
-        hiringRecord.Status = (int)HiringRecordStatus.Cancelled;
-        hiringRecord.UpdatedAt = now;
-        hiringRecord.UpdatedBy = parentUserId;
-
-        var nannyUserId = hiringRecord.NannyProfile?.UserId;
-        if (nannyUserId.HasValue && nannyUserId.Value != Guid.Empty)
-        {
-            _repo.AddNotification(new Notification
-            {
-                Id = Guid.NewGuid(),
-                UserId = nannyUserId.Value,
-                Title = "De nghi viec lam da bi huy",
-                Content = $"{GetDisplayName(hiringRecord.ParentProfile?.User)} da huy de nghi viec lam.",
-                Type = NotificationTypes.HiringDeclined,
-                IsRead = false,
-                RelatedEntityId = hiringRecord.Id,
-                RelatedEntityType = "HiringRecord",
-                CreatedAt = now,
-                CreatedBy = parentUserId,
-                IsDeleted = false
-            });
-        }
 
         await _repo.SaveChangesAsync();
     }
