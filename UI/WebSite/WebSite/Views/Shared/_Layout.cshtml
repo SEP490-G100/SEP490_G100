@@ -11,7 +11,7 @@
         string.Equals(verifyPromptCurrentAction, "Index", StringComparison.OrdinalIgnoreCase);
     var verifyPromptSkipControllers = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
-        "Auth", "Onboarding", "ParentOnboarding", "NannyBasicInfo", "NannyVerificationRequest"
+        "Auth", "Onboarding", "ParentOnboarding", "NannyBasicInfo", "VerificationRequest"
     };
 
     var canCheckNannyVerifyPrompt =
@@ -23,7 +23,7 @@
 
     PersonalProfileViewModel? nannyVerifyPromptProfile = null;
     var showNannyVerifyPrompt = false;
-    var nannyVerifyPromptUrl = "/NannyVerificationRequest/NannySubmitVerificationRequest";
+    var nannyVerifyPromptUrl = "/VerificationRequest/NannySubmitVerificationRequest";
     var nannyVerifyPromptButton = "Xác minh ID ngay";
     var nannyVerifyPromptStatusClass = "is-not-submitted";
     var nannyVerifyPromptStatusText = "Chưa gửi xác minh";
@@ -69,14 +69,14 @@
 
                             if (verificationCode == 1)
                             {
-                                nannyVerifyPromptUrl = "/NannyVerificationRequest/NannyGetVerificationRequestList";
+                                nannyVerifyPromptUrl = "/VerificationRequest/NannyGetVerificationRequestList";
                                 nannyVerifyPromptButton = "Xem yêu cầu xác minh";
                                 nannyVerifyPromptStatusClass = "is-pending";
                                 nannyVerifyPromptStatusText = "Đang chờ duyệt";
                             }
                             else if (verificationCode == 3)
                             {
-                                nannyVerifyPromptUrl = "/NannyVerificationRequest/NannyGetVerificationRequestList";
+                                nannyVerifyPromptUrl = "/VerificationRequest/NannyGetVerificationRequestList";
                                 nannyVerifyPromptButton = "Xem và gửi lại hồ sơ";
                                 nannyVerifyPromptStatusClass = "is-rejected";
                                 nannyVerifyPromptStatusText = "Đã bị từ chối";
@@ -1056,11 +1056,27 @@
                                     </a>
                                 }
 
+                                @if (User.IsInRole("Parent"))
+                                {
+                                    <a href="/Hiring/ViewHiringHistory" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        <span class="material-icons-round text-base">history</span>
+                                        Lịch sử thuê bảo mẫu
+                                    </a>
+                                }
+
+                                @if (User.IsInRole("Nanny"))
+                                {
+                                    <a href="/Hiring/ViewHiringHistory" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        <span class="material-icons-round text-base">history_toggle_off</span>
+                                        Lịch sử được thuê
+                                    </a>
+                                }
+
                                 @if (User.IsInRole("Parent") || User.IsInRole("Nanny"))
                                 {
                                     <a href="/Contract" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                        <span class="material-icons-round text-base">description</span>
-                                        Hợp đồng của tôi
+                                        <span class="material-icons-round text-base">folder</span>
+                                        Quản lí hợp đồng
                                     </a>
                                 }
 
@@ -1094,7 +1110,7 @@
                                         <span class="material-icons-round text-base">contact_mail</span>
                                         Yêu cầu liên hệ đã nhận
                                     </a>
-                                    <a href="/NannyVerificationRequest/NannyGetVerificationRequestList" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                    <a href="/VerificationRequest/NannyGetVerificationRequestList" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                         <span class="material-icons-round text-base">verified_user</span>
                                         Yêu cầu xác minh
                                     </a>

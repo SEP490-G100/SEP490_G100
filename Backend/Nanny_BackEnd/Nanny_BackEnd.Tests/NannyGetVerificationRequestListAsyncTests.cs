@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Hosting;
+
 using Moq;
 using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Models;
@@ -9,22 +9,20 @@ using Nanny_BackEnd.Services.Interfaces;
 namespace Nanny_BackEnd.Tests;
 
 /// <summary>
-/// <see cref="Nanny_BackEnd.Controllers.NannyVerificationRequestController.NannyGetVerificationRequestList"/> →
+/// <see cref="Nanny_BackEnd.Controllers.VerificationRequestController.NannyGetVerificationRequestList"/> →
 /// <see cref="VerificationRequestService.NannyGetVerificationRequestListAsync"/>.
 /// </summary>
 public class NannyGetVerificationRequestListAsyncTests
 {
     private readonly Mock<IVerificationRequestRepository> _mockRepo;
-    private readonly Mock<IWebHostEnvironment> _mockEnv;
     private readonly Mock<INotificationService> _mockNotif;
     private readonly VerificationRequestService _sut;
 
     public NannyGetVerificationRequestListAsyncTests()
     {
         _mockRepo = new Mock<IVerificationRequestRepository>();
-        _mockEnv = new Mock<IWebHostEnvironment>();
         _mockNotif = new Mock<INotificationService>();
-        _sut = new VerificationRequestService(_mockRepo.Object, _mockEnv.Object, _mockNotif.Object);
+        _sut = new VerificationRequestService(_mockRepo.Object, _mockNotif.Object);
     }
 
     private static NannyProfile MakeNannyProfile(Guid userId, Guid npId) => new()

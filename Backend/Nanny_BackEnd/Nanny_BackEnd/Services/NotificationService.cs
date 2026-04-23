@@ -485,9 +485,9 @@ public class NotificationService : INotificationService
             NotificationTypes.VerificationRequestCreated when notification.RelatedEntityId.HasValue =>
                 $"/NannyVerificationRequest/NannyViewVerificationRequestDetail/{notification.RelatedEntityId.Value}",
             NotificationTypes.ReportSubmitted when notification.RelatedEntityId.HasValue =>
-                $"/Moderator/ViewComplaintDetail/{notification.RelatedEntityId.Value}",
+                $"/Moderator/ViewReportDetail/{notification.RelatedEntityId.Value}",
             NotificationTypes.ReportSubmitted =>
-                "/Moderator/ManageComplaint",
+                "/Moderator/ManageReport",
             NotificationTypes.MessageToModerator when notification.RelatedEntityId.HasValue =>
                 $"/Communication?conversationId={notification.RelatedEntityId.Value}",
             NotificationTypes.JobPostingReviewRequired when notification.RelatedEntityId.HasValue =>
@@ -502,6 +502,8 @@ public class NotificationService : INotificationService
                 "/Nanny/ContactRequests",
             NotificationTypes.ContactRequestRejected =>
                 "/Nanny/ContactRequests",
+            NotificationTypes.HiringConfirmed =>
+                "/Hiring/ViewHiringHistory",
             _ => null
         };
     }

@@ -4,6 +4,12 @@ namespace Nanny_BackEnd.Repositories.Interfaces;
 
 public interface IVerificationRequestRepository
 {
+    Task<(List<VerificationRequest> Items, int TotalCount)> GetModeratorListAsync(
+        int? status,
+        int? requestType,
+        string? search,
+        int page,
+        int pageSize);
     Task<(List<VerificationRequest> Items, int TotalCount)> GetListAsync(
         int? status,
         string? search,

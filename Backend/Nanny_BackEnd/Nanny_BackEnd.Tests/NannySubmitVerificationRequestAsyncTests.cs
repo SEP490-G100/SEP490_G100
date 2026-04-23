@@ -11,7 +11,7 @@ using Nanny_BackEnd.Services.Interfaces;
 namespace Nanny_BackEnd.Tests;
 
 /// <summary>
-/// <see cref="Nanny_BackEnd.Controllers.NannyVerificationRequestController"/> submit →
+/// <see cref="Nanny_BackEnd.Controllers.VerificationRequestController"/> submit →
 /// <see cref="VerificationRequestService.NannySubmitVerificationRequestAsync"/>.
 /// </summary>
 public class NannySubmitVerificationRequestAsyncTests
@@ -26,7 +26,7 @@ public class NannySubmitVerificationRequestAsyncTests
         _mockRepo = new Mock<IVerificationRequestRepository>();
         _mockEnv = new Mock<IWebHostEnvironment>();
         _mockNotif = new Mock<INotificationService>();
-        _sut = new VerificationRequestService(_mockRepo.Object, _mockEnv.Object, _mockNotif.Object);
+        _sut = new VerificationRequestService(_mockRepo.Object, _mockNotif.Object);
     }
 
     private static NannyProfile MakeNanny(Guid userId) => new()
