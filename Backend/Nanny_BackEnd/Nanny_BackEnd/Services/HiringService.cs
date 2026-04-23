@@ -525,6 +525,44 @@ public class HiringService : IHiringService
         await _repo.SaveChangesAsync();
     }
 
+    public async Task CancelHiringAsync(Guid hiringRecordId, Guid parentUserId)
+    {
+        var hiringRecord = await _repo.GetHiringRecordByIdAsync(hiringRecordId)
+            ?? throw new KeyNotFoundException("Khong tim thay hop dong.");
+
+        if (hiringRecord.ParentProfile?.UserId != parentUserId)
+            throw new UnauthorizedAccessException("Ban khong co quyen huy de nghi nay.");
+
+        if (hiringRecord.Status != (int)HiringRecordStatus.Pending || hiringRecord.NannyConfirmedAt.HasValue)
+            throw new InvalidOperationException("Chi co the huy de nghi dang cho phan hoi tu bao mau.");
+
+        var now = DateTime.UtcNow;
+        hiringRecord.Status = (int)HiringRecordStatus.Cancelled;
+        hiringRecord.UpdatedAt = now;
+        hiringRecord.UpdatedBy = parentUserId;
+
+        var nannyUserId = hiringRecord.NannyProfile?.UserId;
+        if (nannyUserId.HasValue && nannyUserId.Value != Guid.Empty)
+        {
+            _repo.AddNotification(new Notification
+            {
+                Id = Guid.NewGuid(),
+                UserId = nannyUserId.Value,
+                Title = "De nghi viec lam da bi huy",
+                Content = $"{GetDisplayName(hiringRecord.ParentProfile?.User)} da huy de nghi viec lam.",
+                Type = NotificationTypes.HiringDeclined,
+                IsRead = false,
+                RelatedEntityId = hiringRecord.Id,
+                RelatedEntityType = "HiringRecord",
+                CreatedAt = now,
+                CreatedBy = parentUserId,
+                IsDeleted = false
+            });
+        }
+
+        await _repo.SaveChangesAsync();
+    }
+
     public async Task CompleteHiringAsync(Guid hiringRecordId, Guid parentUserId)
     {
         var hiringRecord = await _repo.GetHiringRecordByIdAsync(hiringRecordId)
