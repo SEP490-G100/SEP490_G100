@@ -8,7 +8,7 @@ using Nanny_BackEnd.Services.Interfaces;
 namespace Nanny_BackEnd.Tests;
 
 /// <summary>
-/// <see cref="Nanny_BackEnd.Controllers.NannyVerificationRequestController"/> detail →
+/// <see cref="Nanny_BackEnd.Controllers.VerificationRequestController"/> detail →
 /// <see cref="VerificationRequestService.NannyViewVerificationRequestDetailAsync"/>.
 /// </summary>
 public class NannyViewVerificationRequestDetailAsyncTests

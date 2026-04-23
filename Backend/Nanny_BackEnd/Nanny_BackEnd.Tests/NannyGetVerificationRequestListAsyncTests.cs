@@ -9,7 +9,7 @@ using Nanny_BackEnd.Services.Interfaces;
 namespace Nanny_BackEnd.Tests;
 
 /// <summary>
-/// <see cref="Nanny_BackEnd.Controllers.NannyVerificationRequestController.NannyGetVerificationRequestList"/> →
+/// <see cref="Nanny_BackEnd.Controllers.VerificationRequestController.NannyGetVerificationRequestList"/> →
 /// <see cref="VerificationRequestService.NannyGetVerificationRequestListAsync"/>.
 /// </summary>
 public class NannyGetVerificationRequestListAsyncTests

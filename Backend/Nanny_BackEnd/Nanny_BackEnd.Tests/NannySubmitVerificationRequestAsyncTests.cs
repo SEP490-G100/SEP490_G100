@@ -11,7 +11,7 @@ using Nanny_BackEnd.Services.Interfaces;
 namespace Nanny_BackEnd.Tests;
 
 /// <summary>
-/// <see cref="Nanny_BackEnd.Controllers.NannyVerificationRequestController"/> submit →
+/// <see cref="Nanny_BackEnd.Controllers.VerificationRequestController"/> submit →
 /// <see cref="VerificationRequestService.NannySubmitVerificationRequestAsync"/>.
 /// </summary>
 public class NannySubmitVerificationRequestAsyncTests

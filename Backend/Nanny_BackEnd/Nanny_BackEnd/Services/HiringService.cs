@@ -15,10 +15,10 @@ public class HiringService : IHiringService
     public async Task<List<JobApplicantDto>> GetApplicantsAsync(Guid jobPostingId, Guid parentUserId)
     {
         var job = await _repo.GetJobPostingByIdAsync(jobPostingId)
-            ?? throw new KeyNotFoundException("Khong tim thay bai dang.");
+            ?? throw new KeyNotFoundException("Không tìm thấy bài đăng.");
 
         if (job.ParentProfile?.UserId != parentUserId)
-            throw new UnauthorizedAccessException("Ban khong co quyen xem danh sach ung vien cua bai dang nay.");
+            throw new UnauthorizedAccessException("Bạn không có quyền xem danh sách ứng viên của bài đăng này.");
 
         var applications = await _repo.GetApplicantsByJobPostingIdAsync(jobPostingId);
         return applications.Select(a => new JobApplicantDto
