@@ -13,6 +13,5 @@ public interface IHiringService
         Guid contactRequestId, Guid parentUserId, ConfirmHiringDto dto);
     Task<HiringOfferDetailDto> GetHiringOfferDetailAsync(Guid hiringRecordId, Guid currentUserId);
     Task RespondToOfferAsync(Guid hiringRecordId, Guid nannyUserId, RespondToOfferDto dto);
-    Task CancelHiringAsync(Guid hiringRecordId, Guid parentUserId);
     Task CompleteHiringAsync(Guid hiringRecordId, Guid parentUserId);
 }
