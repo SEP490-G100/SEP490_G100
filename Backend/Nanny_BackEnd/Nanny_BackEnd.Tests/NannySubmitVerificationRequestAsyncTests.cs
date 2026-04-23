@@ -26,7 +26,7 @@ public class NannySubmitVerificationRequestAsyncTests
         _mockRepo = new Mock<IVerificationRequestRepository>();
         _mockEnv = new Mock<IWebHostEnvironment>();
         _mockNotif = new Mock<INotificationService>();
-        _sut = new VerificationRequestService(_mockRepo.Object, _mockEnv.Object, _mockNotif.Object);
+        _sut = new VerificationRequestService(_mockRepo.Object, _mockNotif.Object);
     }
 
     private static NannyProfile MakeNanny(Guid userId) => new()

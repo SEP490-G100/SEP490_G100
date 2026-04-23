@@ -1,3 +1,5 @@
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Nanny_BackEnd.DTOs.Subscription;
 using Nanny_BackEnd.Models;
@@ -8,30 +10,43 @@ using Nanny_BackEnd.Services.Interfaces;
 namespace Nanny_BackEnd.Tests;
 
 /// <summary>
-/// <see cref="Nanny_BackEnd.Controllers.ModeratorJobController.ModeratorViewJobDetail"/> →
-/// <see cref="ModeratorJobService.ModeratorViewJobDetailAsync"/>.
+/// Tests for:
+/// JobPostingController.ModeratorViewJobDetail -> JobService.ModeratorViewJobDetailAsync
 /// </summary>
-public class ModeratorViewJobDetailAsyncTests
+public class ViewJobDetailAsyncTests
 {
-    private const string NotFoundMessage = "Không tìm thấy tin đăng hoặc tin đã bị xóa.";
+    private const string NotFoundMessage = "Khong tim thay job posting.";
 
-    private readonly Mock<IModeratorJobRepository> _mockRepo;
-    private readonly Mock<INotificationService> _mockNotif;
-    private readonly ModeratorJobService _sut;
+    private readonly Mock<IJobRepository> _mockRepo;
+    private readonly JobService _sut;
 
-    public ModeratorViewJobDetailAsyncTests()
+    public ViewJobDetailAsyncTests()
     {
-        _mockRepo = new Mock<IModeratorJobRepository>();
-        _mockNotif = new Mock<INotificationService>();
-        _sut = new ModeratorJobService(_mockRepo.Object, _mockNotif.Object);
+        _mockRepo = new Mock<IJobRepository>();
+
+        var mockFavoriteRepo = new Mock<IFavoriteRepository>();
+        var mockGeo = new Mock<IGeocodingService>();
+        var mockSubscriptionService = new Mock<ISubscriptionService>();
+        var mockNotif = new Mock<INotificationService>();
+        var mockScopeFactory = new Mock<IServiceScopeFactory>();
+        var mockLogger = new Mock<ILogger<JobService>>();
+
+        _sut = new JobService(
+            _mockRepo.Object,
+            mockFavoriteRepo.Object,
+            mockGeo.Object,
+            mockSubscriptionService.Object,
+            mockNotif.Object,
+            mockScopeFactory.Object,
+            mockLogger.Object);
     }
 
     private static JobPosting MakeJob(Guid id) => new()
     {
         Id = id,
         ParentProfileId = Guid.NewGuid(),
-        Title = "Chi tiết job",
-        Description = "Mô tả",
+        Title = "Chi tiet job",
+        Description = "Mo ta",
         Status = 1,
         ModerationStatus = 0,
         CreatedAt = new DateTime(2025, 3, 1, 0, 0, 0, DateTimeKind.Utc),
@@ -40,7 +55,7 @@ public class ModeratorViewJobDetailAsyncTests
         JobApplications = new List<JobApplication> { new(), new() }
     };
 
-    // Condition: repository trả về null.
+    // Condition: repository returns null.
     [Fact]
     public async Task NotFound_ThrowsKeyNotFound()
     {
@@ -52,7 +67,7 @@ public class ModeratorViewJobDetailAsyncTests
         Assert.Equal(NotFoundMessage, ex.Message);
     }
 
-    // Condition: gọi đúng jobId.
+    // Condition: forwards exact jobId to repository.
     [Fact]
     public async Task ForwardsJobIdToRepository()
     {
@@ -64,7 +79,7 @@ public class ModeratorViewJobDetailAsyncTests
         _mockRepo.Verify(r => r.ModeratorViewJobDetailAsync(id), Times.Once);
     }
 
-    // Condition: trả về DTO chi tiết từ mapToDetail.
+    // Condition: returns mapped detail DTO.
     [Fact]
     public async Task ReturnsMappedDetail()
     {
@@ -74,8 +89,8 @@ public class ModeratorViewJobDetailAsyncTests
         var detail = await _sut.ModeratorViewJobDetailAsync(id);
 
         Assert.Equal(id, detail.Id);
-        Assert.Equal("Chi tiết job", detail.Title);
-        Assert.Equal("Mô tả", detail.Description);
+        Assert.Equal("Chi tiet job", detail.Title);
+        Assert.Equal("Mo ta", detail.Description);
         Assert.Equal(2, detail.ApplicationCount);
         Assert.Equal(Guid.Empty, detail.ParentUserId);
         Assert.Null(detail.SubscriptionPlanCode);

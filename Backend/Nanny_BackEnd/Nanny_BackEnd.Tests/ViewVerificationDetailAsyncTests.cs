@@ -7,52 +7,52 @@ using Nanny_BackEnd.Services.Interfaces;
 namespace Nanny_BackEnd.Tests;
 
 /// <summary>
-/// <see cref="Nanny_BackEnd.Controllers.ModeratorVerificationController.ModeratorViewVerificationDetail"/> →
-/// <see cref="ModeratorVerificationService.ModeratorViewVerificationDetailAsync"/>.
+/// VerificationRequestController.ModeratorViewVerificationDetail ->
+/// VerificationRequestService.ModeratorViewVerificationDetailAsync
 /// </summary>
-public class ModeratorViewVerificationDetailAsyncTests
+public class ViewVerificationDetailAsyncTests
 {
-    private const string NotFoundMessage = "Không tìm thấy yêu cầu xác minh.";
+    private const string NotFoundMessage = "Khong tim thay yeu cau xac minh.";
 
-    private readonly Mock<IModeratorVerificationRepository> _mockRepo;
+    private readonly Mock<IVerificationRequestRepository> _mockRepo;
     private readonly Mock<INotificationService> _mockNotif;
-    private readonly ModeratorVerificationService _sut;
+    private readonly VerificationRequestService _sut;
 
-    public ModeratorViewVerificationDetailAsyncTests()
+    public ViewVerificationDetailAsyncTests()
     {
-        _mockRepo = new Mock<IModeratorVerificationRepository>();
+        _mockRepo = new Mock<IVerificationRequestRepository>();
         _mockNotif = new Mock<INotificationService>();
-        _sut = new ModeratorVerificationService(_mockRepo.Object, _mockNotif.Object);
+        _sut = new VerificationRequestService(_mockRepo.Object, _mockNotif.Object);
     }
 
-    private static VerificationRequest MakeRequest(Guid id, Guid? reviewerId = null, string? reviewerFirst = "Mod")
+    private static VerificationRequest MakeRequest(Guid id, Guid? reviewerId = null, string reviewerFirstName = "Mod")
     {
         var userId = Guid.NewGuid();
-        var npId = Guid.NewGuid();
-        var vr = new VerificationRequest
+        var nannyProfileId = Guid.NewGuid();
+        var request = new VerificationRequest
         {
             Id = id,
-            NannyProfileId = npId,
+            NannyProfileId = nannyProfileId,
             RequestType = 1,
-            Status = 0,
+            Status = 1,
             CreatedAt = DateTime.UtcNow,
             ReviewedBy = reviewerId,
-            ReviewedAt = reviewerId != null ? DateTime.UtcNow : null,
+            ReviewedAt = reviewerId.HasValue ? DateTime.UtcNow : null,
             NannyProfile = new NannyProfile
             {
-                Id = npId,
+                Id = nannyProfileId,
                 UserId = userId,
                 SalaryType = 0,
-                VerificationStatus = 0,
+                VerificationStatus = 1,
                 CreatedAt = DateTime.UtcNow,
                 NannySkills = new List<NannySkill>(),
                 NannyCertificates = new List<NannyCertificate>(),
                 User = new User
                 {
                     Id = userId,
-                    Email = "a@a.a",
                     FirstName = "Hoa",
-                    LastName = "Mai"
+                    LastName = "Mai",
+                    Email = "a@a.a"
                 }
             },
             VerificationDocuments = new List<VerificationDocument>
@@ -60,7 +60,7 @@ public class ModeratorViewVerificationDetailAsyncTests
                 new()
                 {
                     Id = Guid.NewGuid(),
-                    DocumentType = 0,
+                    DocumentType = 1,
                     DocumentUrl = "https://x/u.pdf",
                     FileName = "u.pdf",
                     FileSize = 100,
@@ -68,20 +68,22 @@ public class ModeratorViewVerificationDetailAsyncTests
                 }
             }
         };
+
         if (reviewerId.HasValue)
         {
-            vr.ReviewedByNavigation = new User
+            request.ReviewedByNavigation = new User
             {
                 Id = reviewerId.Value,
-                Email = "m@mod.com",
-                FirstName = reviewerFirst!,
-                LastName = "Erator"
+                FirstName = reviewerFirstName,
+                LastName = "Erator",
+                Email = "m@mod.com"
             };
         }
-        return vr;
+
+        return request;
     }
 
-    // Condition: không tìm thấy bản ghi.
+    // Condition: request not found.
     [Fact]
     public async Task NotFound_ReturnsFailure()
     {
@@ -95,14 +97,14 @@ public class ModeratorViewVerificationDetailAsyncTests
         Assert.Equal(NotFoundMessage, message);
     }
 
-    // Condition: có dữ liệu — map sang detail DTO.
+    // Condition: found -> map to detail dto.
     [Fact]
     public async Task Found_ReturnsMappedDetail()
     {
         var id = Guid.NewGuid();
-        var modId = Guid.NewGuid();
-        var req = MakeRequest(id, modId, "Linh");
-        _mockRepo.Setup(r => r.GetByIdAsync(id)).ReturnsAsync(req);
+        var reviewerId = Guid.NewGuid();
+        var request = MakeRequest(id, reviewerId, "Linh");
+        _mockRepo.Setup(r => r.GetByIdAsync(id)).ReturnsAsync(request);
 
         var (success, data, message) = await _sut.ModeratorViewVerificationDetailAsync(id);
 
@@ -116,7 +118,7 @@ public class ModeratorViewVerificationDetailAsyncTests
         Assert.Equal("a@a.a", data.NannyEmail);
         Assert.Equal("Linh Erator", data.ReviewedByName);
         Assert.Single(data.Documents);
-        Assert.Equal(0, data.Documents[0].DocumentType);
+        Assert.Equal(1, data.Documents[0].DocumentType);
         Assert.Empty(data.Skills);
         Assert.Empty(data.Certificates);
     }

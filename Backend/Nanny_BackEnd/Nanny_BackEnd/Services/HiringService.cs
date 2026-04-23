@@ -10,8 +10,7 @@ namespace Nanny_BackEnd.Services;
 public class HiringService : IHiringService
 {
     private readonly IHiringRepository _repo;
-
-    public HiringService(IHiringRepository repo) => _repo = repo;
+    public HiringService(IHiringRepository repo, CommunicationService _svc) => _repo = repo;
 
     public async Task<List<JobApplicantDto>> GetApplicantsAsync(Guid jobPostingId, Guid parentUserId)
     {

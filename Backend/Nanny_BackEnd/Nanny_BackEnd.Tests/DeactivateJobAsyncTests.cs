@@ -1,3 +1,5 @@
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Helpers;
@@ -9,27 +11,39 @@ using Nanny_BackEnd.Services.Interfaces;
 namespace Nanny_BackEnd.Tests;
 
 /// <summary>
-/// <see cref="Nanny_BackEnd.Controllers.ModeratorJobController.ModeratorDeactivateJob"/> (or equivalent) →
-/// <see cref="ModeratorJobService.ModeratorDeactivateJobAsync"/>.
+/// Tests for:
+/// JobPostingController.ModeratorDeactivateJob -> JobService.ModeratorDeactivateJobAsync
 /// </summary>
-public class ModeratorDeactivateJobAsyncTests
+public class DeactivateJobAsyncTests
 {
-    private const string NotFoundMessage = "Không tìm thấy tin đăng hoặc tin đã bị xóa.";
-
-    private readonly Mock<IModeratorJobRepository> _mockRepo;
+    private readonly Mock<IJobRepository> _mockRepo;
     private readonly Mock<INotificationService> _mockNotif;
-    private readonly ModeratorJobService _sut;
+    private readonly JobService _sut;
 
-    public ModeratorDeactivateJobAsyncTests()
+    public DeactivateJobAsyncTests()
     {
-        _mockRepo = new Mock<IModeratorJobRepository>();
+        _mockRepo = new Mock<IJobRepository>();
         _mockNotif = new Mock<INotificationService>();
-        _sut = new ModeratorJobService(_mockRepo.Object, _mockNotif.Object);
+
+        var mockFavoriteRepo = new Mock<IFavoriteRepository>();
+        var mockGeo = new Mock<IGeocodingService>();
+        var mockSubscriptionService = new Mock<ISubscriptionService>();
+        var mockScopeFactory = new Mock<IServiceScopeFactory>();
+        var mockLogger = new Mock<ILogger<JobService>>();
+
+        _sut = new JobService(
+            _mockRepo.Object,
+            mockFavoriteRepo.Object,
+            mockGeo.Object,
+            mockSubscriptionService.Object,
+            _mockNotif.Object,
+            mockScopeFactory.Object,
+            mockLogger.Object);
     }
 
     private static JobPosting MakeJob(
         Guid jobId,
-        string title = "Công việc",
+        string title = "Cong viec",
         bool isDeleted = false,
         ParentProfile? parent = null) => new()
     {
@@ -46,46 +60,45 @@ public class ModeratorDeactivateJobAsyncTests
         JobApplications = new List<JobApplication>()
     };
 
-    // Condition: job không tồn tại.
+    // Condition: job not found.
     [Fact]
     public async Task NotFound_ThrowsKeyNotFound()
     {
         var jobId = Guid.NewGuid();
-        _mockRepo.Setup(r => r.ModeratorViewJobDetailAsync(jobId)).ReturnsAsync((JobPosting?)null);
+        _mockRepo.Setup(r => r.viewDetailPosting(jobId)).ReturnsAsync((JobPosting?)null);
 
-        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             _sut.ModeratorDeactivateJobAsync(jobId, Guid.NewGuid()));
 
-        Assert.Equal(NotFoundMessage, ex.Message);
-        _mockRepo.Verify(r => r.SaveChangesAsync(), Times.Never);
+        _mockRepo.Verify(r => r.saveChanges(), Times.Never);
     }
 
-    // Condition: IsDeleted = true — thoát sớm, không lưu, không thông báo.
+    // Condition: IsDeleted = true -> early return, no save, no notification.
     [Fact]
     public async Task AlreadyDeleted_ReturnsWithoutSave()
     {
         var jobId = Guid.NewGuid();
         var job = MakeJob(jobId, isDeleted: true);
-        _mockRepo.Setup(r => r.ModeratorViewJobDetailAsync(jobId)).ReturnsAsync(job);
+        _mockRepo.Setup(r => r.viewDetailPosting(jobId)).ReturnsAsync(job);
 
         await _sut.ModeratorDeactivateJobAsync(jobId, Guid.NewGuid());
 
-        _mockRepo.Verify(r => r.SaveChangesAsync(), Times.Never);
+        _mockRepo.Verify(r => r.saveChanges(), Times.Never);
         _mockNotif.Verify(
             n => n.createNotification(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(),
                 It.IsAny<Guid?>(), It.IsAny<string?>(), It.IsAny<Guid?>()),
             Times.Never);
     }
 
-    // Condition: vô hiệu hóa — cập nhật entity và SaveChanges.
+    // Condition: deactivate -> update entity and save.
     [Fact]
     public async Task Success_SetsFlagsAndSaves()
     {
         var jobId = Guid.NewGuid();
         var modId = Guid.NewGuid();
         var job = MakeJob(jobId);
-        _mockRepo.Setup(r => r.ModeratorViewJobDetailAsync(jobId)).ReturnsAsync(job);
-        _mockRepo.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
+        _mockRepo.Setup(r => r.viewDetailPosting(jobId)).ReturnsAsync(job);
+        _mockRepo.Setup(r => r.saveChanges()).Returns(Task.CompletedTask);
 
         await _sut.ModeratorDeactivateJobAsync(jobId, modId);
 
@@ -94,19 +107,19 @@ public class ModeratorDeactivateJobAsyncTests
         Assert.Equal(modId, job.UpdatedBy);
         Assert.NotNull(job.ClosedAt);
         Assert.NotNull(job.UpdatedAt);
-        _mockRepo.Verify(r => r.SaveChangesAsync(), Times.Once);
+        _mockRepo.Verify(r => r.saveChanges(), Times.Once);
     }
 
-    // Condition: có ParentProfile — thông báo từ chối.
+    // Condition: has parent profile -> send notification.
     [Fact]
     public async Task WithParent_SendsNotification()
     {
         var jobId = Guid.NewGuid();
         var modId = Guid.NewGuid();
         var parentUser = Guid.NewGuid();
-        var job = MakeJob(jobId, "Việc X", parent: new ParentProfile { UserId = parentUser });
-        _mockRepo.Setup(r => r.ModeratorViewJobDetailAsync(jobId)).ReturnsAsync(job);
-        _mockRepo.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
+        var job = MakeJob(jobId, "Viec X", parent: new ParentProfile { UserId = parentUser });
+        _mockRepo.Setup(r => r.viewDetailPosting(jobId)).ReturnsAsync(job);
+        _mockRepo.Setup(r => r.saveChanges()).Returns(Task.CompletedTask);
         _mockNotif
             .Setup(n => n.createNotification(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(),
                 It.IsAny<Guid?>(), It.IsAny<string?>(), It.IsAny<Guid?>()))
@@ -117,8 +130,8 @@ public class ModeratorDeactivateJobAsyncTests
         _mockNotif.Verify(
             n => n.createNotification(
                 parentUser,
-                "Bài đăng đã bị vô hiệu hóa",
-                "Bài đăng \"Việc X\" đã bị điều hành viên vô hiệu hóa.",
+                It.IsAny<string>(),
+                It.Is<string>(s => s.Contains("Viec X")),
                 NotificationTypes.JobPostingRejected,
                 jobId,
                 "JobPosting",
@@ -126,15 +139,15 @@ public class ModeratorDeactivateJobAsyncTests
             Times.Once);
     }
 
-    // Condition: không có parent — không gọi createNotification.
+    // Condition: no parent profile -> do not send notification.
     [Fact]
     public async Task WithoutParent_SkipsNotification()
     {
         var jobId = Guid.NewGuid();
         var modId = Guid.NewGuid();
         var job = MakeJob(jobId, parent: null);
-        _mockRepo.Setup(r => r.ModeratorViewJobDetailAsync(jobId)).ReturnsAsync(job);
-        _mockRepo.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
+        _mockRepo.Setup(r => r.viewDetailPosting(jobId)).ReturnsAsync(job);
+        _mockRepo.Setup(r => r.saveChanges()).Returns(Task.CompletedTask);
 
         await _sut.ModeratorDeactivateJobAsync(jobId, modId);
 

@@ -7,15 +7,15 @@ using Nanny_BackEnd.Services;
 
 namespace Nanny_BackEnd.Tests;
 
-public class AdminViewModeratorAccountListTests
+public class ViewModeratorAccountListTests
 {
-    private readonly Mock<IAdminAccountRepository> _mockRepo;
-    private readonly AdminAccountService          _sut;
+    private readonly Mock<IAccountRepository> _mockRepo;
+    private readonly AccountService          _sut;
 
-    public AdminViewModeratorAccountListTests()
+    public ViewModeratorAccountListTests()
     {
-        _mockRepo = new Mock<IAdminAccountRepository>();
-        _sut      = new AdminAccountService(_mockRepo.Object);
+        _mockRepo = new Mock<IAccountRepository>();
+        _sut      = new AccountService(_mockRepo.Object);
     }
 
     // ── Helper: tạo User có role Moderator ───────────────────────────────
