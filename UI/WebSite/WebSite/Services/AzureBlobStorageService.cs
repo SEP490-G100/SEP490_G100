@@ -10,6 +10,7 @@ public interface IAzureBlobStorageService
 {
     Task<string> UploadVerificationDocumentAsync(IFormFile file, VerificationDocumentType documentType, CancellationToken cancellationToken = default);
     Task<string> UploadUserAvatarAsync(IFormFile file, CancellationToken cancellationToken = default);
+    Task<string> UploadContractPdfAsync(IFormFile file, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<string>> UploadMediaAsync(
         IEnumerable<IFormFile> files,
         BlobStorageContainerKind containerKind,
@@ -65,6 +66,23 @@ public class AzureBlobStorageService : IAzureBlobStorageService
         var containerClient = await GetContainerClientAsync(_options.UserAvatarContainerName, cancellationToken);
         var blobName = $"user-avatar/{DateTime.UtcNow:yyyy/MM}/{Guid.NewGuid()}{fileExtension}";
         return await UploadBlobAsync(containerClient, file, blobName, GetImageContentType(file.ContentType, fileExtension), cancellationToken);
+    }
+
+    public async Task<string> UploadContractPdfAsync(IFormFile file, CancellationToken cancellationToken = default)
+    {
+        ValidateConnectionString();
+        ValidateContainerName(_options.ContractContainerName, "ContractContainerName");
+
+        if (file == null || file.Length == 0)
+            throw new InvalidOperationException("File hop dong khong hop le.");
+
+        var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (!IsSupportedPdf(file.ContentType, fileExtension))
+            throw new InvalidOperationException("Chi ho tro upload hop dong dinh dang PDF.");
+
+        var containerClient = await GetContainerClientAsync(_options.ContractContainerName, cancellationToken);
+        var blobName = $"contract/{DateTime.UtcNow:yyyy/MM}/{Guid.NewGuid()}{fileExtension}";
+        return await UploadBlobAsync(containerClient, file, blobName, GetPdfContentType(file.ContentType, fileExtension), cancellationToken);
     }
 
     public async Task<IReadOnlyList<string>> UploadMediaAsync(
@@ -215,6 +233,24 @@ public class AzureBlobStorageService : IAzureBlobStorageService
 
     private static string GetBlogImageContentType(string? contentType, string fileExtension) =>
         GetImageContentType(contentType, fileExtension);
+
+    private static bool IsSupportedPdf(string? contentType, string fileExtension)
+    {
+        if (string.Equals(contentType, "application/pdf", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return string.Equals(fileExtension, ".pdf", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string GetPdfContentType(string? contentType, string fileExtension)
+    {
+        if (string.Equals(contentType, "application/pdf", StringComparison.OrdinalIgnoreCase))
+            return contentType;
+
+        return string.Equals(fileExtension, ".pdf", StringComparison.OrdinalIgnoreCase)
+            ? "application/pdf"
+            : "application/octet-stream";
+    }
 
     private static bool IsSupportedVideo(string? contentType, string fileExtension)
     {

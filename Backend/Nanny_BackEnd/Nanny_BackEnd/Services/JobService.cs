@@ -854,6 +854,37 @@ public class JobService : IJobService
         }
     }
 
+    public async Task<(List<SearchJobResponse> Items, int TotalCount)> ModeratorViewJobListAsync(
+        int? status,
+        int? moderationStatus,
+        string? search,
+        int page,
+        int pageSize) =>
+        await GetModeratorJobsAsync(status, moderationStatus, search, page, pageSize);
+
+    public async Task<JobPostingDetailResponse> ModeratorViewJobDetailAsync(Guid jobId)
+    {
+        var job = await _jobRepo.ModeratorViewJobDetailAsync(jobId);
+        if (job == null || job.IsDeleted)
+            throw new KeyNotFoundException("Khong tim thay job posting.");
+
+        return mapToDetail(job);
+    }
+
+    public async Task ModeratorReviewJobAsync(Guid jobId, Guid moderatorUserId, ModerateJobPostingRequest request)
+    {
+        if (request == null)
+            throw new ArgumentNullException(nameof(request));
+
+        if (request.Action is not 1 and not 2)
+            throw new InvalidOperationException("ModerationStatus khong hop le.");
+
+        await ReviewJobAsync(jobId, moderatorUserId, request.Action, request.Note);
+    }
+
+    public async Task ModeratorDeactivateJobAsync(Guid jobId, Guid moderatorUserId) =>
+        await DeactivateJobAsync(jobId, moderatorUserId);
+
     // Background embedding helper
     private async Task EmbedJobInBackgroundAsync(Guid jobId)
     {

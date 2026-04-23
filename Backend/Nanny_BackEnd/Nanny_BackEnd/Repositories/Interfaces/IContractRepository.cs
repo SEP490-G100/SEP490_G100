@@ -8,5 +8,6 @@ public interface IContractRepository
     Task<List<Contract>> GetContractsByUserIdAsync(Guid userId);
     Task<Contract?> GetContractDetailAsync(Guid contractId);
     Task<Contract?> GetContractForUpdateAsync(Guid contractId);
+    void AddContract(Contract contract);
     Task SaveChangesAsync();
 }

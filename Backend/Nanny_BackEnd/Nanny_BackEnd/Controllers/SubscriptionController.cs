@@ -207,6 +207,113 @@ public class SubscriptionController : ControllerBase
         catch (KeyNotFoundException ex) { return NotFound(fail(ex.Message)); }
     }
 
+    [Authorize(Roles = "Admin")]
+    [HttpGet("/api/Admin/admin-view-subscription-plan-list")]
+    public async Task<IActionResult> AdminViewSubscriptionPlanList(
+        [FromQuery] string? search = null,
+        [FromQuery] string? targetRole = null,
+        [FromQuery] bool? isActive = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 3)
+    {
+        var result = await _subscriptionService.getAdminPlans(
+            search,
+            targetRole,
+            isActive,
+            page,
+            pageSize);
+
+        return Ok(new { success = true, data = result });
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpGet("/api/Admin/admin-view-subscription-plan-detail/{id:guid}")]
+    public async Task<IActionResult> AdminViewSubscriptionPlanDetail(Guid id)
+    {
+        var plan = await _subscriptionService.getAdminPlanDetail(id);
+        return plan == null
+            ? NotFound(new { success = false, message = "Khong tim thay goi subscription." })
+            : Ok(new { success = true, data = plan });
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpPost("/api/Admin/admin-create-subscription-plan")]
+    public async Task<IActionResult> AdminCreateSubscriptionPlan([FromBody] AdminSubscriptionPlanUpsertRequest request)
+    {
+        var adminUserId = getCurrentUserId();
+        if (!adminUserId.HasValue)
+            return Unauthorized(new { success = false, message = "Khong xac dinh duoc admin hien tai." });
+
+        try
+        {
+            var plan = await _subscriptionService.createAdminPlan(adminUserId.Value, request);
+            return Ok(new { success = true, message = "Tao goi subscription thanh cong.", data = plan });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpPatch("/api/Admin/admin-update-subscription-plan/{id:guid}")]
+    public async Task<IActionResult> AdminUpdateSubscriptionPlan(Guid id, [FromBody] AdminSubscriptionPlanUpsertRequest request)
+    {
+        var adminUserId = getCurrentUserId();
+        if (!adminUserId.HasValue)
+            return Unauthorized(new { success = false, message = "Khong xac dinh duoc admin hien tai." });
+
+        try
+        {
+            var plan = await _subscriptionService.updateAdminPlan(id, adminUserId.Value, request);
+            return Ok(new { success = true, message = "Cap nhat goi subscription thanh cong.", data = plan });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { success = false, message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpPatch("/api/Admin/admin-update-subscription-plan-status/{id:guid}")]
+    public async Task<IActionResult> AdminUpdateSubscriptionPlanStatus(
+        Guid id,
+        [FromBody] AdminSubscriptionPlanStatusRequest? request,
+        [FromQuery] bool? isActive)
+    {
+        var adminUserId = getCurrentUserId();
+        if (!adminUserId.HasValue)
+            return Unauthorized(new { success = false, message = "Khong xac dinh duoc admin hien tai." });
+
+        var targetIsActive = isActive ?? request?.IsActive;
+        if (!targetIsActive.HasValue)
+            return BadRequest(new { success = false, message = "Thieu trang thai kich hoat cua goi subscription." });
+
+        try
+        {
+            await _subscriptionService.toggleAdminPlanStatus(
+                id,
+                adminUserId.Value,
+                targetIsActive.Value);
+
+            return Ok(new
+            {
+                success = true,
+                message = targetIsActive.Value
+                    ? "Da kich hoat goi subscription."
+                    : "Da vo hieu hoa goi subscription."
+            });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { success = false, message = ex.Message });
+        }
+    }
+
     private Guid? getCurrentUserId()
     {
         var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value

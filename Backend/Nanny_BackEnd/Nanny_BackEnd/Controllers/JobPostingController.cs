@@ -204,6 +204,90 @@ public class JobPostingController : ControllerBase
         catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
     }
 
+    // GET /api/Moderator/moderator-view-job-list?status=1&moderationStatus=0&search=lan&page=1&pageSize=10
+    [Authorize(Roles = "Moderator")]
+    [HttpGet("moderator-view-job-list")]
+    public async Task<IActionResult> ModeratorViewJobList(
+        [FromQuery] int? status = null,
+        [FromQuery] int? moderationStatus = null,
+        [FromQuery] string? search = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        var (items, totalCount) = await _jobSvc.ModeratorViewJobListAsync(
+            status,
+            moderationStatus,
+            search,
+            page,
+            pageSize);
+
+        return Ok(new { success = true, data = new { items, totalCount, page, pageSize } });
+    }
+
+    // GET /api/Moderator/moderator-view-job-detail/{id}
+    [Authorize(Roles = "Moderator")]
+    [HttpGet("moderator-view-job-detail/{id:guid}")]
+    public async Task<IActionResult> ModeratorViewJobDetail(Guid id)
+    {
+        try
+        {
+            var detail = await _jobSvc.ModeratorViewJobDetailAsync(id);
+            return Ok(new { success = true, data = detail });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { success = false, message = ex.Message });
+        }
+    }
+
+    // PATCH /api/Moderator/moderator-review-job/{id}
+    [Authorize(Roles = "Moderator")]
+    [HttpPatch("moderator-review-job/{id:guid}")]
+    public async Task<IActionResult> ModeratorReviewJob(Guid id, [FromBody] ModerateJobPostingRequest request)
+    {
+        var moderatorId = getCurrentUserId();
+        if (!moderatorId.HasValue)
+            return Unauthorized(new { success = false, message = "Khong xac dinh duoc moderator." });
+
+        try
+        {
+            await _jobSvc.ModeratorReviewJobAsync(id, moderatorId.Value, request);
+            return Ok(new { success = true, message = "Xu ly tin dang thanh cong." });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { success = false, message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+    }
+
+    // PATCH /api/Moderator/moderator-deactivate-job-posting/{id}
+    [Authorize(Roles = "Moderator")]
+    [HttpPatch("moderator-deactivate-job-posting/{id:guid}")]
+    public async Task<IActionResult> ModeratorDeactivateJobPosting(Guid id)
+    {
+        var moderatorId = getCurrentUserId();
+        if (!moderatorId.HasValue)
+            return Unauthorized(new { success = false, message = "Cannot identify moderator." });
+
+        try
+        {
+            await _jobSvc.ModeratorDeactivateJobAsync(id, moderatorId.Value);
+            return Ok(new { success = true, message = "Job posting deactivated successfully." });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { success = false, message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+    }
+
     private async Task<Models.ParentProfile?> getParent()
     {
         var userId = getCurrentUserId();

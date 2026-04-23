@@ -10,6 +10,17 @@ namespace Nanny_BackEnd.Services.Interfaces;
 
 public interface IVerificationRequestService
 {
+    Task<VerificationRequestListResponse> ModeratorViewVerificationListAsync(
+        int? status,
+        int? requestType,
+        string? search,
+        int page,
+        int pageSize);
+    Task<(bool Success, VerificationRequestDetailDto? Data, string? Message)> ModeratorViewVerificationDetailAsync(Guid id);
+    Task<(bool Success, int StatusCode, string Message)> ModeratorReviewVerificationAsync(
+        Guid id,
+        Guid moderatorId,
+        ReviewVerificationRequest request);
     Task<VerificationRequestListResponse> NannyGetVerificationRequestListAsync(Guid userId, int? status, int page, int pageSize);
     Task<(bool Success, VerificationRequestDetailDto? Data, string? Message)> NannyViewVerificationRequestDetailAsync(Guid userId, Guid id);
     Task<(bool Success, string Message)> NannySubmitVerificationRequestAsync(Guid userId, SubmitVerificationRequestDto request);

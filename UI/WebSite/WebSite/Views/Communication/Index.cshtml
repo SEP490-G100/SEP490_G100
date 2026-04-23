@@ -1308,20 +1308,7 @@
 
         async function goToContractDetailByHiringRecord(hiringRecordId) {
             if (!hiringRecordId) return;
-            try {
-                const res = await fetch(`/Hiring/Record?hiringRecordId=${encodeURIComponent(hiringRecordId)}`, {
-                    credentials: 'include'
-                });
-                const json = await res.json();
-                if (!res.ok || !json?.success || !json?.data?.contractId) {
-                    alert(json?.message || 'Khong mo duoc hop dong chi tiet.');
-                    return;
-                }
-
-                window.open(`/Contract/Detail/${json.data.contractId}`, '_blank', 'noopener');
-            } catch {
-                alert('Khong mo duoc hop dong chi tiet.');
-            }
+            window.open(`/Hiring/ViewHiringHistory?hiringRecordId=${encodeURIComponent(hiringRecordId)}`, '_blank', 'noopener');
         }
 
         function renderHiringOfferCard(message, isMine) {
@@ -1445,5 +1432,3 @@
     </script>
     @Html.AntiForgeryToken()
 }
-
-<partial name="~/Views/Hiring/_OfferCard.cshtml" />

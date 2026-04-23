@@ -36,7 +36,7 @@
                 <p class="sidebar-text px-2 text-[10px] uppercase tracking-widest text-gray-500 mb-2 font-semibold">Tổng quan</p>
 
                 <a href="/Moderator/Dashboard"
-                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() == "Dashboard" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
+                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() is "Dashboard" or "DashboardModerator" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">dashboard</span>
                     <span class="sidebar-text">Bảng điều khiển</span>
                 </a>
@@ -62,8 +62,8 @@
                     <span class="material-icons-round text-xl flex-shrink-0">work</span>
                     <span class="sidebar-text">Quản lý bài đăng việc</span>
                 </a>
-                <a href="/Moderator/ManageComplaint"
-                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() is "ManageComplaint" or "ViewComplaintDetail" or "ViewComplainedJobPostingDetail" or "ViewComplainedProfileDetail" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
+                <a href="/Moderator/ManageReport"
+                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() is "ManageReport" or "ViewReportDetail" or "ViewReportedJobPostingDetail" or "ViewReportedProfileDetail" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">flag</span>
                     <span class="sidebar-text">Khiếu nại</span>
                 </a>

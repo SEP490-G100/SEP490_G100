@@ -286,6 +286,23 @@ public class JobRepository : IJobRepository
         return (items, totalCount);
     }
 
+    public async Task<(List<JobPosting> Items, int TotalCount)> ModeratorViewJobListAsync(
+        int? status,
+        int? moderationStatus,
+        string? search,
+        int page,
+        int pageSize) =>
+        await GetModeratorJobPostingsAsync(status, moderationStatus, search, page, pageSize);
+
+    public async Task<JobPosting?> ModeratorViewJobDetailAsync(Guid jobId) =>
+        await viewDetailPosting(jobId);
+
+    public async Task SaveModeratedJobAsync(JobPosting job) =>
+        await updateJobPosting(job);
+
+    public async Task SaveChangesAsync() =>
+        await saveChanges();
+
     public async Task saveChanges() => await _db.SaveChangesAsync();
 
 }
