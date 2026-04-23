@@ -45,4 +45,13 @@ public interface IJobService
         int pageSize);
     Task ReviewJobAsync(Guid jobId, Guid moderatorUserId, int moderationStatus, string? note);
     Task DeactivateJobAsync(Guid jobId, Guid moderatorUserId);
+    Task<(List<SearchJobResponse> Items, int TotalCount)> ModeratorViewJobListAsync(
+        int? status,
+        int? moderationStatus,
+        string? search,
+        int page,
+        int pageSize);
+    Task<JobPostingDetailResponse> ModeratorViewJobDetailAsync(Guid jobId);
+    Task ModeratorReviewJobAsync(Guid jobId, Guid moderatorUserId, ModerateJobPostingRequest request);
+    Task ModeratorDeactivateJobAsync(Guid jobId, Guid moderatorUserId);
 }

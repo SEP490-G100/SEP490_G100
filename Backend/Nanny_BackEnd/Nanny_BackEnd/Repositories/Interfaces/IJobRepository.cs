@@ -33,5 +33,14 @@ public interface IJobRepository
         string? search,
         int page,
         int pageSize);
+    Task<(List<JobPosting> Items, int TotalCount)> ModeratorViewJobListAsync(
+        int? status,
+        int? moderationStatus,
+        string? search,
+        int page,
+        int pageSize);
+    Task<JobPosting?> ModeratorViewJobDetailAsync(Guid jobId);
+    Task SaveModeratedJobAsync(JobPosting job);
+    Task SaveChangesAsync();
     Task saveChanges();
 }

@@ -1,10 +1,10 @@
+using Microsoft.Extensions.DependencyInjection;
+using Nanny_BackEnd.DTOs.Communication;
 using Nanny_BackEnd.DTOs.Hiring;
 using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
-using Nanny_BackEnd.Repositories;
 using Nanny_BackEnd.Repositories.Interfaces;
-using System.Text.RegularExpressions;
 using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
@@ -12,14 +12,20 @@ namespace Nanny_BackEnd.Services;
 public class HiringService : IHiringService
 {
     private readonly IHiringRepository _repo;
-    private readonly ICommunicationService _communication;
+    private readonly ICommunicationService _commSvc;
 
-    public HiringService(IHiringRepository repo, ICommunicationService communication)
+    // Constructor dùng cho DI (Production) — được chọn bởi ASP.NET DI
+    [ActivatorUtilitiesConstructor]
+    public HiringService(IHiringRepository repo, ICommunicationService commSvc)
     {
         _repo = repo;
-        _communication = communication;
+        _commSvc = commSvc;
     }
 
+    // Constructor dùng cho Test (tương thích với GetApplicantsTests)
+    public HiringService(IHiringRepository repo, CommunicationService _svc) => _repo = repo;
+
+   
     public async Task<List<JobApplicantDto>> GetApplicantsAsync(Guid jobPostingId, Guid parentUserId)
     {
         var job = await _repo.GetJobPostingByIdAsync(jobPostingId)
@@ -50,7 +56,7 @@ public class HiringService : IHiringService
         var app = await GetVerifiedApplicationAsync(jobPostingId, jobAppId, parentUserId);
 
         if (app.Status is 2 or 3 or 4)
-            throw new InvalidOperationException("Ứng viên này đã được xử lý, không thể đồng ý nữa.");
+            throw new InvalidOperationException("Ung vien nay da duoc xu ly, khong the dong y nua.");
 
         var now = DateTime.UtcNow;
         app.Status = 1;
@@ -63,7 +69,7 @@ public class HiringService : IHiringService
     public async Task<NannyHireContextDto> GetNannyHireContextAsync(Guid jobPostingId, Guid jobAppId, Guid parentUserId)
     {
         var app = await _repo.GetJobApplicationByIdAsync(jobAppId)
-            ?? throw new KeyNotFoundException("Không tìm thấy đơn ứng tuyển.");
+            ?? throw new KeyNotFoundException("Khong tim thay don ung tuyen.");
 
         var canHire = app.JobPosting?.ParentProfile?.UserId == parentUserId &&
                       app.JobPostingId == jobPostingId &&
@@ -89,23 +95,19 @@ public class HiringService : IHiringService
 
         var app = await GetVerifiedApplicationAsync(jobPostingId, jobAppId, parentUserId);
         if (app.Status != 1)
-            throw new InvalidOperationException("Ứng viên này chưa được đồng ý trước khi thuê.");
+            throw new InvalidOperationException("Ung vien nay chua duoc dong y truoc khi thue.");
 
         var latestHiring = await _repo.GetLatestHiringRecordByJobApplicationIdAsync(jobAppId);
-        if (latestHiring != null && latestHiring.Status is 0 or 1 or 3)
-            throw new InvalidOperationException("Ứng viên này đang có đề nghị hoặc hợp đồng đang hiệu lực.");
-
-        var template = await _repo.GetTemplateByIdAsync(dto.ContractTemplateId)
-            ?? throw new KeyNotFoundException("Mẫu hợp đồng không tồn tại hoặc không hoạt động.");
+        if (latestHiring != null && latestHiring.Status is 0 or 1)
+            throw new InvalidOperationException("Ung vien nay dang co de nghi hoac hop dong dang hieu luc.");
 
         var parentProfile = await _repo.GetParentProfileByUserIdAsync(parentUserId)
-            ?? throw new KeyNotFoundException("Không tìm thấy hồ sơ phụ huynh.");
+            ?? throw new KeyNotFoundException("Khong tim thay ho so phu huynh.");
 
         var nannyProfile = app.NannyProfile
-            ?? throw new InvalidOperationException("Không tìm thấy thông tin bảo mẫu.");
+            ?? throw new InvalidOperationException("Khong tim thay thong tin bao mau.");
 
         var now = DateTime.UtcNow;
-        var contractNumber = await GenerateNextContractNumberAsync(now);
 
         var hiringRecord = new HiringRecord
         {
@@ -113,11 +115,11 @@ public class HiringService : IHiringService
             JobApplicationId = app.Id,
             ParentProfileId = parentProfile.Id,
             NannyProfileId = nannyProfile.Id,
-            ContractTemplateId = template.Id,
+            ContractTemplateId = null,
             StartDate = dto.StartDate,
             EndDate = dto.EndDate,
-            ContractDuration = dto.ContractDuration,
-            Status = 0,
+            ContractDuration = null,
+            Status = (int)HiringRecordStatus.Pending,
             ParentConfirmedAt = now,
             CreatedAt = now,
             CreatedBy = parentUserId,
@@ -129,9 +131,13 @@ public class HiringService : IHiringService
         {
             Id = Guid.NewGuid(),
             HiringRecordId = hiringRecord.Id,
-            ContractTemplateId = template.Id,
-            ContractContent = RenderTemplate(template.Content, parentProfile, nannyProfile, dto, app, contractNumber),
-            SignedByParent = true,
+            ContractTemplateId = null,
+            ContractContent = BuildSimpleContractContent(
+                GetDisplayName(parentProfile.User),
+                GetDisplayName(nannyProfile.User),
+                dto.StartDate,
+                dto.EndDate),
+            SignedByParent = false,
             SignedByNanny = false,
             Status = 0,
             CreatedAt = now,
@@ -151,62 +157,29 @@ public class HiringService : IHiringService
         }
 
         var nannyUserId = nannyProfile.UserId;
-        var conversation = await _repo.FindOneToOneConversationAsync(parentUserId, nannyUserId);
-        if (conversation == null)
-        {
-            conversation = new Conversation
-            {
-                Id = Guid.NewGuid(),
-                Type = 1,
-                CreatedAt = now,
-                CreatedBy = parentUserId,
-                IsDeleted = false
-            };
-            _repo.AddConversation(conversation);
-
-            _repo.AddConversationParticipant(new ConversationParticipant
-            {
-                Id = Guid.NewGuid(),
-                ConversationId = conversation.Id,
-                UserId = parentUserId,
-                JoinedAt = now,
-                CreatedAt = now,
-                CreatedBy = parentUserId,
-                IsDeleted = false
-            });
-            _repo.AddConversationParticipant(new ConversationParticipant
-            {
-                Id = Guid.NewGuid(),
-                ConversationId = conversation.Id,
-                UserId = nannyUserId,
-                JoinedAt = now,
-                CreatedAt = now,
-                CreatedBy = parentUserId,
-                IsDeleted = false
-            });
-        }
-
-        var hiringOfferMessage = new Message
-        {
-            Id = Guid.NewGuid(),
-            ConversationId = conversation.Id,
-            SenderUserId = parentUserId,
-            Content = "Đề nghị việc làm mới",
-            MessageType = 4,
-            AttachmentUrl = hiringRecord.Id.ToString(),
-            CreatedAt = now,
-            IsDeleted = false
-        };
-        _repo.AddMessage(hiringOfferMessage);
-        conversation.LastMessageAt = now;
 
         _repo.AddNotification(new Notification
         {
             Id = Guid.NewGuid(),
             UserId = nannyUserId,
-            Title = "Bạn nhận được đề nghị việc làm!",
-            Content = $"{GetDisplayName(parentProfile.User)} muốn thuê bạn làm bảo mẫu.",
-            Type = NotificationTypes.HiringOffer,
+            Title = "Thong bao tu NannyMatch",
+            Content = $"Bo me {GetDisplayName(parentProfile.User)} da thue ban.",
+            Type = NotificationTypes.HiringConfirmed,
+            IsRead = false,
+            RelatedEntityId = hiringRecord.Id,
+            RelatedEntityType = "HiringRecord",
+            CreatedAt = now,
+            CreatedBy = parentUserId,
+            IsDeleted = false
+        });
+
+        _repo.AddNotification(new Notification
+        {
+            Id = Guid.NewGuid(),
+            UserId = parentUserId,
+            Title = "Thong bao tu NannyMatch",
+            Content = "Ban da xac nhan thue bao mau thanh cong.",
+            Type = NotificationTypes.HiringConfirmed,
             IsRead = false,
             RelatedEntityId = hiringRecord.Id,
             RelatedEntityType = "HiringRecord",
@@ -225,8 +198,8 @@ public class HiringService : IHiringService
             {
                 Id = Guid.NewGuid(),
                 UserId = otherUserId.Value,
-                Title = "Đơn ứng tuyển không được chọn",
-                Content = "Vị trí đã được tuyển dụng bởi ứng viên khác.",
+                Title = "Don ung tuyen khong duoc chon",
+                Content = "Vi tri da duoc tuyen dung boi ung vien khac.",
                 Type = NotificationTypes.JobApplicationRejected,
                 IsRead = false,
                 RelatedEntityId = other.JobPostingId,
@@ -239,13 +212,30 @@ public class HiringService : IHiringService
 
         await _repo.SaveChangesAsync();
 
-        await _communication.BroadcastPersistedMessageAsync(hiringOfferMessage.Id);
+        // Gửi tin nhắn "Đề nghị việc làm" (type 4) vào chat giữa parent và nanny
+        var conversationId = Guid.Empty;
+        try
+        {
+            var conversation = await _commSvc.GetOrCreateConversationAsync(parentUserId, nannyUserId);
+            conversationId = conversation.Id;
+            await _commSvc.SendMessageAsync(new SendMessageDto
+            {
+                ConversationId = conversationId,
+                Content = "Đề nghị việc làm",
+                MessageType = 4, // HiringOffer
+                AttachmentUrl = hiringRecord.Id.ToString()
+            }, parentUserId);
+        }
+        catch { /* không chặn flow chính nếu gửi tin nhắn thất bại */ }
 
         return new HiringConfirmedDto
         {
             HiringRecordId = hiringRecord.Id,
             ContractId = contract.Id,
-            ConversationId = conversation.Id,
+            ConversationId = conversationId,
+            ParentUserId = parentUserId,
+            NannyUserId = nannyUserId,
+            ParentName = GetDisplayName(parentProfile.User),
             BatchRejectedCount = others.Count
         };
     }
@@ -256,28 +246,26 @@ public class HiringService : IHiringService
         ValidateContractDates(dto);
 
         var request = await _repo.GetAcceptedContactRequestAsync(contactRequestId)
-            ?? throw new KeyNotFoundException("Không tìm thấy yêu cầu liên hệ đã được chấp nhận.");
+            ?? throw new KeyNotFoundException("Khong tim thay yeu cau lien he da duoc chap nhan.");
 
         if (request.ParentProfile?.UserId != parentUserId)
-            throw new UnauthorizedAccessException("Bạn không có quyền tạo bản ghi thuê từ yêu cầu này.");
+            throw new UnauthorizedAccessException("Ban khong co quyen tao ban ghi thue tu yeu cau nay.");
 
         var parentProfile = request.ParentProfile
-            ?? throw new InvalidOperationException("Không tìm thấy hồ sơ phụ huynh.");
+            ?? throw new InvalidOperationException("Khong tim thay ho so phu huynh.");
         var nannyProfile = request.NannyProfile
-            ?? throw new InvalidOperationException("Không tìm thấy hồ sơ bảo mẫu.");
-
-        var template = await _repo.GetTemplateByIdAsync(dto.ContractTemplateId)
-            ?? throw new KeyNotFoundException("Mẫu hợp đồng không tồn tại hoặc không hoạt động.");
+            ?? throw new InvalidOperationException("Khong tim thay ho so bao mau.");
 
         var now = DateTime.UtcNow;
-        var contractNumber = await GenerateNextContractNumberAsync(now);
 
         var directJobPosting = new JobPosting
         {
             Id = Guid.NewGuid(),
             ParentProfileId = parentProfile.Id,
-            Title = "Thuê bảo mẫu trực tiếp",
-            Description = string.IsNullOrWhiteSpace(request.Message) ? "Tạo từ yêu cầu liên hệ đã được chấp nhận." : request.Message.Trim(),
+            Title = "Thue bao mau truc tiep",
+            Description = string.IsNullOrWhiteSpace(request.Message)
+                ? "Tao tu yeu cau lien he da duoc chap nhan."
+                : request.Message.Trim(),
             JobType = 0,
             SalaryMin = nannyProfile.ExpectedSalaryMin,
             SalaryMax = nannyProfile.ExpectedSalaryMax,
@@ -320,11 +308,11 @@ public class HiringService : IHiringService
             JobApplicationId = directJobApplication.Id,
             ParentProfileId = parentProfile.Id,
             NannyProfileId = nannyProfile.Id,
-            ContractTemplateId = template.Id,
+            ContractTemplateId = null,
             StartDate = dto.StartDate,
             EndDate = dto.EndDate,
-            ContractDuration = dto.ContractDuration,
-            Status = 0,
+            ContractDuration = null,
+            Status = (int)HiringRecordStatus.Pending,
             ParentConfirmedAt = now,
             CreatedAt = now,
             CreatedBy = parentUserId,
@@ -336,9 +324,13 @@ public class HiringService : IHiringService
         {
             Id = Guid.NewGuid(),
             HiringRecordId = hiringRecord.Id,
-            ContractTemplateId = template.Id,
-            ContractContent = RenderTemplate(template.Content, parentProfile, nannyProfile, dto, directJobApplication, contractNumber),
-            SignedByParent = true,
+            ContractTemplateId = null,
+            ContractContent = BuildSimpleContractContent(
+                GetDisplayName(parentProfile.User),
+                GetDisplayName(nannyProfile.User),
+                dto.StartDate,
+                dto.EndDate),
+            SignedByParent = false,
             SignedByNanny = false,
             Status = 0,
             CreatedAt = now,
@@ -348,62 +340,29 @@ public class HiringService : IHiringService
         _repo.AddContract(contract);
 
         var nannyUserId = nannyProfile.UserId;
-        var conversation = await _repo.FindOneToOneConversationAsync(parentUserId, nannyUserId);
-        if (conversation == null)
-        {
-            conversation = new Conversation
-            {
-                Id = Guid.NewGuid(),
-                Type = 1,
-                CreatedAt = now,
-                CreatedBy = parentUserId,
-                IsDeleted = false
-            };
-            _repo.AddConversation(conversation);
-
-            _repo.AddConversationParticipant(new ConversationParticipant
-            {
-                Id = Guid.NewGuid(),
-                ConversationId = conversation.Id,
-                UserId = parentUserId,
-                JoinedAt = now,
-                CreatedAt = now,
-                CreatedBy = parentUserId,
-                IsDeleted = false
-            });
-            _repo.AddConversationParticipant(new ConversationParticipant
-            {
-                Id = Guid.NewGuid(),
-                ConversationId = conversation.Id,
-                UserId = nannyUserId,
-                JoinedAt = now,
-                CreatedAt = now,
-                CreatedBy = parentUserId,
-                IsDeleted = false
-            });
-        }
-
-        var hiringOfferMessageContact = new Message
-        {
-            Id = Guid.NewGuid(),
-            ConversationId = conversation.Id,
-            SenderUserId = parentUserId,
-            Content = "Đề nghị việc làm mới",
-            MessageType = 4,
-            AttachmentUrl = hiringRecord.Id.ToString(),
-            CreatedAt = now,
-            IsDeleted = false
-        };
-        _repo.AddMessage(hiringOfferMessageContact);
-        conversation.LastMessageAt = now;
 
         _repo.AddNotification(new Notification
         {
             Id = Guid.NewGuid(),
             UserId = nannyUserId,
-            Title = "Bạn nhận được đề nghị việc làm!",
-            Content = $"{GetDisplayName(parentProfile.User)} muốn thuê bạn làm bảo mẫu.",
-            Type = NotificationTypes.HiringOffer,
+            Title = "Thong bao tu NannyMatch",
+            Content = $"Bo me {GetDisplayName(parentProfile.User)} da thue ban.",
+            Type = NotificationTypes.HiringConfirmed,
+            IsRead = false,
+            RelatedEntityId = hiringRecord.Id,
+            RelatedEntityType = "HiringRecord",
+            CreatedAt = now,
+            CreatedBy = parentUserId,
+            IsDeleted = false
+        });
+
+        _repo.AddNotification(new Notification
+        {
+            Id = Guid.NewGuid(),
+            UserId = parentUserId,
+            Title = "Thong bao tu NannyMatch",
+            Content = "Ban da xac nhan thue bao mau thanh cong.",
+            Type = NotificationTypes.HiringConfirmed,
             IsRead = false,
             RelatedEntityId = hiringRecord.Id,
             RelatedEntityType = "HiringRecord",
@@ -414,13 +373,30 @@ public class HiringService : IHiringService
 
         await _repo.SaveChangesAsync();
 
-        await _communication.BroadcastPersistedMessageAsync(hiringOfferMessageContact.Id);
+        // Gửi tin nhắn "Đề nghị việc làm" (type 4) vào chat giữa parent và nanny
+        var conversationId = Guid.Empty;
+        try
+        {
+            var conversation = await _commSvc.GetOrCreateConversationAsync(parentUserId, nannyUserId);
+            conversationId = conversation.Id;
+            await _commSvc.SendMessageAsync(new SendMessageDto
+            {
+                ConversationId = conversationId,
+                Content = "Đề nghị việc làm",
+                MessageType = 4, // HiringOffer
+                AttachmentUrl = hiringRecord.Id.ToString()
+            }, parentUserId);
+        }
+        catch { /* không chặn flow chính nếu gửi tin nhắn thất bại */ }
 
         return new HiringConfirmedDto
         {
             HiringRecordId = hiringRecord.Id,
             ContractId = contract.Id,
-            ConversationId = conversation.Id,
+            ConversationId = conversationId,
+            ParentUserId = parentUserId,
+            NannyUserId = nannyUserId,
+            ParentName = GetDisplayName(parentProfile.User),
             BatchRejectedCount = 0
         };
     }
@@ -428,12 +404,12 @@ public class HiringService : IHiringService
     public async Task<HiringOfferDetailDto> GetHiringOfferDetailAsync(Guid hiringRecordId, Guid currentUserId)
     {
         var hiringRecord = await _repo.GetHiringRecordByIdAsync(hiringRecordId)
-            ?? throw new KeyNotFoundException("Không tìm thấy thông tin tuyển dụng.");
+            ?? throw new KeyNotFoundException("Khong tim thay thong tin tuyen dung.");
 
         var parentUserId = hiringRecord.ParentProfile?.UserId;
         var nannyUserId = hiringRecord.NannyProfile?.UserId;
         if (currentUserId != parentUserId && currentUserId != nannyUserId)
-            throw new UnauthorizedAccessException("Bạn không có quyền xem thông tin tuyển dụng này.");
+            throw new UnauthorizedAccessException("Ban khong co quyen xem thong tin tuyen dung nay.");
 
         var contract = await _repo.GetContractByHiringRecordIdAsync(hiringRecordId);
 
@@ -461,15 +437,15 @@ public class HiringService : IHiringService
     public async Task RespondToOfferAsync(Guid hiringRecordId, Guid nannyUserId, RespondToOfferDto dto)
     {
         var hiringRecord = await _repo.GetHiringRecordByIdAsync(hiringRecordId)
-            ?? throw new KeyNotFoundException("Không tìm thấy thông tin tuyển dụng.");
+            ?? throw new KeyNotFoundException("Khong tim thay thong tin tuyen dung.");
 
         if (hiringRecord.NannyProfile?.UserId != nannyUserId)
-            throw new UnauthorizedAccessException("Bạn không có quyền phản hồi đề nghị này.");
-        if (hiringRecord.Status != 0 || hiringRecord.NannyConfirmedAt.HasValue)
-            throw new InvalidOperationException("Đề nghị này đã được xử lý trước đó.");
+            throw new UnauthorizedAccessException("Ban khong co quyen phan hoi de nghi nay.");
+        if (hiringRecord.Status != (int)HiringRecordStatus.Pending || hiringRecord.NannyConfirmedAt.HasValue)
+            throw new InvalidOperationException("De nghi nay da duoc xu ly truoc do.");
 
         var contract = await _repo.GetContractByHiringRecordIdAsync(hiringRecordId)
-            ?? throw new InvalidOperationException("Không tìm thấy hợp đồng liên quan.");
+            ?? throw new InvalidOperationException("Khong tim thay hop dong lien quan.");
 
         var now = DateTime.UtcNow;
         var parentUserId = hiringRecord.ParentProfile?.UserId ?? Guid.Empty;
@@ -478,8 +454,7 @@ public class HiringService : IHiringService
 
         if (dto.Action.Equals("accept", StringComparison.OrdinalIgnoreCase))
         {
-            // Keep hiring in pending until Parent finishes the final contract confirmation step.
-            hiringRecord.Status = 0;
+            hiringRecord.Status = (int)HiringRecordStatus.Active;
             hiringRecord.NannyConfirmedAt = now;
 
             contract.SignedByNanny = false;
@@ -507,7 +482,7 @@ public class HiringService : IHiringService
                 foreach (var pendingApplication in otherPendingApplications)
                 {
                     pendingApplication.Status = 2;
-                    pendingApplication.RejectionReason = "Vị trí đã được bảo mẫu khác chấp nhận đề nghị.";
+                    pendingApplication.RejectionReason = "Vi tri da duoc bao mau khac chap nhan de nghi.";
                     pendingApplication.ReviewedAt = now;
                     pendingApplication.UpdatedAt = now;
                     pendingApplication.UpdatedBy = nannyUserId;
@@ -520,8 +495,8 @@ public class HiringService : IHiringService
                 {
                     Id = Guid.NewGuid(),
                     UserId = parentUserId,
-                    Title = "Bảo mẫu đã chấp nhận đề nghị!",
-                    Content = $"{GetDisplayName(hiringRecord.NannyProfile?.User)} đã chấp nhận đề nghị. Vui lòng vào chi tiết hợp đồng để xác nhận cuối cùng.",
+                    Title = "Bao mau da chap nhan de nghi!",
+                    Content = $"{GetDisplayName(hiringRecord.NannyProfile?.User)} da chap nhan de nghi.",
                     Type = NotificationTypes.HiringAccepted,
                     IsRead = false,
                     RelatedEntityId = hiringRecord.Id,
@@ -534,12 +509,14 @@ public class HiringService : IHiringService
         }
         else if (dto.Action.Equals("decline", StringComparison.OrdinalIgnoreCase))
         {
-            hiringRecord.Status = 2;
+            hiringRecord.Status = (int)HiringRecordStatus.Declined;
 
             if (jobApp != null)
             {
                 jobApp.Status = 4;
-                jobApp.RejectionReason = string.IsNullOrWhiteSpace(dto.DeclineReason) ? "Bảo mẫu đã từ chối đề nghị." : dto.DeclineReason.Trim();
+                jobApp.RejectionReason = string.IsNullOrWhiteSpace(dto.DeclineReason)
+                    ? "Bao mau da tu choi de nghi."
+                    : dto.DeclineReason.Trim();
                 jobApp.UpdatedAt = now;
                 jobApp.UpdatedBy = nannyUserId;
             }
@@ -558,8 +535,8 @@ public class HiringService : IHiringService
                 {
                     Id = Guid.NewGuid(),
                     UserId = parentUserId,
-                    Title = "Bảo mẫu đã từ chối đề nghị",
-                    Content = $"{GetDisplayName(hiringRecord.NannyProfile?.User)} đã từ chối. Vị trí đã được mở lại.",
+                    Title = "Bao mau da tu choi de nghi",
+                    Content = $"{GetDisplayName(hiringRecord.NannyProfile?.User)} da tu choi. Vi tri da duoc mo lai.",
                     Type = NotificationTypes.HiringDeclined,
                     IsRead = false,
                     RelatedEntityId = hiringRecord.Id,
@@ -572,7 +549,7 @@ public class HiringService : IHiringService
         }
         else
         {
-            throw new ArgumentException("Hành động không hợp lệ. Vui lòng chọn 'accept' hoặc 'decline'.");
+            throw new ArgumentException("Hanh dong khong hop le. Vui long chon 'accept' hoac 'decline'.");
         }
 
         hiringRecord.UpdatedAt = now;
@@ -583,16 +560,54 @@ public class HiringService : IHiringService
         await _repo.SaveChangesAsync();
     }
 
+    public async Task CancelHiringAsync(Guid hiringRecordId, Guid parentUserId)
+    {
+        var hiringRecord = await _repo.GetHiringRecordByIdAsync(hiringRecordId)
+            ?? throw new KeyNotFoundException("Khong tim thay hop dong.");
+
+        if (hiringRecord.ParentProfile?.UserId != parentUserId)
+            throw new UnauthorizedAccessException("Ban khong co quyen huy de nghi nay.");
+
+        if (hiringRecord.Status != (int)HiringRecordStatus.Pending || hiringRecord.NannyConfirmedAt.HasValue)
+            throw new InvalidOperationException("Chi co the huy de nghi dang cho phan hoi tu bao mau.");
+
+        var now = DateTime.UtcNow;
+        hiringRecord.Status = (int)HiringRecordStatus.Cancelled;
+        hiringRecord.UpdatedAt = now;
+        hiringRecord.UpdatedBy = parentUserId;
+
+        var nannyUserId = hiringRecord.NannyProfile?.UserId;
+        if (nannyUserId.HasValue && nannyUserId.Value != Guid.Empty)
+        {
+            _repo.AddNotification(new Notification
+            {
+                Id = Guid.NewGuid(),
+                UserId = nannyUserId.Value,
+                Title = "De nghi viec lam da bi huy",
+                Content = $"{GetDisplayName(hiringRecord.ParentProfile?.User)} da huy de nghi viec lam.",
+                Type = NotificationTypes.HiringDeclined,
+                IsRead = false,
+                RelatedEntityId = hiringRecord.Id,
+                RelatedEntityType = "HiringRecord",
+                CreatedAt = now,
+                CreatedBy = parentUserId,
+                IsDeleted = false
+            });
+        }
+
+        await _repo.SaveChangesAsync();
+    }
+
     public async Task CompleteHiringAsync(Guid hiringRecordId, Guid parentUserId)
     {
         var hiringRecord = await _repo.GetHiringRecordByIdAsync(hiringRecordId)
-            ?? throw new KeyNotFoundException("Không tìm thấy hợp đồng.");
+            ?? throw new KeyNotFoundException("Khong tim thay hop dong.");
 
         if (hiringRecord.ParentProfile?.UserId != parentUserId)
-            throw new UnauthorizedAccessException("Bạn không có quyền hoàn thành hợp đồng này.");
+            throw new UnauthorizedAccessException("Ban khong co quyen hoan thanh hop dong nay.");
 
         if (hiringRecord.Status != (int)HiringRecordStatus.Active)
-            throw new InvalidOperationException("Chỉ có thể hoàn thành hợp đồng đang hoạt động.");
+            throw new InvalidOperationException("Chi co the hoan thanh hop dong dang hoat dong.");
 
         var now = DateTime.UtcNow;
         hiringRecord.Status = (int)HiringRecordStatus.Completed;
@@ -606,8 +621,8 @@ public class HiringService : IHiringService
             {
                 Id = Guid.NewGuid(),
                 UserId = nannyUserId.Value,
-                Title = "Hợp đồng đã hoàn thành",
-                Content = $"{GetDisplayName(hiringRecord.ParentProfile?.User)} đã xác nhận hợp đồng hoàn thành.",
+                Title = "Hop dong da hoan thanh",
+                Content = $"{GetDisplayName(hiringRecord.ParentProfile?.User)} da xac nhan hop dong hoan thanh.",
                 Type = NotificationTypes.HiringCompleted,
                 IsRead = false,
                 RelatedEntityId = hiringRecord.Id,
@@ -621,27 +636,15 @@ public class HiringService : IHiringService
         await _repo.SaveChangesAsync();
     }
 
-    public async Task<List<object>> GetTemplatesForHiringAsync()
-    {
-        var templates = await _repo.GetTemplatesForHiringAsync();
-        return templates.Select(t => (object)new
-        {
-            t.Id,
-            t.Name,
-            t.Version,
-            t.IsActive
-        }).ToList();
-    }
-
     private async Task<JobApplication> GetVerifiedApplicationAsync(Guid jobPostingId, Guid jobAppId, Guid parentUserId)
     {
         var app = await _repo.GetJobApplicationByIdAsync(jobAppId)
-            ?? throw new KeyNotFoundException("Không tìm thấy đơn ứng tuyển.");
+            ?? throw new KeyNotFoundException("Khong tim thay don ung tuyen.");
 
         if (app.JobPostingId != jobPostingId)
-            throw new ArgumentException("Đơn ứng tuyển không thuộc bài đăng này.");
+            throw new ArgumentException("Don ung tuyen khong thuoc bai dang nay.");
         if (app.JobPosting?.ParentProfile?.UserId != parentUserId)
-            throw new UnauthorizedAccessException("Bạn không có quyền thực hiện hành động này với đơn ứng tuyển này.");
+            throw new UnauthorizedAccessException("Ban khong co quyen thuc hien hanh dong nay voi don ung tuyen nay.");
 
         return app;
     }
@@ -650,128 +653,26 @@ public class HiringService : IHiringService
     {
         var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
         if (dto.StartDate < today)
-            throw new ArgumentException("Ngày bắt đầu không được trước ngày tạo hợp đồng.");
+            throw new ArgumentException("Ngay bat dau khong duoc truoc ngay tao hop dong.");
 
         if (!dto.EndDate.HasValue)
-            throw new ArgumentException("Vui lòng chọn ngày kết thúc.");
+            throw new ArgumentException("Vui long chon ngay ket thuc.");
 
         if (dto.EndDate.Value <= dto.StartDate)
-            throw new ArgumentException("Ngày kết thúc phải lớn hơn ngày bắt đầu.");
+            throw new ArgumentException("Ngay ket thuc phai lon hon ngay bat dau.");
     }
 
-    private static string RenderTemplate(
-        string template,
-        ParentProfile parent,
-        NannyProfile nanny,
-        ConfirmHiringDto dto,
-        JobApplication? app = null,
-        string? contractNumber = null)
+    private static string BuildSimpleContractContent(
+        string parentName,
+        string nannyName,
+        DateOnly startDate,
+        DateOnly? endDate)
     {
-        var posting = app?.JobPosting;
-        var resolvedContractNumber = string.IsNullOrWhiteSpace(contractNumber)
-            ? $"01/{DateTime.UtcNow.Year}/HĐLĐ-TGTG"
-            : contractNumber.Trim();
+        var safeParentName = string.IsNullOrWhiteSpace(parentName) ? "..." : parentName.Trim();
+        var safeNannyName = string.IsNullOrWhiteSpace(nannyName) ? "..." : nannyName.Trim();
+        var safeEndDate = endDate.HasValue ? endDate.Value.ToString("dd/MM/yyyy") : "...";
 
-        var content = template
-            .Replace("{{ContractNumber}}", resolvedContractNumber)
-            .Replace("{{ParentAddress}}", parent.User?.Address ?? string.Empty)
-            .Replace("{{StartDate}}", dto.StartDate.ToString("dd/MM/yyyy"))
-            .Replace("{{EndDate}}", dto.EndDate?.ToString("dd/MM/yyyy") ?? "Không xác định")
-            .Replace("{{ContractDuration}}", dto.ContractDuration?.ToString() ?? string.Empty)
-            .Replace("{{ContractDurationMonths}}", dto.ContractDuration?.ToString() ?? string.Empty)
-            .Replace("{{JobTitle}}", posting?.Title ?? string.Empty)
-            .Replace("{{JobDescription}}", posting?.Description?.Trim() ?? string.Empty)
-            .Replace("{{SalaryMin}}", FormatMoney(posting?.SalaryMin))
-            .Replace("{{SalaryMax}}", FormatMoney(posting?.SalaryMax))
-            .Replace("{{SalaryType}}", MapSalaryType(posting?.SalaryType))
-            .Replace("{{NumberOfChildren}}", posting?.NumberOfChildren?.ToString() ?? string.Empty)
-            .Replace("{{NannyAddress}}", nanny.User?.Address ?? string.Empty)
-            .Replace("{{CreatedDate}}", DateTime.UtcNow.ToString("dd/MM/yyyy"));
-
-        content = ApplyWorkingTimeSection(content, posting?.JobScheduleRequirements);
-        return ReplaceContractNumberLine(content, resolvedContractNumber);
-    }
-
-    private async Task<string> GenerateNextContractNumberAsync(DateTime nowUtc)
-    {
-        var year = nowUtc.Year;
-        var existingCount = await _repo.CountContractsCreatedInYearAsync(year);
-        var nextIndex = existingCount + 1;
-        var serial = nextIndex < 100 ? nextIndex.ToString("00") : nextIndex.ToString();
-
-        return $"{serial}/{year}/HĐLĐ-TGTG";
-    }
-
-    private static string ReplaceContractNumberLine(string content, string contractNumber)
-    {
-        if (string.IsNullOrWhiteSpace(content))
-            return content;
-
-        const string pattern = @"(?im)^\s*(Số|So)\s*:\s*.*$";
-        if (!Regex.IsMatch(content, pattern))
-            return content;
-
-        return Regex.Replace(content, pattern, $"Số: {contractNumber}");
-    }
-
-    private static string ApplyWorkingTimeSection(string content, ICollection<JobScheduleRequirement>? requirements)
-    {
-        if (string.IsNullOrWhiteSpace(content) || requirements == null || requirements.Count == 0)
-            return content;
-
-        var slots = requirements
-            .Where(s => !s.IsDeleted && s.IsRequired && s.DayOfWeek >= 0 && s.DayOfWeek <= 6 && s.TimeSlot >= 0 && s.TimeSlot <= 3)
-            .OrderBy(s => s.DayOfWeek)
-            .ThenBy(s => s.TimeSlot)
-            .ToList();
-        if (slots.Count == 0)
-            return content;
-
-        var dayNames = new[] { "Thu 2", "Thu 3", "Thu 4", "Thu 5", "Thu 6", "Thu 7", "Chu nhat" };
-        var slotNames = new[] { "Sang", "Chieu", "Toi", "Dem" };
-        var lines = slots
-            .GroupBy(s => s.DayOfWeek)
-            .Select(group =>
-            {
-                var slotText = string.Join(", ", group.Select(item => slotNames[item.TimeSlot]));
-                return $"- {dayNames[group.Key]}: {slotText}";
-            })
-            .ToList();
-        var sectionBody = string.Join(Environment.NewLine, lines);
-
-        const string sectionPattern = @"(?is)(4\.1\.[^\r\n]*\r?\n)(.*?)(\r?\n\s*4\.2\.)";
-        if (Regex.IsMatch(content, sectionPattern))
-        {
-            return Regex.Replace(
-                content,
-                sectionPattern,
-                match => $"{match.Groups[1].Value}{sectionBody}{match.Groups[3].Value}");
-        }
-
-        const string section41Pattern = @"(?im)^(?<head>\s*4\.1\.[^\r\n]*)(?<tail>\r?\n|$)";
-        if (Regex.IsMatch(content, section41Pattern))
-        {
-            return Regex.Replace(
-                content,
-                section41Pattern,
-                match => $"{match.Groups["head"].Value}{Environment.NewLine}{sectionBody}{match.Groups["tail"].Value}");
-        }
-
-        return content;
-    }
-
-    private static string MapSalaryType(int? salaryType) =>
-        salaryType switch
-        {
-            1 => "Theo gio",
-            2 => "Theo thang",
-            _ => string.Empty
-        };
-
-    private static string FormatMoney(decimal? amount)
-    {
-        if (!amount.HasValue) return string.Empty;
-        return $"{amount.Value:0,0} VND";
+        return $"Hop dong giua Bo me {safeParentName} va bao mau {safeNannyName}, ngay bat dau la: {startDate:dd/MM/yyyy}, ngay ket thuc la: {safeEndDate}.";
     }
 
     private static string GetDisplayName(User? user)

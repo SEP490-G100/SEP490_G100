@@ -195,7 +195,7 @@
             @if (isModeratorViewer && isReadOnly)
             {
                 <a href="javascript:void(0);"
-                   onclick="if (window.history.length > 1) { window.history.back(); } else { window.location.href = '/Moderator/ManageComplaint'; }"
+                   onclick="if (window.history.length > 1) { window.history.back(); } else { window.location.href = '/Moderator/ManageReport'; }"
                    class="profile-primary-btn">
                     Trở về trang trước
                 </a>
@@ -451,7 +451,7 @@
                         }
                         else
                         {
-                            <a href="@Url.Action("verifyNanny", "NannyVerificationRequest", new { tab = "verification-profile-panel", returnUrl = currentProfileUrl })" class="profile-status-btn">Xác minh ngay</a>
+                            <a href="@Url.Action("verifyNanny", "VerificationRequest", new { tab = "verification-profile-panel", returnUrl = currentProfileUrl })" class="profile-status-btn">Xác minh ngay</a>
 
                         }
                     </div>
@@ -472,7 +472,7 @@
                         }
                         else
                         {
-                            <a href="@Url.Action("verifyNanny", "NannyVerificationRequest", new { tab = "health-certificate-panel", returnUrl = currentProfileUrl })" class="profile-status-btn is-danger">Tạo yêu cầu</a>
+                            <a href="@Url.Action("verifyNanny", "VerificationRequest", new { tab = "health-certificate-panel", returnUrl = currentProfileUrl })" class="profile-status-btn is-danger">Tạo yêu cầu</a>
                         }
                     </div>
                 }
@@ -597,9 +597,9 @@
                 </div>
                 <button type="button" onclick="closeProfileComplainModal()" class="text-gray-300 hover:text-gray-700 material-icons-round text-2xl transition-colors">close</button>
             </div>
-            <form id="profileComplainForm" method="post" asp-controller="Complain" asp-action="ComplainProfile" class="px-6 py-5 space-y-4">
+            <form id="profileComplainForm" method="post" asp-controller="Report" asp-action="ReportProfile" class="px-6 py-5 space-y-4">
                 @Html.AntiForgeryToken()
-                <input type="hidden" id="profileComplainedUserId" name="ComplainedUserId" value="@Model.UserId" />
+                <input type="hidden" id="profileReportedUserId" name="ReportedUserId" value="@Model.UserId" />
                 <input type="hidden" name="ReturnUrl" value="@currentProfileUrl" />
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-2">Lý do phàn nàn <span class="text-red-500">*</span></label>
@@ -892,7 +892,7 @@
                     try {
                         var urls = await uploadProfileComplainMediaFiles(
                             [blobInfo.blob()],
-                            '/Complain/UploadComplainMedia?mediaType=image',
+                            '/Report/UploadReportMedia?mediaType=image',
                             'Vui lòng chọn ít nhất một ảnh.');
                         resolve(urls[0]);
                     } catch (error) {
@@ -907,8 +907,8 @@
                     ? 'image/*'
                     : 'video/mp4,video/webm,video/ogg,video/quicktime,.mp4,.webm,.ogg,.mov';
                 var endpoint = isImage
-                    ? '/Complain/UploadComplainMedia?mediaType=image'
-                    : '/Complain/UploadComplainMedia?mediaType=video';
+                    ? '/Report/UploadReportMedia?mediaType=image'
+                    : '/Report/UploadReportMedia?mediaType=video';
 
                 pickProfileComplainFile(accept, false).then(async function (file) {
                     if (!file) return;
@@ -991,9 +991,9 @@
                 });
 
                 complainForm.addEventListener('submit', function (event) {
-                    var complainedUserIdInput = document.getElementById('profileComplainedUserId');
-                    var complainedUserId = complainedUserIdInput ? String(complainedUserIdInput.value || '').trim() : '';
-                    if (!complainedUserId) {
+                    var reportedUserIdInput = document.getElementById('profileReportedUserId');
+                    var reportedUserId = reportedUserIdInput ? String(reportedUserIdInput.value || '').trim() : '';
+                    if (!reportedUserId) {
                         event.preventDefault();
                         notifyProfileToast('Không tìm thấy hồ sơ cần khiếu nại.', 'error');
                         return;

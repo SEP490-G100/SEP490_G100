@@ -67,7 +67,7 @@ public class ReportController : ControllerBase
 
     // GET /api/Moderator/reports?status=0&entityType=Profile&search=abc&page=1&pageSize=10
     [Authorize(Roles = "Moderator")]
-    [HttpGet("/api/Moderator/reports")]
+    [HttpGet("moderator-view-report-list")]
     public async Task<IActionResult> ModeratorViewReportList(
         [FromQuery] int? status = null,
         [FromQuery] string? entityType = null,
@@ -81,7 +81,7 @@ public class ReportController : ControllerBase
 
     // GET /api/Moderator/reports/{id}
     [Authorize(Roles = "Moderator")]
-    [HttpGet("/api/Moderator/reports/{id:guid}")]
+    [HttpGet("moderator-view-report-detail/{id:guid}")]
     public async Task<IActionResult> ModeratorViewReportDetail(Guid id)
     {
         var result = await _reportService.GetModeratorReportDetailAsync(id);
@@ -93,7 +93,7 @@ public class ReportController : ControllerBase
 
     // PATCH /api/Moderator/reports/{id}/resolve
     [Authorize(Roles = "Moderator")]
-    [HttpPatch("/api/Moderator/reports/{id:guid}/resolve")]
+    [HttpPatch("moderator-resolve-report/{id:guid}")]
     public async Task<IActionResult> ModeratorResolveReport(Guid id, [FromBody] ResolveReportRequest request)
     {
         var moderatorId = getCurrentUserId();
@@ -109,7 +109,7 @@ public class ReportController : ControllerBase
 
     // PATCH /api/Moderator/reports/{id}/status
     [Authorize(Roles = "Moderator")]
-    [HttpPatch("/api/Moderator/reports/{id:guid}/status")]
+    [HttpPatch("moderator-toggle-report-status/{id:guid}")]
     public async Task<IActionResult> ModeratorToggleReportStatus(Guid id, [FromBody] ToggleReportStatusRequest request)
     {
         var moderatorId = getCurrentUserId();

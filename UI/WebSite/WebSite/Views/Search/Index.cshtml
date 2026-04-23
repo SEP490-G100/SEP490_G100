@@ -523,7 +523,7 @@
             </div>
             <button onclick="closeJobComplainModal()" class="text-gray-300 hover:text-gray-700 material-icons-round text-2xl transition-colors">close</button>
         </div>
-        <form id="jobComplainForm" method="post" asp-controller="Complain" asp-action="ComplainJobPosting" class="px-6 py-5 space-y-4">
+        <form id="jobComplainForm" method="post" asp-controller="Report" asp-action="ReportJobPosting" class="px-6 py-5 space-y-4">
             @Html.AntiForgeryToken()
             <input type="hidden" id="jobComplainJobPostingId" name="JobPostingId" />
             <div>

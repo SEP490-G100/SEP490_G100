@@ -762,7 +762,7 @@ function uploadSingleComplainImageForTiny(blobInfo) {
     try {
       const urls = await uploadComplainMediaFiles(
         [blobInfo.blob()],
-        '/Complain/UploadComplainMedia?mediaType=image',
+        '/Report/UploadReportMedia?mediaType=image',
         'Vui lòng chọn ít nhất một ảnh.'
       );
       resolve(urls[0]);
@@ -778,8 +778,8 @@ function handleComplainTinyFilePicker(callback, meta) {
     ? 'image/*'
     : 'video/mp4,video/webm,video/ogg,video/quicktime,.mp4,.webm,.ogg,.mov';
   const endpoint = isImage
-    ? '/Complain/UploadComplainMedia?mediaType=image'
-    : '/Complain/UploadComplainMedia?mediaType=video';
+    ? '/Report/UploadReportMedia?mediaType=image'
+    : '/Report/UploadReportMedia?mediaType=video';
 
   pickLocalComplainFile(accept, false).then(async (file) => {
     if (!file) return;
@@ -798,7 +798,7 @@ function handleComplainTinyFilePicker(callback, meta) {
 const complainMediaUploadConfig = {
   image: {
     accept: 'image/*',
-    endpoint: '/Complain/UploadComplainMedia?mediaType=image',
+    endpoint: '/Report/UploadReportMedia?mediaType=image',
     emptyMessage: 'Vui lòng chọn ít nhất một ảnh.',
     successMessage: 'Tải ảnh lên thành công.',
     failedMessage: 'Không thể tải ảnh lên.',
@@ -806,7 +806,7 @@ const complainMediaUploadConfig = {
   },
   video: {
     accept: 'video/mp4,video/webm,video/ogg,video/quicktime,.mp4,.webm,.ogg,.mov',
-    endpoint: '/Complain/UploadComplainMedia?mediaType=video',
+    endpoint: '/Report/UploadReportMedia?mediaType=video',
     emptyMessage: 'Vui lòng chọn ít nhất một video.',
     successMessage: 'Tải video lên thành công.',
     failedMessage: 'Không thể tải video lên.',

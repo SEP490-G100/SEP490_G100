@@ -1,7 +1,7 @@
 @model WebSite.Models.Verification.VerificationRequestListResponse
 @{
     Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
-    ViewData["Title"] = "X�c minh b?o m?u";
+    ViewData["Title"] = "Xác minh bảo mẫu";
 
     var currentSearch = ViewBag.Search as string ?? "";
     var currentStatus = ViewBag.Status as int?;
@@ -13,14 +13,14 @@
 
 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
     <div>
-        <span class="section-label">Qu?n l� x�c minh</span>
+        <span class="section-label">Quản lý xác minh</span>
         <h1 class="page-title mt-2">
-            X�c minh <span class="gradient-text">B?o m?u</span>
+            Xác minh <span class="gradient-text">Bảo mẫu</span>
         </h1>
-        <p class="page-subtitle">Xem x�t h? s? b?o m?u v� ph� duy?t ho?c t? ch?i y�u c?u x�c minh.</p>
+        <p class="page-subtitle">Xem xét hồ sơ bảo mẫu và phê duyệt hoặc từ chối yêu cầu xác minh.</p>
     </div>
     <div class="flex gap-2 text-sm">
-        <span class="badge badge-pending px-3 py-1.5">T?ng s? @(Model?.TotalCount ?? 0)</span>
+        <span class="badge badge-pending px-3 py-1.5">Tổng số @(Model?.TotalCount ?? 0)</span>
     </div>
 </div>
 
@@ -38,7 +38,7 @@
             <div class="relative flex-1">
                 <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">search</span>
                 <input name="search" type="text" value="@currentSearch"
-                       placeholder="T�m theo t�n ho?c email..."
+                       placeholder="Tìm theo tên hoặc email..."
                        class="search-input pl-9 w-full border border-gray-200 rounded-xl px-4 py-2 font-medium"
                        onkeydown="if(event.key==='Enter'){this.form.submit();}" />
             </div>
@@ -47,9 +47,9 @@
                 <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">category</span>
                 <select name="requestType" onchange="this.form.submit()"
                         class="search-input md:w-52 !pl-9 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
-                    <option value="">Tat ca loai ho so</option>
-                    <option value="1" selected="@(currentRequestType == 1 ? "selected" : null)">Ho so xac minh</option>
-                    <option value="2" selected="@(currentRequestType == 2 ? "selected" : null)">Giay kham suc khoe</option>
+                    <option value="">Tất cả loại hồ sơ</option>
+                    <option value="1" selected="@(currentRequestType == 1 ? "selected" : null)">Hồ sơ xác minh</option>
+                    <option value="2" selected="@(currentRequestType == 2 ? "selected" : null)">Giấy khám sức khỏe</option>
                 </select>
             </div>
 
@@ -57,16 +57,16 @@
                 <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">toggle_on</span>
                 <select name="status" onchange="this.form.submit()"
                         class="search-input md:w-44 !pl-9 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
-                    <option value="">T?t c? tr?ng th�i</option>
-                    <option value="1" selected="@(currentStatus == 1 ? "selected" : null)">?ang ch?</option>
-                    <option value="2" selected="@(currentStatus == 2 ? "selected" : null)">?� duy?t</option>
-                    <option value="3" selected="@(currentStatus == 3 ? "selected" : null)">?� t? ch?i</option>
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="1" selected="@(currentStatus == 1 ? "selected" : null)">Đang chờ</option>
+                    <option value="2" selected="@(currentStatus == 2 ? "selected" : null)">Đã duyệt</option>
+                    <option value="3" selected="@(currentStatus == 3 ? "selected" : null)">Đã từ chối</option>
                 </select>
             </div>
 
             <button type="submit" class="btn-primary flex-shrink-0 flex items-center gap-1">
                 <span class="material-icons-round text-base">search</span>
-                T�m ki?m
+                Tìm kiếm
             </button>
         </div>
     </div>
@@ -75,8 +75,8 @@
 <div class="content-card overflow-hidden fade-in-up" style="animation-delay:.1s;">
     <div class="card-header">
         <span class="text-sm text-gray-500">
-            Hi?n th? <span class="font-bold text-gray-800">@items.Count</span>
-            tr�n <span class="font-bold text-gray-800">@(Model?.TotalCount ?? 0)</span> y�u c?u
+            Hiển thị <span class="font-bold text-gray-800">@items.Count</span>
+            trên <span class="font-bold text-gray-800">@(Model?.TotalCount ?? 0)</span> yêu cầu
         </span>
     </div>
 
@@ -85,13 +85,13 @@
             <thead>
                 <tr>
                     <th class="text-left">#</th>
-                    <th class="text-left">B?o m?u</th>
+                    <th class="text-left">Bảo mẫu</th>
                     <th class="text-left">Email</th>
-                    <th class="text-left">Lo?i h? s?</th>
-                    <th class="text-left">H?t h?n</th>
-                    <th class="text-left">Ng�y n?p</th>
-                    <th class="text-left">Tr?ng th�i</th>
-                    <th class="text-center">H�nh ??ng</th>
+                    <th class="text-left">Loại hồ sơ</th>
+                    <th class="text-left">Hết hạn</th>
+                    <th class="text-left">Ngày nộp</th>
+                    <th class="text-left">Trạng thái</th>
+                    <th class="text-center">Hành động</th>
                 </tr>
             </thead>
             <tbody>
@@ -100,8 +100,8 @@
                     <tr>
                         <td colspan="8" class="text-center py-16 text-gray-400">
                             <span class="material-icons-round text-5xl mb-3 block text-gray-200">verified_user</span>
-                            <p class="font-semibold text-gray-400">Kh�ng t�m th?y y�u c?u x�c minh.</p>
-                            <p class="text-xs text-gray-300 mt-1">Th? ?i?u ch?nh b? l?c.</p>
+                            <p class="font-semibold text-gray-400">Không tìm thấy yêu cầu xác minh.</p>
+                            <p class="text-xs text-gray-300 mt-1">Thử điều chỉnh bộ lọc.</p>
                         </td>
                     </tr>
                 }
@@ -142,7 +142,7 @@
                             <a href="/Moderator/ViewNannyVerificationDetail/@item.Id"
                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-orange-50 text-orange-600 border border-orange-200 hover:bg-orange-100 transition-all">
                                 <span class="material-icons-round text-sm">visibility</span>
-                                Xem x�t
+                                Xem xét
                             </a>
                         </td>
                     </tr>

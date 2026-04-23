@@ -20,7 +20,7 @@ public class ContractController : ControllerBase
     {
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
-            return Unauthorized(Fail("Không xác định được người dùng."));
+            return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
 
         try
         {
@@ -33,103 +33,17 @@ public class ContractController : ControllerBase
         }
     }
 
-    [HttpGet("{contractId:guid}")]
-    public async Task<IActionResult> GetContractDetail(Guid contractId)
+    [HttpPatch("{contractId:guid}/storage-file")]
+    public async Task<IActionResult> SaveStorageFile(Guid contractId, [FromBody] SaveContractStoragePdfRequestDto request)
     {
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
-            return Unauthorized(Fail("Không xác định được người dùng."));
+            return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
 
         try
         {
-            var result = await _service.GetContractDetailAsync(contractId, userId.Value);
-            return Ok(OkResult(result));
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Forbid();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(Fail(ex.Message));
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, Fail(ex.Message));
-        }
-    }
-
-    [HttpPatch("{contractId:guid}/draft-parent")]
-    public async Task<IActionResult> SaveDraftByParent(Guid contractId, [FromBody] ContractUpsertRequestDto request)
-    {
-        var userId = GetCurrentUserId();
-        if (!userId.HasValue)
-            return Unauthorized(Fail("Không xác định được người dùng."));
-
-        try
-        {
-            var result = await _service.SaveDraftByParentAsync(contractId, userId.Value, request);
-            return Ok(OkResult(result, "Lưu bản nháp hợp đồng thành công."));
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Forbid();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(Fail(ex.Message));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(Fail(ex.Message));
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, Fail(ex.Message));
-        }
-    }
-
-    [HttpPatch("{contractId:guid}/fill-nanny")]
-    public async Task<IActionResult> FillByNanny(Guid contractId, [FromBody] ContractUpsertRequestDto request)
-    {
-        var userId = GetCurrentUserId();
-        if (!userId.HasValue)
-            return Unauthorized(Fail("Không xác định được người dùng."));
-
-        try
-        {
-            var result = await _service.FillByNannyAsync(contractId, userId.Value, request);
-            return Ok(OkResult(result, "Bảo mẫu gửi thông tin hợp đồng thành công."));
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Forbid();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(Fail(ex.Message));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(Fail(ex.Message));
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, Fail(ex.Message));
-        }
-    }
-
-    [HttpPost("{contractId:guid}/final-confirm-parent")]
-    public async Task<IActionResult> FinalConfirmByParent(Guid contractId)
-    {
-        var userId = GetCurrentUserId();
-        if (!userId.HasValue)
-            return Unauthorized(Fail("Không xác định được người dùng."));
-
-        try
-        {
-            var result = await _service.FinalConfirmByParentAsync(contractId, userId.Value);
-            return Ok(OkResult(result, "Phụ huynh xác nhận hợp đồng thành công."));
+            var result = await _service.SaveContractStoragePdfAsync(contractId, userId.Value, request);
+            return Ok(OkResult(result, "Luu file hop dong thanh cong."));
         }
         catch (UnauthorizedAccessException)
         {

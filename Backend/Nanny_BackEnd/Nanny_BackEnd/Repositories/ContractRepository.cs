@@ -52,5 +52,7 @@ public class ContractRepository : IContractRepository
     public Task<Contract?> GetContractForUpdateAsync(Guid contractId) =>
         GetContractDetailAsync(contractId);
 
+    public void AddContract(Contract contract) => _db.Contracts.Add(contract);
+
     public Task SaveChangesAsync() => _db.SaveChangesAsync();
 }

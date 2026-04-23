@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewData["Title"] = "Tin nhắn";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
@@ -1308,20 +1308,7 @@
 
         async function goToContractDetailByHiringRecord(hiringRecordId) {
             if (!hiringRecordId) return;
-            try {
-                const res = await fetch(`/Hiring/Record?hiringRecordId=${encodeURIComponent(hiringRecordId)}`, {
-                    credentials: 'include'
-                });
-                const json = await res.json();
-                if (!res.ok || !json?.success || !json?.data?.contractId) {
-                    alert(json?.message || 'Khong mo duoc hop dong chi tiet.');
-                    return;
-                }
-
-                window.open(`/Contract/Detail/${json.data.contractId}`, '_blank', 'noopener');
-            } catch {
-                alert('Khong mo duoc hop dong chi tiet.');
-            }
+            window.open(`/Hiring/ViewHiringHistory?hiringRecordId=${encodeURIComponent(hiringRecordId)}`, '_blank', 'noopener');
         }
 
         function renderHiringOfferCard(message, isMine) {
@@ -1336,11 +1323,11 @@
                     <p class="hiring-offer-card__label">
                         ${isMine ? 'Bạn đã gửi đề nghị thuê bảo mẫu.' : 'Bạn nhận được đề nghị việc làm!'}
                     </p>
-                    <p class="hiring-offer-card__hint">${isMine ? 'Bấm để xem chi tiết hợp đồng.' : 'Bấm để xem hợp đồng và phản hồi.'}</p>
+                    <p class="hiring-offer-card__hint">${isMine ? 'Bấm để xem chi tiết đề nghị việc làm.' : 'Bấm để xem đề nghị và phản hồi.'}</p>
                 </div>
                 <div class="hiring-offer-card__footer">
                     <span class="material-icons-round" style="font-size:16px;opacity:.8;">open_in_new</span>
-                    Xem chi tiết hợp đồng
+                    Xem chi tiết đề nghị việc làm
                 </div>
             </div>`;
         }
@@ -1445,5 +1432,3 @@
     </script>
     @Html.AntiForgeryToken()
 }
-
-<partial name="~/Views/Hiring/_OfferCard.cshtml" />
