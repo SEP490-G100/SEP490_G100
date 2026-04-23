@@ -189,6 +189,13 @@
             window.__nmNotificationToastSuppressUntil = Date.now() + 5000;
             window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
             hide();
+
+            // Mở tab mới sang trang tin nhắn với cuộc trò chuyện vừa gửi đề nghị
+            const convId = json?.data?.conversationId;
+            const chatUrl = convId && convId !== '00000000-0000-0000-0000-000000000000'
+                ? `/Communication?conversationId=${encodeURIComponent(convId)}`
+                : '/Communication';
+            window.open(chatUrl, '_blank', 'noopener');
         } catch {
             setError('Lỗi kết nối. Vui lòng thử lại.');
         } finally {

@@ -1,3 +1,5 @@
+using Microsoft.Extensions.DependencyInjection;
+using Nanny_BackEnd.DTOs.Communication;
 using Nanny_BackEnd.DTOs.Hiring;
 using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Helpers;
@@ -10,8 +12,20 @@ namespace Nanny_BackEnd.Services;
 public class HiringService : IHiringService
 {
     private readonly IHiringRepository _repo;
+    private readonly ICommunicationService _commSvc;
+
+    // Constructor dùng cho DI (Production) — được chọn bởi ASP.NET DI
+    [ActivatorUtilitiesConstructor]
+    public HiringService(IHiringRepository repo, ICommunicationService commSvc)
+    {
+        _repo = repo;
+        _commSvc = commSvc;
+    }
+
+    // Constructor dùng cho Test (tương thích với GetApplicantsTests)
     public HiringService(IHiringRepository repo, CommunicationService _svc) => _repo = repo;
 
+   
     public async Task<List<JobApplicantDto>> GetApplicantsAsync(Guid jobPostingId, Guid parentUserId)
     {
         var job = await _repo.GetJobPostingByIdAsync(jobPostingId)
@@ -198,11 +212,27 @@ public class HiringService : IHiringService
 
         await _repo.SaveChangesAsync();
 
+        // Gửi tin nhắn "Đề nghị việc làm" (type 4) vào chat giữa parent và nanny
+        var conversationId = Guid.Empty;
+        try
+        {
+            var conversation = await _commSvc.GetOrCreateConversationAsync(parentUserId, nannyUserId);
+            conversationId = conversation.Id;
+            await _commSvc.SendMessageAsync(new SendMessageDto
+            {
+                ConversationId = conversationId,
+                Content = "Đề nghị việc làm",
+                MessageType = 4, // HiringOffer
+                AttachmentUrl = hiringRecord.Id.ToString()
+            }, parentUserId);
+        }
+        catch { /* không chặn flow chính nếu gửi tin nhắn thất bại */ }
+
         return new HiringConfirmedDto
         {
             HiringRecordId = hiringRecord.Id,
             ContractId = contract.Id,
-            ConversationId = Guid.Empty,
+            ConversationId = conversationId,
             ParentUserId = parentUserId,
             NannyUserId = nannyUserId,
             ParentName = GetDisplayName(parentProfile.User),
@@ -343,11 +373,27 @@ public class HiringService : IHiringService
 
         await _repo.SaveChangesAsync();
 
+        // Gửi tin nhắn "Đề nghị việc làm" (type 4) vào chat giữa parent và nanny
+        var conversationId = Guid.Empty;
+        try
+        {
+            var conversation = await _commSvc.GetOrCreateConversationAsync(parentUserId, nannyUserId);
+            conversationId = conversation.Id;
+            await _commSvc.SendMessageAsync(new SendMessageDto
+            {
+                ConversationId = conversationId,
+                Content = "Đề nghị việc làm",
+                MessageType = 4, // HiringOffer
+                AttachmentUrl = hiringRecord.Id.ToString()
+            }, parentUserId);
+        }
+        catch { /* không chặn flow chính nếu gửi tin nhắn thất bại */ }
+
         return new HiringConfirmedDto
         {
             HiringRecordId = hiringRecord.Id,
             ContractId = contract.Id,
-            ConversationId = Guid.Empty,
+            ConversationId = conversationId,
             ParentUserId = parentUserId,
             NannyUserId = nannyUserId,
             ParentName = GetDisplayName(parentProfile.User),
