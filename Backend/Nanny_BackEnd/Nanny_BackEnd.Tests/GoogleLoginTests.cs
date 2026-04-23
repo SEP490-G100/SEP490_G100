@@ -1,7 +1,6 @@
 using Google.Apis.Auth;
 using Microsoft.Extensions.Configuration;
 using Moq;
-using FluentAssertions;
 using Nanny_BackEnd.DTOs.Auth;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
@@ -111,10 +110,8 @@ public class GoogleLoginTests
                      .ReturnsAsync(existingUser);
 
         var sut = BuildSut(payload);
-        var act = () => sut.GoogleLoginAsync(new GoogleLoginRequest { IdToken = "fake-token" });
-
-        await act.Should().ThrowAsync<InvalidOperationException>()
-                 .WithMessage("Email này đã đăng ký bằng mật khẩu. Vui lòng đăng nhập bằng email.");
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => sut.GoogleLoginAsync(new GoogleLoginRequest { IdToken = "fake-token" }));
+        Assert.Equal("Email này đã đăng ký bằng mật khẩu. Vui lòng đăng nhập bằng email.", ex.Message);
     }
 
     // ── TC2: User chưa tồn tại → tạo mới và đăng nhập ───────────────────
@@ -139,10 +136,10 @@ public class GoogleLoginTests
         var sut = BuildSut(payload);
         var response = await sut.GoogleLoginAsync(new GoogleLoginRequest { IdToken = "fake-token" });
 
-        response.Should().NotBeNull();
-        response.AccessToken.Should().Be("fake-access-token");
-        response.User.Email.Should().Be("newgoogle@mail.com");
-        response.User.AuthProvider.Should().Be("google");
+        Assert.NotNull(response);
+        Assert.Equal("fake-access-token", response.AccessToken);
+        Assert.Equal("newgoogle@mail.com", response.User.Email);
+        Assert.Equal("google", response.User.AuthProvider);
 
         // Xác nhận user được lưu vào DB
         _mockUserRepo.Verify(r => r.SaveChangesAsync(), Times.Once);
@@ -179,8 +176,8 @@ public class GoogleLoginTests
         var sut = BuildSut(payload);
         var response = await sut.GoogleLoginAsync(new GoogleLoginRequest { IdToken = "fake-token" });
 
-        response.Should().NotBeNull();
-        response.AccessToken.Should().Be("google-access-token");
-        response.User.Roles.Should().Contain("Nanny");
+        Assert.NotNull(response);
+        Assert.Equal("google-access-token", response.AccessToken);
+        Assert.Contains("Nanny", response.User.Roles);
     }
 }

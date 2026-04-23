@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
-using FluentAssertions;
 using Nanny_BackEnd.DTOs.JobPosting;
 using Nanny_BackEnd.DTOs.Subscription;
 using Nanny_BackEnd.Enums;
@@ -88,10 +87,9 @@ public class UpdateJobTests
                    .ReturnsAsync(new SubscriptionBenefitResponse { ListingDurationDays = 30 });
         _mockJobRepo.Setup(r => r.viewDetailPosting(jobId)).ReturnsAsync((JobPosting?)null);
 
-        var act = () => _sut.updateJob(jobId, parentProfileId, ValidRequest());
-
-        await act.Should().ThrowAsync<KeyNotFoundException>()
-                 .WithMessage("*Khong tim thay tin dang*");
+        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _sut.updateJob(jobId, parentProfileId, ValidRequest()));
+        Assert.Contains("tìm thấy tin đăng", ex.Message);
     }
 
     // ── TC2: ParentProfileId không khớp với job → UnauthorizedAccessException
@@ -112,10 +110,9 @@ public class UpdateJobTests
         _mockJobRepo.Setup(r => r.viewDetailPosting(job.Id)).ReturnsAsync(job);
         _mockJobRepo.Setup(r => r.getParentProfileSnapshot(callerParentId)).ReturnsAsync(parent);
 
-        var act = () => _sut.updateJob(job.Id, callerParentId, ValidRequest());
-
-        await act.Should().ThrowAsync<UnauthorizedAccessException>()
-                 .WithMessage("*quyen chinh sua*");
+        var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            _sut.updateJob(job.Id, callerParentId, ValidRequest()));
+        Assert.Contains("chỉnh sửa", ex.Message);
     }
 
     // ── TC3: Status = Hidden → ClosedAt được set ─────────────────────────
@@ -135,8 +132,8 @@ public class UpdateJobTests
 
         await _sut.updateJob(job.Id, parentProfileId, ValidRequest(status: (int)JobPostingStatus.Hidden));
 
-        job.ClosedAt.Should().NotBeNull();
-        job.Status.Should().Be((int)JobPostingStatus.Hidden);
+        Assert.NotNull(job.ClosedAt);
+        Assert.Equal((int)JobPostingStatus.Hidden, job.Status);
     }
 
     // ── TC4: Status = Public → ModerationStatus reset về Pending ─────────
@@ -157,9 +154,9 @@ public class UpdateJobTests
 
         await _sut.updateJob(job.Id, parentProfileId, ValidRequest(status: (int)JobPostingStatus.Public));
 
-        job.ModerationStatus.Should().Be((int)JobPostingModerationStatus.Pending);
-        job.PublishedAt.Should().BeNull();
-        job.ClosedAt.Should().BeNull();
-        job.ModerationNote.Should().BeNull();
+        Assert.Equal((int)JobPostingModerationStatus.Pending, job.ModerationStatus);
+        Assert.Null(job.PublishedAt);
+        Assert.Null(job.ClosedAt);
+        Assert.Null(job.ModerationNote);
     }
 }

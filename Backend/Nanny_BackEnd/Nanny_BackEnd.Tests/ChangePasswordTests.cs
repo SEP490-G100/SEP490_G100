@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Configuration;
 using Moq;
-using FluentAssertions;
 using Nanny_BackEnd.DTOs.Auth;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
@@ -61,14 +60,12 @@ public class ChangePasswordTests
         _mockUserRepo.Setup(r => r.FindByIdAsync(userId))
                      .ReturnsAsync((User?)null);
 
-        var act = () => _sut.ChangePasswordAsync(userId, new ChangePasswordRequest
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.ChangePasswordAsync(userId, new ChangePasswordRequest
         {
             CurrentPassword = "Old@123",
             NewPassword     = "New@123"
-        });
-
-        await act.Should().ThrowAsync<InvalidOperationException>()
-                 .WithMessage("Người dùng không tồn tại.");
+        }));
+        Assert.Equal("Người dùng không tồn tại.", ex.Message);
     }
 
     // ── TC2: Tài khoản Google không dùng mật khẩu ────────────────────────
@@ -83,14 +80,12 @@ public class ChangePasswordTests
         };
         _mockUserRepo.Setup(r => r.FindByIdAsync(user.Id)).ReturnsAsync(user);
 
-        var act = () => _sut.ChangePasswordAsync(user.Id, new ChangePasswordRequest
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.ChangePasswordAsync(user.Id, new ChangePasswordRequest
         {
             CurrentPassword = "Old@123",
             NewPassword     = "New@123"
-        });
-
-        await act.Should().ThrowAsync<InvalidOperationException>()
-                 .WithMessage("Tài khoản Google không sử dụng mật khẩu.");
+        }));
+        Assert.Equal("Tài khoản Google không sử dụng mật khẩu.", ex.Message);
     }
 
     // ── TC3: Mật khẩu hiện tại sai ───────────────────────────────────────
@@ -105,14 +100,12 @@ public class ChangePasswordTests
         };
         _mockUserRepo.Setup(r => r.FindByIdAsync(user.Id)).ReturnsAsync(user);
 
-        var act = () => _sut.ChangePasswordAsync(user.Id, new ChangePasswordRequest
+        var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _sut.ChangePasswordAsync(user.Id, new ChangePasswordRequest
         {
             CurrentPassword = "Wrong@999",
             NewPassword     = "New@123"
-        });
-
-        await act.Should().ThrowAsync<UnauthorizedAccessException>()
-                 .WithMessage("Mật khẩu hiện tại không đúng.");
+        }));
+        Assert.Equal("Mật khẩu hiện tại không đúng.", ex.Message);
     }
 
     // ── TC4: Mật khẩu mới không hợp lệ ──────────────────────────────────
@@ -127,13 +120,11 @@ public class ChangePasswordTests
         };
         _mockUserRepo.Setup(r => r.FindByIdAsync(user.Id)).ReturnsAsync(user);
 
-        var act = () => _sut.ChangePasswordAsync(user.Id, new ChangePasswordRequest
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.ChangePasswordAsync(user.Id, new ChangePasswordRequest
         {
             CurrentPassword = "Correct@123",
             NewPassword     = "weak"         // quá ngắn, thiếu hoa/số/ký tự đặc biệt
-        });
-
-        await act.Should().ThrowAsync<InvalidOperationException>();
+        }));
     }
 
     // ── TC5: Đổi mật khẩu thành công ─────────────────────────────────────
@@ -156,7 +147,7 @@ public class ChangePasswordTests
         });
 
         // PasswordHash phải được cập nhật sang hash mới
-        BCrypt.Net.BCrypt.Verify("New@Password1", user.PasswordHash).Should().BeTrue();
+        Assert.True(BCrypt.Net.BCrypt.Verify("New@Password1", user.PasswordHash));
         _mockUserRepo.Verify(r => r.SaveChangesAsync(), Times.Once);
     }
 }
