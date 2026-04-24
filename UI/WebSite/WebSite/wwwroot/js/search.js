@@ -1876,7 +1876,7 @@ function renderPreviewChildProfiles(job, childProfilesInput) {
           <div class="child-profile-panel__head">
           <p class="child-profile-panel__title">Bé thứ ${displayIndex}</p>
           </div>
-          <p class="child-profile-panel__empty">Chưa thấy Child Profile của bé này.</p>
+          <p class="child-profile-panel__empty">Chưa có hồ sơ của bé này.</p>
         </div>`;
       continue;
     }

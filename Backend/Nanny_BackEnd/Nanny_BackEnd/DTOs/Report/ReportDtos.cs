@@ -4,10 +4,12 @@ namespace Nanny_BackEnd.DTOs.Report;
 
 public class CreateReportRequest
 {
+    [Display(Name = "Lý do báo cáo")]
     [Required(ErrorMessage = "Lý do báo cáo là bắt buộc.")]
     [StringLength(500, MinimumLength = 5, ErrorMessage = "Lý do báo cáo phải từ 5 đến 500 ký tự.")]
     public string Reason { get; set; } = null!;
 
+    [Display(Name = "Nội dung bằng chứng")]
     [StringLength(2000, ErrorMessage = "Nội dung bằng chứng không được vượt quá 2000 ký tự.")]
     public string? Evidence { get; set; }
 }
@@ -74,15 +76,18 @@ public class ReportDetailDto
 
 public class ResolveReportRequest
 {
-    [Required(ErrorMessage = "Resolution is required.")]
-    [StringLength(1000, MinimumLength = 1, ErrorMessage = "Resolution must be between 1 and 1000 characters.")]
+    [Display(Name = "Kết quả xử lý")]
+    [Required(ErrorMessage = "Vui lòng nhập kết quả xử lý.")]
+    [StringLength(1000, MinimumLength = 1, ErrorMessage = "Kết quả xử lý phải từ 1 đến 1000 ký tự.")]
     public string Resolution { get; set; } = null!;
 
-    [Required(ErrorMessage = "ActionTaken is required.")]
-    [StringLength(200, MinimumLength = 1, ErrorMessage = "ActionTaken must be between 1 and 200 characters.")]
+    [Display(Name = "Hành động đã thực hiện")]
+    [Required(ErrorMessage = "Vui lòng nhập hành động đã thực hiện.")]
+    [StringLength(200, MinimumLength = 1, ErrorMessage = "Hành động đã thực hiện phải từ 1 đến 200 ký tự.")]
     public string ActionTaken { get; set; } = null!;
 
-    [StringLength(1000, ErrorMessage = "OffenderNotificationMessage must not exceed 1000 characters.")]
+    [Display(Name = "Nội dung thông báo cho người vi phạm")]
+    [StringLength(1000, ErrorMessage = "Nội dung thông báo cho người vi phạm không được vượt quá 1000 ký tự.")]
     public string? OffenderNotificationMessage { get; set; }
 }
 

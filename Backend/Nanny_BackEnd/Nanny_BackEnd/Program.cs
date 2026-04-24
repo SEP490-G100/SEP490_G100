@@ -31,7 +31,10 @@ builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionPath))
     .SetApplicationName("Nanny_BackEnd");
 
-builder.Services.AddControllers()
+builder.Services.AddControllers(options =>
+    {
+        options.ModelMetadataDetailsProviders.Add(new VietnameseValidationMetadataProvider());
+    })
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;

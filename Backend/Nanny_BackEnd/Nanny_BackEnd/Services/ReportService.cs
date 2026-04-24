@@ -101,7 +101,7 @@ public class ReportService : IReportService
     {
         var report = await _reportRepo.GetReportByIdAsync(id, includeDeleted: true);
         if (report == null)
-            return (false, null, "Report not found.");
+            return (false, null, "Không tìm thấy báo cáo.");
 
         var detail = MapDetail(report);
         await EnrichReportDetailAsync(report, detail);
@@ -114,7 +114,7 @@ public class ReportService : IReportService
         ResolveReportRequest request)
     {
         if (request == null)
-            return (false, 400, "Request body is required.");
+            return (false, 400, "Dữ liệu gửi lên là bắt buộc.");
 
         var resolveValidation = validateResolveReportRequest(request);
         if (resolveValidation != null)
@@ -122,21 +122,21 @@ public class ReportService : IReportService
 
         var report = await _reportRepo.GetReportByIdAsync(id, includeDeleted: true);
         if (report == null)
-            return (false, 404, "Report not found.");
+            return (false, 404, "Không tìm thấy báo cáo.");
 
         if (report.IsDeleted)
-            return (false, 400, "Cannot resolve a deactivated report.");
+            return (false, 400, "Không thể xử lý một báo cáo đã bị vô hiệu hóa.");
         if (report.Status == 1)
-            return (false, 400, "Complaint already completed. Resolution cannot be edited.");
+            return (false, 400, "Báo cáo này đã được xử lý, bạn không thể chỉnh sửa kết quả.");
 
         var resolution = request.Resolution?.Trim();
         var actionTaken = request.ActionTaken?.Trim();
         var offenderNotificationMessage = request.OffenderNotificationMessage?.Trim();
 
         if (string.IsNullOrWhiteSpace(resolution))
-            return (false, 400, "Resolution is required.");
+            return (false, 400, "Kết quả xử lý là bắt buộc.");
         if (string.IsNullOrWhiteSpace(actionTaken))
-            return (false, 400, "ActionTaken is required.");
+            return (false, 400, "Hành động đã thực hiện là bắt buộc.");
 
         report.Resolution = resolution;
         report.ActionTaken = actionTaken;
@@ -173,7 +173,7 @@ public class ReportService : IReportService
             }
         }
 
-        return (true, 200, "Report resolved successfully.");
+        return (true, 200, "Xử lý báo cáo thành công.");
     }
 
     public async Task<(bool Success, int StatusCode, string Message)> ToggleReportStatusAsync(
@@ -183,7 +183,7 @@ public class ReportService : IReportService
     {
         var report = await _reportRepo.GetReportByIdAsync(id, includeDeleted: true);
         if (report == null)
-            return (false, 404, "Report not found.");
+            return (false, 404, "Không tìm thấy báo cáo.");
 
         report.IsDeleted = !isActive;
         report.UpdatedAt = DateTime.UtcNow;
@@ -192,8 +192,8 @@ public class ReportService : IReportService
         await _reportRepo.SaveChangesAsync();
 
         return (true, 200, isActive
-            ? "Report activated successfully."
-            : "Report deactivated successfully.");
+            ? "Kích hoạt báo cáo thành công."
+            : "Vô hiệu hóa báo cáo thành công.");
     }
 
     private async Task<Report> createReportAsync(
@@ -203,7 +203,7 @@ public class ReportService : IReportService
         CreateReportRequest request)
     {
         if (request == null)
-            throw new InvalidOperationException("Request body is required.");
+            throw new InvalidOperationException("Dữ liệu gửi lên là bắt buộc.");
 
         var createValidation = validateCreateReportRequest(request);
         if (!string.IsNullOrWhiteSpace(createValidation))

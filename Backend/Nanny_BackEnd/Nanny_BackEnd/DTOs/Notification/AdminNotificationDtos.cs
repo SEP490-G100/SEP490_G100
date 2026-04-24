@@ -4,18 +4,22 @@ namespace Nanny_BackEnd.DTOs.Notification;
 
 public class AdminNotificationUpsertRequest : IValidatableObject
 {
+    [Display(Name = "Tiêu đề")]
     [Required]
     [StringLength(200, MinimumLength = 2)]
     public string Title { get; set; } = "";
 
+    [Display(Name = "Nội dung")]
     [Required]
     [StringLength(1000, MinimumLength = 2)]
     public string Content { get; set; } = "";
 
+    [Display(Name = "Đối tượng nhận")]
     [Required]
-    [RegularExpression("^(All|Role)$", ErrorMessage = "TargetType must be All or Role.")]
+    [RegularExpression("^(All|Role)$", ErrorMessage = "Đối tượng nhận phải là Tất cả hoặc Theo vai trò.")]
     public string TargetType { get; set; } = "All";
 
+    [Display(Name = "Vai trò nhận thông báo")]
     [StringLength(50)]
     public string? TargetRole { get; set; }
 
@@ -26,7 +30,7 @@ public class AdminNotificationUpsertRequest : IValidatableObject
             if (string.IsNullOrWhiteSpace(TargetRole))
             {
                 yield return new ValidationResult(
-                    "TargetRole is required when TargetType is Role.",
+                    "Vai trò nhận thông báo là bắt buộc khi đối tượng nhận là Theo vai trò.",
                     [nameof(TargetRole)]);
                 yield break;
             }
@@ -35,7 +39,7 @@ public class AdminNotificationUpsertRequest : IValidatableObject
             if (normalizedRole is not ("Parent" or "Nanny" or "Moderator"))
             {
                 yield return new ValidationResult(
-                    "TargetRole must be Parent, Nanny, or Moderator.",
+                    "Vai trò nhận thông báo chỉ được là Phụ huynh, Bảo mẫu hoặc Điều hành viên.",
                     [nameof(TargetRole)]);
             }
         }

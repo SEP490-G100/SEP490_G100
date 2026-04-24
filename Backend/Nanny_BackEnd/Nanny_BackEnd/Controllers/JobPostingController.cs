@@ -271,12 +271,12 @@ public class JobPostingController : ControllerBase
     {
         var moderatorId = getCurrentUserId();
         if (!moderatorId.HasValue)
-            return Unauthorized(new { success = false, message = "Cannot identify moderator." });
+            return Unauthorized(new { success = false, message = "Không xác định được điều hành viên." });
 
         try
         {
             await _jobSvc.ModeratorDeactivateJobAsync(id, moderatorId.Value);
-            return Ok(new { success = true, message = "Job posting deactivated successfully." });
+            return Ok(new { success = true, message = "Ẩn bài đăng thành công." });
         }
         catch (KeyNotFoundException ex)
         {

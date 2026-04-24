@@ -64,9 +64,9 @@
                                     <div class="nm-col-12">
                                         <div class="nm-field">
                                             <label asp-for="PhoneNumber" class="nm-label">Số Điện Thoại</label>
-                                            <input asp-for="PhoneNumber" type="tel" class="nm-input" placeholder="0901234567" autocomplete="tel" maxlength="11" />
+                                            <input asp-for="PhoneNumber" type="tel" class="nm-input" placeholder="0901234567" autocomplete="tel" maxlength="10" />
                                             <div class="nm-field-hint">Không bắt buộc. Nếu nhập phải đúng 10 chữ số, bắt đầu bằng 0.</div>
-                                            <span id="err-PhoneNumber" class="nm-error" style="display:none;"></span>
+                                            <span asp-validation-for="PhoneNumber" id="err-PhoneNumber" class="nm-error"></span>
                                         </div>
                                     </div>
 

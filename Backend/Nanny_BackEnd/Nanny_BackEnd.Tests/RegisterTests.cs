@@ -167,6 +167,38 @@ public class RegisterTests
 
     // ── TC6: Đăng ký thành công ───────────────────────────────────────────
     [Fact]
+    public async Task InvalidPhoneNumber()
+    {
+        _mockUserRepo.Setup(r => r.FindByEmailAsync(It.IsAny<string>()))
+                     .ReturnsAsync((User?)null);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.RegisterAsync(new RegisterRequest
+        {
+            Email = "new@mail.com",
+            Password = "Password@123",
+            PhoneNumber = "12345"
+        }));
+        Assert.Equal("Số điện thoại phải gồm 10 chữ số và bắt đầu bằng 0.", ex.Message);
+    }
+
+    [Fact]
+    public async Task DuplicatePhoneNumber()
+    {
+        _mockUserRepo.Setup(r => r.FindByEmailAsync(It.IsAny<string>()))
+                     .ReturnsAsync((User?)null);
+        _mockUserRepo.Setup(r => r.IsPhoneInUseAsync("0901234567"))
+                     .ReturnsAsync(true);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.RegisterAsync(new RegisterRequest
+        {
+            Email = "new@mail.com",
+            Password = "Password@123",
+            PhoneNumber = "0901234567"
+        }));
+        Assert.Equal("Số điện thoại đã được đăng ký.", ex.Message);
+    }
+
+    [Fact]
     public async Task Success()
     {
         _mockUserRepo.Setup(r => r.FindByEmailAsync("new@mail.com"))

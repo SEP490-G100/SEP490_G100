@@ -38,7 +38,7 @@ public class SubscriptionController : ControllerBase
     {
         var plan = await _subscriptionService.getPlanByCode(code);
         return plan == null
-            ? NotFound(fail("Không tìm thấy gói subscription yêu cầu."))
+            ? NotFound(fail("Không tìm thấy gói dịch vụ yêu cầu."))
             : Ok(success(plan));
     }
 
@@ -95,7 +95,7 @@ public class SubscriptionController : ControllerBase
             return Ok(new
             {
                 success = true,
-                message = "Đăng ký gói subscription thành công.",
+                message = "Đăng ký gói dịch vụ thành công.",
                 data = subscription
             });
         }
@@ -122,7 +122,7 @@ public class SubscriptionController : ControllerBase
             return Ok(new
             {
                 success = true,
-                message = "Đã tạo phiên thanh toán subscription thành công.",
+                message = "Đã tạo phiên thanh toán gói dịch vụ thành công.",
                 data = session
             });
         }
@@ -200,7 +200,7 @@ public class SubscriptionController : ControllerBase
             return Ok(new
             {
                 success = true,
-                message = "Hủy gói subscription hiện tại thành công.",
+                message = "Hủy gói dịch vụ hiện tại thành công.",
                 data = subscription
             });
         }
@@ -232,7 +232,7 @@ public class SubscriptionController : ControllerBase
     {
         var plan = await _subscriptionService.getAdminPlanDetail(id);
         return plan == null
-            ? NotFound(new { success = false, message = "Khong tim thay goi subscription." })
+            ? NotFound(new { success = false, message = "Không tìm thấy gói dịch vụ." })
             : Ok(new { success = true, data = plan });
     }
 
@@ -247,7 +247,7 @@ public class SubscriptionController : ControllerBase
         try
         {
             var plan = await _subscriptionService.createAdminPlan(adminUserId.Value, request);
-            return Ok(new { success = true, message = "Tao goi subscription thanh cong.", data = plan });
+            return Ok(new { success = true, message = "Tạo gói dịch vụ thành công.", data = plan });
         }
         catch (InvalidOperationException ex)
         {
@@ -266,7 +266,7 @@ public class SubscriptionController : ControllerBase
         try
         {
             var plan = await _subscriptionService.updateAdminPlan(id, adminUserId.Value, request);
-            return Ok(new { success = true, message = "Cap nhat goi subscription thanh cong.", data = plan });
+            return Ok(new { success = true, message = "Cập nhật gói dịch vụ thành công.", data = plan });
         }
         catch (KeyNotFoundException ex)
         {
@@ -291,7 +291,7 @@ public class SubscriptionController : ControllerBase
 
         var targetIsActive = isActive ?? request?.IsActive;
         if (!targetIsActive.HasValue)
-            return BadRequest(new { success = false, message = "Thieu trang thai kich hoat cua goi subscription." });
+            return BadRequest(new { success = false, message = "Thiếu trạng thái kích hoạt của gói dịch vụ." });
 
         try
         {
@@ -304,8 +304,8 @@ public class SubscriptionController : ControllerBase
             {
                 success = true,
                 message = targetIsActive.Value
-                    ? "Da kich hoat goi subscription."
-                    : "Da vo hieu hoa goi subscription."
+                    ? "Đã kích hoạt gói dịch vụ."
+                    : "Đã vô hiệu hóa gói dịch vụ."
             });
         }
         catch (KeyNotFoundException ex)

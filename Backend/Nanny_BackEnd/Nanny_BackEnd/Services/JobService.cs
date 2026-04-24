@@ -695,7 +695,7 @@ public class JobService : IJobService
             .OrderBy(c => c.CreatedAt)
             .ToList();
         if (children.Count == 0)
-            throw new InvalidOperationException("Vui lòng tạo ít nhất 1 Child Profile trước khi đăng bài.");
+            throw new InvalidOperationException("Vui lòng tạo ít nhất 1 hồ sơ trẻ trước khi đăng bài.");
 
         var explicitIds = (childProfileIds ?? [])
             .Where(id => id != Guid.Empty)
@@ -705,15 +705,15 @@ public class JobService : IJobService
         {
             if (requestedChildren.HasValue && requestedChildren.Value != explicitIds.Count)
                 throw new InvalidOperationException(
-                    "Số lượng trẻ khai báo phải trùng với danh sách Child Profile được chọn.");
+                    "Số lượng trẻ khai báo phải trùng với danh sách hồ sơ trẻ đã chọn.");
 
             if (explicitIds.Count > children.Count)
                 throw new InvalidOperationException(
-                    $"Bạn đã chọn {explicitIds.Count} trẻ nhưng hiện chỉ có {children.Count} Child Profile.");
+                    $"Bạn đã chọn {explicitIds.Count} trẻ nhưng hiện chỉ có {children.Count} hồ sơ trẻ.");
 
             var childMap = children.ToDictionary(child => child.Id, child => child);
             if (explicitIds.Any(id => !childMap.ContainsKey(id)))
-                throw new InvalidOperationException("Có Child Profile không thuộc hồ sơ phụ huynh hiện tại.");
+                throw new InvalidOperationException("Có hồ sơ trẻ không thuộc hồ sơ phụ huynh hiện tại.");
 
             return explicitIds.Select(id => childMap[id]).ToList();
         }
@@ -721,7 +721,7 @@ public class JobService : IJobService
         var requestedCount = Math.Max(1, requestedChildren ?? 1);
         if (requestedCount > children.Count)
             throw new InvalidOperationException(
-                $"Bạn đã chọn {requestedCount} trẻ nhưng hiện chỉ có {children.Count} Child Profile.");
+                $"Bạn đã chọn {requestedCount} trẻ nhưng hiện chỉ có {children.Count} hồ sơ trẻ.");
 
         if (primaryChildId.HasValue && children.All(child => child.Id != primaryChildId.Value))
             throw new InvalidOperationException("Trẻ được chọn không thuộc hồ sơ phụ huynh hiện tại.");

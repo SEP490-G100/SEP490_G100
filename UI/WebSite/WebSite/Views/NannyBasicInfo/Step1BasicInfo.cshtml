@@ -45,7 +45,11 @@
                                     <div class="nm-col-12">
                                         <div class="nm-field">
                                             <label asp-for="AvatarFile" class="nm-label">Ảnh đại diện</label>
-                                            <input type="file" asp-for="AvatarFile" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="nm-file" />
+                                            <div class="nm-avatar-upload">
+                                                <input type="file" asp-for="AvatarFile" id="AvatarFile" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="nm-avatar-file-input" />
+                                                <button id="avatarPickBtn" type="button" class="nm-avatar-pick-btn">Chọn ảnh</button>
+                                                <span id="avatarFileName" class="nm-avatar-file-name">Chưa chọn tệp</span>
+                                            </div>
                                             <div class="nm-field-hint">Nên dùng ảnh rõ mặt, đúng định dạng .jpg, .jpeg, .png.</div>
                                             <div id="avatarUploadError" class="nm-error hidden"></div>
                                             <div class="mt-3">
@@ -76,7 +80,7 @@
                                     <div class="nm-col-6">
                                         <div class="nm-field">
                                             <label asp-for="Gender" class="nm-label">Giới tính <span class="required">*</span></label>
-                                            <select asp-for="Gender" class="nm-select">
+                                            <select asp-for="Gender" class="nm-select" data-nm-select-mode="click">
                                                 <option value="">Chọn giới tính</option>
                                                 <option value="0">Nam</option>
                                                 <option value="1">Nữ</option>
@@ -130,12 +134,56 @@
     </div>
 </div>
 
+<style>
+    .nm-avatar-upload {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        padding: 12px 14px;
+        border: 1px dashed #fdba74;
+        border-radius: 16px;
+        background: #fff7ed;
+    }
+
+    .nm-avatar-file-input {
+        display: none;
+    }
+
+    .nm-avatar-pick-btn {
+        width: fit-content;
+        min-height: 40px;
+        padding: 0 16px;
+        border-radius: 999px;
+        border: 1px solid #f97316;
+        background: #fff;
+        color: #ea580c;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: .15s ease;
+    }
+
+    .nm-avatar-pick-btn:hover {
+        background: #fff7ed;
+        transform: translateY(-1px);
+    }
+
+    .nm-avatar-file-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: #64748b;
+    }
+</style>
+
 <script>
 (function () {
     var avatarInput = document.getElementById('AvatarFile');
+    var avatarPickBtn = document.getElementById('avatarPickBtn');
+    var avatarFileName = document.getElementById('avatarFileName');
     var avatarErr = document.getElementById('avatarUploadError');
     var avatarPreview = document.getElementById('avatarPreview');
-    var currentAvatarUrl = '@(Model.AvatarUrl ?? "")';
+    var currentAvatarUrl = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AvatarUrl ?? ""));
     var objectUrl = null;
 
     function showAvatarError(msg) {
@@ -169,9 +217,19 @@
     if (currentAvatarUrl) {
         setPreview(currentAvatarUrl);
 
+        if (avatarFileName) {
+            avatarFileName.textContent = 'Đang dùng ảnh hiện tại';
+        }
+
         if (typeof window.updateCurrentUserAvatar === 'function') {
             window.updateCurrentUserAvatar(currentAvatarUrl);
         }
+    }
+
+    if (avatarPickBtn && avatarInput) {
+        avatarPickBtn.addEventListener('click', function () {
+            avatarInput.click();
+        });
     }
 
     if (avatarInput) {
@@ -181,6 +239,7 @@
 
             var file = avatarInput.files && avatarInput.files[0] ? avatarInput.files[0] : null;
             if (!file) {
+                if (avatarFileName) avatarFileName.textContent = currentAvatarUrl ? 'Đang dùng ảnh hiện tại' : 'Chưa chọn tệp';
                 if (currentAvatarUrl) setPreview(currentAvatarUrl);
                 return;
             }
@@ -188,10 +247,21 @@
             if (!isAllowedImage(file)) {
                 avatarInput.value = '';
                 showAvatarError('Chỉ cho phép upload ảnh .png, .jpg, .jpeg.');
+                if (avatarFileName) avatarFileName.textContent = currentAvatarUrl ? 'Đang dùng ảnh hiện tại' : 'Chưa chọn tệp';
                 if (currentAvatarUrl) setPreview(currentAvatarUrl);
                 return;
             }
 
+            var maxSize = 5 * 1024 * 1024;
+            if (file.size > maxSize) {
+                avatarInput.value = '';
+                showAvatarError('Dung lượng ảnh không được vượt quá 5MB.');
+                if (avatarFileName) avatarFileName.textContent = currentAvatarUrl ? 'Đang dùng ảnh hiện tại' : 'Chưa chọn tệp';
+                if (currentAvatarUrl) setPreview(currentAvatarUrl);
+                return;
+            }
+
+            if (avatarFileName) avatarFileName.textContent = file.name;
             objectUrl = URL.createObjectURL(file);
             setPreview(objectUrl);
         });
@@ -293,23 +363,49 @@
 
     function setSelectByNormalized(selectEl, value) {
         var target = normalizeText(value);
-        if (!target) return;
+        if (!target) return false;
         for (var i = 0; i < selectEl.options.length; i++) {
             if (normalizeText(selectEl.options[i].value) === target) {
                 selectEl.value = selectEl.options[i].value;
-                return;
+                return true;
             }
+        }
+        return false;
+    }
+
+    function ensureSelectOption(selectEl, value) {
+        if (!selectEl || !value) return;
+        var exists = false;
+        for (var i = 0; i < selectEl.options.length; i++) {
+            if (normalizeText(selectEl.options[i].value) === normalizeText(value)) {
+                exists = true;
+                break;
+            }
+        }
+
+        if (!exists) {
+            var opt = document.createElement('option');
+            opt.value = value;
+            opt.textContent = value;
+            selectEl.appendChild(opt);
         }
     }
 
     function preselectFromModel() {
-        var currentCity = '@(Model.City ?? "")';
-        var currentDistrict = '@(Model.District ?? "")';
+        var currentCity = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.City ?? ""));
+        var currentDistrict = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.District ?? ""));
         if (currentCity) {
-            setSelectByNormalized(citySelect, currentCity);
+            if (!setSelectByNormalized(citySelect, currentCity)) {
+                ensureSelectOption(citySelect, currentCity);
+                citySelect.value = currentCity;
+            }
+
             onCityChange(function () {
                 if (currentDistrict) {
-                    setSelectByNormalized(districtSelect, currentDistrict);
+                    if (!setSelectByNormalized(districtSelect, currentDistrict)) {
+                        ensureSelectOption(districtSelect, currentDistrict);
+                        districtSelect.value = currentDistrict;
+                    }
                     onDistrictChange();
                 }
             });

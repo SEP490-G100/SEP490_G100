@@ -100,8 +100,10 @@ public class AdminNotificationFormViewModel : IValidatableObject
     [Display(Name = "Nội dung")]
     public string Content { get; set; } = "";
 
+    [Display(Name = "Đối tượng nhận")]
     public string TargetType { get; set; } = "All";
 
+    [Display(Name = "Vai trò nhận thông báo")]
     [StringLength(50)]
     public string? TargetRole { get; set; } = "All";
 
