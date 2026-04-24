@@ -405,11 +405,70 @@
 
     var cityInput = document.getElementById('City');
     var districtInput = document.getElementById('District');
+    var fullNameInput = document.getElementById('FullName');
+    var phoneInput = document.getElementById('PhoneNumber');
 
     var addressInput = document.getElementById('Address');
     var latEl = document.getElementById('Latitude');
     var lngEl = document.getElementById('Longitude');
     var addressLoadError = document.getElementById('addressLoadError');
+    var draftKey = 'nm_parent_onboarding_step1_draft_v1';
+
+    function safeGetStorageItem(key) {
+        try { return window.localStorage.getItem(key); } catch (e) { return null; }
+    }
+
+    function safeSetStorageItem(key, value) {
+        try { window.localStorage.setItem(key, value); } catch (e) { }
+    }
+
+    function safeRemoveStorageItem(key) {
+        try { window.localStorage.removeItem(key); } catch (e) { }
+    }
+
+    function buildDraftPayload() {
+        return {
+            FullName: fullNameInput ? fullNameInput.value : '',
+            PhoneNumber: phoneInput ? phoneInput.value : '',
+            DateOfBirth: dobInput ? dobInput.value : '',
+            Address: addressInput ? addressInput.value : '',
+            City: cityInput ? cityInput.value : '',
+            District: districtInput ? districtInput.value : '',
+            Latitude: latEl ? latEl.value : '',
+            Longitude: lngEl ? lngEl.value : '',
+            SavedAt: new Date().toISOString()
+        };
+    }
+
+    function saveDraft() {
+        safeSetStorageItem(draftKey, JSON.stringify(buildDraftPayload()));
+    }
+
+    function restoreDraft() {
+        var raw = safeGetStorageItem(draftKey);
+        if (!raw) return;
+
+        var draft = null;
+        try {
+            draft = JSON.parse(raw);
+        } catch (e) {
+            safeRemoveStorageItem(draftKey);
+            return;
+        }
+
+        if (!draft || typeof draft !== 'object') return;
+
+        if (fullNameInput && typeof draft.FullName === 'string') fullNameInput.value = draft.FullName;
+        if (phoneInput && typeof draft.PhoneNumber === 'string') phoneInput.value = draft.PhoneNumber;
+        if (dobInput && typeof draft.DateOfBirth === 'string') dobInput.value = draft.DateOfBirth;
+        if (addressInput && typeof draft.Address === 'string') addressInput.value = draft.Address;
+        if (cityInput && typeof draft.City === 'string') cityInput.value = draft.City;
+        if (districtInput && typeof draft.District === 'string') districtInput.value = draft.District;
+        if (latEl && typeof draft.Latitude === 'string') latEl.value = draft.Latitude;
+        if (lngEl && typeof draft.Longitude === 'string') lngEl.value = draft.Longitude;
+    }
+
+    restoreDraft();
 
     function showAddressLoadError(message) {
         if (!addressLoadError) return;
@@ -436,6 +495,7 @@
                 var lng = item.longitude != null ? item.longitude : item.Longitude;
                 if (latEl && lat != null) latEl.value = lat;
                 if (lngEl && lng != null) lngEl.value = lng;
+                saveDraft();
             })
             .catch(function () { });
     }
@@ -452,6 +512,12 @@
         });
     }
 
+    [fullNameInput, phoneInput, dobInput, addressInput, cityInput, districtInput].forEach(function (el) {
+        if (!el) return;
+        el.addEventListener('input', saveDraft);
+        el.addEventListener('change', saveDraft);
+    });
+
     if (window.NMLocationAutocomplete && cityInput && districtInput) {
         window.NMLocationAutocomplete.initPair({
             cityInputId: 'City',
@@ -460,6 +526,7 @@
         })
             .then(function () {
                 showAddressLoadError('');
+                saveDraft();
             })
             .catch(function () {
                 showAddressLoadError('Không tải được danh sách tỉnh thành. Vui lòng thử lại sau.');
@@ -507,7 +574,12 @@
             var requiredOk = validateRequiredFields();
             if (!dateOk || !requiredOk) {
                 event.preventDefault();
+                saveDraft();
+                return;
             }
+
+            // Keep draft right before submit so refresh/back still restores latest input.
+            saveDraft();
         });
     }
 })();
