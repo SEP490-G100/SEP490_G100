@@ -400,14 +400,14 @@
 
         if (!action) {
             if (typeof window.showToast === 'function') {
-                window.showToast('Vui lòng chọn Duyệt hoặc Từ chối trước khi lưu.', { type: 'warning' });
+                    window.showToast('Vui lòng chọn Duyệt hoặc Từ chối trước khi lưu.', { type: 'error' });
             }
             return false;
         }
 
         if (action === '1' && !note) {
             if (typeof window.showToast === 'function') {
-                window.showToast('Vui lòng nhập lý do từ chối trước khi lưu.', { type: 'warning' });
+                    window.showToast('Vui lòng nhập lý do từ chối trước khi lưu.', { type: 'error' });
             }
             return false;
         }

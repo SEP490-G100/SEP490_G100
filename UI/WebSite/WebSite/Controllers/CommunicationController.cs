@@ -18,7 +18,7 @@ public class CommunicationController : Controller
         _apiBaseUrl = (config["ApiSettings:BaseUrl"] ?? "").TrimEnd('/');
     }
 
-    // GET /Communication  â€” Trang chat chÃ­nh
+    // GET /Communication - Trang chat chính
     [HttpGet]
     public IActionResult Index(Guid? conversationId = null)
     {
@@ -28,7 +28,7 @@ public class CommunicationController : Controller
         return View();
     }
 
-    // GET /Communication/Conversations â€” proxy API
+    // GET /Communication/Conversations - Proxy API
     [HttpGet]
     public async Task<IActionResult> Conversations()
     {

@@ -199,7 +199,7 @@ public class AdminAccountController : Controller
                 var toastMessage = status == 1
                     ? "Đã kích hoạt tài khoản thành công"
                     : "Đã vô hiệu hóa tài khoản thành công";
-                var toastType = status == 1 ? "success" : "warning";
+                var toastType = "success";
                 return RedirectToReturnUrlOrList(returnUrl, toastType, toastMessage);
             }
 
@@ -253,7 +253,7 @@ public class AdminAccountController : Controller
         {
             return RedirectToAction(
                 nameof(ManageModerators),
-                new { toastType = toastType ?? "info", toastMessage });
+                new { toastType = toastType ?? "success", toastMessage });
         }
 
         return RedirectToAction(nameof(ManageModerators));

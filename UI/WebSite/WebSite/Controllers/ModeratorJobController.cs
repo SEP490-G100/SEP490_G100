@@ -112,7 +112,7 @@ namespace WebSite.Controllers
                         message = action == 2
                             ? "Bài đăng của bạn đã được điều hành viên duyệt."
                             : "Bài đăng của bạn đã bị điều hành viên từ chối.",
-                        toastType = action == 2 ? "success" : "warning"
+                        toastType = action == 2 ? "success" : "error"
                     });
                 }
 

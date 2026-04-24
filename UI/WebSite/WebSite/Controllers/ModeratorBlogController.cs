@@ -355,10 +355,10 @@ public class ModeratorBlogController : Controller
             {
                 return RedirectToAction(nameof(ManageBlog), new
                 {
-                    toastType = activate ? "success" : "warning",
+                    toastType = "success",
                     toastMessage = activate
-                        ? "Blog activated successfully."
-                        : "Blog deactivated successfully."
+                        ? "Đã kích hoạt blog thành công."
+                        : "Đã vô hiệu hóa blog thành công."
                 });
             }
 

@@ -175,7 +175,7 @@ public class ModeratorComplainController : Controller
                         type = "complaint-reviewed",
                         title = "Thông báo từ điều hành viên",
                         message = form.OffenderNotificationMessage.Trim(),
-                        toastType = "info"
+                        toastType = "error"
                     });
                 }
 
@@ -315,7 +315,7 @@ public class ModeratorComplainController : Controller
             {
                 return RedirectToAction("đăng nhập", "Auth", new
                 {
-                    toastType = "warning",
+                    toastType = "error",
                     toastMessage = "Phiên đăng nhập đã hết hạn."
                 });
             }

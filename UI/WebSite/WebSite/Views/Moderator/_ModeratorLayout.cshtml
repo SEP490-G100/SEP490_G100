@@ -359,19 +359,19 @@
                 if (message) {
                     return {
                         message,
-                        type: payload.toastType || 'info'
+                        type: payload.toastType || 'success'
                     };
                 }
 
                 switch (type) {
                     case 'verification-request-submitted':
-                        return { message: 'Có yêu cầu xác minh mới đang chờ duyệt.', type: 'info' };
+                        return { message: 'Có yêu cầu xác minh mới đang chờ duyệt.', type: 'success' };
                     case 'job-posting-review-required':
-                        return { message: 'Có bài đăng mới đang chờ kiểm duyệt viên duyệt.', type: 'info' };
+                        return { message: 'Có bài đăng mới đang chờ kiểm duyệt viên duyệt.', type: 'success' };
                     case 'complain-submitted':
-                        return { message: 'Có báo cáo mới cần xử lý.', type: 'warning' };
+                        return { message: 'Có báo cáo mới cần xử lý.', type: 'error' };
                     case 'system-warning':
-                        return { message: 'Có cảnh báo hệ thống cần xử lý.', type: 'warning' };
+                        return { message: 'Có cảnh báo hệ thống cần xử lý.', type: 'error' };
                     default:
                         return null;
                 }
@@ -466,7 +466,7 @@
         (() => {
             const params = new URLSearchParams(window.location.search);
             const toastMessage = params.get('toastMessage');
-            const toastType = params.get('toastType') || 'info';
+            const toastType = params.get('toastType') || 'success';
 
             if (!toastMessage || typeof window.showToast !== 'function') {
                 return;

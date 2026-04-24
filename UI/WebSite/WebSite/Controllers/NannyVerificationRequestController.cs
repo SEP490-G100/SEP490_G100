@@ -318,7 +318,7 @@ public class NannyVerificationRequestController : Controller
             type = "verification-request-submitted",
             title = "Có yêu cầu xác minh mới",
             message = "Một bảo mẫu vừa gửi yêu cầu xác minh mới.",
-            toastType = "info"
+            toastType = "success"
         });
 
         return RedirectToAction(nameof(NannyGetVerificationRequestList), new

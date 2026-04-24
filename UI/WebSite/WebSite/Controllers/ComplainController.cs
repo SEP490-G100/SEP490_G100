@@ -48,7 +48,7 @@ public class ComplainController : Controller
         {
             return RedirectToAction("Index", "Search", new
             {
-                toastType = "warning",
+                toastType = "error",
                 toastMessage = "Lý do khiếu nại phải từ 5 đến 500 ký tự."
             });
         }
@@ -58,7 +58,7 @@ public class ComplainController : Controller
         {
             return RedirectToAction("Index", "Search", new
             {
-                toastType = "warning",
+                toastType = "error",
                 toastMessage = "Bằng chứng không được vượt quá 2000 ký tự."
             });
         }
@@ -86,7 +86,7 @@ public class ComplainController : Controller
                     type = "complain-submitted",
                     title = "Có báo cáo bài đăng mới",
                     message = "Một báo cáo tin đăng mới vừa được gửi và cần điều hành viên xử lý.",
-                    toastType = "warning"
+                    toastType = "error"
                 }, cancellationToken);
 
                 return RedirectToAction("Index", "Search", new
@@ -131,7 +131,7 @@ public class ComplainController : Controller
             return RedirectToProfileComplainReturn(
                 model.ReturnUrl,
                 model.ComplainedUserId,
-                "warning",
+                "error",
                 "Bạn không thể khiếu nại chính hồ sơ của mình.");
         }
 
@@ -141,7 +141,7 @@ public class ComplainController : Controller
             return RedirectToProfileComplainReturn(
                 model.ReturnUrl,
                 model.ComplainedUserId,
-                "warning",
+                "error",
                 "Lý do khiếu nại phải từ 5 đến 500 ký tự.");
         }
 
@@ -151,7 +151,7 @@ public class ComplainController : Controller
             return RedirectToProfileComplainReturn(
                 model.ReturnUrl,
                 model.ComplainedUserId,
-                "warning",
+                "error",
                 "Bằng chứng không được vượt quá 2000 ký tự.");
         }
 
@@ -178,7 +178,7 @@ public class ComplainController : Controller
                     type = "complain-submitted",
                     title = "Có báo cáo hồ sơ mới",
                     message = "Một báo cáo hồ sơ mới vừa được gửi và cần điều hành viên xử lý.",
-                    toastType = "warning"
+                    toastType = "error"
                 }, cancellationToken);
 
                 return RedirectToProfileComplainReturn(
@@ -425,6 +425,5 @@ public class ComplainController : Controller
         return string.IsNullOrEmpty(hash) ? resultUrl : $"{resultUrl}{hash}";
     }
 }
-
 
 

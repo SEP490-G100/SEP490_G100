@@ -205,7 +205,7 @@ public class AdminNotificationController : Controller
                 var toastMessage = isDeleted
                     ? "Đã vô hiệu hóa thông báo thành công"
                     : "Đã kích hoạt thông báo thành công";
-                var toastType = isDeleted ? "warning" : "success";
+                var toastType = "success";
                 return RedirectToAdminNotificationReturnUrlOrList(
                     returnUrl,
                     toastType,
@@ -257,7 +257,7 @@ public class AdminNotificationController : Controller
         {
             return RedirectToAction(
                 nameof(ManageAdminNotification),
-                new { toastType = toastType ?? "info", toastMessage });
+                new { toastType = toastType ?? "success", toastMessage });
         }
 
         return RedirectToAction(nameof(ManageAdminNotification));

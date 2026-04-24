@@ -137,7 +137,7 @@ public class ModeratorVerificationController : Controller
                         message = action == 2
                             ? "Yêu cầu xác minh của bạn đã được chấp thuận."
                             : "Yêu cầu xác minh của bạn đã bị từ chối.",
-                        toastType = action == 2 ? "success" : "warning"
+                        toastType = action == 2 ? "success" : "error"
                     });
                 }
 

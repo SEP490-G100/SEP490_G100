@@ -189,7 +189,7 @@ public class AdminSubcriptionPlanController : Controller
                 var toastMessage = isActive
                     ? "Đã kích hoạt gói thành công"
                     : "Đã vô hiệu hóa gói thành công";
-                var toastType = isActive ? "success" : "warning";
+                var toastType = "success";
                 return RedirectToReturnUrlOrList(
                     returnUrl,
                     toastType,
@@ -255,7 +255,7 @@ public class AdminSubcriptionPlanController : Controller
         {
             return RedirectToAction(
                 nameof(ManageSubscriptionPlan),
-                new { toastType = toastType ?? "info", toastMessage });
+                new { toastType = toastType ?? "success", toastMessage });
         }
 
         return RedirectToAction(nameof(ManageSubscriptionPlan));
