@@ -187,6 +187,7 @@ public class JobPostingController : ControllerBase
             return Ok(new { success = true, message = "Đã duyệt bài đăng thành công." });
         }
         catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
+        catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
     }
 
     [Authorize(Roles = "Moderator,Admin")]
@@ -202,6 +203,7 @@ public class JobPostingController : ControllerBase
             return Ok(new { success = true, message = "Đã từ chối bài đăng." });
         }
         catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
+        catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
     }
 
     // GET /api/Moderator/moderator-view-job-list?status=1&moderationStatus=0&search=lan&page=1&pageSize=10
@@ -247,12 +249,12 @@ public class JobPostingController : ControllerBase
     {
         var moderatorId = getCurrentUserId();
         if (!moderatorId.HasValue)
-            return Unauthorized(new { success = false, message = "Khong xac dinh duoc moderator." });
+            return Unauthorized(new { success = false, message = "Không xác định được điều hành viên." });
 
         try
         {
             await _jobSvc.ModeratorReviewJobAsync(id, moderatorId.Value, request);
-            return Ok(new { success = true, message = "Xu ly tin dang thanh cong." });
+            return Ok(new { success = true, message = "Xử lý tin đăng thành công." });
         }
         catch (KeyNotFoundException ex)
         {

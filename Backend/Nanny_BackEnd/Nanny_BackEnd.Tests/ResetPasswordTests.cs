@@ -68,6 +68,20 @@ public class ResetPasswordTests
         Assert.Equal("Mã OTP không hợp lệ hoặc đã hết hạn.", ex.Message);
     }
 
+    [Fact]
+    public async Task InvalidEmail_ThrowsValidationError()
+    {
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.ResetPasswordAsync(new ResetPasswordRequest
+        {
+            Email       = "invalid-email",
+            OtpCode     = "123456",
+            NewPassword = "New@Password1"
+        }));
+
+        Assert.Equal("Email không hợp lệ.", ex.Message);
+        _mockOtp.Verify(o => o.ValidateAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<OtpPurpose>()), Times.Never);
+    }
+
     // ── TC2: Tài khoản Google không dùng mật khẩu ────────────────────────
     [Fact]
     public async Task GoogleAccount()

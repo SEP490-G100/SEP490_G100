@@ -17,6 +17,7 @@
         2 => "badge badge-active px-3 py-1.5 text-sm",
         _ => "badge badge-pending px-3 py-1.5 text-sm"
     };
+    var canReview = Model.ModerationStatus == 0;
 }
 
 <div class="flex items-center gap-2 text-sm text-gray-400 mb-6 fade-in-up">
@@ -223,6 +224,8 @@
             </div>
         </div>
 
+        @if (canReview)
+        {
         <div class="content-card p-6 fade-in-up">
             <div class="flex items-center gap-2 mb-5">
                 <span class="material-icons-round text-blue-500 text-lg">gavel</span>
@@ -266,6 +269,25 @@
                 </div>
             </form>
         </div>
+        }
+        else
+        {
+            <div class="content-card p-6 fade-in-up">
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="material-icons-round text-blue-500 text-lg">verified</span>
+                    <h2 class="font-bold text-gray-900">Trạng thái kiểm duyệt</h2>
+                </div>
+                <p class="text-sm text-gray-600 leading-6">
+                    Bài đăng này đã được xử lý trước đó (@Model.ModerationStatusLabel). Không thể duyệt hoặc từ chối lần nữa.
+                </p>
+                <div class="mt-4">
+                    <a href="/Moderator/ManageJobPosting" class="btn-outline inline-flex items-center gap-2">
+                        <span class="material-icons-round text-base">arrow_back</span>
+                        Quay lại danh sách
+                    </a>
+                </div>
+            </div>
+        }
     </div>
 </div>
 

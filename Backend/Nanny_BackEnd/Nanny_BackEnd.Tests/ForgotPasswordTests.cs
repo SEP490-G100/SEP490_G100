@@ -68,6 +68,17 @@ public class ForgotPasswordTests
         _mockOtp.Verify(o => o.GenerateAsync(It.IsAny<string>(), It.IsAny<OtpPurpose>(), It.IsAny<Guid?>()), Times.Never);
     }
 
+    [Fact]
+    public async Task InvalidEmail_ReturnsValidationError()
+    {
+        var (success, message) = await _sut.ForgotPasswordAsync("not-an-email");
+
+        Assert.False(success);
+        Assert.Equal("Email không hợp lệ.", message);
+        _mockUserRepo.Verify(r => r.FindByEmailAsync(It.IsAny<string>()), Times.Never);
+        _mockOtp.Verify(o => o.GenerateAsync(It.IsAny<string>(), It.IsAny<OtpPurpose>(), It.IsAny<Guid?>()), Times.Never);
+    }
+
     // ── TC2: Tài khoản đăng ký bằng Google ───────────────────────────────
     // Không gửi OTP vì Google account không dùng mật khẩu
     [Fact]
