@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
-using FluentAssertions;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
 using Nanny_BackEnd.Repositories.Interfaces;
@@ -50,10 +49,8 @@ public class GetDetailTests
         _mockJobRepo.Setup(r => r.hideExpiredPostings()).Returns(Task.CompletedTask);
         _mockJobRepo.Setup(r => r.viewDetailPosting(jobId)).ReturnsAsync((JobPosting?)null);
 
-        var act = () => _sut.getDetail(jobId);
-
-        await act.Should().ThrowAsync<KeyNotFoundException>()
-                 .WithMessage("*Khong tim thay tin dang*");
+        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.getDetail(jobId));
+        Assert.Contains("tìm thấy tin đăng", ex.Message);
     }
 
     // ── TC2: Job tồn tại → trả về đúng Id và Title ───────────────────────
@@ -74,8 +71,8 @@ public class GetDetailTests
 
         var result = await _sut.getDetail(jobId);
 
-        result.Should().NotBeNull();
-        result.Id.Should().Be(jobId);
-        result.Title.Should().Be("Tìm người giữ trẻ");
+        Assert.NotNull(result);
+        Assert.Equal(jobId, result.Id);
+        Assert.Equal("Tìm người giữ trẻ", result.Title);
     }
 }

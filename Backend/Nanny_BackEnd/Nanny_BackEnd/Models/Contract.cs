@@ -9,9 +9,9 @@ public partial class Contract
 
     public Guid HiringRecordId { get; set; }
 
-    public Guid ContractTemplateId { get; set; }
+    public Guid? ContractTemplateId { get; set; }
 
-    public string ContractContent { get; set; } = null!;
+    public string? ContractContent { get; set; }
 
     public bool SignedByParent { get; set; }
 
@@ -33,7 +33,7 @@ public partial class Contract
 
     public bool IsDeleted { get; set; }
 
-    public virtual ContractTemplate ContractTemplate { get; set; } = null!;
+    public virtual ContractTemplate? ContractTemplate { get; set; }
 
     public virtual HiringRecord HiringRecord { get; set; } = null!;
 }

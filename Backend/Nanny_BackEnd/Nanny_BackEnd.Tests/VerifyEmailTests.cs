@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Configuration;
 using Moq;
-using FluentAssertions;
 using Nanny_BackEnd.DTOs.Auth;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
@@ -60,14 +59,12 @@ public class VerifyEmailTests
         _mockOtp.Setup(o => o.ValidateAsync("test@mail.com", "999999", OtpPurpose.VerifyEmail))
                 .ReturnsAsync((OtpCode?)null);  // OTP không tìm thấy / hết hạn
 
-        var act = () => _sut.VerifyEmailAsync(new VerifyEmailRequest
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.VerifyEmailAsync(new VerifyEmailRequest
         {
             Email   = "test@mail.com",
             OtpCode = "999999"
-        });
-
-        await act.Should().ThrowAsync<InvalidOperationException>()
-                 .WithMessage("Mã OTP không hợp lệ hoặc đã hết hạn.");
+        }));
+        Assert.Equal("Mã OTP không hợp lệ hoặc đã hết hạn.", ex.Message);
     }
 
     // ── TC2: Xác minh thành công → user Active, EmailConfirmed = true ──────
@@ -97,8 +94,8 @@ public class VerifyEmailTests
         });
 
         // Xác nhận user đã được cập nhật đúng
-        user.EmailConfirmed.Should().BeTrue();
-        user.Status.Should().Be((int)UserStatus.Active);
+        Assert.True(user.EmailConfirmed);
+        Assert.Equal((int)UserStatus.Active, user.Status);
 
         // Xác nhận đã lưu DB
         _mockUserRepo.Verify(r => r.SaveChangesAsync(), Times.Once);

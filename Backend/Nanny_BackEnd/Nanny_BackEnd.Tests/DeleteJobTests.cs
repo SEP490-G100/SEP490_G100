@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
-using FluentAssertions;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
 using Nanny_BackEnd.Repositories.Interfaces;
@@ -56,10 +55,9 @@ public class DeleteJobTests
         _mockJobRepo.Setup(r => r.viewDetailPosting(It.IsAny<Guid>()))
                     .ReturnsAsync((JobPosting?)null);
 
-        var act = () => _sut.deletePost(Guid.NewGuid(), Guid.NewGuid());
-
-        await act.Should().ThrowAsync<KeyNotFoundException>()
-                 .WithMessage("*Khong tim thay tin dang*");
+        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _sut.deletePost(Guid.NewGuid(), Guid.NewGuid()));
+        Assert.Contains("tìm thấy tin đăng", ex.Message);
     }
 
     // ── TC2: ParentProfileId không khớp → UnauthorizedAccessException ─────
@@ -70,10 +68,9 @@ public class DeleteJobTests
 
         _mockJobRepo.Setup(r => r.viewDetailPosting(job.Id)).ReturnsAsync(job);
 
-        var act = () => _sut.deletePost(job.Id, Guid.NewGuid());   // caller khác owner
-
-        await act.Should().ThrowAsync<UnauthorizedAccessException>()
-                 .WithMessage("*quyen xoa*");
+        var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            _sut.deletePost(job.Id, Guid.NewGuid()));
+        Assert.Contains("quyền xóa", ex.Message);
     }
 
     // ── TC3: Có đơn ứng tuyển đang chờ (Pending) → InvalidOperationException
@@ -88,10 +85,9 @@ public class DeleteJobTests
 
         _mockJobRepo.Setup(r => r.viewDetailPosting(job.Id)).ReturnsAsync(job);
 
-        var act = () => _sut.deletePost(job.Id, parentProfileId);
-
-        await act.Should().ThrowAsync<InvalidOperationException>()
-                 .WithMessage("*don ung tuyen cho xet duyet*");
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _sut.deletePost(job.Id, parentProfileId));
+        Assert.Contains("ứng tuyển chờ xét duyệt", ex.Message);
     }
 
     // ── TC4: Hợp lệ → deleteJobPosting được gọi đúng 1 lần ──────────────

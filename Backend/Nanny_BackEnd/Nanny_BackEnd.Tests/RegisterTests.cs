@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Configuration;
 using Moq;
-using FluentAssertions;
 using Nanny_BackEnd.DTOs.Auth;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
@@ -88,14 +87,12 @@ public class RegisterTests
         _mockUserRepo.Setup(r => r.FindByEmailAsync(existing.Email))
                      .ReturnsAsync(existing);
 
-        var act = () => _sut.RegisterAsync(new RegisterRequest
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.RegisterAsync(new RegisterRequest
         {
             Email    = existing.Email,
             Password = "Password@123"
-        });
-
-        await act.Should().ThrowAsync<InvalidOperationException>()
-                 .WithMessage("Email đã được đăng ký.");
+        }));
+        Assert.Equal("Email đã được đăng ký.", ex.Message);
     }
 
     // ── TC2: Email đã đăng ký bằng Google ────────────────────────────────
@@ -106,14 +103,12 @@ public class RegisterTests
         _mockUserRepo.Setup(r => r.FindByEmailAsync(existing.Email))
                      .ReturnsAsync(existing);
 
-        var act = () => _sut.RegisterAsync(new RegisterRequest
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.RegisterAsync(new RegisterRequest
         {
             Email    = existing.Email,
             Password = "Password@123"
-        });
-
-        await act.Should().ThrowAsync<InvalidOperationException>()
-                 .WithMessage("Email này đã đăng ký bằng Google. Vui lòng đăng nhập bằng Google.");
+        }));
+        Assert.Equal("Email này đã đăng ký bằng Google. Vui lòng đăng nhập bằng Google.", ex.Message);
     }
 
     // ── TC3: Email tồn tại nhưng đang Pending → gửi lại OTP, không throw ─
@@ -128,14 +123,13 @@ public class RegisterTests
         _mockEmail.Setup(e => e.SendOtpEmailAsync(existing.Email, "654321", "VerifyEmail"))
                   .Returns(Task.CompletedTask);
 
-        var act = () => _sut.RegisterAsync(new RegisterRequest
+        // Không throw — chỉ gửi lại OTP
+        var ex = await Record.ExceptionAsync(() => _sut.RegisterAsync(new RegisterRequest
         {
             Email    = existing.Email,
             Password = "Password@123"
-        });
-
-        // Không throw — chỉ gửi lại OTP
-        await act.Should().NotThrowAsync();
+        }));
+        Assert.Null(ex);
         _mockOtp.Verify(
             o => o.GenerateAsync(existing.Email, OtpPurpose.VerifyEmail, existing.Id),
             Times.Once);
@@ -148,14 +142,12 @@ public class RegisterTests
         _mockUserRepo.Setup(r => r.FindByEmailAsync(It.IsAny<string>()))
                      .ReturnsAsync((User?)null);
 
-        var act = () => _sut.RegisterAsync(new RegisterRequest
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.RegisterAsync(new RegisterRequest
         {
             Email    = "new@mail.com",
             Password = "Ab@1"           // < 8 ký tự
-        });
-
-        await act.Should().ThrowAsync<InvalidOperationException>()
-                 .WithMessage("*ít nhất 8 ký tự*");
+        }));
+        Assert.Contains("ít nhất 8 ký tự", ex.Message);
     }
 
     // ── TC5: Mật khẩu thiếu ký tự đặc biệt ──────────────────────────────
@@ -165,14 +157,12 @@ public class RegisterTests
         _mockUserRepo.Setup(r => r.FindByEmailAsync(It.IsAny<string>()))
                      .ReturnsAsync((User?)null);
 
-        var act = () => _sut.RegisterAsync(new RegisterRequest
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.RegisterAsync(new RegisterRequest
         {
             Email    = "new@mail.com",
             Password = "Password123"    // không có ký tự đặc biệt
-        });
-
-        await act.Should().ThrowAsync<InvalidOperationException>()
-                 .WithMessage("*ký tự đặc biệt*");
+        }));
+        Assert.Contains("ký tự đặc biệt", ex.Message);
     }
 
     // ── TC6: Đăng ký thành công ───────────────────────────────────────────
@@ -188,10 +178,9 @@ public class RegisterTests
         _mockEmail.Setup(e => e.SendOtpEmailAsync("new@mail.com", "111222", "VerifyEmail"))
                   .Returns(Task.CompletedTask);
 
-        var act = () => _sut.RegisterAsync(ValidRequest("new@mail.com"));
-
         // Không throw
-        await act.Should().NotThrowAsync();
+        var ex = await Record.ExceptionAsync(() => _sut.RegisterAsync(ValidRequest("new@mail.com")));
+        Assert.Null(ex);
 
         // SaveChangesAsync được gọi 1 lần
         _mockUserRepo.Verify(r => r.SaveChangesAsync(), Times.Once);

@@ -521,8 +521,6 @@
     </div>
 </div>
 
-<partial name="~/Views/Hiring/_ApplicantList.cshtml" />
-
 <script>
     (() => {
         const HISTORY_TOAST_KEY = 'nm:historyToast';
@@ -687,6 +685,21 @@
                 ${escapeHtml(applicationStatusLabels[status] || 'Đang cập nhật')}
             </span>`;
 
+        const renderApplicationBadgeV2 = (status) => {
+            const s = Number(status);
+            const label = s === 1
+                ? '\u0110\u00e3 \u0111\u01b0\u1ee3c ch\u1ecdn'
+                : s === 2
+                    ? '\u0110\u00e3 b\u1ecb t\u1eeb ch\u1ed1i'
+                    : '\u0110ang ch\u1edd x\u00e9t duy\u1ec7t';
+            const css = s === 1
+                ? 'history-app-badge history-app-badge--approved'
+                : s === 2
+                    ? 'history-app-badge history-app-badge--rejected'
+                    : 'history-app-badge history-app-badge--pending';
+            return `<span class="${css}">${escapeHtml(label)}</span>`;
+        };
+
         const getNameInitial = (fullName) => {
             const normalized = String(fullName ?? '').trim();
             if (!normalized) return 'N';
@@ -700,8 +713,8 @@
 
             const total = applications.length;
             const pending = applications.filter((item) => Number(item.status) === 0).length;
-            const approved = applications.filter((item) => Number(item.status) === 1 || Number(item.status) === 2).length;
-            const rejected = applications.filter((item) => Number(item.status) === 3 || Number(item.status) === 4).length;
+            const approved = applications.filter((item) => Number(item.status) === 1).length;
+            const rejected = applications.filter((item) => Number(item.status) === 2).length;
 
             metricsEl.innerHTML = `
                 <span class="history-request-metric">Tổng: ${total}</span>
@@ -755,7 +768,7 @@
                                         <p class="mt-1 text-xs text-slate-500">${escapeHtml([item?.nanny?.district, item?.nanny?.city].filter(Boolean).join(', ') || 'Chưa cập nhật khu vực')}</p>
                                     </div>
                                 </div>
-                                ${renderApplicationBadge(item.status)}
+                                ${renderApplicationBadgeV2(item.status)}
                             </div>
                             <div class="history-request-info-grid text-xs text-slate-600">
                                 <div class="history-request-info">
@@ -956,7 +969,7 @@
                 : 'Đơn này đã được xử lý. Bạn đang xem lại chi tiết.';
             document.getElementById('jobAppNannyName').textContent = application?.nanny?.fullName || 'Bảo mẫu';
             document.getElementById('jobAppNannyLocation').textContent = [application?.nanny?.district, application?.nanny?.city].filter(Boolean).join(', ') || 'Chưa cập nhật khu vực';
-            document.getElementById('jobAppStatusWrap').innerHTML = renderApplicationBadge(application.status);
+            document.getElementById('jobAppStatusWrap').innerHTML = renderApplicationBadgeV2(application.status);
             document.getElementById('jobAppAppliedAt').textContent = `Ngày ứng tuyển: ${formatDateTime(application.appliedAt)}`;
             document.getElementById('jobAppPhone').textContent = application?.nanny?.phoneNumber || 'Chưa cập nhật';
             document.getElementById('jobAppExperience').textContent = application?.nanny?.yearsOfExperience ? `${application.nanny.yearsOfExperience} năm` : 'Chưa cập nhật';

@@ -1,8 +1,9 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebSite.Models.Contract;
-using System.Text;
+using WebSite.Services;
 
 namespace WebSite.Controllers;
 
@@ -11,22 +12,18 @@ namespace WebSite.Controllers;
 public class ContractController : Controller
 {
     private readonly HttpClient _http;
+    private readonly IAzureBlobStorageService _blobStorage;
 
-    public ContractController(IHttpClientFactory httpFactory)
+    public ContractController(IHttpClientFactory httpFactory, IAzureBlobStorageService blobStorage)
     {
         _http = httpFactory.CreateClient("BackendApi");
+        _blobStorage = blobStorage;
     }
 
     [HttpGet("")]
     public IActionResult Index()
     {
         return View();
-    }
-
-    [HttpGet("Detail/{id:guid}")]
-    public IActionResult Detail(Guid id)
-    {
-        return View("ViewContractDetail", new ContractDetailPageViewModel { ContractId = id });
     }
 
     [HttpGet("Api/List")]
@@ -37,44 +34,33 @@ public class ContractController : Controller
         return await ToJsonProxy(response);
     }
 
-    [HttpGet("Api/Detail/{id:guid}")]
-    public async Task<IActionResult> DetailApi(Guid id)
+    [HttpPost("Api/{id:guid}/UploadStorageFile")]
+    [RequestSizeLimit(15 * 1024 * 1024)]
+    public async Task<IActionResult> UploadStorageFile(Guid id, IFormFile? contractFile)
     {
         SetBearerToken();
-        var response = await _http.GetAsync($"/api/contracts/{id}");
-        return await ToJsonProxy(response);
-    }
 
-    [HttpPatch("Api/Detail/{id:guid}/DraftParent")]
-    public async Task<IActionResult> DraftParent(Guid id)
-    {
-        SetBearerToken();
-        var body = await ReadBodyAsync();
-        var response = await _http.PatchAsync(
-            $"/api/contracts/{id}/draft-parent",
-            JsonContent(body));
-        return await ToJsonProxy(response);
-    }
+        if (contractFile == null || contractFile.Length == 0)
+            return BadRequest(new { success = false, message = "Vui long chon file PDF hop dong de upload." });
 
-    [HttpPatch("Api/Detail/{id:guid}/FillNanny")]
-    public async Task<IActionResult> FillNanny(Guid id)
-    {
-        SetBearerToken();
-        var body = await ReadBodyAsync();
-        var response = await _http.PatchAsync(
-            $"/api/contracts/{id}/fill-nanny",
-            JsonContent(body));
-        return await ToJsonProxy(response);
-    }
+        try
+        {
+            var fileUrl = await _blobStorage.UploadContractPdfAsync(contractFile);
+            var response = await _http.PatchAsJsonAsync($"/api/contracts/{id}/storage-file", new
+            {
+                pdfUrl = fileUrl
+            });
 
-    [HttpPost("Api/Detail/{id:guid}/FinalConfirmParent")]
-    public async Task<IActionResult> FinalConfirmParent(Guid id)
-    {
-        SetBearerToken();
-        var response = await _http.PostAsync(
-            $"/api/contracts/{id}/final-confirm-parent",
-            JsonContent("{}"));
-        return await ToJsonProxy(response);
+            return await ToJsonProxy(response);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, new { success = false, message = "Khong the upload file PDF hop dong luc nay." });
+        }
     }
 
     private void SetBearerToken()
@@ -95,14 +81,4 @@ public class ContractController : Controller
             StatusCode = (int)response.StatusCode
         };
     }
-
-    private async Task<string> ReadBodyAsync()
-    {
-        using var reader = new StreamReader(Request.Body);
-        return await reader.ReadToEndAsync();
-    }
-
-    private static StringContent JsonContent(string body) =>
-        new(string.IsNullOrWhiteSpace(body) ? "{}" : body, Encoding.UTF8, "application/json");
 }
-

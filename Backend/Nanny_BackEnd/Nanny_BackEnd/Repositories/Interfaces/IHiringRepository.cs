@@ -19,12 +19,8 @@ public interface IHiringRepository
     void AddJobPosting(JobPosting jobPosting);
     void AddJobApplication(JobApplication jobApplication);
     Task<Contract?> GetContractByHiringRecordIdAsync(Guid hiringRecordId);
-    Task<int> CountContractsCreatedInYearAsync(int year);
     void AddContract(Contract contract);
     Task<ParentProfile?> GetParentProfileByUserIdAsync(Guid userId);
-    Task<List<ContractTemplate>> GetTemplatesForHiringAsync();
-    Task<List<ContractTemplate>> GetActiveTemplatesAsync();
-    Task<ContractTemplate?> GetTemplateByIdAsync(Guid templateId);
     Task<Conversation?> FindOneToOneConversationAsync(Guid userA, Guid userB);
     void AddConversation(Conversation conversation);
     void AddConversationParticipant(ConversationParticipant participant);
