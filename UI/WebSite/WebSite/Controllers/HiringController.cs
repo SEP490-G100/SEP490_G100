@@ -152,15 +152,6 @@ public class HiringController : Controller
             EmptyJson()));
     }
 
-    [HttpPost("Records/{hiringRecordId:guid}/Cancel")]
-    public async Task<IActionResult> Cancel(Guid hiringRecordId)
-    {
-        SetBearerToken();
-        return await Proxy(() => _http.PostAsync(
-            $"/api/hiring/records/{hiringRecordId}/cancel",
-            EmptyJson()));
-    }
-
     private async Task<IActionResult> ProxyWithRealtimeHireAsync(HttpResponseMessage response)
     {
         var body = await response.Content.ReadAsStringAsync();
