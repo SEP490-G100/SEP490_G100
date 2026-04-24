@@ -93,11 +93,11 @@
                 }
 
                 if (json.isFavorite) {
-                    notify('Bài đăng vẫn đang ở trạng thái đã lưu.', 'warning');
+                    notify('Bài đăng vẫn đang ở trạng thái đã lưu.', 'error');
                     return;
                 }
 
-                notify('Đã bỏ bài đăng khỏi danh sách đã lưu.', 'info');
+                notify('Đã bỏ bài đăng khỏi danh sách đã lưu.', 'success');
                 await loadSavedJobs();
             } catch {
                 notify('Lỗi kết nối máy chủ.', 'error');

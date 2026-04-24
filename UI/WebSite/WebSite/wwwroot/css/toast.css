@@ -72,18 +72,12 @@
     transform: scale(1.03);
 }
 
-.nm-toast--info {
-    background: linear-gradient(135deg, rgba(15, 23, 42, 0.94), rgba(30, 41, 59, 0.94));
-}
-
+.nm-toast--info,
 .nm-toast--success {
     background: linear-gradient(135deg, #0f8c67, #10946d);
 }
 
-.nm-toast--warning {
-    background: linear-gradient(135deg, #c56a09, #ea580c);
-}
-
+.nm-toast--warning,
 .nm-toast--error {
     background: linear-gradient(135deg, #c22525, #dc2626);
 }

@@ -230,7 +230,7 @@ function escapeHtml(value) {
         .replaceAll("'", '&#39;');
 }
 
-function showToast(message, type = 'info') {
+function showToast(message, type = 'error') {
     if (typeof window.showToast === 'function' && window.showToast !== showToast) {
         window.showToast(message, { type });
         return;
@@ -243,7 +243,10 @@ function showToast(message, type = 'info') {
     fallback.style.zIndex = '12060';
     fallback.style.padding = '10px 12px';
     fallback.style.borderRadius = '10px';
-    fallback.style.background = '#0f172a';
+    const normalizedType = String(type || 'error').toLowerCase();
+    fallback.style.background = normalizedType === 'success'
+        ? 'linear-gradient(135deg, #0f8c67, #10946d)'
+        : 'linear-gradient(135deg, #c22525, #dc2626)';
     fallback.style.color = '#fff';
     fallback.style.fontSize = '13px';
     fallback.style.fontWeight = '700';
@@ -294,7 +297,7 @@ function pushHistoryToast(message, type = 'success') {
     try {
         sessionStorage.setItem('nm:historyToast', JSON.stringify({
             message: String(message || ''),
-            type: String(type || 'info'),
+            type: String(type || 'success'),
             createdAt: Date.now()
         }));
     } catch {
@@ -1028,7 +1031,7 @@ document.getElementById('editPageForm')?.addEventListener('submit', async (event
     event.preventDefault();
     if (!hasLoadedEditData) return;
     if (!isFormDirty()) {
-                showToast('Chưa có thay đổi để lưu bài đăng.', 'info');
+            showToast('Chưa có thay đổi để lưu bài đăng.', 'error');
         updateSubmitState();
         return;
     }
@@ -1037,7 +1040,7 @@ document.getElementById('editPageForm')?.addEventListener('submit', async (event
     if (validSkills.length !== editSkills.length) {
         editSkills = validSkills;
         renderSkillCollection();
-                    showToast('Một số kỹ năng cũ không còn hoạt động, hệ thống đã bỏ qua để bạn lưu được bài đăng.', 'warning');
+                    showToast('Một số kỹ năng cũ không còn hoạt động, hệ thống đã bỏ qua để bạn lưu được bài đăng.', 'error');
     }
 
     const numberOfChildren = syncChildrenCountField();
@@ -1064,7 +1067,7 @@ document.getElementById('editPageForm')?.addEventListener('submit', async (event
     };
     const validationError = validateEditPayload(payload);
     if (validationError) {
-        showToast(validationError.message, 'warning');
+            showToast(validationError.message, 'error');
         if (validationError.fieldId) focusInvalidField(validationError.fieldId);
         return;
     }

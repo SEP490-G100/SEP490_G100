@@ -432,7 +432,7 @@
                         toggleBtn.querySelector('span').textContent = 'check_circle_outline';
                     }
                 }
-                triggerToast(newStatus === 1 ? 'success' : 'warning', newStatus === 1
+                triggerToast('success', newStatus === 1
                     ? 'Đã kích hoạt tài khoản ' + name + ' thành công'
                     : 'Đã vô hiệu hóa tài khoản ' + name + ' thành công');
             } else {
@@ -450,10 +450,8 @@
     }
 
     function triggerToast(type, msg) {
-        var normalizedType = String(type || 'info').toLowerCase();
-        var mappedType = normalizedType === 'success'
-            ? 'success'
-            : (normalizedType === 'warning' || normalizedType === 'warn' ? 'warning' : 'error');
+        var normalizedType = String(type || 'error').toLowerCase();
+        var mappedType = normalizedType === 'success' ? 'success' : 'error';
 
         if (typeof window.showToast === 'function') {
             window.showToast(msg || '', { type: mappedType });

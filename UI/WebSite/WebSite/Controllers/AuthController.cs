@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Linq;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -140,6 +141,10 @@ public class AuthController : Controller
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Register(RegisterViewModel model)
     {
+        model.PhoneNumber = NormalizePhoneNumber(model.PhoneNumber);
+        if (!string.IsNullOrWhiteSpace(model.PhoneNumber) && !IsValidPhoneNumber(model.PhoneNumber))
+            ModelState.AddModelError(nameof(model.PhoneNumber), "Số điện thoại phải gồm 10 chữ số và bắt đầu bằng 0.");
+
         if (!ModelState.IsValid) { SetGoogleClientId(); return View(model); }
 
         try
@@ -567,6 +572,12 @@ public class AuthController : Controller
     private static bool hasRole(IEnumerable<string> roles, string roleName) =>
         roles.Any(role => string.Equals(role, roleName, StringComparison.OrdinalIgnoreCase));
 
+    private static string? NormalizePhoneNumber(string? phoneNumber) =>
+        string.IsNullOrWhiteSpace(phoneNumber) ? null : phoneNumber.Trim();
+
+    private static bool IsValidPhoneNumber(string phoneNumber) =>
+        Regex.IsMatch(phoneNumber, @"^0\d{9}$");
+
     private void SetGoogleClientId() =>
         ViewBag.GoogleClientId = _config["Google:ClientId"];
 
@@ -625,5 +636,4 @@ public class AuthController : Controller
         }
     }
 }
-
 

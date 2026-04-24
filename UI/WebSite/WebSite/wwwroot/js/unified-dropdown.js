@@ -85,6 +85,9 @@
   function initSelect(select) {
     if (!isTransformableSelect(select)) return;
 
+    // Default behavior keeps searchable dropdown.
+    // Set data-nm-select-mode="click" on a specific <select> when typing must be disabled.
+    const clickOnlyMode = select.dataset.nmSelectMode === 'click';
     const selectStyle = window.getComputedStyle(select);
     const inheritedPaddingLeft = selectStyle.paddingLeft;
     const inheritedPaddingRight = selectStyle.paddingRight;
@@ -99,6 +102,10 @@
     input.autocomplete = 'off';
     input.setAttribute('aria-haspopup', 'listbox');
     input.setAttribute('aria-expanded', 'false');
+    if (clickOnlyMode) {
+      input.readOnly = true;
+      input.setAttribute('inputmode', 'none');
+    }
 
     const menu = document.createElement('ul');
     menu.className = 'nm-unified-menu';
@@ -133,7 +140,7 @@
     };
 
     const buildOptions = (query) => {
-      const normalizedQuery = normalizeText(query);
+      const normalizedQuery = clickOnlyMode ? '' : normalizeText(query);
       return Array.from(select.options)
         .map((option) => ({
           value: String(option.value ?? ''),
@@ -182,8 +189,29 @@
     };
 
     input.addEventListener('focus', () => showOptions(''));
-    input.addEventListener('click', () => showOptions(input.value.trim()));
-    input.addEventListener('input', () => showOptions(input.value.trim(), true));
+    input.addEventListener('click', () => showOptions(''));
+    if (!clickOnlyMode) {
+      input.addEventListener('input', () => showOptions(input.value.trim(), true));
+    } else {
+      input.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          showOptions('');
+          return;
+        }
+
+        if (event.key === 'Escape') {
+          hideMenu(menu);
+          input.setAttribute('aria-expanded', 'false');
+          return;
+        }
+
+        const allowedKeys = new Set(['Tab', 'ArrowUp', 'ArrowLeft', 'ArrowRight', 'Home', 'End']);
+        if (!allowedKeys.has(event.key)) {
+          event.preventDefault();
+        }
+      });
+    }
     input.addEventListener('blur', () => {
       window.setTimeout(() => {
         hideMenu(menu);

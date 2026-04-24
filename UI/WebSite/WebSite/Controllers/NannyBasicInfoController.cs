@@ -127,6 +127,39 @@ public class NannyBasicInfoController : Controller
         return normalized.Length is >= 9 and <= 15 && normalized.All(char.IsDigit);
     }
 
+    private static bool IsValidAvatarFile(IFormFile file, out string errorMessage)
+    {
+        errorMessage = string.Empty;
+
+        var ext = Path.GetExtension(file.FileName)?.ToLowerInvariant();
+        var allowedExt = new[] { ".jpg", ".jpeg", ".png" };
+        if (string.IsNullOrWhiteSpace(ext) || !allowedExt.Contains(ext))
+        {
+            errorMessage = "Ảnh đại diện chỉ chấp nhận .jpg, .jpeg hoặc .png.";
+            return false;
+        }
+
+        const long maxSizeBytes = 5 * 1024 * 1024;
+        if (file.Length > maxSizeBytes)
+        {
+            errorMessage = "Ảnh đại diện không được vượt quá 5MB.";
+            return false;
+        }
+
+        var contentType = file.ContentType?.ToLowerInvariant();
+        if (!string.IsNullOrWhiteSpace(contentType))
+        {
+            var allowedTypes = new[] { "image/jpeg", "image/jpg", "image/png" };
+            if (!allowedTypes.Contains(contentType))
+            {
+                errorMessage = "Định dạng tệp ảnh không hợp lệ.";
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     private async Task<EditPersonalInfoViewModel?> LoadCurrentProfileAsync()
     {
         SetAuthHeader();
@@ -148,7 +181,7 @@ public class NannyBasicInfoController : Controller
         SetAuthHeader();
 
         // Upload Avatar
-        if (model.AvatarFile != null && model.AvatarFile.Length > 0)
+        if (string.IsNullOrWhiteSpace(model.AvatarUrl) && model.AvatarFile != null && model.AvatarFile.Length > 0)
         {
             try
             {
@@ -214,6 +247,26 @@ public class NannyBasicInfoController : Controller
     {
         if (direction == "next")
         {
+            if (model.AvatarFile != null && model.AvatarFile.Length > 0)
+            {
+                if (!IsValidAvatarFile(model.AvatarFile, out var avatarError))
+                {
+                    ModelState.AddModelError(nameof(model.AvatarFile), avatarError);
+                }
+                else
+                {
+                    try
+                    {
+                        // Keep avatar URL across validation round-trips.
+                        model.AvatarUrl = await _blobStorageService.UploadUserAvatarAsync(model.AvatarFile);
+                    }
+                    catch
+                    {
+                        ModelState.AddModelError(nameof(model.AvatarFile), "Tải ảnh đại diện thất bại. Vui lòng thử lại.");
+                    }
+                }
+            }
+
             if (string.IsNullOrWhiteSpace(model.FullName))
                 ModelState.AddModelError(nameof(model.FullName), "Vui lòng nhập họ tên.");
 

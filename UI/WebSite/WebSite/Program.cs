@@ -1,11 +1,15 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
+using WebSite.Infrastructure;
 using WebSite.Models.Storage;
 using WebSite.Services;
 using WebSite.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    options.ModelMetadataDetailsProviders.Add(new VietnameseValidationMetadataProvider());
+});
 builder.Services.AddRazorPages();
 builder.Services.Configure<AzureBlobStorageOptions>(
     builder.Configuration.GetSection(AzureBlobStorageOptions.SectionName));

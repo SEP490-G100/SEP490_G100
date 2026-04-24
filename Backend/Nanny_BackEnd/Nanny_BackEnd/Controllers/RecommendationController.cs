@@ -39,7 +39,7 @@ public class RecommendationController : ControllerBase
     public async Task<IActionResult> GetJobReadModel(Guid jobId)
     {
         var model = await _recSvc.GetJobReadModelForAdminAsync(jobId);
-        if (model == null) return NotFound(Fail("Không tìm thấy job posting."));
+        if (model == null) return NotFound(Fail("Không tìm thấy bài đăng."));
         return Ok(Success(model));
     }
 
@@ -70,11 +70,11 @@ public class RecommendationController : ControllerBase
         try
         {
             await _embedSvc.EmbedNannyAsync(nannyProfileId);
-            return Ok(new { success = true, message = "Đã re-embed nanny thành công." });
+            return Ok(new { success = true, message = "Đã cập nhật lại dữ liệu gợi ý cho bảo mẫu." });
         }
         catch (Exception ex)
         {
-            return StatusCode(500, Fail($"Lỗi khi embed: {ex.Message}"));
+            return StatusCode(500, Fail($"Lỗi khi cập nhật dữ liệu gợi ý: {ex.Message}"));
         }
     }
 
@@ -85,11 +85,11 @@ public class RecommendationController : ControllerBase
         try
         {
             await _embedSvc.EmbedJobAsync(jobId);
-            return Ok(new { success = true, message = "Đã re-embed job thành công." });
+            return Ok(new { success = true, message = "Đã cập nhật lại dữ liệu gợi ý cho bài đăng." });
         }
         catch (Exception ex)
         {
-            return StatusCode(500, Fail($"Lỗi khi embed: {ex.Message}"));
+            return StatusCode(500, Fail($"Lỗi khi cập nhật dữ liệu gợi ý: {ex.Message}"));
         }
     }
 

@@ -98,7 +98,7 @@ public class ReportController : ControllerBase
     {
         var moderatorId = getCurrentUserId();
         if (!moderatorId.HasValue)
-            return Unauthorized(new { success = false, message = "Cannot identify moderator." });
+            return Unauthorized(new { success = false, message = "Không xác định được điều hành viên." });
 
         var result = await _reportService.ResolveReportAsync(id, moderatorId.Value, request);
         if (!result.Success)
@@ -114,7 +114,7 @@ public class ReportController : ControllerBase
     {
         var moderatorId = getCurrentUserId();
         if (!moderatorId.HasValue)
-            return Unauthorized(new { success = false, message = "Cannot identify moderator." });
+            return Unauthorized(new { success = false, message = "Không xác định được điều hành viên." });
 
         var result = await _reportService.ToggleReportStatusAsync(id, moderatorId.Value, request.IsActive);
         if (!result.Success)

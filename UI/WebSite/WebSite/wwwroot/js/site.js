@@ -1,10 +1,8 @@
 (() => {
   const ROOT_ID = 'nm-toast-root';
   const DEFAULT_DURATION = 2800;
-  const ICON_BY_TYPE = {
-    info: 'info',
+  const ICON_BY_VARIANT = {
     success: 'check_circle',
-    warning: 'warning_amber',
     error: 'error'
   };
   const TYPE_ALIASES = {
@@ -22,7 +20,17 @@
     canhbao: 'warning',
     error: 'error',
     err: 'error',
-    loi: 'error'
+    loi: 'error',
+    failed: 'error',
+    failure: 'error',
+    'that bai': 'error',
+    thatbai: 'error'
+  };
+  const VARIANT_BY_TYPE = {
+    info: 'success',
+    success: 'success',
+    warning: 'error',
+    error: 'error'
   };
 
   function ensureRoot() {
@@ -42,7 +50,7 @@
   }
 
   function normalizeTypeKey(rawType) {
-    const type = String(rawType || 'info').trim().toLowerCase();
+    const type = String(rawType || 'success').trim().toLowerCase();
     const normalized = typeof type.normalize === 'function'
       ? type.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
       : type;
@@ -52,7 +60,11 @@
 
   function getType(rawType) {
     const typeKey = normalizeTypeKey(rawType);
-    return TYPE_ALIASES[typeKey] || 'info';
+    return TYPE_ALIASES[typeKey] || 'success';
+  }
+
+  function getVariant(type) {
+    return VARIANT_BY_TYPE[type] || 'error';
   }
 
   function getDuration(rawDuration) {
@@ -66,18 +78,21 @@
 
     const opts = normalizeOptions(options);
     const type = getType(opts.type);
+    const variant = getVariant(type);
     const duration = getDuration(opts.duration);
     const dismissible = opts.dismissible !== false;
 
     const root = ensureRoot();
     const toast = document.createElement('div');
-    toast.className = `nm-toast nm-toast--${type}`;
+    toast.className = `nm-toast nm-toast--${variant}`;
+    toast.dataset.toastType = type;
+    toast.dataset.toastVariant = variant;
     toast.setAttribute('role', 'status');
-    toast.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
+    toast.setAttribute('aria-live', variant === 'error' ? 'assertive' : 'polite');
 
     const icon = document.createElement('span');
     icon.className = 'material-icons-round nm-toast__icon';
-    icon.textContent = ICON_BY_TYPE[type];
+    icon.textContent = ICON_BY_VARIANT[variant];
 
     const text = document.createElement('div');
     text.className = 'nm-toast__text';

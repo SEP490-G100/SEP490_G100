@@ -159,6 +159,10 @@ public class UserRepository : IUserRepository
     public async Task<bool> IsEmailInUseAsync(string email) =>
         await _db.Users.AnyAsync(u => u.Email == email && !u.IsDeleted);
 
+    /// <summary>Check whether a phone number is already registered.</summary>
+    public async Task<bool> IsPhoneInUseAsync(string phoneNumber) =>
+        await _db.Users.AnyAsync(u => u.PhoneNumber == phoneNumber && !u.IsDeleted);
+
     /// <summary>Fetch a Role entity by name.</summary>
     public async Task<Role?> GetRoleByNameAsync(string roleName) =>
         await _db.Roles.FirstOrDefaultAsync(r => r.Name == roleName && !r.IsDeleted);

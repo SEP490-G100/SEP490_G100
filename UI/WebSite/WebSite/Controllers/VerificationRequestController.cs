@@ -1,4 +1,4 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Azure;
@@ -286,7 +286,7 @@ public class VerificationRequestController : Controller
                 includeHealthCertificate: false,
                 includeDegreeCertificate: true);
 
-            return await SubmitVerificationPayloadAsync(payload, "Ban da gui yeu cau xac minh ho so thanh cong.");
+            return await SubmitVerificationPayloadAsync(payload, "Bạn đã gửi yêu cầu xác minh hồ sơ thành công.");
         }
         catch (InvalidOperationException ex)
         {
@@ -301,7 +301,7 @@ public class VerificationRequestController : Controller
             return RedirectToAction(nameof(NannySubmitVerificationRequest), new
             {
                 toastType = "error",
-                toastMessage = "Khong the upload tai lieu len Azure Blob Storage. Vui long thu lai sau."
+                toastMessage = "Không thể upload tài liệu lên Azure Blob Storage. Vui lòng thử lại sau."
             });
         }
     }
@@ -316,27 +316,29 @@ public class VerificationRequestController : Controller
             return RedirectToAction("Index", "Profile", new
             {
                 toastType = "error",
-                toastMessage = "Vui long cap nhat profile ca nhan truoc khi gui yeu cau."
+                toastMessage = "Vui lòng cập nhật profile cá nhân truoc khi gui yêu cầu."
             });
         }
 
         ValidateUploadSection(
             model.HealthCertificateFiles,
             nameof(model.HealthCertificateFiles),
-            "Ban phai upload anh cho muc giay kham suc khoe.",
+            "Bạn phải upload ảnh cho mục giấy khám sức khỏe.",
             isRequired: true);
 
         if (!model.HealthCertificateExpiryDate.HasValue)
         {
-            ModelState.AddModelError(nameof(model.HealthCertificateExpiryDate), "Ban phai chon ngay het han cho giay kham suc khoe.");
+            ModelState.AddModelError(nameof(model.HealthCertificateExpiryDate), "Bạn phải chọn ngày hết hạn cho giấy khám sức khỏe.");
         }
         else if (model.HealthCertificateExpiryDate.Value.Date <= DateTime.UtcNow.Date)
         {
-            ModelState.AddModelError(nameof(model.HealthCertificateExpiryDate), "Ngay het han phai lon hon ngay hien tai.");
+            ModelState.AddModelError(nameof(model.HealthCertificateExpiryDate), "Ngày hết hạn phải lớn hơn ngày hiện tại.");
         }
 
         if (!ModelState.IsValid)
+        {
             return View("NannySubmitVerificationRequest", model);
+        }
 
         try
         {
@@ -362,7 +364,7 @@ public class VerificationRequestController : Controller
             return RedirectToAction(nameof(NannySubmitVerificationRequest), new
             {
                 toastType = "error",
-                toastMessage = "Khong the tai tai lieu len. Vui long thu lai sau."
+                toastMessage = "Không thể tải tài liệu lên. Vui lòng thử lại sau."
             });
         }
     }
@@ -384,13 +386,19 @@ public class VerificationRequestController : Controller
         var documents = new List<object>();
 
         if (includeIdentity)
+        {
             await AddDocumentsAsync(model.IdentityCardFiles, VerificationDocumentType.IdentityCard, documents);
+        }
 
         if (includeHealthCertificate)
+        {
             await AddDocumentsAsync(model.HealthCertificateFiles, VerificationDocumentType.HealthCertificate, documents, model.HealthCertificateExpiryDate);
+        }
 
         if (includeDegreeCertificate)
+        {
             await AddDocumentsAsync(model.CertificateFiles, VerificationDocumentType.DegreeCertificate, documents);
+        }
 
         return new
         {
@@ -418,7 +426,7 @@ public class VerificationRequestController : Controller
             return RedirectToAction(nameof(NannySubmitVerificationRequest), new
             {
                 toastType = "error",
-                toastMessage = "Loi he thong tu may chu. Vui long thu lai sau."
+                toastMessage = "Lỗi hệ thống từ máy chủ. Vui lòng thử lại sau."
             });
         }
 
@@ -427,15 +435,15 @@ public class VerificationRequestController : Controller
             return RedirectToAction(nameof(NannySubmitVerificationRequest), new
             {
                 toastType = "error",
-                toastMessage = result?.Message ?? "Gui yeu cau that bai."
+                toastMessage = result?.Message ?? "Gửi yêu cầu thất bại."
             });
         }
 
         await _notificationHub.Clients.Group("role:Moderator").SendAsync("notification:new", new
         {
             type = "verification-request-submitted",
-            title = "Co yeu cau xac minh moi",
-            message = "Mot bao mau vua gui yeu cau xac minh moi.",
+            title = "Có yêu cầu xác minh mới",
+            message = "Một bảo mẫu vừa gửi yêu cầu xác minh mới.",
             toastType = "info"
         });
 
@@ -451,13 +459,17 @@ public class VerificationRequestController : Controller
         AddAuthHeader();
         var response = await _http.GetAsync("/api/profile");
         if (!response.IsSuccessStatusCode)
+        {
             return false;
+        }
 
         var json = await response.Content.ReadAsStringAsync();
         var profileResult = JsonSerializer.Deserialize<ApiResult<PersonalProfileViewModel>>(json, JsonOptions);
         var profile = profileResult?.Data;
         if (profile == null)
+        {
             return false;
+        }
 
         model.NannyFirstName = profile.FirstName;
         model.NannyLastName = profile.LastName;
@@ -487,13 +499,13 @@ public class VerificationRequestController : Controller
         {
             if (!IsSupportedDocument(file))
             {
-                ModelState.AddModelError(fieldName, "Ban phai tai len tep dinh dang anh hoac PDF.");
+                ModelState.AddModelError(fieldName, "Bạn phải tải lên tệp định dạng ảnh hoặc PDF.");
                 return;
             }
 
             if (file.Length > MaxDocumentSizeInBytes)
             {
-                ModelState.AddModelError(fieldName, "Ban chi duoc tai len tep co dung luong toi da 5MB.");
+                ModelState.AddModelError(fieldName, "Bạn chỉ được tải lên tệp có dung lượng tối đa 5MB.");
                 return;
             }
         }
@@ -502,11 +514,15 @@ public class VerificationRequestController : Controller
     private static bool IsSupportedDocument(IFormFile file)
     {
         if (file == null || string.IsNullOrWhiteSpace(file.FileName))
+        {
             return false;
+        }
 
         var extension = Path.GetExtension(file.FileName);
         if (!AllowedDocumentExtensions.Contains(extension))
+        {
             return false;
+        }
 
         return string.IsNullOrWhiteSpace(file.ContentType)
             || file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase)
@@ -520,7 +536,9 @@ public class VerificationRequestController : Controller
         DateTime? expiryDate = null)
     {
         if (files == null || files.Count == 0)
+        {
             return;
+        }
 
         foreach (var file in files)
         {
