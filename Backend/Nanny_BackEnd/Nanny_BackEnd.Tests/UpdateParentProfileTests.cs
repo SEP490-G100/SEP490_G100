@@ -67,7 +67,7 @@ public class UpdateParentProfileTests
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             _sut.UpdateParentOnboardingProfileAsync(id, req));
 
-        Assert.Equal("So luong tre phai lon hon hoac bang 1.", ex.Message);
+        Assert.Equal("Số lượng trẻ phải lớn hơn hoặc bằng 1.", ex.Message);
     }
 
     // Condition: tổng số con khai báo &lt; số hồ sơ con đã tạo.
@@ -87,7 +87,7 @@ public class UpdateParentProfileTests
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             _sut.UpdateParentOnboardingProfileAsync(id, req));
 
-        Assert.Equal("Khong the giam tong so tre xuong 2 vi ban da tao 3 ho so tre.", ex.Message);
+        Assert.Equal("Không thể giảm tổng số trẻ xuống 2 vì bạn đã tạo 3 hồ sơ trẻ.", ex.Message);
     }
 
     // Condition: chưa có ParentProfile — tạo mới.

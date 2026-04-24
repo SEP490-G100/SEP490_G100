@@ -15,7 +15,7 @@ namespace Nanny_BackEnd.Tests;
 /// </summary>
 public class GetPublicProfileTests
 {
-    private const string UserNotFoundMessage = "NgÆ°á»i dÃ¹ng khÃ´ng tá»“n táº¡i.";
+    private const string UserNotFoundMessage = "Người dùng không tồn tại.";
 
     private readonly Mock<IUserRepository> _mockUser;
     private readonly Mock<IParentRepository> _mockParent;

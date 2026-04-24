@@ -16,7 +16,7 @@ namespace Nanny_BackEnd.Tests;
 /// </summary>
 public class CreateChildProfileTests
 {
-    private const string OnlyParentMessage = "Chá»‰ dÃ nh cho Parent.";
+    private const string OnlyParentMessage = "Chỉ dành cho Parent.";
 
     private readonly Mock<IUserRepository> _mockUser;
     private readonly Mock<IParentRepository> _mockParent;

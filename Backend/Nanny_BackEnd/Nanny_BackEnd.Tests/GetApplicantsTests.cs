@@ -101,6 +101,7 @@ public class GetApplicantsTests
                     User = new User { FirstName = "Tran", LastName = "Binh" }
                 },
                 Status    = 1,
+                RejectionReason = "Khong phu hop lich trinh",
                 CreatedAt = DateTime.UtcNow
             }
         };
@@ -113,6 +114,7 @@ public class GetApplicantsTests
         Assert.Equal(2, result.Count);
         Assert.Equal(0, result[0].Status);
         Assert.Equal(1, result[1].Status);
+        Assert.Equal("Khong phu hop lich trinh", result[1].RejectionReason);
         Assert.Equal(new[] { "Nguyen An", "Tran Binh" },
             result.Select(r => r.NannyName).ToArray());
     }

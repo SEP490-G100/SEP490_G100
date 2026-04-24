@@ -381,7 +381,7 @@ public class ProfileController : Controller
         }
         catch
         {
-            // silent â€” review failure should not block profile load
+            // silent — review failure should not block profile load
         }
     }
 

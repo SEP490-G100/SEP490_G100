@@ -14,8 +14,7 @@ namespace Nanny_BackEnd.Tests;
 /// </summary>
 public class GetChildProfilesTests
 {
-    private const string OnlyParentMessage =
-        "Chá»‰ ngÆ°á»i dÃ¹ng cÃ³ vá»‹ trÃ­ Parent má»›i cÃ³ thá»ƒ xem.";
+    private const string OnlyParentMessage = "Chỉ người dùng có vị trí Parent mới có thể xem.";
 
     private readonly Mock<IUserRepository> _mockUser;
     private readonly Mock<IParentRepository> _mockParent;

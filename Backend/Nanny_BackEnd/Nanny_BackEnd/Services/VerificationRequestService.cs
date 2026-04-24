@@ -44,7 +44,7 @@ public class VerificationRequestService : IVerificationRequestService
     {
         var request = await _verificationRequestRepo.GetByIdAsync(id);
         if (request == null)
-            return (false, null, "Khong tim thay yeu cau xac minh.");
+            return (false, null, "Không tìm thấy yêu cầu xác minh.");
 
         return (true, MapDetailDto(request), null);
     }
@@ -57,21 +57,21 @@ public class VerificationRequestService : IVerificationRequestService
         if (request.Action != (int)NannyVerificationRequestStatus.Approved &&
             request.Action != (int)NannyVerificationRequestStatus.Rejected)
         {
-            return (false, 400, "Action khong hop le. Chi chap nhan 2 (Approve) hoac 3 (Reject).");
+            return (false, 400, "Action không hợp lệ. Chỉ chấp nhận 2 (Approve) hoặc 3 (Reject).");
         }
 
         if (request.Action == (int)NannyVerificationRequestStatus.Rejected &&
             string.IsNullOrWhiteSpace(request.RejectionReason))
         {
-            return (false, 400, "Ly do tu choi la bat buoc khi tu choi yeu cau.");
+            return (false, 400, "Lý do từ chối là bắt buộc khi từ chối yêu cầu.");
         }
 
         var verificationRequest = await _verificationRequestRepo.GetByIdAsync(id);
         if (verificationRequest == null)
-            return (false, 404, "Khong tim thay yeu cau xac minh.");
+            return (false, 404, "Không tìm thấy yêu cầu xác minh.");
 
         if (verificationRequest.Status != (int)NannyVerificationRequestStatus.Pending)
-            return (false, 409, "Yeu cau nay da duoc xu ly truoc do.");
+            return (false, 409, "Yêu cầu này đã được xử lý trước đó.");
 
         verificationRequest.Status = request.Action;
         verificationRequest.ReviewedBy = moderatorId;
@@ -112,11 +112,11 @@ public class VerificationRequestService : IVerificationRequestService
         await _verificationRequestRepo.SaveChangesAsync();
 
         var notificationTitle = request.Action == (int)NannyVerificationRequestStatus.Approved
-            ? "Yeu cau xac minh cua ban da duoc chap thuan"
-            : "Yeu cau xac minh cua ban da bi tu choi";
+            ? "Yêu cầu xác minh của bạn đã được chấp thuận"
+            : "Yêu cầu xác minh của bạn đã bị từ chối";
         var notificationContent = request.Action == (int)NannyVerificationRequestStatus.Approved
-            ? "Moderator da chap thuan yeu cau xac minh cua ban."
-            : $"Moderator da tu choi yeu cau xac minh cua ban. {(string.IsNullOrWhiteSpace(verificationRequest.RejectionReason) ? string.Empty : $"Ly do: {verificationRequest.RejectionReason}")}".Trim();
+            ? "Moderator đã chấp thuận yêu cầu xác minh của bạn."
+            : $"Moderator đã từ chối yêu cầu xác minh của bạn. {(string.IsNullOrWhiteSpace(verificationRequest.RejectionReason) ? string.Empty : $"Lý do: {verificationRequest.RejectionReason}")}".Trim();
         var notificationType = request.Action == (int)NannyVerificationRequestStatus.Approved
             ? NotificationTypes.VerificationRequestApproved
             : NotificationTypes.VerificationRequestRejected;
@@ -131,8 +131,8 @@ public class VerificationRequestService : IVerificationRequestService
             moderatorId);
 
         var message = request.Action == (int)NannyVerificationRequestStatus.Approved
-            ? "Da duyet yeu cau xac minh."
-            : "Da tu choi yeu cau xac minh.";
+            ? "Đã duyệt yêu cầu xác minh."
+            : "Đã từ chối yêu cầu xác minh.";
 
         return (true, 200, message);
     }
@@ -180,13 +180,13 @@ public class VerificationRequestService : IVerificationRequestService
         var profile = await _verificationRequestRepo.GetNannyProfileByUserIdAsync(userId);
         if (profile == null)
         {
-            return (false, null, "Khong tim thay ho so Nanny.");
+            return (false, null, "Không tìm thấy hồ sơ Nanny.");
         }
 
         var request = await _verificationRequestRepo.GetByIdAsync(id);
         if (request == null || request.NannyProfileId != profile.Id)
         {
-            return (false, null, "Khong tim thay yeu cau xac minh.");
+            return (false, null, "Không tìm thấy yêu cầu xác minh.");
         }
 
         return (true, MapDetailDto(request), null);
@@ -197,7 +197,7 @@ public class VerificationRequestService : IVerificationRequestService
         var profile = await _verificationRequestRepo.GetNannyProfileByUserIdAsync(userId);
         if (profile == null)
         {
-            return (false, "Khong tim thay ho so Nanny.");
+            return (false, "Không tìm thấy hồ sơ Nanny.");
         }
 
         if (request.Documents == null || !request.Documents.Any())
@@ -214,7 +214,7 @@ public class VerificationRequestService : IVerificationRequestService
                 existingRequest.Status == (int)NannyVerificationRequestStatus.Pending &&
                 existingRequest.RequestType == (int)requestType))
         {
-            return (false, "Ban da co mot yeu cau dang cho duyet cho loai ho so nay.");
+            return (false, "Bạn đã có một yêu cầu đang chờ duyệt cho loại hồ sơ này.");
         }
 
         if (requestType == VerificationRequestType.HealthCertificate && !request.HealthCertificateExpiryDate.HasValue)
@@ -266,14 +266,14 @@ public class VerificationRequestService : IVerificationRequestService
         await _verificationRequestRepo.SaveChangesAsync();
 
         await _notificationService.createNotificationForModerators(
-            "Co yeu cau xac minh moi",
-            "Mot nanny vua gui yeu cau xac minh moi va dang cho moderator xem xet.",
+            "Có yêu cầu xác minh mới",
+            "Một nanny vừa gửi yêu cầu xác minh mới và đang chờ moderator xem xét.",
             NotificationTypes.VerificationRequestSubmitted,
             verificationRequest.Id,
             "VerificationRequest",
             userId);
 
-        return (true, "Gui yeu cau xac minh thanh cong.");
+        return (true, "Gửi yêu cầu xác minh thành công.");
     }
 
     private static VerificationRequestListDto MapListDto(Nanny_BackEnd.Models.VerificationRequest request)

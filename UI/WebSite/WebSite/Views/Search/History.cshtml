@@ -841,7 +841,7 @@
                     id: item.jobApplicationId,
                     status: item.status,
                     appliedAt: item.appliedAt,
-                    rejectionReason: null,
+                    rejectionReason: item.rejectionReason ?? item.RejectionReason ?? null,
                     nanny: {
                         userId: item.nannyUserId,
                         profileId: item.nannyProfileId,

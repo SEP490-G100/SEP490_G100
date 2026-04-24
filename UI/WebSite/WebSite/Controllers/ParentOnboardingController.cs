@@ -18,6 +18,13 @@ public class ParentOnboardingController : Controller
     private readonly string _apiBaseUrl;
     private readonly IAzureBlobStorageService _blobStorageService;
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
+    private const int MinParentAge = 18;
+    private const int MaxNameLength = 100;
+    private const int MaxAddressLength = 500;
+    private const int MaxLocationLength = 100;
+    private const int MaxFamilyDescriptionLength = 1000;
+    private const int MaxChildTextLength = 1000;
+    private const int MaxChildren = 20;
 
     public ParentOnboardingController(
         IHttpClientFactory httpFactory,
@@ -43,11 +50,7 @@ public class ParentOnboardingController : Controller
         if (string.IsNullOrWhiteSpace(phoneNumber))
             return null;
 
-        var normalized = phoneNumber.Trim().Replace(" ", string.Empty);
-        if (normalized.StartsWith("00", StringComparison.Ordinal))
-            normalized = "+" + normalized[2..];
-
-        return normalized;
+        return phoneNumber.Trim();
     }
 
     private static bool IsValidPhoneNumber(string phoneNumber)
@@ -56,10 +59,7 @@ public class ParentOnboardingController : Controller
         if (string.IsNullOrWhiteSpace(normalized))
             return false;
 
-        if (normalized.StartsWith("+", StringComparison.Ordinal))
-            normalized = normalized[1..];
-
-        return normalized.Length is >= 9 and <= 15 && normalized.All(char.IsDigit);
+        return System.Text.RegularExpressions.Regex.IsMatch(normalized, @"^0\d{9}$");
     }
 
     private string? NormalizeAvatarUrl(string? url)
@@ -92,6 +92,12 @@ public class ParentOnboardingController : Controller
 
         return (string.Join(" ", parts[..^1]), parts[^1]);
     }
+
+    private static string? NormalizeOptionalText(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private static bool IsValidLength(string? value, int maxLength) =>
+        string.IsNullOrWhiteSpace(value) || value.Trim().Length <= maxLength;
 
     private async Task RefreshAuthClaimsAsync(string? fullName, string? avatarUrl)
     {
@@ -173,6 +179,10 @@ public class ParentOnboardingController : Controller
         }
 
         var (firstName, lastName) = SplitFullName(model.FullName, "Parent", "User");
+        var normalizedAddress = NormalizeOptionalText(model.Address);
+        var normalizedCity = NormalizeOptionalText(model.City);
+        var normalizedDistrict = NormalizeOptionalText(model.District);
+        var normalizedWard = NormalizeOptionalText(model.Ward);
 
         var updateRequest = new
         {
@@ -182,10 +192,10 @@ public class ParentOnboardingController : Controller
             AvatarUrl = model.AvatarUrl,
             DateOfBirth = model.DateOfBirth,
             Gender = (int?)null,
-            model.Address,
-            model.City,
-            model.District,
-            model.Ward,
+            Address = normalizedAddress,
+            City = normalizedCity,
+            District = normalizedDistrict,
+            Ward = normalizedWard,
             model.Latitude,
             model.Longitude
         };
@@ -201,7 +211,7 @@ public class ParentOnboardingController : Controller
         SetAuthHeader();
         var payload = new
         {
-            model.FamilyDescription,
+            FamilyDescription = NormalizeOptionalText(model.FamilyDescription),
             model.NumberOfChildren
         };
 
@@ -216,10 +226,10 @@ public class ParentOnboardingController : Controller
         SetAuthHeader();
         var payload = new
         {
-            Characteristic = model.ChildCharacteristic,
+            Characteristic = NormalizeOptionalText(model.ChildCharacteristic),
             ChildAgeGroup = model.ChildAgeGroup,
-            SpecialNeeds = model.ChildSpecialNeeds,
-            Notes = model.ChildNotes
+            SpecialNeeds = NormalizeOptionalText(model.ChildSpecialNeeds),
+            Notes = NormalizeOptionalText(model.ChildNotes)
         };
 
         var response = await _http.PostAsJsonAsync("/api/profile/children", payload);
@@ -268,8 +278,22 @@ public class ParentOnboardingController : Controller
         if (direction != "next")
             return View(model);
 
-        if (string.IsNullOrWhiteSpace(model.FullName))
+        var normalizedFullName = NormalizeOptionalText(model.FullName);
+        model.FullName = normalizedFullName;
+
+        if (string.IsNullOrWhiteSpace(normalizedFullName))
+        {
             ModelState.AddModelError(nameof(model.FullName), "Vui lòng nhập họ tên.");
+        }
+        else
+        {
+            var (firstName, lastName) = SplitFullName(normalizedFullName, "Parent", "User");
+            if (string.IsNullOrWhiteSpace(firstName) || firstName.Length > MaxNameLength)
+                ModelState.AddModelError(nameof(model.FullName), $"Họ không được rỗng và tối đa {MaxNameLength} ký tự.");
+
+            if (string.IsNullOrWhiteSpace(lastName) || lastName.Length > MaxNameLength)
+                ModelState.AddModelError(nameof(model.FullName), $"Tên không được rỗng và tối đa {MaxNameLength} ký tự.");
+        }
 
         if (!model.DateOfBirth.HasValue)
         {
@@ -285,12 +309,13 @@ public class ParentOnboardingController : Controller
             var age = today.Year - model.DateOfBirth.Value.Year;
             if (model.DateOfBirth.Value > today.AddYears(-age))
                 age--;
-            if (age < 18)
-                ModelState.AddModelError(nameof(model.DateOfBirth), "Phụ huynh phải đủ 18 tuổi trở lên.");
+            if (age < MinParentAge)
+                ModelState.AddModelError(nameof(model.DateOfBirth), $"Phụ huynh phải đủ {MinParentAge} tuổi trở lên.");
         }
 
+        model.PhoneNumber = NormalizePhoneNumber(model.PhoneNumber);
         if (!string.IsNullOrWhiteSpace(model.PhoneNumber) && !IsValidPhoneNumber(model.PhoneNumber))
-            ModelState.AddModelError(nameof(model.PhoneNumber), "Số điện thoại không hợp lệ (10 chữ số).");
+            ModelState.AddModelError(nameof(model.PhoneNumber), "Số điện thoại phải gồm 10 chữ số và bắt đầu bằng 0.");
 
         if (model.AvatarFile != null && model.AvatarFile.Length > 0)
         {
@@ -312,11 +337,31 @@ public class ParentOnboardingController : Controller
             }
         }
 
+        model.Address = NormalizeOptionalText(model.Address);
+        model.City = NormalizeOptionalText(model.City);
+        model.District = NormalizeOptionalText(model.District);
+        model.Ward = NormalizeOptionalText(model.Ward);
+
         if (string.IsNullOrWhiteSpace(model.Address))
             ModelState.AddModelError(nameof(model.Address), "Vui lòng nhập địa chỉ chi tiết.");
+        else if (!IsValidLength(model.Address, MaxAddressLength))
+            ModelState.AddModelError(nameof(model.Address), $"Địa chỉ không được vượt quá {MaxAddressLength} ký tự.");
 
         if (string.IsNullOrWhiteSpace(model.City) || string.IsNullOrWhiteSpace(model.District))
-            ModelState.AddModelError(string.Empty, "Vui lòng chọn đầy đủ Tỉnh/Thành và Quận/Phường.");
+        {
+            ModelState.AddModelError(string.Empty, "Vui lòng chọn đầy đủ Tỉnh/Thành và Quận/Huyện.");
+        }
+        else
+        {
+            if (!IsValidLength(model.City, MaxLocationLength))
+                ModelState.AddModelError(nameof(model.City), $"Tỉnh/Thành tối đa {MaxLocationLength} ký tự.");
+
+            if (!IsValidLength(model.District, MaxLocationLength))
+                ModelState.AddModelError(nameof(model.District), $"Quận/Huyện tối đa {MaxLocationLength} ký tự.");
+        }
+
+        if (!IsValidLength(model.Ward, MaxLocationLength))
+            ModelState.AddModelError(nameof(model.Ward), $"Phường/Xã tối đa {MaxLocationLength} ký tự.");
 
         if (!ModelState.IsValid)
             return View(model);
@@ -348,14 +393,30 @@ public class ParentOnboardingController : Controller
         if (direction != "next")
             return View(model);
 
+        model.FamilyDescription = NormalizeOptionalText(model.FamilyDescription);
+        model.ChildCharacteristic = NormalizeOptionalText(model.ChildCharacteristic);
+        model.ChildSpecialNeeds = NormalizeOptionalText(model.ChildSpecialNeeds);
+        model.ChildNotes = NormalizeOptionalText(model.ChildNotes);
+
         if (string.IsNullOrWhiteSpace(model.FamilyDescription))
             ModelState.AddModelError(nameof(model.FamilyDescription), "Vui lòng mô tả gia đình.");
+        else if (!IsValidLength(model.FamilyDescription, MaxFamilyDescriptionLength))
+            ModelState.AddModelError(nameof(model.FamilyDescription), $"Mô tả gia đình tối đa {MaxFamilyDescriptionLength} ký tự.");
 
-        if (!model.NumberOfChildren.HasValue || model.NumberOfChildren < 1)
-            ModelState.AddModelError(nameof(model.NumberOfChildren), "Vui lòng nhập số lượng con.");
+        if (!model.NumberOfChildren.HasValue || model.NumberOfChildren < 1 || model.NumberOfChildren > MaxChildren)
+            ModelState.AddModelError(nameof(model.NumberOfChildren), $"Số lượng con phải trong khoảng 1-{MaxChildren}.");
 
-        if (!model.ChildAgeGroup.HasValue)
+        if (!model.ChildAgeGroup.HasValue || !Enum.IsDefined(model.ChildAgeGroup.Value))
             ModelState.AddModelError(nameof(model.ChildAgeGroup), "Vui lòng chọn nhóm tuổi của trẻ.");
+
+        if (!IsValidLength(model.ChildCharacteristic, MaxChildTextLength))
+            ModelState.AddModelError(nameof(model.ChildCharacteristic), $"Đặc điểm tối đa {MaxChildTextLength} ký tự.");
+
+        if (!IsValidLength(model.ChildSpecialNeeds, MaxChildTextLength))
+            ModelState.AddModelError(nameof(model.ChildSpecialNeeds), $"Nhu cầu đặc biệt tối đa {MaxChildTextLength} ký tự.");
+
+        if (!IsValidLength(model.ChildNotes, MaxChildTextLength))
+            ModelState.AddModelError(nameof(model.ChildNotes), $"Ghi chú tối đa {MaxChildTextLength} ký tự.");
 
         if (!ModelState.IsValid)
             return View(model);
@@ -377,3 +438,4 @@ public class ParentOnboardingController : Controller
         return RedirectToAction("Index", "Home");
     }
 }
+
