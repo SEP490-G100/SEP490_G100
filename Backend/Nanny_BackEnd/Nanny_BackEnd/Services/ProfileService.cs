@@ -1,5 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.SqlClient;
 using Nanny_BackEnd.DTOs.Profile;
 using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Helpers;
@@ -7,6 +9,7 @@ using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
 using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Services.Interfaces;
+using System.Text.RegularExpressions;
 
 namespace Nanny_BackEnd.Services;
 
@@ -387,8 +390,18 @@ public class ProfileService : IProfileService
         user.LastName = request.LastName?.Trim() ?? user.LastName;
 
         // Partial update for optional fields: keep old values when input is empty
-        if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
-            user.PhoneNumber = request.PhoneNumber.Trim();
+        var normalizedPhone = NormalizePhoneNumber(request.PhoneNumber);
+        if (!string.IsNullOrWhiteSpace(normalizedPhone))
+        {
+            if (!IsValidPhoneNumber(normalizedPhone))
+                throw new InvalidOperationException("Số điện thoại phải gồm 10 chữ số và bắt đầu bằng 0.");
+
+            var isPhoneChanged = !string.Equals(user.PhoneNumber, normalizedPhone, StringComparison.Ordinal);
+            if (isPhoneChanged && await _userRepo.IsPhoneInUseAsync(normalizedPhone))
+                throw new InvalidOperationException("Số điện thoại đã được đăng ký.");
+
+            user.PhoneNumber = normalizedPhone;
+        }
         if (!string.IsNullOrWhiteSpace(request.AvatarUrl))
             user.AvatarUrl = request.AvatarUrl;
 
@@ -428,13 +441,17 @@ public class ProfileService : IProfileService
 
         if (isNanny)
         {
+            var hasNannySpecificPayload = HasNannySpecificPayload(request);
             var nannyProfile = await _nannyProfileRepo.FindByUserIdAsync(userId);
-            if (nannyProfile == null)
+            if (nannyProfile == null && hasNannySpecificPayload)
             {
                 nannyProfile = new NannyProfile
                 {
                     Id = Guid.NewGuid(),
                     UserId = userId,
+                    SalaryType = 0,
+                    TotalReviews = 0,
+                    IsDeleted = false,
                     CreatedAt = DateTime.UtcNow,
                     CreatedBy = userId,
                     VerificationStatus = (int)Enums.VerificationStatus.NotSubmitted
@@ -442,56 +459,67 @@ public class ProfileService : IProfileService
                 _nannyProfileRepo.Add(nannyProfile);
             }
 
-            if (!string.IsNullOrWhiteSpace(request.Bio))
-                nannyProfile.Bio = request.Bio.Trim();
-
-            if (request.YearsOfExperience.HasValue)
-                nannyProfile.YearsOfExperience = request.YearsOfExperience.Value;
-
-            if (request.EducationLevel.HasValue)
-                nannyProfile.EducationLevel = request.EducationLevel.Value;
-
-            if (request.ExpectedSalaryMin.HasValue)
-                nannyProfile.ExpectedSalaryMin = request.ExpectedSalaryMin.Value;
-
-            if (request.ExpectedSalaryMax.HasValue)
-                nannyProfile.ExpectedSalaryMax = request.ExpectedSalaryMax.Value;
-
-            if (request.MaxTravelDistance.HasValue)
-                nannyProfile.MaxTravelDistance = request.MaxTravelDistance.Value;
-
-            if (request.SkillIds != null)
+            if (nannyProfile != null)
             {
-                var selectedSkillIds = request.SkillIds
-                    .Where(x => x != Guid.Empty)
-                    .Distinct()
-                    .ToList();
+                if (!string.IsNullOrWhiteSpace(request.Bio))
+                    nannyProfile.Bio = request.Bio.Trim();
 
-                var existingSkills = await _nannySkillRepo.GetByNannyProfileIdAsync(nannyProfile.Id);
-                if (existingSkills.Any())
-                    _nannySkillRepo.RemoveRange(existingSkills);
+                if (request.YearsOfExperience.HasValue)
+                    nannyProfile.YearsOfExperience = request.YearsOfExperience.Value;
 
-                if (selectedSkillIds.Any())
+                if (request.EducationLevel.HasValue)
+                    nannyProfile.EducationLevel = request.EducationLevel.Value;
+
+                if (request.ExpectedSalaryMin.HasValue)
+                    nannyProfile.ExpectedSalaryMin = request.ExpectedSalaryMin.Value;
+
+                if (request.ExpectedSalaryMax.HasValue)
+                    nannyProfile.ExpectedSalaryMax = request.ExpectedSalaryMax.Value;
+
+                if (request.MaxTravelDistance.HasValue)
+                    nannyProfile.MaxTravelDistance = request.MaxTravelDistance.Value;
+
+                if (request.SkillIds != null)
                 {
-                    var now = DateTime.UtcNow;
-                    var newSkills = selectedSkillIds.Select(skillId => new NannySkill
-                    {
-                        Id = Guid.NewGuid(),
-                        NannyProfileId = nannyProfile.Id,
-                        SkillId = skillId,
-                        ProficiencyLevel = null,
-                        CreatedAt = now,
-                        CreatedBy = userId
-                    });
-                    _nannySkillRepo.AddRange(newSkills);
-                }
-            }
+                    var selectedSkillIds = request.SkillIds
+                        .Where(x => x != Guid.Empty)
+                        .Distinct()
+                        .ToList();
 
-            nannyProfile.UpdatedAt = DateTime.UtcNow;
-            nannyProfile.UpdatedBy = userId;
+                    var existingSkills = await _nannySkillRepo.GetByNannyProfileIdAsync(nannyProfile.Id);
+                    if (existingSkills.Any())
+                        _nannySkillRepo.RemoveRange(existingSkills);
+
+                    if (selectedSkillIds.Any())
+                    {
+                        var now = DateTime.UtcNow;
+                        var newSkills = selectedSkillIds.Select(skillId => new NannySkill
+                        {
+                            Id = Guid.NewGuid(),
+                            NannyProfileId = nannyProfile.Id,
+                            SkillId = skillId,
+                            ProficiencyLevel = null,
+                            CreatedAt = now,
+                            CreatedBy = userId
+                        });
+                        _nannySkillRepo.AddRange(newSkills);
+                    }
+                }
+
+                nannyProfile.UpdatedAt = DateTime.UtcNow;
+                nannyProfile.UpdatedBy = userId;
+            }
         }
 
-        await _userRepo.SaveChangesAsync();
+        try
+        {
+            await _userRepo.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogError(ex, "Lỗi lưu hồ sơ cá nhân cho UserId={UserId}", userId);
+            throw new InvalidOperationException(BuildFriendlyDbUpdateMessage(ex));
+        }
 
         // Fire-and-forget: cập nhật embedding sau khi nanny sửa profile
         if (isNanny)
@@ -521,6 +549,9 @@ public class ProfileService : IProfileService
             {
                 Id = Guid.NewGuid(),
                 UserId = userId,
+                SalaryType = 0,
+                TotalReviews = 0,
+                IsDeleted = false,
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = userId,
                 VerificationStatus = (int)Enums.VerificationStatus.NotSubmitted
@@ -732,6 +763,82 @@ public class ProfileService : IProfileService
             throw new InvalidOperationException($"{fieldName} không được vượt quá {maxLength} ký tự.");
 
         return normalized;
+    }
+
+    private static string? NormalizePhoneNumber(string? phoneNumber) =>
+        string.IsNullOrWhiteSpace(phoneNumber) ? null : phoneNumber.Trim();
+
+    private static bool IsValidPhoneNumber(string phoneNumber) =>
+        Regex.IsMatch(phoneNumber, @"^0\d{9}$");
+
+    private static bool IsUniquePhoneConstraintViolation(DbUpdateException ex)
+    {
+        var sqlEx = ex.GetBaseException() as SqlException;
+        if (sqlEx == null)
+            return false;
+
+        var isUniqueViolation = sqlEx.Number == 2601 || sqlEx.Number == 2627;
+        if (!isUniqueViolation)
+            return false;
+
+        return sqlEx.Message.Contains("UQ_Users_PhoneNumber", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string BuildFriendlyDbUpdateMessage(DbUpdateException ex)
+    {
+        var sqlEx = ex.GetBaseException() as SqlException;
+        if (sqlEx == null)
+            return "Không thể lưu dữ liệu hồ sơ. Vui lòng kiểm tra lại thông tin.";
+
+        if (IsUniquePhoneConstraintViolation(ex))
+            return "Số điện thoại đã được đăng ký.";
+
+        if ((sqlEx.Number == 2601 || sqlEx.Number == 2627)
+            && sqlEx.Message.Contains("UQ_Users_Email", StringComparison.OrdinalIgnoreCase))
+            return "Email đã được đăng ký.";
+
+        if (sqlEx.Number == 515)
+        {
+            var (column, table) = TryExtractSqlColumnAndTable(sqlEx.Message);
+            if (!string.IsNullOrWhiteSpace(column))
+            {
+                var target = string.IsNullOrWhiteSpace(table) ? column : $"{table}.{column}";
+                return $"Thiếu dữ liệu bắt buộc: {target}. Vui lòng kiểm tra lại thông tin.";
+            }
+
+            return "Thiếu dữ liệu bắt buộc để lưu hồ sơ. Vui lòng kiểm tra lại các trường bắt buộc.";
+        }
+
+        if (sqlEx.Number == 8152 || sqlEx.Number == 2628)
+            return "Một số trường vượt quá độ dài cho phép. Vui lòng kiểm tra họ tên, số điện thoại và địa chỉ.";
+
+        if (sqlEx.Number == 547)
+            return "Dữ liệu cập nhật không hợp lệ theo ràng buộc hệ thống.";
+
+        return $"Không thể lưu dữ liệu hồ sơ (SQL {sqlEx.Number}).";
+    }
+
+    private static bool HasNannySpecificPayload(UpdatePersonalInfoRequest request) =>
+        !string.IsNullOrWhiteSpace(request.Bio)
+        || request.YearsOfExperience.HasValue
+        || request.EducationLevel.HasValue
+        || request.ExpectedSalaryMin.HasValue
+        || request.ExpectedSalaryMax.HasValue
+        || request.MaxTravelDistance.HasValue
+        || (request.SkillIds?.Any(x => x != Guid.Empty) == true);
+
+    private static (string? Column, string? Table) TryExtractSqlColumnAndTable(string? sqlMessage)
+    {
+        if (string.IsNullOrWhiteSpace(sqlMessage))
+            return (null, null);
+
+        var match = Regex.Match(sqlMessage, @"column '([^']+)'.*table '([^']+)'", RegexOptions.IgnoreCase);
+        if (!match.Success)
+            return (null, null);
+
+        var column = match.Groups.Count > 1 ? match.Groups[1].Value : null;
+        var table = match.Groups.Count > 2 ? match.Groups[2].Value : null;
+        return (column, table);
     }
 
     private async Task EnsureDeclaredChildrenCountAtLeastCreatedAsync(ParentProfile parentProfile, Guid userId)
