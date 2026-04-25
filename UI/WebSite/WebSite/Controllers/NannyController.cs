@@ -62,6 +62,33 @@ public class NannyController : Controller
         return $"{defaultMessage} (HTTP {(int)response.StatusCode}): {trimmed}";
     }
 
+    private async Task<NannyProfileViewModel> LoadCurrentNannyProfileAsync()
+    {
+        SetAuthHeader();
+
+        try
+        {
+            var response = await _http.GetAsync("/api/profile");
+            if (!response.IsSuccessStatusCode)
+                return new NannyProfileViewModel();
+
+            var json = await response.Content.ReadAsStringAsync();
+            var apiResult = TryDeserializeApiResult(json);
+            if (apiResult?.Data is System.Text.Json.JsonElement element &&
+                element.ValueKind == JsonValueKind.Object)
+            {
+                return JsonSerializer.Deserialize<NannyProfileViewModel>(element.GetRawText(), JsonOpts)
+                       ?? new NannyProfileViewModel();
+            }
+        }
+        catch
+        {
+            // Keep onboarding page available even when profile prefill fails.
+        }
+
+        return new NannyProfileViewModel();
+    }
+
     private async Task<NannySkillsViewModel> BuildSkillsViewModelAsync(IEnumerable<Guid>? preselectedIds = null)
     {
         var vm = new NannySkillsViewModel();
@@ -491,9 +518,10 @@ public class NannyController : Controller
     }
 
     [HttpGet]
-    public IActionResult Profile()
+    public async Task<IActionResult> Profile()
     {
-        return View(new NannyProfileViewModel());
+        var vm = await LoadCurrentNannyProfileAsync();
+        return View(vm);
     }
 
     [HttpPost, ValidateAntiForgeryToken]
@@ -533,7 +561,11 @@ public class NannyController : Controller
         if (apiResult == null || !apiResult.Success)
         {
             var fallback = BuildFallbackHttpErrorMessage(response, json, "Cập nhật thất bại.");
-            ModelState.AddModelError("", apiResult?.Message ?? fallback);
+            var errorMessage = apiResult?.Message ?? fallback;
+            if (errorMessage.Contains("Số năm kinh nghiệm", StringComparison.OrdinalIgnoreCase))
+                ModelState.AddModelError(nameof(model.YearsOfExperience), errorMessage);
+            else
+                ModelState.AddModelError(string.Empty, errorMessage);
             return View(model);
         }
 

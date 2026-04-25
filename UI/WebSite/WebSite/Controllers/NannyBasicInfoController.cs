@@ -342,7 +342,7 @@ public class NannyBasicInfoController : Controller
             }
 
             await RefreshAuthClaimsAsync(model.FullName, model.AvatarUrl);
-            return RedirectToAction("Start", "Onboarding");
+            return RedirectToAction("Profile", "Nanny");
         }
 
         return View(model);
