@@ -183,10 +183,10 @@ public class AuthService : IAuthService
 
         var user = await _userRepo.FindByEmailAsync(email);
         if (user == null)
-            return (true, "Nếu email tồn tại, mã OTP đã được gửi.");
+            return (false, "Email chưa được đăng ký.");
 
         if (user.AuthProvider == (int)AuthProvider.Google)
-            return (true, "Nếu email tồn tại, mã OTP đã được gửi.");
+            return (false, "Tài khoản này đăng nhập bằng Google. Vui lòng đăng nhập bằng Google.");
 
         try
         {

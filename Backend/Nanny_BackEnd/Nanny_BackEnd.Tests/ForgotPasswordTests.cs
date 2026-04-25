@@ -52,7 +52,7 @@ public class ForgotPasswordTests
     }
 
     // ── TC1: Email không tồn tại ──────────────────────────────────────────
-    // Trả về message chung để tránh lộ thông tin email có tồn tại hay không
+    // Trả lỗi để yêu cầu người dùng nhập đúng email đã đăng ký
     [Fact]
     public async Task EmailNotFound()
     {
@@ -61,8 +61,8 @@ public class ForgotPasswordTests
 
         var (success, message) = await _sut.ForgotPasswordAsync("notfound@mail.com");
 
-        Assert.True(success);
-        Assert.Equal("Nếu email tồn tại, mã OTP đã được gửi.", message);
+        Assert.False(success);
+        Assert.Equal("Email chưa được đăng ký.", message);
 
         // Không gửi OTP khi email không tồn tại
         _mockOtp.Verify(o => o.GenerateAsync(It.IsAny<string>(), It.IsAny<OtpPurpose>(), It.IsAny<Guid?>()), Times.Never);
@@ -97,8 +97,8 @@ public class ForgotPasswordTests
 
         var (success, message) = await _sut.ForgotPasswordAsync("google@mail.com");
 
-        Assert.True(success);
-        Assert.Equal("Nếu email tồn tại, mã OTP đã được gửi.", message);
+        Assert.False(success);
+        Assert.Equal("Tài khoản này đăng nhập bằng Google. Vui lòng đăng nhập bằng Google.", message);
 
         _mockOtp.Verify(o => o.GenerateAsync(It.IsAny<string>(), It.IsAny<OtpPurpose>(), It.IsAny<Guid?>()), Times.Never);
     }

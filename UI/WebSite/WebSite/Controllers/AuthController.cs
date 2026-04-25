@@ -288,7 +288,10 @@ public class AuthController : Controller
         var result   = await ReadApiResult(response);
 
         if (result == null || !result.Success)
+        {
             TempData["Error"] = result?.Message ?? "Gửi lại mã OTP thất bại. Vui lòng thử lại.";
+            return RedirectToAction("ForgotPassword");
+        }
         else
             TempData["Success"] = "Đã gửi lại mã OTP. Vui lòng kiểm tra email (kể cả hộp thư spam).";
 
