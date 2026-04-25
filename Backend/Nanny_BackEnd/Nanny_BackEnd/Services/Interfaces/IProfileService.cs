@@ -14,7 +14,7 @@ public interface IProfileService
 {
     Task<string> UploadAvatarAsync(Guid userId, IFormFile file);
     Task<PersonalProfileDto> GetPersonalProfileAsync(Guid userId);
-    Task<PersonalProfileDto> GetPublicProfileAsync(Guid requesterUserId, Guid targetUserId);
+    Task<PersonalProfileDto> GetPublicProfileAsync(Guid? requesterUserId, Guid targetUserId);
     Task<PersonalProfileDto> UpdatePersonalInfoAsync(Guid userId, UpdatePersonalInfoRequest request);
     Task AddNannyCertificateAsync(Guid userId, CreateNannyCertificateRequest request);
     Task<List<ChildProfileDto>> GetChildProfilesAsync(Guid userId);

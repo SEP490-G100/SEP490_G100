@@ -103,11 +103,11 @@ public class ProfileService : IProfileService
         return await BuildProfileDtoAsync(userId);
     }
 
-    public async Task<PersonalProfileDto> GetPublicProfileAsync(Guid requesterUserId, Guid targetUserId)
+    public async Task<PersonalProfileDto> GetPublicProfileAsync(Guid? requesterUserId, Guid targetUserId)
     {
         var profile = await BuildProfileDtoAsync(targetUserId);
 
-        if (requesterUserId == targetUserId)
+        if (requesterUserId.HasValue && requesterUserId.Value == targetUserId)
             return profile;
 
         var isTargetParent = profile.Roles.Any(r => r.Equals("parent", StringComparison.OrdinalIgnoreCase));
