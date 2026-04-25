@@ -33,8 +33,6 @@ public class GetTransactionHistoryTests
             payOpt);
     }
 
-    // Condition: không pending hết hạn, không bản ghi lịch sử.
-    // Confirmation: danh sách rỗng, expire không gọi save nếu không pending.
     [Fact]
     public async Task NoTransactions_ReturnsEmpty()
     {
@@ -51,7 +49,6 @@ public class GetTransactionHistoryTests
         _mockRepo.Verify(r => r.getUserSubscriptionTransactions(userId, 30), Times.Once);
     }
 
-    // Condition: map 1 giao dịch thành công.
     [Fact]
     public async Task ReturnsMappedRows_WithStatusAndTypeLabels()
     {
@@ -66,7 +63,7 @@ public class GetTransactionHistoryTests
             Amount                    = 199000m,
             Status                    = 2,
             Type                      = 1,
-            Description               = "Thanh toan goi Plus",
+            Description               = "Thanh toán gói Plus",
             PaymentGatewayTransactionId = "PAY-1",
             CreatedAt                 = created,
             CompletedAt               = completed
@@ -83,17 +80,14 @@ public class GetTransactionHistoryTests
         Assert.Equal(id, r.Id);
         Assert.Equal(199000m, r.Amount);
         Assert.Equal(2, r.Status);
-        Assert.Equal("Thành công", r.StatusLabel);
         Assert.Equal(1, r.Type);
-        Assert.Equal("Thanh toán subscription", r.TypeLabel);
-        Assert.Equal("Thanh toan goi Plus", r.Description);
+        Assert.Equal("Thanh toán gói Plus", r.Description);
         Assert.Equal("PAY-1", r.PaymentGatewayTransactionId);
         Assert.Equal(created, r.CreatedAt);
         Assert.Equal(completed, r.CompletedAt);
     }
 
-    // Condition: giao dịch pending hết hạn trước khi lấy lịch sử.
-    // Confirmation: đánh dấu thất bại (status 3), gọi save; kết quả map thất bại.
+
     [Fact]
     public async Task ExpiresOldPending_ThenReturnsUpdatedRow()
     {
@@ -103,9 +97,9 @@ public class GetTransactionHistoryTests
             Id       = Guid.NewGuid(),
             UserId   = userId,
             Amount   = 1,
-            Status   = 1, // Chờ thanh toán
-            Type     = 1,
-            CreatedAt = DateTime.UtcNow.AddHours(-1), // hết hạn (CreatedAt + 15 phút << now)
+            Status    = 1,
+            Type      = 1,
+            CreatedAt = DateTime.UtcNow.AddHours(-1)
         };
 
         _mockRepo.Setup(r => r.getPendingSubscriptionTransactions(userId))

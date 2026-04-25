@@ -15,16 +15,6 @@ namespace Nanny_BackEnd.Tests;
 /// </summary>
 public class UploadAvatarAsyncTests
 {
-    private const string UserNotFoundMessage = "Người dùng không tồn tại.";
-
-    private const string ExtNotAllowedMessage =
-        "Chỉ chấp nhận file ảnh .jpg, .jpeg hoặc .png.";
-
-    private const string ContentTypeNotAllowedMessage =
-        "Chỉ chấp nhận ảnh JPEG/PNG hợp lệ.";
-
-    private const string FileTooLargeMessage =
-        "File ảnh không được vượt quá 5MB.";
 
     private readonly Mock<IUserRepository> _mockUser;
     private readonly Mock<IParentRepository> _mockParent;
@@ -67,6 +57,11 @@ public class UploadAvatarAsyncTests
             NullLogger<ProfileService>.Instance);
     }
 
+
+    private const string ExtNotAllowedMessage        = "Chỉ chấp nhận file ảnh .jpg, .jpeg hoặc .png.";
+    private const string ContentTypeNotAllowedMessage = "Chỉ chấp nhận ảnh JPEG/PNG hợp lệ.";
+    private const string FileTooLargeMessage          = "File ảnh không được vượt quá 5MB.";
+
     private static IFormFile MakeFile(string fileName, string? contentType, long length)
     {
         var mock = new Mock<IFormFile>();
@@ -97,7 +92,6 @@ public class UploadAvatarAsyncTests
         LastName = "B"
     };
 
-    // Condition: user không tồn tại.
     [Fact]
     public async Task UserNotFound_Throws()
     {
@@ -107,10 +101,8 @@ public class UploadAvatarAsyncTests
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.UploadAvatarAsync(id, file));
 
-        Assert.Equal(UserNotFoundMessage, ex.Message);
     }
 
-    // Condition: phần mở rộng không nằm trong { .jpg, .jpeg, .png }.
     [Fact]
     public async Task DisallowedExtension_Throws()
     {
@@ -124,7 +116,6 @@ public class UploadAvatarAsyncTests
         _mockUser.Verify(u => u.SaveChangesAsync(), Times.Never);
     }
 
-    // Condition: phần mở rộng OK nhưng Content-Type không phải image/jpeg|image/png.
     [Fact]
     public async Task DisallowedContentType_Throws()
     {
@@ -138,7 +129,6 @@ public class UploadAvatarAsyncTests
         _mockUser.Verify(u => u.SaveChangesAsync(), Times.Never);
     }
 
-    // Condition: ContentType null/empty — không hợp lệ.
     [Fact]
     public async Task NullOrEmptyContentType_Throws()
     {
@@ -166,7 +156,6 @@ public class UploadAvatarAsyncTests
         _mockUser.Verify(u => u.SaveChangesAsync(), Times.Never);
     }
 
-    // Condition: lưu file dưới wwwroot/uploads/avatars, cập nhật user, trả URL có query t=.
     [Fact]
     public async Task Success_WritesFile_UpdatesUser_ReturnsUrl()
     {

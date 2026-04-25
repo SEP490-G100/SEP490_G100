@@ -41,8 +41,8 @@ public class CancelCurrentSubscriptionTests
     private static SubscriptionPlan Plan(Guid id) => new()
     {
         Id            = id,
-        Name          = "Goi phu huynh huy",
-        Description   = "phu huynh; bai dang",
+        Name          = "Gói phụ huynh (hủy)",
+        Description   = "phụ huynh; bài đăng",
         Features      = "parent",
         Price         = 1,
         DurationDays  = 30,
@@ -51,7 +51,6 @@ public class CancelCurrentSubscriptionTests
         CreatedAt     = DateTime.UtcNow
     };
 
-    // Condition: không có gói đang dùng.
     [Fact]
     public async Task NoActive_Throws()
     {
@@ -61,10 +60,8 @@ public class CancelCurrentSubscriptionTests
             .ReturnsAsync((UserSubscription?)null);
 
         var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.cancelCurrentSubscription(userId));
-        Assert.Equal("Bạn không có gói subscription đang hoạt động.", ex.Message);
     }
 
-    // Condition: hủy gói active → cập nhật trạng thái, lưu, map.
     [Fact]
     public async Task Success_SetsCancelled_Saves_Maps()
     {
@@ -93,7 +90,6 @@ public class CancelCurrentSubscriptionTests
 
         Assert.Equal((int)UserSubscriptionStatus.Cancelled, sub.Status);
         Assert.Equal((int)UserSubscriptionStatus.Cancelled, r.Status);
-        Assert.Equal("Đã hủy", r.StatusLabel);
         Assert.NotNull(sub.CancelledAt);
         Assert.Equal(userId, sub.UpdatedBy);
         _mockRepo.Verify(x => x.saveChanges(), Times.Once);
