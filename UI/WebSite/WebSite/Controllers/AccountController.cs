@@ -57,6 +57,11 @@ public class AccountController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateModerator(CreateModeratorRequest model)
     {
+        if (!ModelState.IsValid)
+        {
+            return View("~/Views/Admin/ModeratorAccount/CreateModerator.cshtml", model);
+        }
+
         var body = JsonSerializer.Serialize(new
         {
             email = model.Email,

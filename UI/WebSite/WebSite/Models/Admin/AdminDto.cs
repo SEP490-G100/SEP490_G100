@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace WebSite.Models.Admin;
 
 public class AdminDashboardDto
@@ -262,10 +264,20 @@ public class ApiUserGrowthPointDto
 
 public class CreateModeratorRequest
 {
+    [Required(ErrorMessage = "Email không được để trống, phải là 1 email hợp lệ")]
+    [EmailAddress(ErrorMessage = "Email không được để trống, phải là 1 email hợp lệ")]
     public string Email { get; set; } = "";
+
+    [Required(ErrorMessage = "Mật khẩu không được để trống, chứa ít nhất 8 kí tự và chứa ít nhất 1 kí tự đặc biệt")]
+    [RegularExpression(@"^(?=.*[^a-zA-Z0-9]).{8,}$", ErrorMessage = "Mật khẩu không được để trống, chứa ít nhất 8 kí tự và chứa ít nhất 1 kí tự đặc biệt")]
     public string Password { get; set; } = "";
+
+    [Required(ErrorMessage = "Họ không được để trống")]
     public string FirstName { get; set; } = "";
+
+    [Required(ErrorMessage = "Tên không được để trống")]
     public string LastName { get; set; } = "";
+
     public string? PhoneNumber { get; set; }
 }
 
