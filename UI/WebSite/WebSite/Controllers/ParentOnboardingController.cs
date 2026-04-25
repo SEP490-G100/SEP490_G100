@@ -221,31 +221,161 @@ public class ParentOnboardingController : Controller
         return (apiResult is { Success: true }, apiResult?.Message);
     }
 
-    private async Task<bool> CreateChildAsync(ParentOnboardingWizardViewModel model)
+    private static bool TryGetPropertyIgnoreCase(JsonElement element, string propertyName, out JsonElement value)
+    {
+        if (element.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var prop in element.EnumerateObject())
+            {
+                if (string.Equals(prop.Name, propertyName, StringComparison.OrdinalIgnoreCase))
+                {
+                    value = prop.Value;
+                    return true;
+                }
+            }
+        }
+
+        value = default;
+        return false;
+    }
+
+    private static void EnsureChildrenCount(ParentOnboardingWizardViewModel model, int? desiredCount = null)
+    {
+        model.Children ??= new List<ParentOnboardingChildInputViewModel>();
+
+        var count = desiredCount
+                    ?? model.NumberOfChildren
+                    ?? model.Children.Count;
+
+        if (count < 1) count = 1;
+        if (count > MaxChildren) count = MaxChildren;
+
+        while (model.Children.Count < count)
+            model.Children.Add(new ParentOnboardingChildInputViewModel());
+
+        if (model.Children.Count > count)
+            model.Children = model.Children.Take(count).ToList();
+    }
+
+    private async Task<List<ChildProfileViewModel>> LoadCurrentChildrenAsync()
     {
         SetAuthHeader();
-        var payload = new
-        {
-            Characteristic = NormalizeOptionalText(model.ChildCharacteristic),
-            ChildAgeGroup = model.ChildAgeGroup,
-            SpecialNeeds = NormalizeOptionalText(model.ChildSpecialNeeds),
-            Notes = NormalizeOptionalText(model.ChildNotes)
-        };
-
-        var response = await _http.PostAsJsonAsync("/api/profile/children", payload);
+        var response = await _http.GetAsync("/api/profile/children");
         if (!response.IsSuccessStatusCode)
-            return false;
+            return new List<ChildProfileViewModel>();
 
         var content = await response.Content.ReadAsStringAsync();
-        try
+        var apiResult = JsonSerializer.Deserialize<ApiResultDto>(content, JsonOpts);
+        if (apiResult?.Data is not JsonElement element || element.ValueKind != JsonValueKind.Array)
+            return new List<ChildProfileViewModel>();
+
+        return JsonSerializer.Deserialize<List<ChildProfileViewModel>>(element.GetRawText(), JsonOpts)
+               ?? new List<ChildProfileViewModel>();
+    }
+
+    private async Task<ParentOnboardingWizardViewModel> LoadFamilyStepModelAsync()
+    {
+        var vm = new ParentOnboardingWizardViewModel();
+
+        SetAuthHeader();
+        var profileResponse = await _http.GetAsync("/api/profile");
+        if (profileResponse.IsSuccessStatusCode)
         {
-            var apiResult = JsonSerializer.Deserialize<ApiResultDto>(content, JsonOpts);
-            return apiResult is { Success: true };
+            var profileContent = await profileResponse.Content.ReadAsStringAsync();
+            var profileApiResult = JsonSerializer.Deserialize<ApiResultDto>(profileContent, JsonOpts);
+            if (profileApiResult?.Data is JsonElement profileElement &&
+                profileElement.ValueKind == JsonValueKind.Object)
+            {
+                if (TryGetPropertyIgnoreCase(profileElement, "familyDescription", out var familyDescriptionEl) &&
+                    familyDescriptionEl.ValueKind == JsonValueKind.String)
+                {
+                    vm.FamilyDescription = familyDescriptionEl.GetString();
+                }
+
+                if (TryGetPropertyIgnoreCase(profileElement, "numberOfChildren", out var numberOfChildrenEl) &&
+                    numberOfChildrenEl.ValueKind == JsonValueKind.Number &&
+                    numberOfChildrenEl.TryGetInt32(out var numberOfChildren))
+                {
+                    vm.NumberOfChildren = numberOfChildren;
+                }
+            }
         }
-        catch
+
+        var existingChildren = await LoadCurrentChildrenAsync();
+        if (existingChildren.Count > 0)
         {
-            return false;
+            vm.Children = existingChildren
+                .Select(child => new ParentOnboardingChildInputViewModel
+                {
+                    ChildAgeGroup = child.ChildAgeGroup,
+                    ChildCharacteristic = child.Characteristic,
+                    ChildSpecialNeeds = child.SpecialNeeds,
+                    ChildNotes = child.Notes
+                })
+                .ToList();
         }
+
+        var desired = vm.NumberOfChildren ?? vm.Children.Count;
+        if (desired < 1)
+            desired = 1;
+        if (desired < vm.Children.Count)
+            desired = vm.Children.Count;
+
+        EnsureChildrenCount(vm, desired);
+        return vm;
+    }
+
+    private async Task<(bool Success, string? Message)> UpsertChildrenAsync(ParentOnboardingWizardViewModel model)
+    {
+        SetAuthHeader();
+        var desiredCount = model.NumberOfChildren ?? 1;
+        if (desiredCount < 1)
+            desiredCount = 1;
+
+        EnsureChildrenCount(model, desiredCount);
+        var existingChildren = await LoadCurrentChildrenAsync();
+
+        for (var i = 0; i < desiredCount; i++)
+        {
+            var child = model.Children[i];
+            var payload = new
+            {
+                Characteristic = NormalizeOptionalText(child.ChildCharacteristic),
+                ChildAgeGroup = child.ChildAgeGroup,
+                SpecialNeeds = NormalizeOptionalText(child.ChildSpecialNeeds),
+                Notes = NormalizeOptionalText(child.ChildNotes)
+            };
+
+            HttpResponseMessage response;
+            if (i < existingChildren.Count)
+            {
+                response = await _http.PutAsJsonAsync($"/api/profile/children/{existingChildren[i].Id}", payload);
+            }
+            else
+            {
+                response = await _http.PostAsJsonAsync("/api/profile/children", payload);
+            }
+
+            var content = await response.Content.ReadAsStringAsync();
+            ApiResultDto? apiResult = null;
+            try
+            {
+                apiResult = JsonSerializer.Deserialize<ApiResultDto>(content, JsonOpts);
+            }
+            catch
+            {
+                // fallback message handled below
+            }
+
+            var requestSuccess = response.IsSuccessStatusCode && (apiResult == null || apiResult.Success);
+            if (!requestSuccess)
+            {
+                var defaultMessage = $"Lưu thông tin trẻ thứ {i + 1} thất bại.";
+                return (false, apiResult?.Message ?? defaultMessage);
+            }
+        }
+
+        return (true, null);
     }
 
     [HttpGet]
@@ -378,9 +508,10 @@ public class ParentOnboardingController : Controller
     }
 
     [HttpGet]
-    public IActionResult Step2Family()
+    public async Task<IActionResult> Step2Family()
     {
-        return View(new ParentOnboardingWizardViewModel());
+        var vm = await LoadFamilyStepModelAsync();
+        return View(vm);
     }
 
     [HttpPost]
@@ -394,9 +525,10 @@ public class ParentOnboardingController : Controller
             return View(model);
 
         model.FamilyDescription = NormalizeOptionalText(model.FamilyDescription);
-        model.ChildCharacteristic = NormalizeOptionalText(model.ChildCharacteristic);
-        model.ChildSpecialNeeds = NormalizeOptionalText(model.ChildSpecialNeeds);
-        model.ChildNotes = NormalizeOptionalText(model.ChildNotes);
+        var selectedChildCount = model.NumberOfChildren ?? 1;
+        if (selectedChildCount < 1) selectedChildCount = 1;
+        if (selectedChildCount > MaxChildren) selectedChildCount = MaxChildren;
+        EnsureChildrenCount(model, selectedChildCount);
 
         if (string.IsNullOrWhiteSpace(model.FamilyDescription))
             ModelState.AddModelError(nameof(model.FamilyDescription), "Vui lòng mô tả gia đình.");
@@ -406,17 +538,25 @@ public class ParentOnboardingController : Controller
         if (!model.NumberOfChildren.HasValue || model.NumberOfChildren < 1 || model.NumberOfChildren > MaxChildren)
             ModelState.AddModelError(nameof(model.NumberOfChildren), $"Số lượng con phải trong khoảng 1-{MaxChildren}.");
 
-        if (!model.ChildAgeGroup.HasValue || !Enum.IsDefined(model.ChildAgeGroup.Value))
-            ModelState.AddModelError(nameof(model.ChildAgeGroup), "Vui lòng chọn nhóm tuổi của trẻ.");
+        for (var i = 0; i < selectedChildCount; i++)
+        {
+            var child = model.Children[i];
+            child.ChildCharacteristic = NormalizeOptionalText(child.ChildCharacteristic);
+            child.ChildSpecialNeeds = NormalizeOptionalText(child.ChildSpecialNeeds);
+            child.ChildNotes = NormalizeOptionalText(child.ChildNotes);
 
-        if (!IsValidLength(model.ChildCharacteristic, MaxChildTextLength))
-            ModelState.AddModelError(nameof(model.ChildCharacteristic), $"Đặc điểm tối đa {MaxChildTextLength} ký tự.");
+            if (!child.ChildAgeGroup.HasValue || !Enum.IsDefined(child.ChildAgeGroup.Value))
+                ModelState.AddModelError($"Children[{i}].ChildAgeGroup", $"Vui lòng chọn nhóm tuổi cho trẻ thứ {i + 1}.");
 
-        if (!IsValidLength(model.ChildSpecialNeeds, MaxChildTextLength))
-            ModelState.AddModelError(nameof(model.ChildSpecialNeeds), $"Nhu cầu đặc biệt tối đa {MaxChildTextLength} ký tự.");
+            if (!IsValidLength(child.ChildCharacteristic, MaxChildTextLength))
+                ModelState.AddModelError($"Children[{i}].ChildCharacteristic", $"Đặc điểm của trẻ thứ {i + 1} tối đa {MaxChildTextLength} ký tự.");
 
-        if (!IsValidLength(model.ChildNotes, MaxChildTextLength))
-            ModelState.AddModelError(nameof(model.ChildNotes), $"Ghi chú tối đa {MaxChildTextLength} ký tự.");
+            if (!IsValidLength(child.ChildSpecialNeeds, MaxChildTextLength))
+                ModelState.AddModelError($"Children[{i}].ChildSpecialNeeds", $"Nhu cầu đặc biệt của trẻ thứ {i + 1} tối đa {MaxChildTextLength} ký tự.");
+
+            if (!IsValidLength(child.ChildNotes, MaxChildTextLength))
+                ModelState.AddModelError($"Children[{i}].ChildNotes", $"Ghi chú của trẻ thứ {i + 1} tối đa {MaxChildTextLength} ký tự.");
+        }
 
         if (!ModelState.IsValid)
             return View(model);
@@ -428,10 +568,10 @@ public class ParentOnboardingController : Controller
             return View(model);
         }
 
-        var childSuccess = await CreateChildAsync(model);
-        if (!childSuccess)
+        var childSaveResult = await UpsertChildrenAsync(model);
+        if (!childSaveResult.Success)
         {
-            ModelState.AddModelError(string.Empty, "Tạo hồ sơ con thất bại. Vui lòng kiểm tra thông tin và thử lại.");
+            ModelState.AddModelError(string.Empty, childSaveResult.Message ?? "Lưu thông tin con thất bại. Vui lòng kiểm tra lại.");
             return View(model);
         }
 
