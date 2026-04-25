@@ -215,7 +215,7 @@ public class OnboardingService : IOnboardingService
             if (request.YearsOfExperience.Value > maxLogicalExperience)
             {
                 throw new InvalidOperationException(
-                    $"Số năm kinh nghiệm không hợp lý với ngày sinh đã chọn. Tối đa {maxLogicalExperience} năm.");
+                    $"Số năm kinh nghiệm không hợp lý với ngày sinh đã chọn.");
             }
         }
 
