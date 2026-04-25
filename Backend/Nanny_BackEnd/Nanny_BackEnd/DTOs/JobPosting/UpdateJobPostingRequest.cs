@@ -16,10 +16,10 @@ public class UpdateJobPostingRequest
     [Range(1, 3, ErrorMessage = "Loại công việc phải là 1 (Toàn thời gian), 2 (Bán thời gian) hoặc 3 (Qua đêm).")]
     public int JobType { get; set; }
 
-    [Range(8_000_000, 50_000_000, ErrorMessage = "Lương tối thiểu phải trong khoảng 8.000.000 - 50.000.000 VND.")]
+    [Range(8_000_000, 50_000_000, ErrorMessage = "Lương từ phải trong khoảng 8.000.000 - 50.000.000 VND.")]
     public decimal? SalaryMin { get; set; }
 
-    [Range(8_000_000, 50_000_000, ErrorMessage = "Lương tối đa phải trong khoảng 8.000.000 - 50.000.000 VND.")]
+    [Range(8_000_000, 50_000_000, ErrorMessage = "Đến phải trong khoảng 8.000.000 - 50.000.000 VND.")]
     public decimal? SalaryMax { get; set; }
 
     public bool SalaryNegotiable { get; set; }

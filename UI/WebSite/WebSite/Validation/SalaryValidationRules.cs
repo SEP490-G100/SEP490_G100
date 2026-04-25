@@ -13,8 +13,8 @@ public static class SalaryValidationRules
         decimal? maxSalary,
         string minMemberName,
         string maxMemberName,
-        string minLabel = "Mức lương tối thiểu",
-        string maxLabel = "Mức lương tối đa")
+        string minLabel = "Lương từ",
+        string maxLabel = "Đến")
     {
         if (minSalary.HasValue && !IsWithinAllowedRange(minSalary.Value))
         {

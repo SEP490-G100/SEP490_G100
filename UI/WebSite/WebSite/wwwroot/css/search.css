@@ -1130,6 +1130,42 @@ select.form-input.bg-gray-50 {
     margin-bottom: 1rem;
 }
 
+.schedule-preset-wrap {
+    margin-bottom: 1rem;
+}
+
+.schedule-preset-label {
+    display: block;
+    font-size: .86rem;
+    font-weight: 800;
+    color: #334155;
+    margin-bottom: .45rem;
+}
+
+.schedule-preset-select {
+    width: 100%;
+    border: 1px solid #fdba74;
+    border-radius: .95rem;
+    background: linear-gradient(180deg, #fff, #fffaf4);
+    color: #0f172a;
+    font-size: .95rem;
+    font-weight: 700;
+    padding: .72rem .95rem;
+    outline: none;
+    transition: border-color .18s ease, box-shadow .18s ease;
+}
+
+.schedule-preset-select:focus {
+    border-color: #f97316;
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, .15);
+}
+
+.schedule-preset-hint {
+    margin-top: .45rem;
+    font-size: .8rem;
+    color: #64748b;
+}
+
 .schedule-grid {
     display: grid;
     grid-template-columns: 110px repeat(7, minmax(34px, 1fr));

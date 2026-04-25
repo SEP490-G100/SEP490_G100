@@ -73,11 +73,11 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="form-label">Lương tối thiểu</label>
+                                <label class="form-label">Lương từ</label>
                                 <input type="text" id="ef-salMin" inputmode="numeric" class="form-input" placeholder="VD: 1.000.000" />
                             </div>
                             <div>
-                                <label class="form-label">Lương tối đa</label>
+                                <label class="form-label">Đến</label>
                                 <input type="text" id="ef-salMax" inputmode="numeric" class="form-input" placeholder="VD: 3.000.000" />
                             </div>
                             <div class="md:col-span-2 text-xs font-semibold text-slate-500">
@@ -127,6 +127,17 @@
                                 <p class="section-title">Lịch ngày muốn tuyển bảo mẫu</p>
                                 <p class="section-caption">Cập nhật các buổi cần bảo mẫu hỗ trợ trong tuần.</p>
                             </div>
+                        </div>
+                        <div class="schedule-preset-wrap">
+                            <label class="schedule-preset-label" for="ef-schedulePreset">Mẫu lịch nhanh</label>
+                            <select id="ef-schedulePreset" class="schedule-preset-select">
+                                <option value="">-- Chọn mẫu lịch nhanh --</option>
+                                <option value="morning-afternoon">Từ sáng đến chiều</option>
+                                <option value="afternoon-evening">Từ chiều đến tối</option>
+                                <option value="weekday-only">Làm các ngày trong tuần trừ cuối tuần</option>
+                                <option value="all-week">Làm cả tuần</option>
+                            </select>
+                            <p class="schedule-preset-hint">Chọn mẫu để tự động tích lịch, sau đó bạn vẫn có thể chỉnh tay.</p>
                         </div>
                         <div id="ef-schedule" class="schedule-grid"></div>
                     </div>
@@ -220,6 +231,12 @@ let locationTreePromise = null;
 
 const DAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 const ROW_LABELS = ['Sáng', 'Chiều', 'Tối', 'Đêm'];
+const SCHEDULE_PRESET_VALUES = Object.freeze({
+    MORNING_AFTERNOON: 'morning-afternoon',
+    AFTERNOON_EVENING: 'afternoon-evening',
+    WEEKDAY_ONLY: 'weekday-only',
+    ALL_WEEK: 'all-week'
+});
 const EDIT_DRAFT_STORAGE_KEY = `nm:editJobDraft:${JOB_ID}`;
 let isApplyingDraft = false;
 
@@ -259,6 +276,69 @@ function showToast(message, type = 'error') {
 
 function sanitizeMoneyDigits(value) {
     return String(value ?? '').replace(/[^\d]/g, '');
+}
+
+function setSchedulePresetValue(value) {
+    const select = document.getElementById('ef-schedulePreset');
+    if (!select) return;
+    select.value = value;
+}
+
+function buildScheduleByPreset(preset) {
+    const slots = [];
+    const addSlot = (dayOfWeek, timeSlot) => {
+        slots.push({ dayOfWeek, timeSlot });
+    };
+    const addAllSlotsOfDay = (dayOfWeek) => {
+        for (let timeSlot = 0; timeSlot < 4; timeSlot += 1) {
+            addSlot(dayOfWeek, timeSlot);
+        }
+    };
+
+    switch (preset) {
+        case SCHEDULE_PRESET_VALUES.MORNING_AFTERNOON:
+            for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek += 1) {
+                addSlot(dayOfWeek, 0);
+                addSlot(dayOfWeek, 1);
+            }
+            break;
+        case SCHEDULE_PRESET_VALUES.AFTERNOON_EVENING:
+            for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek += 1) {
+                addSlot(dayOfWeek, 1);
+                addSlot(dayOfWeek, 2);
+            }
+            break;
+        case SCHEDULE_PRESET_VALUES.WEEKDAY_ONLY:
+            for (let dayOfWeek = 0; dayOfWeek < 5; dayOfWeek += 1) {
+                addAllSlotsOfDay(dayOfWeek);
+            }
+            break;
+        case SCHEDULE_PRESET_VALUES.ALL_WEEK:
+            for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek += 1) {
+                addAllSlotsOfDay(dayOfWeek);
+            }
+            break;
+        default:
+            break;
+    }
+
+    return slots;
+}
+
+function applySchedulePreset(preset) {
+    if (!preset) return;
+    editSchedule = buildScheduleByPreset(preset);
+    renderScheduleGrid();
+    updateSubmitState();
+}
+
+function bindSchedulePreset() {
+    const select = document.getElementById('ef-schedulePreset');
+    if (!select || select.dataset.boundPreset === 'true') return;
+    select.dataset.boundPreset = 'true';
+    select.addEventListener('change', function () {
+        applySchedulePreset(select.value);
+    });
 }
 
 function formatMoneyInputValue(value) {
@@ -407,6 +487,7 @@ function applyEditDraft(draft) {
 
         editSkills = normalizeDraftSkills(draft.skills);
         editSchedule = normalizeDraftSchedule(draft.scheduleSlots);
+        setSchedulePresetValue('');
 
         renderSkillCollection();
         renderScheduleGrid();
@@ -812,6 +893,7 @@ function renderScheduleGrid() {
     container.innerHTML = html;
     container.querySelectorAll('.schedule-cell').forEach((button) => {
         button.addEventListener('click', () => {
+            setSchedulePresetValue('');
             const dayOfWeek = Number(button.dataset.day);
             const timeSlot = Number(button.dataset.slot);
             const idx = editSchedule.findIndex(slot => slot.dayOfWeek === dayOfWeek && slot.timeSlot === timeSlot);
@@ -969,16 +1051,16 @@ function validateEditPayload(payload) {
     const salaryMin = payload?.salaryMin;
     const salaryMax = payload?.salaryMax;
     if (!payload?.salaryNegotiable && salaryMin == null) {
-        return { message: 'Vui lòng nhập lương tối thiểu trong khoảng 8.000.000 - 50.000.000 VND hoặc bật lương thỏa thuận.', fieldId: 'ef-salMin' };
+                return { message: 'Vui lòng nhập lương từ trong khoảng 8.000.000 - 50.000.000 VND hoặc bật lương thỏa thuận.', fieldId: 'ef-salMin' };
     }
     if (salaryMin != null && (!Number.isFinite(salaryMin) || salaryMin < minimumSalary || salaryMin > maximumSalary)) {
-        return { message: 'Lương tối thiểu phải trong khoảng 8.000.000 - 50.000.000 VND.', fieldId: 'ef-salMin' };
+                return { message: 'Lương từ phải trong khoảng 8.000.000 - 50.000.000 VND.', fieldId: 'ef-salMin' };
     }
     if (salaryMax != null && (!Number.isFinite(salaryMax) || salaryMax < minimumSalary || salaryMax > maximumSalary)) {
-        return { message: 'Lương tối đa phải trong khoảng 8.000.000 - 50.000.000 VND.', fieldId: 'ef-salMax' };
+                return { message: 'Đến phải trong khoảng 8.000.000 - 50.000.000 VND.', fieldId: 'ef-salMax' };
     }
     if (salaryMin != null && salaryMax != null && Number(salaryMin) > Number(salaryMax)) {
-        return { message: 'Lương tối thiểu không được lớn hơn lương tối đa.', fieldId: 'ef-salMin' };
+                return { message: 'Lương từ không được lớn hơn Đến.', fieldId: 'ef-salMin' };
     }
 
     const minAge = payload?.minNannyAge;
@@ -1127,6 +1209,7 @@ async function loadEditPage() {
 
         editSkills = Array.isArray(job.skills) ? [...job.skills] : [];
         editSchedule = Array.isArray(job.scheduleSlots) ? job.scheduleSlots.map(slot => ({ dayOfWeek: slot.dayOfWeek, timeSlot: slot.timeSlot })) : [];
+        setSchedulePresetValue('');
         renderSkillCollection();
         renderScheduleGrid();
         setProfileFields(getSelectedChild());
@@ -1287,6 +1370,8 @@ function initializeEditPage() {
     loadLocationTree();
     initMoneyInputs();
     attachEditSelectPickers();
+    bindSchedulePreset();
+    setSchedulePresetValue('');
     bindClickOnlySelect(document.getElementById('ef-children'));
     syncChildrenCountField();
     updateSubmitState();

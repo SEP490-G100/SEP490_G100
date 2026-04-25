@@ -23,6 +23,8 @@ public partial class NannyProfile
 
     public int? MaxTravelDistance { get; set; }
 
+    public int ProfileCompleteness { get; set; }
+
     public int VerificationStatus { get; set; }
 
     public DateTime? VerifiedAt { get; set; }

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Net.Http.Headers;
 using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
@@ -51,10 +52,15 @@ public class GeocodingService : IGeocodingService
         try
         {
             var url = $"https://nominatim.openstreetmap.org/search?q={Uri.EscapeDataString(query)}&format=json&limit=1&countrycodes=vn";
-            var response = await _http.GetAsync(url);
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            var response = await _http.SendAsync(request);
             if (!response.IsSuccessStatusCode) return null;
 
             var json = await response.Content.ReadAsStringAsync();
+            if (!LooksLikeJsonArray(json))
+                return null;
+
             var arr  = JsonSerializer.Deserialize<NominatimResult[]>(json, Opts);
 
             if (arr == null || arr.Length == 0) return null;
@@ -70,6 +76,20 @@ public class GeocodingService : IGeocodingService
         catch { /* silent — geocoding failure should not block job creation */ }
 
         return null;
+    }
+
+    private static bool LooksLikeJsonArray(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+            return false;
+
+        foreach (var ch in raw)
+        {
+            if (!char.IsWhiteSpace(ch))
+                return ch == '[';
+        }
+
+        return false;
     }
 
     // ── Haversine distance (km) ─────────────────────────────────────────

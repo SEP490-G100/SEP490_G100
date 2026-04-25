@@ -33,6 +33,7 @@
     var isIdentityVerified = verificationCode == 2;
     var hasUploadedHealthDocument = Model.HasHealthCertificate;
     var areaText = string.Join(", ", new[] { Model.Ward, Model.District, Model.City }.Where(v => !string.IsNullOrWhiteSpace(v)));
+    var viCulture = System.Globalization.CultureInfo.GetCultureInfo("vi-VN");
     var displayEmail = string.IsNullOrWhiteSpace(Model.Email) ? "Chưa cập nhật" : Model.Email;
     int? ResolveAge(DateOnly? dateOfBirth)
     {
@@ -91,6 +92,9 @@
         3 => "6 - 12 tuổi",
         _ => "Chưa cập nhật"
     };
+
+    string FormatSalary(decimal? value) =>
+        value.HasValue ? value.Value.ToString("#,0", viCulture) : "0";
 
     IEnumerable<string> SplitSpecialNeeds(string? rawValue)
     {
@@ -287,7 +291,7 @@
                             </div>
                             <div class="profile-detail-item">
                                 <div class="label">Lương mong muốn</div>
-                                <div class="value">@((Model.ExpectedSalaryMin?.ToString("0")) ?? "0") - @((Model.ExpectedSalaryMax?.ToString("0")) ?? "0") VND</div>
+                                <div class="value">@FormatSalary(Model.ExpectedSalaryMin) đến @FormatSalary(Model.ExpectedSalaryMax) VND</div>
                             </div>
                             <div class="profile-detail-item">
                                 <div class="label">Bán kính di chuyển</div>

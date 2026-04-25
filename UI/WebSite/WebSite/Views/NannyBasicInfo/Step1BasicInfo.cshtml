@@ -71,9 +71,9 @@
                                     <div class="nm-col-6">
                                         <div class="nm-field">
                                             <label asp-for="DateOfBirth" class="nm-label">Ngày sinh <span class="required">*</span></label>
-                                            <input asp-for="DateOfBirth" asp-format="{0:yyyy-MM-dd}" type="date" class="nm-input" max="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                                            <input asp-for="DateOfBirth" asp-format="{0:yyyy-MM-dd}" type="date" class="nm-input" max="@DateTime.Today.AddYears(-31).ToString("yyyy-MM-dd")" />
                                             <span asp-validation-for="DateOfBirth" class="nm-error"></span>
-                                            <div id="dateOfBirthClientError" class="nm-error hidden">Ngày sinh không được lớn hơn ngày hiện tại.</div>
+                                            <div id="dateOfBirthClientError" class="nm-error hidden">Bảo mẫu phải lớn hơn 30 tuổi.</div>
                                         </div>
                                     </div>
 
@@ -315,9 +315,17 @@
     var lngEl = document.getElementById('Longitude');
     var addressLoadError = document.getElementById('addressLoadError');
     if (dateOfBirthInput) {
+        function toIsoLocal(date) {
+            var year = date.getFullYear();
+            var month = String(date.getMonth() + 1).padStart(2, '0');
+            var day = String(date.getDate()).padStart(2, '0');
+            return year + '-' + month + '-' + day;
+        }
+
         var today = new Date();
-        var todayStr = today.toISOString().split('T')[0];
-        dateOfBirthInput.max = todayStr;
+        var maxAllowedDate = new Date(today.getFullYear() - 31, today.getMonth(), today.getDate());
+        var maxAllowedStr = toIsoLocal(maxAllowedDate);
+        dateOfBirthInput.max = maxAllowedStr;
 
         function validateDateOfBirth() {
             if (!dateOfBirthInput.value) {
@@ -326,8 +334,8 @@
                 return true;
             }
 
-            if (dateOfBirthInput.value > todayStr) {
-                dateOfBirthInput.setCustomValidity('Ngày sinh không được lớn hơn ngày hiện tại.');
+            if (dateOfBirthInput.value > maxAllowedStr) {
+                dateOfBirthInput.setCustomValidity('Bảo mẫu phải lớn hơn 30 tuổi.');
                 if (dateOfBirthClientError) dateOfBirthClientError.classList.remove('hidden');
                 return false;
             }
@@ -339,6 +347,7 @@
 
         dateOfBirthInput.addEventListener('input', validateDateOfBirth);
         dateOfBirthInput.addEventListener('change', validateDateOfBirth);
+        validateDateOfBirth();
 
         if (form) {
             form.addEventListener('submit', function (e) {
