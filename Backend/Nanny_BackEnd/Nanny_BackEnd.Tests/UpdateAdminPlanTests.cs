@@ -114,8 +114,8 @@ public class AdminUpdateSubscriptionPlanAsyncTests
         var plan = new SubscriptionPlan
         {
             Id = id,
-            Name = "Ten cu",
-            Description = "Cu",
+            Name = "Tên cũ",
+            Description = "Mô tả cũ",
             Features = FeaturesJson(),
             Price = 10_000m,
             DurationDays = 7,
@@ -133,14 +133,14 @@ public class AdminUpdateSubscriptionPlanAsyncTests
 
         var req = ValidRequest();
         req.Name = "  Nanny Pro  ";
-        req.Description = "  moi  ";
+        req.Description = "  mới  ";
         req.SortOrder = 7;
         req.Features = new List<string> { "Nang 1", "Nang 1", "Nang 2" };
 
         var r = await _sut.updateAdminPlan(id, adminId, req);
 
         Assert.Equal("Nanny Pro", plan.Name);
-        Assert.Equal("moi", plan.Description);
+        Assert.Equal("mới", plan.Description);
         Assert.Equal(120_000m, plan.Price);
         Assert.Equal(60, plan.DurationDays);
         Assert.Equal(7, plan.SortOrder);

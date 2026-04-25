@@ -70,7 +70,7 @@ public class GetJobApplicationsForParentAsyncTests
         {
             Id                = _jobId,
             ParentProfileId   = _parentProfileId,
-            Title             = "Tuyen nanny",
+            Title             = "Tìm nanny",
             Status            = 1,
             ModerationStatus  = 1,
             City              = "HN",
@@ -116,7 +116,7 @@ public class GetJobApplicationsForParentAsyncTests
 
         Assert.Null(err);
         Assert.NotNull(data);
-        Assert.Equal("Tuyen nanny", data!.Job.Title);
+        Assert.Equal("Tìm nanny", data!.Job.Title);
         Assert.Single(data.Applications);
         Assert.Equal("N 1", data.Applications[0].Nanny.FullName);
     }

@@ -50,7 +50,7 @@ public class GetPlansTests
         var p = new SubscriptionPlan
         {
             Id            = id,
-            Name          = "Goi phu huynh premium",
+            Name          = "Gói phụ huynh premium",
             Description   = "Bai dang; gia dinh",
             Features      = "3 bai; parent",
             Price         = 500000m,
@@ -66,7 +66,7 @@ public class GetPlansTests
         var r = Assert.Single(list);
 
         Assert.Equal(id, r.Id);
-        Assert.Equal("Goi phu huynh premium", r.Name);
+        Assert.Equal("Gói phụ huynh premium", r.Name);
         Assert.Equal(500000m, r.Price);
         Assert.Equal(60, r.DurationDays);
         Assert.Equal(1, r.SortOrder);
