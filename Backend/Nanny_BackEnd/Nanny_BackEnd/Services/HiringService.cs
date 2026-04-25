@@ -605,7 +605,7 @@ public class HiringService : IHiringService
 
     private static string GetDisplayName(User? user)
     {
-        if (user == null) return "Nguoi dung";
+        if (user == null) return "Người dùng";
         var fullName = $"{user.FirstName} {user.LastName}".Trim();
         return string.IsNullOrWhiteSpace(fullName) ? user.Email : fullName;
     }

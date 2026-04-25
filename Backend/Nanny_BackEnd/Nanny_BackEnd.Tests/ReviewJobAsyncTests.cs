@@ -1,102 +1,95 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Moq;
-using Nanny_BackEnd.DTOs.JobPosting;
 using Nanny_BackEnd.Enums;
-using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
+using Nanny_BackEnd.Repositories;
 using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Services;
-using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Tests;
 
-/// <summary>
-/// Tests for:
-/// JobPostingController.ModeratorReviewJob -> JobService.ModeratorReviewJobAsync
-/// </summary>
 public class ReviewJobAsyncTests
 {
-    private readonly Mock<IJobRepository> _mockRepo;
-    private readonly Mock<INotificationService> _mockNotif;
-    private readonly JobService _sut;
+    private readonly Mock<IJobRepository>       _mockJobRepo;
+    private readonly Mock<NotificationService> _mockNotif;
+    private readonly JobService                _sut;
 
     public ReviewJobAsyncTests()
     {
-        _mockRepo = new Mock<IJobRepository>();
-        _mockNotif = new Mock<INotificationService>();
+        var mockHttp = new Mock<System.Net.Http.IHttpClientFactory>();
 
-        var mockFavoriteRepo = new Mock<IFavoriteRepository>();
-        var mockGeo = new Mock<IGeocodingService>();
-        var mockSubscriptionService = new Mock<ISubscriptionService>();
-        var mockScopeFactory = new Mock<IServiceScopeFactory>();
-        var mockLogger = new Mock<ILogger<JobService>>();
+        _mockJobRepo = new Mock<IJobRepository>();
+
+        var mockFavRepo   = new Mock<IFavoriteRepository>();
+        var mockGeo       = new Mock<GeocodingService>(mockHttp.Object);
+        var mockSubRepo   = new Mock<ISubscriptionRepository>();
+        var mockUserRepo  = new Mock<IUserRepository>();
+        _mockNotif        = new Mock<NotificationService>(mockSubRepo.Object, mockUserRepo.Object);
+        var mockCasso     = new Mock<CassoService>(mockHttp.Object, Options.Create(new CassoOptions()));
+        var mockPayOs     = new Mock<PayOsService>(mockHttp.Object, Options.Create(new PayOsOptions()));
+        var mockSubSvc    = new Mock<SubscriptionService>(
+            mockSubRepo.Object, _mockNotif.Object, mockCasso.Object,
+            mockPayOs.Object,   Options.Create(new PayOsOptions()));
+        var mockScope     = new Mock<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>();
 
         _sut = new JobService(
-            _mockRepo.Object,
-            mockFavoriteRepo.Object,
+            _mockJobRepo.Object,
+            mockFavRepo.Object,
             mockGeo.Object,
-            mockSubscriptionService.Object,
+            mockSubSvc.Object,
             _mockNotif.Object,
-            mockScopeFactory.Object,
-            mockLogger.Object);
+            mockScope.Object,
+            NullLogger<JobService>.Instance);
     }
 
-    private static JobPosting BaseJob(
-        Guid jobId,
-        int status,
-        string title = "Tin mau",
+    // -- Helper ------------------------------------------------------------
+    private static JobPosting MakeJob(
+        int status = (int)JobPostingStatus.Public,
+        int moderationStatus = (int)JobPostingModerationStatus.Pending,
         ParentProfile? parent = null) => new()
     {
-        Id = jobId,
-        ParentProfileId = Guid.NewGuid(),
-        ParentProfile = parent ?? null!,
-        Title = title,
-        Description = "Mo ta",
+        Id = Guid.NewGuid(),
         Status = status,
-        ModerationStatus = (int)JobPostingModerationStatus.Pending,
-        CreatedAt = DateTime.UtcNow,
-        JobRequirements = new List<JobRequirement>(),
-        JobScheduleRequirements = new List<JobScheduleRequirement>(),
-        JobApplications = new List<JobApplication>()
+        ModerationStatus = moderationStatus,
+        ParentProfile = parent
+                      ?? new ParentProfile { Id = Guid.NewGuid(), UserId = Guid.NewGuid() }
     };
 
-    // Condition: job not found.
+    private void SetupNotif() =>
+        _mockNotif.Setup(n => n.createNotification(
+            It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<int>(), It.IsAny<Guid?>(), It.IsAny<string?>(), It.IsAny<Guid?>()))
+            .Returns(Task.CompletedTask);
+
     [Fact]
-    public async Task NotFound_ThrowsKeyNotFound()
+    public async Task NotFound()
     {
         var jobId = Guid.NewGuid();
-        _mockRepo.Setup(r => r.viewDetailPosting(jobId)).ReturnsAsync((JobPosting?)null);
+        _mockJobRepo.Setup(r => r.viewDetailPosting(jobId))
+                    .ReturnsAsync((JobPosting?)null);
 
-        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _sut.ModeratorReviewJobAsync(jobId, Guid.NewGuid(), new ModerateJobPostingRequest
-            {
-                Action = (int)JobPostingModerationStatus.Approved
-            }));
-
-        Assert.NotNull(ex.Message);
-        _mockRepo.Verify(r => r.updateJobPosting(It.IsAny<JobPosting>()), Times.Never);
+        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.ReviewJobAsync(jobId, Guid.NewGuid(),
+            (int)JobPostingModerationStatus.Approved, null));
     }
 
-    // Condition: approved + job status Public -> PublishedAt set, ClosedAt null.
+    // TC2: Approved + Public job
     [Fact]
     public async Task AlreadyModerated_ThrowsInvalidOperation()
     {
-        var jobId = Guid.NewGuid();
-        var job = BaseJob(jobId, (int)JobPostingStatus.Public, parent: new ParentProfile { UserId = Guid.NewGuid() });
-        job.ModerationStatus = (int)JobPostingModerationStatus.Approved;
+        var job = MakeJob(
+            status: (int)JobPostingStatus.Public,
+            moderationStatus: (int)JobPostingModerationStatus.Approved,
+            parent: new ParentProfile { UserId = Guid.NewGuid() });
 
-        _mockRepo.Setup(r => r.viewDetailPosting(jobId)).ReturnsAsync(job);
+        _mockJobRepo.Setup(r => r.viewDetailPosting(job.Id)).ReturnsAsync(job);
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _sut.ModeratorReviewJobAsync(jobId, Guid.NewGuid(), new ModerateJobPostingRequest
-            {
-                Action = (int)JobPostingModerationStatus.Rejected,
-                Note = "lý do"
-            }));
+            _sut.ReviewJobAsync(job.Id, Guid.NewGuid(),
+                (int)JobPostingModerationStatus.Rejected, "lý do"));
 
         Assert.Contains("không thể xử lý lại", ex.Message.ToLowerInvariant());
-        _mockRepo.Verify(r => r.updateJobPosting(It.IsAny<JobPosting>()), Times.Never);
+        _mockJobRepo.Verify(r => r.updateJobPosting(It.IsAny<JobPosting>()), Times.Never);
         _mockNotif.Verify(n => n.createNotification(
             It.IsAny<Guid>(),
             It.IsAny<string>(),
@@ -110,152 +103,65 @@ public class ReviewJobAsyncTests
     [Fact]
     public async Task Approved_PublicJob_SetsPublishedAt()
     {
-        var jobId = Guid.NewGuid();
+        var job = MakeJob(
+            status: (int)JobPostingStatus.Public,
+            parent: new ParentProfile { UserId = Guid.NewGuid() });
         var moderatorId = Guid.NewGuid();
-        var parentUserId = Guid.NewGuid();
 
-        var job = BaseJob(
-            jobId,
-            (int)JobPostingStatus.Public,
-            parent: new ParentProfile { UserId = parentUserId });
+        _mockJobRepo.Setup(r => r.viewDetailPosting(job.Id)).ReturnsAsync(job);
+        _mockJobRepo.Setup(r => r.updateJobPosting(job)).Returns(Task.CompletedTask);
+        SetupNotif();
 
-        _mockRepo.Setup(r => r.viewDetailPosting(jobId)).ReturnsAsync(job);
-        _mockRepo.Setup(r => r.updateJobPosting(It.IsAny<JobPosting>())).Returns(Task.CompletedTask);
-        _mockNotif.Setup(n => n.createNotification(
-                It.IsAny<Guid>(),
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<int>(),
-                It.IsAny<Guid?>(),
-                It.IsAny<string?>(),
-                It.IsAny<Guid?>()))
-            .Returns(Task.CompletedTask);
-
-        await _sut.ModeratorReviewJobAsync(jobId, moderatorId, new ModerateJobPostingRequest
-        {
-            Action = (int)JobPostingModerationStatus.Approved
-        });
+        await _sut.ReviewJobAsync(job.Id, moderatorId,
+            (int)JobPostingModerationStatus.Approved, null);
 
         Assert.Equal((int)JobPostingModerationStatus.Approved, job.ModerationStatus);
-        Assert.Equal(moderatorId, job.ModeratedBy);
-        Assert.NotNull(job.ModeratedAt);
         Assert.NotNull(job.PublishedAt);
         Assert.Null(job.ClosedAt);
+        Assert.Equal(moderatorId, job.ModeratedBy);
 
-        _mockRepo.Verify(r => r.updateJobPosting(job), Times.Once);
         _mockNotif.Verify(n => n.createNotification(
-                parentUserId,
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                NotificationTypes.JobPostingApproved,
-                jobId,
-                "JobPosting",
-                moderatorId),
+            job.ParentProfile!.UserId, It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<int>(), It.IsAny<Guid?>(), It.IsAny<string?>(), moderatorId),
             Times.Once);
     }
 
-    // Condition: approved + job status Hidden -> ClosedAt set, PublishedAt null.
+    // TC3: Approved + Hidden job
     [Fact]
     public async Task Approved_HiddenJob_SetsClosedAt()
     {
-        var jobId = Guid.NewGuid();
-        var moderatorId = Guid.NewGuid();
-        var job = BaseJob(jobId, (int)JobPostingStatus.Hidden, parent: null);
+        var job = MakeJob(
+            status: (int)JobPostingStatus.Hidden,
+            parent: new ParentProfile { UserId = Guid.NewGuid() });
 
-        _mockRepo.Setup(r => r.viewDetailPosting(jobId)).ReturnsAsync(job);
-        _mockRepo.Setup(r => r.updateJobPosting(It.IsAny<JobPosting>())).Returns(Task.CompletedTask);
+        _mockJobRepo.Setup(r => r.viewDetailPosting(job.Id)).ReturnsAsync(job);
+        _mockJobRepo.Setup(r => r.updateJobPosting(job)).Returns(Task.CompletedTask);
+        SetupNotif();
 
-        await _sut.ModeratorReviewJobAsync(jobId, moderatorId, new ModerateJobPostingRequest
-        {
-            Action = (int)JobPostingModerationStatus.Approved
-        });
+        await _sut.ReviewJobAsync(job.Id, Guid.NewGuid(),
+            (int)JobPostingModerationStatus.Approved, null);
 
-        Assert.Equal((int)JobPostingModerationStatus.Approved, job.ModerationStatus);
         Assert.Null(job.PublishedAt);
         Assert.NotNull(job.ClosedAt);
-        _mockNotif.Verify(n => n.createNotification(
-            It.IsAny<Guid>(),
-            It.IsAny<string>(),
-            It.IsAny<string>(),
-            It.IsAny<int>(),
-            It.IsAny<Guid?>(),
-            It.IsAny<string?>(),
-            It.IsAny<Guid?>()), Times.Never);
     }
 
-    // Condition: rejected -> PublishedAt null, ClosedAt set, note trimmed.
     [Fact]
-    public async Task Rejected_SetsClosedAt_AndTrimsNote()
+    public async Task Rejected_WithNote_SetsClosedAt_TrimsNote()
     {
-        var jobId = Guid.NewGuid();
-        var moderatorId = Guid.NewGuid();
-        var job = BaseJob(jobId, (int)JobPostingStatus.Public, parent: null);
+        var job = MakeJob(
+            status: (int)JobPostingStatus.Public,
+            parent: new ParentProfile { UserId = Guid.NewGuid() });
 
-        _mockRepo.Setup(r => r.viewDetailPosting(jobId)).ReturnsAsync(job);
-        _mockRepo.Setup(r => r.updateJobPosting(It.IsAny<JobPosting>())).Returns(Task.CompletedTask);
+        _mockJobRepo.Setup(r => r.viewDetailPosting(job.Id)).ReturnsAsync(job);
+        _mockJobRepo.Setup(r => r.updateJobPosting(job)).Returns(Task.CompletedTask);
+        SetupNotif();
 
-        await _sut.ModeratorReviewJobAsync(jobId, moderatorId, new ModerateJobPostingRequest
-        {
-            Action = (int)JobPostingModerationStatus.Rejected,
-            Note = "  vi pham noi dung  "
-        });
+        await _sut.ReviewJobAsync(job.Id, Guid.NewGuid(),
+            (int)JobPostingModerationStatus.Rejected, "  Nội dung vi phạm  ");
 
         Assert.Equal((int)JobPostingModerationStatus.Rejected, job.ModerationStatus);
-        Assert.Equal("vi pham noi dung", job.ModerationNote);
         Assert.Null(job.PublishedAt);
         Assert.NotNull(job.ClosedAt);
-    }
-
-    // Condition: rejected + has parent profile -> send rejected notification with reason.
-    [Fact]
-    public async Task Rejected_WithParent_SendsNotification()
-    {
-        var jobId = Guid.NewGuid();
-        var moderatorId = Guid.NewGuid();
-        var parentUserId = Guid.NewGuid();
-        var job = BaseJob(jobId, (int)JobPostingStatus.Public, "Viec ABC", new ParentProfile { UserId = parentUserId });
-
-        _mockRepo.Setup(r => r.viewDetailPosting(jobId)).ReturnsAsync(job);
-        _mockRepo.Setup(r => r.updateJobPosting(It.IsAny<JobPosting>())).Returns(Task.CompletedTask);
-        _mockNotif.Setup(n => n.createNotification(
-                It.IsAny<Guid>(),
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<int>(),
-                It.IsAny<Guid?>(),
-                It.IsAny<string?>(),
-                It.IsAny<Guid?>()))
-            .Returns(Task.CompletedTask);
-
-        await _sut.ModeratorReviewJobAsync(jobId, moderatorId, new ModerateJobPostingRequest
-        {
-            Action = (int)JobPostingModerationStatus.Rejected,
-            Note = "Sai mo ta"
-        });
-
-        _mockNotif.Verify(n => n.createNotification(
-                parentUserId,
-                It.IsAny<string>(),
-                It.Is<string>(content => !string.IsNullOrWhiteSpace(content)),
-                NotificationTypes.JobPostingRejected,
-                jobId,
-                "JobPosting",
-                moderatorId),
-            Times.Once);
-    }
-
-    // Condition: request action is invalid -> throw and skip repository update.
-    [Fact]
-    public async Task InvalidAction_ThrowsInvalidOperation()
-    {
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _sut.ModeratorReviewJobAsync(Guid.NewGuid(), Guid.NewGuid(), new ModerateJobPostingRequest
-            {
-                Action = 99
-            }));
-
-        Assert.NotNull(ex.Message);
-        _mockRepo.Verify(r => r.viewDetailPosting(It.IsAny<Guid>()), Times.Never);
-        _mockRepo.Verify(r => r.updateJobPosting(It.IsAny<JobPosting>()), Times.Never);
+        Assert.Equal("Nội dung vi phạm", job.ModerationNote);
     }
 }

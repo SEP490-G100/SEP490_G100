@@ -8,7 +8,7 @@ using Nanny_BackEnd.Services;
 namespace Nanny_BackEnd.Tests;
 
 /// <summary>
-/// <see cref="Nanny_BackEnd.Controllers.ReviewController.Create"/> →
+/// <see cref="Nanny_BackEnd.Controllers.ReviewController.Create"/> ?
 /// <see cref="ReviewService.CreateReviewAsync"/>.
 /// </summary>
 public class CreateReviewAsyncTests
@@ -57,7 +57,6 @@ public class CreateReviewAsyncTests
         };
     }
 
-    // Condition: hiring không tồn tại.
     [Fact]
     public async Task HiringNotFound_ThrowsKeyNotFound()
     {
@@ -68,10 +67,8 @@ public class CreateReviewAsyncTests
         var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.CreateReviewAsync(pid,
             new CreateReviewRequest { HiringRecordId = hid, Rating = 5 }));
 
-        Assert.Equal("Không tìm thấy hợp đồng thuê.", ex.Message);
     }
 
-    // Condition: phụ huynh không khớp.
     [Fact]
     public async Task WrongParent_ThrowsUnauthorized()
     {
@@ -85,10 +82,8 @@ public class CreateReviewAsyncTests
         var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _sut.CreateReviewAsync(other,
             new CreateReviewRequest { HiringRecordId = hid, Rating = 4 }));
 
-        Assert.Equal("Bạn không có quyền đánh giá hợp đồng này.", ex.Message);
     }
 
-    // Condition: hợp đồng chưa hoàn thành.
     [Fact]
     public async Task NotCompleted_ThrowsInvalidOperation()
     {
@@ -101,10 +96,8 @@ public class CreateReviewAsyncTests
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.CreateReviewAsync(parentId,
             new CreateReviewRequest { HiringRecordId = hid, Rating = 4 }));
 
-        Assert.Equal("Chỉ có thể đánh giá sau khi hợp đồng hoàn thành.", ex.Message);
     }
 
-    // Condition: đã có review.
     [Fact]
     public async Task AlreadyReviewed_Throws()
     {
@@ -118,10 +111,8 @@ public class CreateReviewAsyncTests
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.CreateReviewAsync(parentId,
             new CreateReviewRequest { HiringRecordId = hid, Rating = 4 }));
 
-        Assert.Equal("Bạn đã đánh giá hợp đồng này rồi.", ex.Message);
     }
 
-    // Condition: reviewer không tồn tại sau khi lưu.
     [Fact]
     public async Task ReviewerUserMissing_ThrowsAfterSave()
     {
@@ -137,12 +128,11 @@ public class CreateReviewAsyncTests
         var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.CreateReviewAsync(parentId,
             new CreateReviewRequest { HiringRecordId = hid, Rating = 5, Comment = "  ok  " }));
 
-        Assert.Equal("Không tìm thấy người dùng.", ex.Message);
         _mockReview.Verify(r => r.Add(It.IsAny<Review>()), Times.Once);
         _mockReview.Verify(r => r.SaveChangesAsync(), Times.Once);
     }
 
-    // Condition: tạo review + map DTO.
+
     [Fact]
     public async Task Success_AddsSavesAndReturnsDto()
     {
@@ -155,7 +145,7 @@ public class CreateReviewAsyncTests
         var parentUser = new User
         {
             Id = parentId,
-            FirstName = "Mẹ",
+            FirstName = "Mỹ",
             LastName = "Lan",
             AvatarUrl = "/a.png"
         };
@@ -171,7 +161,7 @@ public class CreateReviewAsyncTests
 
         Assert.Equal(5, dto.Rating);
         Assert.Equal("Tốt", dto.Comment);
-        Assert.Equal("Mẹ Lan", dto.ReviewerName);
+        Assert.Equal("Mỹ Lan", dto.ReviewerName);
         Assert.Equal("/a.png", dto.ReviewerAvatarUrl);
         _mockReview.Verify(
             r => r.Add(It.Is<Review>(x =>

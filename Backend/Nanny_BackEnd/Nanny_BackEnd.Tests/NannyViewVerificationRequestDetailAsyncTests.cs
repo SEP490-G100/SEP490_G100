@@ -8,13 +8,13 @@ using Nanny_BackEnd.Services.Interfaces;
 namespace Nanny_BackEnd.Tests;
 
 /// <summary>
-/// <see cref="Nanny_BackEnd.Controllers.VerificationRequestController"/> detail →
+/// <see cref="Nanny_BackEnd.Controllers.VerificationRequestController"/> detail ?
 /// <see cref="VerificationRequestService.NannyViewVerificationRequestDetailAsync"/>.
 /// </summary>
 public class NannyViewVerificationRequestDetailAsyncTests
 {
-    private const string NoNannyProfileMessage = "Khong tim thay ho so Nanny.";
-    private const string NoRequestMessage = "Khong tim thay yeu cau xac minh.";
+    private const string NoNannyProfileMessage = "Không tìm thấy hồ sơ Nanny.";
+    private const string NoRequestMessage = "Không tìm thấy yêu cầu xác minh.";
 
     private readonly Mock<IVerificationRequestRepository> _mockRepo;
     private readonly Mock<IWebHostEnvironment> _mockEnv;
@@ -75,7 +75,6 @@ public class NannyViewVerificationRequestDetailAsyncTests
         return (np, vr);
     }
 
-    // Condition: user chưa có hồ sơ nanny.
     [Fact]
     public async Task NoNannyProfile_ReturnsNotFound()
     {
@@ -108,7 +107,6 @@ public class NannyViewVerificationRequestDetailAsyncTests
         Assert.Equal(NoRequestMessage, message);
     }
 
-    // Condition: yêu cầu thuộc hồ sơ khác (NannyProfileId ≠ profile hiện tại).
     [Fact]
     public async Task RequestBelongsToOtherProfile_ReturnsNotFound()
     {
@@ -126,7 +124,6 @@ public class NannyViewVerificationRequestDetailAsyncTests
         Assert.Equal(NoRequestMessage, message);
     }
 
-    // Condition: hợp lệ — map MapDetailDto.
     [Fact]
     public async Task Success_ReturnsDetail()
     {

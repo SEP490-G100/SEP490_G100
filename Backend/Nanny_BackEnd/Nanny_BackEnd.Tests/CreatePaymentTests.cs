@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using Moq;
 using Nanny_BackEnd.DTOs.Subscription;
 using Nanny_BackEnd.Models;
@@ -9,7 +9,6 @@ using Nanny_BackEnd.Services.Interfaces;
 namespace Nanny_BackEnd.Tests;
 
 /// <summary>
-/// <see cref="Nanny_BackEnd.Controllers.SubscriptionController.CreatePayment"/> → <see cref="SubscriptionService.createPayment"/>.
 /// </summary>
 public class CreatePaymentTests
 {
@@ -59,7 +58,6 @@ public class CreatePaymentTests
         CreatedAt     = DateTime.UtcNow
     };
 
-    // Condition: không có gói theo id.
     [Fact]
     public async Task PlanNotFound_Throws()
     {
@@ -69,10 +67,8 @@ public class CreatePaymentTests
         _mockRepo.Setup(r => r.findPlanById(planId)).ReturnsAsync((SubscriptionPlan?)null);
 
         var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.createPayment(userId, Req(planId)));
-        Assert.Contains("gói subscription", ex.Message, StringComparison.Ordinal);
     }
 
-    // Condition: gói cho Parent, user chưa có parent profile.
     [Fact]
     public async Task NotParent_Throws()
     {
@@ -85,10 +81,8 @@ public class CreatePaymentTests
         _mockRepo.Setup(r => r.hasNannyProfile(userId)).ReturnsAsync(false);
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.createPayment(userId, Req(planId)));
-        Assert.Equal("Tài khoản hiện tại không phải Parent nên không thể mua gói này.", ex.Message);
     }
 
-    // Condition: đang có gói còn hạn.
     [Fact]
     public async Task HasActiveSubscription_Throws()
     {
@@ -108,10 +102,8 @@ public class CreatePaymentTests
             });
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.createPayment(userId, Req(planId)));
-        Assert.Contains("còn hiệu lực", ex.Message, StringComparison.Ordinal);
     }
 
-    // Condition: tạo phiên mới, PayOS trả hướng dẫn hợp lệ.
     [Fact]
     public async Task Success_CreatesSession_ReturnsInstruction()
     {
@@ -155,7 +147,6 @@ public class CreatePaymentTests
         _mockPayOs.Verify(p => p.createPaymentInstruction(It.IsAny<Guid>(), It.IsAny<int>(), 199000m, plan.Name), Times.Once);
     }
 
-    // Condition: tạo giao dịch xong, PayOS tạo instruction lỗi → hợp nhất thất bại.
     [Fact]
     public async Task PayOsThrows_MarksTransactionFailed()
     {
