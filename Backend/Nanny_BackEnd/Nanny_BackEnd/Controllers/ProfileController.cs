@@ -37,12 +37,13 @@ public class ProfileController : ControllerBase
         }
     }
 
+    [AllowAnonymous]
     [HttpGet("public/{userId:guid}")]
     public async Task<IActionResult> GetPublicProfile(Guid userId)
     {
         try
         {
-            var requesterUserId = GetCurrentUserId();
+            var requesterUserId = TryGetCurrentUserId();
             var profile = await _profileService.GetPublicProfileAsync(requesterUserId, userId);
             return Ok(new { success = true, data = profile });
         }
@@ -199,6 +200,17 @@ public class ProfileController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(sub) || !Guid.TryParse(sub, out var userId))
             throw new UnauthorizedAccessException("Token không hợp lệ.");
+
+        return userId;
+    }
+
+    private Guid? TryGetCurrentUserId()
+    {
+        var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+               ?? User.FindFirst("sub")?.Value;
+
+        if (string.IsNullOrWhiteSpace(sub) || !Guid.TryParse(sub, out var userId))
+            return null;
 
         return userId;
     }

@@ -1,4 +1,4 @@
-﻿@model WebSite.Models.Moderator.ModeratorReportedProfileDetailPageModel
+@model WebSite.Models.Moderator.ModeratorReportedProfileDetailPageModel
 @{
     Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
     ViewData["Title"] = "Chi tiết hồ sơ bị khiếu nại";
@@ -156,7 +156,7 @@
                                 {
                                     var active = IsAvailable(day.Item1, slot.Item1);
                                     <div class="schedule-cell @(active ? "active" : "")" aria-hidden="true">
-                                        <span class="schedule-check">@(active ? "âœ“" : "")</span>
+                                        <span class="schedule-check">@(active ? "✓" : "")</span>
                                     </div>
                                 }
                             }

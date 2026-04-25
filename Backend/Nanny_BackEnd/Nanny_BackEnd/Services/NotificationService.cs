@@ -249,7 +249,7 @@ public class NotificationService : INotificationService
         var targetRole = normalizeTargetRole(request.TargetRole);
 
         if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(content))
-            throw new InvalidOperationException("Tieu de va noi dung thong bao la bat buoc.");
+            throw new InvalidOperationException("Tiêu đề và nội dung thông báo là bắt buộc.");
 
         var recipientIds = await resolveAdminNotificationRecipients(targetType, targetRole);
         if (recipientIds.Count == 0)
@@ -281,7 +281,7 @@ public class NotificationService : INotificationService
         var content = request.Content.Trim();
 
         if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(content))
-            throw new InvalidOperationException("Tieu de va noi dung thong bao la bat buoc.");
+            throw new InvalidOperationException("Tiêu đề và nội dung thông báo là bắt buộc.");
 
         var nowUtc = DateTime.UtcNow;
         foreach (var row in rows)
@@ -443,14 +443,14 @@ public class NotificationService : INotificationService
     private static string getSenderLabel(Notification notification, IReadOnlyDictionary<Guid, string> senderMap)
     {
         if (!notification.CreatedBy.HasValue)
-            return notification.Type == NotificationTypes.AdminBroadcast ? "Admin he thong" : "He thong";
+            return notification.Type == NotificationTypes.AdminBroadcast ? "Admin hệ thống" : "Hệ thống";
 
         if (notification.CreatedBy.Value == notification.UserId)
             return string.Empty;
 
         return senderMap.TryGetValue(notification.CreatedBy.Value, out var senderName)
             ? senderName
-            : "Nguoi dung";
+            : "Người dùng";
     }
 
     private static string getDisplayName(User user)

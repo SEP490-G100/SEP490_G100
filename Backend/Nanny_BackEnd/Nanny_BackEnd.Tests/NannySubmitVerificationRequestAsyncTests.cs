@@ -11,7 +11,7 @@ using Nanny_BackEnd.Services.Interfaces;
 namespace Nanny_BackEnd.Tests;
 
 /// <summary>
-/// <see cref="Nanny_BackEnd.Controllers.VerificationRequestController"/> submit →
+/// <see cref="Nanny_BackEnd.Controllers.VerificationRequestController"/> submit ?
 /// <see cref="VerificationRequestService.NannySubmitVerificationRequestAsync"/>.
 /// </summary>
 public class NannySubmitVerificationRequestAsyncTests
@@ -54,7 +54,6 @@ public class NannySubmitVerificationRequestAsyncTests
         FileSize = 10
     };
 
-    // Condition: chưa có hồ sơ.
     [Fact]
     public async Task NoNannyProfile_ReturnsFalse()
     {
@@ -68,10 +67,9 @@ public class NannySubmitVerificationRequestAsyncTests
         });
 
         Assert.False(ok);
-        Assert.Equal("Khong tim thay ho so Nanny.", msg);
+        Assert.Equal("Không tìm thấy hồ sơ Nanny.", msg);
     }
 
-    // Condition: thiếu tài liệu.
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
@@ -95,7 +93,6 @@ public class NannySubmitVerificationRequestAsyncTests
         Assert.Equal("Ban phai tai len it nhat mot tai lieu.", msg);
     }
 
-    // Condition: đã có yêu cầu pending cùng loại.
     [Fact]
     public async Task PendingSameTypeExists_ReturnsFalse()
     {
@@ -122,10 +119,9 @@ public class NannySubmitVerificationRequestAsyncTests
         });
 
         Assert.False(ok);
-        Assert.Equal("Ban da co mot yeu cau dang cho duyet cho loai ho so nay.", msg);
+        Assert.Equal("Bạn đã có một yêu cầu đang chờ duyệt cho loại hồ sơ này.", msg);
     }
 
-    // Condition: Health certificate — bắt buộc HealthCertificateExpiryDate.
     [Fact]
     public async Task HealthCertificateWithoutExpiryDate_ReturnsFalse()
     {
@@ -146,7 +142,6 @@ public class NannySubmitVerificationRequestAsyncTests
         Assert.Equal("Ban phai nhap ngay het han cho giay kham suc khoe.", msg);
     }
 
-    // Condition: nộp hồ sơ profile thành công.
     [Fact]
     public async Task Success_ProfileRequest_AddsNotifiesSaves()
     {
@@ -169,7 +164,7 @@ public class NannySubmitVerificationRequestAsyncTests
         var (ok, msg) = await _sut.NannySubmitVerificationRequestAsync(userId, body);
 
         Assert.True(ok);
-        Assert.Equal("Gui yeu cau xac minh thanh cong.", msg);
+        Assert.Equal("Gửi yêu cầu xác minh thành công.", msg);
         Assert.Equal((int)VerificationStatus.Pending, np.VerificationStatus);
         _mockRepo.Verify(
             r => r.AddRequest(It.Is<VerificationRequest>(v =>
@@ -181,8 +176,8 @@ public class NannySubmitVerificationRequestAsyncTests
         _mockRepo.Verify(r => r.SaveChangesAsync(), Times.Once);
         _mockNotif.Verify(
             n => n.createNotificationForModerators(
-                "Co yeu cau xac minh moi",
-                "Mot nanny vua gui yeu cau xac minh moi va dang cho moderator xem xet.",
+                "Có yêu cầu xác minh mới",
+                "Một nanny vừa gửi yêu cầu xác minh mới và đang chờ moderator xem xét.",
                 NotificationTypes.VerificationRequestSubmitted,
                 It.IsAny<Guid?>(),
                 "VerificationRequest",

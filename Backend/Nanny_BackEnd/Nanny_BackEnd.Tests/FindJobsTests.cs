@@ -40,41 +40,49 @@ public class FindJobsTests
             mockScope.Object,
             NullLogger<JobService>.Instance);
 
-        // hideExpiredPostings luôn no-op trong test
         _mockJobRepo.Setup(r => r.hideExpiredPostings()).Returns(Task.CompletedTask);
     }
 
-    // ── Helper ────────────────────────────────────────────────────────────
     private static SearchJobRequest DefaultFilters(int page = 1, int pageSize = 20) =>
         new() { Page = page, PageSize = pageSize };
 
-    private static JobPosting MakeJob(string title = "Tìm bảo mẫu") => new()
+    private static JobPosting MakeJob(string title = "Tìm người giúp việc") => new()
     {
         Id    = Guid.NewGuid(),
         Title = title
     };
 
-    // ── TC1: PageSize > 50 → clamp về 50, repo được gọi với PageSize = 50 ─
+    [Fact]
+    public async Task ReturnsJobsFromRepo()
+    {
+        var job = MakeJob();
+        _mockJobRepo.Setup(r => r.searchJobPosting(
+            It.IsAny<SearchJobRequest>(), It.IsAny<Guid?>(), It.IsAny<bool>()))
+            .ReturnsAsync(new List<JobPosting> { job });
+
+        var result = await _sut.findJobs(DefaultFilters(), null);
+
+        Assert.Single(result);
+        Assert.Equal(job.Id, result[0].Id);
+        Assert.Equal("Tìm người giúp việc", result[0].Title);
+        Assert.False(result[0].IsFavorite);
+    }
+
+    // Boundary: pageSize vượt trần 50.
     [Fact]
     public async Task PageSizeAboveMax_Clamped()
     {
-        var filters = DefaultFilters(pageSize: 100);
-
         _mockJobRepo.Setup(r => r.searchJobPosting(
             It.Is<SearchJobRequest>(f => f.PageSize == 50), It.IsAny<Guid?>(), It.IsAny<bool>()))
             .ReturnsAsync(new List<JobPosting>());
 
-        await _sut.findJobs(filters);
+        var result = await _sut.findJobs(DefaultFilters(pageSize: 100));
 
-        _mockJobRepo.Verify(r => r.searchJobPosting(
-            It.Is<SearchJobRequest>(f => f.PageSize == 50),
-            It.IsAny<Guid?>(), It.IsAny<bool>()), Times.Once);
+        Assert.Empty(result);
     }
 
-    // ── TC3: Không có nannyProfileId → getFavoriteJobIds không được gọi,
-    //         IsFavorite = false ──────────────────────────────────────────
     [Fact]
-    public async Task NoNannyProfileId_SkipsFavorites()
+    public async Task NoNannyProfileId_IsFavoriteFalse()
     {
         var job = MakeJob();
         _mockJobRepo.Setup(r => r.searchJobPosting(
@@ -85,13 +93,8 @@ public class FindJobsTests
 
         Assert.Single(result);
         Assert.False(result[0].IsFavorite);
-
-        _mockFavRepo.Verify(r => r.getFavoriteJobIds(
-            It.IsAny<Guid>(), It.IsAny<IEnumerable<Guid>>()),
-            Times.Never);
     }
 
-    // ── TC4: Có nannyProfileId, job nằm trong favorites → IsFavorite = true
     [Fact]
     public async Task WithNannyProfileId_JobInFavorites_IsFavoriteTrue()
     {

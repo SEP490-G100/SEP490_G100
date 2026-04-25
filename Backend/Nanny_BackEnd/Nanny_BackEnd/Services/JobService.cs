@@ -151,8 +151,8 @@ public class JobService : IJobService
         var salaryValidationError = SalaryValidationRules.GetFirstError(
             req.SalaryMin,
             req.SalaryMax,
-            "Lương tối thiểu",
-            "Lương tối đa");
+            "Lương từ",
+            "Đến");
         if (!string.IsNullOrWhiteSpace(salaryValidationError))
             throw new InvalidOperationException(salaryValidationError);
         var selectedChildren = resolveSelectedChildren(parentProfile, req.ChildProfileId, req.ChildProfileIds, req.NumberOfChildren);
@@ -175,9 +175,9 @@ public class JobService : IJobService
         // (plan benefits được apply khi tính ExpiresAt và FeaturedBadge)
 
         if (!req.SalaryNegotiable && req.SalaryMin == null)
-            throw new InvalidOperationException("Phải nhập mức lương tối thiểu hoặc chọn 'Thương lượng'.");
+            throw new InvalidOperationException("Phải nhập lương từ hoặc chọn 'Thương lượng'.");
         if (req.SalaryMin.HasValue && req.SalaryMax.HasValue && req.SalaryMin > req.SalaryMax)
-            throw new InvalidOperationException("Lương tối thiểu không được lớn hơn lương tối đa.");
+            throw new InvalidOperationException("Lương từ không được lớn hơn Đến.");
 
         var profileSnapshot = buildProfileSnapshot(parentProfile, selectedChildren);
 
@@ -260,17 +260,17 @@ public class JobService : IJobService
         var salaryValidationError = SalaryValidationRules.GetFirstError(
             req.SalaryMin,
             req.SalaryMax,
-            "Lương tối thiểu",
-            "Lương tối đa");
+            "Lương từ",
+            "Đến");
         if (!string.IsNullOrWhiteSpace(salaryValidationError))
             throw new InvalidOperationException(salaryValidationError);
         var selectedChildren = resolveSelectedChildren(parentProfile, req.ChildProfileId, req.ChildProfileIds, req.NumberOfChildren);
         var primaryChild = selectedChildren.FirstOrDefault();
 
         if (!req.SalaryNegotiable && req.SalaryMin == null)
-            throw new InvalidOperationException("Phải nhập mức lương tối thiểu hoặc chọn 'Thương lượng'.");
+            throw new InvalidOperationException("Phải nhập lương từ hoặc chọn 'Thương lượng'.");
         if (req.SalaryMin.HasValue && req.SalaryMax.HasValue && req.SalaryMin > req.SalaryMax)
-            throw new InvalidOperationException("Lương tối thiểu không được lớn hơn lương tối đa.");
+            throw new InvalidOperationException("Lương từ không được lớn hơn Đến.");
 
         var addrChanged = req.Location != job.Location
                        || req.City != job.City
@@ -333,6 +333,7 @@ public class JobService : IJobService
         var job = await _jobRepo.viewDetailPosting(jobId)
             ?? throw new KeyNotFoundException("Không tìm thấy tin đăng hoặc tin đã bị xóa.");
 
+        ensureJobModerationIsPending(job);
         var nowUtc = DateTime.UtcNow;
         job.ModerationStatus = approved
             ? (int)JobPostingModerationStatus.Approved
@@ -782,6 +783,7 @@ public class JobService : IJobService
         var job = await _jobRepo.viewDetailPosting(jobId)
             ?? throw new KeyNotFoundException("Không tìm thấy tin đăng hoặc tin đã bị xóa.");
 
+        ensureJobModerationIsPending(job);
         var nowUtc = DateTime.UtcNow;
         job.ModerationStatus = moderationStatus;
         job.ModerationNote = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
@@ -866,7 +868,7 @@ public class JobService : IJobService
     {
         var job = await _jobRepo.ModeratorViewJobDetailAsync(jobId);
         if (job == null || job.IsDeleted)
-            throw new KeyNotFoundException("Khong tim thay job posting.");
+            throw new KeyNotFoundException("Không tìm thấy bài đăng công việc.");
 
         return mapToDetail(job);
     }
@@ -877,13 +879,19 @@ public class JobService : IJobService
             throw new ArgumentNullException(nameof(request));
 
         if (request.Action is not 1 and not 2)
-            throw new InvalidOperationException("ModerationStatus khong hop le.");
+            throw new InvalidOperationException("Trạng thái kiểm duyệt không hợp lệ.");
 
         await ReviewJobAsync(jobId, moderatorUserId, request.Action, request.Note);
     }
 
     public async Task ModeratorDeactivateJobAsync(Guid jobId, Guid moderatorUserId) =>
         await DeactivateJobAsync(jobId, moderatorUserId);
+
+    private static void ensureJobModerationIsPending(JobPosting job)
+    {
+        if (job.ModerationStatus != (int)JobPostingModerationStatus.Pending)
+            throw new InvalidOperationException("Tin đăng đã được kiểm duyệt trước đó, không thể xử lý lại.");
+    }
 
     // Background embedding helper
     private async Task EmbedJobInBackgroundAsync(Guid jobId)

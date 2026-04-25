@@ -57,7 +57,7 @@ namespace WebSite.Controllers
                 _logger.LogWarning(ex, "Không tải được dữ liệu bảo mẫu nổi bật cho trang chủ.");
             }
 
-            return View("_Services", vm);
+            return View("Index", vm);
         }
    
 

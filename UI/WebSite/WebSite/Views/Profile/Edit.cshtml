@@ -59,7 +59,7 @@
                                 <input asp-for="DateOfBirth" asp-format="{0:yyyy-MM-dd}" id="DateOfBirth" type="date" max="@dobMax" class="form-input" />
                                 @if (isNanny)
                                 {
-                                    <p class="text-xs text-slate-500 mt-1">Nanny phải lớn hơn 30 tuổi.</p>
+                                    <p id="dobHint" class="text-xs text-slate-500 mt-1">Yêu cầu: Bảo mẫu phải lớn hơn 30 tuổi.</p>
                                 }
                                 <p id="dobError" class="hidden text-xs text-red-600 mt-1"></p>
                             </div>
@@ -103,18 +103,18 @@
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label class="form-label" for="ExpectedSalaryMin">Lương tối thiểu</label>
+                                        <label class="form-label" for="ExpectedSalaryMin">Lương từ</label>
                                         <input asp-for="ExpectedSalaryMin" id="ExpectedSalaryMin" type="text" inputmode="numeric" autocomplete="off" class="form-input" />
                                         <span asp-validation-for="ExpectedSalaryMin" class="text-xs text-red-600 mt-1 block"></span>
                                     </div>
                                     <div>
-                                        <label class="form-label" for="ExpectedSalaryMax">Lương tối đa</label>
+                                        <label class="form-label" for="ExpectedSalaryMax">Đến</label>
                                         <input asp-for="ExpectedSalaryMax" id="ExpectedSalaryMax" type="text" inputmode="numeric" autocomplete="off" class="form-input" />
                                         <span asp-validation-for="ExpectedSalaryMax" class="text-xs text-red-600 mt-1 block"></span>
                                     </div>
                                 </div>
                                 <p id="salaryError" class="hidden text-xs text-red-600 mt-1"></p>
-                                <p class="text-xs text-slate-500">Lương hợp lệ từ 8.000.000 đến 50.000.000 VND.</p>
+                                <p id="salaryHint" class="text-xs text-slate-500">Lương hợp lệ từ 8.000.000 đến 50.000.000 VND.</p>
                                 <div>
                                     <label class="form-label" for="MaxTravelDistance">Khoảng cách di chuyển tối đa (km)</label>
                                     <input asp-for="MaxTravelDistance" id="MaxTravelDistance" type="number" min="0" class="form-input" />
@@ -160,6 +160,17 @@
                         <div class="profile-card profile-card-soft">
                             <h3>Lịch làm việc</h3>
                             <p class="text-sm text-slate-500 mb-4">Chọn các khung giờ bạn có thể nhận việc trong tuần.</p>
+                            <div class="schedule-preset-wrap">
+                                <label class="schedule-preset-label" for="availabilityEditPreset">Mẫu lịch nhanh</label>
+                                <select id="availabilityEditPreset" class="schedule-preset-select">
+                                    <option value="">-- Chọn mẫu lịch nhanh --</option>
+                                    <option value="morning-afternoon">Từ sáng đến chiều</option>
+                                    <option value="afternoon-evening">Từ chiều đến tối</option>
+                                    <option value="weekday-only">Làm các ngày trong tuần trừ cuối tuần</option>
+                                    <option value="all-week">Làm cả tuần</option>
+                                </select>
+                                <p class="schedule-preset-hint">Chọn mẫu để tự động tích lịch, sau đó bạn vẫn có thể chỉnh tay.</p>
+                            </div>
 
                             @for (var i = 0; i < availDays.Count; i++)
                             {
@@ -197,6 +208,8 @@
                                         <button type="button"
                                                 class="schedule-cell @(isActive ? "active" : "")"
                                                 data-input-id="@inputId"
+                                                data-day-of-week="@availDays[i].DayOfWeek"
+                                                data-slot="@row.Slot"
                                                 aria-pressed="@(isActive ? "true" : "false")">
                                             <span class="schedule-check">@(isActive ? Html.Raw("&#10003;") : Html.Raw(""))</span>
                                         </button>
@@ -273,7 +286,7 @@
                                     <button type="button" id="avatarUploadBtn" class="profile-primary-btn flex-1">Chọn ảnh</button>
                                     <button type="button" id="avatarResetBtn" class="ghost-btn">Bỏ chọn</button>
                                 </div>
-                                <p class="text-xs text-slate-500 mt-2">Chỉ cho phép file .jpg, .jpeg hoặc .png</p>
+                                <p id="avatarUploadHint" class="text-xs text-slate-500 mt-2">Chỉ cho phép file .jpg, .jpeg hoặc .png</p>
                                 <p id="avatarUploadError" class="hidden text-xs text-red-600 mt-1"></p>
                             </div>
                             <div class="w-full mt-3">
@@ -306,6 +319,19 @@
             var form = document.getElementById("editProfileForm");
             var dobInput = document.getElementById("DateOfBirth");
             var dobError = document.getElementById("dobError");
+            var dobHint = document.getElementById("dobHint");
+
+            function showProfileToast(message, type) {
+                var msg = (message || "").toString().trim();
+                if (!msg) return;
+
+                if (typeof window.showToast === "function") {
+                    window.showToast(msg, { type: type || "success" });
+                }
+            }
+
+            showProfileToast(profileSuccessToastMessage, "success");
+            showProfileToast(profileErrorToastMessage, "error");
 
             var genderInput = document.getElementById("Gender");
             var genderButtons = document.querySelectorAll(".gender-btn");
@@ -341,8 +367,10 @@
             var maxSalaryAllowed = 50000000;
 
             function showAvatarError(msg) {
+                var avatarHint = document.getElementById("avatarUploadHint");
                 avatarErr.textContent = msg || "";
                 avatarErr.classList.toggle("hidden", !msg);
+                if (avatarHint) avatarHint.classList.toggle("hidden", !!msg);
             }
             function isAllowedImage(file) {
                 if (!file) return false;
@@ -430,8 +458,26 @@
                 return (value || "").replace(/\D/g, "");
             }
 
+            function normalizeSalaryDigits(value) {
+                var raw = (value || "").toString().trim();
+                if (!raw) return "";
+
+                raw = raw.replace(/\s/g, "");
+                var sepIndex = Math.max(raw.lastIndexOf("."), raw.lastIndexOf(","));
+                if (sepIndex >= 0) {
+                    var fraction = raw.substring(sepIndex + 1);
+                    // Keep only integer VND part for inputs like:
+                    // "10000000.00", "10000000,00", "10,000,000.00", "10.000.000,00".
+                    if (/^\d{1,2}$/.test(fraction)) {
+                        return getDigits(raw.substring(0, sepIndex));
+                    }
+                }
+
+                return getDigits(raw);
+            }
+
             function formatMoneyValue(value) {
-                var digits = getDigits(value);
+                var digits = normalizeSalaryDigits(value);
                 if (!digits) return "";
                 return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
             }
@@ -454,14 +500,16 @@
 
             function parseSalaryInput(input) {
                 if (!input) return null;
-                var digits = getDigits(input.value);
+                var digits = normalizeSalaryDigits(input.value);
                 return digits ? Number(digits) : null;
             }
 
             function showSalaryError(message) {
                 if (!salaryError) return;
+                var salaryHint = document.getElementById("salaryHint");
                 salaryError.textContent = message || "";
                 salaryError.classList.toggle("hidden", !message);
+                if (salaryHint) salaryHint.classList.toggle("hidden", !!message);
             }
 
             function validateSalaryRange() {
@@ -471,17 +519,17 @@
                 var salaryMax = parseSalaryInput(document.getElementById("ExpectedSalaryMax"));
 
                 if (salaryMin != null && (salaryMin < minSalaryAllowed || salaryMin > maxSalaryAllowed)) {
-                    showSalaryError("Lương tối thiểu phải trong khoảng 8.000.000 - 50.000.000 VND.");
+                    showSalaryError("Lương từ phải trong khoảng 8.000.000 - 50.000.000 VND.");
                     return false;
                 }
 
                 if (salaryMax != null && (salaryMax < minSalaryAllowed || salaryMax > maxSalaryAllowed)) {
-                    showSalaryError("Lương tối đa phải trong khoảng 8.000.000 - 50.000.000 VND.");
+                    showSalaryError("Đến phải trong khoảng 8.000.000 - 50.000.000 VND.");
                     return false;
                 }
 
                 if (salaryMin != null && salaryMax != null && salaryMin > salaryMax) {
-                    showSalaryError("Lương tối thiểu không được lớn hơn lương tối đa.");
+                    showSalaryError("Lương từ không được lớn hơn Đến.");
                     return false;
                 }
 
@@ -491,10 +539,22 @@
 
             function validateNannyDob() {
                 if (!isNanny) return true;
+
+                function showDobError(message) {
+                    dobError.textContent = message || "";
+                    dobError.classList.remove("hidden");
+                    if (dobHint) dobHint.classList.add("hidden");
+                }
+
+                function clearDobError() {
+                    dobError.classList.add("hidden");
+                    dobError.textContent = "";
+                    if (dobHint) dobHint.classList.remove("hidden");
+                }
+
                 var value = dobInput.value;
                 if (!value) {
-                    dobError.textContent = "Vui lòng chọn ngày sinh.";
-                    dobError.classList.remove("hidden");
+                    showDobError("Vui lòng chọn ngày sinh.");
                     return false;
                 }
                 var dob = new Date(value + "T00:00:00");
@@ -503,12 +563,10 @@
                 var monthDiff = today.getMonth() - dob.getMonth();
                 if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) age--;
                 if (age <= 30) {
-                    dobError.textContent = "Bảo mẫu phải lớn hơn 30 tuổi.";
-                    dobError.classList.remove("hidden");
+                    showDobError("Bảo mẫu phải lớn hơn 30 tuổi.");
                     return false;
                 }
-                dobError.classList.add("hidden");
-                dobError.textContent = "";
+                clearDobError();
                 return true;
             }
 
@@ -524,35 +582,81 @@
                 }
 
                 salaryInputs.forEach(function (input) {
-                    input.value = getDigits(input.value);
+                    input.value = normalizeSalaryDigits(input.value);
                 });
             });
             dobInput.addEventListener("change", validateNannyDob);
 
             var availGrid = document.getElementById("availabilityEditGrid");
+            var availabilityPreset = document.getElementById("availabilityEditPreset");
             if (availGrid) {
-                availGrid.querySelectorAll(".schedule-cell[data-input-id]").forEach(function (cell) {
+                var availCells = Array.prototype.slice.call(availGrid.querySelectorAll(".schedule-cell[data-input-id]"));
+
+                function setAvailCellState(cell, active) {
+                    var inputId = cell.getAttribute("data-input-id");
+                    if (!inputId) return;
+                    var checkbox = document.getElementById(inputId);
+                    if (!checkbox) return;
+
+                    checkbox.checked = !!active;
+                    cell.classList.toggle("active", !!active);
+                    cell.setAttribute("aria-pressed", active ? "true" : "false");
+
+                    var check = cell.querySelector(".schedule-check");
+                    if (check) check.innerHTML = active ? "&#10003;" : "";
+                }
+
+                function clearAvailabilityGrid() {
+                    availCells.forEach(function (cell) {
+                        setAvailCellState(cell, false);
+                    });
+                }
+
+                function applyAvailabilityPreset(preset) {
+                    if (!preset) return;
+                    clearAvailabilityGrid();
+
+                    availCells.forEach(function (cell) {
+                        var slot = Number(cell.getAttribute("data-slot"));
+                        var dayOfWeek = Number(cell.getAttribute("data-day-of-week"));
+                        var isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
+                        var shouldEnable = false;
+
+                        if (preset === "morning-afternoon") {
+                            shouldEnable = slot === 0 || slot === 1;
+                        } else if (preset === "afternoon-evening") {
+                            shouldEnable = slot === 1 || slot === 2;
+                        } else if (preset === "weekday-only") {
+                            shouldEnable = isWeekday;
+                        } else if (preset === "all-week") {
+                            shouldEnable = true;
+                        }
+
+                        if (shouldEnable) {
+                            setAvailCellState(cell, true);
+                        }
+                    });
+                }
+
+                availCells.forEach(function (cell) {
                     cell.addEventListener("click", function () {
+                        if (availabilityPreset && availabilityPreset.value) {
+                            availabilityPreset.value = "";
+                        }
                         var inputId = cell.getAttribute("data-input-id");
                         if (!inputId) return;
                         var checkbox = document.getElementById(inputId);
                         if (!checkbox) return;
-                        checkbox.checked = !checkbox.checked;
-                        var active = checkbox.checked;
-                        cell.classList.toggle("active", active);
-                        cell.setAttribute("aria-pressed", active ? "true" : "false");
-                        var check = cell.querySelector(".schedule-check");
-                        if (check) check.innerHTML = active ? "&#10003;" : "";
+                        setAvailCellState(cell, !checkbox.checked);
                     });
                 });
-            }
 
-            var toast = document.getElementById("profileToast");
-            if (toast && toast.textContent.trim()) {
-                toast.classList.remove("hidden");
-                setTimeout(function () {
-                    toast.classList.add("hidden");
-                }, 2500);
+                if (availabilityPreset && availabilityPreset.dataset.boundPreset !== "true") {
+                    availabilityPreset.dataset.boundPreset = "true";
+                    availabilityPreset.addEventListener("change", function () {
+                        applyAvailabilityPreset(availabilityPreset.value);
+                    });
+                }
             }
 
             var initialLat = parseFloat(document.getElementById("Latitude").value) || 21.0285;
@@ -644,7 +748,7 @@
                     .replace(/[\u0300-\u036f]/g, "")
                     .replace(/\u0111/g, "d")
                     .replace(/\u0110/g, "d")
-                    .replace(/Ä‘/g, "d")
+                    .replace(/đ/g, "d")
                     .trim();
             }
             function sortByFilterAndName(items, filterKey, getName) {

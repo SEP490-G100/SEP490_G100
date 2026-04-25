@@ -150,8 +150,8 @@ public class ReportService : IReportService
 
         await _notificationService.createNotification(
             report.ReporterUserId,
-            "Thong bao tu Moderator",
-            "Chúng tôi đã xử lí yêu cầu phàn nàn của bạn",
+            "Thông báo từ Moderator",
+            "Chúng tôi đã xử lý yêu cầu phản ánh của bạn",
             NotificationTypes.ModeratorBroadcast,
             report.Id,
             "Report",
@@ -164,7 +164,7 @@ public class ReportService : IReportService
             {
                 await _notificationService.createNotification(
                     offenderUserId.Value,
-                    "Thong bao tu Moderator",
+                    "Thông báo từ Moderator",
                     offenderNotificationMessage,
                     NotificationTypes.ModeratorBroadcast,
                     report.Id,

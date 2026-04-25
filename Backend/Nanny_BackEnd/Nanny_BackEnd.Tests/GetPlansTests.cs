@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using Moq;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories.Interfaces;
@@ -8,7 +8,6 @@ using Nanny_BackEnd.Services.Interfaces;
 namespace Nanny_BackEnd.Tests;
 
 /// <summary>
-/// <see cref="Nanny_BackEnd.Controllers.SubscriptionController.GetPlans"/> → <see cref="SubscriptionService.getPlans"/>.
 /// </summary>
 public class GetPlansTests
 {
@@ -33,7 +32,6 @@ public class GetPlansTests
             payOpt);
     }
 
-    // Condition: chưa có gói active.
     [Fact]
     public async Task NoPlans_ReturnsEmpty()
     {
@@ -45,7 +43,6 @@ public class GetPlansTests
         _mockRepo.Verify(r => r.getActivePlans(), Times.Once);
     }
 
-    // Condition: 1 gói — map plan (suy ra TargetRole Parent từ tên/mô tả).
     [Fact]
     public async Task OnePlan_MapsNamePriceAndInferredTargetRole()
     {

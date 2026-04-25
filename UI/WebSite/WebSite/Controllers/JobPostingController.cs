@@ -87,10 +87,23 @@ public class JobPostingController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ReviewJobPosting(Guid id, int action, string? note, Guid? parentUserId = null, bool returnToDetail = false)
     {
+        if (action is not 1 and not 2)
+        {
+            TempData["Error"] = "Hành động kiểm duyệt không hợp lệ.";
+            return RedirectToAction(nameof(ViewJobPostingDetail), new { id });
+        }
+
+        if (action == 1 && string.IsNullOrWhiteSpace(note))
+        {
+            TempData["Error"] = "Bạn phải nhập lý do từ chối trước khi từ chối bài đăng.";
+            return RedirectToAction(nameof(ViewJobPostingDetail), new { id });
+        }
+
+        var normalizedNote = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
         var token = HttpContext.Session.GetString("AccessToken");
         _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var body = new { action, note };
+        var body = new { action, note = normalizedNote };
         var response = await _http.PatchAsJsonAsync($"api/job-postings/moderator-review-job/{id}", body);
 
         if (response.IsSuccessStatusCode)
@@ -100,23 +113,22 @@ public class JobPostingController : Controller
                 await _notificationHub.Clients.Group($"user:{parentUserId.Value}").SendAsync("notification:new", new
                 {
                     type = action == 2 ? "job-posting-approved" : "job-posting-rejected",
-                    title = action == 2 ? "Bai dang da duoc duyet" : "Bai dang da bi tu choi",
+                    title = action == 2 ? "Bài đăng đã được duyệt" : "Bài đăng đã bị từ chối",
                     message = action == 2
-                        ? "Bai dang cua ban da duoc dieu hanh vien duyet."
-                        : "Bai dang cua ban da bi dieu hanh vien tu choi.",
+                        ? "Bài đăng của bạn đã được điều hành viên duyệt."
+                        : "Bài đăng của bạn đã bị điều hành viên từ chối.",
                     toastType = action == 2 ? "success" : "warning"
                 });
             }
 
             var listUrl = Url.Action(nameof(ManageJobPosting), "JobPosting")
                           ?? "/Moderator/ManageJobPosting";
-            var toastMessage = Uri.EscapeDataString("Ban da xu ly yeu cau duyet bai dang thanh cong");
+            var toastMessage = Uri.EscapeDataString("Bạn đã xử lý yêu cầu kiểm duyệt bài đăng thành công.");
             return Redirect($"{listUrl}?toastType=success&toastMessage={toastMessage}");
         }
 
         var errorJson = await response.Content.ReadAsStringAsync();
-        TempData["Error"] = "Kiem duyet that bai: " + errorJson;
-        return RedirectToAction(nameof(ManageJobPosting));
+        TempData["Error"] = "Kiểm duyệt thất bại: " + errorJson;
+        return RedirectToAction(nameof(ViewJobPostingDetail), new { id });
     }
 }
-

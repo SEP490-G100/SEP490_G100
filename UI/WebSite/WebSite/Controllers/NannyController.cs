@@ -34,6 +34,106 @@ public class NannyController : Controller
         else
             _http.DefaultRequestHeaders.Authorization = null;
     }
+
+    private static ApiResultDto? TryDeserializeApiResult(string? content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return null;
+
+        try
+        {
+            return JsonSerializer.Deserialize<ApiResultDto>(content, JsonOpts);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static string BuildFallbackHttpErrorMessage(HttpResponseMessage response, string? body, string defaultMessage)
+    {
+        var trimmed = (body ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(trimmed))
+            return defaultMessage;
+
+        if (trimmed.Length > 180)
+            trimmed = trimmed[..180] + "...";
+
+        return $"{defaultMessage} (HTTP {(int)response.StatusCode}): {trimmed}";
+    }
+
+    private async Task<NannySkillsViewModel> BuildSkillsViewModelAsync(IEnumerable<Guid>? preselectedIds = null)
+    {
+        var vm = new NannySkillsViewModel();
+
+        SetAuthHeader();
+        try
+        {
+            var response = await _http.GetAsync("/api/onboarding/skills");
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync();
+                var apiResult = TryDeserializeApiResult(json);
+
+                if (apiResult?.Data is System.Text.Json.JsonElement element &&
+                    element.ValueKind == System.Text.Json.JsonValueKind.Array)
+                {
+                    vm.AvailableSkills = JsonSerializer.Deserialize<List<NannySkillSelectionViewModel>>(
+                        element.GetRawText(), JsonOpts) ?? new();
+                }
+            }
+        }
+        catch
+        {
+            vm.AvailableSkills = new();
+        }
+
+        var selectedSet = new HashSet<Guid>((preselectedIds ?? Enumerable.Empty<Guid>())
+            .Where(id => id != Guid.Empty));
+
+        if (selectedSet.Count == 0)
+        {
+            try
+            {
+                var profileResponse = await _http.GetAsync("/api/profile");
+                if (profileResponse.IsSuccessStatusCode)
+                {
+                    var profileJson = await profileResponse.Content.ReadAsStringAsync();
+                    var profileResult = TryDeserializeApiResult(profileJson);
+                    if (profileResult?.Data is System.Text.Json.JsonElement profileElement &&
+                        profileElement.ValueKind == System.Text.Json.JsonValueKind.Object &&
+                        profileElement.TryGetProperty("skills", out var skillsElement) &&
+                        skillsElement.ValueKind == System.Text.Json.JsonValueKind.Array)
+                    {
+                        foreach (var skillElement in skillsElement.EnumerateArray())
+                        {
+                            if (!skillElement.TryGetProperty("skillId", out var skillIdElement))
+                                continue;
+
+                            Guid skillId;
+                            if (skillIdElement.ValueKind == System.Text.Json.JsonValueKind.String &&
+                                Guid.TryParse(skillIdElement.GetString(), out skillId))
+                            {
+                                selectedSet.Add(skillId);
+                            }
+                            else if (Guid.TryParse(skillIdElement.ToString(), out skillId))
+                            {
+                                selectedSet.Add(skillId);
+                            }
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // ignore prefill errors
+            }
+        }
+
+        vm.SelectedSkillIds = selectedSet.ToList();
+        return vm;
+    }
+
     [AllowAnonymous]
     [HttpGet]
     public async Task<IActionResult> List()
@@ -404,8 +504,8 @@ public class NannyController : Controller
                      model.ExpectedSalaryMax,
                      nameof(model.ExpectedSalaryMin),
                      nameof(model.ExpectedSalaryMax),
-                     "Mức lương tối thiểu",
-                     "Mức lương tối đa"))
+                     "Lương từ",
+                     "Đến"))
         {
             var memberNames = error.MemberNames?.Any() == true
                 ? error.MemberNames
@@ -429,61 +529,60 @@ public class NannyController : Controller
         });
 
         var json = await response.Content.ReadAsStringAsync();
-        var apiResult = JsonSerializer.Deserialize<ApiResultDto>(json, JsonOpts);
+        var apiResult = TryDeserializeApiResult(json);
         if (apiResult == null || !apiResult.Success)
         {
-            ModelState.AddModelError("", apiResult?.Message ?? "Cập nhật thất bại.");
+            var fallback = BuildFallbackHttpErrorMessage(response, json, "Cập nhật thất bại.");
+            ModelState.AddModelError("", apiResult?.Message ?? fallback);
             return View(model);
         }
 
-        return RedirectToAction("Availability", "Nanny");
+        return RedirectToAction("Skills", "Nanny");
     }
 
     [HttpGet]
     public async Task<IActionResult> Skills()
     {
-        SetAuthHeader();
-        var vm = new NannySkillsViewModel();
-
-        var response = await _http.GetAsync("/api/onboarding/skills");
-        if (response.IsSuccessStatusCode)
-        {
-            var json = await response.Content.ReadAsStringAsync();
-            var apiResult = JsonSerializer.Deserialize<ApiResultDto>(json, JsonOpts);
-
-            if (apiResult?.Data is System.Text.Json.JsonElement element &&
-                element.ValueKind == System.Text.Json.JsonValueKind.Array)
-            {
-                var skills = JsonSerializer.Deserialize<List<NannySkillSelectionViewModel>>(
-                    element.GetRawText(), JsonOpts) ?? new();
-                vm.AvailableSkills = skills;
-            }
-        }
-
-        vm.SelectedSkills.Add(new NannySkillSelectionViewModel());
+        var vm = await BuildSkillsViewModelAsync();
         return View(vm);
     }
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Skills(NannySkillsViewModel model)
     {
-        if (!ModelState.IsValid) return View(model);
+        var selectedSkillIds = (model.SelectedSkillIds ?? new List<Guid>())
+            .Where(id => id != Guid.Empty)
+            .Distinct()
+            .ToList();
+
+        if (!selectedSkillIds.Any())
+            ModelState.AddModelError(nameof(model.SelectedSkillIds), "Vui lòng chọn ít nhất một kỹ năng.");
+
+        if (!ModelState.IsValid)
+        {
+            var vm = await BuildSkillsViewModelAsync(selectedSkillIds);
+            return View(vm);
+        }
 
         SetAuthHeader();
         var payload = new
         {
-            Skills = model.SelectedSkills.Select(s => new { SkillId = s.SkillId, ProficiencyLevel = s.ProficiencyLevel }).ToList()
+            Skills = selectedSkillIds
+                .Select(skillId => new { SkillId = skillId, ProficiencyLevel = (int?)null })
+                .ToList()
         };
 
         var response = await _http.PutAsJsonAsync("/api/onboarding/nanny/skills", payload);
         var json = await response.Content.ReadAsStringAsync();
-        var apiResult = JsonSerializer.Deserialize<ApiResultDto>(json, JsonOpts);
+        var apiResult = TryDeserializeApiResult(json);
         if (apiResult == null || !apiResult.Success)
         {
-            ModelState.AddModelError("", apiResult?.Message ?? "Cập nhật thất bại.");
-            return View(model);
+            var fallback = BuildFallbackHttpErrorMessage(response, json, "Cập nhật thất bại.");
+            ModelState.AddModelError("", apiResult?.Message ?? fallback);
+            var vm = await BuildSkillsViewModelAsync(selectedSkillIds);
+            return View(vm);
         }
 
-        return RedirectToAction("Index", "Home");
+        return RedirectToAction("Availability", "Nanny");
     }
 
     [HttpGet]
@@ -510,10 +609,11 @@ public class NannyController : Controller
 
         var response = await _http.PutAsJsonAsync("/api/onboarding/nanny/availability", payload);
         var json = await response.Content.ReadAsStringAsync();
-        var apiResult = JsonSerializer.Deserialize<ApiResultDto>(json, JsonOpts);
+        var apiResult = TryDeserializeApiResult(json);
         if (apiResult == null || !apiResult.Success)
         {
-            ModelState.AddModelError("", apiResult?.Message ?? "Cập nhật thất bại.");
+            var fallback = BuildFallbackHttpErrorMessage(response, json, "Cập nhật thất bại.");
+            ModelState.AddModelError("", apiResult?.Message ?? fallback);
             return View(model);
         }
 
@@ -699,4 +799,3 @@ public class NannyController : Controller
         public string? ResponseMessage { get; set; }
     }
 }
-

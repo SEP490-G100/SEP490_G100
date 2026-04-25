@@ -60,10 +60,10 @@ public class SearchController : ControllerBase
             var userId = GetCurrentUserId();
             var nannyProfileId = await _searchSvc.GetNannyProfileIdByUserIdAsync(userId);
             if (nannyProfileId == null)
-                return BadRequest(Fail("Tai khoan khong phai nanny."));
+                return BadRequest(Fail("Tài khoản không phải nanny."));
 
             await _jobSvc.addFavoriteJob(nannyProfileId.Value, jobPostingId);
-            return Ok(new { success = true, message = "Da luu bai dang." });
+            return Ok(new { success = true, message = "Đã lưu bài đăng." });
         }
         catch (InvalidOperationException ex)
         {
@@ -87,7 +87,7 @@ public class SearchController : ControllerBase
             var userId = GetCurrentUserId();
             var nannyProfileId = await _searchSvc.GetNannyProfileIdByUserIdAsync(userId);
             if (nannyProfileId == null)
-                return BadRequest(Fail("Tai khoan khong phai nanny."));
+                return BadRequest(Fail("Tài khoản không phải nanny."));
 
             var result = await _jobSvc.getFavoriteJobs(nannyProfileId.Value, page, pageSize, userId);
             return Ok(new
@@ -117,7 +117,7 @@ public class SearchController : ControllerBase
             var userId = GetCurrentUserId();
             var nannyProfileId = await _searchSvc.GetNannyProfileIdByUserIdAsync(userId);
             if (nannyProfileId == null)
-                return BadRequest(Fail("Tai khoan khong phai nanny."));
+                return BadRequest(Fail("Tài khoản không phải nanny."));
 
             var isFavorite = await _jobSvc.toggleFavoriteJob(nannyProfileId.Value, jobPostingId, userId);
             return Ok(new
@@ -160,16 +160,16 @@ public class SearchController : ControllerBase
                         or ApplyToJobFailure.JobNotOpen
                         or ApplyToJobFailure.OwnJob
                         => BadRequest(Fail(result.Failure == ApplyToJobFailure.NotNanny
-                            ? "Tai khoan khong phai nanny."
+                            ? "Tài khoản không phải nanny."
                             : (result.Failure == ApplyToJobFailure.JobNotOpen
-                                ? "Bai dang hien khong san sang de ung tuyen."
-                                : "Ban khong the ung tuyen bai dang cua chinh minh."))),
-                    ApplyToJobFailure.NotFound => NotFound(Fail("Khong tim thay bai dang.")),
+                                ? "Bài đăng hiện không sẵn sàng để ứng tuyển."
+                                : "Bạn không thể ứng tuyển bài đăng của chính mình."))),
+                    ApplyToJobFailure.NotFound => NotFound(Fail("Không tìm thấy bài đăng.")),
                     ApplyToJobFailure.AlreadyApplied
-                        => Conflict(Fail("Ban da gui don ung tuyen cho bai dang nay.")),
+                        => Conflict(Fail("Bạn đã gửi đơn ứng tuyển cho bài đăng này.")),
                     ApplyToJobFailure.MonthlyLimit
                         => BadRequest(Fail(result.ErrorDetailMessage!)),
-                    _ => BadRequest(Fail("Khong the ung tuyen."))
+                    _ => BadRequest(Fail("Không thể ứng tuyển."))
                 };
             }
 
@@ -204,7 +204,7 @@ public class SearchController : ControllerBase
             var userId = GetCurrentUserId();
             var list   = await _searchSvc.GetMyApplicationsAsync(userId, page, pageSize);
             if (list == null)
-                return BadRequest(Fail("Tai khoan khong phai nanny."));
+                return BadRequest(Fail("Tài khoản không phải nanny."));
 
             return Ok(new
             {
@@ -236,16 +236,16 @@ public class SearchController : ControllerBase
             {
                 return r.Failure switch
                 {
-                    WithdrawForNannyFailure.NotNanny => BadRequest(Fail("Tai khoan khong phai nanny.")),
+                    WithdrawForNannyFailure.NotNanny => BadRequest(Fail("Tài khoản không phải nanny.")),
                     WithdrawForNannyFailure.NotFound
-                        => NotFound(Fail("Khong tim thay don ung tuyen.")),
+                        => NotFound(Fail("Không tìm thấy đơn ứng tuyển.")),
                     WithdrawForNannyFailure.NotPending
-                        => BadRequest(Fail("Chi don dang cho duyet moi co the huy.")),
-                    _ => BadRequest(Fail("Khong the huy don."))
+                        => BadRequest(Fail("Chỉ đơn đang chờ duyệt mới có thể hủy.")),
+                    _ => BadRequest(Fail("Không thể hủy đơn."))
                 };
             }
 
-            return Ok(new { success = true, message = "Ban da huy don ung tuyen." });
+            return Ok(new { success = true, message = "Bạn đã hủy đơn ứng tuyển." });
         }
         catch (Exception ex)
         {
@@ -267,7 +267,7 @@ public class SearchController : ControllerBase
             if (err == GetParentJobApplicationsFailure.InvalidStatusFilter)
                 return BadRequest(Fail(errMsg!));
             if (err == GetParentJobApplicationsFailure.NotParent)
-                return BadRequest(Fail("Tai khoan khong phai parent."));
+                return BadRequest(Fail("Tài khoản không phải parent."));
             if (err == GetParentJobApplicationsFailure.JobNotFound)
                 return NotFound(Fail(errMsg!));
 
@@ -343,7 +343,7 @@ public class SearchController : ControllerBase
                 {
                     ReviewJobParentFailure.BadInput => BadRequest(Fail(r.ErrorMessage!)),
                     ReviewJobParentFailure.NotParent
-                        => BadRequest(Fail("Tai khoan khong phai parent.")),
+                        => BadRequest(Fail("Tài khoản không phải parent.")),
                     ReviewJobParentFailure.ApplicationNotFound
                         => NotFound(Fail(r.ErrorMessage!)),
                     ReviewJobParentFailure.Forbidden
@@ -352,7 +352,7 @@ public class SearchController : ControllerBase
                         or ReviewJobParentFailure.AlreadyProcessed
                         or ReviewJobParentFailure.NotPending
                         => BadRequest(Fail(r.ErrorMessage!)),
-                    _ => BadRequest(Fail("Khong the xu ly request."))
+                    _ => BadRequest(Fail("Không thể xử lý request."))
                 };
             }
 

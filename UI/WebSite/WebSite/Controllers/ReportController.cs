@@ -297,7 +297,7 @@ public class ReportController : Controller
         }
         catch
         {
-            TempData["Error"] = "Khong the tai danh sach report.";
+            TempData["Error"] = "Không thể tải danh sách report.";
             return View("~/Views/Moderator/Report/ManageReport.cshtml", new ModeratorReportListResponse());
         }
     }
@@ -309,7 +309,7 @@ public class ReportController : Controller
         var detail = await FetchReportDetailAsync(id);
         if (detail == null)
         {
-            TempData["Error"] = "Khong tim thay report.";
+            TempData["Error"] = "Không tìm thấy report.";
             return RedirectToAction(nameof(ManageReport));
         }
 
@@ -334,13 +334,13 @@ public class ReportController : Controller
         var detail = await FetchReportDetailAsync(id);
         if (detail == null)
         {
-            TempData["Error"] = "Khong tim thay report.";
+            TempData["Error"] = "Không tìm thấy report.";
             return RedirectToAction(nameof(ManageReport));
         }
 
         if (detail.Status == 1)
         {
-            TempData["Error"] = "Report da completed. Khong the chinh sua.";
+            TempData["Error"] = "Report đã completed. Không thể chỉnh sửa.";
             var lockedModel = new ModeratorReportDetailPageModel
             {
                 Detail = detail,
@@ -392,8 +392,8 @@ public class ReportController : Controller
                 await _notificationHub.Clients.Group($"user:{detail.ReporterUserId}").SendAsync("notification:new", new
                 {
                     type = "report-resolved",
-                    title = "Thong bao tu Moderator",
-                    message = "Chung toi da xu ly yeu cau phan nan cua ban",
+                    title = "Thông báo từ Moderator",
+                    message = "Chúng tôi đã xử lý yêu cầu phản ánh của bạn",
                     toastType = "success"
                 });
 
@@ -404,18 +404,18 @@ public class ReportController : Controller
                     await _notificationHub.Clients.Group($"user:{detail.OffenderUserId.Value}").SendAsync("notification:new", new
                     {
                         type = "report-reviewed",
-                        title = "Thong bao tu Moderator",
+                        title = "Thông báo từ Moderator",
                         message = form.OffenderNotificationMessage.Trim(),
                         toastType = "info"
                     });
                 }
 
                 var listUrl = Url.Action(nameof(ManageReport), "Report") ?? "/Moderator/ManageReport";
-                var toastMessage = Uri.EscapeDataString("Ban da xu ly yeu cau phan nan thanh cong");
+                var toastMessage = Uri.EscapeDataString("Bạn đã xử lý yêu cầu phản ánh thành công");
                 return Redirect($"{listUrl}?toastType=success&toastMessage={toastMessage}");
             }
 
-            TempData["Error"] = result?.Message ?? "Khong the xu ly report.";
+            TempData["Error"] = result?.Message ?? "Không thể xử lý report.";
             var failedModel = new ModeratorReportDetailPageModel
             {
                 Detail = detail,
@@ -425,7 +425,7 @@ public class ReportController : Controller
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"Loi ket noi: {ex.Message}";
+            TempData["Error"] = $"Lỗi kết nối: {ex.Message}";
             var failedModel = new ModeratorReportDetailPageModel
             {
                 Detail = detail,
@@ -440,7 +440,7 @@ public class ReportController : Controller
     public async Task<IActionResult> ViewReportedJobPostingDetail(Guid jobPostingId, Guid? reportId = null)
     {
         if (jobPostingId == Guid.Empty)
-            return RedirectToAction(nameof(ManageReport), new { toastType = "error", toastMessage = "Khong tim thay bai dang." });
+            return RedirectToAction(nameof(ManageReport), new { toastType = "error", toastMessage = "Không tìm thấy bài đăng." });
 
         var token = HttpContext.Session.GetString("AccessToken");
         _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -456,7 +456,7 @@ public class ReportController : Controller
                 return RedirectToAction(nameof(ManageReport), new
                 {
                     toastType = "error",
-                    toastMessage = result?.Message ?? "Khong the tai chi tiet bai dang bi phan nan."
+                    toastMessage = result?.Message ?? "Không thể tải chi tiết bài đăng bị phản ánh."
                 });
             }
 
@@ -473,7 +473,7 @@ public class ReportController : Controller
             return RedirectToAction(nameof(ManageReport), new
             {
                 toastType = "error",
-                toastMessage = "Khong the tai chi tiet bai dang bi phan nan."
+                toastMessage = "Không thể tải chi tiết bài đăng bị phản ánh."
             });
         }
     }
@@ -484,7 +484,7 @@ public class ReportController : Controller
     public async Task<IActionResult> DeactivateReportedJobPosting(Guid jobPostingId, Guid? reportId = null)
     {
         if (jobPostingId == Guid.Empty)
-            return RedirectToAction(nameof(ManageReport), new { toastType = "error", toastMessage = "Khong tim thay bai dang." });
+            return RedirectToAction(nameof(ManageReport), new { toastType = "error", toastMessage = "Không tìm thấy bài đăng." });
 
         var token = HttpContext.Session.GetString("AccessToken");
         _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -503,14 +503,14 @@ public class ReportController : Controller
                     {
                         id = reportId.Value,
                         toastType = "success",
-                        toastMessage = "Da vo hieu hoa bai dang"
+                        toastMessage = "Đã vô hiệu hóa bài đăng"
                     });
                 }
 
                 return RedirectToAction(nameof(ManageReport), new
                 {
                     toastType = "success",
-                    toastMessage = "Da vo hieu hoa bai dang"
+                    toastMessage = "Đã vô hiệu hóa bài đăng"
                 });
             }
 
@@ -519,7 +519,7 @@ public class ReportController : Controller
                 jobPostingId,
                 reportId,
                 toastType = "error",
-                toastMessage = result?.Message ?? "Khong the vo hieu hoa bai dang."
+                toastMessage = result?.Message ?? "Không thể vô hiệu hóa bài đăng."
             });
         }
         catch
@@ -529,7 +529,7 @@ public class ReportController : Controller
                 jobPostingId,
                 reportId,
                 toastType = "error",
-                toastMessage = "Khong the vo hieu hoa bai dang."
+                toastMessage = "Không thể vô hiệu hóa bài đăng."
             });
         }
     }
@@ -539,7 +539,7 @@ public class ReportController : Controller
     public async Task<IActionResult> ViewReportedProfileDetail(Guid userId, Guid? reportId = null)
     {
         if (userId == Guid.Empty)
-            return RedirectToAction(nameof(ManageReport), new { toastType = "error", toastMessage = "Khong tim thay ho so." });
+            return RedirectToAction(nameof(ManageReport), new { toastType = "error", toastMessage = "Không tìm thấy hồ sơ." });
 
         try
         {
@@ -549,7 +549,7 @@ public class ReportController : Controller
                 return RedirectToAction("Login", "Auth", new
                 {
                     toastType = "warning",
-                    toastMessage = "Phien dang nhap da het han."
+                    toastMessage = "Phiên đăng nhập đã hết hạn."
                 });
             }
 
@@ -561,7 +561,7 @@ public class ReportController : Controller
                 return RedirectToAction(nameof(ManageReport), new
                 {
                     toastType = "error",
-                    toastMessage = "Khong the tai ho so bi phan nan."
+                    toastMessage = "Không thể tải hồ sơ bị phản ánh."
                 });
             }
 
@@ -572,7 +572,7 @@ public class ReportController : Controller
                 return RedirectToAction(nameof(ManageReport), new
                 {
                     toastType = "error",
-                    toastMessage = result?.Message ?? "Khong the tai ho so bi phan nan."
+                    toastMessage = result?.Message ?? "Không thể tải hồ sơ bị phản ánh."
                 });
             }
 
@@ -591,7 +591,7 @@ public class ReportController : Controller
             return RedirectToAction(nameof(ManageReport), new
             {
                 toastType = "error",
-                toastMessage = "Khong the tai ho so bi phan nan."
+                toastMessage = "Không thể tải hồ sơ bị phản ánh."
             });
         }
     }
@@ -623,14 +623,14 @@ public class ReportController : Controller
                 success = isSuccess,
                 message = isSuccess
                     ? (isActive
-                        ? "Ban da kich hoat phan nan thanh cong"
-                        : "Ban da vo hieu hoa phan nan thanh cong")
+                        ? "Bạn đã kích hoạt phản ánh thành công"
+                        : "Bạn đã vô hiệu hóa phản ánh thành công")
                     : (result?.Message ?? "Thao tac that bai.")
             });
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = $"Loi ket noi: {ex.Message}" });
+            return Json(new { success = false, message = $"Lỗi kết nối: {ex.Message}" });
         }
     }
 

@@ -73,7 +73,7 @@ public class SearchService : ISearchService
             {
                 return new ApplyToJobServiceResult(
                     false, ApplyToJobFailure.MonthlyLimit,
-                    $"Ban da dat gioi han {monthlyApplicationLimit} luot ung tuyen trong thang nay. Vui long nang cap goi de ung tuyen them.",
+                    $"Bạn đã đạt giới hạn {monthlyApplicationLimit} lượt ứng tuyển trong tháng này. Vui lòng nâng cấp gói để ứng tuyển thêm.",
                     default, default, default, default, false, "");
             }
         }
@@ -123,15 +123,15 @@ public class SearchService : ISearchService
         await _jobAppRepo.SaveChangesAsync();
 
         var nannyName = $"{nannyProfile.User?.FirstName} {nannyProfile.User?.LastName}".Trim();
-        if (string.IsNullOrWhiteSpace(nannyName)) nannyName = "Mot nanny";
+        if (string.IsNullOrWhiteSpace(nannyName)) nannyName = "Một nanny";
 
         var parentUserId = job.ParentProfile?.UserId ?? Guid.Empty;
         if (parentUserId != Guid.Empty)
         {
             await _notificationService.createNotification(
                 parentUserId,
-                "Co nanny vua ung tuyen bai dang cua ban",
-                $"{nannyName} vua gui don ung tuyen cho bai dang \"{job.Title}\".",
+                "Có nanny vừa ứng tuyển bài đăng của bạn",
+                $"{nannyName} vừa gửi đơn ứng tuyển cho bài đăng \"{job.Title}\".",
                 NotificationTypes.JobApplicationReceived,
                 job.Id,
                 "JobPosting",
@@ -140,16 +140,16 @@ public class SearchService : ISearchService
 
         await _notificationService.createNotification(
             userId,
-            "Ban da gui don ung tuyen",
-            $"Don ung tuyen cua ban cho bai dang \"{job.Title}\" da duoc gui. Vui long cho Parent phan hoi.",
+            "Bạn đã gửi đơn ứng tuyển",
+            $"Đơn ứng tuyển của bạn cho bài đăng \"{job.Title}\" đã được gửi. Vui lòng chờ Parent phản hồi.",
             NotificationTypes.JobApplicationSubmitted,
             application.Id,
             "JobApplication",
             userId);
 
         var successMsg = isReapplied
-            ? "Ban da gui lai don ung tuyen. Vui long cho Parent phan hoi."
-            : "Ban da ung tuyen thanh cong. Vui long cho Parent phan hoi.";
+            ? "Bạn đã gửi lại đơn ứng tuyển. Vui lòng chờ Parent phản hồi."
+            : "Bạn đã ứng tuyển thành công. Vui lòng chờ Parent phản hồi.";
 
         return new ApplyToJobServiceResult(
             true, null, null,
@@ -224,7 +224,7 @@ public class SearchService : ISearchService
     {
         if (status.HasValue && (status.Value < 0 || status.Value > 3))
         {
-            return (GetParentJobApplicationsFailure.InvalidStatusFilter, "Trang thai don ung tuyen khong hop le.", null);
+            return (GetParentJobApplicationsFailure.InvalidStatusFilter, "Trạng thái đơn ứng tuyển không hợp lệ.", null);
         }
 
         var parentProfileId = await _jobAppRepo.GetParentProfileIdByUserIdAsync(userId);
@@ -236,7 +236,7 @@ public class SearchService : ISearchService
         var job = await _jobAppRepo.GetJobPostingForParentAsync(jobPostingId, parentProfileId.Value);
         if (job == null)
         {
-            return (GetParentJobApplicationsFailure.JobNotFound, "Khong tim thay bai dang hoac ban khong co quyen truy cap.", null);
+            return (GetParentJobApplicationsFailure.JobNotFound, "Không tìm thấy bài đăng hoặc bạn không có quyền truy cập.", null);
         }
 
         var applications = await _jobAppRepo.GetApplicationsByJobPostingAsync(jobPostingId, status);
@@ -291,21 +291,21 @@ public class SearchService : ISearchService
         if (request == null)
         {
             return new ReviewJobApplicationServiceResult(
-                false, ReviewJobParentFailure.BadInput, "Du lieu review khong hop le.",
+                false, ReviewJobParentFailure.BadInput, "Dữ liệu review không hợp lệ.",
                 default, default, default, default, default, default, default, default, "");
         }
 
         if (request.Action is not 1 and not 2)
         {
             return new ReviewJobApplicationServiceResult(
-                false, ReviewJobParentFailure.BadInput, "Action khong hop le. Dung 1 (accept) hoac 2 (reject).",
+                false, ReviewJobParentFailure.BadInput, "Action không hợp lệ. Dùng 1 (accept) hoặc 2 (reject).",
                 default, default, default, default, default, default, default, default, "");
         }
 
         if (request.Action == 2 && string.IsNullOrWhiteSpace(request.RejectionReason))
         {
             return new ReviewJobApplicationServiceResult(
-                false, ReviewJobParentFailure.BadInput, "Vui long nhap ly do khi tu choi request.",
+                false, ReviewJobParentFailure.BadInput, "Vui lòng nhập lý do khi từ chối request.",
                 default, default, default, default, default, default, default, default, "");
         }
 
@@ -321,7 +321,7 @@ public class SearchService : ISearchService
         if (application == null)
         {
             return new ReviewJobApplicationServiceResult(
-                false, ReviewJobParentFailure.ApplicationNotFound, "Khong tim thay request ung tuyen.",
+                false, ReviewJobParentFailure.ApplicationNotFound, "Không tìm thấy request ứng tuyển.",
                 default, default, default, default, default, default, default, default, "");
         }
 
@@ -329,28 +329,28 @@ public class SearchService : ISearchService
             application.JobPosting.ParentProfileId != parentProfileId.Value)
         {
             return new ReviewJobApplicationServiceResult(
-                false, ReviewJobParentFailure.Forbidden, "Khong tim thay request ung tuyen hoac ban khong co quyen xu ly.",
+                false, ReviewJobParentFailure.Forbidden, "Không tìm thấy request ứng tuyển hoặc bạn không có quyền xử lý.",
                 default, default, default, default, default, default, default, default, "");
         }
 
         if (application.Status == 3)
         {
             return new ReviewJobApplicationServiceResult(
-                false, ReviewJobParentFailure.NannyWithdrawn, "Request nay da duoc nanny huy.",
+                false, ReviewJobParentFailure.NannyWithdrawn, "Request này đã được nanny hủy.",
                 default, default, default, default, default, default, default, default, "");
         }
 
         if (application.Status is 1 or 2)
         {
             return new ReviewJobApplicationServiceResult(
-                false, ReviewJobParentFailure.AlreadyProcessed, "Request nay da duoc xu ly truoc do.",
+                false, ReviewJobParentFailure.AlreadyProcessed, "Request này đã được xử lý trước đó.",
                 default, default, default, default, default, default, default, default, "");
         }
 
         if (application.Status != 0)
         {
             return new ReviewJobApplicationServiceResult(
-                false, ReviewJobParentFailure.NotPending, "Chi request dang cho duyet moi co the xu ly.",
+                false, ReviewJobParentFailure.NotPending, "Chỉ request đang chờ duyệt mới có thể xử lý.",
                 default, default, default, default, default, default, default, default, "");
         }
 
@@ -368,9 +368,9 @@ public class SearchService : ISearchService
         var nannyUserId = application.NannyProfile?.UserId ?? Guid.Empty;
         if (nannyUserId != Guid.Empty && !isApproved)
         {
-            var title = "Don ung tuyen bi tu choi";
+            var title = "Đơn ứng tuyển bị từ chối";
             var content =
-                $"Parent da tu choi don ung tuyen cua ban cho bai dang \"{application.JobPosting.Title}\". Ly do: {application.RejectionReason}";
+                $"Parent đã từ chối đơn ứng tuyển của bạn cho bài đăng \"{application.JobPosting.Title}\". Lý do: {application.RejectionReason}";
 
             await _notificationService.createNotification(
                 nannyUserId,
@@ -393,8 +393,8 @@ public class SearchService : ISearchService
             userId,
             nannyUserId,
             isApproved
-                ? "Ban da chap nhan request ung tuyen."
-                : "Ban da tu choi request ung tuyen.");
+                ? "Bạn đã chấp nhận request ứng tuyển."
+                : "Bạn đã từ chối request ứng tuyển.");
     }
 
     private async Task<int> getMonthlyApplicationLimit(Guid nannyProfileId)
@@ -409,10 +409,10 @@ public class SearchService : ISearchService
     private static string getApplicationStatusLabel(int status) =>
         status switch
         {
-            0 => "Dang cho duyet",
-            1 => "Da duoc chap nhan",
-            2 => "Da bi tu choi",
-            3 => "Da huy",
-            _ => "Dang cap nhat"
+            0 => "Đang chờ duyệt",
+            1 => "Đã được chấp nhận",
+            2 => "Đã bị từ chối",
+            3 => "Đã hủy",
+            _ => "Đang cập nhật"
         };
 }

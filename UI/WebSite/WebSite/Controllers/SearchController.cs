@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
@@ -76,7 +76,7 @@ public class SearchController : Controller
         return View();
     }
 
-    // â”€â”€ GET /Search/Jobs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── GET /Search/Jobs ────────────────────────────────────
     [HttpGet]
     public async Task<IActionResult> Jobs([FromQuery] SearchJobRequest req)
     {

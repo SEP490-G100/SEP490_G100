@@ -240,7 +240,7 @@ public class AccountController : Controller
             status: status,
             search: search,
             page: page,
-            pageSize: 3);
+            pageSize: 7);
 
         if (result == null)
         {

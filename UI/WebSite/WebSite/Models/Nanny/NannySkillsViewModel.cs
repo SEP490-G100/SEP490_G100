@@ -12,6 +12,5 @@ public class NannySkillSelectionViewModel
 public class NannySkillsViewModel
 {
     public List<NannySkillSelectionViewModel> AvailableSkills { get; set; } = new();
-    public List<NannySkillSelectionViewModel> SelectedSkills { get; set; } = new();
+    public List<Guid> SelectedSkillIds { get; set; } = new();
 }
-
