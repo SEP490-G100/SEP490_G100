@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Hosting;
 using Moq;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories.Interfaces;
@@ -13,8 +13,8 @@ namespace Nanny_BackEnd.Tests;
 /// </summary>
 public class NannyViewVerificationRequestDetailAsyncTests
 {
-    private const string NoNannyProfileMessage = "Khong tim thay ho so Nanny.";
-    private const string NoRequestMessage = "Khong tim thay yeu cau xac minh.";
+    private const string NoNannyProfileMessage = "Không tìm thấy hồ sơ Nanny.";
+    private const string NoRequestMessage = "Không tìm thấy yêu cầu xác minh.";
 
     private readonly Mock<IVerificationRequestRepository> _mockRepo;
     private readonly Mock<IWebHostEnvironment> _mockEnv;

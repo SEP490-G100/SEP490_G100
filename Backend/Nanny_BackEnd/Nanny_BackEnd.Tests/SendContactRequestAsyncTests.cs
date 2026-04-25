@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Moq;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
@@ -55,7 +55,7 @@ public class SendContactRequestAsyncTests
         var r = await _sut.SendAsync(userId, Guid.NewGuid(), "hi");
 
         Assert.Equal(400, r.StatusCode);
-        Assert.Equal("Tai khoan khong phai parent.", ErrorMessage(r.Body));
+        Assert.Equal("Tài khoản không phải parent.", ErrorMessage(r.Body));
     }
 
     // Confirmation: 404.
@@ -70,7 +70,7 @@ public class SendContactRequestAsyncTests
         var r = await _sut.SendAsync(userId, nannyId, null);
 
         Assert.Equal(404, r.StatusCode);
-        Assert.Equal("Khong tim thay ho so nanny.", ErrorMessage(r.Body));
+        Assert.Equal("Không tìm thấy hồ sơ nanny.", ErrorMessage(r.Body));
     }
 
     [Fact]
@@ -84,7 +84,7 @@ public class SendContactRequestAsyncTests
         var r = await _sut.SendAsync(userId, nId, "x");
 
         Assert.Equal(400, r.StatusCode);
-        Assert.Equal("Ban khong the gui request contact cho chinh minh.", ErrorMessage(r.Body));
+        Assert.Equal("Bạn không thể gửi request contact cho chính mình.", ErrorMessage(r.Body));
     }
 
     // Confirmation: 400.
@@ -100,7 +100,7 @@ public class SendContactRequestAsyncTests
         var r = await _sut.SendAsync(userId, nId, new string('a', 1001));
 
         Assert.Equal(400, r.StatusCode);
-        Assert.Equal("Noi dung request contact khong duoc vuot qua 1000 ky tu.", ErrorMessage(r.Body));
+        Assert.Equal("Nội dung request contact không được vượt quá 1000 ký tự.", ErrorMessage(r.Body));
     }
 
     // Confirmation: 409.
@@ -127,7 +127,7 @@ public class SendContactRequestAsyncTests
 
         Assert.Equal(409, r.StatusCode);
         Assert.Equal(
-            "Ban da gui request contact den nanny nay va dang cho phan hoi.",
+            "Bạn đã gửi request contact đến nanny này và đang chờ phản hồi.",
             ErrorMessage(r.Body));
         _mockCr.Verify(c => c.SaveChangesAsync(), Times.Never);
     }
@@ -145,21 +145,21 @@ public class SendContactRequestAsyncTests
             .ReturnsAsync((ContactRequest?)null);
         _mockCr.Setup(c => c.SaveChangesAsync()).Returns(Task.CompletedTask);
 
-        var r = await _sut.SendAsync(userId, nId, "  Chao  ");
+        var r = await _sut.SendAsync(userId, nId, "  Chào  ");
 
         Assert.Equal(200, r.StatusCode);
         _mockCr.Verify(c => c.Add(It.Is<ContactRequest>(x =>
             x.ParentProfileId == parent.Id
             && x.NannyProfileId == nId
-            && x.Message == "Chao"
+            && x.Message == "Chào"
             && x.Status == 0
             && x.CreatedBy == userId
             && !x.IsDeleted)), Times.Once);
         _mockCr.Verify(c => c.SaveChangesAsync(), Times.Once);
         _mockNotif.Verify(n => n.createNotification(
             nUserId,
-            "Ban vua nhan duoc request contact",
-            "P A vua gui request contact cho ho so cua ban.",
+            "Bạn vừa nhận được request contact",
+            "P A vừa gửi request contact cho hồ sơ của bạn.",
             NotificationTypes.ContactRequestReceived,
             It.IsAny<Guid?>(),
             "ContactRequest",
@@ -168,7 +168,7 @@ public class SendContactRequestAsyncTests
         var root = JsonDocument.Parse(JsonSerializer.Serialize(r.Body)).RootElement;
         Assert.True(root.GetProperty("success").GetBoolean());
         var msg = root.GetProperty("message").GetString();
-        Assert.Equal("Ban da gui request contact thanh cong. Vui long cho nanny phan hoi.", msg);
+        Assert.Equal("Bạn đã gửi request contact thành công. Vui lòng chờ nanny phản hồi.", msg);
     }
 
     [Fact]
@@ -207,6 +207,6 @@ public class SendContactRequestAsyncTests
 
         var root = JsonDocument.Parse(JsonSerializer.Serialize(r.Body)).RootElement;
         var msg = root.GetProperty("message").GetString();
-        Assert.Equal("Ban da gui lai request contact. Vui long cho nanny phan hoi.", msg);
+        Assert.Equal("Bạn đã gửi lại request contact. Vui lòng chờ nanny phản hồi.", msg);
     }
 }

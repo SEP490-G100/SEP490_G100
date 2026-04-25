@@ -1,4 +1,4 @@
-﻿using Moq;
+using Moq;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Services;
@@ -12,7 +12,7 @@ namespace Nanny_BackEnd.Tests;
 /// </summary>
 public class ModeratorViewVerificationDetailAsyncTests
 {
-    private const string NotFoundMessage = "Khong tim thay yeu cau xac minh.";
+    private const string NotFoundMessage = "Không tìm thấy yêu cầu xác minh.";
 
     private readonly Mock<IVerificationRequestRepository> _mockRepo;
     private readonly Mock<INotificationService> _mockNotif;

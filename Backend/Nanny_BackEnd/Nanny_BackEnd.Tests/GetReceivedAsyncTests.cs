@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Moq;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories.Interfaces;
@@ -39,7 +39,7 @@ public class GetReceivedAsyncTests
         var r = await _sut.GetReceivedAsync(Guid.NewGuid(), badStatus);
 
         Assert.Equal(400, r.StatusCode);
-        Assert.Equal("Trang thai request contact khong hop le.", ErrorMessage(r.Body));
+        Assert.Equal("Trạng thái request contact không hợp lệ.", ErrorMessage(r.Body));
     }
 
     // Confirmation: 400.
@@ -52,11 +52,11 @@ public class GetReceivedAsyncTests
         var r = await _sut.GetReceivedAsync(userId, null);
 
         Assert.Equal(400, r.StatusCode);
-        Assert.Equal("Tai khoan khong phai nanny.", ErrorMessage(r.Body));
+        Assert.Equal("Tài khoản không phải nanny.", ErrorMessage(r.Body));
         _mockCr.Verify(c => c.GetReceivedListForNannyAsync(It.IsAny<Guid>(), It.IsAny<int?>()), Times.Never);
     }
 
-    // Confirmation: 200, data d?m 0, requests r?ng.
+    // Confirmation: 200, data đm 0, requests rỗng.
     [Fact]
     public async Task Success_EmptyList_Returns200()
     {
@@ -78,7 +78,7 @@ public class GetReceivedAsyncTests
         Assert.Equal(0, data.GetProperty("requests").GetArrayLength());
     }
 
-    // Confirmation: map parent, canReview=true, g?i repo v?i (nannyId, 0).
+    // Confirmation: map parent, canReview=true, gửi repo với (nannyId, 0).
     [Fact]
     public async Task Success_WithItem_MapsParent_Pending_CanReview()
     {
@@ -119,7 +119,7 @@ public class GetReceivedAsyncTests
             .GetProperty("requests")[0];
         Assert.Equal(crId, first.GetProperty("id").GetGuid());
         Assert.Equal(0, first.GetProperty("status").GetInt32());
-        Assert.Equal("Dang cho duyet", first.GetProperty("statusLabel").GetString());
+        Assert.Equal("Đang chờ duyệt", first.GetProperty("statusLabel").GetString());
         Assert.Equal("hello", first.GetProperty("message").GetString());
         Assert.True(first.GetProperty("canReview").GetBoolean());
         var pr = first.GetProperty("parent");
@@ -161,6 +161,6 @@ public class GetReceivedAsyncTests
             .GetProperty("data")
             .GetProperty("requests")[0];
         Assert.False(first.GetProperty("canReview").GetBoolean());
-        Assert.Equal("Da duoc chap nhan", first.GetProperty("statusLabel").GetString());
+        Assert.Equal("Đã được chấp nhận", first.GetProperty("statusLabel").GetString());
     }
 }

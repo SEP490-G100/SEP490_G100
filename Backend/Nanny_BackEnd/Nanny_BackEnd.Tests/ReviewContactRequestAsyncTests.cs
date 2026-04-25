@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Moq;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
@@ -39,7 +39,7 @@ public class ReviewContactRequestAsyncTests
         var r = await _sut.ReviewAsync(Guid.NewGuid(), Guid.NewGuid(), action, null);
 
         Assert.Equal(400, r.StatusCode);
-        Assert.Equal("Action khong hop le. Dung 1 (accept) hoac 2 (reject).", ErrorMessage(r.Body));
+        Assert.Equal("Action không hợp lệ. Dùng 1 (accept) hoặc 2 (reject).", ErrorMessage(r.Body));
     }
 
     [Theory]
@@ -50,7 +50,7 @@ public class ReviewContactRequestAsyncTests
         var r = await _sut.ReviewAsync(Guid.NewGuid(), Guid.NewGuid(), 2, responseMessage);
 
         Assert.Equal(400, r.StatusCode);
-        Assert.Equal("Vui long nhap ly do khi tu choi request contact.", ErrorMessage(r.Body));
+        Assert.Equal("Vui lòng nhập lý do khi từ chối request contact.", ErrorMessage(r.Body));
     }
 
     [Fact]
@@ -59,7 +59,7 @@ public class ReviewContactRequestAsyncTests
         var r = await _sut.ReviewAsync(Guid.NewGuid(), Guid.NewGuid(), 1, new string('x', 1001));
 
         Assert.Equal(400, r.StatusCode);
-        Assert.Equal("Noi dung phan hoi khong duoc vuot qua 1000 ky tu.", ErrorMessage(r.Body));
+        Assert.Equal("Nội dung phản hồi không được vượt quá 1000 ký tự.", ErrorMessage(r.Body));
     }
 
     [Fact]
@@ -71,7 +71,7 @@ public class ReviewContactRequestAsyncTests
         var r = await _sut.ReviewAsync(userId, Guid.NewGuid(), 1, null);
 
         Assert.Equal(400, r.StatusCode);
-        Assert.Equal("Tai khoan khong phai nanny.", ErrorMessage(r.Body));
+        Assert.Equal("Tài khoản không phải nanny.", ErrorMessage(r.Body));
         _mockCr.Verify(
             c => c.GetByIdForNannyReviewTrackingAsync(It.IsAny<Guid>(), It.IsAny<Guid>()),
             Times.Never);
@@ -91,7 +91,7 @@ public class ReviewContactRequestAsyncTests
         var r = await _sut.ReviewAsync(userId, crId, 1, null);
 
         Assert.Equal(404, r.StatusCode);
-        Assert.Equal("Khong tim thay request contact hoac ban khong co quyen xu ly.", ErrorMessage(r.Body));
+        Assert.Equal("Không tìm thấy request contact hoặc bạn không có quyền xử lý.", ErrorMessage(r.Body));
     }
 
     [Theory]
@@ -110,7 +110,7 @@ public class ReviewContactRequestAsyncTests
         var r = await _sut.ReviewAsync(userId, crId, 1, null);
 
         Assert.Equal(400, r.StatusCode);
-        Assert.Equal("Request contact nay da duoc xu ly truoc do.", ErrorMessage(r.Body));
+        Assert.Equal("Request contact này đã được xử lý trước đó.", ErrorMessage(r.Body));
     }
 
     [Fact]
@@ -127,7 +127,7 @@ public class ReviewContactRequestAsyncTests
         var r = await _sut.ReviewAsync(userId, crId, 1, null);
 
         Assert.Equal(400, r.StatusCode);
-        Assert.Equal("Chi request contact dang cho duyet moi co the xu ly.", ErrorMessage(r.Body));
+        Assert.Equal("Chỉ request contact đang chờ duyệt mới có thể xử lý.", ErrorMessage(r.Body));
     }
 
     [Fact]
@@ -166,15 +166,15 @@ public class ReviewContactRequestAsyncTests
         Assert.NotNull(cr.RespondedAt);
         _mockNotif.Verify(n => n.createNotification(
             parentU,
-            "Request contact da duoc chap nhan",
-            "N 1 da chap nhan request contact cua ban.",
+            "Request contact đã được chấp nhận",
+            "N 1 đã chấp nhận request contact của bạn.",
             NotificationTypes.ContactRequestAccepted,
             crId,
             "ContactRequest",
             userId), Times.Once);
 
         var root = JsonDocument.Parse(JsonSerializer.Serialize(r.Body)).RootElement;
-        Assert.Equal("Ban da chap nhan request contact.", root.GetProperty("message").GetString());
+        Assert.Equal("Bạn đã chấp nhận request contact.", root.GetProperty("message").GetString());
     }
 
     [Fact]
@@ -211,14 +211,14 @@ public class ReviewContactRequestAsyncTests
         Assert.Equal("full", cr.ResponseMessage);
         _mockNotif.Verify(n => n.createNotification(
             parentU,
-            "Request contact bi tu choi",
-            "A B da tu choi request contact cua ban. Ly do: full",
+            "Request contact bị từ chối",
+            "A B đã từ chối request contact của bạn. Lý do: full",
             NotificationTypes.ContactRequestRejected,
             crId,
             "ContactRequest",
             userId), Times.Once);
 
         var root = JsonDocument.Parse(JsonSerializer.Serialize(r.Body)).RootElement;
-        Assert.Equal("Ban da tu choi request contact.", root.GetProperty("message").GetString());
+        Assert.Equal("Bạn đã từ chối request contact.", root.GetProperty("message").GetString());
     }
 }

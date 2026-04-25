@@ -59,7 +59,8 @@ public class ForgotPasswordAsyncTests
 
         var (success, message) = await _sut.ForgotPasswordAsync("notfound@mail.com");
 
-        Assert.True(success);
+        Assert.False(success);
+        Assert.Equal("Email chưa được đăng ký.", message);
 
         _mockOtp.Verify(o => o.GenerateAsync(It.IsAny<string>(), It.IsAny<OtpPurpose>(), It.IsAny<Guid?>()), Times.Never);
     }
@@ -80,7 +81,8 @@ public class ForgotPasswordAsyncTests
 
         var (success, message) = await _sut.ForgotPasswordAsync("google@mail.com");
 
-        Assert.True(success);
+        Assert.False(success);
+        Assert.Equal("Tài khoản này đăng nhập bằng Google. Vui lòng đăng nhập bằng Google.", message);
 
         _mockOtp.Verify(o => o.GenerateAsync(It.IsAny<string>(), It.IsAny<OtpPurpose>(), It.IsAny<Guid?>()), Times.Never);
     }

@@ -77,21 +77,19 @@ public class ReviewJobAsyncTests
     [Fact]
     public async Task AlreadyModerated_ThrowsInvalidOperation()
     {
-        var jobId = Guid.NewGuid();
-        var job = BaseJob(jobId, (int)JobPostingStatus.Public, parent: new ParentProfile { UserId = Guid.NewGuid() });
-        job.ModerationStatus = (int)JobPostingModerationStatus.Approved;
+        var job = MakeJob(
+            status: (int)JobPostingStatus.Public,
+            moderationStatus: (int)JobPostingModerationStatus.Approved,
+            parent: new ParentProfile { UserId = Guid.NewGuid() });
 
-        _mockRepo.Setup(r => r.viewDetailPosting(jobId)).ReturnsAsync(job);
+        _mockJobRepo.Setup(r => r.viewDetailPosting(job.Id)).ReturnsAsync(job);
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _sut.ModeratorReviewJobAsync(jobId, Guid.NewGuid(), new ModerateJobPostingRequest
-            {
-                Action = (int)JobPostingModerationStatus.Rejected,
-                Note = "lý do"
-            }));
+            _sut.ReviewJobAsync(job.Id, Guid.NewGuid(),
+                (int)JobPostingModerationStatus.Rejected, "lý do"));
 
         Assert.Contains("không thể xử lý lại", ex.Message.ToLowerInvariant());
-        _mockRepo.Verify(r => r.updateJobPosting(It.IsAny<JobPosting>()), Times.Never);
+        _mockJobRepo.Verify(r => r.updateJobPosting(It.IsAny<JobPosting>()), Times.Never);
         _mockNotif.Verify(n => n.createNotification(
             It.IsAny<Guid>(),
             It.IsAny<string>(),

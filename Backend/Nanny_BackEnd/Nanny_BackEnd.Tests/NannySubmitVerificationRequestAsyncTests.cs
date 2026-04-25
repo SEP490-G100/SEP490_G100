@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Hosting;
 using Moq;
 using Nanny_BackEnd.DTOs.Verification;
 using Nanny_BackEnd.Enums;
@@ -67,7 +67,7 @@ public class NannySubmitVerificationRequestAsyncTests
         });
 
         Assert.False(ok);
-        Assert.Equal("Khong tim thay ho so Nanny.", msg);
+        Assert.Equal("Không tìm thấy hồ sơ Nanny.", msg);
     }
 
     [Theory]
@@ -119,7 +119,7 @@ public class NannySubmitVerificationRequestAsyncTests
         });
 
         Assert.False(ok);
-        Assert.Equal("Ban da co mot yeu cau dang cho duyet cho loai ho so nay.", msg);
+        Assert.Equal("Bạn đã có một yêu cầu đang chờ duyệt cho loại hồ sơ này.", msg);
     }
 
     [Fact]
@@ -164,7 +164,7 @@ public class NannySubmitVerificationRequestAsyncTests
         var (ok, msg) = await _sut.NannySubmitVerificationRequestAsync(userId, body);
 
         Assert.True(ok);
-        Assert.Equal("Gui yeu cau xac minh thanh cong.", msg);
+        Assert.Equal("Gửi yêu cầu xác minh thành công.", msg);
         Assert.Equal((int)VerificationStatus.Pending, np.VerificationStatus);
         _mockRepo.Verify(
             r => r.AddRequest(It.Is<VerificationRequest>(v =>
@@ -176,8 +176,8 @@ public class NannySubmitVerificationRequestAsyncTests
         _mockRepo.Verify(r => r.SaveChangesAsync(), Times.Once);
         _mockNotif.Verify(
             n => n.createNotificationForModerators(
-                "Co yeu cau xac minh moi",
-                "Mot nanny vua gui yeu cau xac minh moi va dang cho moderator xem xet.",
+                "Có yêu cầu xác minh mới",
+                "Một nanny vừa gửi yêu cầu xác minh mới và đang chờ moderator xem xét.",
                 NotificationTypes.VerificationRequestSubmitted,
                 It.IsAny<Guid?>(),
                 "VerificationRequest",

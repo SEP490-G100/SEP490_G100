@@ -1,4 +1,4 @@
-﻿using Moq;
+using Moq;
 using Nanny_BackEnd.DTOs.Verification;
 using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Helpers;
@@ -97,7 +97,7 @@ public class ModeratorReviewVerificationAsyncTests
 
         Assert.False(r.Success);
         Assert.Equal(400, r.StatusCode);
-        Assert.Equal("Action khong hop le. Chi chap nhan 2 (Approve) hoac 3 (Reject).", r.Message);
+        Assert.Equal("Action không hợp lệ. Chỉ chấp nhận 2 (Approve) hoặc 3 (Reject).", r.Message);
         _mockRepo.Verify(x => x.GetByIdAsync(It.IsAny<Guid>()), Times.Never);
     }
 
@@ -114,7 +114,7 @@ public class ModeratorReviewVerificationAsyncTests
 
         Assert.False(r.Success);
         Assert.Equal(400, r.StatusCode);
-        Assert.Equal("Ly do tu choi la bat buoc khi tu choi yeu cau.", r.Message);
+        Assert.Equal("Lý do từ chối là bắt buộc khi từ chối yêu cầu.", r.Message);
     }
 
     // Condition: request not found.
@@ -131,7 +131,7 @@ public class ModeratorReviewVerificationAsyncTests
 
         Assert.False(r.Success);
         Assert.Equal(404, r.StatusCode);
-        Assert.Equal("Khong tim thay yeu cau xac minh.", r.Message);
+        Assert.Equal("Không tìm thấy yêu cầu xác minh.", r.Message);
     }
 
     // Condition: request already processed (status != Pending).
@@ -149,7 +149,7 @@ public class ModeratorReviewVerificationAsyncTests
 
         Assert.False(r.Success);
         Assert.Equal(409, r.StatusCode);
-        Assert.Equal("Yeu cau nay da duoc xu ly truoc do.", r.Message);
+        Assert.Equal("Yêu cầu này đã được xử lý trước đó.", r.Message);
     }
 
     // Condition: approve -> update request/profile/health-expiry + notification.
@@ -171,7 +171,7 @@ public class ModeratorReviewVerificationAsyncTests
 
         Assert.True(r.Success);
         Assert.Equal(200, r.StatusCode);
-        Assert.Equal("Da duyet yeu cau xac minh.", r.Message);
+        Assert.Equal("Đã duyệt yêu cầu xác minh.", r.Message);
         Assert.Equal((int)NannyVerificationRequestStatus.Approved, vr.Status);
         Assert.Equal((int)VerificationStatus.Approved, vr.NannyProfile.VerificationStatus);
         Assert.Equal(moderatorId, vr.NannyProfile.VerifiedBy);
@@ -181,8 +181,8 @@ public class ModeratorReviewVerificationAsyncTests
 
         _mockNotif.Verify(n => n.createNotification(
             vr.NannyProfile.UserId,
-            "Yeu cau xac minh cua ban da duoc chap thuan",
-            "Moderator da chap thuan yeu cau xac minh cua ban.",
+            "Yêu cầu xác minh của bạn đã được chấp thuận",
+            "Moderator đã chấp thuận yêu cầu xác minh của bạn.",
             NotificationTypes.VerificationRequestApproved,
             id,
             "VerificationRequest",
@@ -211,15 +211,15 @@ public class ModeratorReviewVerificationAsyncTests
 
         Assert.True(r.Success);
         Assert.Equal(200, r.StatusCode);
-        Assert.Equal("Da tu choi yeu cau xac minh.", r.Message);
+        Assert.Equal("Đã từ chối yêu cầu xác minh.", r.Message);
         Assert.Equal("giay to mo", vr.RejectionReason);
         Assert.Equal((int)VerificationStatus.Rejected, vr.NannyProfile.VerificationStatus);
         Assert.Null(vr.NannyProfile.VerifiedBy);
 
         _mockNotif.Verify(n => n.createNotification(
             vr.NannyProfile.UserId,
-            "Yeu cau xac minh cua ban da bi tu choi",
-            "Moderator da tu choi yeu cau xac minh cua ban. Ly do: giay to mo",
+            "Yêu cầu xác minh của bạn đã bị từ chối",
+            "Moderator đã từ chối yêu cầu xác minh của bạn. Lý do: giay to mo",
             NotificationTypes.VerificationRequestRejected,
             id,
             "VerificationRequest",
