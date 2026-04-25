@@ -1646,15 +1646,15 @@ function validatePayload(payload) {
     return 'Vui lòng chọn đủ hồ sơ bé cho từng trẻ.';
   }
   if (!payload.childProfileId) return 'Vui lòng chọn hồ sơ bé.';
-  if (!payload.salaryNegotiable && payload.salaryMin == null) return 'Vui lòng nhập lương tối thiểu trong khoảng 8.000.000 - 50.000.000 VND hoặc bật lương thỏa thuận.';
+        if (!payload.salaryNegotiable && payload.salaryMin == null) return 'Vui lòng nhập lương từ trong khoảng 8.000.000 - 50.000.000 VND hoặc bật lương thỏa thuận.';
   if (payload.salaryMin != null && (!Number.isFinite(payload.salaryMin) || payload.salaryMin < minimumSalary || payload.salaryMin > maximumSalary)) {
-    return 'Lương tối thiểu phải trong khoảng 8.000.000 - 50.000.000 VND.';
+            return 'Lương từ phải trong khoảng 8.000.000 - 50.000.000 VND.';
   }
   if (payload.salaryMax != null && (!Number.isFinite(payload.salaryMax) || payload.salaryMax < minimumSalary || payload.salaryMax > maximumSalary)) {
-    return 'Lương tối đa phải trong khoảng 8.000.000 - 50.000.000 VND.';
+            return 'Đến phải trong khoảng 8.000.000 - 50.000.000 VND.';
   }
   if (payload.salaryMin != null && payload.salaryMax != null && payload.salaryMin > payload.salaryMax) {
-    return 'Lương tối thiểu không được lớn hơn lương tối đa.';
+            return 'Lương từ không được lớn hơn Đến.';
   }
   if (!payload.location || payload.location.length < 3) return 'Vui lòng nhập địa chỉ chi tiết.';
   if (!payload.city) return 'Vui lòng nhập thành phố.';

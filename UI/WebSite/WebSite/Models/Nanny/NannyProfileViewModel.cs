@@ -20,6 +20,6 @@ public class NannyProfileViewModel : IValidatableObject
             ExpectedSalaryMax,
             nameof(ExpectedSalaryMin),
             nameof(ExpectedSalaryMax),
-            "Mức lương tối thiểu",
-            "Mức lương tối đa");
+            "Lương từ",
+            "Đến");
 }

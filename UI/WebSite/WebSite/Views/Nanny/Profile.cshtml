@@ -58,7 +58,7 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Mức lương tối thiểu</label>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Lương từ</label>
                                 <div class="relative">
                                     <input type="hidden" asp-for="ExpectedSalaryMin" />
                                     <input id="ExpectedSalaryMinDisplay" type="text" inputmode="numeric" autocomplete="off" value="@(Model.ExpectedSalaryMin?.ToString("0") ?? "")"
@@ -68,7 +68,7 @@
                                 <span asp-validation-for="ExpectedSalaryMin" class="text-red-500 text-xs mt-1"></span>
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Mức lương tối đa</label>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Đến</label>
                                 <div class="relative">
                                     <input type="hidden" asp-for="ExpectedSalaryMax" />
                                     <input id="ExpectedSalaryMaxDisplay" type="text" inputmode="numeric" autocomplete="off" value="@(Model.ExpectedSalaryMax?.ToString("0") ?? "")"
@@ -160,9 +160,9 @@
             var min = minEl ? parseCurrencyValue(minEl.value) : null;
             var max = maxEl ? parseCurrencyValue(maxEl.value) : null;
 
-        if (min != null && (min < minSalaryAllowed || min > maxSalaryAllowed)) return 'Mức lương tối thiểu phải trong khoảng 8.000.000 - 50.000.000 VND.';
-        if (max != null && (max < minSalaryAllowed || max > maxSalaryAllowed)) return 'Mức lương tối đa phải trong khoảng 8.000.000 - 50.000.000 VND.';
-        if (min != null && max != null && max < min) return 'Mức lương tối đa phải lớn hơn hoặc bằng mức tối thiểu.';
+        if (min != null && (min < minSalaryAllowed || min > maxSalaryAllowed)) return 'Lương từ phải trong khoảng 8.000.000 - 50.000.000 VND.';
+        if (max != null && (max < minSalaryAllowed || max > maxSalaryAllowed)) return 'Đến phải trong khoảng 8.000.000 - 50.000.000 VND.';
+        if (min != null && max != null && max < min) return 'Đến phải lớn hơn hoặc bằng Lương từ.';
         return '';
     }
 

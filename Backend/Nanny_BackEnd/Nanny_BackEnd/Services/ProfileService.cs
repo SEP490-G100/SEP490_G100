@@ -399,8 +399,8 @@ public class ProfileService : IProfileService
             var salaryValidationError = SalaryValidationRules.GetFirstError(
                 request.ExpectedSalaryMin,
                 request.ExpectedSalaryMax,
-                "Lương tối thiểu",
-                "Lương tối đa");
+                "Lương từ",
+                "Đến");
             if (!string.IsNullOrWhiteSpace(salaryValidationError))
                 throw new InvalidOperationException(salaryValidationError);
 

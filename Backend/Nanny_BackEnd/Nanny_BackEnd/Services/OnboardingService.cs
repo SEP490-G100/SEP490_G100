@@ -193,8 +193,8 @@ public class OnboardingService : IOnboardingService
         var salaryValidationError = SalaryValidationRules.GetFirstError(
             request.ExpectedSalaryMin,
             request.ExpectedSalaryMax,
-            "Mức lương tối thiểu",
-            "Mức lương tối đa");
+            "Lương từ",
+            "Đến");
         if (!string.IsNullOrWhiteSpace(salaryValidationError))
             throw new InvalidOperationException(salaryValidationError);
 

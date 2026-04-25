@@ -504,8 +504,8 @@ public class NannyController : Controller
                      model.ExpectedSalaryMax,
                      nameof(model.ExpectedSalaryMin),
                      nameof(model.ExpectedSalaryMax),
-                     "Mức lương tối thiểu",
-                     "Mức lương tối đa"))
+                     "Lương từ",
+                     "Đến"))
         {
             var memberNames = error.MemberNames?.Any() == true
                 ? error.MemberNames

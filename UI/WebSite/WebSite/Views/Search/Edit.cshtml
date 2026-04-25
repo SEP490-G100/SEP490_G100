@@ -73,11 +73,11 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="form-label">Lương tối thiểu</label>
+                                <label class="form-label">Lương từ</label>
                                 <input type="text" id="ef-salMin" inputmode="numeric" class="form-input" placeholder="VD: 1.000.000" />
                             </div>
                             <div>
-                                <label class="form-label">Lương tối đa</label>
+                                <label class="form-label">Đến</label>
                                 <input type="text" id="ef-salMax" inputmode="numeric" class="form-input" placeholder="VD: 3.000.000" />
                             </div>
                             <div class="md:col-span-2 text-xs font-semibold text-slate-500">
@@ -969,16 +969,16 @@ function validateEditPayload(payload) {
     const salaryMin = payload?.salaryMin;
     const salaryMax = payload?.salaryMax;
     if (!payload?.salaryNegotiable && salaryMin == null) {
-        return { message: 'Vui lòng nhập lương tối thiểu trong khoảng 8.000.000 - 50.000.000 VND hoặc bật lương thỏa thuận.', fieldId: 'ef-salMin' };
+                return { message: 'Vui lòng nhập lương từ trong khoảng 8.000.000 - 50.000.000 VND hoặc bật lương thỏa thuận.', fieldId: 'ef-salMin' };
     }
     if (salaryMin != null && (!Number.isFinite(salaryMin) || salaryMin < minimumSalary || salaryMin > maximumSalary)) {
-        return { message: 'Lương tối thiểu phải trong khoảng 8.000.000 - 50.000.000 VND.', fieldId: 'ef-salMin' };
+                return { message: 'Lương từ phải trong khoảng 8.000.000 - 50.000.000 VND.', fieldId: 'ef-salMin' };
     }
     if (salaryMax != null && (!Number.isFinite(salaryMax) || salaryMax < minimumSalary || salaryMax > maximumSalary)) {
-        return { message: 'Lương tối đa phải trong khoảng 8.000.000 - 50.000.000 VND.', fieldId: 'ef-salMax' };
+                return { message: 'Đến phải trong khoảng 8.000.000 - 50.000.000 VND.', fieldId: 'ef-salMax' };
     }
     if (salaryMin != null && salaryMax != null && Number(salaryMin) > Number(salaryMax)) {
-        return { message: 'Lương tối thiểu không được lớn hơn lương tối đa.', fieldId: 'ef-salMin' };
+                return { message: 'Lương từ không được lớn hơn Đến.', fieldId: 'ef-salMin' };
     }
 
     const minAge = payload?.minNannyAge;

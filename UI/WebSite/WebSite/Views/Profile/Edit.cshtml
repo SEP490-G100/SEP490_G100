@@ -103,12 +103,12 @@
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label class="form-label" for="ExpectedSalaryMin">Lương tối thiểu</label>
+                                        <label class="form-label" for="ExpectedSalaryMin">Lương từ</label>
                                         <input asp-for="ExpectedSalaryMin" id="ExpectedSalaryMin" type="text" inputmode="numeric" autocomplete="off" class="form-input" />
                                         <span asp-validation-for="ExpectedSalaryMin" class="text-xs text-red-600 mt-1 block"></span>
                                     </div>
                                     <div>
-                                        <label class="form-label" for="ExpectedSalaryMax">Lương tối đa</label>
+                                        <label class="form-label" for="ExpectedSalaryMax">Đến</label>
                                         <input asp-for="ExpectedSalaryMax" id="ExpectedSalaryMax" type="text" inputmode="numeric" autocomplete="off" class="form-input" />
                                         <span asp-validation-for="ExpectedSalaryMax" class="text-xs text-red-600 mt-1 block"></span>
                                     </div>
@@ -494,17 +494,17 @@
                 var salaryMax = parseSalaryInput(document.getElementById("ExpectedSalaryMax"));
 
                 if (salaryMin != null && (salaryMin < minSalaryAllowed || salaryMin > maxSalaryAllowed)) {
-                    showSalaryError("Lương tối thiểu phải trong khoảng 8.000.000 - 50.000.000 VND.");
+                    showSalaryError("Lương từ phải trong khoảng 8.000.000 - 50.000.000 VND.");
                     return false;
                 }
 
                 if (salaryMax != null && (salaryMax < minSalaryAllowed || salaryMax > maxSalaryAllowed)) {
-                    showSalaryError("Lương tối đa phải trong khoảng 8.000.000 - 50.000.000 VND.");
+                    showSalaryError("Đến phải trong khoảng 8.000.000 - 50.000.000 VND.");
                     return false;
                 }
 
                 if (salaryMin != null && salaryMax != null && salaryMin > salaryMax) {
-                    showSalaryError("Lương tối thiểu không được lớn hơn lương tối đa.");
+                    showSalaryError("Lương từ không được lớn hơn Đến.");
                     return false;
                 }
 

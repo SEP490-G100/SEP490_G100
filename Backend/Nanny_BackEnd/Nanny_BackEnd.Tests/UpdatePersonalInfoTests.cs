@@ -108,7 +108,7 @@ public class UpdatePersonalInfoTests
         Assert.Equal("Ngày sinh không được lớn hơn ngày hiện tại.", ex.Message);
     }
 
-    // Condition: bảo mẫu — mức lương tối thiểu ngoài khoảng cho phép.
+        // Condition: bảo mẫu — lương từ ngoài khoảng cho phép.
     [Fact]
     public async Task Nanny_SalaryOutOfRange_Throws()
     {
@@ -134,7 +134,7 @@ public class UpdatePersonalInfoTests
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.UpdatePersonalInfoAsync(id, req));
 
-        Assert.Equal("Lương tối thiểu phải trong khoảng 8.000.000 - 50.000.000 VND.", ex.Message);
+        Assert.Equal("Lương từ phải trong khoảng 8.000.000 - 50.000.000 VND.", ex.Message);
     }
 
     // Condition: bảo mẫu — không có DOB ở request và cũng không có trên user.

@@ -151,8 +151,8 @@ public class JobService : IJobService
         var salaryValidationError = SalaryValidationRules.GetFirstError(
             req.SalaryMin,
             req.SalaryMax,
-            "Lương tối thiểu",
-            "Lương tối đa");
+            "Lương từ",
+            "Đến");
         if (!string.IsNullOrWhiteSpace(salaryValidationError))
             throw new InvalidOperationException(salaryValidationError);
         var selectedChildren = resolveSelectedChildren(parentProfile, req.ChildProfileId, req.ChildProfileIds, req.NumberOfChildren);
@@ -175,9 +175,9 @@ public class JobService : IJobService
         // (plan benefits được apply khi tính ExpiresAt và FeaturedBadge)
 
         if (!req.SalaryNegotiable && req.SalaryMin == null)
-            throw new InvalidOperationException("Phải nhập mức lương tối thiểu hoặc chọn 'Thương lượng'.");
+            throw new InvalidOperationException("Phải nhập lương từ hoặc chọn 'Thương lượng'.");
         if (req.SalaryMin.HasValue && req.SalaryMax.HasValue && req.SalaryMin > req.SalaryMax)
-            throw new InvalidOperationException("Lương tối thiểu không được lớn hơn lương tối đa.");
+            throw new InvalidOperationException("Lương từ không được lớn hơn Đến.");
 
         var profileSnapshot = buildProfileSnapshot(parentProfile, selectedChildren);
 
@@ -260,17 +260,17 @@ public class JobService : IJobService
         var salaryValidationError = SalaryValidationRules.GetFirstError(
             req.SalaryMin,
             req.SalaryMax,
-            "Lương tối thiểu",
-            "Lương tối đa");
+            "Lương từ",
+            "Đến");
         if (!string.IsNullOrWhiteSpace(salaryValidationError))
             throw new InvalidOperationException(salaryValidationError);
         var selectedChildren = resolveSelectedChildren(parentProfile, req.ChildProfileId, req.ChildProfileIds, req.NumberOfChildren);
         var primaryChild = selectedChildren.FirstOrDefault();
 
         if (!req.SalaryNegotiable && req.SalaryMin == null)
-            throw new InvalidOperationException("Phải nhập mức lương tối thiểu hoặc chọn 'Thương lượng'.");
+            throw new InvalidOperationException("Phải nhập lương từ hoặc chọn 'Thương lượng'.");
         if (req.SalaryMin.HasValue && req.SalaryMax.HasValue && req.SalaryMin > req.SalaryMax)
-            throw new InvalidOperationException("Lương tối thiểu không được lớn hơn lương tối đa.");
+            throw new InvalidOperationException("Lương từ không được lớn hơn Đến.");
 
         var addrChanged = req.Location != job.Location
                        || req.City != job.City

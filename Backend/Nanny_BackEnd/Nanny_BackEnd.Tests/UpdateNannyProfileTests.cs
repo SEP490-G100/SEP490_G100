@@ -53,7 +53,7 @@ public class UpdateNannyProfileTests
         MaxTravelDistance = 20
     };
 
-    // Condition: mức lương tối thiểu ngoài khoảng quy định.
+        // Condition: lương từ ngoài khoảng quy định.
     [Fact]
     public async Task SalaryMinOutOfRange_Throws()
     {
