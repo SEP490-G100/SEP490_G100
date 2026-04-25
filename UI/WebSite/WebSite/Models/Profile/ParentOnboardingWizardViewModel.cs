@@ -43,7 +43,15 @@ namespace WebSite.Models.Profile
         [Display(Name = "Số lượng trẻ")]
         public int? NumberOfChildren { get; set; }
 
-        // Step 5 - Child
+        // Step 5 - Children
+        public List<ParentOnboardingChildInputViewModel> Children { get; set; } = new()
+        {
+            new ParentOnboardingChildInputViewModel()
+        };
+    }
+
+    public class ParentOnboardingChildInputViewModel
+    {
         [Display(Name = "Nhóm tuổi của trẻ")]
         public WebSite.Enums.ChildAgeGroup? ChildAgeGroup { get; set; }
 

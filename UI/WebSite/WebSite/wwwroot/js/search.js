@@ -36,10 +36,10 @@ const SCHEDULE_PRESET_VALUES = Object.freeze({
 });
 
 const GEO_FALLBACK = {
-  'Ho Chi Minh': { lat: 10.776, lng: 106.701, radius: 7000, zoom: 11 },
-  'Thanh pho Ho Chi Minh': { lat: 10.776, lng: 106.701, radius: 7000, zoom: 11 },
-  'Ha Noi': { lat: 21.028, lng: 105.854, radius: 7000, zoom: 11 },
-  'Da Nang': { lat: 16.054, lng: 108.202, radius: 6500, zoom: 11 }
+  'ho chi minh': { lat: 10.776, lng: 106.701, radius: 7000, zoom: 11 },
+  'ha noi': { lat: 21.028, lng: 105.854, radius: 7000, zoom: 11 },
+  'da nang': { lat: 16.054, lng: 108.202, radius: 6500, zoom: 11 },
+  'can tho': { lat: 10.045, lng: 105.746, radius: 6500, zoom: 11 }
 };
 
 let pendingComplainJob = null;
@@ -1220,7 +1220,8 @@ function getAreaPresentation(job) {
     };
   }
 
-  const fallback = GEO_FALLBACK[job?.city] || GEO_FALLBACK['Ho Chi Minh'];
+  const cityKey = normalizeAdministrativeName(job?.city || '');
+  const fallback = GEO_FALLBACK[cityKey] || GEO_FALLBACK['ho chi minh'];
   return { ...fallback };
 }
 
@@ -1648,6 +1649,20 @@ function setEditStatus(status) {
   setStatusToggle('ef-statusToggle', 'ef-status', status);
 }
 
+function getCreateSubmitButton() {
+  return document.querySelector('#createModal .modal-footer .modal-btn-primary');
+}
+
+function setCreateSubmitState(isSubmitting) {
+  isSubmittingCreate = isSubmitting;
+  const submitBtn = getCreateSubmitButton();
+  if (!submitBtn) return;
+
+  submitBtn.disabled = isSubmitting;
+  submitBtn.textContent = isSubmitting ? 'Đang gửi...' : 'Đăng bài';
+  submitBtn.setAttribute('aria-busy', isSubmitting ? 'true' : 'false');
+}
+
 async function openCreate() {
   if (!isLoggedIn()) {
     window.location.href = '/Auth/Login';
@@ -1680,12 +1695,13 @@ async function openCreate() {
   handleCreateChildrenCountChange();
 
   syncSelectPickerTexts();
+  setCreateSubmitState(false);
   document.getElementById('createModal')?.classList.add('show');
 }
 
 function closeCreate() {
   document.getElementById('createModal')?.classList.remove('show');
-  isSubmittingCreate = false;
+  setCreateSubmitState(false);
 }
 
 function getCreatePayload() {
@@ -1770,12 +1786,7 @@ async function submitCreate() {
     return;
   }
 
-  isSubmittingCreate = true;
-  const submitBtn = document.querySelector('#createModal .modal-btn-primary');
-  if (submitBtn) {
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Đang gửi...';
-  }
+  setCreateSubmitState(true);
 
   try {
     const res = await fetch('/Search/CreateJob', {
@@ -1787,11 +1798,7 @@ async function submitCreate() {
     const json = await res.json();
     if (!json.success) {
       notifyToast(json.message || 'Đăng bài thất bại');
-      isSubmittingCreate = false;
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Đăng bài';
-      }
+      setCreateSubmitState(false);
       return;
     }
 
@@ -1812,11 +1819,7 @@ async function submitCreate() {
     doSearch();
   } catch {
     notifyToast('Lỗi kết nối máy chủ.');
-    isSubmittingCreate = false;
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Đăng bài';
-    }
+    setCreateSubmitState(false);
   }
 }
 

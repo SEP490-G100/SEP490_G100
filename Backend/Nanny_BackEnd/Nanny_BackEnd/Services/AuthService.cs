@@ -261,8 +261,24 @@ public class AuthService : IAuthService
         var user = await _userRepo.FindByIdAsync(userId)
             ?? throw new InvalidOperationException("Người dùng không tồn tại.");
 
-        // Xóa tất cả role cũ rồi gán role mới
-        await _userRepo.RemoveAllRolesAsync(userId);
+        var existingRoles = (await _userRepo.GetRolesAsync(userId))
+            .Where(static r => !string.IsNullOrWhiteSpace(r))
+            .ToList();
+
+        var existingOnboardingRole = existingRoles.FirstOrDefault(r =>
+            string.Equals(r, "Parent", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(r, "Nanny", StringComparison.OrdinalIgnoreCase));
+
+        if (!string.IsNullOrWhiteSpace(existingOnboardingRole))
+        {
+            // Idempotent: đã có sẵn role này thì chỉ trả token mới.
+            if (string.Equals(existingOnboardingRole, role, StringComparison.OrdinalIgnoreCase))
+                return await BuildLoginResponseAsync(user);
+
+            throw new InvalidOperationException(
+                $"Tài khoản đã được gán vai trò {existingOnboardingRole}, không thể chọn lại vai trò khác.");
+        }
+
         await _userRepo.AssignRoleAsync(userId, role);
         await _userRepo.SaveChangesAsync();
 
