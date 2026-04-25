@@ -233,13 +233,15 @@
 
     await loadLocationData();
 
-    const handleCityChange = (explicitCityValue) => {
+    const handleCityChange = (explicitCityValue, options = {}) => {
+      const preserveDistrict = options.preserveDistrict !== false;
       const cityValue = String(explicitCityValue ?? cityInput.value ?? '').trim();
       const districtValue = String(districtInput.value ?? '').trim();
       const allowedDistricts = getCachedDistrictOptions(cityValue);
       const districtKey = normalizeAdministrativeName(districtValue);
 
       if (
+        !preserveDistrict &&
         districtValue &&
         allowedDistricts.length &&
         !allowedDistricts.some((value) => normalizeAdministrativeName(value) === districtKey)
@@ -264,7 +266,7 @@
       (value) => {
         cityInput.value = value;
         districtInput.value = '';
-        handleCityChange(value);
+        handleCityChange(value, { preserveDistrict: false });
       }
     );
 
@@ -277,14 +279,14 @@
       }
     );
 
-    cityInput.addEventListener('input', () => handleCityChange());
-    cityInput.addEventListener('change', () => handleCityChange());
+    cityInput.addEventListener('input', () => handleCityChange(undefined, { preserveDistrict: true }));
+    cityInput.addEventListener('change', () => handleCityChange(undefined, { preserveDistrict: true }));
     districtInput.addEventListener('change', handleDistrictChange);
     districtInput.addEventListener('input', handleDistrictChange);
 
     if (cityInput.value.trim()) {
       await fetchDistrictOptionsByCity(cityInput.value.trim());
-      handleCityChange(cityInput.value.trim());
+      handleCityChange(cityInput.value.trim(), { preserveDistrict: true });
     } else {
       onLocationChange({ city: '', district: districtInput.value.trim() });
     }

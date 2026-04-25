@@ -275,6 +275,7 @@ public class ProfileController : Controller
         }
     }
 
+    [AllowAnonymous]
     [HttpGet]
     public async Task<IActionResult> ViewUser(
         Guid userId,
@@ -296,13 +297,15 @@ public class ProfileController : Controller
         try
         {
             var token = GetTokenFromSession();
-            if (string.IsNullOrEmpty(token))
+            if (string.IsNullOrEmpty(token) && User.Identity?.IsAuthenticated == true)
             {
                 TempData["Error"] = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
                 return RedirectToAction("Login", "Auth");
             }
 
-            _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            _http.DefaultRequestHeaders.Authorization = string.IsNullOrWhiteSpace(token)
+                ? null
+                : new AuthenticationHeaderValue("Bearer", token);
             var response = await _http.GetAsync($"/api/profile/public/{userId}");
             if (!response.IsSuccessStatusCode)
                 return RedirectToAction(nameof(Index));

@@ -19,6 +19,21 @@ public class OnboardingController : Controller
 
     private string? GetToken() => HttpContext.Session.GetString("AccessToken");
 
+    private static ApiResultDto? TryDeserializeApiResult(string? content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return null;
+
+        try
+        {
+            return JsonSerializer.Deserialize<ApiResultDto>(content, JsonOpts);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
     private async Task<OnboardingStatusViewModel?> GetStatusAsync()
     {
         var token = GetToken();
@@ -29,8 +44,9 @@ public class OnboardingController : Controller
         if (!response.IsSuccessStatusCode) return null;
 
         var json = await response.Content.ReadAsStringAsync();
-        var apiResult = JsonSerializer.Deserialize<ApiResultDto>(json, JsonOpts);
-        if (apiResult?.Data is System.Text.Json.JsonElement element)
+        var apiResult = TryDeserializeApiResult(json);
+        if (apiResult?.Data is System.Text.Json.JsonElement element &&
+            element.ValueKind == JsonValueKind.Object)
         {
             return JsonSerializer.Deserialize<OnboardingStatusViewModel>(element.GetRawText(), JsonOpts);
         }
@@ -67,4 +83,3 @@ public class OnboardingController : Controller
         };
     }
 }
-

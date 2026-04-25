@@ -276,7 +276,10 @@ public class NannyBasicInfoController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Step1BasicInfo(NannyBasicInfoWizardViewModel model, string? direction)
     {
-        if (direction == "next")
+        var isNext = string.IsNullOrWhiteSpace(direction)
+            || direction.Equals("next", StringComparison.OrdinalIgnoreCase);
+
+        if (isNext)
         {
             if (model.AvatarFile != null && model.AvatarFile.Length > 0)
             {
@@ -307,10 +310,13 @@ public class NannyBasicInfoController : Controller
             {
                 var today = DateOnly.FromDateTime(DateTime.Today);
                 var dob = model.DateOfBirth.Value;
+                if (dob > today)
+                    ModelState.AddModelError(nameof(model.DateOfBirth), "Ngày sinh không được lớn hơn ngày hiện tại.");
+
                 var age = today.Year - dob.Year;
                 if (dob > today.AddYears(-age)) age--;
-                if (age < 18)
-                    ModelState.AddModelError(nameof(model.DateOfBirth), "Bảo mẫu phải đủ 18 tuổi trở lên.");
+                if (age <= 30)
+                    ModelState.AddModelError(nameof(model.DateOfBirth), "Bảo mẫu phải lớn hơn 30 tuổi.");
             }
 
             if (model.Gender == null)

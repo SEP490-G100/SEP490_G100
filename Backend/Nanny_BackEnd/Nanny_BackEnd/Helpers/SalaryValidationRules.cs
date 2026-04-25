@@ -12,8 +12,8 @@ public static class SalaryValidationRules
     public static string? GetFirstError(
         decimal? minSalary,
         decimal? maxSalary,
-        string minLabel = "Lương tối thiểu",
-        string maxLabel = "Lương tối đa")
+        string minLabel = "Lương từ",
+        string maxLabel = "Đến")
     {
         if (minSalary.HasValue && !IsWithinAllowedRange(minSalary.Value))
             return $"{minLabel} phải trong khoảng {SalaryRangeText}.";

@@ -103,11 +103,11 @@ public class ProfileService : IProfileService
         return await BuildProfileDtoAsync(userId);
     }
 
-    public async Task<PersonalProfileDto> GetPublicProfileAsync(Guid requesterUserId, Guid targetUserId)
+    public async Task<PersonalProfileDto> GetPublicProfileAsync(Guid? requesterUserId, Guid targetUserId)
     {
         var profile = await BuildProfileDtoAsync(targetUserId);
 
-        if (requesterUserId == targetUserId)
+        if (requesterUserId.HasValue && requesterUserId.Value == targetUserId)
             return profile;
 
         var isTargetParent = profile.Roles.Any(r => r.Equals("parent", StringComparison.OrdinalIgnoreCase));
@@ -399,8 +399,8 @@ public class ProfileService : IProfileService
             var salaryValidationError = SalaryValidationRules.GetFirstError(
                 request.ExpectedSalaryMin,
                 request.ExpectedSalaryMax,
-                "Lương tối thiểu",
-                "Lương tối đa");
+                "Lương từ",
+                "Đến");
             if (!string.IsNullOrWhiteSpace(salaryValidationError))
                 throw new InvalidOperationException(salaryValidationError);
 
@@ -478,6 +478,7 @@ public class ProfileService : IProfileService
                     Id = Guid.NewGuid(),
                     UserId = userId,
                     SalaryType = 0,
+                    ProfileCompleteness = 0,
                     TotalReviews = 0,
                     IsDeleted = false,
                     CreatedAt = DateTime.UtcNow,
@@ -578,6 +579,7 @@ public class ProfileService : IProfileService
                 Id = Guid.NewGuid(),
                 UserId = userId,
                 SalaryType = 0,
+                ProfileCompleteness = 0,
                 TotalReviews = 0,
                 IsDeleted = false,
                 CreatedAt = DateTime.UtcNow,

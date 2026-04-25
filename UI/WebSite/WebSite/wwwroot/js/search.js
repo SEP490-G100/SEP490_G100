@@ -28,6 +28,12 @@ let ownedJobsLoaded = false;
 
 const DAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 const ROW_LABELS = ['Sáng', 'Chiều', 'Tối', 'Đêm'];
+const SCHEDULE_PRESET_VALUES = Object.freeze({
+  MORNING_AFTERNOON: 'morning-afternoon',
+  AFTERNOON_EVENING: 'afternoon-evening',
+  WEEKDAY_ONLY: 'weekday-only',
+  ALL_WEEK: 'all-week'
+});
 
 const GEO_FALLBACK = {
   'Ho Chi Minh': { lat: 10.776, lng: 106.701, radius: 7000, zoom: 11 },
@@ -394,6 +400,61 @@ function escapeHtml(value) {
 
 function escapeJs(value) {
   return String(value ?? '').replaceAll('\\', '\\\\').replaceAll("'", "\\'");
+}
+
+function buildScheduleByPreset(preset) {
+  const slots = [];
+  const addSlot = (dayOfWeek, timeSlot) => {
+    slots.push({ dayOfWeek, timeSlot });
+  };
+  const addAllSlotsOfDay = (dayOfWeek) => {
+    for (let timeSlot = 0; timeSlot < 4; timeSlot += 1) {
+      addSlot(dayOfWeek, timeSlot);
+    }
+  };
+
+  switch (preset) {
+    case SCHEDULE_PRESET_VALUES.MORNING_AFTERNOON:
+      for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek += 1) {
+        addSlot(dayOfWeek, 0);
+        addSlot(dayOfWeek, 1);
+      }
+      break;
+    case SCHEDULE_PRESET_VALUES.AFTERNOON_EVENING:
+      for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek += 1) {
+        addSlot(dayOfWeek, 1);
+        addSlot(dayOfWeek, 2);
+      }
+      break;
+    case SCHEDULE_PRESET_VALUES.WEEKDAY_ONLY:
+      for (let dayOfWeek = 0; dayOfWeek < 5; dayOfWeek += 1) {
+        addAllSlotsOfDay(dayOfWeek);
+      }
+      break;
+    case SCHEDULE_PRESET_VALUES.ALL_WEEK:
+      for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek += 1) {
+        addAllSlotsOfDay(dayOfWeek);
+      }
+      break;
+    default:
+      break;
+  }
+
+  return slots;
+}
+
+function applySchedulePreset(collection, preset) {
+  if (!Array.isArray(collection) || !preset) return false;
+  const slots = buildScheduleByPreset(preset);
+  if (!slots.length) return false;
+  collection.splice(0, collection.length, ...slots);
+  return true;
+}
+
+function setSchedulePresetValue(selectId, value) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+  select.value = value;
 }
 
 function formatSalary(value) {
@@ -1493,13 +1554,43 @@ function toggleScheduleValue(collection, dayOfWeek, timeSlot) {
 }
 
 function toggleCreateSchedule(dayOfWeek, timeSlot) {
+  setSchedulePresetValue('cf-schedulePreset', '');
   toggleScheduleValue(createSchedule, dayOfWeek, timeSlot);
   renderScheduleGrid('cf-schedule', createSchedule, 'toggleCreateSchedule');
 }
 
 function toggleEditSchedule(dayOfWeek, timeSlot) {
+  setSchedulePresetValue('ef-schedulePreset', '');
   toggleScheduleValue(editSchedule, dayOfWeek, timeSlot);
   renderScheduleGrid('ef-schedule', editSchedule, 'toggleEditSchedule');
+}
+
+function handleCreateSchedulePresetChange() {
+  const select = document.getElementById('cf-schedulePreset');
+  if (!select) return;
+  if (!applySchedulePreset(createSchedule, select.value)) return;
+  renderScheduleGrid('cf-schedule', createSchedule, 'toggleCreateSchedule');
+}
+
+function handleEditSchedulePresetChange() {
+  const select = document.getElementById('ef-schedulePreset');
+  if (!select) return;
+  if (!applySchedulePreset(editSchedule, select.value)) return;
+  renderScheduleGrid('ef-schedule', editSchedule, 'toggleEditSchedule');
+}
+
+function bindSchedulePresetHandlers() {
+  const createPreset = document.getElementById('cf-schedulePreset');
+  if (createPreset && createPreset.dataset.boundPreset !== 'true') {
+    createPreset.dataset.boundPreset = 'true';
+    createPreset.addEventListener('change', handleCreateSchedulePresetChange);
+  }
+
+  const editPreset = document.getElementById('ef-schedulePreset');
+  if (editPreset && editPreset.dataset.boundPreset !== 'true') {
+    editPreset.dataset.boundPreset = 'true';
+    editPreset.addEventListener('change', handleEditSchedulePresetChange);
+  }
 }
 
 function renderSkillCollection(containerId, collection, removeHandlerName) {
@@ -1570,6 +1661,7 @@ async function openCreate() {
   createSkills = [];
   createSchedule = [];
   createChildren = [];
+  setSchedulePresetValue('cf-schedulePreset', '');
   setCreateStatus(1);
   ensureChildrenCountOptions('cf-children', 0, 1);
   renderSkillCollection('cf-skills', createSkills, 'removeCreateSkill');
@@ -1646,15 +1738,15 @@ function validatePayload(payload) {
     return 'Vui lòng chọn đủ hồ sơ bé cho từng trẻ.';
   }
   if (!payload.childProfileId) return 'Vui lòng chọn hồ sơ bé.';
-  if (!payload.salaryNegotiable && payload.salaryMin == null) return 'Vui lòng nhập lương tối thiểu trong khoảng 8.000.000 - 50.000.000 VND hoặc bật lương thỏa thuận.';
+        if (!payload.salaryNegotiable && payload.salaryMin == null) return 'Vui lòng nhập lương từ trong khoảng 8.000.000 - 50.000.000 VND hoặc bật lương thỏa thuận.';
   if (payload.salaryMin != null && (!Number.isFinite(payload.salaryMin) || payload.salaryMin < minimumSalary || payload.salaryMin > maximumSalary)) {
-    return 'Lương tối thiểu phải trong khoảng 8.000.000 - 50.000.000 VND.';
+            return 'Lương từ phải trong khoảng 8.000.000 - 50.000.000 VND.';
   }
   if (payload.salaryMax != null && (!Number.isFinite(payload.salaryMax) || payload.salaryMax < minimumSalary || payload.salaryMax > maximumSalary)) {
-    return 'Lương tối đa phải trong khoảng 8.000.000 - 50.000.000 VND.';
+            return 'Đến phải trong khoảng 8.000.000 - 50.000.000 VND.';
   }
   if (payload.salaryMin != null && payload.salaryMax != null && payload.salaryMin > payload.salaryMax) {
-    return 'Lương tối thiểu không được lớn hơn lương tối đa.';
+            return 'Lương từ không được lớn hơn Đến.';
   }
   if (!payload.location || payload.location.length < 3) return 'Vui lòng nhập địa chỉ chi tiết.';
   if (!payload.city) return 'Vui lòng nhập thành phố.';
@@ -2005,6 +2097,7 @@ async function bootstrapSearchPage() {
 
   attachCreateSelectPickers();
   bindCreateJobPostingClickOnlySelects();
+  bindSchedulePresetHandlers();
   const createChildrenInput = document.getElementById('cf-children');
   if (createChildrenInput && createChildrenInput.dataset.bindChildrenCount !== 'true') {
     createChildrenInput.dataset.bindChildrenCount = 'true';

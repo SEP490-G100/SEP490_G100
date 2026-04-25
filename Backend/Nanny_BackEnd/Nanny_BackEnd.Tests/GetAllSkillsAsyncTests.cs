@@ -1,4 +1,5 @@
 using Moq;
+using Microsoft.Extensions.Logging.Abstractions;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Services;
@@ -36,7 +37,8 @@ public class GetAllSkillsAsyncTests
             _mockNannyProfile.Object,
             _mockNannySkill.Object,
             _mockNannyAvail.Object,
-            _mockJob.Object);
+            _mockJob.Object,
+            NullLogger<OnboardingService>.Instance);
     }
 
 
