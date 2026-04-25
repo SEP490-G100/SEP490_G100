@@ -175,6 +175,41 @@ public class NannyBasicInfoController : Controller
         }
     }
 
+    private async Task<OnboardingStatusViewModel?> GetOnboardingStatusAsync()
+    {
+        var token = GetToken();
+        if (string.IsNullOrWhiteSpace(token))
+            return null;
+
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/onboarding/status");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var response = await _http.SendAsync(request);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        var content = await response.Content.ReadAsStringAsync();
+        var apiResult = TryDeserializeApiResult(content);
+        if (apiResult?.Data is JsonElement element && element.ValueKind == JsonValueKind.Object)
+            return JsonSerializer.Deserialize<OnboardingStatusViewModel>(element.GetRawText(), JsonOpts);
+
+        return null;
+    }
+
+    private async Task<IActionResult?> GuardOnboardingAccessAsync(string expectedRole)
+    {
+        var status = await GetOnboardingStatusAsync();
+        if (status == null)
+            return RedirectToAction("Start", "Onboarding");
+
+        if (!string.Equals(status.Role, expectedRole, StringComparison.OrdinalIgnoreCase))
+            return RedirectToAction("Start", "Onboarding");
+
+        if (!status.RequiresOnboarding || string.Equals(status.NextStep, "Completed", StringComparison.OrdinalIgnoreCase))
+            return RedirectToAction("Index", "Home");
+
+        return null;
+    }
+
     private static string BuildFallbackHttpErrorMessage(HttpResponseMessage response, string? body)
     {
         var statusText = $"HTTP {(int)response.StatusCode}";
@@ -251,6 +286,10 @@ public class NannyBasicInfoController : Controller
     [HttpGet]
     public async Task<IActionResult> Step1BasicInfo()
     {
+        var guard = await GuardOnboardingAccessAsync("Nanny");
+        if (guard != null)
+            return guard;
+
         var existing = await LoadCurrentProfileAsync();
         var vm = new NannyBasicInfoWizardViewModel();
 
@@ -276,6 +315,10 @@ public class NannyBasicInfoController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Step1BasicInfo(NannyBasicInfoWizardViewModel model, string? direction)
     {
+        var guard = await GuardOnboardingAccessAsync("Nanny");
+        if (guard != null)
+            return guard;
+
         var isNext = string.IsNullOrWhiteSpace(direction)
             || direction.Equals("next", StringComparison.OrdinalIgnoreCase);
 
@@ -342,9 +385,10 @@ public class NannyBasicInfoController : Controller
             }
 
             await RefreshAuthClaimsAsync(model.FullName, model.AvatarUrl);
-            return RedirectToAction("Start", "Onboarding");
+            return RedirectToAction("Profile", "Nanny");
         }
 
         return View(model);
     }
 }
+

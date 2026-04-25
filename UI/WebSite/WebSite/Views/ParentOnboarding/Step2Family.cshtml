@@ -1,6 +1,17 @@
 @model WebSite.Models.Profile.ParentOnboardingWizardViewModel
+@using WebSite.Enums
 @{
     ViewData["Title"] = "Phụ huynh - Gia đình và trẻ";
+
+    var childCount = Model.NumberOfChildren ?? Model.Children?.Count ?? 1;
+    if (childCount < 1) childCount = 1;
+    if (childCount > 20) childCount = 20;
+
+    var children = (Model.Children ?? new List<WebSite.Models.Profile.ParentOnboardingChildInputViewModel>()).ToList();
+    while (children.Count < childCount)
+    {
+        children.Add(new WebSite.Models.Profile.ParentOnboardingChildInputViewModel());
+    }
 }
 
 <div class="nm-flow-shell">
@@ -12,27 +23,25 @@
                         <span class="nm-flow-badge">Đăng ký phụ huynh</span>
                         <h1 class="nm-flow-title">Thông tin gia đình và trẻ</h1>
                         <p class="nm-flow-subtitle">
-                            Khai báo tổng số trẻ trong gia đình và thông tin chi tiết của một bé để hệ thống đề xuất bảo mẫu phù hợp hơn.
+                            Chọn tổng số trẻ, sau đó điền thông tin tương ứng cho từng bé ngay tại màn hình này.
                         </p>
                     </div>
                 </div>
 
                 <div asp-validation-summary="ModelOnly" class="nm-alert"></div>
 
-                <form asp-action="Step2Family" method="post" data-nm-unified-skip="true" class="nm-family-form">
+                <form asp-action="Step2Family" method="post" class="nm-family-form">
                     @Html.AntiForgeryToken()
 
                     <div class="nm-form-grid">
                         <div class="nm-col-12">
                             <div class="nm-section-card">
                                 <div class="nm-section-title">Tổng quan gia đình</div>
-                                <div class="nm-section-note">Tổng số trẻ là thông tin tổng quan của gia đình. Bạn có thể thêm đầy đủ hồ sơ của từng trẻ sau.</div>
-
                                 <div class="nm-form-grid">
                                     <div class="nm-col-12">
                                         <div class="nm-field">
                                             <label asp-for="FamilyDescription" class="nm-label">Mô tả gia đình <span class="required">*</span></label>
-                                            <textarea asp-for="FamilyDescription" rows="4" class="nm-textarea" placeholder="Mô tả nhịp sinh hoạt, nhu cầu chăm bé, điều cần lưu ý..."></textarea>
+                                            <textarea asp-for="FamilyDescription" rows="4" class="nm-textarea" placeholder="Mô tả nhu cầu chăm bé, thói quen sinh hoạt, điều cần lưu ý..."></textarea>
                                             <span asp-validation-for="FamilyDescription" class="nm-error"></span>
                                         </div>
                                     </div>
@@ -40,14 +49,8 @@
                                     <div class="nm-col-6">
                                         <div class="nm-field">
                                             <label asp-for="NumberOfChildren" class="nm-label">Tổng số trẻ trong gia đình <span class="required">*</span></label>
-                                            <input type="hidden" asp-for="NumberOfChildren" id="NumberOfChildren" />
-                                            <div class="nm-cf-dropdown" id="dd_number">
-                                                <button type="button" class="nm-cf-dropdown-trigger" aria-label="Chọn số lượng trẻ">
-                                                    <span id="NumberDisplay" class="nm-cf-dropdown-text nm-cf-dropdown-placeholder">Chọn số lượng trẻ</span>
-                                                    <span class="material-icons-round nm-cf-dropdown-arrow">expand_more</span>
-                                                </button>
-                                                <div class="nm-cf-dropdown-menu" id="NumberMenu"></div>
-                                            </div>
+                                            <input asp-for="NumberOfChildren" id="NumberOfChildren" type="number" min="1" max="20" class="nm-input" />
+                                            <div class="nm-field-hint">Chọn từ 1 đến 20 trẻ. Form bên dưới sẽ tự tăng/giảm theo số bạn chọn.</div>
                                             <span asp-validation-for="NumberOfChildren" class="nm-error"></span>
                                         </div>
                                     </div>
@@ -57,58 +60,57 @@
 
                         <div class="nm-col-12">
                             <div class="nm-section-card">
-                                <div class="nm-section-title">Thông tin của một bé</div>
-                                <div class="nm-section-note">Hồ sơ này dùng làm mẫu để kết nối. Các bé còn lại bạn thêm trong Quản lý con em.</div>
+                                <div class="nm-section-title">Thông tin từng trẻ</div>
+                                <div class="nm-section-note">Bạn đã chọn <strong id="childCountBadge">@childCount</strong> trẻ.</div>
 
-                                <div class="nm-form-grid">
-                                    <div class="nm-col-6">
-                                        <div class="nm-field">
-                                            <label asp-for="ChildAgeGroup" class="nm-label">Nhóm tuổi <span class="required">*</span></label>
-                                            <input type="hidden" asp-for="ChildAgeGroup" id="ChildAgeGroup" />
-                                            <div class="nm-cf-dropdown" id="dd_age">
-                                                <button type="button" class="nm-cf-dropdown-trigger" aria-label="Chọn nhóm tuổi">
-                                                    <span id="AgeDisplay" class="nm-cf-dropdown-text nm-cf-dropdown-placeholder">Chọn nhóm tuổi</span>
-                                                    <span class="material-icons-round nm-cf-dropdown-arrow">expand_more</span>
-                                                </button>
-                                                <div class="nm-cf-dropdown-menu" id="AgeMenu"></div>
+                                <div id="childrenContainer" class="space-y-4 mt-4">
+                                    @for (var i = 0; i < childCount; i++)
+                                    {
+                                        var child = children[i];
+                                        <div class="child-card border border-orange-100 rounded-2xl p-4 bg-orange-50/30" data-child-index="@i">
+                                            <div class="text-sm font-bold text-slate-800 mb-3">Trẻ thứ @(i + 1)</div>
+
+                                            <div class="nm-form-grid">
+                                                <div class="nm-col-6">
+                                                    <div class="nm-field">
+                                                        <label class="nm-label">Nhóm tuổi <span class="required">*</span></label>
+                                                        <select name="Children[@i].ChildAgeGroup" id="@($"Children_{i}__ChildAgeGroup")" class="nm-select">
+                                                            <option value="">Chọn nhóm tuổi</option>
+                                                            <option value="0" selected="@(child.ChildAgeGroup == ChildAgeGroup.Baby)">Sơ sinh (0 - 1 tuổi)</option>
+                                                            <option value="1" selected="@(child.ChildAgeGroup == ChildAgeGroup.Toddler)">Chập chững (1 - 3 tuổi)</option>
+                                                            <option value="2" selected="@(child.ChildAgeGroup == ChildAgeGroup.Preschooler)">Mầm non (3 - 5 tuổi)</option>
+                                                            <option value="3" selected="@(child.ChildAgeGroup == ChildAgeGroup.Gradeschooler)">Tiểu học (6 - 12 tuổi)</option>
+                                                        </select>
+                                                        @Html.ValidationMessage($"Children[{i}].ChildAgeGroup", new { @class = "nm-error" })
+                                                    </div>
+                                                </div>
+
+                                                <div class="nm-col-6">
+                                                    <div class="nm-field">
+                                                        <label class="nm-label">Đặc điểm</label>
+                                                        <input name="Children[@i].ChildCharacteristic" id="@($"Children_{i}__ChildCharacteristic")" value="@child.ChildCharacteristic" class="nm-input" placeholder="Ví dụ: hiếu động, dễ ngủ..." />
+                                                        @Html.ValidationMessage($"Children[{i}].ChildCharacteristic", new { @class = "nm-error" })
+                                                    </div>
+                                                </div>
+
+                                                <div class="nm-col-12">
+                                                    <div class="nm-field">
+                                                        <label class="nm-label">Nhu cầu đặc biệt</label>
+                                                        <input name="Children[@i].ChildSpecialNeeds" id="@($"Children_{i}__ChildSpecialNeeds")" value="@child.ChildSpecialNeeds" class="nm-input" placeholder="Ví dụ: dị ứng sữa, hen suyễn..." />
+                                                        @Html.ValidationMessage($"Children[{i}].ChildSpecialNeeds", new { @class = "nm-error" })
+                                                    </div>
+                                                </div>
+
+                                                <div class="nm-col-12">
+                                                    <div class="nm-field">
+                                                        <label class="nm-label">Ghi chú</label>
+                                                        <textarea name="Children[@i].ChildNotes" id="@($"Children_{i}__ChildNotes")" rows="2" class="nm-textarea" placeholder="Thông tin bổ sung...">@child.ChildNotes</textarea>
+                                                        @Html.ValidationMessage($"Children[{i}].ChildNotes", new { @class = "nm-error" })
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <span asp-validation-for="ChildAgeGroup" class="nm-error"></span>
                                         </div>
-                                    </div>
-
-                                    <div class="nm-col-6">
-                                        <div class="nm-field">
-                                            <label asp-for="ChildCharacteristic" class="nm-label">Tính cách</label>
-                                            <input asp-for="ChildCharacteristic" class="nm-input" placeholder="Năng động, dễ ngủ, thích vẽ..." />
-                                        </div>
-                                    </div>
-
-                                    <div class="nm-col-12">
-                                        <div class="nm-field">
-                                            <label class="nm-label">Nhu cầu đặc biệt</label>
-                                            <div class="nm-field-hint">Chọn tất cả những mục phù hợp để nanny chuẩn bị đúng kinh nghiệm và kỹ năng.</div>
-                                            <div class="nm-tags-grid mt-2 nm-check-grid">
-                                                @{
-                                                    var options = new[] { "Dị ứng thực phẩm", "Hen suyễn", "Tự kỷ", "ADHD", "Chế độ ăn đặc biệt", "Khác" };
-                                                }
-                                                @foreach (var option in options)
-                                                {
-                                                    <label class="nm-check-card">
-                                                        <input type="checkbox" value="@option" class="special-need-checkbox" />
-                                                        <span>@option</span>
-                                                    </label>
-                                                }
-                                            </div>
-                                            <input type="hidden" asp-for="ChildSpecialNeeds" id="hiddenSpecialNeeds" />
-                                        </div>
-                                    </div>
-
-                                    <div class="nm-col-12">
-                                        <div class="nm-field">
-                                            <label asp-for="ChildNotes" class="nm-label">Ghi chú thêm</label>
-                                            <textarea asp-for="ChildNotes" rows="3" class="nm-textarea" placeholder="Thông tin bổ sung để nanny dễ hình dung hơn về bé..."></textarea>
-                                        </div>
-                                    </div>
+                                    }
                                 </div>
                             </div>
                         </div>
@@ -124,254 +126,91 @@
     </div>
 </div>
 
-<style>
-    .nm-family-form .nm-section-card {
-        border: 1px solid #f1f5f9;
-        border-radius: 22px;
-        background: #fff;
-        box-shadow: 0 10px 26px rgba(15, 23, 42, 0.04);
-    }
-
-    .nm-family-form .nm-section-card + .nm-section-card {
-        margin-top: 2px;
-    }
-
-    .nm-cf-dropdown {
-        position: relative;
-        z-index: 2;
-    }
-
-    .nm-cf-dropdown.open {
-        z-index: 2200;
-    }
-
-    .nm-field.nm-dropdown-active {
-        z-index: 2200;
-    }
-
-    .nm-section-card.nm-dropdown-active {
-        z-index: 2300;
-    }
-
-    .nm-cf-dropdown-trigger {
-        width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        min-height: 54px;
-        padding: 0 16px;
-        border: 1.5px solid #dbe3ec;
-        border-radius: 18px;
-        background: #fff;
-        cursor: pointer;
-        transition: border-color .15s, box-shadow .15s;
-    }
-
-    .nm-cf-dropdown:not(.is-disabled) .nm-cf-dropdown-trigger:hover {
-        border-color: #fdba74;
-    }
-
-    .nm-cf-dropdown.open .nm-cf-dropdown-trigger {
-        border-color: #f97316;
-        box-shadow: 0 0 0 3px rgba(249, 115, 22, .12);
-        border-bottom-left-radius: 0;
-        border-bottom-right-radius: 0;
-    }
-
-    .nm-cf-dropdown-text {
-        font-size: 16px;
-        font-weight: 600;
-        color: #0f172a;
-    }
-
-    .nm-cf-dropdown-placeholder {
-        color: #94a3b8;
-        font-weight: 500;
-    }
-
-    .nm-cf-dropdown-arrow {
-        font-size: 20px !important;
-        color: #f97316;
-        transition: transform .2s;
-    }
-
-    .nm-cf-dropdown.open .nm-cf-dropdown-arrow {
-        transform: rotate(180deg);
-    }
-
-    .nm-cf-dropdown-menu {
-        display: none;
-        position: absolute;
-        left: 0;
-        right: 0;
-        top: 100%;
-        max-height: 260px;
-        overflow-y: auto;
-        background: #fff;
-        border: 1.5px solid #f97316;
-        border-top: none;
-        border-bottom-left-radius: 16px;
-        border-bottom-right-radius: 16px;
-        box-shadow: 0 10px 26px rgba(15, 23, 42, .12);
-        z-index: 2250;
-    }
-
-    .nm-cf-dropdown.open .nm-cf-dropdown-menu {
-        display: block;
-    }
-
-    .nm-cf-dropdown-option {
-        padding: 12px 16px;
-        font-size: 14px;
-        font-weight: 500;
-        color: #334155;
-        cursor: pointer;
-        border-bottom: 1px solid #ffedd5;
-        transition: background .1s, color .1s;
-    }
-
-    .nm-cf-dropdown-option:last-child {
-        border-bottom: none;
-    }
-
-    .nm-cf-dropdown-option:hover {
-        background: #fff7ed;
-        color: #c2410c;
-    }
-
-    .nm-cf-dropdown-option.is-selected {
-        background: #fff7ed;
-        color: #c2410c;
-        font-weight: 700;
-    }
-
-    .nm-check-grid .nm-check-card {
-        background: #f8fafc;
-        border-color: #e2e8f0;
-    }
-
-    .nm-check-grid .nm-check-card:hover {
-        background: #fff7ed;
-        border-color: #fdba74;
-    }
-</style>
-
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     try {
         window.localStorage.removeItem('nm_parent_onboarding_step1_draft_v1');
     } catch (e) { }
 
-    var hiddenSpecialNeeds = document.getElementById('hiddenSpecialNeeds');
-    var checkboxes = Array.from(document.querySelectorAll('.special-need-checkbox'));
+    var numberInput = document.getElementById('NumberOfChildren');
+    var container = document.getElementById('childrenContainer');
+    var badge = document.getElementById('childCountBadge');
+    if (!numberInput || !container) return;
 
-    function normalizeText(value) {
-        return (value || '')
-            .toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .replace(/đ/g, 'd')
-            .trim();
+    function clampCount(value) {
+        var parsed = parseInt(value, 10);
+        if (isNaN(parsed)) parsed = 1;
+        if (parsed < 1) parsed = 1;
+        if (parsed > 20) parsed = 20;
+        return parsed;
     }
 
-    function syncSpecialNeeds() {
-        var selected = checkboxes
-            .filter(function (cb) { return cb.checked; })
-            .map(function (cb) { return cb.value; });
-        hiddenSpecialNeeds.value = selected.join(', ');
+    function ageOptionsHtml() {
+        return [
+            '<option value="">Chọn nhóm tuổi</option>',
+            '<option value="0">Sơ sinh (0 - 1 tuổi)</option>',
+            '<option value="1">Chập chững (1 - 3 tuổi)</option>',
+            '<option value="2">Mầm non (3 - 5 tuổi)</option>',
+            '<option value="3">Tiểu học (6 - 12 tuổi)</option>'
+        ].join('');
     }
 
-    var initialSpecialNeeds = (hiddenSpecialNeeds && hiddenSpecialNeeds.value) ? hiddenSpecialNeeds.value.split(',') : [];
-    var initialNeedSet = new Set(initialSpecialNeeds.map(function (x) { return normalizeText(x); }));
-    checkboxes.forEach(function (cb) {
-        cb.checked = initialNeedSet.has(normalizeText(cb.value));
-        cb.addEventListener('change', syncSpecialNeeds);
-    });
-    syncSpecialNeeds();
-
-    function setDropdownOpenState(dropdown, isOpen) {
-        if (!dropdown) return;
-        dropdown.classList.toggle('open', !!isOpen);
-
-        var parentField = dropdown.closest('.nm-field');
-        var parentCard = dropdown.closest('.nm-section-card');
-        if (parentField) parentField.classList.toggle('nm-dropdown-active', !!isOpen);
-        if (parentCard) parentCard.classList.toggle('nm-dropdown-active', !!isOpen);
+    function cardHtml(index) {
+        return '' +
+            '<div class="child-card border border-orange-100 rounded-2xl p-4 bg-orange-50/30" data-child-index="' + index + '">' +
+            '  <div class="text-sm font-bold text-slate-800 mb-3">Trẻ thứ ' + (index + 1) + '</div>' +
+            '  <div class="nm-form-grid">' +
+            '    <div class="nm-col-6">' +
+            '      <div class="nm-field">' +
+            '        <label class="nm-label">Nhóm tuổi <span class="required">*</span></label>' +
+            '        <select name="Children[' + index + '].ChildAgeGroup" id="Children_' + index + '__ChildAgeGroup" class="nm-select">' + ageOptionsHtml() + '</select>' +
+            '      </div>' +
+            '    </div>' +
+            '    <div class="nm-col-6">' +
+            '      <div class="nm-field">' +
+            '        <label class="nm-label">Đặc điểm</label>' +
+            '        <input name="Children[' + index + '].ChildCharacteristic" id="Children_' + index + '__ChildCharacteristic" class="nm-input" placeholder="Ví dụ: hiếu động, dễ ngủ..." />' +
+            '      </div>' +
+            '    </div>' +
+            '    <div class="nm-col-12">' +
+            '      <div class="nm-field">' +
+            '        <label class="nm-label">Nhu cầu đặc biệt</label>' +
+            '        <input name="Children[' + index + '].ChildSpecialNeeds" id="Children_' + index + '__ChildSpecialNeeds" class="nm-input" placeholder="Ví dụ: dị ứng sữa, hen suyễn..." />' +
+            '      </div>' +
+            '    </div>' +
+            '    <div class="nm-col-12">' +
+            '      <div class="nm-field">' +
+            '        <label class="nm-label">Ghi chú</label>' +
+            '        <textarea name="Children[' + index + '].ChildNotes" id="Children_' + index + '__ChildNotes" rows="2" class="nm-textarea" placeholder="Thông tin bổ sung..."></textarea>' +
+            '      </div>' +
+            '    </div>' +
+            '  </div>' +
+            '</div>';
     }
 
-    function closeAllDropdowns() {
-        document.querySelectorAll('.nm-cf-dropdown.open').forEach(function (dd) {
-            setDropdownOpenState(dd, false);
-        });
-    }
+    function syncChildCards() {
+        var count = clampCount(numberInput.value);
+        numberInput.value = count;
 
-    function initDropdown(dropdownId, hiddenInputId, displayId, menuId, placeholder, options) {
-        var dropdown = document.getElementById(dropdownId);
-        var hiddenInput = document.getElementById(hiddenInputId);
-        var display = document.getElementById(displayId);
-        var menu = document.getElementById(menuId);
-
-        if (!dropdown || !hiddenInput || !display || !menu) return;
-
-        function setDisplay(value, label) {
-            hiddenInput.value = value;
-            display.textContent = label || placeholder;
-            display.classList.toggle('nm-cf-dropdown-placeholder', !label);
+        while (container.children.length < count) {
+            var index = container.children.length;
+            container.insertAdjacentHTML('beforeend', cardHtml(index));
         }
 
-        function render() {
-            menu.innerHTML = '';
-            options.forEach(function (opt) {
-                var item = document.createElement('div');
-                item.className = 'nm-cf-dropdown-option';
-                if (String(hiddenInput.value) === String(opt.value)) item.classList.add('is-selected');
-                item.textContent = opt.label;
-                item.addEventListener('click', function () {
-                    setDisplay(opt.value, opt.label);
-                    render();
-                    closeAllDropdowns();
-                });
-                menu.appendChild(item);
-            });
+        while (container.children.length > count) {
+            container.removeChild(container.lastElementChild);
         }
 
-        var selectedOption = options.find(function (opt) { return String(opt.value) === String(hiddenInput.value); });
-        setDisplay(hiddenInput.value, selectedOption ? selectedOption.label : '');
-        render();
-
-        var trigger = dropdown.querySelector('.nm-cf-dropdown-trigger');
-        if (trigger) {
-            trigger.addEventListener('click', function () {
-                if (dropdown.classList.contains('open')) {
-                    setDropdownOpenState(dropdown, false);
-                } else {
-                    closeAllDropdowns();
-                    setDropdownOpenState(dropdown, true);
-                }
-            });
+        for (var i = 0; i < container.children.length; i++) {
+            var title = container.children[i].querySelector('.text-sm.font-bold');
+            if (title) title.textContent = 'Trẻ thứ ' + (i + 1);
         }
+
+        if (badge) badge.textContent = String(count);
     }
 
-    initDropdown('dd_number', 'NumberOfChildren', 'NumberDisplay', 'NumberMenu', 'Chọn số lượng trẻ', [
-        { value: '1', label: '1 trẻ' },
-        { value: '2', label: '2 trẻ' },
-        { value: '3', label: '3 trẻ' },
-        { value: '4', label: '4 trẻ' },
-        { value: '5', label: '5 trẻ' },
-        { value: '6', label: '6 trẻ' }
-    ]);
-
-    initDropdown('dd_age', 'ChildAgeGroup', 'AgeDisplay', 'AgeMenu', 'Chọn nhóm tuổi', [
-        { value: '0', label: 'Sơ sinh (0 - 1 tuổi)' },
-        { value: '1', label: 'Chập chững (1 - 3 tuổi)' },
-        { value: '2', label: 'Mầm non (3 - 5 tuổi)' },
-        { value: '3', label: 'Học sinh tiểu học (6 - 12 tuổi)' }
-    ]);
-
-    document.addEventListener('click', function (event) {
-        if (!event.target.closest('.nm-cf-dropdown')) {
-            closeAllDropdowns();
-        }
-    });
+    numberInput.addEventListener('input', syncChildCards);
+    numberInput.addEventListener('change', syncChildCards);
+    syncChildCards();
 });
 </script>
