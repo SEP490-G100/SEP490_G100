@@ -50,6 +50,41 @@ public class NannyController : Controller
         }
     }
 
+    private async Task<OnboardingStatusViewModel?> GetOnboardingStatusAsync()
+    {
+        var token = GetToken();
+        if (string.IsNullOrWhiteSpace(token))
+            return null;
+
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/onboarding/status");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var response = await _http.SendAsync(request);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        var content = await response.Content.ReadAsStringAsync();
+        var apiResult = TryDeserializeApiResult(content);
+        if (apiResult?.Data is JsonElement element && element.ValueKind == JsonValueKind.Object)
+            return JsonSerializer.Deserialize<OnboardingStatusViewModel>(element.GetRawText(), JsonOpts);
+
+        return null;
+    }
+
+    private async Task<IActionResult?> GuardNannyOnboardingAccessAsync()
+    {
+        var status = await GetOnboardingStatusAsync();
+        if (status == null)
+            return RedirectToAction("Start", "Onboarding");
+
+        if (!string.Equals(status.Role, "Nanny", StringComparison.OrdinalIgnoreCase))
+            return RedirectToAction("Start", "Onboarding");
+
+        if (!status.RequiresOnboarding || string.Equals(status.NextStep, "Completed", StringComparison.OrdinalIgnoreCase))
+            return RedirectToAction("Index", "Home");
+
+        return null;
+    }
+
     private static string BuildFallbackHttpErrorMessage(HttpResponseMessage response, string? body, string defaultMessage)
     {
         var trimmed = (body ?? string.Empty).Trim();
@@ -520,6 +555,10 @@ public class NannyController : Controller
     [HttpGet]
     public async Task<IActionResult> Profile()
     {
+        var guard = await GuardNannyOnboardingAccessAsync();
+        if (guard != null)
+            return guard;
+
         var vm = await LoadCurrentNannyProfileAsync();
         return View(vm);
     }
@@ -527,6 +566,10 @@ public class NannyController : Controller
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Profile(NannyProfileViewModel model)
     {
+        var guard = await GuardNannyOnboardingAccessAsync();
+        if (guard != null)
+            return guard;
+
         foreach (var error in SalaryValidationRules.Validate(
                      model.ExpectedSalaryMin,
                      model.ExpectedSalaryMax,
@@ -575,12 +618,20 @@ public class NannyController : Controller
     [HttpGet]
     public async Task<IActionResult> Skills()
     {
+        var guard = await GuardNannyOnboardingAccessAsync();
+        if (guard != null)
+            return guard;
+
         var vm = await BuildSkillsViewModelAsync();
         return View(vm);
     }
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Skills(NannySkillsViewModel model)
     {
+        var guard = await GuardNannyOnboardingAccessAsync();
+        if (guard != null)
+            return guard;
+
         var selectedSkillIds = (model.SelectedSkillIds ?? new List<Guid>())
             .Where(id => id != Guid.Empty)
             .Distinct()
@@ -618,14 +669,22 @@ public class NannyController : Controller
     }
 
     [HttpGet]
-    public IActionResult Availability()
+    public async Task<IActionResult> Availability()
     {
+        var guard = await GuardNannyOnboardingAccessAsync();
+        if (guard != null)
+            return guard;
+
         return View(new NannyAvailabilityViewModel());
     }
 
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Availability(NannyAvailabilityViewModel model)
     {
+        var guard = await GuardNannyOnboardingAccessAsync();
+        if (guard != null)
+            return guard;
+
         SetAuthHeader();
         var payload = new
         {
@@ -831,3 +890,4 @@ public class NannyController : Controller
         public string? ResponseMessage { get; set; }
     }
 }
+

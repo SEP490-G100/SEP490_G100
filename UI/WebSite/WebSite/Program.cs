@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Security.Claims;
 using WebSite.Infrastructure;
 using WebSite.Models.Storage;
 using WebSite.Services;
@@ -57,6 +59,45 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseSession();
 app.UseAuthentication();
+
+app.Use(async (context, next) =>
+{
+    if (context.User?.Identity?.IsAuthenticated == true)
+    {
+        var hasAnyRole = context.User.Claims.Any(claim =>
+            claim.Type == ClaimTypes.Role &&
+            !string.IsNullOrWhiteSpace(claim.Value));
+
+        if (!hasAnyRole)
+        {
+            var path = context.Request.Path;
+            var isChooseRolePath = path.StartsWithSegments("/Auth/ChooseRole", StringComparison.OrdinalIgnoreCase);
+            var isAuthLoginPath = path.StartsWithSegments("/Auth/Login", StringComparison.OrdinalIgnoreCase);
+            var isAuthLogoutPath = path.StartsWithSegments("/Auth/Logout", StringComparison.OrdinalIgnoreCase);
+            var isGet = HttpMethods.IsGet(context.Request.Method);
+            var secFetchDest = context.Request.Headers["Sec-Fetch-Dest"].ToString();
+            var accept = context.Request.Headers.Accept.ToString();
+            var isTopLevelNavigation =
+                isGet &&
+                (
+                    string.Equals(secFetchDest, "document", StringComparison.OrdinalIgnoreCase) ||
+                    (!string.IsNullOrWhiteSpace(accept) &&
+                     accept.Contains("text/html", StringComparison.OrdinalIgnoreCase))
+                );
+
+            if (isTopLevelNavigation && !isChooseRolePath && !isAuthLoginPath && !isAuthLogoutPath)
+            {
+                context.Session.Clear();
+                await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                context.Response.Redirect("/Auth/Login");
+                return;
+            }
+        }
+    }
+
+    await next();
+});
+
 app.UseAuthorization();
 
 app.MapControllerRoute(

@@ -45,6 +45,56 @@ public class ParentOnboardingController : Controller
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
     }
 
+    private static ApiResultDto? TryDeserializeApiResult(string? content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return null;
+
+        try
+        {
+            return JsonSerializer.Deserialize<ApiResultDto>(content, JsonOpts);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private async Task<OnboardingStatusViewModel?> GetOnboardingStatusAsync()
+    {
+        var token = GetToken();
+        if (string.IsNullOrWhiteSpace(token))
+            return null;
+
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/onboarding/status");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var response = await _http.SendAsync(request);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        var content = await response.Content.ReadAsStringAsync();
+        var apiResult = TryDeserializeApiResult(content);
+        if (apiResult?.Data is JsonElement element && element.ValueKind == JsonValueKind.Object)
+            return JsonSerializer.Deserialize<OnboardingStatusViewModel>(element.GetRawText(), JsonOpts);
+
+        return null;
+    }
+
+    private async Task<IActionResult?> GuardOnboardingAccessAsync(string expectedRole)
+    {
+        var status = await GetOnboardingStatusAsync();
+        if (status == null)
+            return RedirectToAction("Start", "Onboarding");
+
+        if (!string.Equals(status.Role, expectedRole, StringComparison.OrdinalIgnoreCase))
+            return RedirectToAction("Start", "Onboarding");
+
+        if (!status.RequiresOnboarding || string.Equals(status.NextStep, "Completed", StringComparison.OrdinalIgnoreCase))
+            return RedirectToAction("Index", "Home");
+
+        return null;
+    }
+
     private static string? NormalizePhoneNumber(string? phoneNumber)
     {
         if (string.IsNullOrWhiteSpace(phoneNumber))
@@ -381,6 +431,10 @@ public class ParentOnboardingController : Controller
     [HttpGet]
     public async Task<IActionResult> Step1BasicInfo()
     {
+        var guard = await GuardOnboardingAccessAsync("Parent");
+        if (guard != null)
+            return guard;
+
         var existing = await LoadCurrentProfileAsync();
         var vm = new ParentOnboardingWizardViewModel();
 
@@ -405,6 +459,10 @@ public class ParentOnboardingController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Step1BasicInfo(ParentOnboardingWizardViewModel model, string? direction)
     {
+        var guard = await GuardOnboardingAccessAsync("Parent");
+        if (guard != null)
+            return guard;
+
         if (direction != "next")
             return View(model);
 
@@ -510,6 +568,10 @@ public class ParentOnboardingController : Controller
     [HttpGet]
     public async Task<IActionResult> Step2Family()
     {
+        var guard = await GuardOnboardingAccessAsync("Parent");
+        if (guard != null)
+            return guard;
+
         var vm = await LoadFamilyStepModelAsync();
         return View(vm);
     }
@@ -518,6 +580,10 @@ public class ParentOnboardingController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Step2Family(ParentOnboardingWizardViewModel model, string? direction)
     {
+        var guard = await GuardOnboardingAccessAsync("Parent");
+        if (guard != null)
+            return guard;
+
         if (direction == "back")
             return RedirectToAction("Step1BasicInfo");
 
