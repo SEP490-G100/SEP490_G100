@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -25,7 +25,7 @@ public class RecommendationController : Controller
             : null;
     }
 
-    // â”€â”€ AJAX: Nanny xem top K job gá»£i Ã½ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // AJAX: Nanny xem top K job gợi ý
     // GET /Recommendation/JobsData?topK=5
     [Authorize(Roles = "Nanny")]
     [HttpGet]
@@ -43,7 +43,7 @@ public class RecommendationController : Controller
             var json = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<ApiResult<List<JobRecommendItem>>>(json, JsonOpts);
 
-            // Map sang shape Ä‘Æ¡n giáº£n cho UI â€” khÃ´ng expose score ká»¹ thuáº­t
+            // Map sang shape đơn giản cho UI, không expose score kỹ thuật
             var items = (result?.Data ?? new()).Select(j => new
             {
                 jobId       = j.JobId,
@@ -68,7 +68,7 @@ public class RecommendationController : Controller
         }
     }
 
-    // â”€â”€ AJAX: Parent xem top K nanny gá»£i Ã½ cho 1 job â”€â”€â”€â”€â”€â”€â”€â”€
+    // AJAX: Parent xem top K nanny gợi ý cho 1 job
     // GET /Recommendation/NanniesData?jobId=...&topK=5
     [HttpGet]
     public async Task<IActionResult> NanniesData([FromQuery] Guid jobId, [FromQuery] int topK = 5)
@@ -112,7 +112,7 @@ public class RecommendationController : Controller
         }
     }
 
-    // â”€â”€ Admin: batch re-embed â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Admin: batch re-embed ────────────────────────────────
     [Authorize(Roles = "Admin,Moderator")]
     [HttpPost]
     public async Task<IActionResult> ReembedBatch()
@@ -130,13 +130,13 @@ public class RecommendationController : Controller
         }
     }
 
-    // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Helpers ──────────────────────────────────────────────
 
     private static string MatchLabel(double score) => score switch
     {
         >= 0.82 => "Rất phù hợp",
-        >= 0.65 => "PhÃ¹ há»£p tá»‘t",
-        _       => "CÃ³ thá»ƒ phÃ¹ há»£p"
+        >= 0.65 => "Phù hợp tốt",
+        _       => "Có thể phù hợp"
     };
 
     private static string MatchTier(double score) => score switch
@@ -147,7 +147,7 @@ public class RecommendationController : Controller
     };
 }
 
-// â”€â”€ Internal DTOs cho deserialize backend response â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Internal DTOs cho deserialize backend response ──────────
 internal class JobRecommendItem
 {
     public Guid JobId { get; set; }

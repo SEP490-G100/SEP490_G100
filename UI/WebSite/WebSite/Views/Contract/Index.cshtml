@@ -1,18 +1,20 @@
-@{
+﻿@{
     ViewData["Title"] = "Quan ly hop dong";
+    var isParent = User.IsInRole("Parent");
+
 }
 
 <section class="mx-auto max-w-6xl px-4 py-8 md:py-10">
     <div class="rounded-3xl border border-orange-100 bg-white shadow-sm">
         <div class="border-b border-orange-100 px-5 py-5 md:px-7">
-            <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-orange-500">Contract Storage</p>
-            <h1 class="mt-1 text-2xl font-bold text-slate-900">Quan ly hop dong</h1>
-            <p class="mt-1 text-sm text-slate-500">Tai len file PDF hop dong de luu tru tren he thong (chi nhan PDF).</p>
+            <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-orange-500">@(isParent ? "Khu vực phụ huynh" : "Khu vực bảo mẫu")</p>
+            <h1 class="mt-1 text-2xl font-bold text-slate-900">@(isParent ? "Quản lý hợp đồng của phụ huynh" : "Quản lý hợp đồng của bảo mẫu")</h1>
+            <p class="mt-1 text-sm text-slate-500">Tải lên file PDF hợp đồng để lưu trữ trên hệ thống (chỉ nhận PDF).</p>
         </div>
 
         <div class="px-5 pb-6 pt-5 md:px-7">
             <div id="contractStorageState" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm font-semibold text-slate-500">
-                Dang tai danh sach hop dong...
+                Đang tải danh sách hợp đồng...
             </div>
             <div id="contractStorageList" class="hidden grid gap-3"></div>
         </div>
@@ -143,13 +145,13 @@
                     .then(async (res) => {
                         const json = await res.json();
                         if (!res.ok || !json?.success) {
-                            throw new Error(json?.message || 'Khong tai duoc danh sach hop dong.');
+                            throw new Error(json?.message || 'Không thể tải danh sách hợp đồng.');
                         }
 
                         const items = toFlatList(json.data);
                         if (!items.length) {
                             stateEl.classList.remove('hidden');
-                            stateEl.textContent = 'Chua co hop dong nao de quan ly.';
+                            stateEl.textContent = 'Chưa có hợp đồng nào để quản lý.';
                             listEl.classList.add('hidden');
                             return;
                         }
@@ -161,7 +163,7 @@
                     })
                     .catch((err) => {
                         stateEl.classList.remove('hidden');
-                        stateEl.textContent = `Khong tai duoc danh sach hop dong: ${String(err?.message || 'Unknown error')}`;
+                        stateEl.textContent = `Không thể tải danh sách hợp đồng: ${String(err?.message || 'Unknown error')}`;
                         listEl.classList.add('hidden');
                     });
             };

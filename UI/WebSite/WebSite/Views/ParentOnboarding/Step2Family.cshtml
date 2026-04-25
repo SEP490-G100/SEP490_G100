@@ -258,6 +258,10 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    try {
+        window.localStorage.removeItem('nm_parent_onboarding_step1_draft_v1');
+    } catch (e) { }
+
     var hiddenSpecialNeeds = document.getElementById('hiddenSpecialNeeds');
     var checkboxes = Array.from(document.querySelectorAll('.special-need-checkbox'));
 

@@ -86,11 +86,11 @@
                 }
 
                 if (json.isFavorite) {
-                    notify('Bảo mẫu này vẫn đang ở trạng thái yêu thích.', 'warning');
+                    notify('Bảo mẫu này vẫn đang ở trạng thái yêu thích.', 'error');
                     return;
                 }
 
-                notify('Đã bỏ bảo mẫu khỏi danh sách yêu thích.', 'info');
+                notify('Đã bỏ bảo mẫu khỏi danh sách yêu thích.', 'success');
                 await loadFavorites();
             } catch {
                 notify('Lỗi kết nối máy chủ.', 'error');

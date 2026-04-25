@@ -3,6 +3,19 @@
     'form-select-native-hidden',
     'nanny-filter--native'
   ]);
+  const LOCATION_KEYWORDS = [
+    'city',
+    'province',
+    'district',
+    'ward',
+    'tinh',
+    'thanh pho',
+    'quan',
+    'huyen',
+    'phuong',
+    'xa',
+    'khu vuc'
+  ];
 
   function normalizeText(value) {
     return String(value ?? '')
@@ -31,6 +44,43 @@
     if (input.dataset.nmUnifiedSkip === 'true') return false;
     if (input.closest('[data-nm-unified-skip="true"]')) return false;
     return !!input.getAttribute('list');
+  }
+
+  function collectSelectHints(select) {
+    const hints = [];
+    const attrs = ['id', 'name', 'aria-label', 'placeholder', 'data-placeholder'];
+
+    attrs.forEach((attr) => {
+      const value = select.getAttribute(attr);
+      if (value) hints.push(value);
+    });
+
+    const selectId = select.getAttribute('id');
+    if (selectId) {
+      Array.from(document.getElementsByTagName('label')).forEach((label) => {
+        if (label.htmlFor === selectId && label.textContent) {
+          hints.push(label.textContent);
+        }
+      });
+    }
+
+    const nearestLabel = select.closest('.nm-field, .form-group, .mb-3, .field')?.querySelector('label');
+    if (nearestLabel?.textContent) hints.push(nearestLabel.textContent);
+
+    return hints.join(' ');
+  }
+
+  function isLocationSelect(select) {
+    const normalizedHints = normalizeText(collectSelectHints(select));
+    if (!normalizedHints) return false;
+    return LOCATION_KEYWORDS.some((keyword) => normalizedHints.includes(normalizeText(keyword)));
+  }
+
+  function resolveSelectMode(select) {
+    const explicitMode = normalizeText(select.dataset.nmSelectMode);
+    if (explicitMode === 'search') return 'search';
+    if (explicitMode === 'click') return 'click';
+    return isLocationSelect(select) ? 'search' : 'click';
   }
 
   function ensureFieldWrapper(control) {
@@ -85,6 +135,11 @@
   function initSelect(select) {
     if (!isTransformableSelect(select)) return;
 
+    // Default: click-only for consistency.
+    // Location dropdowns (city/province/district/ward) are auto-searchable.
+    // You can still override with data-nm-select-mode="search" or "click".
+    const selectMode = resolveSelectMode(select);
+    const clickOnlyMode = selectMode !== 'search';
     const selectStyle = window.getComputedStyle(select);
     const inheritedPaddingLeft = selectStyle.paddingLeft;
     const inheritedPaddingRight = selectStyle.paddingRight;
@@ -99,6 +154,10 @@
     input.autocomplete = 'off';
     input.setAttribute('aria-haspopup', 'listbox');
     input.setAttribute('aria-expanded', 'false');
+    if (clickOnlyMode) {
+      input.readOnly = true;
+      input.setAttribute('inputmode', 'none');
+    }
 
     const menu = document.createElement('ul');
     menu.className = 'nm-unified-menu';
@@ -133,7 +192,7 @@
     };
 
     const buildOptions = (query) => {
-      const normalizedQuery = normalizeText(query);
+      const normalizedQuery = clickOnlyMode ? '' : normalizeText(query);
       return Array.from(select.options)
         .map((option) => ({
           value: String(option.value ?? ''),
@@ -182,8 +241,29 @@
     };
 
     input.addEventListener('focus', () => showOptions(''));
-    input.addEventListener('click', () => showOptions(input.value.trim()));
-    input.addEventListener('input', () => showOptions(input.value.trim(), true));
+    input.addEventListener('click', () => showOptions(''));
+    if (!clickOnlyMode) {
+      input.addEventListener('input', () => showOptions(input.value.trim(), true));
+    } else {
+      input.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          showOptions('');
+          return;
+        }
+
+        if (event.key === 'Escape') {
+          hideMenu(menu);
+          input.setAttribute('aria-expanded', 'false');
+          return;
+        }
+
+        const allowedKeys = new Set(['Tab', 'ArrowUp', 'ArrowLeft', 'ArrowRight', 'Home', 'End']);
+        if (!allowedKeys.has(event.key)) {
+          event.preventDefault();
+        }
+      });
+    }
     input.addEventListener('blur', () => {
       window.setTimeout(() => {
         hideMenu(menu);

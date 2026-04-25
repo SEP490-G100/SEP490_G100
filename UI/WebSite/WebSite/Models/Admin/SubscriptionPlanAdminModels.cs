@@ -6,10 +6,12 @@ namespace WebSite.Models.Admin;
 public class AdminSubscriptionPlanBenefitViewModel
 {
     [JsonPropertyName("monthlyJobPostLimit")]
+    [Display(Name = "Giới hạn đăng bài mỗi tháng")]
     [Range(0, 1000)]
     public int MonthlyJobPostLimit { get; set; }
 
     [JsonPropertyName("monthlyApplicationLimit")]
+    [Display(Name = "Giới hạn ứng tuyển mỗi tháng")]
     [Range(0, 1000)]
     public int MonthlyApplicationLimit { get; set; }
 
@@ -20,6 +22,7 @@ public class AdminSubscriptionPlanBenefitViewModel
     public bool SearchPriority { get; set; }
 
     [JsonPropertyName("listingDurationDays")]
+    [Display(Name = "Số ngày hiển thị bài đăng")]
     [Range(0, 3650)]
     public int ListingDurationDays { get; set; }
 }
@@ -138,33 +141,42 @@ public class AdminSubscriptionPlanFormViewModel
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 
+    [Display(Name = "Tên gói")]
     [Required]
     [StringLength(100, MinimumLength = 2)]
     public string Name { get; set; } = "";
 
+    [Display(Name = "Mô tả")]
     [Required(ErrorMessage = "Vui lòng nhập mô tả.")]
     [StringLength(500, ErrorMessage = "Mô tả không được vượt quá 500 ký tự.")]
     public string Description { get; set; } = "";
 
+    [Display(Name = "Vai trò mục tiêu")]
     [Required]
-    [RegularExpression("^(Parent|Nanny)$", ErrorMessage = "Vai trò mục tiêu phải là Phụ huynh hoặc Bảo mẫu (Parent / Nanny).")]
+    [RegularExpression("^(Parent|Nanny)$", ErrorMessage = "Vai trò mục tiêu phải là Phụ huynh hoặc Bảo mẫu.")]
     public string TargetRole { get; set; } = "Parent";
 
+    [Display(Name = "Giá gói")]
     [Range(typeof(decimal), "1000", "999999999")]
     public decimal Price { get; set; }
 
+    [Display(Name = "Thời hạn sử dụng")]
     [Range(1, 3650)]
     public int DurationDays { get; set; }
 
+    [Display(Name = "Thứ tự sắp xếp")]
     [Range(1, 999)]
     public int SortOrder { get; set; } = 1;
 
+    [Display(Name = "Danh sách tính năng")]
     [Required]
     public string FeatureLines { get; set; } = "";
 
+    [Display(Name = "Giới hạn đăng bài mỗi tháng")]
     [Range(0, 1000)]
     public int MonthlyJobPostLimit { get; set; }
 
+    [Display(Name = "Giới hạn ứng tuyển mỗi tháng")]
     [Range(0, 1000)]
     public int MonthlyApplicationLimit { get; set; }
 
@@ -172,6 +184,7 @@ public class AdminSubscriptionPlanFormViewModel
 
     public bool SearchPriority { get; set; }
 
+    [Display(Name = "Số ngày hiển thị bài đăng")]
     [Range(0, 3650)]
     public int ListingDurationDays { get; set; }
 

@@ -9,13 +9,13 @@ using Nanny_BackEnd.Services;
 
 namespace Nanny_BackEnd.Tests;
 
-public class ReviewJobAsyncTests
+public class ReviewJobTests
 {
     private readonly Mock<IJobRepository>       _mockJobRepo;
     private readonly Mock<NotificationService> _mockNotif;
     private readonly JobService                _sut;
 
-    public ReviewJobAsyncTests()
+    public ReviewJobTests()
     {
         var mockHttp = new Mock<System.Net.Http.IHttpClientFactory>();
 
@@ -43,15 +43,17 @@ public class ReviewJobAsyncTests
             NullLogger<JobService>.Instance);
     }
 
-    // -- Helper ------------------------------------------------------------
+    // ── Helper ────────────────────────────────────────────────────────────
     private static JobPosting MakeJob(
         int status = (int)JobPostingStatus.Public,
         int moderationStatus = (int)JobPostingModerationStatus.Pending,
         ParentProfile? parent = null) => new()
     {
         Id = Guid.NewGuid(),
+        Title = "Tìm bảo mẫu",
         Status = status,
         ModerationStatus = moderationStatus,
+        // Entity yêu cầu navigation non-null; khi test không cần parent, dùng stub.
         ParentProfile = parent
                       ?? new ParentProfile { Id = Guid.NewGuid(), UserId = Guid.NewGuid() }
     };
@@ -62,6 +64,7 @@ public class ReviewJobAsyncTests
             It.IsAny<int>(), It.IsAny<Guid?>(), It.IsAny<string?>(), It.IsAny<Guid?>()))
             .Returns(Task.CompletedTask);
 
+    // ── TC1: Job không tồn tại → KeyNotFoundException ─────────────────────
     [Fact]
     public async Task NotFound()
     {
@@ -71,35 +74,31 @@ public class ReviewJobAsyncTests
 
         var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.ReviewJobAsync(jobId, Guid.NewGuid(),
             (int)JobPostingModerationStatus.Approved, null));
+        Assert.Contains("tìm thấy tin đăng", ex.Message);
     }
 
-    // TC2: Approved + Public job
+    // ── TC2: Approved + Status=Public → PublishedAt được set ─────────────
     [Fact]
     public async Task AlreadyModerated_ThrowsInvalidOperation()
     {
-        var jobId = Guid.NewGuid();
-        var job = BaseJob(jobId, (int)JobPostingStatus.Public, parent: new ParentProfile { UserId = Guid.NewGuid() });
-        job.ModerationStatus = (int)JobPostingModerationStatus.Approved;
+        var job = MakeJob(
+            moderationStatus: (int)JobPostingModerationStatus.Approved,
+            parent: new ParentProfile { UserId = Guid.NewGuid() });
 
-        _mockRepo.Setup(r => r.viewDetailPosting(jobId)).ReturnsAsync(job);
+        _mockJobRepo.Setup(r => r.viewDetailPosting(job.Id)).ReturnsAsync(job);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _sut.ModeratorReviewJobAsync(jobId, Guid.NewGuid(), new ModerateJobPostingRequest
-            {
-                Action = (int)JobPostingModerationStatus.Rejected,
-                Note = "lý do"
-            }));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.ReviewJobAsync(
+            job.Id,
+            Guid.NewGuid(),
+            (int)JobPostingModerationStatus.Rejected,
+            "lý do"));
 
         Assert.Contains("không thể xử lý lại", ex.Message.ToLowerInvariant());
-        _mockRepo.Verify(r => r.updateJobPosting(It.IsAny<JobPosting>()), Times.Never);
+        _mockJobRepo.Verify(r => r.updateJobPosting(It.IsAny<JobPosting>()), Times.Never);
         _mockNotif.Verify(n => n.createNotification(
-            It.IsAny<Guid>(),
-            It.IsAny<string>(),
-            It.IsAny<string>(),
-            It.IsAny<int>(),
-            It.IsAny<Guid?>(),
-            It.IsAny<string?>(),
-            It.IsAny<Guid?>()), Times.Never);
+                It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<int>(), It.IsAny<Guid?>(), It.IsAny<string?>(), It.IsAny<Guid?>()),
+            Times.Never);
     }
 
     [Fact]
@@ -122,13 +121,14 @@ public class ReviewJobAsyncTests
         Assert.Null(job.ClosedAt);
         Assert.Equal(moderatorId, job.ModeratedBy);
 
+        // Thông báo gửi cho parent
         _mockNotif.Verify(n => n.createNotification(
             job.ParentProfile!.UserId, It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<int>(), It.IsAny<Guid?>(), It.IsAny<string?>(), moderatorId),
             Times.Once);
     }
 
-    // TC3: Approved + Hidden job
+    // ── TC3: Approved + Status=Hidden → ClosedAt được set ────────────────
     [Fact]
     public async Task Approved_HiddenJob_SetsClosedAt()
     {
@@ -147,6 +147,7 @@ public class ReviewJobAsyncTests
         Assert.NotNull(job.ClosedAt);
     }
 
+    // ── TC4: Rejected + có note → ClosedAt set, note được trim ───────────
     [Fact]
     public async Task Rejected_WithNote_SetsClosedAt_TrimsNote()
     {

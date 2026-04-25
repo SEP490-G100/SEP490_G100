@@ -460,6 +460,7 @@
             resize: none;
             border: none;
             outline: none;
+            box-shadow: none;
             background: transparent;
             font-size: 14px;
             color: #374151;
@@ -468,6 +469,15 @@
             overflow-y: auto;
             font-family: 'Quicksand', sans-serif;
         }
+
+            .chat-textarea:focus,
+            .chat-textarea:focus-visible {
+                border: none !important;
+                outline: none !important;
+                box-shadow: none !important;
+                --tw-ring-shadow: 0 0 #0000;
+                --tw-ring-offset-shadow: 0 0 #0000;
+            }
 
         .chat-send-btn {
             width: 42px;
@@ -813,7 +823,15 @@
         let pendingReportMsgId = null;
         let allConversations = [];
         let hubConnection = null;
-        let joinedConvId = null;
+        const joinedConversationIds = new Set();
+        const lastRenderedSignatureByConversation = new Map();
+        let conversationsPollTimer = null;
+        let messagesPollTimer = null;
+        let isLoadingConversations = false;
+        let isLoadingMessages = false;
+        let isSyncingConversationGroups = false;
+        const CONVERSATIONS_POLL_INTERVAL_MS = 5000;
+        const MESSAGES_POLL_INTERVAL_MS = 2500;
 
         function notifyHeaderChatUnread() {
             try {
@@ -846,6 +864,7 @@
         document.addEventListener('DOMContentLoaded', async () => {
             await loadConversations();
             await initSignalR();
+            startRealtimeSync();
 
             const initialId = '@(ViewBag.InitialConversationId?.ToString() ?? "")';
             if (initialId && initialId !== '') {
@@ -876,20 +895,37 @@
             document.addEventListener('click', () => {
                 document.querySelectorAll('.msg-ctx-menu.open').forEach(m => m.classList.remove('open'));
             });
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) return;
+                loadConversations(true);
+                if (activeConvId) {
+                    loadMessages(activeConvId, 1, true);
+                }
+            });
+
+            window.addEventListener('beforeunload', stopRealtimeSync);
         });
 
         // ════════════════════════════════════════════════════════════════════
         //  CONVERSATIONS
         // ════════════════════════════════════════════════════════════════════
-        async function loadConversations() {
+        async function loadConversations(silent = false) {
+            if (isLoadingConversations) return;
+            isLoadingConversations = true;
             try {
                 const res = await fetch('/Communication/Conversations');
                 const json = await res.json();
                 allConversations = json.data ?? [];
                 renderConversations(allConversations);
+                await syncConversationGroups();
                 notifyHeaderChatUnread();
             } catch {
+                if (!silent) {
                 document.getElementById('convList').innerHTML = '<p style="text-align:center;color:#9ca3af;padding:20px;font-size:14px;">Không thể tải danh sách.</p>';
+                }
+            } finally {
+                isLoadingConversations = false;
             }
         }
 
@@ -931,7 +967,6 @@
         // ════════════════════════════════════════════════════════════════════
         async function openConversation(id) {
             if (activeConvId === id) return;
-            const previousId = activeConvId;
             activeConvId = id;
 
             // Highlight sidebar item
@@ -949,18 +984,19 @@
             document.getElementById('headerName').textContent = conv?.dataset?.name ?? '...';
 
             await loadMessages(id);
-            await joinConversationIfReady(id, previousId);
             resetUnreadCount(id);
         }
 
         // ════════════════════════════════════════════════════════════════════
         //  MESSAGES
         // ════════════════════════════════════════════════════════════════════
-        async function loadMessages(convId, page = 1) {
+        async function loadMessages(convId, page = 1, silent = false) {
+            if (!convId) return;
             try {
                 const res = await fetch(`/Communication/Messages?conversationId=${convId}&page=${page}&pageSize=50`);
                 const json = await res.json();
                 const data = json.data;
+                if (!data) return;
 
                 // Update header
                 document.getElementById('headerName').textContent = data.otherUserName || 'Người dùng';
@@ -976,8 +1012,21 @@
                 };
 
                 updateBlockUI(data.isBlocked);
-                renderMessages(data.messages ?? []);
-                await markConversationReadOnServer(convId);
+                const messages = data.messages ?? [];
+                const signature = buildMessageSignature(messages);
+                const signatureKey = String(convId);
+                const previousSignature = lastRenderedSignatureByConversation.get(signatureKey);
+                if (previousSignature !== signature) {
+                    renderMessages(messages);
+                    lastRenderedSignatureByConversation.set(signatureKey, signature);
+                }
+
+                const hasUnreadIncoming = messages.some(m =>
+                    String(m.senderId || '') === String(data.otherUserId || '') && !m.readAt && !m.isDeleted
+                );
+                if (hasUnreadIncoming) {
+                    await markConversationReadOnServer(convId);
+                }
             } catch {
                 document.getElementById('chatMessages').innerHTML = '<p style="text-align:center;color:#9ca3af;padding:20px;">Không thể tải tin nhắn.</p>';
             }
@@ -1333,6 +1382,68 @@
         }
 
         // ════════════════════════════════════════════════════════════════════
+        function buildMessageSignature(messages) {
+            if (!Array.isArray(messages) || !messages.length) return 'empty';
+            return messages
+                .map(m => `${m.id || ''}|${m.readAt || ''}|${m.isDeleted ? 1 : 0}|${m.createdAt || ''}`)
+                .join('~');
+        }
+
+        async function syncConversationGroups() {
+            if (!hubConnection || hubConnection.state !== signalR.HubConnectionState.Connected) return;
+            if (isSyncingConversationGroups) return;
+
+            isSyncingConversationGroups = true;
+            try {
+                const wantedConversationIds = new Set(
+                    (allConversations || [])
+                        .map(c => String(c?.id || ''))
+                        .filter(Boolean)
+                );
+
+                const joinedSnapshot = Array.from(joinedConversationIds);
+                for (const joinedId of joinedSnapshot) {
+                    if (wantedConversationIds.has(joinedId)) continue;
+                    await hubConnection.invoke('LeaveConversation', joinedId);
+                    joinedConversationIds.delete(joinedId);
+                }
+
+                for (const convId of wantedConversationIds) {
+                    if (joinedConversationIds.has(convId)) continue;
+                    await hubConnection.invoke('JoinConversation', convId);
+                    joinedConversationIds.add(convId);
+                }
+            } catch {
+                // no-op
+            } finally {
+                isSyncingConversationGroups = false;
+            }
+        }
+
+        function startRealtimeSync() {
+            stopRealtimeSync();
+
+            conversationsPollTimer = window.setInterval(() => {
+                loadConversations(true);
+            }, CONVERSATIONS_POLL_INTERVAL_MS);
+
+            messagesPollTimer = window.setInterval(() => {
+                if (!activeConvId) return;
+                loadMessages(activeConvId, 1, true);
+            }, MESSAGES_POLL_INTERVAL_MS);
+        }
+
+        function stopRealtimeSync() {
+            if (conversationsPollTimer) {
+                window.clearInterval(conversationsPollTimer);
+                conversationsPollTimer = null;
+            }
+            if (messagesPollTimer) {
+                window.clearInterval(messagesPollTimer);
+                messagesPollTimer = null;
+            }
+        }
+
         //  SIGNALR
         // ════════════════════════════════════════════════════════════════════
         async function initSignalR() {
@@ -1347,14 +1458,14 @@
 
             hubConnection.on('ReceiveMessage', async (message) => {
                 if (!message || !message.conversationId) return;
+                const isMine = resolveMessageIsMine(message);
                 if (String(message.conversationId) === String(activeConvId)) {
-                    const isMine = resolveMessageIsMine(message);
                     appendMessage({ ...message, isMine });
+                    updateConversationPreview(message, isMine);
                     if (!isMine) {
                         await markConversationReadOnServer(message.conversationId);
                     }
                 } else {
-                    const isMine = typeof message.isMine === 'boolean' ? message.isMine : false;
                     updateConversationPreview(message, isMine);
                     notifyHeaderChatUnread();
                 }
@@ -1378,28 +1489,24 @@
             });
 
             hubConnection.onreconnected(async () => {
-                if (activeConvId) await joinConversationIfReady(activeConvId, null);
+                joinedConversationIds.clear();
+                await loadConversations(true);
+                await syncConversationGroups();
+                if (activeConvId) {
+                    await loadMessages(activeConvId, 1, true);
+                }
             });
 
             try {
                 await hubConnection.start();
-                if (activeConvId) await joinConversationIfReady(activeConvId, null);
+                await syncConversationGroups();
             } catch (err) {
                 console.warn('SignalR connect failed:', err);
             }
         }
 
-        async function joinConversationIfReady(convId, previousId) {
-            if (!hubConnection || hubConnection.state !== signalR.HubConnectionState.Connected) return;
-            try {
-                if (previousId && String(previousId) !== String(convId)) {
-                    await hubConnection.invoke('LeaveConversation', previousId);
-                }
-                if (joinedConvId !== convId) {
-                    await hubConnection.invoke('JoinConversation', convId);
-                    joinedConvId = convId;
-                }
-            } catch {}
+        async function joinConversationIfReady() {
+            await syncConversationGroups();
         }
 
         async function sendMessageViaHub(text) {

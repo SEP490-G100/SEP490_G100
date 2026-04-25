@@ -1251,33 +1251,33 @@
                                     if (message) {
                                         return {
                                             message,
-                                            type: payload.toastType || 'info'
+                                            type: payload.toastType || 'success'
                                         };
                                     }
 
-                                    switch (type) {
-                                        case 'verification-request-submitted':
-                                            return { message: 'Có yêu cầu xác minh mới đang chờ duyệt.', type: 'info' };
-                                        case 'verification-request-created':
-                                            return { message: 'Bạn vừa gửi yêu cầu xác minh thành công.', type: 'success' };
-                                        case 'job-posting-review-required':
-                                            return { message: 'Có bài đăng mới đang chờ kiểm duyệt viên duyệt.', type: 'info' };
-                                        case 'complain-submitted':
-                                            return { message: 'Có báo cáo mới cần xử lý.', type: 'warning' };
-                                        case 'verification-approved':
-                                            return { message: 'Yêu cầu xác minh của bạn đã được chấp nhận.', type: 'success' };
-                                        case 'verification-rejected':
-                                            return { message: 'Yêu cầu xác minh của bạn đã bị từ chối.', type: 'warning' };
-                                        case 'job-posting-approved':
-                                            return { message: 'Bài đăng của bạn đã được duyệt.', type: 'success' };
-                                        case 'job-posting-rejected':
-                                            return { message: 'Bài đăng của bạn đã bị từ chối.', type: 'warning' };
-                                        case 'job-posting-pending':
-                                            return { message: 'Bài đăng của bạn đang chờ kiểm duyệt viên duyệt.', type: 'success' };
-                                        case 'nanny-profile-favorited':
-                                            return { message: 'Hồ sơ của bạn vừa được yêu thích.', type: 'success' };
-                                        case 'system-warning':
-                                            return { message: 'Có cảnh báo hệ thống cần xử lý.', type: 'warning' };
+                                        switch (type) {
+                                            case 'verification-request-submitted':
+                                                return { message: 'Có yêu cầu xác minh mới đang chờ duyệt.', type: 'success' };
+                                            case 'verification-request-created':
+                                                return { message: 'Bạn vừa gửi yêu cầu xác minh thành công.', type: 'success' };
+                                            case 'job-posting-review-required':
+                                                return { message: 'Có bài đăng mới đang chờ kiểm duyệt viên duyệt.', type: 'success' };
+                                            case 'complain-submitted':
+                                                return { message: 'Có báo cáo mới cần xử lý.', type: 'error' };
+                                            case 'verification-approved':
+                                                return { message: 'Yêu cầu xác minh của bạn đã được chấp nhận.', type: 'success' };
+                                            case 'verification-rejected':
+                                                return { message: 'Yêu cầu xác minh của bạn đã bị từ chối.', type: 'error' };
+                                            case 'job-posting-approved':
+                                                return { message: 'Bài đăng của bạn đã được duyệt.', type: 'success' };
+                                            case 'job-posting-rejected':
+                                                return { message: 'Bài đăng của bạn đã bị từ chối.', type: 'error' };
+                                            case 'job-posting-pending':
+                                                return { message: 'Bài đăng của bạn đang chờ kiểm duyệt viên duyệt.', type: 'success' };
+                                            case 'nanny-profile-favorited':
+                                                return { message: 'Hồ sơ của bạn vừa được yêu thích.', type: 'success' };
+                                            case 'system-warning':
+                                                return { message: 'Có cảnh báo hệ thống cần xử lý.', type: 'error' };
                                         default:
                                             return null;
                                     }
@@ -1451,7 +1451,10 @@
 
                                 const loadChatUnread = async () => {
                                     try {
-                                        const response = await fetch('/Communication/UnreadCount', { credentials: 'same-origin' });
+                                        const response = await fetch(`/Communication/UnreadCount?_=${Date.now()}`, {
+                                            credentials: 'same-origin',
+                                            cache: 'no-store'
+                                        });
                                         const result = await response.json();
                                         updateChatBadge(result?.data?.unreadCount ?? 0);
                                     } catch {
@@ -1459,9 +1462,29 @@
                                     }
                                 };
 
+                                let chatUnreadTimer = null;
+                                const CHAT_UNREAD_POLL_VISIBLE_MS = 2000;
+                                const CHAT_UNREAD_POLL_HIDDEN_MS = 10000;
+
+                                const restartChatUnreadPolling = () => {
+                                    if (chatUnreadTimer) {
+                                        window.clearInterval(chatUnreadTimer);
+                                    }
+                                    const interval = document.hidden
+                                        ? CHAT_UNREAD_POLL_HIDDEN_MS
+                                        : CHAT_UNREAD_POLL_VISIBLE_MS;
+                                    chatUnreadTimer = window.setInterval(loadChatUnread, interval);
+                                };
+
                                 window.addEventListener('nm:chat-unread-refresh', () => { loadChatUnread(); });
+                                window.addEventListener('nm:notifications-refresh', () => { loadChatUnread(); });
+                                window.addEventListener('focus', () => { loadChatUnread(); });
+                                document.addEventListener('visibilitychange', () => {
+                                    if (!document.hidden) loadChatUnread();
+                                    restartChatUnreadPolling();
+                                });
                                 loadChatUnread();
-                                window.setInterval(loadChatUnread, 90000);
+                                restartChatUnreadPolling();
                             })();
 
                             (() => {
@@ -1884,7 +1907,7 @@
         (() => {
             const params = new URLSearchParams(window.location.search);
             const toastMessage = params.get('toastMessage');
-            const toastType = params.get('toastType') || 'info';
+            const toastType = params.get('toastType') || 'success';
 
             if (!toastMessage || typeof window.showToast !== 'function') {
                 return;

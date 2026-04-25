@@ -287,6 +287,12 @@ public class ProfileController : Controller
         if (userId == Guid.Empty)
             return RedirectToAction(nameof(Index));
 
+        var currentUserId = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var parsedUserId)
+            ? parsedUserId
+            : Guid.Empty;
+        if (currentUserId != Guid.Empty && userId == currentUserId)
+            return RedirectToAction(nameof(Index));
+
         try
         {
             var token = GetTokenFromSession();
@@ -381,7 +387,7 @@ public class ProfileController : Controller
         }
         catch
         {
-            // silent â€” review failure should not block profile load
+            // silent — review failure should not block profile load
         }
     }
 

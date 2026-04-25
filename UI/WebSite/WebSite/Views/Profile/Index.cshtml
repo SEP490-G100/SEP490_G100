@@ -688,7 +688,7 @@
                     var nannyProfileId = requestBtn.getAttribute('data-nanny-profile-id');
                     if (!nannyProfileId) {
                         if (typeof window.showToast === 'function') {
-                            window.showToast('Không tìm thấy hồ sơ bảo mẫu để gửi yêu cầu liên hệ.', { type: 'warning' });
+                    window.showToast('Không tìm thấy hồ sơ bảo mẫu để gửi yêu cầu liên hệ.', { type: 'error' });
                         }
                         return;
                     }
@@ -789,7 +789,7 @@
                     }
                     if (!hasHiringContext) {
                         if (typeof window.showToast === 'function') {
-                            window.showToast('Không tìm thấy yêu cầu liên hệ hợp lệ để tạo bản ghi thuê.', { type: 'warning' });
+                    window.showToast('Không tìm thấy yêu cầu liên hệ hợp lệ để tạo bản ghi thuê.', { type: 'error' });
                         }
                     }
                 });
@@ -1008,7 +1008,7 @@
 
                     if (reason.length < 5 || reason.length > 500) {
                         event.preventDefault();
-                        notifyProfileToast('Lý do phàn nàn phải từ 5 đến 500 ký tự.', 'warning');
+                        notifyProfileToast('Lý do phàn nàn phải từ 5 đến 500 ký tự.', 'error');
                         if (typeof tinymce !== 'undefined' && tinymce.get('profileComplainReason')) {
                             tinymce.get('profileComplainReason').focus();
                         } else if (complainReasonEl) {
@@ -1019,7 +1019,7 @@
 
                     if (evidence.length > 2000) {
                         event.preventDefault();
-                        notifyProfileToast('Bằng chứng không được vượt quá 2000 ký tự.', 'warning');
+                        notifyProfileToast('Bằng chứng không được vượt quá 2000 ký tự.', 'error');
                         if (typeof tinymce !== 'undefined' && tinymce.get('profileComplainEvidence')) {
                             tinymce.get('profileComplainEvidence').focus();
                         }

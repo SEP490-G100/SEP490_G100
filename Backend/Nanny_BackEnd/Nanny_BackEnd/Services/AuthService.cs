@@ -1,4 +1,5 @@
 using Google.Apis.Auth;
+using System.Text.RegularExpressions;
 using Nanny_BackEnd.DTOs.Auth;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
@@ -56,6 +57,13 @@ public class AuthService : IAuthService
 
         ValidatePasswordOrThrow(request.Password);
 
+        var normalizedPhone = NormalizePhoneNumber(request.PhoneNumber);
+        if (!string.IsNullOrWhiteSpace(normalizedPhone) && !IsValidPhoneNumber(normalizedPhone))
+            throw new InvalidOperationException("Số điện thoại phải gồm 10 chữ số và bắt đầu bằng 0.");
+
+        if (!string.IsNullOrWhiteSpace(normalizedPhone) && await _userRepo.IsPhoneInUseAsync(normalizedPhone))
+            throw new InvalidOperationException("Số điện thoại đã được đăng ký.");
+
         var user = new User
         {
             Id = Guid.NewGuid(),
@@ -63,7 +71,7 @@ public class AuthService : IAuthService
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             FirstName = request.FirstName,
             LastName = request.LastName,
-            PhoneNumber = request.PhoneNumber,
+            PhoneNumber = normalizedPhone,
             AuthProvider = (int)AuthProvider.Email,
             Status = (int)UserStatus.Pending,
             CreatedAt = DateTime.UtcNow
@@ -169,12 +177,16 @@ public class AuthService : IAuthService
 
     public async Task<(bool success, string message)> ForgotPasswordAsync(string email)
     {
+        email = NormalizeEmail(email);
+        if (!IsValidEmail(email))
+            return (false, "Email không hợp lệ.");
+
         var user = await _userRepo.FindByEmailAsync(email);
         if (user == null)
-            return (true, "Nếu email tồn tại, mã OTP đã được gửi.");
+            return (false, "Email chưa được đăng ký.");
 
         if (user.AuthProvider == (int)AuthProvider.Google)
-            return (true, "Nếu email tồn tại, mã OTP đã được gửi.");
+            return (false, "Tài khoản này đăng nhập bằng Google. Vui lòng đăng nhập bằng Google.");
 
         try
         {
@@ -190,6 +202,10 @@ public class AuthService : IAuthService
 
     public async Task ResetPasswordAsync(ResetPasswordRequest request)
     {
+        request.Email = NormalizeEmail(request.Email);
+        if (!IsValidEmail(request.Email))
+            throw new InvalidOperationException("Email không hợp lệ.");
+
         var otp = await _otp.ValidateAsync(request.Email, request.OtpCode, OtpPurpose.ForgotPassword)
             ?? throw new InvalidOperationException("Mã OTP không hợp lệ hoặc đã hết hạn.");
 
@@ -340,6 +356,21 @@ public class AuthService : IAuthService
         if (!isValid)
             throw new InvalidOperationException(string.Join(" ", errors));
     }
+
+    private static string? NormalizePhoneNumber(string? phoneNumber) =>
+        string.IsNullOrWhiteSpace(phoneNumber) ? null : phoneNumber.Trim();
+
+    private static bool IsValidPhoneNumber(string phoneNumber) =>
+        Regex.IsMatch(phoneNumber, @"^0\d{9}$");
+
+    private static string NormalizeEmail(string? email) =>
+        string.IsNullOrWhiteSpace(email) ? string.Empty : email.Trim();
+
+    private static bool IsValidEmail(string email) =>
+        Regex.IsMatch(
+            email,
+            @"^(?!.*\.\.)(?!\.)(?!.*\.$)[A-Za-z0-9._%+\-']+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$",
+            RegexOptions.IgnoreCase);
 
     private async Task UpdatePasswordAsync(User user, string newPassword)
     {

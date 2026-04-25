@@ -66,13 +66,13 @@ public class FaqService : IFaqService
         Guid? createdBy)
     {
         if (request == null)
-            return (false, 400, "Request body is required.", null);
+            return (false, 400, "Dữ liệu gửi lên là bắt buộc.", null);
         if (string.IsNullOrWhiteSpace(request.Question))
-            return (false, 400, "Question khong duoc de trong.", null);
+            return (false, 400, "Câu hỏi không được để trống.", null);
         if (string.IsNullOrWhiteSpace(request.Answer))
-            return (false, 400, "Answer khong duoc de trong.", null);
+            return (false, 400, "Câu trả lời không được để trống.", null);
         if (string.IsNullOrWhiteSpace(request.Category))
-            return (false, 400, "Category khong duoc de trong.", null);
+            return (false, 400, "Danh mục không được để trống.", null);
 
         var maxOrder = await _faqRepository.GetMaxSortOrderAsync();
 
@@ -102,11 +102,11 @@ public class FaqService : IFaqService
         Guid? updatedBy)
     {
         if (request == null)
-            return (false, 400, "Request body is required.");
+            return (false, 400, "Dữ liệu gửi lên là bắt buộc.");
         if (string.IsNullOrWhiteSpace(request.Question))
-            return (false, 400, "Question khong duoc de trong.");
+            return (false, 400, "Câu hỏi không được để trống.");
         if (string.IsNullOrWhiteSpace(request.Answer))
-            return (false, 400, "Answer khong duoc de trong.");
+            return (false, 400, "Câu trả lời không được để trống.");
 
         var faq = await _faqRepository.GetByIdAsync(id);
         if (faq == null)

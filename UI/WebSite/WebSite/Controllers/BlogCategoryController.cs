@@ -171,7 +171,7 @@ public class BlogCategoryController : Controller
             {
                 return RedirectToAction(nameof(ManageBlogCategory), new
                 {
-                    toastType = activate ? "success" : "warning",
+                    toastType = "success",
                     toastMessage = activate
                         ? "Đã kích hoạt danh mục blog thành công"
                         : "Đã vô hiệu hóa danh mục blog thành công"

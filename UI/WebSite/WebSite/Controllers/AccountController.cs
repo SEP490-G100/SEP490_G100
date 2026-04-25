@@ -1,4 +1,4 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
@@ -202,18 +202,18 @@ public class AccountController : Controller
             if (result?.Success == true)
             {
                 var toastMessage = status == 1
-                    ? "Da kich hoat tai khoan thanh cong"
-                    : "Da vo hieu hoa tai khoan thanh cong";
-                var toastType = status == 1 ? "success" : "warning";
+                    ? "Đã kích hoạt tài khoản thành công"
+                    : "Đã vô hiệu hóa tài khoản thành công";
+                var toastType = "success";
                 return RedirectToReturnUrlOrList(returnUrl, toastType, toastMessage);
             }
 
-            TempData["Error"] = result?.Message ?? "Khong the cap nhat trang thai dieu hanh vien.";
+            TempData["Error"] = result?.Message ?? "Không thể cập nhật trạng thái điều hành viên.";
             return RedirectToReturnUrlOrList(returnUrl);
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"Loi ket noi: {ex.Message}";
+            TempData["Error"] = $"Lỗi kết nối: {ex.Message}";
             return RedirectToReturnUrlOrList(returnUrl);
         }
     }
@@ -235,7 +235,7 @@ public class AccountController : Controller
             status: status,
             search: search,
             page: page,
-            pageSize: 3);
+            pageSize: 7);
 
         if (result == null)
         {
@@ -326,17 +326,17 @@ public class AccountController : Controller
                 {
                     toastType = "success",
                     toastMessage = model.Status == 1
-                        ? "Ban da kich hoat tai khoan thanh cong"
-                        : "Ban da vo hieu hoa tai khoan thanh cong"
+                        ? "Bạn đã kích hoạt tài khoản thành công"
+                        : "Bạn đã vô hiệu hóa tài khoản thành công"
                 });
             }
 
-            TempData["Error"] = result?.Message ?? "Cap nhat that bai.";
+            TempData["Error"] = result?.Message ?? "Cập nhật thất bại.";
             return RedirectToAction(nameof(ManageAccount));
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"Loi ket noi: {ex.Message}";
+            TempData["Error"] = $"Lỗi kết nối: {ex.Message}";
             return RedirectToAction(nameof(ManageAccount));
         }
     }
@@ -394,7 +394,7 @@ public class AccountController : Controller
         {
             return RedirectToAction(
                 nameof(ManageModerators),
-                new { toastType = toastType ?? "info", toastMessage });
+                new { toastType = toastType ?? "success", toastMessage });
         }
 
         return RedirectToAction(nameof(ManageModerators));

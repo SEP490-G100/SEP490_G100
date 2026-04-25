@@ -189,7 +189,7 @@
         var reason = document.getElementById('rejectionReason').value.trim();
         if (!reason) {
             if (typeof window.showToast === 'function') {
-                window.showToast('Vui lòng nhập lý do từ chối trước khi lưu.', { type: 'warning' });
+                window.showToast('Vui lòng nhập lý do từ chối trước khi lưu.', { type: 'error' });
             }
             return false;
         }

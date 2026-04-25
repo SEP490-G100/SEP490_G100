@@ -38,7 +38,7 @@ public class HiringController : Controller
     public async Task<IActionResult> HistoryApi()
     {
         if (!User.IsInRole("Parent") && !User.IsInRole("Nanny"))
-            return StatusCode(403, new { success = false, message = "Ban khong co quyen xem lich su thue." });
+            return StatusCode(403, new { success = false, message = "Bạn không có quyền xem lịch sử thuê." });
 
         SetBearerToken();
         try
@@ -103,7 +103,7 @@ public class HiringController : Controller
         }
         catch (Exception)
         {
-            return new JsonResult(new { success = false, message = "Khong the ket noi may chu luc nay. Vui long thu lai." }) { StatusCode = 500 };
+            return new JsonResult(new { success = false, message = "Không thể kết nối máy chủ lúc này. Vui lòng thử lại." }) { StatusCode = 500 };
         }
     }
 
@@ -122,7 +122,7 @@ public class HiringController : Controller
         }
         catch (Exception)
         {
-            return new JsonResult(new { success = false, message = "Khong the ket noi may chu luc nay. Vui long thu lai." }) { StatusCode = 500 };
+            return new JsonResult(new { success = false, message = "Không thể kết nối máy chủ lúc này. Vui lòng thử lại." }) { StatusCode = 500 };
         }
     }
 
@@ -152,15 +152,6 @@ public class HiringController : Controller
             EmptyJson()));
     }
 
-    [HttpPost("Records/{hiringRecordId:guid}/Cancel")]
-    public async Task<IActionResult> Cancel(Guid hiringRecordId)
-    {
-        SetBearerToken();
-        return await Proxy(() => _http.PostAsync(
-            $"/api/hiring/records/{hiringRecordId}/cancel",
-            EmptyJson()));
-    }
-
     private async Task<IActionResult> ProxyWithRealtimeHireAsync(HttpResponseMessage response)
     {
         var body = await response.Content.ReadAsStringAsync();
@@ -178,8 +169,8 @@ public class HiringController : Controller
                 await _notificationHub.Clients.Group($"user:{nannyUserId}").SendAsync("notification:new", new
                 {
                     type = "hiring-confirmed-nanny",
-                    title = "Thong bao tu NannyMatch",
-                    message = $"Bo me {resolvedParentName} da thue ban.",
+                    title = "Thông báo từ NannyMatch",
+                    message = $"Bố mẹ {resolvedParentName} đã thuê bạn.",
                     toastType = "success"
                 });
             }
@@ -294,7 +285,7 @@ public class HiringController : Controller
         }
         catch (Exception)
         {
-            return new JsonResult(new { success = false, message = "Khong the ket noi may chu luc nay. Vui long thu lai." }) { StatusCode = 500 };
+            return new JsonResult(new { success = false, message = "Không thể kết nối máy chủ lúc này. Vui lòng thử lại." }) { StatusCode = 500 };
         }
     }
 }

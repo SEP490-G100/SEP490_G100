@@ -1,4 +1,4 @@
-@{
+﻿@{
     var isParent = User.IsInRole("Parent");
     ViewData["Title"] = isParent ? "Lich su thue bao mau" : "Lich su duoc thue";
     var sampleContractUrl = "https://docs.google.com/document/d/1ix5IfIKIZFrmjspvv9Z-MBKNrk0Yh7Un/edit?usp=sharing&ouid=109977210644916932805&rtpof=true&sd=true";
@@ -7,27 +7,27 @@
 <section class="mx-auto max-w-6xl px-4 py-8 md:py-10">
     <div class="rounded-3xl border border-orange-100 bg-white shadow-sm">
         <div class="border-b border-orange-100 px-5 py-5 md:px-7">
-            <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-orange-500">Hiring History</p>
-            <h1 class="mt-1 text-2xl font-bold text-slate-900">@(isParent ? "Lich su thue bao mau" : "Lich su duoc thue")</h1>
+            <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-orange-500">@(isParent ? "Khu vực phụ huynh" : "Khu vực bảo mẫu")</p>
+            <h1 class="mt-1 text-2xl font-bold text-slate-900">@(isParent ? "Lịch sử thuê bảo mẫu" : "Lịch sử được thuê")</h1>
             <p class="mt-2 text-sm text-slate-600">
-                Day la hop dong mau chung toi tham khao tu nguon thu vien tham khao. Chung toi khong chiu trach nhiem ve cac dieu khoan.
-                Mong ben Bo me va bao mau se tham khao va di toi thoa thuan phu hop cho ca hai ben.
+                Đây là hợp đồng mẫu chúng tôi tham khảo từ nguồn Thư Viện Pháp Luật. Chúng tôi không chịu trách nhiệm về các điều khoản, quy định trong hợp đồng. 
+                Mong bố mẹ và bảo mẫu sẽ tham khảo và đi tới thỏa thuận phù hợp cho cả hai bên.
             </p>
             <div class="mt-4 flex flex-wrap items-center gap-3">
                 <a href="@sampleContractUrl" target="_blank" rel="noopener"
                    class="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-orange-500 to-orange-400 px-4 py-2 text-sm font-bold text-white shadow-sm hover:from-orange-600 hover:to-orange-500">
-                    Su dung hop dong mau
+                    Sử dụng hợp đồng mẫu
                 </a>
                 <p class="text-sm text-slate-600">
-                    Neu ban muon luu tru hop dong cua ban, hay tai len hop dong
-                    <a href="/Contract" target="_blank" rel="noopener noreferrer" class="font-bold text-orange-600 hover:text-orange-700 hover:underline">tai day</a>.
+                    Nếu bạn muốn lưu trữ hợp đồng của bạn, hãy tải lên hợp đồng
+                    <a href="/Contract" target="_blank" rel="noopener noreferrer" class="font-bold text-orange-600 hover:text-orange-700 hover:underline">tại đây</a>.
                 </p>
             </div>
         </div>
 
         <div class="px-5 pb-6 pt-5 md:px-7">
             <div id="hiringHistoryState" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm font-semibold text-slate-500">
-                Dang tai lich su...
+                Đang tải lịch sử...
             </div>
             <div id="hiringHistoryList" class="hidden grid gap-3"></div>
         </div>
@@ -42,6 +42,7 @@
             const stateEl = document.getElementById('hiringHistoryState');
             const listEl = document.getElementById('hiringHistoryList');
             const focusHiringRecordId = new URLSearchParams(window.location.search).get('hiringRecordId');
+            const actionLocks = new Set();
 
             const esc = (value) => String(value ?? '')
                 .replaceAll('&', '&amp;')
@@ -55,12 +56,12 @@
 
             const statusLabel = (status) => {
                 const s = Number(status);
-                if (s === 0) return { text: 'Dang cho bao mau phan hoi', css: 'bg-amber-50 text-amber-700 border-amber-200' };
-                if (s === 1) return { text: 'Dang hoat dong', css: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
-                if (s === 2) return { text: 'Da tu choi', css: 'bg-rose-50 text-rose-700 border-rose-200' };
-                if (s === 3) return { text: 'Da huy', css: 'bg-slate-100 text-slate-700 border-slate-200' };
-                if (s === 4) return { text: 'Da hoan thanh', css: 'bg-indigo-50 text-indigo-700 border-indigo-200' };
-                return { text: 'Khong xac dinh', css: 'bg-slate-100 text-slate-700 border-slate-200' };
+                if (s === 0) return { text: 'Đang chờ bảo mẫu phản hồi', css: 'bg-amber-50 text-amber-700 border-amber-200' };
+                if (s === 1) return { text: 'Đang hoạt động', css: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
+                if (s === 2) return { text: 'Đã từ chối', css: 'bg-rose-50 text-rose-700 border-rose-200' };
+                if (s === 3) return { text: 'Đã hủy', css: 'bg-slate-100 text-slate-700 border-slate-200' };
+                if (s === 4) return { text: 'Đã hoàn thành', css: 'bg-indigo-50 text-indigo-700 border-indigo-200' };
+                return { text: 'Không xác định', css: 'bg-slate-100 text-slate-700 border-slate-200' };
             };
 
             const showToast = (message, type = 'info') => {
@@ -74,9 +75,9 @@
             const getErrorMessage = async (response) => {
                 try {
                     const json = await response.json();
-                    return json?.message || 'Thao tac that bai.';
+                    return json?.message || 'Thao tác thất bại.';
                 } catch {
-                    return 'Thao tac that bai.';
+                    return 'Thao tác thất bại.';
                 }
             };
 
@@ -94,7 +95,7 @@
 
                 const json = await response.json();
                 if (json?.success === false) {
-                    throw new Error(json?.message || 'Thao tac that bai.');
+                    throw new Error(json?.message || 'Thao tác thất bại.');
                 }
             };
 
@@ -110,63 +111,52 @@
 
                 const json = await response.json();
                 if (json?.success === false) {
-                    throw new Error(json?.message || 'Thao tac that bai.');
+                    throw new Error(json?.message || 'Thao tác thất bại.');
+                }
+            };
+
+            const runWithLock = async (hiringRecordId, action) => {
+                if (!hiringRecordId || actionLocks.has(hiringRecordId)) return false;
+                actionLocks.add(hiringRecordId);
+                listEl.style.pointerEvents = 'none';
+                try {
+                    await action();
+                    return true;
+                } finally {
+                    actionLocks.delete(hiringRecordId);
+                    listEl.style.pointerEvents = '';
                 }
             };
 
             const handleAccept = async (hiringRecordId) => {
                 try {
-                    await postJson(`/Hiring/Records/${encodeURIComponent(hiringRecordId)}/Respond`, { action: 'accept' });
-                    showToast('Ban da chap nhan de nghi viec lam.', 'success');
-                    await loadHistory();
-                } catch (error) {
-                    showToast(error.message || 'Khong the chap nhan de nghi.', 'error');
-                }
-            };
-
-            const handleDecline = async (hiringRecordId) => {
-                const reason = window.prompt('Nhap ly do tu choi (co the de trong):', '') ?? null;
-                if (reason === null) return;
-
-                try {
-                    await postJson(`/Hiring/Records/${encodeURIComponent(hiringRecordId)}/Respond`, {
-                        action: 'decline',
-                        declineReason: String(reason || '').trim() || null
+                    const done = await runWithLock(hiringRecordId, async () => {
+                        await postJson(`/Hiring/Records/${encodeURIComponent(hiringRecordId)}/Respond`, { action: 'accept' });
                     });
-                    showToast('Ban da tu choi de nghi viec lam.', 'warning');
+                    if (!done) return;
+                    showToast('Bạn đã chấp nhận đề nghị việc làm.', 'success');
                     await loadHistory();
                 } catch (error) {
-                    showToast(error.message || 'Khong the tu choi de nghi.', 'error');
-                }
-            };
-
-            const handleCancel = async (hiringRecordId) => {
-                if (!window.confirm('Ban co chac muon huy de nghi viec lam nay khong?')) return;
-
-                try {
-                    await postEmpty(`/Hiring/Records/${encodeURIComponent(hiringRecordId)}/Cancel`);
-                    showToast('Ban da huy de nghi viec lam.', 'warning');
-                    await loadHistory();
-                } catch (error) {
-                    showToast(error.message || 'Khong the huy de nghi viec lam.', 'error');
+                    showToast(error.message || 'Không thể chấp nhận đề nghị.', 'error');
                 }
             };
 
             const handleComplete = async (hiringRecordId) => {
-                if (!window.confirm('Ban co chac muon xac nhan hoan thanh cong viec nay khong?')) return;
+                if (!window.confirm('Bạn có chắc muốn xác nhận hoàn thành công việc này không?')) return;
 
                 try {
-                    await postEmpty(`/Hiring/Records/${encodeURIComponent(hiringRecordId)}/Complete`);
-                    showToast('Ban da xac nhan hoan thanh cong viec.', 'success');
+                    const done = await runWithLock(hiringRecordId, async () => {
+                        await postEmpty(`/Hiring/Records/${encodeURIComponent(hiringRecordId)}/Complete`);
+                    });
+                    if (!done) return;
+                    showToast('Bạn đã xác nhận hoàn thành công việc.', 'success');
                     await loadHistory();
                 } catch (error) {
-                    showToast(error.message || 'Khong the xac nhan hoan thanh.', 'error');
+                    showToast(error.message || 'Không thể xác nhận hoàn thành công việc.', 'error');
                 }
             };
 
             window.__hiringHistoryAccept = handleAccept;
-            window.__hiringHistoryDecline = handleDecline;
-            window.__hiringHistoryCancel = handleCancel;
             window.__hiringHistoryComplete = handleComplete;
 
             const renderActionButtons = (item) => {
@@ -180,24 +170,7 @@
                                 onclick="window.__hiringHistoryAccept('${id}')"
                                 class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-xs font-extrabold shadow-sm hover:opacity-90"
                                 style="background-color:#10b981;color:#ffffff;border:1px solid #059669;opacity:1;">
-                            Chap nhan
-                        </button>`);
-                    buttons.push(`
-                        <button type="button"
-                                onclick="window.__hiringHistoryDecline('${id}')"
-                                class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-xs font-extrabold shadow-sm hover:opacity-90"
-                                style="background-color:#f43f5e;color:#ffffff;border:1px solid #e11d48;opacity:1;">
-                            Tu choi yeu cau
-                        </button>`);
-                }
-
-                if (isParent && status === 0) {
-                    buttons.push(`
-                        <button type="button"
-                                onclick="window.__hiringHistoryCancel('${id}')"
-                                class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-xs font-extrabold shadow-sm hover:opacity-90"
-                                style="background-color:#475569;color:#ffffff;border:1px solid #334155;opacity:1;">
-                            Huy thue
+                            Chấp nhận đề nghị
                         </button>`);
                 }
 
@@ -207,7 +180,7 @@
                                 onclick="window.__hiringHistoryComplete('${id}')"
                                 class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-xs font-extrabold shadow-sm hover:opacity-90"
                                 style="background-color:#4f46e5;color:#ffffff;border:1px solid #4338ca;opacity:1;">
-                            Hoan thanh thue
+                            Hoàn thành thuê
                         </button>`);
                 }
 
@@ -253,13 +226,13 @@
                     const res = await fetch('/Hiring/Api/History', { credentials: 'include' });
                     const json = await res.json();
                     if (!res.ok || !json?.success) {
-                        throw new Error(json?.message || 'Khong the tai lich su.');
+                        throw new Error(json?.message || 'Không thể tải lịch sử.');
                     }
 
                     const items = Array.isArray(json.data) ? json.data : [];
                     if (!items.length) {
                         stateEl.classList.remove('hidden');
-                        stateEl.textContent = 'Chua co ban ghi thue nao.';
+                        stateEl.textContent = 'Chưa có bản ghi thuê nào.';
                         listEl.classList.add('hidden');
                         listEl.innerHTML = '';
                         return;
@@ -275,7 +248,7 @@
                     }
                 } catch (err) {
                     stateEl.classList.remove('hidden');
-                    stateEl.textContent = `Khong tai duoc lich su: ${String(err?.message || 'Unknown error')}`;
+                    stateEl.textContent = `Không thể tải lịch sử: ${String(err?.message || 'Unknown error')}`;
                     listEl.classList.add('hidden');
                 }
             };

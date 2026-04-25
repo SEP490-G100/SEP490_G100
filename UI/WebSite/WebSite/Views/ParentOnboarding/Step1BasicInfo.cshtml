@@ -31,8 +31,8 @@
                     <div class="nm-form-grid">
                         <div class="nm-col-12">
                             <div class="nm-section-card">
-                                <div class="nm-section-title">Thong tin ca nhan</div>
-                                <div class="nm-section-note">Anh dai dien, ho ten va dia chi co ban se duoc dung cho ho so parent sau khi onboarding hoan tat.</div>
+                                <div class="nm-section-title">Thông Tin Cá Nhân</div>
+                                <div class="nm-section-note">Ảnh đại diện, Họ Tên và địa chỉ cơ bản sẽ được dùng cho hồ sơ phụ huynh sau khi nhập thông tin hồ sơ hoàn tất </div>
 
                                 <div class="nm-form-grid">
                                     <div class="nm-col-12">
@@ -94,14 +94,7 @@
                                     <div class="nm-col-6">
                                         <div class="nm-field">
                                             <label asp-for="City" class="nm-label">Tỉnh / Thành phố <span class="required">*</span></label>
-                                            <input type="hidden" asp-for="City" id="City" />
-                                            <div class="nm-cf-dropdown" id="dd_city">
-                                                <button type="button" class="nm-cf-dropdown-trigger" aria-label="Chọn tỉnh thành">
-                                                    <span id="CityDisplay" class="nm-cf-dropdown-text nm-cf-dropdown-placeholder">Chọn tỉnh / thành</span>
-                                                    <span class="material-icons-round nm-cf-dropdown-arrow">expand_more</span>
-                                                </button>
-                                                <div class="nm-cf-dropdown-menu" id="CityMenu"></div>
-                                            </div>
+                                            <input asp-for="City" id="City" class="nm-input nm-location-input" autocomplete="off" placeholder="Nhập hoặc chọn thành phố" />
                                             <span asp-validation-for="City" class="nm-error"></span>
                                         </div>
                                     </div>
@@ -109,14 +102,7 @@
                                     <div class="nm-col-6">
                                         <div class="nm-field">
                                             <label asp-for="District" class="nm-label">Quận / Huyện / Phường <span class="required">*</span></label>
-                                            <input type="hidden" asp-for="District" id="District" />
-                                            <div class="nm-cf-dropdown is-disabled" id="dd_district">
-                                                <button type="button" class="nm-cf-dropdown-trigger" aria-label="Chọn khu vực">
-                                                    <span id="DistrictDisplay" class="nm-cf-dropdown-text nm-cf-dropdown-placeholder">Chọn khu vực</span>
-                                                    <span class="material-icons-round nm-cf-dropdown-arrow">expand_more</span>
-                                                </button>
-                                                <div class="nm-cf-dropdown-menu" id="DistrictMenu"></div>
-                                            </div>
+                                            <input asp-for="District" id="District" class="nm-input nm-location-input" autocomplete="off" placeholder="Nhập hoặc chọn phường/xã" />
                                             <span asp-validation-for="District" class="nm-error"></span>
                                         </div>
                                     </div>
@@ -218,126 +204,45 @@
         color: #64748b;
     }
 
-    .nm-cf-dropdown {
+    .nm-field.autocomplete-field {
         position: relative;
-        z-index: 2;
     }
 
-    .nm-cf-dropdown.open {
-        z-index: 2200;
-    }
-
-    .nm-field.nm-dropdown-active {
-        z-index: 2200;
-    }
-
-    .nm-section-card.nm-dropdown-active {
-        z-index: 2300;
-    }
-
-    .nm-cf-dropdown-trigger {
-        width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        min-height: 54px;
-        padding: 0 16px;
-        border: 1.5px solid #dbe3ec;
-        border-radius: 18px;
-        background: #fff;
-        cursor: pointer;
-        transition: border-color .15s, box-shadow .15s;
-    }
-
-    .nm-cf-dropdown:not(.is-disabled) .nm-cf-dropdown-trigger:hover {
-        border-color: #fdba74;
-    }
-
-    .nm-cf-dropdown.open .nm-cf-dropdown-trigger {
-        border-color: #f97316;
-        box-shadow: 0 0 0 3px rgba(249, 115, 22, .12);
-        border-bottom-left-radius: 0;
-        border-bottom-right-radius: 0;
-    }
-
-    .nm-cf-dropdown.is-disabled .nm-cf-dropdown-trigger {
-        background: #f8fafc;
-        color: #9ca3af;
-        cursor: not-allowed;
-    }
-
-    .nm-cf-dropdown-text {
-        font-size: 16px;
-        font-weight: 600;
-        color: #0f172a;
-    }
-
-    .nm-cf-dropdown-placeholder {
-        color: #94a3b8;
-        font-weight: 500;
-    }
-
-    .nm-cf-dropdown-arrow {
-        font-size: 20px !important;
-        color: #f97316;
-        transition: transform .2s;
-        flex-shrink: 0;
-    }
-
-    .nm-cf-dropdown.open .nm-cf-dropdown-arrow {
-        transform: rotate(180deg);
-    }
-
-    .nm-cf-dropdown-menu {
-        display: none;
+    .nm-field .ac-dropdown {
         position: absolute;
+        top: calc(100% + 6px);
         left: 0;
         right: 0;
-        top: 100%;
-        max-height: 260px;
+        z-index: 80;
+        margin: 0;
+        padding: 6px;
+        list-style: none;
+        max-height: 230px;
         overflow-y: auto;
+        border-radius: 16px;
+        border: 1px solid #fed7aa;
         background: #fff;
-        border: 1.5px solid #f97316;
-        border-top: none;
-        border-bottom-left-radius: 16px;
-        border-bottom-right-radius: 16px;
-        box-shadow: 0 10px 26px rgba(15, 23, 42, .12);
-        z-index: 2250;
+        box-shadow: 0 14px 28px rgba(15, 23, 42, .12);
+        display: none;
     }
 
-    .nm-cf-dropdown.open .nm-cf-dropdown-menu {
+    .nm-field .ac-dropdown.show {
         display: block;
     }
 
-    .nm-cf-dropdown-option {
-        padding: 12px 16px;
+    .nm-field .ac-dropdown li {
+        padding: 10px 12px;
+        border-radius: 12px;
         font-size: 14px;
-        font-weight: 500;
+        font-weight: 600;
         color: #334155;
         cursor: pointer;
-        border-bottom: 1px solid #ffedd5;
-        transition: background .1s, color .1s;
+        transition: background .12s ease, color .12s ease;
     }
 
-    .nm-cf-dropdown-option:last-child {
-        border-bottom: none;
-    }
-
-    .nm-cf-dropdown-option:hover {
+    .nm-field .ac-dropdown li:hover {
         background: #fff7ed;
         color: #c2410c;
-    }
-
-    .nm-cf-dropdown-option.is-selected {
-        background: #fff7ed;
-        color: #c2410c;
-        font-weight: 700;
-    }
-
-    .nm-cf-dropdown-option.is-disabled {
-        color: #94a3b8;
-        cursor: default;
-        background: #fff;
     }
 
     @@media (max-width: 640px) {
@@ -351,6 +256,7 @@
     }
 </style>
 
+<script src="~/js/location-autocomplete.js" asp-append-version="true"></script>
 <script>
 (function () {
     var form = document.querySelector('.nm-basic-form');
@@ -499,190 +405,75 @@
 
     var cityInput = document.getElementById('City');
     var districtInput = document.getElementById('District');
-    var cityDisplay = document.getElementById('CityDisplay');
-    var districtDisplay = document.getElementById('DistrictDisplay');
-    var cityMenu = document.getElementById('CityMenu');
-    var districtMenu = document.getElementById('DistrictMenu');
-    var cityDropdown = document.getElementById('dd_city');
-    var districtDropdown = document.getElementById('dd_district');
+    var fullNameInput = document.getElementById('FullName');
+    var phoneInput = document.getElementById('PhoneNumber');
 
     var addressInput = document.getElementById('Address');
     var latEl = document.getElementById('Latitude');
     var lngEl = document.getElementById('Longitude');
     var addressLoadError = document.getElementById('addressLoadError');
-    var provinces = [];
-    var selectedProvince = null;
+    var draftKey = 'nm_parent_onboarding_step1_draft_v1';
+
+    function safeGetStorageItem(key) {
+        try { return window.localStorage.getItem(key); } catch (e) { return null; }
+    }
+
+    function safeSetStorageItem(key, value) {
+        try { window.localStorage.setItem(key, value); } catch (e) { }
+    }
+
+    function safeRemoveStorageItem(key) {
+        try { window.localStorage.removeItem(key); } catch (e) { }
+    }
+
+    function buildDraftPayload() {
+        return {
+            FullName: fullNameInput ? fullNameInput.value : '',
+            PhoneNumber: phoneInput ? phoneInput.value : '',
+            DateOfBirth: dobInput ? dobInput.value : '',
+            Address: addressInput ? addressInput.value : '',
+            City: cityInput ? cityInput.value : '',
+            District: districtInput ? districtInput.value : '',
+            Latitude: latEl ? latEl.value : '',
+            Longitude: lngEl ? lngEl.value : '',
+            SavedAt: new Date().toISOString()
+        };
+    }
+
+    function saveDraft() {
+        safeSetStorageItem(draftKey, JSON.stringify(buildDraftPayload()));
+    }
+
+    function restoreDraft() {
+        var raw = safeGetStorageItem(draftKey);
+        if (!raw) return;
+
+        var draft = null;
+        try {
+            draft = JSON.parse(raw);
+        } catch (e) {
+            safeRemoveStorageItem(draftKey);
+            return;
+        }
+
+        if (!draft || typeof draft !== 'object') return;
+
+        if (fullNameInput && typeof draft.FullName === 'string') fullNameInput.value = draft.FullName;
+        if (phoneInput && typeof draft.PhoneNumber === 'string') phoneInput.value = draft.PhoneNumber;
+        if (dobInput && typeof draft.DateOfBirth === 'string') dobInput.value = draft.DateOfBirth;
+        if (addressInput && typeof draft.Address === 'string') addressInput.value = draft.Address;
+        if (cityInput && typeof draft.City === 'string') cityInput.value = draft.City;
+        if (districtInput && typeof draft.District === 'string') districtInput.value = draft.District;
+        if (latEl && typeof draft.Latitude === 'string') latEl.value = draft.Latitude;
+        if (lngEl && typeof draft.Longitude === 'string') lngEl.value = draft.Longitude;
+    }
+
+    restoreDraft();
 
     function showAddressLoadError(message) {
         if (!addressLoadError) return;
         addressLoadError.textContent = message || '';
         addressLoadError.classList.toggle('hidden', !message);
-    }
-
-    function normalizeText(value) {
-        return (value || '')
-            .toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .replace(/đ/g, 'd')
-            .trim();
-    }
-
-    function setDropdownOpenState(dropdown, isOpen) {
-        if (!dropdown) return;
-        dropdown.classList.toggle('open', !!isOpen);
-
-        var parentField = dropdown.closest('.nm-field');
-        var parentCard = dropdown.closest('.nm-section-card');
-        if (parentField) parentField.classList.toggle('nm-dropdown-active', !!isOpen);
-        if (parentCard) parentCard.classList.toggle('nm-dropdown-active', !!isOpen);
-    }
-
-    function closeAllDropdowns() {
-        document.querySelectorAll('.nm-cf-dropdown.open').forEach(function (dd) {
-            setDropdownOpenState(dd, false);
-        });
-    }
-
-    function setDropdownDisabled(dropdown, disabled) {
-        if (!dropdown) return;
-        dropdown.classList.toggle('is-disabled', !!disabled);
-        if (disabled) {
-            setDropdownOpenState(dropdown, false);
-        }
-    }
-
-    function setDisplayText(el, value, placeholder) {
-        if (!el) return;
-        el.textContent = value || placeholder;
-        el.classList.toggle('nm-cf-dropdown-placeholder', !value);
-    }
-
-    function createOption(text, onClick, selected, disabled) {
-        var opt = document.createElement('div');
-        opt.className = 'nm-cf-dropdown-option';
-        if (selected) opt.classList.add('is-selected');
-        if (disabled) opt.classList.add('is-disabled');
-        opt.textContent = text;
-        if (!disabled && typeof onClick === 'function') {
-            opt.addEventListener('click', onClick);
-        }
-        return opt;
-    }
-
-    function findProvinceByName(name) {
-        var target = normalizeText(name);
-        return provinces.find(function (p) {
-            return normalizeText(p.name) === target;
-        });
-    }
-
-    function findDistrictByName(province, name) {
-        if (!province || !Array.isArray(province.districts)) return null;
-        var target = normalizeText(name);
-        return province.districts.find(function (d) {
-            return normalizeText(d.name) === target;
-        });
-    }
-
-    function renderCityOptions() {
-        if (!cityMenu) return;
-        cityMenu.innerHTML = '';
-        if (!provinces.length) {
-            cityMenu.appendChild(createOption('Không có dữ liệu tỉnh/thành', null, false, true));
-            return;
-        }
-        provinces.forEach(function (p) {
-            var selected = normalizeText(cityInput.value) === normalizeText(p.name);
-            cityMenu.appendChild(createOption(p.name, function () {
-                selectCity(p.name, false);
-                closeAllDropdowns();
-            }, selected, false));
-        });
-    }
-
-    function renderDistrictOptions() {
-        if (!districtMenu) return;
-        districtMenu.innerHTML = '';
-
-        if (!selectedProvince) {
-            districtMenu.appendChild(createOption('Vui lòng chọn tỉnh/thành trước', null, false, true));
-            return;
-        }
-
-        var districts = selectedProvince.districts || [];
-        if (!districts.length) {
-            districtMenu.appendChild(createOption('Không có dữ liệu khu vực', null, false, true));
-            return;
-        }
-
-        districts.forEach(function (d) {
-            var selected = normalizeText(districtInput.value) === normalizeText(d.name);
-            districtMenu.appendChild(createOption(d.name, function () {
-                selectDistrict(d.name);
-                closeAllDropdowns();
-            }, selected, false));
-        });
-    }
-
-    function selectCity(cityName, keepDistrict) {
-        var province = findProvinceByName(cityName);
-        selectedProvince = province || null;
-
-        if (!province) {
-            // Keep user's posted values on validation roundtrip even if
-            // API location naming changed and cannot map back exactly.
-            setDisplayText(cityDisplay, cityInput.value || cityName || '', 'Chọn tỉnh / thành');
-            setDisplayText(districtDisplay, districtInput.value || '', 'Chọn khu vực');
-            setDropdownDisabled(districtDropdown, !districtInput.value);
-            districtMenu.innerHTML = '';
-            if (districtInput.value) {
-                districtMenu.appendChild(createOption(districtInput.value, null, true, true));
-            } else {
-                districtMenu.appendChild(createOption('Vui lòng chọn tỉnh/thành trước', null, false, true));
-            }
-            return;
-        }
-
-        cityInput.value = province.name;
-        setDisplayText(cityDisplay, province.name, 'Chọn tỉnh / thành');
-        setDropdownDisabled(districtDropdown, false);
-
-        if (!keepDistrict) {
-            districtInput.value = '';
-            setDisplayText(districtDisplay, '', 'Chọn khu vực');
-        }
-
-        renderCityOptions();
-        renderDistrictOptions();
-
-        if (keepDistrict && districtInput.value) {
-            selectDistrict(districtInput.value);
-        }
-
-        autoGeocode();
-    }
-
-    function selectDistrict(districtName) {
-        if (!selectedProvince) {
-            districtInput.value = '';
-            setDisplayText(districtDisplay, '', 'Chọn khu vực');
-            renderDistrictOptions();
-            return;
-        }
-
-        var district = findDistrictByName(selectedProvince, districtName);
-        if (!district) {
-            districtInput.value = '';
-            setDisplayText(districtDisplay, '', 'Chọn khu vực');
-            renderDistrictOptions();
-            return;
-        }
-
-        districtInput.value = district.name;
-        setDisplayText(districtDisplay, district.name, 'Chọn khu vực');
-        renderDistrictOptions();
-        autoGeocode();
     }
 
     function autoGeocode() {
@@ -704,68 +495,45 @@
                 var lng = item.longitude != null ? item.longitude : item.Longitude;
                 if (latEl && lat != null) latEl.value = lat;
                 if (lngEl && lng != null) lngEl.value = lng;
+                saveDraft();
             })
             .catch(function () { });
     }
 
-    document.querySelectorAll('.nm-cf-dropdown-trigger').forEach(function (trigger) {
-        trigger.addEventListener('click', function () {
-            var dropdown = trigger.closest('.nm-cf-dropdown');
-            if (!dropdown || dropdown.classList.contains('is-disabled')) return;
-            if (dropdown.classList.contains('open')) {
-                setDropdownOpenState(dropdown, false);
-            } else {
-                closeAllDropdowns();
-                setDropdownOpenState(dropdown, true);
-            }
-        });
-    });
+    var geoDebounceTimer;
+    function scheduleGeocode() {
+        clearTimeout(geoDebounceTimer);
+        geoDebounceTimer = setTimeout(autoGeocode, 300);
+    }
 
-    document.addEventListener('click', function (event) {
-        if (!event.target.closest('.nm-cf-dropdown')) {
-            closeAllDropdowns();
-        }
-    });
-
-    var debounceTimer;
     if (addressInput) {
         addressInput.addEventListener('blur', function () {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(autoGeocode, 300);
+            scheduleGeocode();
         });
     }
 
-    setDropdownDisabled(cityDropdown, true);
-    setDropdownDisabled(districtDropdown, true);
-    setDisplayText(cityDisplay, cityInput ? cityInput.value : '', 'Chọn tỉnh / thành');
-    setDisplayText(districtDisplay, districtInput ? districtInput.value : '', 'Chọn khu vực');
-    renderDistrictOptions();
+    [fullNameInput, phoneInput, dobInput, addressInput, cityInput, districtInput].forEach(function (el) {
+        if (!el) return;
+        el.addEventListener('input', saveDraft);
+        el.addEventListener('change', saveDraft);
+    });
 
-    fetch('/Address/LocationTree')
-        .then(function (r) {
-            if (!r.ok) throw new Error('address-load-failed');
-            return r.json();
+    if (window.NMLocationAutocomplete && cityInput && districtInput) {
+        window.NMLocationAutocomplete.initPair({
+            cityInputId: 'City',
+            districtInputId: 'District',
+            onLocationChange: scheduleGeocode
         })
-        .then(function (data) {
-            provinces = data || [];
-            renderCityOptions();
-            setDropdownDisabled(cityDropdown, false);
-            showAddressLoadError('');
-
-            if (cityInput && cityInput.value) {
-                selectCity(cityInput.value, true);
-            } else {
-                setDropdownDisabled(districtDropdown, true);
-                renderDistrictOptions();
-            }
-        })
-        .catch(function () {
-            provinces = [];
-            renderCityOptions();
-            setDropdownDisabled(cityDropdown, true);
-            setDropdownDisabled(districtDropdown, true);
-            showAddressLoadError('Không tải được danh sách tỉnh thành. Vui lòng thử lại sau.');
-        });
+            .then(function () {
+                showAddressLoadError('');
+                saveDraft();
+            })
+            .catch(function () {
+                showAddressLoadError('Không tải được danh sách tỉnh thành. Vui lòng thử lại sau.');
+            });
+    } else {
+        showAddressLoadError('Không tải được danh sách tỉnh thành. Vui lòng thử lại sau.');
+    }
 
     if (form) {
         function setValidationMessage(fieldName, message) {
@@ -806,7 +574,12 @@
             var requiredOk = validateRequiredFields();
             if (!dateOk || !requiredOk) {
                 event.preventDefault();
+                saveDraft();
+                return;
             }
+
+            // Keep draft right before submit so refresh/back still restores latest input.
+            saveDraft();
         });
     }
 })();

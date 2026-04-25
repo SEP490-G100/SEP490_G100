@@ -348,7 +348,7 @@ function confirmToggle(id, sortOrder, wasActive) {
                     toggleBtn.querySelector('span').textContent = 'check_circle_outline';
                 }
             }
-            triggerToast(nowActive ? 'success' : 'warning', data.message);
+            triggerToast('success', data.message);
         } else {
             triggerToast('error', data.message || 'Không thể thay đổi trạng thái.');
         }
@@ -364,10 +364,8 @@ function confirmToggle(id, sortOrder, wasActive) {
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
 function triggerToast(type, msg) {
-    var normalizedType = String(type || 'info').toLowerCase();
-    var mappedType = normalizedType === 'success'
-        ? 'success'
-        : (normalizedType === 'warning' || normalizedType === 'warn' ? 'warning' : 'error');
+    var normalizedType = String(type || 'error').toLowerCase();
+    var mappedType = normalizedType === 'success' ? 'success' : 'error';
 
     if (typeof window.showToast === 'function') {
         window.showToast(msg || '', { type: mappedType });

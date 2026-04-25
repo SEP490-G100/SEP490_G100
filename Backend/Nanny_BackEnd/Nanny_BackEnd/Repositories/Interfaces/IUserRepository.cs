@@ -25,6 +25,7 @@ public interface IUserRepository
     Task<List<Guid>> GetActiveUserIdsByRolesAsync(IEnumerable<string> roleNames);
     Task<List<string>> GetNotificationAssignableRolesAsync();
     Task<bool> IsEmailInUseAsync(string email);
+    Task<bool> IsPhoneInUseAsync(string phoneNumber);
     Task<Role?> GetRoleByNameAsync(string roleName);
     Task<User?> GetUserByIdAndRoleAsync(Guid id, string roleName);
     void AddUserRole(UserRole userRole);

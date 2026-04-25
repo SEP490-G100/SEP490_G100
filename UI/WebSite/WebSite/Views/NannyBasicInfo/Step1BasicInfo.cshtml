@@ -45,7 +45,11 @@
                                     <div class="nm-col-12">
                                         <div class="nm-field">
                                             <label asp-for="AvatarFile" class="nm-label">Ảnh đại diện</label>
-                                            <input type="file" asp-for="AvatarFile" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="nm-file" />
+                                            <div class="nm-avatar-upload">
+                                                <input type="file" asp-for="AvatarFile" id="AvatarFile" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="nm-avatar-file-input" />
+                                                <button id="avatarPickBtn" type="button" class="nm-avatar-pick-btn">Chọn ảnh</button>
+                                                <span id="avatarFileName" class="nm-avatar-file-name">Chưa chọn tệp</span>
+                                            </div>
                                             <div class="nm-field-hint">Nên dùng ảnh rõ mặt, đúng định dạng .jpg, .jpeg, .png.</div>
                                             <div id="avatarUploadError" class="nm-error hidden"></div>
                                             <div class="mt-3">
@@ -76,7 +80,7 @@
                                     <div class="nm-col-6">
                                         <div class="nm-field">
                                             <label asp-for="Gender" class="nm-label">Giới tính <span class="required">*</span></label>
-                                            <select asp-for="Gender" class="nm-select">
+                                            <select asp-for="Gender" class="nm-select" data-nm-select-mode="click">
                                                 <option value="">Chọn giới tính</option>
                                                 <option value="0">Nam</option>
                                                 <option value="1">Nữ</option>
@@ -97,9 +101,7 @@
                                     <div class="nm-col-6">
                                         <div class="nm-field">
                                             <label asp-for="City" class="nm-label">Tỉnh / Thành phố <span class="required">*</span></label>
-                                            <select asp-for="City" id="City" class="nm-select">
-                                                <option value="">Chọn tỉnh / thành</option>
-                                            </select>
+                                            <input asp-for="City" id="City" class="nm-input nm-location-input" autocomplete="off" placeholder="Nhập hoặc chọn thành phố" />
                                             <span asp-validation-for="City" class="nm-error"></span>
                                         </div>
                                     </div>
@@ -107,9 +109,7 @@
                                     <div class="nm-col-6">
                                         <div class="nm-field">
                                             <label asp-for="District" class="nm-label">Quận / Huyện / Phường <span class="required">*</span></label>
-                                            <select asp-for="District" id="District" class="nm-select">
-                                                <option value="">Chọn khu vực</option>
-                                            </select>
+                                            <input asp-for="District" id="District" class="nm-input nm-location-input" autocomplete="off" placeholder="Nhập hoặc chọn phường/xã" />
                                             <span asp-validation-for="District" class="nm-error"></span>
                                         </div>
                                     </div>
@@ -130,12 +130,98 @@
     </div>
 </div>
 
+<style>
+    .nm-avatar-upload {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        padding: 12px 14px;
+        border: 1px dashed #fdba74;
+        border-radius: 16px;
+        background: #fff7ed;
+    }
+
+    .nm-avatar-file-input {
+        display: none;
+    }
+
+    .nm-avatar-pick-btn {
+        width: fit-content;
+        min-height: 40px;
+        padding: 0 16px;
+        border-radius: 999px;
+        border: 1px solid #f97316;
+        background: #fff;
+        color: #ea580c;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: .15s ease;
+    }
+
+    .nm-avatar-pick-btn:hover {
+        background: #fff7ed;
+        transform: translateY(-1px);
+    }
+
+    .nm-avatar-file-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: #64748b;
+    }
+
+    .nm-field.autocomplete-field {
+        position: relative;
+    }
+
+    .nm-field .ac-dropdown {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        right: 0;
+        z-index: 80;
+        margin: 0;
+        padding: 6px;
+        list-style: none;
+        max-height: 230px;
+        overflow-y: auto;
+        border-radius: 16px;
+        border: 1px solid #fed7aa;
+        background: #fff;
+        box-shadow: 0 14px 28px rgba(15, 23, 42, .12);
+        display: none;
+    }
+
+    .nm-field .ac-dropdown.show {
+        display: block;
+    }
+
+    .nm-field .ac-dropdown li {
+        padding: 10px 12px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #334155;
+        cursor: pointer;
+        transition: background .12s ease, color .12s ease;
+    }
+
+    .nm-field .ac-dropdown li:hover {
+        background: #fff7ed;
+        color: #c2410c;
+    }
+</style>
+
+<script src="~/js/location-autocomplete.js" asp-append-version="true"></script>
 <script>
 (function () {
     var avatarInput = document.getElementById('AvatarFile');
+    var avatarPickBtn = document.getElementById('avatarPickBtn');
+    var avatarFileName = document.getElementById('avatarFileName');
     var avatarErr = document.getElementById('avatarUploadError');
     var avatarPreview = document.getElementById('avatarPreview');
-    var currentAvatarUrl = '@(Model.AvatarUrl ?? "")';
+    var currentAvatarUrl = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AvatarUrl ?? ""));
     var objectUrl = null;
 
     function showAvatarError(msg) {
@@ -169,9 +255,19 @@
     if (currentAvatarUrl) {
         setPreview(currentAvatarUrl);
 
+        if (avatarFileName) {
+            avatarFileName.textContent = 'Đang dùng ảnh hiện tại';
+        }
+
         if (typeof window.updateCurrentUserAvatar === 'function') {
             window.updateCurrentUserAvatar(currentAvatarUrl);
         }
+    }
+
+    if (avatarPickBtn && avatarInput) {
+        avatarPickBtn.addEventListener('click', function () {
+            avatarInput.click();
+        });
     }
 
     if (avatarInput) {
@@ -181,6 +277,7 @@
 
             var file = avatarInput.files && avatarInput.files[0] ? avatarInput.files[0] : null;
             if (!file) {
+                if (avatarFileName) avatarFileName.textContent = currentAvatarUrl ? 'Đang dùng ảnh hiện tại' : 'Chưa chọn tệp';
                 if (currentAvatarUrl) setPreview(currentAvatarUrl);
                 return;
             }
@@ -188,10 +285,21 @@
             if (!isAllowedImage(file)) {
                 avatarInput.value = '';
                 showAvatarError('Chỉ cho phép upload ảnh .png, .jpg, .jpeg.');
+                if (avatarFileName) avatarFileName.textContent = currentAvatarUrl ? 'Đang dùng ảnh hiện tại' : 'Chưa chọn tệp';
                 if (currentAvatarUrl) setPreview(currentAvatarUrl);
                 return;
             }
 
+            var maxSize = 5 * 1024 * 1024;
+            if (file.size > maxSize) {
+                avatarInput.value = '';
+                showAvatarError('Dung lượng ảnh không được vượt quá 5MB.');
+                if (avatarFileName) avatarFileName.textContent = currentAvatarUrl ? 'Đang dùng ảnh hiện tại' : 'Chưa chọn tệp';
+                if (currentAvatarUrl) setPreview(currentAvatarUrl);
+                return;
+            }
+
+            if (avatarFileName) avatarFileName.textContent = file.name;
             objectUrl = URL.createObjectURL(file);
             setPreview(objectUrl);
         });
@@ -200,13 +308,12 @@
     var form = document.querySelector('form[asp-action], form');
     var dateOfBirthInput = document.getElementById('DateOfBirth');
     var dateOfBirthClientError = document.getElementById('dateOfBirthClientError');
-    var citySelect = document.getElementById('City');
-    var districtSelect = document.getElementById('District');
+    var cityInput = document.getElementById('City');
+    var districtInput = document.getElementById('District');
     var addressInput = document.getElementById('Address');
     var latEl = document.getElementById('Latitude');
     var lngEl = document.getElementById('Longitude');
     var addressLoadError = document.getElementById('addressLoadError');
-    var provinces = [];
     if (dateOfBirthInput) {
         var today = new Date();
         var todayStr = today.toISOString().split('T')[0];
@@ -244,122 +351,25 @@
         }
     }
 
-    setAddressSelectState(true);
-
-    fetch('/Address/LocationTree')
-        .then(function (r) {
-            if (!r.ok) throw new Error('address-load-failed');
-            return r.json();
-        })
-        .then(function (data) {
-            provinces = data || [];
-            provinces.forEach(function (p) {
-                var opt = document.createElement('option');
-                opt.value = p.name;
-                opt.textContent = p.name;
-                opt.dataset.code = p.code;
-                citySelect.appendChild(opt);
-            });
-
-            preselectFromModel();
-            showAddressLoadError('');
-            setAddressSelectState(false);
-        })
-        .catch(function () {
-            provinces = [];
-            setAddressSelectState(true);
-            showAddressLoadError('Không tải được danh sách tỉnh thành. Vui lòng thử lại sau.');
-        });
-
-    function setAddressSelectState(disabled) {
-        citySelect.disabled = disabled;
-        districtSelect.disabled = disabled;
-    }
-
     function showAddressLoadError(message) {
         if (!addressLoadError) return;
         addressLoadError.textContent = message || '';
         addressLoadError.classList.toggle('hidden', !message);
     }
 
-    function normalizeText(value) {
-        return (value || '')
-            .toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .replace(/đ/g, 'd')
-            .trim();
+    var geoDebounceTimer;
+    function scheduleGeocode() {
+        clearTimeout(geoDebounceTimer);
+        geoDebounceTimer = setTimeout(autoGeocode, 300);
     }
 
-    function setSelectByNormalized(selectEl, value) {
-        var target = normalizeText(value);
-        if (!target) return;
-        for (var i = 0; i < selectEl.options.length; i++) {
-            if (normalizeText(selectEl.options[i].value) === target) {
-                selectEl.value = selectEl.options[i].value;
-                return;
-            }
-        }
+    if (addressInput) {
+        addressInput.addEventListener('blur', scheduleGeocode);
     }
-
-    function preselectFromModel() {
-        var currentCity = '@(Model.City ?? "")';
-        var currentDistrict = '@(Model.District ?? "")';
-        if (currentCity) {
-            setSelectByNormalized(citySelect, currentCity);
-            onCityChange(function () {
-                if (currentDistrict) {
-                    setSelectByNormalized(districtSelect, currentDistrict);
-                    onDistrictChange();
-                }
-            });
-        }
-    }
-
-    function onCityChange(callback) {
-        districtSelect.innerHTML = '<option value="">Chọn khu vực</option>';
-
-        var selectedCity = normalizeText(citySelect.value);
-        var selected = provinces.find(function (p) { return normalizeText(p.name) === selectedCity; });
-        if (!selected) { if (callback) callback(); return; }
-
-        selected.districts.forEach(function (d) {
-            var opt = document.createElement('option');
-            opt.value = d.name;
-            opt.textContent = d.name;
-            opt.dataset.code = d.code;
-            districtSelect.appendChild(opt);
-        });
-
-        if (callback) callback();
-        autoGeocode();
-    }
-
-    function onDistrictChange(callback) {
-        var selectedCity = normalizeText(citySelect.value);
-        var selectedProv = provinces.find(function (p) { return normalizeText(p.name) === selectedCity; });
-        if (!selectedProv) { if (callback) callback(); return; }
-
-        var selectedDistrict = normalizeText(districtSelect.value);
-        var selectedDist = selectedProv.districts.find(function (d) { return normalizeText(d.name) === selectedDistrict; });
-        if (!selectedDist) { if (callback) callback(); return; }
-
-        if (callback) callback();
-        autoGeocode();
-    }
-
-    citySelect.addEventListener('change', function () { onCityChange(); });
-    districtSelect.addEventListener('change', function () { onDistrictChange(); });
-
-    var debounceTimer;
-    addressInput.addEventListener('blur', function () {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(autoGeocode, 300);
-    });
 
     function autoGeocode() {
-        var city = (citySelect.value || '').trim();
-        var dist = (districtSelect.value || '').trim();
+        var city = (cityInput && cityInput.value ? cityInput.value : '').trim();
+        var dist = (districtInput && districtInput.value ? districtInput.value : '').trim();
         if (!city) return;
 
         var parts = [];
@@ -378,6 +388,22 @@
                 if (lngEl && lng != null) lngEl.value = lng;
             })
             .catch(function () { });
+    }
+
+    if (window.NMLocationAutocomplete && cityInput && districtInput) {
+        window.NMLocationAutocomplete.initPair({
+            cityInputId: 'City',
+            districtInputId: 'District',
+            onLocationChange: scheduleGeocode
+        })
+            .then(function () {
+                showAddressLoadError('');
+            })
+            .catch(function () {
+                showAddressLoadError('Không tải được danh sách tỉnh thành. Vui lòng thử lại sau.');
+            });
+    } else {
+        showAddressLoadError('Không tải được danh sách tỉnh thành. Vui lòng thử lại sau.');
     }
 })();
 </script>

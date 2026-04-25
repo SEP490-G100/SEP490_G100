@@ -286,12 +286,12 @@ async function toggleNannyFavorite(nannyId, event) {
   event?.stopPropagation?.();
 
   if (!isLoggedIn()) {
-    showNannyToast('Vui lòng đăng nhập để yêu thích bảo mẫu.', 'warning');
+    showNannyToast('Vui lòng đăng nhập để yêu thích bảo mẫu.', 'error');
     return;
   }
 
   if (!isParentRole()) {
-    showNannyToast('Chỉ phụ huynh mới có quyền yêu thích bảo mẫu.', 'warning');
+    showNannyToast('Chỉ phụ huynh mới có quyền yêu thích bảo mẫu.', 'error');
     return;
   }
 
@@ -310,7 +310,7 @@ async function toggleNannyFavorite(nannyId, event) {
     setNannyFavoriteState(nannyId, favoriteState);
     showNannyToast(
       json.message || (favoriteState ? 'Đã yêu thích bảo mẫu.' : 'Đã bỏ yêu thích.'),
-      favoriteState ? 'success' : 'info'
+      'success'
     );
   } catch {
     showNannyToast('Không thể cập nhật yêu thích.', 'error');
@@ -324,12 +324,12 @@ function toggleNannyFavoriteFromDetail(event) {
 
 async function sendContactRequest(nannyProfileId, message) {
   if (!isLoggedIn()) {
-    showNannyToast('Vui lòng đăng nhập để gửi yêu cầu liên hệ.', 'warning');
+    showNannyToast('Vui lòng đăng nhập để gửi yêu cầu liên hệ.', 'error');
     return null;
   }
 
   if (!isParentRole()) {
-    showNannyToast('Chỉ phụ huynh mới có quyền gửi yêu cầu liên hệ.', 'warning');
+    showNannyToast('Chỉ phụ huynh mới có quyền gửi yêu cầu liên hệ.', 'error');
     return null;
   }
 

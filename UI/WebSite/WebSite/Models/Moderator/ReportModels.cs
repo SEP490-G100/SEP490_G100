@@ -24,14 +24,14 @@ public class ModeratorReportListItemDto
     public bool IsDeleted { get; set; }
 
     public bool IsActive => !IsDeleted;
-    public string StatusLabel => Status == 1 ? "Completed" : "Pending";
+    public string StatusLabel => Status == 1 ? "Đã xử lý" : "Chờ xử lý";
     public string StatusClass => Status == 1 ? "badge-active" : "badge-pending";
     public string EntityTypeLabel => ReportedEntityType switch
     {
-        "JobPosting" => "Job Posting",
-        "Conversation" => "Conversation",
-        "Message" => "Message",
-        "Profile" => "Profile",
+        "JobPosting" => "Bài đăng",
+        "Conversation" => "Cuộc trò chuyện",
+        "Message" => "Tin nhắn",
+        "Profile" => "Hồ sơ",
         _ => ReportedEntityType
     };
     public string ReporterDisplay => string.IsNullOrWhiteSpace(ReporterName) ? ReporterEmail : ReporterName;
@@ -72,14 +72,14 @@ public class ModeratorReportDetailDto
     public DateTime? UpdatedAt { get; set; }
     public bool IsDeleted { get; set; }
 
-    public string StatusLabel => Status == 1 ? "Completed" : "Pending";
+    public string StatusLabel => Status == 1 ? "Đã xử lý" : "Chờ xử lý";
     public string StatusClass => Status == 1 ? "badge-active" : "badge-pending";
     public string EntityTypeLabel => ReportedEntityType switch
     {
-        "JobPosting" => "Job Posting",
-        "Conversation" => "Conversation",
-        "Message" => "Message",
-        "Profile" => "Profile",
+        "JobPosting" => "Bài đăng",
+        "Conversation" => "Cuộc trò chuyện",
+        "Message" => "Tin nhắn",
+        "Profile" => "Hồ sơ",
         _ => ReportedEntityType
     };
     public string ReporterDisplay => string.IsNullOrWhiteSpace(ReporterName) ? ReporterEmail : ReporterName;
@@ -87,15 +87,18 @@ public class ModeratorReportDetailDto
 
 public class ModeratorResolveReportRequest
 {
-    [Required(ErrorMessage = "Resolution is required.")]
-    [StringLength(1000, ErrorMessage = "Resolution must not exceed 1000 characters.")]
+    [Display(Name = "Kết quả xử lý")]
+    [Required(ErrorMessage = "Vui lòng nhập kết quả xử lý.")]
+    [StringLength(1000, ErrorMessage = "Kết quả xử lý không được vượt quá 1000 ký tự.")]
     public string Resolution { get; set; } = "";
 
-    [Required(ErrorMessage = "Action Taken is required.")]
-    [StringLength(200, ErrorMessage = "Action Taken must not exceed 200 characters.")]
+    [Display(Name = "Hành động đã thực hiện")]
+    [Required(ErrorMessage = "Vui lòng nhập hành động đã thực hiện.")]
+    [StringLength(200, ErrorMessage = "Hành động đã thực hiện không được vượt quá 200 ký tự.")]
     public string ActionTaken { get; set; } = "";
 
-    [StringLength(1000, ErrorMessage = "Offender notification message must not exceed 1000 characters.")]
+    [Display(Name = "Nội dung thông báo cho người vi phạm")]
+    [StringLength(1000, ErrorMessage = "Nội dung thông báo cho người vi phạm không được vượt quá 1000 ký tự.")]
     public string? OffenderNotificationMessage { get; set; }
 }
 

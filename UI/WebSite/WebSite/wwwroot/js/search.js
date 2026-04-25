@@ -554,12 +554,12 @@ async function toggleJobFavorite(jobId, event) {
   event?.stopPropagation?.();
 
   if (!isLoggedIn()) {
-    notifyToast('Vui lòng đăng nhập để lưu bài đăng.', 'warning');
+    notifyToast('Vui lòng đăng nhập để lưu bài đăng.', 'error');
     return;
   }
 
   if (!isNannyRole()) {
-    notifyToast('Chỉ bảo mẫu mới có quyền lưu bài đăng.', 'warning');
+    notifyToast('Chỉ bảo mẫu mới có quyền lưu bài đăng.', 'error');
     return;
   }
 
@@ -584,7 +584,7 @@ async function toggleJobFavorite(jobId, event) {
     setJobFavoriteState(jobId, favoriteState);
     notifyToast(
       payload?.message || json?.message || (favoriteState ? 'Đã lưu bài đăng.' : 'Đã bỏ lưu bài đăng.'),
-      favoriteState ? 'success' : 'info'
+      'success'
     );
   } catch {
     notifyToast('Không thể cập nhật lưu bài đăng.', 'error');
@@ -891,13 +891,13 @@ async function applyJob(jobId, event) {
   const realtimeToastType = 'job-application-submitted';
 
   if (!isLoggedIn()) {
-    notifyToast('Vui lòng đăng nhập để ứng tuyển bài đăng.', 'warning');
+    notifyToast('Vui lòng đăng nhập để ứng tuyển bài đăng.', 'error');
     window.location.href = '/Auth/Login';
     return;
   }
 
   if (!isNannyRole()) {
-    notifyToast('Chỉ bảo mẫu mới có quyền ứng tuyển bài đăng.', 'warning');
+    notifyToast('Chỉ bảo mẫu mới có quyền ứng tuyển bài đăng.', 'error');
     return;
   }
 
@@ -907,7 +907,7 @@ async function applyJob(jobId, event) {
   }
 
   if (isJobApplied(jobId)) {
-    notifyToast('Bạn đã gửi đơn ứng tuyển cho bài đăng này.', 'info');
+    notifyToast('Bạn đã gửi đơn ứng tuyển cho bài đăng này.', 'error');
     return;
   }
 
@@ -972,13 +972,13 @@ function openJobComplainModal(job, event) {
   event?.stopPropagation?.();
 
   if (!isLoggedIn()) {
-    notifyToast('Vui lòng đăng nhập để gửi khiếu nại.', 'warning');
+    notifyToast('Vui lòng đăng nhập để gửi khiếu nại.', 'error');
     window.location.href = '/Auth/Login';
     return;
   }
 
   if (!canComplainJob(job)) {
-    notifyToast('Bạn không thể khiếu nại bài đăng của chính mình.', 'warning');
+    notifyToast('Bạn không thể khiếu nại bài đăng của chính mình.', 'error');
     return;
   }
 
@@ -1026,7 +1026,7 @@ async function submitJobComplain() {
   const evidence = String(evidenceHtml || '').trim();
 
   if (reason.length < 5) {
-    notifyToast('Lý do khiếu nại phải có ít nhất 5 ký tự.', 'warning');
+    notifyToast('Lý do khiếu nại phải có ít nhất 5 ký tự.', 'error');
     if (typeof tinymce !== 'undefined' && tinymce.get('jobComplainReason')) tinymce.get('jobComplainReason').focus();
     else reasonEl?.focus();
     return;
@@ -1876,7 +1876,7 @@ function renderPreviewChildProfiles(job, childProfilesInput) {
           <div class="child-profile-panel__head">
           <p class="child-profile-panel__title">Bé thứ ${displayIndex}</p>
           </div>
-          <p class="child-profile-panel__empty">Chưa thấy Child Profile của bé này.</p>
+          <p class="child-profile-panel__empty">Chưa có hồ sơ của bé này.</p>
         </div>`;
       continue;
     }

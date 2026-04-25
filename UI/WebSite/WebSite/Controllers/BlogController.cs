@@ -382,8 +382,8 @@ public class BlogController : Controller
                 {
                     toastType = activate ? "success" : "warning",
                     toastMessage = activate
-                        ? "Blog activated successfully."
-                        : "Blog deactivated successfully."
+                        ? "Kích hoạt bài viết thành công."
+                        : "Ẩn bài viết thành công."
                 });
             }
 

@@ -333,6 +333,7 @@ public class JobService : IJobService
         var job = await _jobRepo.viewDetailPosting(jobId)
             ?? throw new KeyNotFoundException("Không tìm thấy tin đăng hoặc tin đã bị xóa.");
 
+        ensureJobModerationIsPending(job);
         var nowUtc = DateTime.UtcNow;
         job.ModerationStatus = approved
             ? (int)JobPostingModerationStatus.Approved
@@ -695,7 +696,7 @@ public class JobService : IJobService
             .OrderBy(c => c.CreatedAt)
             .ToList();
         if (children.Count == 0)
-            throw new InvalidOperationException("Vui lòng tạo ít nhất 1 Child Profile trước khi đăng bài.");
+            throw new InvalidOperationException("Vui lòng tạo ít nhất 1 hồ sơ trẻ trước khi đăng bài.");
 
         var explicitIds = (childProfileIds ?? [])
             .Where(id => id != Guid.Empty)
@@ -705,15 +706,15 @@ public class JobService : IJobService
         {
             if (requestedChildren.HasValue && requestedChildren.Value != explicitIds.Count)
                 throw new InvalidOperationException(
-                    "Số lượng trẻ khai báo phải trùng với danh sách Child Profile được chọn.");
+                    "Số lượng trẻ khai báo phải trùng với danh sách hồ sơ trẻ đã chọn.");
 
             if (explicitIds.Count > children.Count)
                 throw new InvalidOperationException(
-                    $"Bạn đã chọn {explicitIds.Count} trẻ nhưng hiện chỉ có {children.Count} Child Profile.");
+                    $"Bạn đã chọn {explicitIds.Count} trẻ nhưng hiện chỉ có {children.Count} hồ sơ trẻ.");
 
             var childMap = children.ToDictionary(child => child.Id, child => child);
             if (explicitIds.Any(id => !childMap.ContainsKey(id)))
-                throw new InvalidOperationException("Có Child Profile không thuộc hồ sơ phụ huynh hiện tại.");
+                throw new InvalidOperationException("Có hồ sơ trẻ không thuộc hồ sơ phụ huynh hiện tại.");
 
             return explicitIds.Select(id => childMap[id]).ToList();
         }
@@ -721,7 +722,7 @@ public class JobService : IJobService
         var requestedCount = Math.Max(1, requestedChildren ?? 1);
         if (requestedCount > children.Count)
             throw new InvalidOperationException(
-                $"Bạn đã chọn {requestedCount} trẻ nhưng hiện chỉ có {children.Count} Child Profile.");
+                $"Bạn đã chọn {requestedCount} trẻ nhưng hiện chỉ có {children.Count} hồ sơ trẻ.");
 
         if (primaryChildId.HasValue && children.All(child => child.Id != primaryChildId.Value))
             throw new InvalidOperationException("Trẻ được chọn không thuộc hồ sơ phụ huynh hiện tại.");
@@ -782,6 +783,7 @@ public class JobService : IJobService
         var job = await _jobRepo.viewDetailPosting(jobId)
             ?? throw new KeyNotFoundException("Không tìm thấy tin đăng hoặc tin đã bị xóa.");
 
+        ensureJobModerationIsPending(job);
         var nowUtc = DateTime.UtcNow;
         job.ModerationStatus = moderationStatus;
         job.ModerationNote = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
@@ -866,7 +868,7 @@ public class JobService : IJobService
     {
         var job = await _jobRepo.ModeratorViewJobDetailAsync(jobId);
         if (job == null || job.IsDeleted)
-            throw new KeyNotFoundException("Khong tim thay job posting.");
+            throw new KeyNotFoundException("Không tìm thấy bài đăng công việc.");
 
         return mapToDetail(job);
     }
@@ -877,13 +879,19 @@ public class JobService : IJobService
             throw new ArgumentNullException(nameof(request));
 
         if (request.Action is not 1 and not 2)
-            throw new InvalidOperationException("ModerationStatus khong hop le.");
+            throw new InvalidOperationException("Trạng thái kiểm duyệt không hợp lệ.");
 
         await ReviewJobAsync(jobId, moderatorUserId, request.Action, request.Note);
     }
 
     public async Task ModeratorDeactivateJobAsync(Guid jobId, Guid moderatorUserId) =>
         await DeactivateJobAsync(jobId, moderatorUserId);
+
+    private static void ensureJobModerationIsPending(JobPosting job)
+    {
+        if (job.ModerationStatus != (int)JobPostingModerationStatus.Pending)
+            throw new InvalidOperationException("Tin đăng đã được kiểm duyệt trước đó, không thể xử lý lại.");
+    }
 
     // Background embedding helper
     private async Task EmbedJobInBackgroundAsync(Guid jobId)

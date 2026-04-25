@@ -4,9 +4,11 @@ namespace Nanny_BackEnd.DTOs.Subscription;
 
 public class AdminSubscriptionPlanBenefitRequest
 {
+    [Display(Name = "Giới hạn đăng bài mỗi tháng")]
     [Range(0, 1000)]
     public int MonthlyJobPostLimit { get; set; }
 
+    [Display(Name = "Giới hạn ứng tuyển mỗi tháng")]
     [Range(0, 1000)]
     public int MonthlyApplicationLimit { get; set; }
 
@@ -14,35 +16,44 @@ public class AdminSubscriptionPlanBenefitRequest
 
     public bool SearchPriority { get; set; }
 
+    [Display(Name = "Số ngày hiển thị bài đăng")]
     [Range(0, 3650)]
     public int ListingDurationDays { get; set; }
 }
 
 public class AdminSubscriptionPlanUpsertRequest
 {
+    [Display(Name = "Tên gói")]
     [Required]
     [StringLength(100, MinimumLength = 2)]
     public string Name { get; set; } = "";
 
+    [Display(Name = "Mô tả")]
     [StringLength(500)]
     public string? Description { get; set; }
 
+    [Display(Name = "Vai trò mục tiêu")]
     [Required]
-    [RegularExpression("^(Parent|Nanny)$", ErrorMessage = "TargetRole chi duoc la Parent hoac Nanny.")]
+    [RegularExpression("^(Parent|Nanny)$", ErrorMessage = "Vai trò mục tiêu chỉ được là Phụ huynh hoặc Bảo mẫu.")]
     public string TargetRole { get; set; } = "";
 
+    [Display(Name = "Giá gói")]
     [Range(typeof(decimal), "1000", "999999999")]
     public decimal Price { get; set; }
 
+    [Display(Name = "Thời hạn sử dụng")]
     [Range(1, 3650)]
     public int DurationDays { get; set; }
 
+    [Display(Name = "Thứ tự sắp xếp")]
     [Range(1, 999)]
     public int SortOrder { get; set; } = 1;
 
-    [MinLength(1, ErrorMessage = "Phai co it nhat 1 feature.")]
+    [Display(Name = "Danh sách tính năng")]
+    [MinLength(1, ErrorMessage = "Phải có ít nhất 1 tính năng.")]
     public List<string> Features { get; set; } = [];
 
+    [Display(Name = "Quyền lợi gói")]
     [Required]
     public AdminSubscriptionPlanBenefitRequest Benefits { get; set; } = new();
 
