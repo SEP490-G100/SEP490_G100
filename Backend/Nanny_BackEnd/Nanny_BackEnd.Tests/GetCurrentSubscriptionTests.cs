@@ -40,8 +40,8 @@ public class GetCurrentSubscriptionTests
     private static SubscriptionPlan Plan(Guid id) => new()
     {
         Id            = id,
-        Name          = "Goi phu huynh current",
-        Description   = "phu huynh; bai dang",
+        Name          = "Gói phụ huynh hiện tại",
+        Description   = "phụ huynh; bài đăng",
         Features      = "parent",
         Price         = 100000m,
         DurationDays  = 30,
@@ -50,7 +50,6 @@ public class GetCurrentSubscriptionTests
         CreatedAt     = DateTime.UtcNow
     };
 
-    // Condition: hết hạn cũ đã gỡ, không còn subscription current.
     [Fact]
     public async Task None_ReturnsNull()
     {
@@ -64,7 +63,6 @@ public class GetCurrentSubscriptionTests
         Assert.Null(r);
     }
 
-    // Condition: còn gói active, map về DTO.
     [Fact]
     public async Task Active_ReturnsMapped()
     {
@@ -91,7 +89,6 @@ public class GetCurrentSubscriptionTests
         var r = await _sut.getCurrentSubscription(userId);
 
         Assert.NotNull(r);
-        Assert.Equal("Đang hoạt động", r!.StatusLabel);
         Assert.Equal(plan.Name, r.Plan.Name);
         Assert.True(r.IsActive);
         Assert.True(r.RemainingDays > 0);

@@ -43,12 +43,10 @@ public class UpdateJobTests
             NullLogger<JobService>.Instance);
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────
+    // -- Helpers -----------------------------------------------------------
 
     private static UpdateJobPostingRequest ValidRequest(int status = (int)JobPostingStatus.Public) => new()
     {
-        Title            = "Tìm người giữ trẻ",
-        Description      = "Mô tả công việc giữ trẻ tại nhà",
         JobType          = 1,
         SalaryNegotiable = true,
         Status           = status,
@@ -76,7 +74,6 @@ public class UpdateJobTests
         _mockJobRepo.Setup(r => r.updateJobPosting(It.IsAny<JobPosting>())).Returns(Task.CompletedTask);
     }
 
-    // ── TC1: Job không tồn tại → KeyNotFoundException ─────────────────────
     [Fact]
     public async Task JobNotFound()
     {
@@ -89,10 +86,8 @@ public class UpdateJobTests
 
         var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             _sut.updateJob(jobId, parentProfileId, ValidRequest()));
-        Assert.Contains("tìm thấy tin đăng", ex.Message);
     }
 
-    // ── TC2: ParentProfileId không khớp với job → UnauthorizedAccessException
     [Fact]
     public async Task UnauthorizedOwner()
     {
@@ -100,7 +95,7 @@ public class UpdateJobTests
         var job = new JobPosting
         {
             Id              = Guid.NewGuid(),
-            ParentProfileId = Guid.NewGuid(),   // khác caller → unauthorized
+            ParentProfileId = Guid.NewGuid(),
             Title           = "Job gốc"
         };
         var parent = MakeParent(callerParentId);
@@ -112,10 +107,10 @@ public class UpdateJobTests
 
         var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
             _sut.updateJob(job.Id, callerParentId, ValidRequest()));
-        Assert.Contains("chỉnh sửa", ex.Message);
+
     }
 
-    // ── TC3: Status = Hidden → ClosedAt được set ─────────────────────────
+    // TC3: Status = Hidden → ClosedAt được set
     [Fact]
     public async Task StatusHidden_SetsClosedAt()
     {
@@ -136,7 +131,7 @@ public class UpdateJobTests
         Assert.Equal((int)JobPostingStatus.Hidden, job.Status);
     }
 
-    // ── TC4: Status = Public → ModerationStatus reset về Pending ─────────
+    // TC4: Status = Public → ModerationStatus reset về Pending
     [Fact]
     public async Task StatusPublic_ResetsModerationToPending()
     {

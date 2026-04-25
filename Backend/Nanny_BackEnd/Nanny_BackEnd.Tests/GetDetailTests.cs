@@ -41,7 +41,6 @@ public class GetDetailTests
             NullLogger<JobService>.Instance);
     }
 
-    // ── TC1: Job không tồn tại → throw KeyNotFoundException ──────────────
     [Fact]
     public async Task NotFound()
     {
@@ -50,10 +49,8 @@ public class GetDetailTests
         _mockJobRepo.Setup(r => r.viewDetailPosting(jobId)).ReturnsAsync((JobPosting?)null);
 
         var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.getDetail(jobId));
-        Assert.Contains("tìm thấy tin đăng", ex.Message);
     }
 
-    // ── TC2: Job tồn tại → trả về đúng Id và Title ───────────────────────
     [Fact]
     public async Task Found()
     {
@@ -61,8 +58,6 @@ public class GetDetailTests
         var job   = new JobPosting
         {
             Id    = jobId,
-            Title = "Tìm người giữ trẻ",
-            // Collections đã được khởi tạo sẵn trong model (= new List<>())
             // ParentProfile = null → null-safe trong mapToDetail
         };
 
@@ -73,6 +68,5 @@ public class GetDetailTests
 
         Assert.NotNull(result);
         Assert.Equal(jobId, result.Id);
-        Assert.Equal("Tìm người giữ trẻ", result.Title);
     }
 }

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Hosting;
+﻿using Microsoft.AspNetCore.Hosting;
 using Moq;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories.Interfaces;
@@ -8,7 +8,7 @@ using Nanny_BackEnd.Services.Interfaces;
 namespace Nanny_BackEnd.Tests;
 
 /// <summary>
-/// <see cref="Nanny_BackEnd.Controllers.VerificationRequestController"/> detail →
+/// <see cref="Nanny_BackEnd.Controllers.VerificationRequestController"/> detail ?
 /// <see cref="VerificationRequestService.NannyViewVerificationRequestDetailAsync"/>.
 /// </summary>
 public class NannyViewVerificationRequestDetailAsyncTests
@@ -75,7 +75,6 @@ public class NannyViewVerificationRequestDetailAsyncTests
         return (np, vr);
     }
 
-    // Condition: user chưa có hồ sơ nanny.
     [Fact]
     public async Task NoNannyProfile_ReturnsNotFound()
     {
@@ -108,7 +107,6 @@ public class NannyViewVerificationRequestDetailAsyncTests
         Assert.Equal(NoRequestMessage, message);
     }
 
-    // Condition: yêu cầu thuộc hồ sơ khác (NannyProfileId ≠ profile hiện tại).
     [Fact]
     public async Task RequestBelongsToOtherProfile_ReturnsNotFound()
     {
@@ -126,7 +124,6 @@ public class NannyViewVerificationRequestDetailAsyncTests
         Assert.Equal(NoRequestMessage, message);
     }
 
-    // Condition: hợp lệ — map MapDetailDto.
     [Fact]
     public async Task Success_ReturnsDetail()
     {

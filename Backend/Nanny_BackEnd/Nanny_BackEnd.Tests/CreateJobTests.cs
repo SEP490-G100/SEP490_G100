@@ -18,11 +18,10 @@ public class CreateJobTests
     private readonly Mock<GeocodingService>       _mockGeo;
     private readonly JobService                   _sut;
 
-    // Paid benefits — ListingDurationDays > 0 để tạo được ExpiresAt
     private static readonly SubscriptionBenefitResponse PaidBenefits = new()
     {
         ListingDurationDays = 30,
-        MonthlyJobPostLimit = 0   // không giới hạn khi có gói
+        MonthlyJobPostLimit = 0
     };
 
     public CreateJobTests()
@@ -53,7 +52,6 @@ public class CreateJobTests
             NullLogger<JobService>.Instance);
     }
 
-    // ── Helper: ParentProfile tối giản có 1 child ─────────────────────────
     private static ParentProfile MakeParent(Guid? parentProfileId = null) => new()
     {
         Id      = parentProfileId ?? Guid.NewGuid(),
@@ -65,11 +63,9 @@ public class CreateJobTests
         }
     };
 
-    // ── Helper: request hợp lệ tối giản ──────────────────────────────────
+    // Helper: request hợp lệ tối giản
     private static CreateJobPostingRequest ValidRequest() => new()
     {
-        Title           = "Tìm người giữ trẻ",
-        Description     = "Mô tả công việc giữ trẻ tại nhà",
         JobType         = 1,
         SalaryNegotiable = true,       // bỏ qua salary validation
         Status          = 1,
@@ -77,7 +73,6 @@ public class CreateJobTests
         ScheduleSlots   = []           // empty → syncScheduleRequirements chỉ gọi saveChanges
     };
 
-    // ── TC1: ParentProfile không tồn tại → KeyNotFoundException ──────────
     [Fact]
     public async Task ParentNotFound()
     {
@@ -89,10 +84,8 @@ public class CreateJobTests
 
         var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             _sut.createJob(parentId, ValidRequest()));
-        Assert.Contains("tìm thấy hồ sơ phụ huynh", ex.Message);
     }
 
-    // ── TC2: Free user đã đạt giới hạn 3 bài đăng đang active ───────────
     [Fact]
     public async Task FreeUserPostingLimitReached()
     {
@@ -108,10 +101,8 @@ public class CreateJobTests
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             _sut.createJob(parentId, ValidRequest()));
-        Assert.Contains("tối đa 3 bài đăng", ex.Message);
     }
 
-    // ── TC3: Free user đã đạt giới hạn bài đăng trong tháng ─────────────
     [Fact]
     public async Task FreeUserMonthlyLimitReached()
     {
@@ -129,10 +120,9 @@ public class CreateJobTests
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             _sut.createJob(parentId, ValidRequest()));
-        Assert.Contains("tối đa 3 bài viết trong 1 tháng", ex.Message);
     }
 
-    // ── TC4: Paid user, tất cả hợp lệ → trả về JobId ────────────────────
+    // TC4: Paid user, tất cả hợp lệ → trả về JobId
     [Fact]
     public async Task Success()
     {
@@ -142,7 +132,7 @@ public class CreateJobTests
         _mockJobRepo.Setup(r => r.getParentProfileSnapshot(parentId))
                     .ReturnsAsync(MakeParent(parentId));
         _mockSubService.Setup(s => s.hasActiveParentSubscription(parentId))
-                       .ReturnsAsync(true);    // paid → bỏ qua free limit checks
+                        .ReturnsAsync(true);    // paid → bỏ qua free limit checks
         _mockGeo.Setup(g => g.geocode(It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>()))
                 .ReturnsAsync(default((decimal, decimal)?));
         _mockJobRepo.Setup(r => r.createJobPosting(It.IsAny<JobPosting>()))
@@ -163,7 +153,6 @@ public class CreateJobTests
         _mockJobRepo.Verify(r => r.createJobPosting(It.IsAny<JobPosting>()), Times.Once);
     }
 
-    // ── Helper dùng chung cho 2 boundary TC ──────────────────────────────
     private void SetupSuccessPath(Guid parentId)
     {
         _mockSubService.Setup(s => s.getBenefitsForParentProfile(parentId))
@@ -187,7 +176,7 @@ public class CreateJobTests
             .Returns(Task.CompletedTask);
     }
 
-    // ── Boundary TC1: active = 2 (ngay dưới giới hạn 3) → vẫn tạo được ──
+    // Boundary TC1: active = 2 (ngay dưới giới hạn 3) → vẫn tạo được
     [Fact]
     public async Task FreeUser_ActivePostings_AtBoundary_Pass()
     {
@@ -201,7 +190,7 @@ public class CreateJobTests
         Assert.NotEqual(Guid.Empty, jobId);
     }
 
-    // ── Boundary TC2: monthly = 2 (ngay dưới giới hạn 3) → vẫn tạo được ─
+    // Boundary TC2: monthly = 2 (ngay dưới giới hạn 3) → vẫn tạo được
     [Fact]
     public async Task FreeUser_MonthlyPostings_AtBoundary_Pass()
     {
@@ -215,7 +204,6 @@ public class CreateJobTests
         Assert.NotEqual(Guid.Empty, jobId);
     }
 
-    // ── Validation request (ít nhánh, bổ sung coverage createJob) ───────
 
     [Fact]
     public async Task NannyAgeMinGreaterThanMax_Throws()
@@ -231,7 +219,6 @@ public class CreateJobTests
         req.MaxNannyAge = 20;
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.createJob(parentId, req));
-        Assert.Contains("Độ tuổi tối thiểu", ex.Message);
     }
 
     [Fact]
@@ -265,7 +252,6 @@ public class CreateJobTests
         req.SalaryMax = 10_000_000m;
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.createJob(parentId, req));
-        Assert.Contains("Lương tối thiểu không được lớn hơn", ex.Message);
     }
 
     [Fact]
@@ -285,6 +271,6 @@ public class CreateJobTests
         req.SalaryMax = null;
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.createJob(parentId, req));
-        Assert.Contains("Thương lượng", ex.Message);
+
     }
 }

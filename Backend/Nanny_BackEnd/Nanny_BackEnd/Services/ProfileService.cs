@@ -56,20 +56,20 @@ public class ProfileService : IProfileService
     public async Task<string> UploadAvatarAsync(Guid userId, IFormFile file)
     {
         var user = await _userRepo.FindByIdAsync(userId)
-            ?? throw new InvalidOperationException("NgÆ°á»i dÃ¹ng khÃ´ng tá»“n táº¡i.");
+            ?? throw new InvalidOperationException("Người dùng không tồn tại.");
 
         var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
         var allowedExts = new[] { ".jpg", ".jpeg", ".png" };
         if (!allowedExts.Contains(ext))
-            throw new InvalidOperationException("Chá»‰ cháº¥p nháº­n file áº£nh .jpg, .jpeg hoáº·c .png.");
+            throw new InvalidOperationException("Chỉ chấp nhận file ảnh .jpg, .jpeg hoặc .png.");
 
         var contentType = (file.ContentType ?? string.Empty).ToLowerInvariant();
         var allowedTypes = new[] { "image/jpeg", "image/png" };
         if (!allowedTypes.Contains(contentType))
-            throw new InvalidOperationException("Chá»‰ cháº¥p nháº­n áº£nh JPEG/PNG há»£p lá»‡.");
+            throw new InvalidOperationException("Chỉ chấp nhận ảnh JPEG/PNG hợp lệ.");
 
         if (file.Length > 5 * 1024 * 1024)
-            throw new InvalidOperationException("File áº£nh khÃ´ng Ä‘Æ°á»£c vÆ°á»£t quÃ¡ 5MB.");
+            throw new InvalidOperationException("File ảnh không được vượt quá 5MB.");
 
         var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", "avatars");
         Directory.CreateDirectory(uploadsFolder);
@@ -149,7 +149,7 @@ public class ProfileService : IProfileService
     private async Task<PersonalProfileDto> BuildProfileDtoAsync(Guid userId)
     {
         var user = await _userRepo.FindByIdAsync(userId)
-            ?? throw new InvalidOperationException("NgÆ°á»i dÃ¹ng khÃ´ng tá»“n táº¡i.");
+            ?? throw new InvalidOperationException("Người dùng không tồn tại.");
 
         var roles = await _userRepo.GetRolesAsync(userId);
         var isParent = roles.Any(r => r.Equals("parent", StringComparison.OrdinalIgnoreCase));
@@ -244,7 +244,7 @@ public class ProfileService : IProfileService
             }
             else
             {
-                verificationStatus = "ChÆ°a Ä‘Æ°á»£c xÃ¡c thá»±c";
+                verificationStatus = "Chưa được xác thực";
             }
         }
 
@@ -352,34 +352,34 @@ public class ProfileService : IProfileService
     public async Task<PersonalProfileDto> UpdatePersonalInfoAsync(Guid userId, UpdatePersonalInfoRequest request)
     {
         var user = await _userRepo.FindByIdAsync(userId)
-            ?? throw new InvalidOperationException("NgÆ°á»i dÃ¹ng khÃ´ng tá»“n táº¡i.");
+            ?? throw new InvalidOperationException("Người dùng không tồn tại.");
 
         var roles = await _userRepo.GetRolesAsync(userId);
         var isNanny = roles.Any(r => r.Equals("nanny", StringComparison.OrdinalIgnoreCase));
         var today = DateOnly.FromDateTime(DateTime.Today);
 
         if (request.DateOfBirth.HasValue && request.DateOfBirth.Value > today)
-            throw new InvalidOperationException("Ngay sinh khong duoc lon hon ngay hien tai.");
+            throw new InvalidOperationException("Ngày sinh không được lớn hơn ngày hiện tại.");
 
         if (isNanny)
         {
             var salaryValidationError = SalaryValidationRules.GetFirstError(
                 request.ExpectedSalaryMin,
                 request.ExpectedSalaryMax,
-                "Luong toi thieu",
-                "Luong toi da");
+                "Lương tối thiểu",
+                "Lương tối đa");
             if (!string.IsNullOrWhiteSpace(salaryValidationError))
                 throw new InvalidOperationException(salaryValidationError);
 
             var dobToValidate = request.DateOfBirth ?? user.DateOfBirth;
             if (!dobToValidate.HasValue)
-                throw new InvalidOperationException("Nanny pháº£i nháº­p ngÃ ,áy sinh.");
+                throw new InvalidOperationException("Nanny phải nhập ngày sinh.");
 
             var dob = dobToValidate.Value;
             var age = today.Year - dob.Year;
             if (dob > today.AddYears(-age)) age--;
             if (age <= 30)
-                throw new InvalidOperationException("Nanny phai lon hon 30 tuoi.");
+                throw new InvalidOperationException("Nanny phải lớn hơn 30 tuổi.");
         }
 
         // Map required core fields
@@ -549,7 +549,7 @@ public class ProfileService : IProfileService
     {
         var roles = await _userRepo.GetRolesAsync(userId);
         if (!roles.Any(r => r.ToLower() == "parent"))
-            throw new UnauthorizedAccessException("Chá»‰ ngÆ°á»i dÃ¹ng cÃ³ vá»‹ trÃ­ Parent má»›i cÃ³ thá»ƒ xem.");
+            throw new UnauthorizedAccessException("Chỉ người dùng có vị trí Parent mới có thể xem.");
 
         var parentProfile = await _parentRepo.FindByUserIdAsync(userId);
         if (parentProfile == null) return new();
@@ -572,7 +572,7 @@ public class ProfileService : IProfileService
     {
         var roles = await _userRepo.GetRolesAsync(userId);
         if (!roles.Any(r => r.Equals("parent", StringComparison.OrdinalIgnoreCase)))
-            throw new UnauthorizedAccessException("Chá»‰ dÃ nh cho Parent.");
+            throw new UnauthorizedAccessException("Chỉ dành cho Parent.");
 
         var normalizedSpecialNeeds = NormalizeOptionalText(request.SpecialNeeds, 1000, "Nhu cầu đặc biệt");
         var normalizedNotes = NormalizeOptionalText(request.Notes, 1000, "Ghi chú");
@@ -611,7 +611,7 @@ public class ProfileService : IProfileService
     {
         var roles = await _userRepo.GetRolesAsync(userId);
         if (!roles.Any(r => r.Equals("parent", StringComparison.OrdinalIgnoreCase)))
-            throw new UnauthorizedAccessException("Chá»‰ dÃ nh cho Parent.");
+            throw new UnauthorizedAccessException("Chỉ dành cho Parent.");
 
         var normalizedSpecialNeeds = NormalizeOptionalText(request.SpecialNeeds, 1000, "Nhu cầu đặc biệt");
         var normalizedNotes = NormalizeOptionalText(request.Notes, 1000, "Ghi chú");
@@ -619,10 +619,10 @@ public class ProfileService : IProfileService
         var childAgeGroup = ValidateAndGetChildAgeGroup(request.ChildAgeGroup);
 
         var parentProfile = await _parentRepo.FindByUserIdAsync(userId)
-            ?? throw new InvalidOperationException("KhÃ´ng tÃ¬m tháº¥y há»“ sÆ¡ Parent.");
+            ?? throw new InvalidOperationException("Không tìm thấy hồ sơ Parent.");
 
         var child = await _childRepo.FindByIdAndParentAsync(childId, parentProfile.Id)
-            ?? throw new InvalidOperationException("KhÃ´ng tÃ¬m tháº¥y con hoáº·c khÃ´ng cÃ³ quyá»n.");
+            ?? throw new InvalidOperationException("Không tìm thấy con hoặc không có quyền.");
 
         child.SpecialNeeds = normalizedSpecialNeeds;
         child.Notes = normalizedNotes;
@@ -641,13 +641,13 @@ public class ProfileService : IProfileService
     {
         var roles = await _userRepo.GetRolesAsync(userId);
         if (!roles.Any(r => r.Equals("parent", StringComparison.OrdinalIgnoreCase)))
-            throw new UnauthorizedAccessException("Chá»‰ dÃ nh cho Parent.");
+            throw new UnauthorizedAccessException("Chỉ dành cho Parent.");
 
         var parentProfile = await _parentRepo.FindByUserIdAsync(userId)
-            ?? throw new InvalidOperationException("KhÃ´ng tÃ¬m tháº¥y há»“ sÆ¡ Parent.");
+            ?? throw new InvalidOperationException("Không tìm thấy hồ sơ Parent.");
 
         var child = await _childRepo.FindByIdAndParentAsync(childId, parentProfile.Id)
-            ?? throw new InvalidOperationException("KhÃ´ng tÃ¬m tháº¥y con.");
+            ?? throw new InvalidOperationException("Không tìm thấy con.");
 
         child.IsDeleted = true;
         child.UpdatedAt = DateTime.UtcNow;
@@ -669,7 +669,7 @@ public class ProfileService : IProfileService
     public async Task UpdateParentOnboardingProfileAsync(Guid userId, UpdateParentProfileRequest request)
     {
         if (request.NumberOfChildren.HasValue && request.NumberOfChildren.Value < 1)
-            throw new InvalidOperationException("So luong tre phai lon hon hoac bang 1.");
+            throw new InvalidOperationException("Số lượng trẻ phải lớn hơn hoặc bằng 1.");
 
         var parentProfile = await _parentRepo.FindByUserIdAsync(userId);
         if (parentProfile == null)
@@ -688,7 +688,7 @@ public class ProfileService : IProfileService
         if (request.NumberOfChildren.HasValue && request.NumberOfChildren.Value < createdChildrenCount)
         {
             throw new InvalidOperationException(
-                $"Khong the giam tong so tre xuong {request.NumberOfChildren.Value} vi ban da tao {createdChildrenCount} ho so tre.");
+                $"Không thể giảm tổng số trẻ xuống {request.NumberOfChildren.Value} vì bạn đã tạo {createdChildrenCount} hồ sơ trẻ.");
         }
 
         parentProfile.FamilyDescription = request.FamilyDescription;

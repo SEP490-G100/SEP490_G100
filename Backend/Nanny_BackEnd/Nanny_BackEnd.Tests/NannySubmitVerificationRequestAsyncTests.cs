@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Hosting;
+﻿using Microsoft.AspNetCore.Hosting;
 using Moq;
 using Nanny_BackEnd.DTOs.Verification;
 using Nanny_BackEnd.Enums;
@@ -11,7 +11,7 @@ using Nanny_BackEnd.Services.Interfaces;
 namespace Nanny_BackEnd.Tests;
 
 /// <summary>
-/// <see cref="Nanny_BackEnd.Controllers.VerificationRequestController"/> submit →
+/// <see cref="Nanny_BackEnd.Controllers.VerificationRequestController"/> submit ?
 /// <see cref="VerificationRequestService.NannySubmitVerificationRequestAsync"/>.
 /// </summary>
 public class NannySubmitVerificationRequestAsyncTests
@@ -54,7 +54,6 @@ public class NannySubmitVerificationRequestAsyncTests
         FileSize = 10
     };
 
-    // Condition: chưa có hồ sơ.
     [Fact]
     public async Task NoNannyProfile_ReturnsFalse()
     {
@@ -71,7 +70,6 @@ public class NannySubmitVerificationRequestAsyncTests
         Assert.Equal("Khong tim thay ho so Nanny.", msg);
     }
 
-    // Condition: thiếu tài liệu.
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
@@ -95,7 +93,6 @@ public class NannySubmitVerificationRequestAsyncTests
         Assert.Equal("Ban phai tai len it nhat mot tai lieu.", msg);
     }
 
-    // Condition: đã có yêu cầu pending cùng loại.
     [Fact]
     public async Task PendingSameTypeExists_ReturnsFalse()
     {
@@ -125,7 +122,6 @@ public class NannySubmitVerificationRequestAsyncTests
         Assert.Equal("Ban da co mot yeu cau dang cho duyet cho loai ho so nay.", msg);
     }
 
-    // Condition: Health certificate — bắt buộc HealthCertificateExpiryDate.
     [Fact]
     public async Task HealthCertificateWithoutExpiryDate_ReturnsFalse()
     {
@@ -146,7 +142,6 @@ public class NannySubmitVerificationRequestAsyncTests
         Assert.Equal("Ban phai nhap ngay het han cho giay kham suc khoe.", msg);
     }
 
-    // Condition: nộp hồ sơ profile thành công.
     [Fact]
     public async Task Success_ProfileRequest_AddsNotifiesSaves()
     {

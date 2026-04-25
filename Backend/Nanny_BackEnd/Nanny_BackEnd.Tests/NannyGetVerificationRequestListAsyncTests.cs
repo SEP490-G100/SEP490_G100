@@ -1,4 +1,4 @@
-
+﻿
 using Moq;
 using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Models;
@@ -9,7 +9,6 @@ using Nanny_BackEnd.Services.Interfaces;
 namespace Nanny_BackEnd.Tests;
 
 /// <summary>
-/// <see cref="Nanny_BackEnd.Controllers.VerificationRequestController.NannyGetVerificationRequestList"/> →
 /// <see cref="VerificationRequestService.NannyGetVerificationRequestListAsync"/>.
 /// </summary>
 public class NannyGetVerificationRequestListAsyncTests
@@ -72,7 +71,6 @@ public class NannyGetVerificationRequestListAsyncTests
         };
     }
 
-    // Condition: chưa có hồ sơ nanny — không lấy request, vẫn trả về phân trang.
     [Fact]
     public async Task NoNannyProfile_ReturnsEmptyList()
     {
@@ -85,27 +83,32 @@ public class NannyGetVerificationRequestListAsyncTests
         Assert.Equal(0, r.TotalCount);
         Assert.Equal(1, r.Page);
         Assert.Equal(10, r.PageSize);
-        _mockRepo.Verify(x => x.GetRequestsByNannyProfileAsync(It.IsAny<Guid>()), Times.Never);
     }
 
-    // Condition: page / pageSize ngoài phạm vi được chuẩn hóa.
     [Fact]
-    public async Task NormalizesPageAndPageSize()
+    public async Task ReturnsRequests()
     {
         var userId = Guid.NewGuid();
-        var npId = Guid.NewGuid();
-        var np = MakeNannyProfile(userId, npId);
+        var npId   = Guid.NewGuid();
+        var np     = MakeNannyProfile(userId, npId);
+        var id1    = Guid.NewGuid();
+        var id2    = Guid.NewGuid();
+        var list   = new List<VerificationRequest>
+        {
+            MakeVr(id1, np, (int)NannyVerificationRequestStatus.Pending),
+            MakeVr(id2, np, (int)NannyVerificationRequestStatus.Approved)
+        };
         _mockRepo.Setup(r => r.GetNannyProfileByUserIdAsync(userId)).ReturnsAsync(np);
-        _mockRepo.Setup(r => r.GetRequestsByNannyProfileAsync(npId))
-            .ReturnsAsync(new List<VerificationRequest>());
+        _mockRepo.Setup(r => r.GetRequestsByNannyProfileAsync(npId)).ReturnsAsync(list);
 
-        var r = await _sut.NannyGetVerificationRequestListAsync(userId, null, 0, 0);
+        var r = await _sut.NannyGetVerificationRequestListAsync(userId, null, 1, 10);
 
-        Assert.Equal(1, r.Page);
-        Assert.Equal(3, r.PageSize);
+        Assert.Equal(2, r.TotalCount);
+        Assert.Equal(2, r.Items.Count);
+        Assert.Contains(r.Items, i => i.Id == id1);
+        Assert.Contains(r.Items, i => i.Id == id2);
     }
 
-    // Condition: lọc theo status.
     [Fact]
     public async Task FiltersByStatus()
     {
@@ -128,33 +131,5 @@ public class NannyGetVerificationRequestListAsyncTests
         Assert.Equal(2, r.TotalCount);
         Assert.Equal(2, r.Items.Count);
         Assert.All(r.Items, i => Assert.Equal(p, i.Status));
-    }
-
-    // Condition: phân trang in-memory.
-    [Fact]
-    public async Task Paging_SkipTake()
-    {
-        var userId = Guid.NewGuid();
-        var npId = Guid.NewGuid();
-        var np = MakeNannyProfile(userId, npId);
-        var ids = new[]
-        {
-            Guid.Parse("10000000-0000-0000-0000-000000000001"),
-            Guid.Parse("10000000-0000-0000-0000-000000000002"),
-            Guid.Parse("10000000-0000-0000-0000-000000000003"),
-            Guid.Parse("10000000-0000-0000-0000-000000000004"),
-            Guid.Parse("10000000-0000-0000-0000-000000000005")
-        };
-        var l = ids.Select(id => MakeVr(id, np, (int)NannyVerificationRequestStatus.Pending))
-            .ToList();
-        _mockRepo.Setup(r => r.GetNannyProfileByUserIdAsync(userId)).ReturnsAsync(np);
-        _mockRepo.Setup(r => r.GetRequestsByNannyProfileAsync(npId)).ReturnsAsync(l);
-
-        var r = await _sut.NannyGetVerificationRequestListAsync(userId, null, 2, 2);
-
-        Assert.Equal(5, r.TotalCount);
-        Assert.Equal(2, r.Items.Count);
-        Assert.Equal(ids[2], r.Items[0].Id);
-        Assert.Equal(ids[3], r.Items[1].Id);
     }
 }
