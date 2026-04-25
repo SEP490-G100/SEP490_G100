@@ -1,4 +1,5 @@
 using Moq;
+using Microsoft.Extensions.Logging.Abstractions;
 using Nanny_BackEnd.DTOs.Profile;
 using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Helpers;
@@ -40,7 +41,8 @@ public class UpdateNannyProfileAsyncTests
             _mockNannyProfile.Object,
             _mockNannySkill.Object,
             _mockNannyAvail.Object,
-            _mockJob.Object);
+            _mockJob.Object,
+            NullLogger<OnboardingService>.Instance);
     }
 
     private static UpdateNannyProfileRequest ValidRequest() => new()
