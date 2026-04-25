@@ -321,6 +321,18 @@
             var dobError = document.getElementById("dobError");
             var dobHint = document.getElementById("dobHint");
 
+            function showProfileToast(message, type) {
+                var msg = (message || "").toString().trim();
+                if (!msg) return;
+
+                if (typeof window.showToast === "function") {
+                    window.showToast(msg, { type: type || "success" });
+                }
+            }
+
+            showProfileToast(profileSuccessToastMessage, "success");
+            showProfileToast(profileErrorToastMessage, "error");
+
             var genderInput = document.getElementById("Gender");
             var genderButtons = document.querySelectorAll(".gender-btn");
             function syncGenderUI() {
@@ -645,14 +657,6 @@
                         applyAvailabilityPreset(availabilityPreset.value);
                     });
                 }
-            }
-
-            var toast = document.getElementById("profileToast");
-            if (toast && toast.textContent.trim()) {
-                toast.classList.remove("hidden");
-                setTimeout(function () {
-                    toast.classList.add("hidden");
-                }, 2500);
             }
 
             var initialLat = parseFloat(document.getElementById("Latitude").value) || 21.0285;
