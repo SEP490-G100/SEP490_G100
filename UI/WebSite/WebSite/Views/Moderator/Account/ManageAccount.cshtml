@@ -125,7 +125,7 @@
                         </td>
                     </tr>
                 }
-                @{int rowNum = ((currentPage - 1) * 3) + 1;}
+                @{int rowNum = ((currentPage - 1) * 7) + 1;}
                 @foreach (var acc in accounts)
                 {
                     var statusBadge = acc.Status == 1 ? "badge-active"   : "badge-inactive";

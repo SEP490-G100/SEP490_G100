@@ -248,7 +248,13 @@ public class AuthController : Controller
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
     {
+        model.Email = NormalizeEmail(model.Email);
         if (!ModelState.IsValid) return View(model);
+        if (!IsValidEmail(model.Email))
+        {
+            ModelState.AddModelError(nameof(model.Email), "Email không hợp lệ.");
+            return View(model);
+        }
 
         var response = await _http.PostAsJsonAsync("/api/auth/forgot-password", new { model.Email });
         var result = await ReadApiResult(response);
@@ -266,9 +272,15 @@ public class AuthController : Controller
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> ResendForgotPasswordOtp(string email)
     {
+        email = NormalizeEmail(email);
         if (string.IsNullOrWhiteSpace(email))
         {
             TempData["Error"] = "Không xác định được email. Vui lòng thử lại từ đầu.";
+            return RedirectToAction("ForgotPassword");
+        }
+        if (!IsValidEmail(email))
+        {
+            TempData["Error"] = "Email không hợp lệ. Vui lòng kiểm tra lại.";
             return RedirectToAction("ForgotPassword");
         }
 
@@ -276,7 +288,10 @@ public class AuthController : Controller
         var result   = await ReadApiResult(response);
 
         if (result == null || !result.Success)
+        {
             TempData["Error"] = result?.Message ?? "Gửi lại mã OTP thất bại. Vui lòng thử lại.";
+            return RedirectToAction("ForgotPassword");
+        }
         else
             TempData["Success"] = "Đã gửi lại mã OTP. Vui lòng kiểm tra email (kể cả hộp thư spam).";
 
@@ -290,7 +305,13 @@ public class AuthController : Controller
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
     {
+        model.Email = NormalizeEmail(model.Email);
         if (!ModelState.IsValid) return View(model);
+        if (!IsValidEmail(model.Email))
+        {
+            ModelState.AddModelError(nameof(model.Email), "Email không hợp lệ.");
+            return View(model);
+        }
 
         var response = await _http.PostAsJsonAsync("/api/auth/reset-password", new
         {
@@ -578,6 +599,15 @@ public class AuthController : Controller
     private static bool IsValidPhoneNumber(string phoneNumber) =>
         Regex.IsMatch(phoneNumber, @"^0\d{9}$");
 
+    private static string NormalizeEmail(string? email) =>
+        string.IsNullOrWhiteSpace(email) ? string.Empty : email.Trim();
+
+    private static bool IsValidEmail(string email) =>
+        Regex.IsMatch(
+            email,
+            @"^(?!.*\.\.)(?!\.)(?!.*\.$)[A-Za-z0-9._%+\-']+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$",
+            RegexOptions.IgnoreCase);
+
     private void SetGoogleClientId() =>
         ViewBag.GoogleClientId = _config["Google:ClientId"];
 
@@ -636,4 +666,3 @@ public class AuthController : Controller
         }
     }
 }
-

@@ -186,6 +186,9 @@ public class OnboardingService : IOnboardingService
             {
                 Id = Guid.NewGuid(),
                 UserId = userId,
+                SalaryType = 0,
+                TotalReviews = 0,
+                IsDeleted = false,
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = userId,
                 VerificationStatus = (int)VerificationStatus.NotSubmitted

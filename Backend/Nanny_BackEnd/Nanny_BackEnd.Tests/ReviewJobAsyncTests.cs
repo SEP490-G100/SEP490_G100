@@ -80,6 +80,34 @@ public class ReviewJobAsyncTests
 
     // Condition: approved + job status Public -> PublishedAt set, ClosedAt null.
     [Fact]
+    public async Task AlreadyModerated_ThrowsInvalidOperation()
+    {
+        var jobId = Guid.NewGuid();
+        var job = BaseJob(jobId, (int)JobPostingStatus.Public, parent: new ParentProfile { UserId = Guid.NewGuid() });
+        job.ModerationStatus = (int)JobPostingModerationStatus.Approved;
+
+        _mockRepo.Setup(r => r.viewDetailPosting(jobId)).ReturnsAsync(job);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _sut.ModeratorReviewJobAsync(jobId, Guid.NewGuid(), new ModerateJobPostingRequest
+            {
+                Action = (int)JobPostingModerationStatus.Rejected,
+                Note = "lý do"
+            }));
+
+        Assert.Contains("không thể xử lý lại", ex.Message.ToLowerInvariant());
+        _mockRepo.Verify(r => r.updateJobPosting(It.IsAny<JobPosting>()), Times.Never);
+        _mockNotif.Verify(n => n.createNotification(
+            It.IsAny<Guid>(),
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<int>(),
+            It.IsAny<Guid?>(),
+            It.IsAny<string?>(),
+            It.IsAny<Guid?>()), Times.Never);
+    }
+
+    [Fact]
     public async Task Approved_PublicJob_SetsPublishedAt()
     {
         var jobId = Guid.NewGuid();

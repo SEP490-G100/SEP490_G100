@@ -79,6 +79,29 @@ public class ReviewJobTests
 
     // ── TC2: Approved + Status=Public → PublishedAt được set ─────────────
     [Fact]
+    public async Task AlreadyModerated_ThrowsInvalidOperation()
+    {
+        var job = MakeJob(
+            moderationStatus: (int)JobPostingModerationStatus.Approved,
+            parent: new ParentProfile { UserId = Guid.NewGuid() });
+
+        _mockJobRepo.Setup(r => r.viewDetailPosting(job.Id)).ReturnsAsync(job);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.ReviewJobAsync(
+            job.Id,
+            Guid.NewGuid(),
+            (int)JobPostingModerationStatus.Rejected,
+            "lý do"));
+
+        Assert.Contains("không thể xử lý lại", ex.Message.ToLowerInvariant());
+        _mockJobRepo.Verify(r => r.updateJobPosting(It.IsAny<JobPosting>()), Times.Never);
+        _mockNotif.Verify(n => n.createNotification(
+                It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<int>(), It.IsAny<Guid?>(), It.IsAny<string?>(), It.IsAny<Guid?>()),
+            Times.Never);
+    }
+
+    [Fact]
     public async Task Approved_PublicJob_SetsPublishedAt()
     {
         var job = MakeJob(

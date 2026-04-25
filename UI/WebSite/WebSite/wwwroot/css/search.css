@@ -1007,6 +1007,15 @@ select.form-input.bg-gray-50 {
     position: relative;
 }
 
+.edit-skill-picker-row {
+    position: relative;
+    z-index: 12020;
+}
+
+.edit-skill-picker-row .ac-dropdown {
+    z-index: 12050;
+}
+
 .autocomplete-field .form-input {
     padding-right: 2.8rem;
     background-image:

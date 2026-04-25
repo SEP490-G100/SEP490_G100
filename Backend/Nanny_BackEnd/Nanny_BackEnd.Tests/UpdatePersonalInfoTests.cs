@@ -16,7 +16,7 @@ namespace Nanny_BackEnd.Tests;
 /// </summary>
 public class UpdatePersonalInfoTests
 {
-    private const string UserNotFoundMessage = "NgÆ°á»i dÃ¹ng khÃ´ng tá»“n táº¡i.";
+    private const string UserNotFoundMessage = "Người dùng không tồn tại.";
 
     private readonly Mock<IUserRepository> _mockUser;
     private readonly Mock<IParentRepository> _mockParent;
@@ -105,7 +105,7 @@ public class UpdatePersonalInfoTests
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.UpdatePersonalInfoAsync(id, req));
 
-        Assert.Equal("Ngay sinh khong duoc lon hon ngay hien tai.", ex.Message);
+        Assert.Equal("Ngày sinh không được lớn hơn ngày hiện tại.", ex.Message);
     }
 
     // Condition: bảo mẫu — mức lương tối thiểu ngoài khoảng cho phép.
@@ -134,7 +134,7 @@ public class UpdatePersonalInfoTests
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.UpdatePersonalInfoAsync(id, req));
 
-        Assert.Equal("Luong toi thieu phải trong khoảng 8.000.000 - 50.000.000 VND.", ex.Message);
+        Assert.Equal("Lương tối thiểu phải trong khoảng 8.000.000 - 50.000.000 VND.", ex.Message);
     }
 
     // Condition: bảo mẫu — không có DOB ở request và cũng không có trên user.
@@ -163,7 +163,7 @@ public class UpdatePersonalInfoTests
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.UpdatePersonalInfoAsync(id, req));
 
-        Assert.Equal("Nanny pháº£i nháº­p ngÃ ,áy sinh.", ex.Message);
+        Assert.Equal("Nanny phải nhập ngày sinh.", ex.Message);
     }
 
     // Condition: bảo mẫu — tuổi ≤ 30 (tính theo ngày hiện tại).
@@ -195,7 +195,7 @@ public class UpdatePersonalInfoTests
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.UpdatePersonalInfoAsync(id, req));
 
-        Assert.Equal("Nanny phai lon hon 30 tuoi.", ex.Message);
+        Assert.Equal("Nanny phải lớn hơn 30 tuổi.", ex.Message);
     }
 
     // Condition: không phải bảo mẫu — cập nhật tên, gọi lưu.

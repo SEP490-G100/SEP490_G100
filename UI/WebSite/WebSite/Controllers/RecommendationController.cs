@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -112,7 +112,7 @@ public class RecommendationController : Controller
         }
     }
 
-    // â”€â”€ Admin: batch re-embed â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Admin: batch re-embed ────────────────────────────────
     [Authorize(Roles = "Admin,Moderator")]
     [HttpPost]
     public async Task<IActionResult> ReembedBatch()
@@ -130,7 +130,7 @@ public class RecommendationController : Controller
         }
     }
 
-    // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Helpers ──────────────────────────────────────────────
 
     private static string MatchLabel(double score) => score switch
     {
@@ -147,7 +147,7 @@ public class RecommendationController : Controller
     };
 }
 
-// â”€â”€ Internal DTOs cho deserialize backend response â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Internal DTOs cho deserialize backend response ──────────
 internal class JobRecommendItem
 {
     public Guid JobId { get; set; }

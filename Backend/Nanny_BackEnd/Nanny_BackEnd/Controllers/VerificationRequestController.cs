@@ -48,7 +48,7 @@ public class VerificationRequestController : ControllerBase
     {
         var moderatorId = GetCurrentUserId();
         if (!moderatorId.HasValue)
-            return Unauthorized(new { success = false, message = "Khong xac dinh duoc moderator." });
+            return Unauthorized(new { success = false, message = "Không xác định được moderator." });
 
         var result = await _verificationService.ModeratorReviewVerificationAsync(id, moderatorId.Value, request);
         if (!result.Success)
@@ -80,7 +80,7 @@ public class VerificationRequestController : ControllerBase
         var (success, data, message) = await _verificationService.NannyViewVerificationRequestDetailAsync(userId.Value, id);
         if (!success || data == null)
         {
-            return NotFound(new { success = false, message = message ?? "Khong tim thay yeu cau xac minh." });
+            return NotFound(new { success = false, message = message ?? "Không tìm thấy yêu cầu xác minh." });
         }
 
         return Ok(new { success = true, data });

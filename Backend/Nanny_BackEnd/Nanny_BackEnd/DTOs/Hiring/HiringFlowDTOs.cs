@@ -24,6 +24,7 @@ public class JobApplicantDto
     public decimal? ExpectedSalaryMax { get; set; }
     public DateTime AppliedAt { get; set; }
     public int Status { get; set; }
+    public string? RejectionReason { get; set; }
 }
 
 public class HiringOfferDetailDto

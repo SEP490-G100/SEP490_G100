@@ -166,7 +166,7 @@
                                 <p class="section-caption">Cập nhật bộ kỹ năng từ danh sách có sẵn trong hệ thống.</p>
                             </div>
                         </div>
-                        <div class="flex gap-2 items-center">
+                        <div id="ef-skillPickerWrap" class="flex gap-2 items-center edit-skill-picker-row">
                             <input type="text" id="ef-skillSelectText" class="form-input form-select-picker-input" autocomplete="off" placeholder="Chọn kỹ năng cần yêu cầu" />
                             <select id="ef-skillSelect" class="form-input form-select-native-hidden">
                                 <option value="">Chọn kỹ năng cần yêu cầu</option>
@@ -220,6 +220,8 @@ let locationTreePromise = null;
 
 const DAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 const ROW_LABELS = ['Sáng', 'Chiều', 'Tối', 'Đêm'];
+const EDIT_DRAFT_STORAGE_KEY = `nm:editJobDraft:${JOB_ID}`;
+let isApplyingDraft = false;
 
 function escapeHtml(value) {
     return String(value ?? '')
@@ -307,6 +309,148 @@ function pushHistoryToast(message, type = 'success') {
 
 function redirectToHistory(jobId) {
     window.location.href = `/Search/History?jobId=${encodeURIComponent(jobId)}`;
+}
+
+function clearEditDraft() {
+    try {
+        localStorage.removeItem(EDIT_DRAFT_STORAGE_KEY);
+    } catch {
+        // Ignore storage errors.
+    }
+}
+
+function readEditDraft() {
+    try {
+        const raw = localStorage.getItem(EDIT_DRAFT_STORAGE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch {
+        return null;
+    }
+}
+
+function normalizeDraftSkills(skills) {
+    const normalized = [];
+    const seen = new Set();
+    for (const skill of (Array.isArray(skills) ? skills : [])) {
+        const value = String(skill ?? '').trim();
+        if (!value) continue;
+        const key = value.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        normalized.push(value);
+    }
+    return normalized.slice(0, 20);
+}
+
+function normalizeDraftSchedule(slots) {
+    const normalized = [];
+    const seen = new Set();
+    for (const slot of (Array.isArray(slots) ? slots : [])) {
+        const dayOfWeek = Number(slot?.dayOfWeek);
+        const timeSlot = Number(slot?.timeSlot);
+        if (!Number.isInteger(dayOfWeek) || !Number.isInteger(timeSlot)) continue;
+        if (dayOfWeek < 0 || dayOfWeek > 6 || timeSlot < 0 || timeSlot > 3) continue;
+        const key = `${dayOfWeek}-${timeSlot}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        normalized.push({ dayOfWeek, timeSlot });
+    }
+    return normalized;
+}
+
+function applyEditDraft(draft) {
+    if (!draft || typeof draft !== 'object') return false;
+
+    isApplyingDraft = true;
+    try {
+        const titleInput = document.getElementById('ef-title');
+        const descInput = document.getElementById('ef-desc');
+        const typeSelect = document.getElementById('ef-type');
+        const salMinInput = document.getElementById('ef-salMin');
+        const salMaxInput = document.getElementById('ef-salMax');
+        const negotiableInput = document.getElementById('ef-negotiable');
+        const locationInput = document.getElementById('ef-location');
+        const cityInput = document.getElementById('ef-city');
+        const districtInput = document.getElementById('ef-district');
+        const minAgeInput = document.getElementById('ef-minAge');
+        const maxAgeInput = document.getElementById('ef-maxAge');
+        const childProfileSelect = document.getElementById('ef-childProfileId');
+
+        if (titleInput) titleInput.value = String(draft.title ?? '');
+        if (descInput) descInput.value = String(draft.description ?? '');
+        if (typeSelect && [1, 2, 3].includes(Number(draft.jobType))) {
+            typeSelect.value = String(Number(draft.jobType));
+        }
+        if (salMinInput) salMinInput.value = formatMoneyInputValue(draft.salaryMinInput ?? '');
+        if (salMaxInput) salMaxInput.value = formatMoneyInputValue(draft.salaryMaxInput ?? '');
+        if (negotiableInput) negotiableInput.checked = !!draft.salaryNegotiable;
+        if (locationInput) locationInput.value = String(draft.location ?? '');
+        if (cityInput) cityInput.value = String(draft.city ?? '');
+        if (districtInput) districtInput.value = String(draft.district ?? '');
+        if (minAgeInput) minAgeInput.value = String(draft.minNannyAge ?? '');
+        if (maxAgeInput) maxAgeInput.value = String(draft.maxNannyAge ?? '');
+
+        handleLocationCityChange('ef', cityInput?.value || '');
+
+        if (childProfileSelect) {
+            const childProfileId = String(draft.childProfileId ?? '');
+            if (childProfileId && Array.from(childProfileSelect.options).some((option) => option.value === childProfileId)) {
+                childProfileSelect.value = childProfileId;
+            }
+        }
+
+        if ([1, 2].includes(Number(draft.status))) {
+            setEditStatus(Number(draft.status));
+        }
+
+        editSkills = normalizeDraftSkills(draft.skills);
+        editSchedule = normalizeDraftSchedule(draft.scheduleSlots);
+
+        renderSkillCollection();
+        renderScheduleGrid();
+        syncSelectPickerTexts();
+        handleEditChildChange();
+
+        return true;
+    } finally {
+        isApplyingDraft = false;
+    }
+}
+
+function saveEditDraft() {
+    if (!hasLoadedEditData || isSubmittingEdit || isApplyingDraft) return;
+
+    if (!isFormDirty()) {
+        clearEditDraft();
+        return;
+    }
+
+    const draft = {
+        title: document.getElementById('ef-title')?.value?.trim() || '',
+        description: document.getElementById('ef-desc')?.value?.trim() || '',
+        jobType: Number(document.getElementById('ef-type')?.value || 1),
+        childProfileId: document.getElementById('ef-childProfileId')?.value || '',
+        salaryMinInput: document.getElementById('ef-salMin')?.value || '',
+        salaryMaxInput: document.getElementById('ef-salMax')?.value || '',
+        salaryNegotiable: !!document.getElementById('ef-negotiable')?.checked,
+        location: document.getElementById('ef-location')?.value?.trim() || '',
+        city: document.getElementById('ef-city')?.value?.trim() || '',
+        district: document.getElementById('ef-district')?.value?.trim() || '',
+        minNannyAge: document.getElementById('ef-minAge')?.value || '',
+        maxNannyAge: document.getElementById('ef-maxAge')?.value || '',
+        status: Number(document.getElementById('ef-status')?.value || 1),
+        skills: normalizeDraftSkills(editSkills),
+        scheduleSlots: normalizeDraftSchedule(editSchedule),
+        updatedAt: Date.now()
+    };
+
+    try {
+        localStorage.setItem(EDIT_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+    } catch {
+        // Ignore storage errors.
+    }
 }
 
 function normalizeText(value) {
@@ -888,6 +1032,7 @@ function updateSubmitState() {
     submitBtn.title = disabled && !isSubmittingEdit
         ? 'Không có thay đổi để lưu bài đăng'
         : '';
+    saveEditDraft();
 }
 
 function setProfileFields(child) {
@@ -993,7 +1138,12 @@ async function loadEditPage() {
         }
         currentModerationStatus = Number(job.moderationStatus);
 
-        initialFormSignature = getCurrentFormSignature();
+        const serverFormSignature = getCurrentFormSignature();
+        const draftApplied = applyEditDraft(readEditDraft());
+        if (draftApplied) {
+            showToast('Đã khôi phục dữ liệu bạn vừa nhập trước khi tải lại trang.', 'success');
+        }
+        initialFormSignature = serverFormSignature;
         hasLoadedEditData = true;
         updateSubmitState();
     } catch {
@@ -1111,6 +1261,7 @@ document.getElementById('editPageForm')?.addEventListener('submit', async (event
         const successMessage = currentModerationStatus === 0
             ? 'Đã cập nhật bài đăng đang chờ kiểm duyệt.'
             : (payloadResult?.message || 'Cập nhật thành công. Bài đăng đã được gửi kiểm duyệt lại.');
+        clearEditDraft();
         pushHistoryToast(successMessage, 'success');
         shouldKeepDisabledForRedirect = true;
         redirectToHistory(JOB_ID);

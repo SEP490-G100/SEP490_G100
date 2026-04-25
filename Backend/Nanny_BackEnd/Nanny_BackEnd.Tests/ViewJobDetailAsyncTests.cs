@@ -15,7 +15,7 @@ namespace Nanny_BackEnd.Tests;
 /// </summary>
 public class ViewJobDetailAsyncTests
 {
-    private const string NotFoundMessage = "Khong tim thay job posting.";
+    private const string NotFoundMessage = "Không tìm thấy bài đăng công việc.";
 
     private readonly Mock<IJobRepository> _mockRepo;
     private readonly JobService _sut;

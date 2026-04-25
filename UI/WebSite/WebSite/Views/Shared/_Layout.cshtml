@@ -1451,7 +1451,10 @@
 
                                 const loadChatUnread = async () => {
                                     try {
-                                        const response = await fetch('/Communication/UnreadCount', { credentials: 'same-origin' });
+                                        const response = await fetch(`/Communication/UnreadCount?_=${Date.now()}`, {
+                                            credentials: 'same-origin',
+                                            cache: 'no-store'
+                                        });
                                         const result = await response.json();
                                         updateChatBadge(result?.data?.unreadCount ?? 0);
                                     } catch {
@@ -1459,9 +1462,29 @@
                                     }
                                 };
 
+                                let chatUnreadTimer = null;
+                                const CHAT_UNREAD_POLL_VISIBLE_MS = 2000;
+                                const CHAT_UNREAD_POLL_HIDDEN_MS = 10000;
+
+                                const restartChatUnreadPolling = () => {
+                                    if (chatUnreadTimer) {
+                                        window.clearInterval(chatUnreadTimer);
+                                    }
+                                    const interval = document.hidden
+                                        ? CHAT_UNREAD_POLL_HIDDEN_MS
+                                        : CHAT_UNREAD_POLL_VISIBLE_MS;
+                                    chatUnreadTimer = window.setInterval(loadChatUnread, interval);
+                                };
+
                                 window.addEventListener('nm:chat-unread-refresh', () => { loadChatUnread(); });
+                                window.addEventListener('nm:notifications-refresh', () => { loadChatUnread(); });
+                                window.addEventListener('focus', () => { loadChatUnread(); });
+                                document.addEventListener('visibilitychange', () => {
+                                    if (!document.hidden) loadChatUnread();
+                                    restartChatUnreadPolling();
+                                });
                                 loadChatUnread();
-                                window.setInterval(loadChatUnread, 90000);
+                                restartChatUnreadPolling();
                             })();
 
                             (() => {

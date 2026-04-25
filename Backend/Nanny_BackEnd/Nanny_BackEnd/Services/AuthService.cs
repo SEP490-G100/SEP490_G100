@@ -177,12 +177,16 @@ public class AuthService : IAuthService
 
     public async Task<(bool success, string message)> ForgotPasswordAsync(string email)
     {
+        email = NormalizeEmail(email);
+        if (!IsValidEmail(email))
+            return (false, "Email không hợp lệ.");
+
         var user = await _userRepo.FindByEmailAsync(email);
         if (user == null)
-            return (true, "Nếu email tồn tại, mã OTP đã được gửi.");
+            return (false, "Email chưa được đăng ký.");
 
         if (user.AuthProvider == (int)AuthProvider.Google)
-            return (true, "Nếu email tồn tại, mã OTP đã được gửi.");
+            return (false, "Tài khoản này đăng nhập bằng Google. Vui lòng đăng nhập bằng Google.");
 
         try
         {
@@ -198,6 +202,10 @@ public class AuthService : IAuthService
 
     public async Task ResetPasswordAsync(ResetPasswordRequest request)
     {
+        request.Email = NormalizeEmail(request.Email);
+        if (!IsValidEmail(request.Email))
+            throw new InvalidOperationException("Email không hợp lệ.");
+
         var otp = await _otp.ValidateAsync(request.Email, request.OtpCode, OtpPurpose.ForgotPassword)
             ?? throw new InvalidOperationException("Mã OTP không hợp lệ hoặc đã hết hạn.");
 
@@ -354,6 +362,15 @@ public class AuthService : IAuthService
 
     private static bool IsValidPhoneNumber(string phoneNumber) =>
         Regex.IsMatch(phoneNumber, @"^0\d{9}$");
+
+    private static string NormalizeEmail(string? email) =>
+        string.IsNullOrWhiteSpace(email) ? string.Empty : email.Trim();
+
+    private static bool IsValidEmail(string email) =>
+        Regex.IsMatch(
+            email,
+            @"^(?!.*\.\.)(?!\.)(?!.*\.$)[A-Za-z0-9._%+\-']+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$",
+            RegexOptions.IgnoreCase);
 
     private async Task UpdatePasswordAsync(User user, string newPassword)
     {

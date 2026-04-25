@@ -160,6 +160,34 @@ public class NannyBasicInfoController : Controller
         return true;
     }
 
+    private static ApiResultDto? TryDeserializeApiResult(string? content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return null;
+
+        try
+        {
+            return JsonSerializer.Deserialize<ApiResultDto>(content, JsonOpts);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static string BuildFallbackHttpErrorMessage(HttpResponseMessage response, string? body)
+    {
+        var statusText = $"HTTP {(int)response.StatusCode}";
+        var trimmed = (body ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(trimmed))
+            return $"Cập nhật thông tin thất bại ({statusText}).";
+
+        if (trimmed.Length > 180)
+            trimmed = trimmed[..180] + "...";
+
+        return $"Cập nhật thông tin thất bại ({statusText}): {trimmed}";
+    }
+
     private async Task<EditPersonalInfoViewModel?> LoadCurrentProfileAsync()
     {
         SetAuthHeader();
@@ -167,7 +195,7 @@ public class NannyBasicInfoController : Controller
         if (!response.IsSuccessStatusCode) return null;
 
         var content = await response.Content.ReadAsStringAsync();
-        var apiResult = JsonSerializer.Deserialize<ApiResultDto>(content, JsonOpts);
+        var apiResult = TryDeserializeApiResult(content);
         if (apiResult?.Data is System.Text.Json.JsonElement element)
         {
             return JsonSerializer.Deserialize<EditPersonalInfoViewModel>(element.GetRawText(), JsonOpts);
@@ -176,7 +204,7 @@ public class NannyBasicInfoController : Controller
         return null;
     }
 
-    private async Task<bool> SaveProfileAsync(NannyBasicInfoWizardViewModel model)
+    private async Task<(bool Success, string? Message)> SaveProfileAsync(NannyBasicInfoWizardViewModel model)
     {
         SetAuthHeader();
 
@@ -189,7 +217,7 @@ public class NannyBasicInfoController : Controller
             }
             catch
             {
-                return false;
+                return (false, "Tải ảnh đại diện thất bại. Vui lòng thử lại.");
             }
         }
 
@@ -213,8 +241,11 @@ public class NannyBasicInfoController : Controller
 
         var response = await _http.PutAsJsonAsync("/api/profile", updateRequest);
         var resContent = await response.Content.ReadAsStringAsync();
-        var apiResult = JsonSerializer.Deserialize<ApiResultDto>(resContent, JsonOpts);
-        return apiResult != null && apiResult.Success;
+        var apiResult = TryDeserializeApiResult(resContent);
+        if (apiResult != null)
+            return (apiResult.Success, apiResult.Message);
+
+        return (false, BuildFallbackHttpErrorMessage(response, resContent));
     }
 
     [HttpGet]
@@ -297,10 +328,10 @@ public class NannyBasicInfoController : Controller
             if (!ModelState.IsValid)
                 return View(model);
 
-            var success = await SaveProfileAsync(model);
-            if (!success)
+            var saveResult = await SaveProfileAsync(model);
+            if (!saveResult.Success)
             {
-                ModelState.AddModelError(string.Empty, "Cập nhật thông tin thất bại. Vui lòng thử lại.");
+                ModelState.AddModelError(string.Empty, saveResult.Message ?? "Cập nhật thông tin thất bại. Vui lòng thử lại.");
                 return View(model);
             }
 

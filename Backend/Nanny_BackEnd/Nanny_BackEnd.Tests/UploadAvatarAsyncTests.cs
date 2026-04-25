@@ -15,16 +15,16 @@ namespace Nanny_BackEnd.Tests;
 /// </summary>
 public class UploadAvatarAsyncTests
 {
-    private const string UserNotFoundMessage = "NgÆ°á»i dÃ¹ng khÃ´ng tá»“n táº¡i.";
+    private const string UserNotFoundMessage = "Người dùng không tồn tại.";
 
     private const string ExtNotAllowedMessage =
-        "Chá»‰ cháº¥p nháº­n file áº£nh .jpg, .jpeg hoáº·c .png.";
+        "Chỉ chấp nhận file ảnh .jpg, .jpeg hoặc .png.";
 
     private const string ContentTypeNotAllowedMessage =
-        "Chá»‰ cháº¥p nháº­n áº£nh JPEG/PNG há»£p lá»‡.";
+        "Chỉ chấp nhận ảnh JPEG/PNG hợp lệ.";
 
     private const string FileTooLargeMessage =
-        "File áº£nh khÃ´ng Ä‘Æ°á»£c vÆ°á»£t quÃ¡ 5MB.";
+        "File ảnh không được vượt quá 5MB.";
 
     private readonly Mock<IUserRepository> _mockUser;
     private readonly Mock<IParentRepository> _mockParent;

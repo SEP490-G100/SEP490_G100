@@ -15,7 +15,7 @@ namespace Nanny_BackEnd.Tests;
 /// </summary>
 public class GetPersonalProfileTests
 {
-    private const string UserNotFoundMessage = "NgÆ°á»i dÃ¹ng khÃ´ng tá»“n táº¡i.";
+    private const string UserNotFoundMessage = "Người dùng không tồn tại.";
 
     private readonly Mock<IUserRepository> _mockUser;
     private readonly Mock<IParentRepository> _mockParent;
@@ -220,6 +220,6 @@ public class GetPersonalProfileTests
 
         var dto = await _sut.GetPersonalProfileAsync(id);
 
-        Assert.Equal("ChÆ°a Ä‘Æ°á»£c xÃ¡c thá»±c", dto.VerificationStatus);
+        Assert.Equal("Chưa được xác thực", dto.VerificationStatus);
     }
 }

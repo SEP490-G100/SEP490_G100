@@ -29,18 +29,18 @@ public class ContactRequestService : IContactRequestService
     {
         var parentProfile = await _parents.FindByUserIdWithUserAsync(userId);
         if (parentProfile == null)
-            return Err(400, "Tai khoan khong phai parent.");
+            return Err(400, "Tài khoản không phải parent.");
 
         var nannyProfile = await _nannies.FindByIdWithUserAsync(nannyProfileId);
         if (nannyProfile == null)
-            return Err(404, "Khong tim thay ho so nanny.");
+            return Err(404, "Không tìm thấy hồ sơ nanny.");
 
         if (nannyProfile.UserId == userId)
-            return Err(400, "Ban khong the gui request contact cho chinh minh.");
+            return Err(400, "Bạn không thể gửi request contact cho chính mình.");
 
         message = message?.Trim();
         if (!string.IsNullOrWhiteSpace(message) && message.Length > 1000)
-            return Err(400, "Noi dung request contact khong duoc vuot qua 1000 ky tu.");
+            return Err(400, "Nội dung request contact không được vượt quá 1000 ký tự.");
 
         var nowUtc = DateTime.UtcNow;
         var existingRequest = await _contactRequests.FindByParentAndNannyNotDeletedAsync(
@@ -53,7 +53,7 @@ public class ContactRequestService : IContactRequestService
                 return new ContactRequestEndpointResult
                 {
                     StatusCode = 409,
-                    Body = new { success = false, message = "Ban da gui request contact den nanny nay va dang cho phan hoi." }
+                    Body = new { success = false, message = "Bạn đã gửi request contact đến nanny này và đang chờ phản hồi." }
                 };
 
             existingRequest.Status = 0;
@@ -89,12 +89,12 @@ public class ContactRequestService : IContactRequestService
 
         var parentName = $"{parentProfile.User?.FirstName} {parentProfile.User?.LastName}".Trim();
         if (string.IsNullOrWhiteSpace(parentName))
-            parentName = "Mot parent";
+            parentName = "Một parent";
 
         await _notifications.createNotification(
             nannyProfile.UserId,
-            "Ban vua nhan duoc request contact",
-            $"{parentName} vua gui request contact cho ho so cua ban.",
+            "Bạn vừa nhận được request contact",
+            $"{parentName} vừa gửi request contact cho hồ sơ của bạn.",
             NotificationTypes.ContactRequestReceived,
             existingRequest.Id,
             "ContactRequest",
@@ -116,8 +116,8 @@ public class ContactRequestService : IContactRequestService
                     createdAt = existingRequest.CreatedAt
                 },
                 message = isResubmitted
-                    ? "Ban da gui lai request contact. Vui long cho nanny phan hoi."
-                    : "Ban da gui request contact thanh cong. Vui long cho nanny phan hoi."
+                    ? "Bạn đã gửi lại request contact. Vui lòng chờ nanny phản hồi."
+                    : "Bạn đã gửi request contact thành công. Vui lòng chờ nanny phản hồi."
             }
         };
     }
@@ -125,11 +125,11 @@ public class ContactRequestService : IContactRequestService
     public async Task<ContactRequestEndpointResult> GetReceivedAsync(Guid userId, int? status)
     {
         if (status.HasValue && (status.Value < 0 || status.Value > 2))
-            return Err(400, "Trang thai request contact khong hop le.");
+            return Err(400, "Trạng thái request contact không hợp lệ.");
 
         var nannyProfile = await _nannies.FindByUserIdAsync(userId);
         if (nannyProfile == null)
-            return Err(400, "Tai khoan khong phai nanny.");
+            return Err(400, "Tài khoản không phải nanny.");
 
         var (items, total, pending, accepted, rejected) =
             await _contactRequests.GetReceivedListForNannyAsync(nannyProfile.Id, status);
@@ -186,11 +186,11 @@ public class ContactRequestService : IContactRequestService
     public async Task<ContactRequestEndpointResult> GetSentAsync(Guid userId, int? status)
     {
         if (status.HasValue && (status.Value < 0 || status.Value > 2))
-            return Err(400, "Trang thai request contact khong hop le.");
+            return Err(400, "Trạng thái request contact không hợp lệ.");
 
         var parentProfile = await _parents.FindByUserIdAsync(userId);
         if (parentProfile == null)
-            return Err(400, "Tai khoan khong phai parent.");
+            return Err(400, "Tài khoản không phải parent.");
 
         var (items, total, pending, accepted, rejected) =
             await _contactRequests.GetSentListForParentAsync(parentProfile.Id, status);
@@ -250,17 +250,17 @@ public class ContactRequestService : IContactRequestService
         Guid userId, Guid contactRequestId, bool isParent, bool isNanny)
     {
         if (!isParent && !isNanny)
-            return Err(403, "Ban khong co quyen xem chi tiet request contact.");
+            return Err(403, "Bạn không có quyền xem chi tiết request contact.");
 
         var request = await _contactRequests.GetByIdForDetailNoTrackingAsync(contactRequestId);
         if (request == null)
-            return Err(404, "Khong tim thay request contact.");
+            return Err(404, "Không tìm thấy request contact.");
 
         if (isParent && request.ParentProfile?.UserId != userId)
-            return Err(404, "Khong tim thay request contact hoac ban khong co quyen truy cap.");
+            return Err(404, "Không tìm thấy request contact hoặc bạn không có quyền truy cập.");
 
         if (isNanny && request.NannyProfile?.UserId != userId)
-            return Err(404, "Khong tim thay request contact hoac ban khong co quyen truy cap.");
+            return Err(404, "Không tìm thấy request contact hoặc bạn không có quyền truy cập.");
 
         var parentUser = request.ParentProfile?.User;
         var nannyUser = request.NannyProfile?.User;
@@ -326,30 +326,30 @@ public class ContactRequestService : IContactRequestService
         string? responseMessage)
     {
         if (action is not 1 and not 2)
-            return Err(400, "Action khong hop le. Dung 1 (accept) hoac 2 (reject).");
+            return Err(400, "Action không hợp lệ. Dùng 1 (accept) hoặc 2 (reject).");
 
         responseMessage = responseMessage?.Trim();
         if (action == 2 && string.IsNullOrWhiteSpace(responseMessage))
-            return Err(400, "Vui long nhap ly do khi tu choi request contact.");
+            return Err(400, "Vui lòng nhập lý do khi từ chối request contact.");
 
         if (!string.IsNullOrWhiteSpace(responseMessage) && responseMessage.Length > 1000)
-            return Err(400, "Noi dung phan hoi khong duoc vuot qua 1000 ky tu.");
+            return Err(400, "Nội dung phản hồi không được vượt quá 1000 ký tự.");
 
         var nannyProfile = await _nannies.FindByUserIdAsync(userId);
         if (nannyProfile == null)
-            return Err(400, "Tai khoan khong phai nanny.");
+            return Err(400, "Tài khoản không phải nanny.");
 
         var contactRequest = await _contactRequests.GetByIdForNannyReviewTrackingAsync(
             contactRequestId, nannyProfile.Id);
 
         if (contactRequest == null)
-            return Err(404, "Khong tim thay request contact hoac ban khong co quyen xu ly.");
+            return Err(404, "Không tìm thấy request contact hoặc bạn không có quyền xử lý.");
 
         if (contactRequest.Status is 1 or 2)
-            return Err(400, "Request contact nay da duoc xu ly truoc do.");
+            return Err(400, "Request contact này đã được xử lý trước đó.");
 
         if (contactRequest.Status != 0)
-            return Err(400, "Chi request contact dang cho duyet moi co the xu ly.");
+            return Err(400, "Chỉ request contact đang chờ duyệt mới có thể xử lý.");
 
         var nowUtc = DateTime.UtcNow;
         var isApproved = action == 1;
@@ -370,12 +370,12 @@ public class ContactRequestService : IContactRequestService
                 nannyName = "Nanny";
 
             var title = isApproved
-                ? "Request contact da duoc chap nhan"
-                : "Request contact bi tu choi";
+                ? "Request contact đã được chấp nhận"
+                : "Request contact bị từ chối";
 
             var content = isApproved
-                ? $"{nannyName} da chap nhan request contact cua ban."
-                : $"{nannyName} da tu choi request contact cua ban. Ly do: {responseMessage}";
+                ? $"{nannyName} đã chấp nhận request contact của bạn."
+                : $"{nannyName} đã từ chối request contact của bạn. Lý do: {responseMessage}";
 
             await _notifications.createNotification(
                 parentUserId,
@@ -404,18 +404,18 @@ public class ContactRequestService : IContactRequestService
                     respondedAt = contactRequest.RespondedAt
                 },
                 message = isApproved
-                    ? "Ban da chap nhan request contact."
-                    : "Ban da tu choi request contact."
+                    ? "Bạn đã chấp nhận request contact."
+                    : "Bạn đã từ chối request contact."
             }
         };
     }
 
     private static string GetStatusLabel(int status) => status switch
     {
-        0 => "Dang cho duyet",
-        1 => "Da duoc chap nhan",
-        2 => "Da bi tu choi",
-        _ => "Dang cap nhat"
+        0 => "Đang chờ duyệt",
+        1 => "Đã được chấp nhận",
+        2 => "Đã bị từ chối",
+        _ => "Đang cập nhật"
     };
 
     private static ContactRequestEndpointResult Err(int code, string message) => new()

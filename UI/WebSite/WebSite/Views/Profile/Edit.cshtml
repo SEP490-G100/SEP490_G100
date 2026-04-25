@@ -59,7 +59,7 @@
                                 <input asp-for="DateOfBirth" asp-format="{0:yyyy-MM-dd}" id="DateOfBirth" type="date" max="@dobMax" class="form-input" />
                                 @if (isNanny)
                                 {
-                                    <p class="text-xs text-slate-500 mt-1">Nanny phải lớn hơn 30 tuổi.</p>
+                                    <p id="dobHint" class="text-xs text-slate-500 mt-1">Yêu cầu: Bảo mẫu phải lớn hơn 30 tuổi.</p>
                                 }
                                 <p id="dobError" class="hidden text-xs text-red-600 mt-1"></p>
                             </div>
@@ -114,7 +114,7 @@
                                     </div>
                                 </div>
                                 <p id="salaryError" class="hidden text-xs text-red-600 mt-1"></p>
-                                <p class="text-xs text-slate-500">Lương hợp lệ từ 8.000.000 đến 50.000.000 VND.</p>
+                                <p id="salaryHint" class="text-xs text-slate-500">Lương hợp lệ từ 8.000.000 đến 50.000.000 VND.</p>
                                 <div>
                                     <label class="form-label" for="MaxTravelDistance">Khoảng cách di chuyển tối đa (km)</label>
                                     <input asp-for="MaxTravelDistance" id="MaxTravelDistance" type="number" min="0" class="form-input" />
@@ -273,7 +273,7 @@
                                     <button type="button" id="avatarUploadBtn" class="profile-primary-btn flex-1">Chọn ảnh</button>
                                     <button type="button" id="avatarResetBtn" class="ghost-btn">Bỏ chọn</button>
                                 </div>
-                                <p class="text-xs text-slate-500 mt-2">Chỉ cho phép file .jpg, .jpeg hoặc .png</p>
+                                <p id="avatarUploadHint" class="text-xs text-slate-500 mt-2">Chỉ cho phép file .jpg, .jpeg hoặc .png</p>
                                 <p id="avatarUploadError" class="hidden text-xs text-red-600 mt-1"></p>
                             </div>
                             <div class="w-full mt-3">
@@ -306,6 +306,7 @@
             var form = document.getElementById("editProfileForm");
             var dobInput = document.getElementById("DateOfBirth");
             var dobError = document.getElementById("dobError");
+            var dobHint = document.getElementById("dobHint");
 
             var genderInput = document.getElementById("Gender");
             var genderButtons = document.querySelectorAll(".gender-btn");
@@ -341,8 +342,10 @@
             var maxSalaryAllowed = 50000000;
 
             function showAvatarError(msg) {
+                var avatarHint = document.getElementById("avatarUploadHint");
                 avatarErr.textContent = msg || "";
                 avatarErr.classList.toggle("hidden", !msg);
+                if (avatarHint) avatarHint.classList.toggle("hidden", !!msg);
             }
             function isAllowedImage(file) {
                 if (!file) return false;
@@ -460,8 +463,10 @@
 
             function showSalaryError(message) {
                 if (!salaryError) return;
+                var salaryHint = document.getElementById("salaryHint");
                 salaryError.textContent = message || "";
                 salaryError.classList.toggle("hidden", !message);
+                if (salaryHint) salaryHint.classList.toggle("hidden", !!message);
             }
 
             function validateSalaryRange() {
@@ -491,10 +496,22 @@
 
             function validateNannyDob() {
                 if (!isNanny) return true;
+
+                function showDobError(message) {
+                    dobError.textContent = message || "";
+                    dobError.classList.remove("hidden");
+                    if (dobHint) dobHint.classList.add("hidden");
+                }
+
+                function clearDobError() {
+                    dobError.classList.add("hidden");
+                    dobError.textContent = "";
+                    if (dobHint) dobHint.classList.remove("hidden");
+                }
+
                 var value = dobInput.value;
                 if (!value) {
-                    dobError.textContent = "Vui lòng chọn ngày sinh.";
-                    dobError.classList.remove("hidden");
+                    showDobError("Vui lòng chọn ngày sinh.");
                     return false;
                 }
                 var dob = new Date(value + "T00:00:00");
@@ -503,12 +520,10 @@
                 var monthDiff = today.getMonth() - dob.getMonth();
                 if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) age--;
                 if (age <= 30) {
-                    dobError.textContent = "Bảo mẫu phải lớn hơn 30 tuổi.";
-                    dobError.classList.remove("hidden");
+                    showDobError("Bảo mẫu phải lớn hơn 30 tuổi.");
                     return false;
                 }
-                dobError.classList.add("hidden");
-                dobError.textContent = "";
+                clearDobError();
                 return true;
             }
 
@@ -644,7 +659,7 @@
                     .replace(/[\u0300-\u036f]/g, "")
                     .replace(/\u0111/g, "d")
                     .replace(/\u0110/g, "d")
-                    .replace(/Ä‘/g, "d")
+                    .replace(/đ/g, "d")
                     .trim();
             }
             function sortByFilterAndName(items, filterKey, getName) {
