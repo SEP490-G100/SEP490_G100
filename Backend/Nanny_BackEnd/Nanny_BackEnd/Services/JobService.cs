@@ -887,6 +887,151 @@ public class JobService : IJobService
     public async Task ModeratorDeactivateJobAsync(Guid jobId, Guid moderatorUserId) =>
         await DeactivateJobAsync(jobId, moderatorUserId);
 
+    public async Task<BackfillJobCoordinatesResult> BackfillJobCoordinatesAsync(
+        BackfillJobCoordinatesRequest request,
+        Guid? actorUserId = null,
+        CancellationToken cancellationToken = default)
+    {
+        request ??= new BackfillJobCoordinatesRequest();
+
+        var maxItems = Math.Clamp(request.MaxItems, 1, 1000);
+        var delayMs = Math.Clamp(request.DelayMs, 0, 5000);
+        var jobs = await _jobRepo.GetJobsForCoordinateBackfillAsync(request.CreatedBeforeUtc, maxItems);
+        var result = new BackfillJobCoordinatesResult
+        {
+            DryRun = request.DryRun,
+            ScannedCount = jobs.Count
+        };
+
+        foreach (var job in jobs)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var needsFix = request.ForceGeocode || NeedsCoordinateBackfill(job.Latitude, job.Longitude);
+            if (!needsFix)
+                continue;
+
+            result.CandidateCount++;
+            var oldLat = job.Latitude;
+            var oldLng = job.Longitude;
+            var isSwapped = IsLikelySwapped(oldLat, oldLng);
+            var hasAddress = HasAddressInput(job.Location, job.City, job.District);
+
+            var item = new BackfillJobCoordinateItemResult
+            {
+                JobId = job.Id,
+                Title = job.Title,
+                OldLatitude = oldLat,
+                OldLongitude = oldLng
+            };
+
+            if (request.DryRun)
+            {
+                if (!request.ForceGeocode && isSwapped)
+                {
+                    var (newLat, newLng) = SwapCoordinatePair(oldLat!.Value, oldLng!.Value);
+                    item.NewLatitude = newLat;
+                    item.NewLongitude = newLng;
+                    item.Action = "would_swap";
+                    item.Message = "Tọa độ có dấu hiệu bị đảo lat/lng.";
+                }
+                else if (hasAddress)
+                {
+                    item.Action = "would_geocode";
+                    item.Message = "Sẽ gọi geocoding từ địa chỉ để cập nhật tọa độ.";
+                }
+                else if (isSwapped)
+                {
+                    var (newLat, newLng) = SwapCoordinatePair(oldLat!.Value, oldLng!.Value);
+                    item.NewLatitude = newLat;
+                    item.NewLongitude = newLng;
+                    item.Action = "would_swap_fallback";
+                    item.Message = "Không đủ thông tin địa chỉ, sẽ sửa bằng cách đảo lat/lng.";
+                }
+                else
+                {
+                    item.Action = "would_skip";
+                    item.Message = "Không đủ địa chỉ để geocode.";
+                    result.FailedCount++;
+                }
+
+                result.Items.Add(item);
+                continue;
+            }
+
+            var updated = false;
+            var usedGeocode = false;
+
+            if (!request.ForceGeocode && isSwapped)
+            {
+                var (newLat, newLng) = SwapCoordinatePair(oldLat!.Value, oldLng!.Value);
+                job.Latitude = newLat;
+                job.Longitude = newLng;
+                item.NewLatitude = newLat;
+                item.NewLongitude = newLng;
+                item.Action = "swapped";
+                item.Message = "Đã sửa bằng cách đảo lat/lng.";
+                updated = true;
+                result.SwappedCount++;
+            }
+            else if (hasAddress)
+            {
+                usedGeocode = true;
+                var coords = await _geo.geocode(job.Location, job.City, job.District);
+                if (coords.HasValue)
+                {
+                    job.Latitude = coords.Value.Lat;
+                    job.Longitude = coords.Value.Lng;
+                    item.NewLatitude = coords.Value.Lat;
+                    item.NewLongitude = coords.Value.Lng;
+                    item.Action = "geocoded";
+                    item.Message = "Đã cập nhật tọa độ từ geocoding.";
+                    updated = true;
+                    result.GeocodedCount++;
+                }
+            }
+
+            if (!updated && isSwapped)
+            {
+                var (newLat, newLng) = SwapCoordinatePair(oldLat!.Value, oldLng!.Value);
+                job.Latitude = newLat;
+                job.Longitude = newLng;
+                item.NewLatitude = newLat;
+                item.NewLongitude = newLng;
+                item.Action = "swapped_fallback";
+                item.Message = "Geocoding không trả về kết quả, đã fallback đảo lat/lng.";
+                updated = true;
+                result.SwappedCount++;
+            }
+
+            if (updated)
+            {
+                job.UpdatedAt = DateTime.UtcNow;
+                if (actorUserId.HasValue)
+                    job.UpdatedBy = actorUserId.Value;
+                result.UpdatedCount++;
+            }
+            else
+            {
+                item.Action = "skipped";
+                item.Message = hasAddress
+                    ? "Geocoding không trả về kết quả hợp lệ."
+                    : "Không đủ địa chỉ để geocode.";
+                result.FailedCount++;
+            }
+
+            result.Items.Add(item);
+
+            if (usedGeocode && delayMs > 0)
+                await Task.Delay(delayMs, cancellationToken);
+        }
+
+        if (!request.DryRun && result.UpdatedCount > 0)
+            await _jobRepo.saveChanges();
+
+        return result;
+    }
+
     private static void ensureJobModerationIsPending(JobPosting job)
     {
         if (job.ModerationStatus != (int)JobPostingModerationStatus.Pending)
@@ -907,4 +1052,35 @@ public class JobService : IJobService
             _logger.LogWarning(ex, "Background re-embed thất bại cho JobId={JobId}", jobId);
         }
     }
+
+    private static bool NeedsCoordinateBackfill(decimal? lat, decimal? lng)
+    {
+        if (!lat.HasValue || !lng.HasValue)
+            return true;
+
+        if (IsLikelySwapped(lat, lng))
+            return true;
+
+        return !IsWithinVietnamBounds(lat.Value, lng.Value);
+    }
+
+    private static bool IsLikelySwapped(decimal? lat, decimal? lng)
+    {
+        if (!lat.HasValue || !lng.HasValue)
+            return false;
+
+        return lat.Value is >= 102m and <= 110m &&
+               lng.Value is >= 8m and <= 24m;
+    }
+
+    private static bool IsWithinVietnamBounds(decimal lat, decimal lng) =>
+        lat is >= 8m and <= 24m &&
+        lng is >= 102m and <= 110m;
+
+    private static bool HasAddressInput(string? location, string? city, string? district) =>
+        !string.IsNullOrWhiteSpace(location) ||
+        !string.IsNullOrWhiteSpace(city) ||
+        !string.IsNullOrWhiteSpace(district);
+
+    private static (decimal Lat, decimal Lng) SwapCoordinatePair(decimal lat, decimal lng) => (lng, lat);
 }
