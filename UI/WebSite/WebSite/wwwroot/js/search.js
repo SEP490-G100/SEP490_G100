@@ -1287,6 +1287,9 @@ function renderJobs(jobs) {
 
   resultCount.textContent = `${jobs.length} tin đăng`;
   clearMapMarkers();
+  if (map) {
+    try { map.invalidateSize({ animate: false }); } catch (_) {}
+  }
 
   if (!jobs.length) {
     list.innerHTML = `

@@ -309,69 +309,133 @@
     let recUpgradeRequired = false;
 
     function renderRecNannyCard(n, idx) {
-        const pct = Math.round((n.finalScore ?? 0) * 100);
+        const pct   = Math.round((n.finalScore ?? 0) * 100);
         const color = pct >= 80 ? '#16a34a' : pct >= 60 ? '#f97316' : '#6b7280';
-        const exp  = n.yearsOfExperience != null ? `<span class="rec-chip rec-chip--distance">${n.yearsOfExperience} năm kinh nghiệm</span>` : '';
+        const exp   = n.yearsOfExperience != null
+            ? `<span class="rec-chip rec-chip--distance">${n.yearsOfExperience} năm KN</span>` : '';
         const rating = n.averageRating != null
-            ? `<span class="rec-stars"><span class="material-icons-round" style="font-size:13px">star</span>${n.averageRating.toFixed(1)}</span>`
+            ? `<span class="rec-chip rec-chip--salary"><span class="material-icons-round" style="font-size:11px">star</span>${Number(n.averageRating).toFixed(1)}</span>`
             : '';
         const dist = n.distanceKm != null
             ? `<span class="rec-chip rec-chip--distance"><span class="material-icons-round" style="font-size:11px">near_me</span>${n.distanceKm.toFixed(1)} km</span>`
             : '';
         const badgeCls = `rec-badge rec-badge--${n.matchTier || 'ok'}`;
-        const skills = (n.skills || []).slice(0, 4).map(s =>
-            `<span class="rec-chip rec-chip--skill">${escNRec(s.skillName ?? s)}</span>`).join('');
+        const skills   = (n.skills || []).slice(0, 4)
+            .map(s => `<span class="rec-chip rec-chip--skill">${escNRec(s.skillName ?? s)}</span>`).join('');
+
+        // Avatar circle — show image or initials fallback
+        const initials = (n.fullName || '?').split(' ').map(w => w[0]).slice(-2).join('').toUpperCase();
+        const avatarHtml = n.avatarUrl
+            ? `<img src="${escNRec(n.avatarUrl)}" alt="" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid #e2e8f0">`
+            : `<div style="width:44px;height:44px;border-radius:50%;background:#e0e7ff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#6366f1;flex-shrink:0">${initials}</div>`;
+
+        // Score breakdown sub-components
+        const semPct  = Math.round((n.semanticScore  ?? 0) * 100);
+        const salPct  = Math.round((n.salaryScore    ?? 0) * 100);
+        const distPct = Math.round((n.distanceScore  ?? 0) * 100);
 
         return `
         <div class="rec-card rec-card--clickable" data-rec-idx="${idx}"
              onclick="openNannyDetail('${escNRec(n.nannyProfileId)}')">
             <div class="rec-card-header">
-                <div class="rec-score-ring" style="--score-color:${color}">
-                    <span class="rec-score-value" style="color:${color}">${pct}%</span>
-                </div>
-                <div class="rec-card-meta">
-                    <h3 class="rec-card-title">${escNRec(n.fullName)}</h3>
-                    <p class="rec-card-sub">${rating} ${exp}</p>
+                <div style="flex-shrink:0">${avatarHtml}</div>
+                <div class="rec-card-meta" style="min-width:0">
+                    <div class="rec-card-meta__top">
+                        <h3 class="rec-card-title">${escNRec(n.fullName)}</h3>
+                        <span class="rec-score-badge" style="--score-color:${color}">${pct}%</span>
+                    </div>
+                    <p class="rec-card-sub" style="margin-top:2px">${rating}${exp ? ' ' + exp : ''}</p>
                 </div>
             </div>
             <div class="rec-card-chips">
-                ${dist}
-                ${skills}
+                ${dist}${skills}
+            </div>
+            <div class="rec-score-breakdown" onclick="event.stopPropagation(); toggleNannyBreakdown(this)">
+                <div class="rec-score-breakdown__toggle">
+                    <span class="material-icons-round rec-score-breakdown__icon">info_outline</span>
+                    <span>Thông số gợi ý chi tiết</span>
+                    <span class="material-icons-round rec-score-breakdown__chevron">expand_more</span>
+                </div>
+                <div class="rec-score-breakdown__body">
+                    <div class="rec-score-breakdown__row">
+                        <span class="rec-score-breakdown__label">Nội dung phù hợp</span>
+                        <div class="rec-mini-bar"><div class="rec-mini-bar__fill" style="width:${semPct}%;background:#3b82f6"></div></div>
+                        <span class="rec-score-breakdown__val">${semPct}%</span>
+                    </div>
+                    <div class="rec-score-breakdown__row">
+                        <span class="rec-score-breakdown__label">Mức lương</span>
+                        <div class="rec-mini-bar"><div class="rec-mini-bar__fill" style="width:${salPct}%;background:#8b5cf6"></div></div>
+                        <span class="rec-score-breakdown__val">${salPct}%</span>
+                    </div>
+                    <div class="rec-score-breakdown__row">
+                        <span class="rec-score-breakdown__label">Khoảng cách</span>
+                        <div class="rec-mini-bar"><div class="rec-mini-bar__fill" style="width:${distPct}%;background:#0ea5e9"></div></div>
+                        <span class="rec-score-breakdown__val">${distPct}%</span>
+                    </div>
+                </div>
             </div>
             <div class="rec-card-footer">
-                <span class="rec-ai-badge"><span class="material-icons-round" style="font-size:13px">auto_awesome</span>AI Gợi ý</span>
+                <span class="rec-ai-badge"><span class="material-icons-round" style="font-size:13px">auto_awesome</span>Hệ thống gợi ý</span>
                 <span class="${badgeCls}">${escNRec(n.matchLabel || '')}</span>
             </div>
         </div>`;
     }
 
+    function toggleNannyBreakdown(el) {
+        const body    = el.querySelector('.rec-score-breakdown__body');
+        const chevron = el.querySelector('.rec-score-breakdown__chevron');
+        const isOpen  = el.classList.contains('open');
+        el.classList.toggle('open', !isOpen);
+        body.style.display      = isOpen ? 'none' : 'flex';
+        chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+    }
+
     function plotRecNannyMarkers(nannies) {
         if (typeof clearNannyMarkers === 'function') clearNannyMarkers();
-        if (!window.nannyMap || !window.L) return;
+        // __leafletNannyMap is set by nanny-list.js; window.nannyMap = DOM element (browser quirk)
+        const leafletMap = window.__leafletNannyMap;
+        if (!leafletMap || typeof L === 'undefined') return;
+        // Ensure map knows its current container dimensions before adding layers
+        try { leafletMap.invalidateSize({ animate: false }); } catch (_) {}
         nannies.forEach((n, idx) => {
             if (!n.latitude || !n.longitude) return;
-            const pct = Math.round((n.finalScore ?? 0) * 100);
-            const color = pct >= 80 ? '#16a34a' : pct >= 60 ? '#f97316' : '#6b7280';
-            const el = document.createElement('div');
-            el.className = 'nanny-marker';
-            el.innerHTML = `<span style="font-size:11px;font-weight:800;color:${color}">${pct}%</span>`;
-            el.style.cssText = `background:#fff;border:2px solid ${color};border-radius:999px;padding:2px 7px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.15);cursor:pointer`;
-            const marker = window.L.marker([n.latitude, n.longitude], {
-                icon: window.L.divIcon({ html: el, className: '', iconAnchor: [20, 12] })
-            }).addTo(window.nannyMap);
-            marker.bindPopup(`<div style="font-size:.82rem;font-weight:700">${n.fullName}</div><div style="font-size:.75rem;color:#64748b">${pct}% phù hợp</div>`);
-            const circle = window.L.circle([n.latitude, n.longitude], {
-                radius: 600, color: '#fdba74', fillColor: '#fdba74',
-                fillOpacity: 0.1, weight: 1
-            }).addTo(window.nannyMap);
-            window.nannyMarkers.push({ marker, circle, point: { lat: n.latitude, lng: n.longitude, zoom: 14 }, element: el });
+            try {
+                const pct = Math.round((n.finalScore ?? 0) * 100);
+                const color = pct >= 80 ? '#16a34a' : pct >= 60 ? '#f97316' : '#6b7280';
+                const el = document.createElement('div');
+                el.innerHTML = `<span style="font-size:11px;font-weight:800;color:${color}">${pct}%</span>`;
+                el.style.cssText = `background:#fff;border:2px solid ${color};border-radius:999px;padding:2px 7px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.15);cursor:pointer`;
+                const marker = L.marker([n.latitude, n.longitude], {
+                    icon: L.divIcon({ html: el, className: '', iconAnchor: [20, 12] })
+                }).addTo(leafletMap);
+                marker.bindPopup(`<div style="font-size:.82rem;font-weight:700">${escNRec(n.fullName)}</div><div style="font-size:.75rem;color:#64748b">${pct}% phù hợp</div>`);
+                const circle = L.circle([n.latitude, n.longitude], {
+                    radius: 600, color: '#fdba74', fillColor: '#fdba74',
+                    fillOpacity: 0.1, weight: 1
+                }).addTo(leafletMap);
+                if (typeof pushRecNannyMarker === 'function')
+                    pushRecNannyMarker({ marker, circle, point: { lat: n.latitude, lng: n.longitude, zoom: 14 }, element: el });
+            } catch (markerErr) {
+                console.warn('[rec-nanny] marker error at idx', idx, markerErr);
+            }
         });
-        // Fit map to rec markers
+        // Fit map — skip far outliers (same logic as rec job markers)
         const valid = nannies.filter(n => n.latitude && n.longitude);
-        if (valid.length && window.nannyMap) {
-            const bounds = window.L.latLngBounds(valid.map(n => [n.latitude, n.longitude]));
-            window.suppressNextNannyMapMove = true;
-            window.nannyMap.fitBounds(bounds, { padding: [32, 32], maxZoom: 14 });
+        if (valid.length) {
+            try {
+                const top  = valid.slice(0, 5);
+                const cLat = top.reduce((s, n) => s + n.latitude, 0) / top.length;
+                const cLng = top.reduce((s, n) => s + n.longitude, 0) / top.length;
+                const nearby = valid.filter(n =>
+                    Math.abs(n.latitude - cLat) < 1.5 && Math.abs(n.longitude - cLng) < 1.5);
+                const fitSet = nearby.length ? nearby : top;
+                const bounds = L.latLngBounds(fitSet.map(n => [n.latitude, n.longitude]));
+                if (typeof setSuppressNextNannySearch === 'function') setSuppressNextNannySearch();
+                // animate:false avoids mid-animation layer re-projection (layerPointToContainerPoint null)
+                leafletMap.fitBounds(bounds, { padding: [48, 48], maxZoom: 13, animate: false });
+            } catch (boundsErr) {
+                console.warn('[rec-nanny] fitBounds error', boundsErr);
+            }
         }
     }
 

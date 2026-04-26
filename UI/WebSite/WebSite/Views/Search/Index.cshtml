@@ -650,7 +650,7 @@ function renderRecJobCard(j, idx) {
         <div class="rec-score-breakdown" onclick="event.stopPropagation(); toggleScoreBreakdown(this)">
             <div class="rec-score-breakdown__toggle">
                 <span class="material-icons-round rec-score-breakdown__icon">info_outline</span>
-                <span>Căn cứ gợi ý</span>
+                <span>Thông số gợi ý chi tiết</span>
                 <span class="material-icons-round rec-score-breakdown__chevron">expand_more</span>
             </div>
             <div class="rec-score-breakdown__body">
@@ -672,7 +672,7 @@ function renderRecJobCard(j, idx) {
             </div>
         </div>
         <div class="rec-card-footer">
-            <span class="rec-ai-badge"><span class="material-icons-round" style="font-size:13px">auto_awesome</span>AI Gợi ý</span>
+            <span class="rec-ai-badge"><span class="material-icons-round" style="font-size:13px">auto_awesome</span>Hệ thống gợi ý</span>
             <span class="${badgeCls}">${escRecHtml(j.matchLabel || '')}</span>
         </div>
     </div>`;
@@ -769,38 +769,47 @@ function plotRecJobMarkers(jobs) {
     // __leafletMap is set by search.js initMap(); window.map = DOM element (browser quirk)
     const leafletMap = window.__leafletMap;
     if (!leafletMap || typeof L === 'undefined') return;
+    // Ensure map knows its current container dimensions before adding layers
+    try { leafletMap.invalidateSize({ animate: false }); } catch (_) {}
     jobs.forEach((j, idx) => {
         if (!j.latitude || !j.longitude) return;
-        const pct = Math.round((j.finalScore ?? 0) * 100);
-        const color = recScoreColor(pct);
-        const el = document.createElement('div');
-        el.innerHTML = `<span style="font-size:11px;font-weight:800;color:${color}">${pct}%</span>`;
-        el.style.cssText = `background:#fff;border:2px solid ${color};border-radius:999px;padding:2px 7px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.15);cursor:pointer`;
-        const marker = L.marker([j.latitude, j.longitude], {
-            icon: L.divIcon({ html: el, className: '', iconAnchor: [20, 12] })
-        }).addTo(leafletMap);
-        marker.bindPopup(`<div style="font-size:.82rem;font-weight:700">${escRecHtml(j.title)}</div><div style="font-size:.75rem;color:#64748b">${pct}% phù hợp</div>`);
-        const circle = L.circle([j.latitude, j.longitude], {
-            radius: 600, color: '#fdba74', fillColor: '#fdba74',
-            fillOpacity: 0.1, weight: 1
-        }).addTo(leafletMap);
-        if (typeof pushRecMarker === 'function')
-            pushRecMarker({ marker, circle, point: { lat: j.latitude, lng: j.longitude, zoom: 14 }, element: el });
+        try {
+            const pct = Math.round((j.finalScore ?? 0) * 100);
+            const color = recScoreColor(pct);
+            const el = document.createElement('div');
+            el.innerHTML = `<span style="font-size:11px;font-weight:800;color:${color}">${pct}%</span>`;
+            el.style.cssText = `background:#fff;border:2px solid ${color};border-radius:999px;padding:2px 7px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.15);cursor:pointer`;
+            const marker = L.marker([j.latitude, j.longitude], {
+                icon: L.divIcon({ html: el, className: '', iconAnchor: [20, 12] })
+            }).addTo(leafletMap);
+            marker.bindPopup(`<div style="font-size:.82rem;font-weight:700">${escRecHtml(j.title)}</div><div style="font-size:.75rem;color:#64748b">${pct}% phù hợp</div>`);
+            const circle = L.circle([j.latitude, j.longitude], {
+                radius: 600, color: '#fdba74', fillColor: '#fdba74',
+                fillOpacity: 0.1, weight: 1
+            }).addTo(leafletMap);
+            if (typeof pushRecMarker === 'function')
+                pushRecMarker({ marker, circle, point: { lat: j.latitude, lng: j.longitude, zoom: 14 }, element: el });
+        } catch (markerErr) {
+            console.warn('[rec-job] marker error at idx', idx, markerErr);
+        }
     });
     // Fit map — only use jobs that are reasonably clustered (skip far outliers)
     const valid = jobs.filter(j => j.latitude && j.longitude);
     if (valid.length) {
-        // Calculate centroid of top-ranked jobs (first 5) to find the main cluster
-        const top = valid.slice(0, 5);
-        const cLat = top.reduce((s, j) => s + j.latitude, 0) / top.length;
-        const cLng = top.reduce((s, j) => s + j.longitude, 0) / top.length;
-        // Only include jobs within ~1.5° (~150 km) of the centroid to avoid zoom-out from outliers
-        const nearby = valid.filter(j =>
-            Math.abs(j.latitude - cLat) < 1.5 && Math.abs(j.longitude - cLng) < 1.5);
-        const fitSet = nearby.length ? nearby : top;
-        const bounds = L.latLngBounds(fitSet.map(j => [j.latitude, j.longitude]));
-        if (typeof setSuppressNextSearch === 'function') setSuppressNextSearch();
-        leafletMap.fitBounds(bounds, { padding: [48, 48], maxZoom: 13 });
+        try {
+            const top = valid.slice(0, 5);
+            const cLat = top.reduce((s, j) => s + j.latitude, 0) / top.length;
+            const cLng = top.reduce((s, j) => s + j.longitude, 0) / top.length;
+            const nearby = valid.filter(j =>
+                Math.abs(j.latitude - cLat) < 1.5 && Math.abs(j.longitude - cLng) < 1.5);
+            const fitSet = nearby.length ? nearby : top;
+            const bounds = L.latLngBounds(fitSet.map(j => [j.latitude, j.longitude]));
+            if (typeof setSuppressNextSearch === 'function') setSuppressNextSearch();
+            // animate:false avoids mid-animation layer re-projection (layerPointToContainerPoint null)
+            leafletMap.fitBounds(bounds, { padding: [48, 48], maxZoom: 13, animate: false });
+        } catch (boundsErr) {
+            console.warn('[rec-job] fitBounds error', boundsErr);
+        }
     }
 }
 

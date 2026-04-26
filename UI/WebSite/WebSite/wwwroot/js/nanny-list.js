@@ -895,6 +895,7 @@ function initNannyMap() {
   if (nannyMap || !mapEl || typeof L === 'undefined') return;
 
   nannyMap = L.map('nannyMap', { zoomControl: true }).setView([10.776, 106.701], 11);
+  window.__leafletNannyMap = nannyMap;  // expose for rec panel (window.nannyMap = DOM element)
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; CartoDB',
     maxZoom: 19
@@ -963,6 +964,10 @@ function clearNannyMarkers() {
   nannyMarkers = [];
 }
 
+// Helpers for rec panel (window.xxx ≠ let vars in this file)
+function pushRecNannyMarker(item) { nannyMarkers.push(item); }
+function setSuppressNextNannySearch() { suppressNextNannyMapMove = true; }
+
 function setNannyMarkerHover(idx, active, openPopup = false) {
   const markerData = nannyMarkers[idx];
   if (!markerData) return;
@@ -993,6 +998,9 @@ function renderNannyCards(items, options = {}) {
 
   count.textContent = `${items.length} hồ sơ`;
   clearNannyMarkers();
+  if (nannyMap) {
+    try { nannyMap.invalidateSize({ animate: false }); } catch (_) {}
+  }
 
   if (!items.length) {
     list.innerHTML = `
@@ -1081,7 +1089,11 @@ function renderNannyCards(items, options = {}) {
       nannyMarkers.map((entry) => [entry.point.lat, entry.point.lng])
     );
     suppressNextNannyMapMove = true;
-    nannyMap.fitBounds(bounds, { padding: [24, 24], maxZoom: 13 });
+    try {
+      nannyMap.fitBounds(bounds, { padding: [24, 24], maxZoom: 13, animate: false });
+    } catch (e) {
+      console.warn('[nanny-list] fitBounds error', e);
+    }
   }
 
   list.querySelectorAll('.nanny-card').forEach((card) => {
