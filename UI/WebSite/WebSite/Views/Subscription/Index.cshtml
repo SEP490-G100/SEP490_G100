@@ -58,7 +58,7 @@
                 {
                     <div class="sub-metric">
                         <span class="sub-metric-label">Miễn phí</span>
-                        <b>@Model.FreeBenefits.MonthlyJobPostLimit bài/tháng</b>
+                        <b>@Model.FreeBenefits.MonthlyJobPostLimit bài đang hoạt động</b>
                     </div>
                     <div class="sub-metric">
                         <span class="sub-metric-label">Thời hạn</span>
@@ -138,6 +138,43 @@
                 {
                     var isCurrent = Model.CurrentSubscription?.Plan?.Code == plan.Code && Model.HasActiveSubscription;
                     var isHighestPricePlan = Model.Plans.Count > 0 && plan.Id == Model.Plans.OrderByDescending(p => p.Price).ThenByDescending(p => p.DurationDays).First().Id;
+                    var isPlusOrProPlan =
+                        (!string.IsNullOrWhiteSpace(plan.Code) &&
+                            (plan.Code.Contains("PLUS", StringComparison.OrdinalIgnoreCase) ||
+                             plan.Code.Contains("PRO", StringComparison.OrdinalIgnoreCase))) ||
+                        (!string.IsNullOrWhiteSpace(plan.Name) &&
+                            (plan.Name.Contains("Plus", StringComparison.OrdinalIgnoreCase) ||
+                             plan.Name.Contains("Pro", StringComparison.OrdinalIgnoreCase)));
+
+                    var lockPlanFeatures = isPlusOrProPlan && !isCurrent;
+
+                    var planFeatureItems = new List<string>();
+                    if (Model.IsParent)
+                    {
+                        planFeatureItems.Add(
+                            plan.Benefits.MonthlyJobPostLimit > 0
+                                ? $"Đăng tối đa {plan.Benefits.MonthlyJobPostLimit} bài mỗi tháng"
+                                : "Số lượng bài đăng được mở rộng theo cấu hình gói");
+                        planFeatureItems.Add(
+                            plan.Benefits.ListingDurationDays > 0
+                                ? $"Bài đăng hiển thị {plan.Benefits.ListingDurationDays} ngày"
+                                : $"Gói có thời hạn sử dụng {plan.DurationDays} ngày");
+                        planFeatureItems.Add(plan.Benefits.FeaturedBadge ? "Có huy hiệu nổi bật cho bài đăng" : "Không có huy hiệu nổi bật");
+                        planFeatureItems.Add(plan.Benefits.SearchPriority ? "Được ưu tiên hiển thị trong tìm kiếm" : "Không ưu tiên hiển thị");
+                    }
+                    else if (Model.IsNanny)
+                    {
+                        planFeatureItems.Add(
+                            plan.Benefits.MonthlyApplicationLimit > 0
+                                ? $"Ứng tuyển tối đa {plan.Benefits.MonthlyApplicationLimit} công việc mỗi tháng"
+                                : "Quyền ứng tuyển được mở rộng theo cấu hình gói");
+                        planFeatureItems.Add(plan.Benefits.FeaturedBadge ? "Hồ sơ có huy hiệu nổi bật" : "Hồ sơ hiển thị thường");
+                        planFeatureItems.Add(plan.Benefits.SearchPriority ? "Hồ sơ được ưu tiên hiển thị cao hơn" : "Hồ sơ có thêm quyền lợi so với gói miễn phí");
+                    }
+
+                    planFeatureItems.AddRange(
+                        plan.Features.Where(feature => !string.IsNullOrWhiteSpace(feature)).Select(feature => feature.Trim()));
+
                     <article class="plan-card paid-card @(isHighestPricePlan ? "accent-card" : "") @(isCurrent ? "current-card" : "")">
                         <div class="plan-top">
                             <span class="plan-tag">@plan.Name@if (plan.IsTrial) { <text> · </text><span class="sub-trial-badge">Dùng thử</span> }</span>
@@ -161,38 +198,39 @@
                         </div>
 
                         <div class="plan-benefit-title">Quyền lợi nhận được</div>
-                        <ul class="plan-list">
-                            @if (Model.IsParent)
-                            {
-                                <li>
-                                    @(plan.Benefits.MonthlyJobPostLimit > 0
-                                        ? $"Đăng tối đa {plan.Benefits.MonthlyJobPostLimit} bài mỗi tháng"
-                                        : "Số lượng bài đăng được mở rộng theo cấu hình gói")
-                                </li>
-                                <li>
-                                    @(plan.Benefits.ListingDurationDays > 0
-                                        ? $"Bài đăng hiển thị {plan.Benefits.ListingDurationDays} ngày"
-                                        : $"Gói có thời hạn sử dụng {plan.DurationDays} ngày")
-                                </li>
-                                <li>@(plan.Benefits.FeaturedBadge ? "Có huy hiệu nổi bật cho bài đăng" : "Không có huy hiệu nổi bật")</li>
-                                <li>@(plan.Benefits.SearchPriority ? "Được ưu tiên hiển thị trong tìm kiếm" : "Không ưu tiên hiển thị")</li>
-                            }
-                            else if (Model.IsNanny)
-                            {
-                                <li>
-                                    @(plan.Benefits.MonthlyApplicationLimit > 0
-                                        ? $"Ứng tuyển tối đa {plan.Benefits.MonthlyApplicationLimit} công việc mỗi tháng"
-                                        : "Quyền ứng tuyển được mở rộng theo cấu hình gói")
-                                </li>
-                                <li>@(plan.Benefits.FeaturedBadge ? "Hồ sơ có huy hiệu nổi bật" : "Hồ sơ hiển thị thường")</li>
-                                <li>@(plan.Benefits.SearchPriority ? "Hồ sơ được ưu tiên hiển thị cao hơn" : "Hồ sơ có thêm quyền lợi so với gói miễn phí")</li>
-                            }
+                        @if (lockPlanFeatures && planFeatureItems.Count > 1)
+                        {
+                            <ul class="plan-list">
+                                <li>@planFeatureItems[0]</li>
+                            </ul>
 
-                            @foreach (var feature in plan.Features)
-                            {
-                                <li>@feature</li>
-                            }
-                        </ul>
+                            <div class="plan-list-lock">
+                                <ul class="plan-list plan-list--blurred" aria-hidden="true">
+                                    @foreach (var feature in planFeatureItems.Skip(1))
+                                    {
+                                        <li>@feature</li>
+                                    }
+                                </ul>
+                                <div class="plan-list-lock-overlay">
+                                    <span class="plan-list-lock-pill">Nâng cấp gói để mở khóa</span>
+                                    <p>Mua gói trả phí để xem toàn bộ quyền lợi chi tiết.</p>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <ul class="plan-list">
+                                @foreach (var feature in planFeatureItems)
+                                {
+                                    <li>@feature</li>
+                                }
+                            </ul>
+                        }
+
+                        @if (lockPlanFeatures && !Model.HasActiveSubscription && !plan.IsTrial)
+                        {
+                            <div class="plan-lock-note">Đang hiển thị bản xem trước quyền lợi của gói @plan.Name.</div>
+                        }
 
                         @if (isCurrent)
                         {
@@ -524,4 +562,3 @@
         })();
     </script>
 }
-

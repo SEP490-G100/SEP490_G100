@@ -82,19 +82,6 @@ public class VerificationRequestService : IVerificationRequestService
         verificationRequest.UpdatedAt = DateTime.UtcNow;
         verificationRequest.UpdatedBy = moderatorId;
 
-        if (request.Action == (int)NannyVerificationRequestStatus.Approved)
-        {
-            var reviewTime = verificationRequest.ReviewedAt ?? DateTime.UtcNow;
-            foreach (var document in verificationRequest.VerificationDocuments.Where(document =>
-                         !document.IsDeleted &&
-                         document.DocumentType == (int)VerificationDocumentType.HealthCertificate))
-            {
-                document.ExpiryDate = reviewTime.AddMonths(6);
-                document.UpdatedAt = DateTime.UtcNow;
-                document.UpdatedBy = moderatorId;
-            }
-        }
-
         var nannyProfile = await _verificationRequestRepo.GetNannyProfileAsync(verificationRequest.NannyProfileId);
         if (nannyProfile != null && verificationRequest.RequestType == (int)VerificationRequestType.ProfileVerification)
         {
@@ -217,9 +204,30 @@ public class VerificationRequestService : IVerificationRequestService
             return (false, "Bạn đã có một yêu cầu đang chờ duyệt cho loại hồ sơ này.");
         }
 
-        if (requestType == VerificationRequestType.HealthCertificate && !request.HealthCertificateExpiryDate.HasValue)
+        var expectedDocumentType = requestType switch
         {
-            return (false, "Ban phai nhap ngay het han cho giay kham suc khoe.");
+            VerificationRequestType.HealthCertificate => (int)VerificationDocumentType.HealthCertificate,
+            VerificationRequestType.DegreeCertificate => (int)VerificationDocumentType.DegreeCertificate,
+            _ => (int)VerificationDocumentType.IdentityCard
+        };
+
+        var today = DateTime.UtcNow.Date;
+        foreach (var document in request.Documents)
+        {
+            if (document.DocumentType != expectedDocumentType)
+            {
+                return (false, "Loại tài liệu không khớp với loại yêu cầu xác minh.");
+            }
+
+            if (!document.ExpiryDate.HasValue)
+            {
+                return (false, "Bạn phải chọn ngày cấp cho tài liệu xác minh.");
+            }
+
+            if (document.ExpiryDate.Value.Date > today)
+            {
+                return (false, "Ngày cấp không được lớn hơn ngày hiện tại.");
+            }
         }
 
         var verificationRequest = new Nanny_BackEnd.Models.VerificationRequest
@@ -313,10 +321,10 @@ public class VerificationRequestService : IVerificationRequestService
     private static VerificationRequestListDto MapModeratorListDto(Nanny_BackEnd.Models.VerificationRequest request)
     {
         var activeDocuments = request.VerificationDocuments.Where(document => !document.IsDeleted).ToList();
-        var healthCertDocument = activeDocuments
-            .Where(document => document.DocumentType == (int)VerificationDocumentType.HealthCertificate)
-            .OrderByDescending(document => document.ExpiryDate)
-            .FirstOrDefault();
+        var issueDate = activeDocuments
+            .Where(document => document.ExpiryDate.HasValue)
+            .Select(document => document.ExpiryDate)
+            .Max();
 
         return new VerificationRequestListDto
         {
@@ -327,7 +335,7 @@ public class VerificationRequestService : IVerificationRequestService
                 .Select(document => document.DocumentType)
                 .Distinct()
                 .ToList(),
-            ExpiryDate = healthCertDocument?.ExpiryDate,
+            ExpiryDate = issueDate,
             Status = request.Status,
             CreatedAt = request.CreatedAt,
             ReviewedAt = request.ReviewedAt,

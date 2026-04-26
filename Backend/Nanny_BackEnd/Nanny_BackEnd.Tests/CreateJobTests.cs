@@ -98,14 +98,14 @@ public class CreateJobTests
         _mockSubService.Setup(s => s.hasActiveParentSubscription(parentId))
                        .ReturnsAsync(false);
         _mockJobRepo.Setup(r => r.countActiveJobPostings(parentId))
-                    .ReturnsAsync(3);   // == freeParentActivePostingLimit
+                    .ReturnsAsync(1);   // == freeParentActivePostingLimit
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             _sut.createJob(parentId, ValidRequest()));
     }
 
     [Fact]
-    public async Task FreeUserMonthlyLimitReached()
+    public async Task FreeUserNoActivePosting_CanCreate()
     {
         var parentId = Guid.NewGuid();
         _mockSubService.Setup(s => s.getBenefitsForParentProfile(parentId))
@@ -115,12 +115,24 @@ public class CreateJobTests
         _mockSubService.Setup(s => s.hasActiveParentSubscription(parentId))
                        .ReturnsAsync(false);
         _mockJobRepo.Setup(r => r.countActiveJobPostings(parentId))
-                    .ReturnsAsync(1);   // dưới giới hạn active
-        _mockJobRepo.Setup(r => r.countJobPostingsInCurrentMonth(parentId))
-                    .ReturnsAsync(3);   // == MonthlyJobPostLimit = 3
+                    .ReturnsAsync(0);
+        _mockGeo.Setup(g => g.geocode(It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>()))
+                .ReturnsAsync(default((decimal, decimal)?));
+        _mockJobRepo.Setup(r => r.createJobPosting(It.IsAny<JobPosting>()))
+                    .ReturnsAsync((JobPosting j) => j);
+        _mockJobRepo.Setup(r => r.saveChanges()).Returns(Task.CompletedTask);
+        _mockNotif.Setup(n => n.createNotification(
+            It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<int>(), It.IsAny<Guid?>(), It.IsAny<string?>(), It.IsAny<Guid?>()))
+            .Returns(Task.CompletedTask);
+        _mockNotif.Setup(n => n.createNotificationForModerators(
+            It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<int>(), It.IsAny<Guid?>(), It.IsAny<string?>(), It.IsAny<Guid?>()))
+            .Returns(Task.CompletedTask);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _sut.createJob(parentId, ValidRequest()));
+        var jobId = await _sut.createJob(parentId, ValidRequest());
+
+        Assert.NotEqual(Guid.Empty, jobId);
     }
 
     // TC4: Paid user, tất cả hợp lệ → trả về JobId
@@ -177,28 +189,27 @@ public class CreateJobTests
             .Returns(Task.CompletedTask);
     }
 
-    // Boundary TC1: active = 2 (ngay dưới giới hạn 3) → vẫn tạo được
+    // Boundary TC1: active = 0 (ngay dưới giới hạn 1) → vẫn tạo được
     [Fact]
     public async Task FreeUser_ActivePostings_AtBoundary_Pass()
     {
         var parentId = Guid.NewGuid();
         SetupSuccessPath(parentId);
-        _mockJobRepo.Setup(r => r.countActiveJobPostings(parentId)).ReturnsAsync(2);
-        _mockJobRepo.Setup(r => r.countJobPostingsInCurrentMonth(parentId)).ReturnsAsync(1);
+        _mockJobRepo.Setup(r => r.countActiveJobPostings(parentId)).ReturnsAsync(0);
 
         var jobId = await _sut.createJob(parentId, ValidRequest());
 
         Assert.NotEqual(Guid.Empty, jobId);
     }
 
-    // Boundary TC2: monthly = 2 (ngay dưới giới hạn 3) → vẫn tạo được
+    // Boundary TC2: số bài đã tạo trong tháng không còn là điều kiện chặn
     [Fact]
-    public async Task FreeUser_MonthlyPostings_AtBoundary_Pass()
+    public async Task FreeUser_MonthlyPostingCount_DoesNotBlock()
     {
         var parentId = Guid.NewGuid();
         SetupSuccessPath(parentId);
-        _mockJobRepo.Setup(r => r.countActiveJobPostings(parentId)).ReturnsAsync(1);
-        _mockJobRepo.Setup(r => r.countJobPostingsInCurrentMonth(parentId)).ReturnsAsync(2);
+        _mockJobRepo.Setup(r => r.countActiveJobPostings(parentId)).ReturnsAsync(0);
+        _mockJobRepo.Setup(r => r.countJobPostingsInCurrentMonth(parentId)).ReturnsAsync(999);
 
         var jobId = await _sut.createJob(parentId, ValidRequest());
 

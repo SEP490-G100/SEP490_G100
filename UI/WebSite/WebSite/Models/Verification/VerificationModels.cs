@@ -5,7 +5,9 @@ public class SubmitVerificationRequestViewModel
     public List<IFormFile> IdentityCardFiles { get; set; } = new();
     public List<IFormFile> CertificateFiles { get; set; } = new();
     public List<IFormFile> HealthCertificateFiles { get; set; } = new();
-    public DateTime? HealthCertificateExpiryDate { get; set; }
+    public DateTime? IdentityCardIssueDate { get; set; }
+    public DateTime? CertificateIssueDate { get; set; }
+    public DateTime? HealthCertificateIssueDate { get; set; }
 
     public string NannyFirstName { get; set; } = string.Empty;
     public string NannyLastName { get; set; } = string.Empty;

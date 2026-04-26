@@ -24,9 +24,9 @@
     PersonalProfileViewModel? nannyVerifyPromptProfile = null;
     var showNannyVerifyPrompt = false;
     var nannyVerifyPromptUrl = "/VerificationRequest/NannySubmitVerificationRequest";
-    var nannyVerifyPromptButton = "Xác minh ID ngay";
+    var nannyVerifyPromptButton = "Xác minh hồ sơ ngay";
     var nannyVerifyPromptStatusClass = "is-not-submitted";
-    var nannyVerifyPromptStatusText = "Chưa gửi xác minh";
+    var nannyVerifyPromptStatusText = "Chưa hoàn tất xác minh";
     var currentUserFirstName = User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? string.Empty;
     var currentUserLastName = User.FindFirst(System.Security.Claims.ClaimTypes.Surname)?.Value ?? string.Empty;
     var currentUserInitial = !string.IsNullOrWhiteSpace(currentUserFirstName)
@@ -1683,10 +1683,10 @@
                         <span class="material-icons-round">shield</span>
                         <span>@nannyVerifyPromptStatusText</span>
                     </span>
-                    <h2 id="nmVerifyPromptTitle" class="nm-verify-title">Xác minh ID để mở khóa kết nối</h2>
+                    <h2 id="nmVerifyPromptTitle" class="nm-verify-title">Cần xác minh CCCD và giấy khám sức khỏe để ứng tuyển</h2>
                     <p class="nm-verify-subtitle">
                         Hồ sơ bảo mẫu của @(string.IsNullOrWhiteSpace(nannyVerifyPromptProfile?.FirstName) ? "bạn" : nannyVerifyPromptProfile!.FirstName)
-                        chưa hoàn tất xác minh giấy tờ. Khi xác minh xong, phụ huynh sẽ tin tưởng hơn khi xem hồ sơ và gửi yêu cầu liên hệ.
+                        chưa hoàn tất xác minh căn cước công dân và giấy khám sức khỏe. Bạn chỉ có thể gửi yêu cầu ứng tuyển sau khi cả hai giấy tờ được xác minh.
                     </p>
 
                     <div class="nm-verify-hero" aria-hidden="true">

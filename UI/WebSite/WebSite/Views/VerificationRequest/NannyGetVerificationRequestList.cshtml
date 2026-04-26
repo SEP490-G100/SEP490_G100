@@ -63,7 +63,7 @@
                         <th class="text-left">#</th>
                         <th class="text-left">Ngày nộp</th>
                         <th class="text-left">Loại hồ sơ</th>
-                        <th class="text-left">Hết hạn</th>
+                        <th class="text-left">Ngày cấp</th>
                         <th class="text-left">Trạng thái</th>
                         <th class="text-left">Người duyệt</th>
                         <th class="text-left">Ngày duyệt</th>
@@ -100,13 +100,17 @@
                                     {
                                         <span class="badge badge-active">Giấy khám sức khỏe</span>
                                     }
+                                    else if (item.RequestType == 3)
+                                    {
+                                        <span class="badge badge-nanny">Bằng cấp / Chứng chỉ</span>
+                                    }
                                     else
                                     {
-                                        <span class="badge badge-pending">Hồ sơ xác minh</span>
+                                        <span class="badge badge-pending">Căn cước công dân</span>
                                     }
                                 </td>
                                 <td class="text-gray-500 text-sm">
-                                    @(item.ExpiryDate.HasValue ? item.ExpiryDate.Value.ToString("dd/MM/yyyy") : "-")
+                                    @item.IssueDateLabel
                                 </td>
                                 <td>
                                     <span class="badge @item.StatusClass">@item.StatusLabel</span>
