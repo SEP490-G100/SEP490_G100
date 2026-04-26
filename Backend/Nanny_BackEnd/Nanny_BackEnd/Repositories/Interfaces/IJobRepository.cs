@@ -43,4 +43,7 @@ public interface IJobRepository
     Task SaveModeratedJobAsync(JobPosting job);
     Task SaveChangesAsync();
     Task saveChanges();
+    Task<List<JobPosting>> GetJobsForCoordinateBackfillAsync(
+        DateTime? createdBeforeUtc,
+        int maxItems);
 }
