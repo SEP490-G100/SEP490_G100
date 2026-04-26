@@ -206,6 +206,33 @@ public class JobPostingController : ControllerBase
         catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
     }
 
+    [Authorize(Roles = "Moderator,Admin")]
+    [HttpPost("admin/backfill-coordinates")]
+    public async Task<IActionResult> BackfillCoordinates([FromBody] BackfillJobCoordinatesRequest? request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(FailValidation(ModelState));
+
+        var actorUserId = getCurrentUserId();
+        var input = request ?? new BackfillJobCoordinatesRequest();
+
+        var result = await _jobSvc.BackfillJobCoordinatesAsync(
+            input,
+            actorUserId,
+            HttpContext.RequestAborted);
+
+        var message = result.DryRun
+            ? "Đã chạy dry-run backfill tọa độ cho job posting."
+            : "Đã backfill tọa độ cho job posting.";
+
+        return Ok(new
+        {
+            success = true,
+            message,
+            data = result
+        });
+    }
+
     // GET /api/Moderator/moderator-view-job-list?status=1&moderationStatus=0&search=lan&page=1&pageSize=10
     [Authorize(Roles = "Moderator")]
     [HttpGet("moderator-view-job-list")]

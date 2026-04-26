@@ -305,4 +305,23 @@ public class JobRepository : IJobRepository
 
     public async Task saveChanges() => await _db.SaveChangesAsync();
 
+    public async Task<List<JobPosting>> GetJobsForCoordinateBackfillAsync(
+        DateTime? createdBeforeUtc,
+        int maxItems)
+    {
+        var take = Math.Clamp(maxItems, 1, 1000);
+        var query = _db.JobPostings
+            .Where(j => !j.IsDeleted)
+            .AsQueryable();
+
+        if (createdBeforeUtc.HasValue)
+            query = query.Where(j => j.CreatedAt < createdBeforeUtc.Value);
+
+        return await query
+            .OrderBy(j => j.CreatedAt)
+            .ThenBy(j => j.Id)
+            .Take(take)
+            .ToListAsync();
+    }
+
 }
