@@ -25,6 +25,7 @@
             const stateEl = document.getElementById('hiringHistoryState');
             const listEl = document.getElementById('hiringHistoryList');
             const focusHiringRecordId = new URLSearchParams(window.location.search).get('hiringRecordId');
+            const isParentRole = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(isParent));
 
             const esc = (value) => String(value ?? '')
                 .replaceAll('&', '&amp;')
@@ -36,6 +37,14 @@
             const fmtDate = (value) => value ? new Date(`${value}T00:00:00`).toLocaleDateString('vi-VN') : 'Chưa xác định';
             const fmtDateTime = (value) => value ? new Date(value).toLocaleString('vi-VN') : 'Chưa xác định';
 
+            const showToast = (message, type = 'info') => {
+                if (typeof window.showToast === 'function') {
+                    window.showToast(message, { type, duration: 4500 });
+                    return;
+                }
+                alert(message);
+            };
+
             const statusLabel = (status) => {
                 const s = Number(status);
                 if (s === 0) return { text: 'Đang chờ', css: 'bg-amber-50 text-amber-700 border-amber-200' };
@@ -44,6 +53,19 @@
                 if (s === 2) return { text: 'Đã từ chối', css: 'bg-rose-50 text-rose-700 border-rose-200' };
                 if (s === 3) return { text: 'Đã hủy', css: 'bg-slate-100 text-slate-700 border-slate-200' };
                 return { text: 'Không xác định', css: 'bg-slate-100 text-slate-700 border-slate-200' };
+            };
+
+            const canCompleteHiring = (item) => {
+                if (!isParentRole) return false;
+                if (Number(item?.hiringStatus) !== 1) return false;
+                if (!item?.endDate) return false;
+
+                const endDate = new Date(`${item.endDate}T00:00:00`);
+                if (Number.isNaN(endDate.getTime())) return false;
+
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                return endDate <= today;
             };
 
             const renderItem = (item) => {
@@ -81,8 +103,39 @@
                                class="inline-flex items-center justify-center rounded-xl border border-orange-200 bg-white px-4 py-2 text-xs font-extrabold text-orange-600 hover:bg-orange-50">
                                 Tải xuống hợp đồng
                             </a>` : ''}
+                            ${canCompleteHiring(item) ? `
+                            <button type="button"
+                                    class="js-complete-hiring inline-flex items-center justify-center rounded-xl px-4 py-2 text-xs font-extrabold"
+                                    style="background-color:#16a34a;color:#ffffff;border:1px solid #86efac;"
+                                    data-hiring-record-id="${esc(item.hiringRecordId)}">
+                                Hoàn thành hợp đồng thuê
+                            </button>` : ''}
                         </div>
                     </article>`;
+            };
+
+            const completeHiring = async (hiringRecordId) => {
+                const confirmed = window.confirm('Bạn có chắc muốn hoàn thành hợp đồng thuê này không?');
+                if (!confirmed) return;
+
+                try {
+                    const res = await fetch(`/Hiring/Records/${encodeURIComponent(hiringRecordId)}/Complete`, {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: '{}'
+                    });
+
+                    const json = await res.json().catch(() => ({}));
+                    if (!res.ok || !json?.success) {
+                        throw new Error(json?.message || 'Không thể hoàn thành hợp đồng thuê.');
+                    }
+
+                    showToast('Bạn đã chuyển trạng thái thuê sang Đã hoàn thành.', 'success');
+                    await loadHistory();
+                } catch (err) {
+                    showToast(String(err?.message || 'Không thể hoàn thành hợp đồng thuê.'), 'error');
+                }
             };
 
             const loadHistory = async () => {
@@ -116,6 +169,19 @@
                     listEl.classList.add('hidden');
                 }
             };
+
+            listEl.addEventListener('click', async (event) => {
+                const target = event.target;
+                if (!(target instanceof HTMLElement)) return;
+
+                const btn = target.closest('.js-complete-hiring');
+                if (!(btn instanceof HTMLButtonElement)) return;
+
+                const hiringRecordId = btn.dataset.hiringRecordId;
+                if (!hiringRecordId) return;
+
+                await completeHiring(hiringRecordId);
+            });
 
             loadHistory();
         })();
