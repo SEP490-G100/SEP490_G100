@@ -262,7 +262,7 @@ public class AccountService : IAccountService
         if (string.IsNullOrWhiteSpace(request.Password))
             return "Mat khau la bat buoc.";
         if (!IsStrongPassword(request.Password))
-            return "Mat khau phai co it nhat 8 ky tu, bao gom chu, so va it nhat 1 ky tu dac biet.";
+            return "Mat khau phai co it nhat 8 ky tu, it nhat 1 ky tu in hoa va 1 ky tu dac biet.";
         if (string.IsNullOrWhiteSpace(request.FirstName))
             return "FirstName la bat buoc.";
         if (!IsValidName(request.FirstName.Trim()))
@@ -295,7 +295,7 @@ public class AccountService : IAccountService
         Regex.IsMatch(phoneNumber, @"^\d{10,11}$");
 
     private static bool IsStrongPassword(string password) =>
-        Regex.IsMatch(password, @"^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$");
+        Regex.IsMatch(password, @"^(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$");
 
     private static bool IsValidName(string value) =>
         Regex.IsMatch(value, @"^[\p{L}\s]+$");

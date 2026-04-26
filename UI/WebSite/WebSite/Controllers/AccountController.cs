@@ -1,6 +1,7 @@
 ﻿using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebSite.Models;
@@ -57,6 +58,14 @@ public class AccountController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateModerator(CreateModeratorRequest model)
     {
+        if (!string.IsNullOrWhiteSpace(model.Password) &&
+            !Regex.IsMatch(model.Password, @"^(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$"))
+        {
+            ModelState.AddModelError(
+                nameof(model.Password),
+                "Mat khau phai co it nhat 8 ky tu, it nhat 1 ky tu dac biet va 1 ky tu in hoa.");
+        }
+
         if (!ModelState.IsValid)
         {
             return View("~/Views/Admin/ModeratorAccount/CreateModerator.cshtml", model);

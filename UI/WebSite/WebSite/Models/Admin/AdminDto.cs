@@ -268,8 +268,8 @@ public class CreateModeratorRequest
     [EmailAddress(ErrorMessage = "Email không được để trống, phải là 1 email hợp lệ")]
     public string Email { get; set; } = "";
 
-    [Required(ErrorMessage = "Mật khẩu không được để trống, chứa ít nhất 8 kí tự và chứa ít nhất 1 kí tự đặc biệt")]
-    [RegularExpression(@"^(?=.*[^a-zA-Z0-9]).{8,}$", ErrorMessage = "Mật khẩu không được để trống, chứa ít nhất 8 kí tự và chứa ít nhất 1 kí tự đặc biệt")]
+    [Required(ErrorMessage = "Mật khẩu không được để trống")]
+    [RegularExpression(@"^(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}$", ErrorMessage = "Mật khẩu phải có ít nhất 8 kí tự, phải chứa ít nhất 1 kí tự đặc biệt, 1 kí tự in hoa")]
     public string Password { get; set; } = "";
 
     [Required(ErrorMessage = "Họ không được để trống")]
