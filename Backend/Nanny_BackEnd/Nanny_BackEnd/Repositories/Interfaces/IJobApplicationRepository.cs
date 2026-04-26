@@ -6,6 +6,7 @@ public interface IJobApplicationRepository
 {
     Task<NannyProfile?> GetNannyProfileWithUserAsync(Guid userId);
     Task<Guid?> GetNannyProfileIdByUserIdAsync(Guid userId);
+    Task<bool> HasApprovedHealthCertificateAsync(Guid nannyProfileId, DateTime utcNow);
     Task<JobPosting?> GetJobPostingForApplyAsync(Guid jobPostingId);
     Task<JobPosting?> GetJobPostingForParentAsync(Guid jobPostingId, Guid parentProfileId);
     Task<JobApplication?> GetExistingApplicationAsync(Guid jobPostingId, Guid nannyProfileId);

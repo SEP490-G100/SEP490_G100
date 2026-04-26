@@ -16,6 +16,7 @@ namespace WebSite.Controllers;
 public class AuthController : Controller
 {
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
+    private const string NannyOnboardingCompletedSessionKey = "NannyOnboardingCompleted";
 
     private readonly HttpClient _http;
     private readonly IConfiguration _config;
@@ -125,6 +126,7 @@ public class AuthController : Controller
             var ob = 
                 await _http.SendAsync(obRequest);
             var obResult = await ReadApiResult<OnboardingStatusViewModel>(ob);
+            SyncNannyOnboardingCompletedSession(obResult?.Data, normalizedRoles);
             if (obResult?.Data != null && obResult.Data.RequiresOnboarding && obResult.Data.NextStep != "Completed")
                 return RedirectToAction("Start", "Onboarding");
         }
@@ -232,6 +234,7 @@ public class AuthController : Controller
             };
             var ob = await _http.SendAsync(obRequest);
             var obResult = await ReadApiResult<OnboardingStatusViewModel>(ob);
+            SyncNannyOnboardingCompletedSession(obResult?.Data, normalizedRoles);
             if (obResult?.Data != null && obResult.Data.RequiresOnboarding && obResult.Data.NextStep != "Completed")
                 return RedirectToAction("Start", "Onboarding");
         }
@@ -435,6 +438,7 @@ public class AuthController : Controller
             }
 
             // Sau khi set role thành công, chuyển hướng tới Onboarding/Start
+            HttpContext.Session.Remove(NannyOnboardingCompletedSessionKey);
             return RedirectToAction("Start", "Onboarding");
         }
         catch (Exception ex)
@@ -503,6 +507,9 @@ public class AuthController : Controller
             HttpContext.Session.SetString("ShowNannyVerifyPrompt", "1");
         else
             HttpContext.Session.Remove("ShowNannyVerifyPrompt");
+
+        if (!hasRole(normalizedRoles, "Nanny"))
+            HttpContext.Session.Remove(NannyOnboardingCompletedSessionKey);
 
         var claims = new List<Claim>
         {
@@ -634,6 +641,31 @@ public class AuthController : Controller
         {
             return false;
         }
+    }
+
+    private static bool IsCompletedNannyOnboardingStatus(OnboardingStatusViewModel status) =>
+        string.Equals(status.Role, "Nanny", StringComparison.OrdinalIgnoreCase) &&
+        (!status.RequiresOnboarding || string.Equals(status.NextStep, "Completed", StringComparison.OrdinalIgnoreCase));
+
+    private void SyncNannyOnboardingCompletedSession(OnboardingStatusViewModel? status, IEnumerable<string>? roles)
+    {
+        var normalizedRoles = normalizeRoles(roles);
+        var hasNannyRole = hasRole(normalizedRoles, "Nanny");
+
+        if (status != null && IsCompletedNannyOnboardingStatus(status))
+        {
+            HttpContext.Session.SetString(NannyOnboardingCompletedSessionKey, "1");
+            return;
+        }
+
+        if (!hasNannyRole)
+        {
+            HttpContext.Session.Remove(NannyOnboardingCompletedSessionKey);
+            return;
+        }
+
+        if (status != null && string.Equals(status.Role, "Nanny", StringComparison.OrdinalIgnoreCase))
+            HttpContext.Session.Remove(NannyOnboardingCompletedSessionKey);
     }
 
     private static string? NormalizePhoneNumber(string? phoneNumber) =>

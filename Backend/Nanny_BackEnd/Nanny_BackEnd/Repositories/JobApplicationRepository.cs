@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
+using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Models;
 
@@ -23,6 +24,22 @@ public class JobApplicationRepository : IJobApplicationRepository
             .Where(n => n.UserId == userId && !n.IsDeleted)
             .Select(n => (Guid?)n.Id)
             .FirstOrDefaultAsync();
+
+    public async Task<bool> HasApprovedHealthCertificateAsync(Guid nannyProfileId, DateTime utcNow)
+    {
+        var today = utcNow.Date;
+
+        return await _db.VerificationRequests
+            .Where(request =>
+                request.NannyProfileId == nannyProfileId &&
+                !request.IsDeleted &&
+                request.RequestType == (int)VerificationRequestType.HealthCertificate &&
+                request.Status == (int)NannyVerificationRequestStatus.Approved)
+            .AnyAsync(request => request.VerificationDocuments.Any(document =>
+                !document.IsDeleted &&
+                document.DocumentType == (int)VerificationDocumentType.HealthCertificate &&
+                (!document.ExpiryDate.HasValue || document.ExpiryDate.Value.Date >= today)));
+    }
 
     // ── JobPosting ────────────────────────────────────────────────────────
 

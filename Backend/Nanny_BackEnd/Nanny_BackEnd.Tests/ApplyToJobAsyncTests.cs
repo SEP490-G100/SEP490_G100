@@ -31,6 +31,8 @@ public class ApplyToJobAsyncTests
 
         _mockSubSvc.Setup(s => s.getBenefitsForNannyProfile(It.IsAny<Guid>()))
             .ReturnsAsync(new SubscriptionBenefitResponse { MonthlyApplicationLimit = 0 });
+        _mockAppRepo.Setup(r => r.HasApprovedHealthCertificateAsync(It.IsAny<Guid>(), It.IsAny<DateTime>()))
+            .ReturnsAsync(true);
         _mockNotif.Setup(n => n.createNotification(
             It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<int>(), It.IsAny<Guid?>(), It.IsAny<string?>(), It.IsAny<Guid?>()))
@@ -42,6 +44,7 @@ public class ApplyToJobAsyncTests
         Id        = _nannyProfileId,
         UserId    = _nannyUserId,
         IsDeleted = false,
+        VerificationStatus = (int)VerificationStatus.Approved,
         User = new User
         {
             Id        = _nannyUserId,
@@ -78,6 +81,34 @@ public class ApplyToJobAsyncTests
 
         Assert.False(result.IsSuccess);
         Assert.Equal(ApplyToJobFailure.NotFound, result.Failure);
+    }
+
+    [Fact]
+    public async Task IdentityNotVerified_ShouldReturnCombinedFailure()
+    {
+        var nanny = NannyOk();
+        nanny.VerificationStatus = (int)VerificationStatus.Pending;
+        _mockAppRepo.Setup(r => r.GetNannyProfileWithUserAsync(_nannyUserId)).ReturnsAsync(nanny);
+
+        var result = await _sut.ApplyToJobAsync(_nannyUserId, _jobId);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ApplyToJobFailure.MissingRequiredVerifications, result.Failure);
+        _mockAppRepo.Verify(r => r.GetJobPostingForApplyAsync(It.IsAny<Guid>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task HealthCertificateNotVerified_ShouldReturnCombinedFailure()
+    {
+        _mockAppRepo.Setup(r => r.GetNannyProfileWithUserAsync(_nannyUserId)).ReturnsAsync(NannyOk());
+        _mockAppRepo.Setup(r => r.HasApprovedHealthCertificateAsync(_nannyProfileId, It.IsAny<DateTime>()))
+            .ReturnsAsync(false);
+
+        var result = await _sut.ApplyToJobAsync(_nannyUserId, _jobId);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ApplyToJobFailure.MissingRequiredVerifications, result.Failure);
+        _mockAppRepo.Verify(r => r.GetJobPostingForApplyAsync(It.IsAny<Guid>()), Times.Never);
     }
 
     [Fact]

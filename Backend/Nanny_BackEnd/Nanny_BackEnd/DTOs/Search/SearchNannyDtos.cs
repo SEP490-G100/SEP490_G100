@@ -15,6 +15,7 @@ public record ApplyToJobServiceResult(
 public enum ApplyToJobFailure
 {
     NotNanny,
+    MissingRequiredVerifications,
     NotFound,
     JobNotOpen,
     OwnJob,

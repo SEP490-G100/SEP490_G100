@@ -38,6 +38,18 @@ public class SearchService : ISearchService
                 default, default, default, default, false, "");
         }
 
+        var nowUtc = DateTime.UtcNow;
+        var isIdentityVerified = nannyProfile.VerificationStatus == (int)VerificationStatus.Approved;
+        var hasApprovedHealthCertificate =
+            await _jobAppRepo.HasApprovedHealthCertificateAsync(nannyProfile.Id, nowUtc);
+
+        if (!isIdentityVerified || !hasApprovedHealthCertificate)
+        {
+            return new ApplyToJobServiceResult(
+                false, ApplyToJobFailure.MissingRequiredVerifications, null,
+                default, default, default, default, false, "");
+        }
+
         var job = await _jobAppRepo.GetJobPostingForApplyAsync(jobPostingId);
         if (job == null)
         {
@@ -61,7 +73,6 @@ public class SearchService : ISearchService
                 default, default, default, default, false, "");
         }
 
-        var nowUtc = DateTime.UtcNow;
         var existingApplication = await _jobAppRepo.GetExistingApplicationAsync(jobPostingId, nannyProfile.Id);
         var monthlyApplicationLimit = await getMonthlyApplicationLimit(nannyProfile.Id);
         if (monthlyApplicationLimit > 0)

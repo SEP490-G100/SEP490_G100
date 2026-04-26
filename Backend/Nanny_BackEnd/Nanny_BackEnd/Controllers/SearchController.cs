@@ -156,6 +156,8 @@ public class SearchController : ControllerBase
             {
                 return result.Failure switch
                 {
+                    ApplyToJobFailure.MissingRequiredVerifications
+                        => BadRequest(Fail("Bạn cần xác minh danh tính và xác minh giấy khám sức khỏe trước khi ứng tuyển.")),
                     ApplyToJobFailure.NotNanny
                         or ApplyToJobFailure.JobNotOpen
                         or ApplyToJobFailure.OwnJob

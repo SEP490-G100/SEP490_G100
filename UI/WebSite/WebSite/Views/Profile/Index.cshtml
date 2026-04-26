@@ -455,7 +455,7 @@
                         }
                         else
                         {
-                            <a href="@Url.Action("verifyNanny", "VerificationRequest", new { tab = "verification-profile-panel", returnUrl = currentProfileUrl })" class="profile-status-btn">Xác minh ngay</a>
+                            <a href="@Url.Action("NannySubmitVerificationRequest", "VerificationRequest", new { tab = "verification-profile-panel", returnUrl = currentProfileUrl })" class="profile-status-btn">Xác minh ngay</a>
 
                         }
                     </div>
@@ -476,7 +476,7 @@
                         }
                         else
                         {
-                            <a href="@Url.Action("verifyNanny", "VerificationRequest", new { tab = "health-certificate-panel", returnUrl = currentProfileUrl })" class="profile-status-btn is-danger">Tạo yêu cầu</a>
+                            <a href="@Url.Action("NannySubmitVerificationRequest", "VerificationRequest", new { tab = "health-certificate-panel", returnUrl = currentProfileUrl })" class="profile-status-btn is-danger">Tạo yêu cầu</a>
                         }
                     </div>
                 }
