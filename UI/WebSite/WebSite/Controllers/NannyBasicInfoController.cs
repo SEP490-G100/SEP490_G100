@@ -19,6 +19,7 @@ public class NannyBasicInfoController : Controller
     private readonly string _apiBaseUrl;
     private readonly IAzureBlobStorageService _blobStorageService;
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
+    private const string NannyOnboardingCompletedSessionKey = "NannyOnboardingCompleted";
 
     public NannyBasicInfoController(
         IHttpClientFactory httpFactory,
@@ -197,17 +198,57 @@ public class NannyBasicInfoController : Controller
 
     private async Task<IActionResult?> GuardOnboardingAccessAsync(string expectedRole)
     {
+        if (IsNannyOnboardingLocked())
+            return RedirectToAction("Index", "Home");
+
         var status = await GetOnboardingStatusAsync();
         if (status == null)
             return RedirectToAction("Start", "Onboarding");
+
+        SyncNannyOnboardingCompletedFlag(status);
+        if (IsNannyOnboardingLocked())
+            return RedirectToAction("Index", "Home");
 
         if (!string.Equals(status.Role, expectedRole, StringComparison.OrdinalIgnoreCase))
             return RedirectToAction("Start", "Onboarding");
 
         if (!status.RequiresOnboarding || string.Equals(status.NextStep, "Completed", StringComparison.OrdinalIgnoreCase))
+        {
+            HttpContext.Session.SetString(NannyOnboardingCompletedSessionKey, "1");
             return RedirectToAction("Index", "Home");
+        }
 
         return null;
+    }
+
+    private static bool IsCompletedNannyOnboardingStatus(OnboardingStatusViewModel status) =>
+        string.Equals(status.Role, "Nanny", StringComparison.OrdinalIgnoreCase) &&
+        (!status.RequiresOnboarding || string.Equals(status.NextStep, "Completed", StringComparison.OrdinalIgnoreCase));
+
+    private void SyncNannyOnboardingCompletedFlag(OnboardingStatusViewModel status)
+    {
+        if (IsCompletedNannyOnboardingStatus(status))
+        {
+            HttpContext.Session.SetString(NannyOnboardingCompletedSessionKey, "1");
+            return;
+        }
+
+        if (string.Equals(status.Role, "Nanny", StringComparison.OrdinalIgnoreCase))
+            HttpContext.Session.Remove(NannyOnboardingCompletedSessionKey);
+    }
+
+    private bool IsNannyOnboardingLocked() =>
+        IsNannyRole() &&
+        string.Equals(HttpContext.Session.GetString(NannyOnboardingCompletedSessionKey), "1", StringComparison.Ordinal);
+
+    private bool IsNannyRole()
+    {
+        if (User.IsInRole("Nanny"))
+            return true;
+
+        return User.Claims.Any(c =>
+            c.Type == ClaimTypes.Role &&
+            string.Equals(c.Value, "Nanny", StringComparison.OrdinalIgnoreCase));
     }
 
     private static string BuildFallbackHttpErrorMessage(HttpResponseMessage response, string? body)
