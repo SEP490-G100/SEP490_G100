@@ -1,4 +1,4 @@
-﻿@model WebSite.Models.Subscription.SubscriptionPageViewModel
+@model WebSite.Models.Subscription.SubscriptionPageViewModel
 @{
     ViewData["Title"] = "Gói đăng ký";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -16,9 +16,16 @@
             <h1>@Model.Headline</h1>
             <p>@Model.Summary</p>
             <div class="sub-chip-row">
+                @{
+                    var forSaleCount = Model.Plans.Count(p => !p.IsTrial);
+                }
                 @if (Model.Plans.Count > 0)
                 {
-                    <span class="sub-chip">Đang mở bán @Model.Plans.Count gói đăng ký</span>
+                    <span class="sub-chip">@forSaleCount gói trả phí đang mở bán</span>
+                    @if (Model.Plans.Any(p => p.IsTrial))
+                    {
+                        <span class="sub-chip">Gói dùng thử chỉ hiện nếu bạn đang dùng thử (không mua tại đây)</span>
+                    }
                     <span class="sub-chip">Danh sách gói được đồng bộ từ hệ thống quản trị</span>
                     <span class="sub-chip">Quyền lợi mỗi gói sẽ thay đổi theo cấu hình quản trị viên cập nhật</span>
                 }
@@ -29,8 +36,16 @@
             <span class="sub-status-label">Trạng thái hiện tại</span>
             @if (Model.HasActiveSubscription)
             {
-                <strong>@Model.CurrentSubscription!.Plan.Name</strong>
-                <p>Còn @Model.CurrentSubscription.RemainingDays ngày và hết hạn vào @Model.CurrentSubscription.EndDate.ToLocalTime().ToString("dd/MM/yyyy")</p>
+                @if (Model.IsTrialActive)
+                {
+                    <strong>@Model.CurrentSubscription!.Plan.Name <span class="sub-trial-badge">Dùng thử</span></strong>
+                    <p>Còn @Model.CurrentSubscription.RemainingDays ngày — hết hạn @Model.CurrentSubscription.EndDate.ToLocalTime().ToString("dd/MM/yyyy"). Sau khi hết hạn bạn sẽ về gói miễn phí.</p>
+                }
+                else
+                {
+                    <strong>@Model.CurrentSubscription!.Plan.Name</strong>
+                    <p>Còn @Model.CurrentSubscription.RemainingDays ngày và hết hạn vào @Model.CurrentSubscription.EndDate.ToLocalTime().ToString("dd/MM/yyyy")</p>
+                }
             }
             else
             {
@@ -95,7 +110,9 @@
                 {
                     <form asp-action="CancelCurrent" method="post">
                         @Html.AntiForgeryToken()
-                        <button type="submit" class="sub-secondary-btn">Hủy gói hiện tại</button>
+                        <button type="submit" class="sub-secondary-btn">
+                            @(Model.IsTrialActive ? "Hủy dùng thử" : "Hủy gói hiện tại")
+                        </button>
                     </form>
                 }
             </div>
@@ -123,7 +140,7 @@
                     var isHighestPricePlan = Model.Plans.Count > 0 && plan.Id == Model.Plans.OrderByDescending(p => p.Price).ThenByDescending(p => p.DurationDays).First().Id;
                     <article class="plan-card paid-card @(isHighestPricePlan ? "accent-card" : "") @(isCurrent ? "current-card" : "")">
                         <div class="plan-top">
-                            <span class="plan-tag">@plan.Name</span>
+                            <span class="plan-tag">@plan.Name@if (plan.IsTrial) { <text> · </text><span class="sub-trial-badge">Dùng thử</span> }</span>
                             <h3>@plan.Name</h3>
                             <p>@(plan.Description ?? "Gói phù hợp để mở rộng quyền lợi sử dụng.")</p>
                         </div>
@@ -181,9 +198,17 @@
                         {
                             <div class="plan-current-pill">Đang sử dụng</div>
                         }
+                        else if (plan.IsTrial)
+                        {
+                            <button type="button" class="sub-disabled-btn" disabled title="Gói dùng thử không bán tại đây">
+                                Chỉ cấp khi kích hoạt ưu đãi
+                            </button>
+                        }
                         else if (Model.HasActiveSubscription)
                         {
-                            <button type="button" class="sub-disabled-btn" disabled>Đang có gói hoạt động</button>
+                            <button type="button" class="sub-disabled-btn" disabled>
+                                @(Model.IsTrialActive ? "Đang dùng thử — hủy để mua gói" : "Đang có gói hoạt động")
+                            </button>
                         }
                         else
                         {

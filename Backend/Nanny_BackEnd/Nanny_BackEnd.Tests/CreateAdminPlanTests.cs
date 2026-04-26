@@ -1,7 +1,9 @@
-﻿using System.Text.Json;
+using System.Text.Json;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 using Nanny_BackEnd.DTOs.Subscription;
+using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Services;
@@ -25,14 +27,17 @@ public class CreateAdminPlanTests
         var mockNotificationService = new Mock<INotificationService>();
         var mockCassoService = new Mock<ICassoService>();
         var mockPayOsService = new Mock<IPayOsService>();
+        var mockUserRepository = new Mock<IUserRepository>();
         var payOsOptions = Options.Create(new PayOsOptions { ExpiresAfterMinutes = 15 });
 
         _sut = new SubscriptionService(
             _mockRepo.Object,
+            mockUserRepository.Object,
             mockNotificationService.Object,
             mockCassoService.Object,
             mockPayOsService.Object,
-            payOsOptions);
+            payOsOptions,
+            NullLogger<SubscriptionService>.Instance);
     }
 
     private static AdminSubscriptionPlanUpsertRequest ValidRequest() => new()
@@ -70,20 +75,6 @@ public class CreateAdminPlanTests
         _mockRepo.Verify(r => r.addPlan(It.IsAny<SubscriptionPlan>()), Times.Never);
     }
 
-    // Condition: duplicate plan name (trimmed) -> throw and stop.
-    [Fact]
-    public async Task DuplicateName_Throws()
-    {
-        _mockRepo.Setup(r => r.existsPlanNameIncludingDeleted("Goi Premium", null)).ReturnsAsync(true);
-
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _sut.createAdminPlan(Guid.NewGuid(), ValidRequest()));
-
-        Assert.Contains("subscription", ex.Message, StringComparison.OrdinalIgnoreCase);
-        _mockRepo.Verify(r => r.getNextSubscriptionPlanSortOrder(), Times.Never);
-        _mockRepo.Verify(r => r.addPlan(It.IsAny<SubscriptionPlan>()), Times.Never);
-    }
-
     // Condition: create success -> trim input, use next sort order, persist, then return detail.
     [Fact]
     public async Task Create_Success_AddsPlan_AndReturnsDetail()
@@ -97,7 +88,6 @@ public class CreateAdminPlanTests
 
         SubscriptionPlan? added = null;
 
-        _mockRepo.Setup(r => r.existsPlanNameIncludingDeleted("Gói Mới", null)).ReturnsAsync(false);
         _mockRepo.Setup(r => r.getNextSubscriptionPlanSortOrder()).ReturnsAsync(4);
         _mockRepo.Setup(r => r.addPlan(It.IsAny<SubscriptionPlan>()))
             .Callback<SubscriptionPlan>(plan => added = plan);
@@ -121,12 +111,13 @@ public class CreateAdminPlanTests
         Assert.Equal(adminId, added.CreatedBy);
         Assert.NotEqual(Guid.Empty, added.Id);
 
-        // Features are stored as normalized JSON list.
-        var storedFeatures = JsonSerializer.Deserialize<List<string>>(added.Features ?? "[]");
-        Assert.NotNull(storedFeatures);
-        Assert.Equal(2, storedFeatures!.Count);
-        Assert.Contains("Parent benefit", storedFeatures);
-        Assert.Contains("Extra", storedFeatures);
+        // Features are stored as structured metadata JSON (code, targetRole, features, benefits, isTrial).
+        var meta = SubscriptionPlanMetadataHelper.TryParse(added.Features);
+        Assert.NotNull(meta);
+        Assert.Equal(2, meta!.Features.Count);
+        Assert.Contains("Parent benefit", meta.Features);
+        Assert.Contains("Extra", meta.Features);
+        Assert.False(meta.IsTrial);
 
         Assert.Equal(added.Id, result.Id);
         Assert.Equal("Gói Mới", result.Name);
@@ -135,7 +126,6 @@ public class CreateAdminPlanTests
         Assert.Equal(2, result.ActiveSubscriberCount);
         Assert.True(result.CanUseRecommendation);
 
-        _mockRepo.Verify(r => r.existsPlanNameIncludingDeleted("Gói Mới", null), Times.Once);
         _mockRepo.Verify(r => r.getNextSubscriptionPlanSortOrder(), Times.Once);
         _mockRepo.Verify(r => r.addPlan(It.IsAny<SubscriptionPlan>()), Times.Once);
         _mockRepo.Verify(r => r.saveChanges(), Times.Once);
@@ -151,7 +141,6 @@ public class CreateAdminPlanTests
         req.Description = "   ";
 
         SubscriptionPlan? added = null;
-        _mockRepo.Setup(r => r.existsPlanNameIncludingDeleted("Gói Premium", null)).ReturnsAsync(false);
         _mockRepo.Setup(r => r.getNextSubscriptionPlanSortOrder()).ReturnsAsync(1);
         _mockRepo.Setup(r => r.addPlan(It.IsAny<SubscriptionPlan>()))
             .Callback<SubscriptionPlan>(plan => added = plan);
@@ -172,7 +161,6 @@ public class CreateAdminPlanTests
     [Fact]
     public async Task Create_WhenDetailCannotBeLoaded_Throws()
     {
-        _mockRepo.Setup(r => r.existsPlanNameIncludingDeleted("Gói Premium", null)).ReturnsAsync(false);
         _mockRepo.Setup(r => r.getNextSubscriptionPlanSortOrder()).ReturnsAsync(1);
         _mockRepo.Setup(r => r.addPlan(It.IsAny<SubscriptionPlan>()));
         _mockRepo.Setup(r => r.saveChanges()).Returns(Task.CompletedTask);

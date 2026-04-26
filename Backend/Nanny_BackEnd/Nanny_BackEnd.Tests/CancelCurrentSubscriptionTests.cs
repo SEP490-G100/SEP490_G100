@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 using Nanny_BackEnd.Enums;
@@ -14,6 +15,7 @@ namespace Nanny_BackEnd.Tests;
 public class CancelCurrentSubscriptionTests
 {
     private readonly Mock<ISubscriptionRepository> _mockRepo;
+    private readonly Mock<IUserRepository> _mockUserRepo;
     private readonly Mock<INotificationService>     _mockNotif;
     private readonly Mock<ICassoService>            _mockCasso;
     private readonly Mock<IPayOsService>            _mockPayOs;
@@ -22,16 +24,19 @@ public class CancelCurrentSubscriptionTests
     public CancelCurrentSubscriptionTests()
     {
         _mockRepo  = new Mock<ISubscriptionRepository>();
+        _mockUserRepo = new Mock<IUserRepository>();
         _mockNotif = new Mock<INotificationService>();
         _mockCasso = new Mock<ICassoService>();
         _mockPayOs = new Mock<IPayOsService>();
         var payOpt = Options.Create(new PayOsOptions { ExpiresAfterMinutes = 15 });
         _sut = new SubscriptionService(
             _mockRepo.Object,
+            _mockUserRepo.Object,
             _mockNotif.Object,
             _mockCasso.Object,
             _mockPayOs.Object,
-            payOpt);
+            payOpt,
+            NullLogger<SubscriptionService>.Instance);
     }
 
     private void StubExpireNoOp(Guid userId) =>

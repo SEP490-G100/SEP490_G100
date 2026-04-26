@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Tests;
 
@@ -19,6 +20,7 @@ public class GetAllSkillsAsyncTests
     private readonly Mock<INannySkillRepository> _mockNannySkill;
     private readonly Mock<INannyAvailabilityRepository> _mockNannyAvail;
     private readonly Mock<IJobRepository> _mockJob;
+    private readonly Mock<ISubscriptionService> _mockSub;
     private readonly OnboardingService _sut;
 
     public GetAllSkillsAsyncTests()
@@ -30,6 +32,8 @@ public class GetAllSkillsAsyncTests
         _mockNannySkill = new Mock<INannySkillRepository>();
         _mockNannyAvail = new Mock<INannyAvailabilityRepository>();
         _mockJob = new Mock<IJobRepository>();
+        _mockSub = new Mock<ISubscriptionService>();
+        _mockSub.Setup(s => s.tryGrantWelcomeTrialAsync(It.IsAny<Guid>(), It.IsAny<string>())).Returns(Task.CompletedTask);
         _sut = new OnboardingService(
             _mockUser.Object,
             _mockParent.Object,
@@ -38,6 +42,7 @@ public class GetAllSkillsAsyncTests
             _mockNannySkill.Object,
             _mockNannyAvail.Object,
             _mockJob.Object,
+            _mockSub.Object,
             NullLogger<OnboardingService>.Instance);
     }
 

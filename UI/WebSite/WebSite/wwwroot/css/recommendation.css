@@ -462,3 +462,110 @@
     border: 1px solid #fed7aa;
     white-space: nowrap;
 }
+
+/* ── Card header meta top row (title + score badge) ───────────── */
+.rec-card-meta__top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.rec-card-meta__top .rec-card-title {
+    flex: 1;
+    min-width: 0;
+}
+
+/* ── Compact % score badge (next to title) ────────────────────── */
+.rec-score-badge {
+    flex-shrink: 0;
+    font-size: .73rem;
+    font-weight: 900;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--score-color, #6b7280) 10%, white);
+    color: var(--score-color, #6b7280);
+    border: 1.5px solid var(--score-color, #6b7280);
+    white-space: nowrap;
+    line-height: 1.5;
+}
+
+/* ── Score breakdown collapsible ──────────────────────────────── */
+.rec-score-breakdown {
+    margin-top: 8px;
+    border-radius: 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+
+.rec-score-breakdown__toggle {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 10px;
+    font-size: .75rem;
+    font-weight: 700;
+    color: #64748b;
+    cursor: pointer;
+    user-select: none;
+    transition: background .15s, color .15s;
+}
+
+.rec-score-breakdown__toggle:hover,
+.rec-score-breakdown.open .rec-score-breakdown__toggle {
+    background: #f1f5f9;
+    color: #334155;
+}
+
+.rec-score-breakdown__icon   { font-size: 14px !important; }
+.rec-score-breakdown__chevron {
+    font-size: 15px !important;
+    margin-left: auto;
+    transition: transform .2s ease;
+}
+
+.rec-score-breakdown__body {
+    display: none;
+    flex-direction: column;
+    gap: 7px;
+    padding: 8px 10px 10px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.rec-score-breakdown__row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rec-score-breakdown__label {
+    font-size: .72rem;
+    font-weight: 600;
+    color: #64748b;
+    width: 120px;
+    flex-shrink: 0;
+}
+
+.rec-mini-bar {
+    flex: 1;
+    height: 5px;
+    border-radius: 99px;
+    background: #e2e8f0;
+    overflow: hidden;
+}
+
+.rec-mini-bar__fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width .5s ease;
+    min-width: 3px;
+}
+
+.rec-score-breakdown__val {
+    font-size: .72rem;
+    font-weight: 800;
+    min-width: 32px;
+    text-align: right;
+    color: #334155;
+}

@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+using System.Text.Json;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 using Nanny_BackEnd.DTOs.Subscription;
@@ -25,14 +26,17 @@ public class GetAdminPlanDetailTests
         var mockNotificationService = new Mock<INotificationService>();
         var mockCassoService = new Mock<ICassoService>();
         var mockPayOsService = new Mock<IPayOsService>();
+        var mockUserRepository = new Mock<IUserRepository>();
         var payOsOptions = Options.Create(new PayOsOptions { ExpiresAfterMinutes = 15 });
 
         _sut = new SubscriptionService(
             _mockRepo.Object,
+            mockUserRepository.Object,
             mockNotificationService.Object,
             mockCassoService.Object,
             mockPayOsService.Object,
-            payOsOptions);
+            payOsOptions,
+            NullLogger<SubscriptionService>.Instance);
     }
 
     private static string FeaturesJson() => JsonSerializer.Serialize(new List<string> { "F1" });
