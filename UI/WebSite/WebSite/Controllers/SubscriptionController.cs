@@ -386,6 +386,19 @@ public class SubscriptionController : Controller
         if (currentResult?.Success == true)
             page.CurrentSubscription = currentResult.Data;
 
+        // Gói dùng thử không có trong /plans — chỉ gộp khi *chính user* đang dùng gói đó để hiển thị thẻ "Đang sử dụng";
+        // phụ huynh/bảo mẫu khác không thấy gói trial trong danh sách, không mua được từ trang này.
+        if (page.CurrentSubscription is { IsActive: true, Plan.IsTrial: true } sub &&
+            roleMatches(sub.Plan, role) &&
+            !page.Plans.Any(p => p.Id == sub.Plan.Id))
+        {
+            page.Plans = page.Plans
+                .Append(sub.Plan)
+                .OrderBy(p => p.SortOrder)
+                .ThenBy(p => p.Price)
+                .ToList();
+        }
+
         var transactionResponse = await _http.GetAsync("/api/subscriptions/transactions");
         var transactionResult = await readApiResult<List<SubscriptionTransactionViewModel>>(transactionResponse);
         if (transactionResult?.Success == true && transactionResult.Data != null)
@@ -427,6 +440,7 @@ public class SubscriptionController : Controller
         sortOrder = model.SortOrder,
         features = model.GetFeatures(),
         canUseRecommendation = model.CanUseRecommendation,
+        isTrial = model.IsTrial,
         benefits = new
         {
             monthlyJobPostLimit = model.MonthlyJobPostLimit,

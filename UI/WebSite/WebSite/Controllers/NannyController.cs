@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.AspNetCore.Authorization;
@@ -16,12 +16,17 @@ public class NannyController : Controller
 {
     private readonly HttpClient _http;
     private readonly IHubContext<NotificationHub> _notificationHub;
+    private readonly ILogger<NannyController> _logger;
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
 
-    public NannyController(IHttpClientFactory httpFactory, IHubContext<NotificationHub> notificationHub)
+    public NannyController(
+        IHttpClientFactory httpFactory,
+        IHubContext<NotificationHub> notificationHub,
+        ILogger<NannyController> logger)
     {
         _http = httpFactory.CreateClient("BackendApi");
         _notificationHub = notificationHub;
+        _logger = logger;
     }
 
     private string? GetToken() => HttpContext.Session.GetString("AccessToken");
@@ -56,18 +61,31 @@ public class NannyController : Controller
         if (string.IsNullOrWhiteSpace(token))
             return null;
 
-        var request = new HttpRequestMessage(HttpMethod.Get, "/api/onboarding/status");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        var response = await _http.SendAsync(request);
-        if (!response.IsSuccessStatusCode)
+        try
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, "/api/onboarding/status");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            var response = await _http.SendAsync(request);
+            if (!response.IsSuccessStatusCode)
+                return null;
+
+            var content = await response.Content.ReadAsStringAsync();
+            var apiResult = TryDeserializeApiResult(content);
+            if (apiResult?.Data is JsonElement element && element.ValueKind == JsonValueKind.Object)
+                return JsonSerializer.Deserialize<OnboardingStatusViewModel>(element.GetRawText(), JsonOpts);
+
             return null;
-
-        var content = await response.Content.ReadAsStringAsync();
-        var apiResult = TryDeserializeApiResult(content);
-        if (apiResult?.Data is JsonElement element && element.ValueKind == JsonValueKind.Object)
-            return JsonSerializer.Deserialize<OnboardingStatusViewModel>(element.GetRawText(), JsonOpts);
-
-        return null;
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogWarning(ex, "Không gọi được API onboarding/status (kiểm tra ApiSettings:BaseUrl và backend đang chạy).");
+            return null;
+        }
+        catch (TaskCanceledException ex) when (ex.CancellationToken.IsCancellationRequested == false)
+        {
+            _logger.LogWarning(ex, "Timeout khi gọi API onboarding/status.");
+            return null;
+        }
     }
 
     private async Task<IActionResult?> GuardNannyOnboardingAccessAsync()
@@ -589,15 +607,33 @@ public class NannyController : Controller
         if (!ModelState.IsValid) return View(model);
 
         SetAuthHeader();
-        var response = await _http.PutAsJsonAsync("/api/onboarding/nanny/profile", new
+        HttpResponseMessage response;
+        try
         {
-            model.Bio,
-            model.YearsOfExperience,
-            model.EducationLevel,
-            model.ExpectedSalaryMin,
-            model.ExpectedSalaryMax,
-            model.MaxTravelDistance
-        });
+            response = await _http.PutAsJsonAsync("/api/onboarding/nanny/profile", new
+            {
+                model.Bio,
+                model.YearsOfExperience,
+                model.EducationLevel,
+                model.ExpectedSalaryMin,
+                model.ExpectedSalaryMax,
+                model.MaxTravelDistance
+            });
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "Không kết nối được API khi cập nhật hồ sơ nanny.");
+            ModelState.AddModelError(
+                string.Empty,
+                "Không kết nối được máy chủ. Hãy kiểm tra API backend đang chạy và cấu hình ApiSettings:BaseUrl trong Web.");
+            return View(model);
+        }
+        catch (TaskCanceledException ex) when (ex.CancellationToken.IsCancellationRequested == false)
+        {
+            _logger.LogWarning(ex, "Timeout khi cập nhật hồ sơ nanny.");
+            ModelState.AddModelError(string.Empty, "Hệ thống phản hồi quá lâu. Vui lòng thử lại.");
+            return View(model);
+        }
 
         var json = await response.Content.ReadAsStringAsync();
         var apiResult = TryDeserializeApiResult(json);

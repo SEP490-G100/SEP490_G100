@@ -43,21 +43,28 @@ public class RecommendationController : Controller
             var json = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<ApiResult<List<JobRecommendItem>>>(json, JsonOpts);
 
-            // Map sang shape đơn giản cho UI, không expose score kỹ thuật
             var items = (result?.Data ?? new()).Select(j => new
             {
-                jobId       = j.JobId,
-                title       = j.Title,
-                city        = j.City,
-                district    = j.District,
-                salaryMin   = j.SalaryMin,
-                salaryMax   = j.SalaryMax,
+                jobId            = j.JobId,
+                title            = j.Title,
+                description      = j.Description,
+                city             = j.City,
+                district         = j.District,
+                salaryMin        = j.SalaryMin,
+                salaryMax        = j.SalaryMax,
                 salaryNegotiable = j.SalaryNegotiable,
-                distanceKm  = j.DistanceKm,
-                requiredSkills = j.RequiredSkills?.Select(s => s.SkillName).ToList(),
-                finalScore  = j.FinalScore,
-                matchLabel  = MatchLabel(j.FinalScore),
-                matchTier   = MatchTier(j.FinalScore)   // "high" | "good" | "ok"
+                distanceKm       = j.DistanceKm,
+                latitude         = j.Latitude,
+                longitude        = j.Longitude,
+                requiredSkills   = j.RequiredSkills?.Select(s => s.SkillName).ToList(),
+                semanticScore    = j.SemanticScore,
+                salaryScore      = j.SalaryScore,
+                distanceScore    = j.DistanceScore,
+                hybridScore      = j.HybridScore,
+                businessBoost    = j.BusinessBoost,
+                finalScore       = j.FinalScore,
+                matchLabel       = MatchLabel(j.FinalScore),
+                matchTier        = MatchTier(j.FinalScore)
             });
 
             return Json(new { success = true, data = items });
@@ -152,13 +159,21 @@ internal class JobRecommendItem
 {
     public Guid JobId { get; set; }
     public string Title { get; set; } = string.Empty;
+    public string? Description { get; set; }
     public string? City { get; set; }
     public string? District { get; set; }
     public decimal? SalaryMin { get; set; }
     public decimal? SalaryMax { get; set; }
     public bool SalaryNegotiable { get; set; }
     public double? DistanceKm { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
     public List<SkillItem>? RequiredSkills { get; set; }
+    public double SemanticScore { get; set; }
+    public double SalaryScore { get; set; }
+    public double DistanceScore { get; set; }
+    public double HybridScore { get; set; }
+    public double BusinessBoost { get; set; }
     public double FinalScore { get; set; }
 }
 

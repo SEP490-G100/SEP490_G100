@@ -2,12 +2,12 @@ using System.Text.Json;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nanny_BackEnd.DTOs.Subscription;
 using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
-using Nanny_BackEnd.Repositories;
 using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Services.Interfaces;
 
@@ -16,29 +16,38 @@ namespace Nanny_BackEnd.Services;
 public class SubscriptionService : ISubscriptionService
 {
     private readonly ISubscriptionRepository _subscriptionRepo;
+    private readonly IUserRepository _userRepo;
     private readonly INotificationService _notificationService;
     private readonly ICassoService _cassoService;
     private readonly IPayOsService _payOsService;
     private readonly PayOsOptions _payOsOptions;
+    private readonly ILogger<SubscriptionService> _logger;
 
     public SubscriptionService(
         ISubscriptionRepository subscriptionRepo,
+        IUserRepository userRepository,
         INotificationService notificationService,
         ICassoService cassoService,
         IPayOsService payOsService,
-        IOptions<PayOsOptions> payOsOptions)
+        IOptions<PayOsOptions> payOsOptions,
+        ILogger<SubscriptionService> logger)
     {
         _subscriptionRepo = subscriptionRepo;
+        _userRepo = userRepository;
         _notificationService = notificationService;
         _cassoService = cassoService;
         _payOsService = payOsService;
         _payOsOptions = payOsOptions.Value;
+        _logger = logger;
     }
 
     public async Task<List<SubscriptionPlanResponse>> getPlans()
     {
         var plans = await _subscriptionRepo.getActivePlans();
-        return plans.Select(mapPlan).ToList();
+        return plans
+            .Select(mapPlan)
+            .Where(p => !p.IsTrial)
+            .ToList();
     }
 
     public async Task<SubscriptionPlanResponse?> getPlanByCode(string code)
@@ -47,7 +56,10 @@ public class SubscriptionService : ISubscriptionService
         var plans = await _subscriptionRepo.getActivePlans();
         var plan = plans.FirstOrDefault(p =>
             string.Equals(buildPlanCode(p), normalizedCode, StringComparison.OrdinalIgnoreCase));
-        return plan == null ? null : mapPlan(plan);
+        if (plan == null)
+            return null;
+        var mapped = mapPlan(plan);
+        return mapped.IsTrial ? null : mapped;
     }
 
     public async Task<UserSubscriptionResponse?> getCurrentSubscription(Guid userId)
@@ -81,6 +93,9 @@ public class SubscriptionService : ISubscriptionService
             ?? throw new KeyNotFoundException("Không tìm thấy gói subscription hoặc gói đã ngừng hoạt động.");
 
         var planResponse = mapPlan(plan);
+        if (planResponse.IsTrial)
+            throw new InvalidOperationException("Gói dùng thử không thể đăng ký trực tiếp. Vui lòng dùng ưu đãi tại onboarding hoặc hủy gói dùng thử hiện tại rồi chọn gói trả phí.");
+
         await validatePlanOwnership(userId, planResponse.TargetRole);
 
         var currentSubscription = await _subscriptionRepo.findCurrentSubscription(userId, DateTime.UtcNow);
@@ -133,6 +148,9 @@ public class SubscriptionService : ISubscriptionService
             ?? throw new KeyNotFoundException("Không tìm thấy gói subscription hoặc gói đã ngừng hoạt động.");
 
         var planResponse = mapPlan(plan);
+        if (planResponse.IsTrial)
+            throw new InvalidOperationException("Gói dùng thử không thể đăng ký trực tiếp. Vui lòng dùng ưu đãi tại onboarding hoặc hủy gói dùng thử hiện tại rồi chọn gói trả phí.");
+
         await validatePlanOwnership(userId, planResponse.TargetRole);
 
         var currentSubscription = await _subscriptionRepo.findCurrentSubscription(userId, DateTime.UtcNow);
@@ -333,8 +351,7 @@ public class SubscriptionService : ISubscriptionService
             return false;
 
         var targetRole = mapPlan(subscription.SubscriptionPlan).TargetRole;
-        return string.Equals(targetRole, "Parent", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(targetRole, "Unknown", StringComparison.OrdinalIgnoreCase);
+        return string.Equals(targetRole, "Parent", StringComparison.OrdinalIgnoreCase);
     }
 
     public async Task<UserSubscriptionResponse> cancelCurrentSubscription(Guid userId)
@@ -454,8 +471,6 @@ public class SubscriptionService : ISubscriptionService
         validateAdminPlanRequest(request);
 
         var normalizedName = request.Name.Trim();
-        if (await _subscriptionRepo.existsPlanNameIncludingDeleted(normalizedName))
-            throw new InvalidOperationException("Tên gói subscription đã tồn tại.");
 
         var nowUtc = DateTime.UtcNow;
         var nextSortOrder = await _subscriptionRepo.getNextSubscriptionPlanSortOrder();
@@ -466,7 +481,7 @@ public class SubscriptionService : ISubscriptionService
             Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
             Price = request.Price,
             DurationDays = request.DurationDays,
-            Features = serializeFeaturesForStorage(request.Features),
+            Features = serializeAdminPlanMetadataToFeaturesColumn(request),
             CanUseRecommendation = request.CanUseRecommendation,
             IsActive = true,
             SortOrder = nextSortOrder,
@@ -490,15 +505,13 @@ public class SubscriptionService : ISubscriptionService
             ?? throw new KeyNotFoundException("Không tìm thấy gói subscription.");
 
         var normalizedName = request.Name.Trim();
-        if (await _subscriptionRepo.existsPlanNameIncludingDeleted(normalizedName, id))
-            throw new InvalidOperationException("Tên gói subscription đã tồn tại.");
 
         plan.Name = normalizedName;
         plan.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
         plan.Price = request.Price;
         plan.DurationDays = request.DurationDays;
         plan.SortOrder = request.SortOrder;
-        plan.Features = serializeFeaturesForStorage(request.Features);
+        plan.Features = serializeAdminPlanMetadataToFeaturesColumn(request);
         plan.CanUseRecommendation = request.CanUseRecommendation;
         plan.UpdatedAt = DateTime.UtcNow;
         plan.UpdatedBy = adminUserId;
@@ -525,7 +538,121 @@ public class SubscriptionService : ISubscriptionService
         await _subscriptionRepo.saveChanges();
     }
 
-  
+    public async Task tryGrantWelcomeTrialAsync(Guid userId, string role)
+    {
+        try
+        {
+            if (!string.Equals(role, "Parent", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(role, "Nanny", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            var user = await _userRepo.FindByIdAsync(userId);
+            if (user == null || user.WelcomeTrialUsedAt.HasValue)
+                return;
+
+            var roles = await _userRepo.GetRolesAsync(userId);
+            if (!roles.Any(r => string.Equals(r, role, StringComparison.OrdinalIgnoreCase)))
+                return;
+
+            if (string.Equals(role, "Parent", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!await _subscriptionRepo.hasParentProfile(userId))
+                    return;
+            }
+            else if (!await _subscriptionRepo.hasNannyProfile(userId))
+            {
+                return;
+            }
+
+            await expireOldSubscriptions(userId);
+
+            var current = await _subscriptionRepo.findCurrentSubscription(userId, DateTime.UtcNow);
+            if (current != null)
+                return;
+
+            var plan = await findSingleActiveWelcomeTrialPlanForRoleAsync(role);
+            if (plan == null)
+                return;
+
+            var nowUtc = DateTime.UtcNow;
+            user.WelcomeTrialUsedAt = nowUtc;
+
+            var subscription = new UserSubscription
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                SubscriptionPlanId = plan.Id,
+                StartDate = nowUtc,
+                EndDate = nowUtc.AddDays(plan.DurationDays),
+                Status = 1,
+                PaymentTransactionId = null,
+                CreatedAt = nowUtc,
+                CreatedBy = userId
+            };
+
+            _subscriptionRepo.addUserSubscription(subscription);
+            await _subscriptionRepo.saveChanges();
+
+            await _notificationService.createNotification(
+                userId,
+                "Bắt đầu dùng thử gói dịch vụ",
+                $"Bạn đang dùng thử gói {plan.Name} đến {subscription.EndDate:dd/MM/yyyy}. Bạn có thể nâng cấp lên gói trả phí bất kỳ lúc nào (hủy dùng thử trước nếu cần mua gói mới trước khi hết hạn).",
+                NotificationTypes.SubscriptionPurchased,
+                subscription.Id,
+                "UserSubscription",
+                null);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "tryGrantWelcomeTrialAsync lỗi cho user {UserId}, role {Role}.", userId, role);
+        }
+    }
+
+    /// <summary>
+    /// Một gói trial active theo <paramref name="role"/> (IsTrial + TargetRole). Nếu 0 gói thì tặng không chạy;
+    /// nếu &gt;1 gói thì từ chối tặng và ghi log (cần dữ liệu gọn một gói trial/role).
+    /// </summary>
+    private async Task<SubscriptionPlan?> findSingleActiveWelcomeTrialPlanForRoleAsync(string role)
+    {
+        var roleNorm = SubscriptionPlanMetadataHelper.NormalizeTargetRole(role);
+        if (string.Equals(roleNorm, "Unknown", StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        var all = await _subscriptionRepo.getActivePlans();
+        var matches = new List<SubscriptionPlan>();
+        foreach (var p in all)
+        {
+            var dto = mapPlan(p);
+            if (!dto.IsTrial)
+                continue;
+            if (!string.Equals(dto.TargetRole, roleNorm, StringComparison.OrdinalIgnoreCase))
+                continue;
+            matches.Add(p);
+        }
+
+        if (matches.Count == 0)
+            return null;
+
+        if (matches.Count > 1)
+        {
+            _logger.LogWarning(
+                "WelcomeTrial: có {Count} gói trial active cho role {Role} — cần chỉ giữ đúng một. Bỏ qua tặng tự động cho user này.",
+                matches.Count,
+                role);
+            return null;
+        }
+
+        return matches[0];
+    }
+
+    private async Task<SubscriptionPlan?> findActivePlanEntityByCodeAsync(string code)
+    {
+        var normalizedCode = normalizeCode(code);
+        var plans = await _subscriptionRepo.getActivePlans();
+        return plans.FirstOrDefault(p =>
+            string.Equals(buildPlanCode(p), normalizedCode, StringComparison.OrdinalIgnoreCase));
+    }
+
     private async Task<Transaction?> findReusablePendingTransaction(Guid userId, string planCode)
     {
         var nowUtc = DateTime.UtcNow;
@@ -967,6 +1094,7 @@ public class SubscriptionService : ISubscriptionService
             DurationDays = plan.DurationDays,
             Features = features,
             SortOrder = plan.SortOrder,
+            IsTrial = hasStructuredMetadata && metadata?.IsTrial == true,
             Benefits = benefits
         };
     }
@@ -1086,6 +1214,30 @@ public class SubscriptionService : ISubscriptionService
 
     private static string serializeFeaturesForStorage(IEnumerable<string> features) =>
         JsonSerializer.Serialize(SubscriptionPlanMetadataHelper.NormalizeFeatures(features));
+
+    private static string serializeAdminPlanMetadataToFeaturesColumn(AdminSubscriptionPlanUpsertRequest request)
+    {
+        var name = request.Name.Trim();
+        var code = SubscriptionPlanMetadataHelper.NormalizeCode(null, request.TargetRole, name);
+        var target = SubscriptionPlanMetadataHelper.NormalizeTargetRole(request.TargetRole);
+        var metadata = new SubscriptionPlanMetadata
+        {
+            Code = code,
+            TargetRole = target,
+            IsTrial = request.IsTrial,
+            Features = SubscriptionPlanMetadataHelper.NormalizeFeatures(request.Features),
+            Benefits = new SubscriptionBenefitResponse
+            {
+                MonthlyJobPostLimit = request.Benefits.MonthlyJobPostLimit,
+                MonthlyApplicationLimit = request.Benefits.MonthlyApplicationLimit,
+                FeaturedBadge = request.Benefits.FeaturedBadge,
+                SearchPriority = request.Benefits.SearchPriority,
+                ListingDurationDays = request.Benefits.ListingDurationDays,
+                CanUseRecommendation = request.CanUseRecommendation
+            }
+        };
+        return SubscriptionPlanMetadataHelper.Serialize(metadata);
+    }
 
     private static void validateAdminPlanRequest(AdminSubscriptionPlanUpsertRequest request)
     {

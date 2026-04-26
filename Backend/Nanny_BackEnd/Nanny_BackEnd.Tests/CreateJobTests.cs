@@ -38,8 +38,9 @@ public class CreateJobTests
         var mockCasso     = new Mock<CassoService>(mockHttp.Object, Options.Create(new CassoOptions()));
         var mockPayOs     = new Mock<PayOsService>(mockHttp.Object, Options.Create(new PayOsOptions()));
         _mockSubService   = new Mock<SubscriptionService>(
-            mockSubRepo.Object, _mockNotif.Object, mockCasso.Object,
-            mockPayOs.Object,   Options.Create(new PayOsOptions()));
+            mockSubRepo.Object, mockUserRepo.Object, _mockNotif.Object, mockCasso.Object,
+            mockPayOs.Object,   Options.Create(new PayOsOptions()),
+            NullLogger<SubscriptionService>.Instance);
         var mockScope     = new Mock<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>();
 
         _sut = new JobService(

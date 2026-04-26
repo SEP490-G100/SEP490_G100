@@ -653,7 +653,8 @@ async function toggleJobFavorite(jobId, event) {
 }
 
 async function loadOwnedJobs() {
-  if (!isLoggedIn()) {
+  // MyJobs is Parent-only — skip for Nanny/unauthenticated users to avoid 403 console noise
+  if (!isLoggedIn() || (typeof IS_PARENT !== 'undefined' && !IS_PARENT)) {
     setOwnedJobs([]);
     ownedJobsLoaded = true;
     return;
@@ -1181,6 +1182,7 @@ function initMap() {
   const mapEl = document.getElementById('map');
   if (map || !mapEl || typeof L === 'undefined') return;
   map = L.map('map', { zoomControl: true }).setView([10.776, 106.701], 11);
+  window.__leafletMap = map;   // expose for rec panel (window.map = DOM element, not usable)
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; CartoDB',
     maxZoom: 19
@@ -1232,6 +1234,12 @@ function clearMapMarkers() {
   });
   markers = [];
 }
+
+// Helper for rec panel to push markers into the shared markers array
+function pushRecMarker(item) { markers.push(item); }
+
+// Helper for rec panel to suppress the map's moveend search (window.xxx ≠ let var)
+function setSuppressNextSearch() { suppressNextMapSearch = true; }
 
 function setMarkerHover(idx, active, openPopup = false) {
   const markerData = markers[idx];
