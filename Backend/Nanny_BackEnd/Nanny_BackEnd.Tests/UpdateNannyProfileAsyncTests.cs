@@ -6,6 +6,7 @@ using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Tests;
 
@@ -22,6 +23,7 @@ public class UpdateNannyProfileAsyncTests
     private readonly Mock<INannySkillRepository> _mockNannySkill;
     private readonly Mock<INannyAvailabilityRepository> _mockNannyAvail;
     private readonly Mock<IJobRepository> _mockJob;
+    private readonly Mock<ISubscriptionService> _mockSub;
     private readonly OnboardingService _sut;
 
     public UpdateNannyProfileAsyncTests()
@@ -33,6 +35,8 @@ public class UpdateNannyProfileAsyncTests
         _mockNannySkill = new Mock<INannySkillRepository>();
         _mockNannyAvail = new Mock<INannyAvailabilityRepository>();
         _mockJob = new Mock<IJobRepository>();
+        _mockSub = new Mock<ISubscriptionService>();
+        _mockSub.Setup(s => s.tryGrantWelcomeTrialAsync(It.IsAny<Guid>(), It.IsAny<string>())).Returns(Task.CompletedTask);
 
         _sut = new OnboardingService(
             _mockUser.Object,
@@ -42,6 +46,7 @@ public class UpdateNannyProfileAsyncTests
             _mockNannySkill.Object,
             _mockNannyAvail.Object,
             _mockJob.Object,
+            _mockSub.Object,
             NullLogger<OnboardingService>.Instance);
     }
 
@@ -55,10 +60,27 @@ public class UpdateNannyProfileAsyncTests
         MaxTravelDistance = 20
     };
 
+    private void SetupUser(Guid id, int ageYears = 35, bool withDateOfBirth = true)
+    {
+        DateOnly? dateOfBirth = null;
+        if (withDateOfBirth)
+            dateOfBirth = DateOnly.FromDateTime(DateTime.Today.AddYears(-ageYears));
+
+        _mockUser.Setup(u => u.FindByIdAsync(id)).ReturnsAsync(new User
+        {
+            Id = id,
+            Email = "test.user@hopthu.local",
+            FirstName = "Test",
+            LastName = "User",
+            DateOfBirth = dateOfBirth
+        });
+    }
+
     [Fact]
     public async Task SalaryMinOutOfRange_Throws()
     {
         var id = Guid.NewGuid();
+        SetupUser(id);
         var req = new UpdateNannyProfileRequest
         {
             ExpectedSalaryMin = 1_000_000m,
@@ -66,8 +88,7 @@ public class UpdateNannyProfileAsyncTests
         };
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.UpdateNannyProfileAsync(id, req));
-
-
+        Assert.Contains("Lương", ex.Message);
     }
 
 
@@ -75,6 +96,7 @@ public class UpdateNannyProfileAsyncTests
     public async Task SalaryMinGreaterThanMax_Throws()
     {
         var id = Guid.NewGuid();
+        SetupUser(id);
         var req = new UpdateNannyProfileRequest
         {
             ExpectedSalaryMin = 30_000_000m,
@@ -82,13 +104,27 @@ public class UpdateNannyProfileAsyncTests
         };
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.UpdateNannyProfileAsync(id, req));
+        Assert.Contains("Lương", ex.Message);
+    }
 
+    [Fact]
+    public async Task YearsOfExperience_ExceedsLogicalLimit_Throws()
+    {
+        var id = Guid.NewGuid();
+        SetupUser(id, ageYears: 31); // Max logical experience = 13 (31 - 18)
+
+        var req = ValidRequest();
+        req.YearsOfExperience = 22;
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.UpdateNannyProfileAsync(id, req));
+        Assert.Contains("Số năm kinh nghiệm", ex.Message);
     }
 
     [Fact]
     public async Task NoExistingProfile_CreatesAndPersists()
     {
         var id = Guid.NewGuid();
+        SetupUser(id);
         _mockNannyProfile.Setup(n => n.FindByUserIdAsync(id)).ReturnsAsync((NannyProfile?)null);
         _mockNannyProfile.Setup(n => n.SaveChangesAsync()).Returns(Task.CompletedTask);
 
@@ -109,6 +145,7 @@ public class UpdateNannyProfileAsyncTests
     public async Task ExistingProfile_UpdatesInPlace()
     {
         var id = Guid.NewGuid();
+        SetupUser(id);
         var npId = Guid.NewGuid();
         var existing = new NannyProfile
         {

@@ -17,6 +17,10 @@
                     <span class="badge @(Model.TargetRole == "Parent" ? "badge-parent" : "badge-nanny")">@(Model.TargetRole == "Parent" ? "Phụ Huynh" : Model.TargetRole == "Nanny" ? "Người Giữ Trẻ" : Model.TargetRole)</span>
                     <span class="badge badge-mod">@Model.Code</span>
                     <span class="badge badge-pending">@Model.GetFeatures().Count tính năng</span>
+                    @if (Model.IsTrial)
+                    {
+                        <span class="badge" style="background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e; border: 1px solid #f59e0b;">Dùng thử (welcome)</span>
+                    }
                     <span class="badge badge-pending">@Model.ActiveSubscriberCount người đăng ký đang hoạt động</span>
                 </div>
             </div>
@@ -103,7 +107,7 @@
                 </div>
                 <div class="field-group">
                     <label asp-for="Price" class="field-label"></label>
-                    <input asp-for="Price" type="number" min="1000" step="1000" class="search-input !pl-4" required />
+                    <input asp-for="Price" type="number" min="0" step="1000" class="search-input !pl-4" required />
                     <span asp-validation-for="Price" class="text-xs text-red-500"></span>
                 </div>
                 <div class="field-group">
@@ -160,6 +164,12 @@
                     <label class="field-readonly !justify-between cursor-pointer">
                         <span>Có thể dùng gợi ý (AI)</span>
                         <input asp-for="CanUseRecommendation" type="checkbox" class="w-4 h-4 accent-orange-500" />
+                    </label>
+                </div>
+                <div class="field-group lg:col-span-2">
+                    <label class="field-readonly !justify-between cursor-pointer">
+                        <span class="text-sm text-gray-800">@Html.DisplayNameFor(m => m.IsTrial)</span>
+                        <input asp-for="IsTrial" type="checkbox" class="w-4 h-4 accent-orange-500" />
                     </label>
                 </div>
             </div>

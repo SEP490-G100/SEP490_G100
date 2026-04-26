@@ -11,5 +11,6 @@ public class SubscriptionPlanResponse
     public int DurationDays { get; set; }
     public List<string> Features { get; set; } = [];
     public int SortOrder { get; set; }
+    public bool IsTrial { get; set; }
     public SubscriptionBenefitResponse Benefits { get; set; } = new();
 }

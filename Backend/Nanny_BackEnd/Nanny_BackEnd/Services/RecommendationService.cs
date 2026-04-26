@@ -39,7 +39,7 @@ public class RecommendationService : IRecommendationService
 
     public async Task<List<NannyRecommendResultDto>> GetTopNanniesForJobAsync(
         Guid jobId,
-        int topK = 5,
+        int topK = 10,
         double? overrideLat = null,
         double? overrideLng = null)
     {
@@ -88,7 +88,7 @@ public class RecommendationService : IRecommendationService
 
             // 5. Business boost (rating only)
             double boost = CalcBoost(c.AverageRating);
-            double finalScore = hybridScore * boost;
+            double finalScore = Math.Min(1.0, hybridScore * boost);
 
             results.Add(new NannyRecommendResultDto
             {
@@ -127,7 +127,7 @@ public class RecommendationService : IRecommendationService
 
     public async Task<List<JobRecommendResultDto>> GetTopJobsForNannyAsync(
         Guid nannyProfileId,
-        int topK = 5)
+        int topK = 10)
     {
         var candidates = await _repo.GetJobCandidatesAsync(nannyProfileId);
         if (candidates.Count == 0) return new List<JobRecommendResultDto>();
@@ -172,7 +172,7 @@ public class RecommendationService : IRecommendationService
 
             // 5. Business boost (rating only — job không có rating)
             double boost = CalcBoost(rating: null);
-            double finalScore = hybridScore * boost;
+            double finalScore = Math.Min(1.0, hybridScore * boost);
 
             results.Add(new JobRecommendResultDto
             {

@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Moq;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories.Interfaces;
@@ -23,14 +24,17 @@ public class AdminUpdateSubscriptionPlanStatusAsyncTests
         var mockNotificationService = new Mock<INotificationService>();
         var mockCassoService = new Mock<ICassoService>();
         var mockPayOsService = new Mock<IPayOsService>();
+        var mockUserRepository = new Mock<IUserRepository>();
         var payOsOptions = Options.Create(new PayOsOptions { ExpiresAfterMinutes = 15 });
 
         _sut = new SubscriptionService(
             _mockRepo.Object,
+            mockUserRepository.Object,
             mockNotificationService.Object,
             mockCassoService.Object,
             mockPayOsService.Object,
-            payOsOptions);
+            payOsOptions,
+            NullLogger<SubscriptionService>.Instance);
     }
 
     [Fact]

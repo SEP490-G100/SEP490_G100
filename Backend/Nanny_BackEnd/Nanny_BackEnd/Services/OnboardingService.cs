@@ -13,6 +13,8 @@ namespace Nanny_BackEnd.Services;
 
 public class OnboardingService : IOnboardingService
 {
+    private const int MinWorkingAgeForExperience = 18;
+
     private readonly IUserRepository _userRepo;
     private readonly IParentRepository _parentRepo;
     private readonly IChildRepository _childRepo;
@@ -20,6 +22,7 @@ public class OnboardingService : IOnboardingService
     private readonly INannySkillRepository _nannySkillRepo;
     private readonly INannyAvailabilityRepository _nannyAvailabilityRepo;
     private readonly IJobRepository _jobRepo;
+    private readonly ISubscriptionService _subscriptionService;
     private readonly ILogger<OnboardingService> _logger;
 
     public OnboardingService(
@@ -30,6 +33,7 @@ public class OnboardingService : IOnboardingService
         INannySkillRepository nannySkillRepo,
         INannyAvailabilityRepository nannyAvailabilityRepo,
         IJobRepository jobRepo,
+        ISubscriptionService subscriptionService,
         ILogger<OnboardingService> logger)
     {
         _userRepo = userRepo;
@@ -39,6 +43,7 @@ public class OnboardingService : IOnboardingService
         _nannySkillRepo = nannySkillRepo;
         _nannyAvailabilityRepo = nannyAvailabilityRepo;
         _jobRepo = jobRepo;
+        _subscriptionService = subscriptionService;
         _logger = logger;
     }
 
@@ -198,6 +203,25 @@ public class OnboardingService : IOnboardingService
         if (!string.IsNullOrWhiteSpace(salaryValidationError))
             throw new InvalidOperationException(salaryValidationError);
 
+        var user = await _userRepo.FindByIdAsync(userId)
+            ?? throw new InvalidOperationException("Không tìm thấy người dùng.");
+
+        if (!user.DateOfBirth.HasValue)
+            throw new InvalidOperationException("Vui lòng hoàn tất Bước 1 và nhập ngày sinh trước khi khai báo kinh nghiệm.");
+
+        if (request.YearsOfExperience.HasValue)
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var age = CalculateAge(user.DateOfBirth.Value, today);
+            var maxLogicalExperience = Math.Max(0, age - MinWorkingAgeForExperience);
+
+            if (request.YearsOfExperience.Value > maxLogicalExperience)
+            {
+                throw new InvalidOperationException(
+                    $"Số năm kinh nghiệm không hợp lý với ngày sinh đã chọn.");
+            }
+        }
+
         var profile = await _nannyProfileRepo.FindByUserIdAsync(userId);
         if (profile == null)
         {
@@ -234,6 +258,8 @@ public class OnboardingService : IOnboardingService
             _logger.LogError(ex, "Lỗi lưu hồ sơ onboarding nanny cho UserId={UserId}", userId);
             throw new InvalidOperationException(BuildFriendlyDbUpdateMessage(ex));
         }
+
+        await _subscriptionService.tryGrantWelcomeTrialAsync(userId, "Nanny");
 
         return profile;
     }
@@ -331,6 +357,14 @@ public class OnboardingService : IOnboardingService
             throw new InvalidOperationException($"{fieldName} không được vượt quá {maxLength} ký tự.");
 
         return normalized;
+    }
+
+    private static int CalculateAge(DateOnly dateOfBirth, DateOnly today)
+    {
+        var age = today.Year - dateOfBirth.Year;
+        if (dateOfBirth > today.AddYears(-age))
+            age--;
+        return age;
     }
 
     private static string BuildFriendlyDbUpdateMessage(DbUpdateException ex)

@@ -381,11 +381,23 @@ public class AuthController : Controller
     /// Cho phép user chọn vai trò (Nanny hoặc Parent) khi lần đầu tiên đăng nhập
     /// </summary>
     [Authorize, HttpGet]
-    public IActionResult ChooseRole() => View();
+    public async Task<IActionResult> ChooseRole()
+    {
+        if (await HasOnboardingRoleAsync())
+            return RedirectToAction("Start", "Onboarding");
+
+        return View();
+    }
 
     [Authorize, HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> ChooseRole(string role)
     {
+        if (await HasOnboardingRoleAsync())
+        {
+            TempData["Info"] = "Bạn đã chọn vai trò trước đó.";
+            return RedirectToAction("Start", "Onboarding");
+        }
+
         if (string.IsNullOrEmpty(role) || (role != "Nanny" && role != "Parent"))
         {
             ModelState.AddModelError("", "Vui lòng chọn một vai trò hợp lệ.");
@@ -592,6 +604,37 @@ public class AuthController : Controller
 
     private static bool hasRole(IEnumerable<string> roles, string roleName) =>
         roles.Any(role => string.Equals(role, roleName, StringComparison.OrdinalIgnoreCase));
+
+    private bool HasOnboardingRoleInClaims() =>
+        User.IsInRole("Parent") || User.IsInRole("Nanny");
+
+    private async Task<bool> HasOnboardingRoleAsync()
+    {
+        if (HasOnboardingRoleInClaims())
+            return true;
+
+        var token = HttpContext.Session.GetString("AccessToken");
+        if (string.IsNullOrWhiteSpace(token))
+            return false;
+
+        try
+        {
+            var req = new HttpRequestMessage(HttpMethod.Get, "/api/onboarding/status")
+            {
+                Headers = { Authorization = new AuthenticationHeaderValue("Bearer", token) }
+            };
+            var response = await _http.SendAsync(req);
+            var result = await ReadApiResult<OnboardingStatusViewModel>(response);
+            var role = result?.Data?.Role;
+
+            return string.Equals(role, "Parent", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(role, "Nanny", StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
+    }
 
     private static string? NormalizePhoneNumber(string? phoneNumber) =>
         string.IsNullOrWhiteSpace(phoneNumber) ? null : phoneNumber.Trim();
