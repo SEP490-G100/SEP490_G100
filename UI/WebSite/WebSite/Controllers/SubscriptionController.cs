@@ -527,11 +527,11 @@ public class SubscriptionController : Controller
     {
         "Parent" => new SubscriptionBenefitViewModel
         {
-            MonthlyJobPostLimit = 3,
+            MonthlyJobPostLimit = 1,
             MonthlyApplicationLimit = 0,
             FeaturedBadge = false,
             SearchPriority = false,
-            ListingDurationDays = 30
+            ListingDurationDays = 7
         },
         "Nanny" => new SubscriptionBenefitViewModel
         {
@@ -548,8 +548,8 @@ public class SubscriptionController : Controller
     {
         "Parent" =>
         [
-            "Tối đa 3 bài đăng đang hoạt động theo thiết lập miễn phí hiện tại",
-            "Thời gian hiển thị bài đăng cơ bản 30 ngày",
+            "Tối đa 1 bài đăng đang hoạt động cùng lúc",
+            "Mỗi bài đăng có thời gian hiển thị 7 ngày",
             "Không có huy hiệu nổi bật",
             "Không ưu tiên trong kết quả tìm kiếm"
         ],

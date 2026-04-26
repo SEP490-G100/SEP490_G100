@@ -27,8 +27,6 @@ public class JobApplicationRepository : IJobApplicationRepository
 
     public async Task<bool> HasApprovedHealthCertificateAsync(Guid nannyProfileId, DateTime utcNow)
     {
-        var today = utcNow.Date;
-
         return await _db.VerificationRequests
             .Where(request =>
                 request.NannyProfileId == nannyProfileId &&
@@ -37,8 +35,7 @@ public class JobApplicationRepository : IJobApplicationRepository
                 request.Status == (int)NannyVerificationRequestStatus.Approved)
             .AnyAsync(request => request.VerificationDocuments.Any(document =>
                 !document.IsDeleted &&
-                document.DocumentType == (int)VerificationDocumentType.HealthCertificate &&
-                (!document.ExpiryDate.HasValue || document.ExpiryDate.Value.Date >= today)));
+                document.DocumentType == (int)VerificationDocumentType.HealthCertificate));
     }
 
     // ── JobPosting ────────────────────────────────────────────────────────
