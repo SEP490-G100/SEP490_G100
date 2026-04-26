@@ -9,7 +9,11 @@
         <div class="border-b border-orange-100 px-5 py-5 md:px-7">
             <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-orange-500">@(isParent ? "Khu vực phụ huynh" : "Khu vực bảo mẫu")</p>
             <h1 class="mt-1 text-2xl font-bold text-slate-900">@(isParent ? "Quản lý hợp đồng của phụ huynh" : "Quản lý hợp đồng của bảo mẫu")</h1>
-            <p class="mt-1 text-sm text-slate-500">Tải lên file PDF hợp đồng để lưu trữ trên hệ thống (chỉ nhận PDF).</p>
+            <p class="mt-1 text-sm text-slate-500">
+                @(isParent
+                    ? "Chỉ khi hợp đồng đã hoàn tất xác nhận, phụ huynh mới có thể tải lên file PDF để lưu trữ."
+                    : "Bảo mẫu chỉ có quyền xem file PDF hợp đồng do phụ huynh tải lên.")
+            </p>
         </div>
 
         <div class="px-5 pb-6 pt-5 md:px-7">
@@ -24,6 +28,7 @@
 @section Scripts {
     <script>
         (() => {
+            const isParent = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(isParent));
             const stateEl = document.getElementById('contractStorageState');
             const listEl = document.getElementById('contractStorageList');
 
@@ -48,6 +53,7 @@
             const renderItem = (item) => {
                 const fileUrl = String(item.pdfUrl || '').trim();
                 const hasFile = !!fileUrl;
+                const canUpload = isParent && Number(item.contractStatus) === 3;
 
                 return `
                 <article class="rounded-2xl border border-orange-100 bg-gradient-to-b from-white to-orange-50/40 p-4 shadow-sm" data-contract-card="${esc(item.contractId)}">
@@ -68,13 +74,17 @@
                         ${hasFile
                             ? `<a href="${esc(fileUrl)}" target="_blank" rel="noopener" class="mb-3 inline-flex items-center justify-center rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-bold text-orange-600 hover:bg-orange-100">Xem file PDF hợp đồng đã lưu</a>`
                             : '<p class="mb-3 text-xs font-semibold text-slate-500">Chưa có file PDF hợp đồng nào được lưu.</p>'}
-                        <div class="flex flex-wrap items-center gap-2">
-                            <input type="file" accept="application/pdf,.pdf" data-file-input="${esc(item.contractId)}" class="block text-sm text-slate-700" />
-                            <button type="button" data-upload-btn="${esc(item.contractId)}"
-                                class="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-orange-500 to-orange-400 px-4 py-2 text-xs font-extrabold text-white hover:from-orange-600 hover:to-orange-500">
-                                Lưu hợp đồng
-                            </button>
-                        </div>
+                        ${isParent
+                            ? (canUpload
+                                ? `<div class="flex flex-wrap items-center gap-2">
+                                        <input type="file" accept="application/pdf,.pdf" data-file-input="${esc(item.contractId)}" class="block text-sm text-slate-700" />
+                                        <button type="button" data-upload-btn="${esc(item.contractId)}"
+                                            class="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-orange-500 to-orange-400 px-4 py-2 text-xs font-extrabold text-white hover:from-orange-600 hover:to-orange-500">
+                                            Lưu hợp đồng
+                                        </button>
+                                   </div>`
+                                : '<p class="text-xs font-semibold text-amber-700">Chỉ được tải lên khi hợp đồng đã xác nhận hoàn tất.</p>')
+                            : '<p class="text-xs font-semibold text-slate-500">Bạn chỉ có quyền xem file PDF hợp đồng.</p>'}
                         <p class="mt-2 hidden text-xs font-semibold" data-upload-msg="${esc(item.contractId)}"></p>
                     </div>
                 </article>`;

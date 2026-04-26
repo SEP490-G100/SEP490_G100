@@ -1,0 +1,353 @@
+@model WebSite.Models.Contract.ContractDetailViewModel
+@{
+    ViewData["Title"] = "Chi tiết hợp đồng";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<section class="mx-auto max-w-6xl px-4 py-8 md:py-10">
+    <div class="rounded-3xl border border-orange-100 bg-white shadow-sm">
+        <div class="border-b border-orange-100 px-5 py-5 md:px-7">
+            <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-orange-500">Hợp đồng</p>
+            <h1 class="mt-1 text-2xl font-bold text-slate-900">Chi tiết hợp đồng</h1>
+            <div class="mt-3 flex flex-wrap items-center gap-2">
+                @if (Model.CanParentConfirmInfo)
+                {
+                    <button type="button" id="btnParentConfirm"
+                            class="inline-flex items-center rounded-xl px-4 py-2 text-sm font-bold text-white"
+                            style="background-color:#f97316;border:1px solid #ea580c;"
+                            onmouseover="this.style.backgroundColor='#ea580c'"
+                            onmouseout="this.style.backgroundColor='#f97316'">
+                        Xác nhận thông tin
+                    </button>
+                }
+                @if (Model.CanNannyConfirmInfo)
+                {
+                    <button type="button" id="btnNannyConfirm"
+                            class="inline-flex items-center rounded-xl px-4 py-2 text-sm font-bold text-white"
+                            style="background-color:#4f46e5;border:1px solid #4338ca;"
+                            onmouseover="this.style.backgroundColor='#4338ca'"
+                            onmouseout="this.style.backgroundColor='#4f46e5'">
+                        Xác nhận thông tin
+                    </button>
+                }
+                @if (Model.CanParentFinalConfirm)
+                {
+                    <button type="button" id="btnParentFinalConfirm"
+                            class="inline-flex items-center rounded-xl px-4 py-2 text-sm font-bold text-white"
+                            style="background-color:#059669;border:1px solid #047857;"
+                            onmouseover="this.style.backgroundColor='#047857'"
+                            onmouseout="this.style.backgroundColor='#059669'">
+                        Xác nhận hợp đồng
+                    </button>
+                }
+            </div>
+        </div>
+
+        <div class="px-5 pb-6 pt-5 md:px-7">
+            <div id="contractEditor"
+                 class="min-h-[520px] whitespace-pre-wrap rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-800"></div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        (() => {
+            const contractId = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ContractId));
+            const rawContractContent = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ContractContent ?? ""));
+            const contractStatus = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ContractStatus));
+            const currentUserRole = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CurrentUserRole ?? ""));
+            const canParentConfirmInfo = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CanParentConfirmInfo));
+            const canNannyConfirmInfo = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CanNannyConfirmInfo));
+            const canParentFinalConfirm = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CanParentFinalConfirm));
+
+            const parentName = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ParentName ?? ""));
+            const parentPhone = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ParentPhone ?? ""));
+            const parentEmail = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ParentEmail ?? ""));
+            const nannyName = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.NannyName ?? ""));
+            const nannyPhone = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.NannyPhone ?? ""));
+            const nannyEmail = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.NannyEmail ?? ""));
+
+            const editorEl = document.getElementById('contractEditor');
+            const btnParentConfirm = document.getElementById('btnParentConfirm');
+            const btnNannyConfirm = document.getElementById('btnNannyConfirm');
+            const btnParentFinalConfirm = document.getElementById('btnParentFinalConfirm');
+
+            const parentFields = {
+                ParentName: 'parentName',
+                ParentDOB: 'parentDob',
+                ParentIdentityNumber: 'parentIdentityNumber',
+                ParentIdentityIssueDate: 'parentIdentityIssueDate',
+                ParentIdentityIssuePlace: 'parentIdentityIssuePlace',
+                ParentPermanentAddress: 'parentPermanentAddress',
+                ParentCurrentAddress: 'parentCurrentAddress',
+                ParentPhone: 'parentPhone',
+                ParentEmail: 'parentEmail',
+                ContractDurationMonths: 'contractDurationMonths',
+                ProbationStartDate: 'probationStartDate',
+                ProbationEndDate: 'probationEndDate',
+                WorkAddress: 'workAddress',
+                SalaryAmount: 'salaryAmount',
+                ProbationSalaryAmount: 'probationSalaryAmount',
+                AllowanceAmount: 'allowanceAmount',
+                BankAccountNumber: 'bankAccountNumber',
+                BankName: 'bankName',
+                SalaryReceivedDate: 'salaryReceivedDate',
+                MealPerDay: 'mealPerDay'
+            };
+
+            const nannyFields = {
+                NannyName: 'nannyName',
+                NannyDOB: 'nannyDob',
+                NannyIdentityNumber: 'nannyIdentityNumber',
+                NannyIdentityIssueDate: 'nannyIdentityIssueDate',
+                NannyIdentityIssuePlace: 'nannyIdentityIssuePlace',
+                NannyPermanentAddress: 'nannyPermanentAddress',
+                NannyCurrentAddress: 'nannyCurrentAddress',
+                NannyPhone: 'nannyPhone'
+            };
+
+            const editableFieldMap = canParentConfirmInfo
+                ? parentFields
+                : (canNannyConfirmInfo ? nannyFields : {});
+
+            const editableFieldSet = new Set(Object.keys(editableFieldMap));
+            const fieldState = {
+                ParentName: parentName || '',
+                ParentPhone: parentPhone || '',
+                ParentEmail: parentEmail || '',
+                NannyName: nannyName || '',
+                NannyPhone: nannyPhone || '',
+                NannyEmail: nannyEmail || ''
+            };
+
+            const escapeHtml = (value) => String(value ?? '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
+
+            const showToast = (message, type = 'info') => {
+                if (typeof window.showToast === 'function') {
+                    window.showToast(message, { type });
+                    return;
+                }
+                alert(message);
+            };
+
+            const reloadToastKey = 'contract:reload-toast';
+            const saveToastForReload = (message, type) => {
+                try {
+                    sessionStorage.setItem(reloadToastKey, JSON.stringify({ message, type }));
+                } catch { }
+            };
+
+            const consumeToastAfterReload = () => {
+                try {
+                    const raw = sessionStorage.getItem(reloadToastKey);
+                    if (!raw) return;
+                    sessionStorage.removeItem(reloadToastKey);
+                    const toast = JSON.parse(raw);
+                    if (toast?.message) showToast(toast.message, toast.type || 'success');
+                } catch { }
+            };
+
+            const reloadWithToast = (message, type = 'success') => {
+                saveToastForReload(message, type);
+                window.location.reload();
+            };
+
+            const resolveDisplayValue = (fieldKey) => {
+                const val = fieldState[fieldKey];
+                if (typeof val === 'string' && val.trim() !== '') return val.trim();
+                return '...';
+            };
+
+            const replaceNth = (source, regex, nth, replacementBuilder) => {
+                let count = 0;
+                return source.replace(regex, (...args) => {
+                    count += 1;
+                    if (count === nth) {
+                        return typeof replacementBuilder === 'function'
+                            ? replacementBuilder(...args)
+                            : replacementBuilder;
+                    }
+                    return args[0];
+                });
+            };
+
+            const normalizeContentForInlineInput = (source) => {
+                let result = source || '';
+
+                if (!result.includes('{{ParentName}}')) {
+                    result = replaceNth(result, /Ông\/bà:\s*[^\r\n]+/g, 1, 'Ông/bà: {{ParentName}}');
+                }
+
+                if (!result.includes('{{NannyName}}')) {
+                    result = replaceNth(result, /Ông\/bà:\s*[^\r\n]+/g, 2, 'Ông/bà: {{NannyName}}');
+                }
+
+                if (!result.includes('{{ParentPhone}}') || !result.includes('{{ParentEmail}}')) {
+                    result = replaceNth(
+                        result,
+                        /Điện thoại liên hệ:\s*[^\r\n]+/g,
+                        1,
+                        'Điện thoại liên hệ: {{ParentPhone}}. Email: {{ParentEmail}}'
+                    );
+                }
+
+                if (!result.includes('{{NannyPhone}}')) {
+                    result = replaceNth(
+                        result,
+                        /Điện thoại liên hệ:\s*[^\r\n]+/g,
+                        2,
+                        'Điện thoại liên hệ: {{NannyPhone}}'
+                    );
+                }
+
+                return result;
+            };
+
+            const contractContent = normalizeContentForInlineInput(rawContractContent);
+
+            const renderContractEditor = () => {
+                const tokenRegex = /\{\{\s*([A-Za-z0-9_]+)\s*\}\}/g;
+                let cursor = 0;
+                let html = '';
+                let match;
+
+                while ((match = tokenRegex.exec(contractContent)) !== null) {
+                    const tokenStart = match.index;
+                    const tokenEnd = tokenRegex.lastIndex;
+                    const fieldKey = match[1];
+                    const staticText = contractContent.slice(cursor, tokenStart);
+                    html += escapeHtml(staticText).replace(/\n/g, '<br>');
+
+                    if (editableFieldSet.has(fieldKey)) {
+                        const current = fieldState[fieldKey] || '';
+                        html += `<input type="text"
+                                       class="contract-inline-input"
+                                       data-field="${escapeHtml(fieldKey)}"
+                                       value="${escapeHtml(current)}"
+                                       style="min-width:220px;max-width:100%;display:inline-block;border:1px solid #f59e0b;border-radius:8px;padding:2px 8px;background:#ffffff;color:#0f172a;font-size:0.95rem;" />`;
+                    } else {
+                        html += `<span data-value-field="${escapeHtml(fieldKey)}" class="font-semibold text-slate-700">${escapeHtml(resolveDisplayValue(fieldKey))}</span>`;
+                    }
+
+                    cursor = tokenEnd;
+                }
+
+                html += escapeHtml(contractContent.slice(cursor)).replace(/\n/g, '<br>');
+                editorEl.innerHTML = html;
+            };
+
+            const syncFieldValue = (fieldKey, value) => {
+                fieldState[fieldKey] = value ?? '';
+                const siblings = editorEl.querySelectorAll(`input.contract-inline-input[data-field="${fieldKey}"]`);
+                siblings.forEach((inputEl) => {
+                    if (inputEl.value !== (value ?? '')) inputEl.value = value ?? '';
+                });
+            };
+
+            editorEl.addEventListener('input', (event) => {
+                const target = event.target;
+                if (!(target instanceof HTMLInputElement)) return;
+                const fieldKey = target.dataset.field;
+                if (!fieldKey) return;
+                syncFieldValue(fieldKey, target.value);
+            });
+
+            const buildPayload = (fieldMap) => {
+                const payload = {};
+                for (const [fieldKey, propName] of Object.entries(fieldMap)) {
+                    payload[propName] = (fieldState[fieldKey] || '').trim();
+                }
+                return payload;
+            };
+
+            const requestJson = async (url, method, payload) => {
+                const options = {
+                    method,
+                    credentials: 'include',
+                    headers: {}
+                };
+
+                if (method !== 'GET') {
+                    options.headers['Content-Type'] = 'application/json';
+                    options.body = payload ? JSON.stringify(payload) : '{}';
+                }
+
+                const response = await fetch(url, options);
+                const text = await response.text();
+                let json = {};
+                if (text) {
+                    try { json = JSON.parse(text); } catch { json = {}; }
+                }
+
+                if (!response.ok || json?.success === false) {
+                    throw new Error(json?.message || 'Thao tác thất bại.');
+                }
+                return json;
+            };
+
+            const startNannyStatusPolling = () => {
+                if (canNannyConfirmInfo) return;
+                if (String(currentUserRole || '').toLowerCase() !== 'nanny') return;
+                if (Number(contractStatus) !== 0) return;
+
+                const poll = async () => {
+                    try {
+                        const detail = await requestJson(`/Contract/Api/Detail?contractId=${encodeURIComponent(contractId)}`, 'GET');
+                        if (detail?.data?.canNannyConfirmInfo === true) {
+                            reloadWithToast('Bố mẹ đã xác nhận thông tin. Bạn có thể xác nhận hợp đồng ngay bây giờ.', 'success');
+                        }
+                    } catch { }
+                };
+
+                const timer = window.setInterval(poll, 5000);
+                window.addEventListener('beforeunload', () => window.clearInterval(timer), { once: true });
+                poll();
+            };
+
+            if (btnParentConfirm) {
+                btnParentConfirm.addEventListener('click', async () => {
+                    try {
+                        const payload = buildPayload(parentFields);
+                        await requestJson(`/Contract/Api/${encodeURIComponent(contractId)}/ParentConfirmInfo`, 'PATCH', payload);
+                        reloadWithToast('Bố mẹ đã xác nhận thông tin hợp đồng.', 'success');
+                    } catch (error) {
+                        showToast(error.message || 'Không thể xác nhận thông tin.', 'error');
+                    }
+                });
+            }
+
+            if (btnNannyConfirm) {
+                btnNannyConfirm.addEventListener('click', async () => {
+                    try {
+                        const payload = buildPayload(nannyFields);
+                        await requestJson(`/Contract/Api/${encodeURIComponent(contractId)}/NannyConfirmInfo`, 'PATCH', payload);
+                        reloadWithToast('Bảo mẫu đã xác nhận thông tin hợp đồng.', 'success');
+                    } catch (error) {
+                        showToast(error.message || 'Không thể xác nhận thông tin.', 'error');
+                    }
+                });
+            }
+
+            if (btnParentFinalConfirm) {
+                btnParentFinalConfirm.addEventListener('click', async () => {
+                    try {
+                        await requestJson(`/Contract/Api/${encodeURIComponent(contractId)}/ParentFinalConfirm`, 'POST');
+                        reloadWithToast('Bố mẹ đã xác nhận hoàn tất hợp đồng.', 'success');
+                    } catch (error) {
+                        showToast(error.message || 'Không thể hoàn tất hợp đồng.', 'error');
+                    }
+                });
+            }
+
+            consumeToastAfterReload();
+            renderContractEditor();
+            startNannyStatusPolling();
+        })();
+    </script>
+}
