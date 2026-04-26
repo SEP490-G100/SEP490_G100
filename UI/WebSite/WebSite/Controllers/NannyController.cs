@@ -18,6 +18,7 @@ public class NannyController : Controller
     private readonly IHubContext<NotificationHub> _notificationHub;
     private readonly ILogger<NannyController> _logger;
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
+    private const string NannyOnboardingCompletedSessionKey = "NannyOnboardingCompleted";
 
     public NannyController(
         IHttpClientFactory httpFactory,
@@ -90,18 +91,48 @@ public class NannyController : Controller
 
     private async Task<IActionResult?> GuardNannyOnboardingAccessAsync()
     {
+        if (IsNannyOnboardingLocked())
+            return RedirectToAction("Index", "Home");
+
         var status = await GetOnboardingStatusAsync();
         if (status == null)
             return RedirectToAction("Start", "Onboarding");
+
+        SyncNannyOnboardingCompletedFlag(status);
+        if (IsNannyOnboardingLocked())
+            return RedirectToAction("Index", "Home");
 
         if (!string.Equals(status.Role, "Nanny", StringComparison.OrdinalIgnoreCase))
             return RedirectToAction("Start", "Onboarding");
 
         if (!status.RequiresOnboarding || string.Equals(status.NextStep, "Completed", StringComparison.OrdinalIgnoreCase))
+        {
+            HttpContext.Session.SetString(NannyOnboardingCompletedSessionKey, "1");
             return RedirectToAction("Index", "Home");
+        }
 
         return null;
     }
+
+    private static bool IsCompletedNannyOnboardingStatus(OnboardingStatusViewModel status) =>
+        string.Equals(status.Role, "Nanny", StringComparison.OrdinalIgnoreCase) &&
+        (!status.RequiresOnboarding || string.Equals(status.NextStep, "Completed", StringComparison.OrdinalIgnoreCase));
+
+    private void SyncNannyOnboardingCompletedFlag(OnboardingStatusViewModel status)
+    {
+        if (IsCompletedNannyOnboardingStatus(status))
+        {
+            HttpContext.Session.SetString(NannyOnboardingCompletedSessionKey, "1");
+            return;
+        }
+
+        if (string.Equals(status.Role, "Nanny", StringComparison.OrdinalIgnoreCase))
+            HttpContext.Session.Remove(NannyOnboardingCompletedSessionKey);
+    }
+
+    private bool IsNannyOnboardingLocked() =>
+        IsNannyRole() &&
+        string.Equals(HttpContext.Session.GetString(NannyOnboardingCompletedSessionKey), "1", StringComparison.Ordinal);
 
     private static string BuildFallbackHttpErrorMessage(HttpResponseMessage response, string? body, string defaultMessage)
     {
@@ -743,7 +774,7 @@ public class NannyController : Controller
             ModelState.AddModelError("", apiResult?.Message ?? fallback);
             return View(model);
         }
-
+        HttpContext.Session.SetString(NannyOnboardingCompletedSessionKey, "1");
         return RedirectToAction("Index", "Home");
     }
 
@@ -926,4 +957,3 @@ public class NannyController : Controller
         public string? ResponseMessage { get; set; }
     }
 }
-

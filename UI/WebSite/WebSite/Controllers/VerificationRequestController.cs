@@ -275,7 +275,7 @@ public class VerificationRequestController : Controller
             isRequired: false);
 
         if (!ModelState.IsValid)
-            return View("VerificationRequest/NannySubmitVerificationRequest", model);
+            return View("NannySubmitVerificationRequest", model);
 
         try
         {

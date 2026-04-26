@@ -1480,7 +1480,55 @@ function getCreateSelectedChildren(requiredCount) {
 function renderCreateExtraChildProfiles() {
   const container = document.getElementById('cf-extraChildProfiles');
   if (!container) return;
-  container.innerHTML = '';
+
+  const requiredCount = normalizeChildrenCount(document.getElementById('cf-children')?.value || 1);
+  if (requiredCount <= 1) {
+    container.innerHTML = '';
+    return;
+  }
+
+  const selectedChildren = getCreateSelectedChildren(requiredCount);
+  let html = '';
+
+  for (let idx = 1; idx < requiredCount; idx += 1) {
+    const child = selectedChildren[idx] || null;
+    const displayIndex = idx + 1;
+
+    if (!child) {
+      html += `
+        <div class="child-profile-panel child-profile-panel--missing">
+          <div class="child-profile-panel__head">
+            <p class="child-profile-panel__title">Bé thứ ${displayIndex}</p>
+          </div>
+          <p class="child-profile-panel__empty">Chưa đủ hồ sơ bé để hiển thị thông tin cho bé này.</p>
+        </div>`;
+      continue;
+    }
+
+    html += `
+      <div class="child-profile-panel">
+        <div class="child-profile-panel__head">
+          <p class="child-profile-panel__title">Bé thứ ${displayIndex}</p>
+          <span class="child-profile-panel__badge">${escapeHtml(child.label || `Bé ${displayIndex}`)}</span>
+        </div>
+        <div class="child-profile-grid">
+          <div class="child-profile-field">
+            <span class="child-profile-field__label">Đặc điểm</span>
+            <p class="child-profile-field__value">${escapeHtml(child.characteristic || 'Chưa cập nhật')}</p>
+          </div>
+          <div class="child-profile-field">
+            <span class="child-profile-field__label">Nhóm tuổi</span>
+            <p class="child-profile-field__value">${escapeHtml(child.birthTypeLabel || 'Chưa cập nhật')}</p>
+          </div>
+          <div class="child-profile-field child-profile-field--full">
+            <span class="child-profile-field__label">Nhu cầu đặc biệt</span>
+            <p class="child-profile-field__value">${escapeHtml(child.specialNeeds || 'Không có')}</p>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  container.innerHTML = html;
 }
 
 function renderChildren(prefix, selectedChildId) {
