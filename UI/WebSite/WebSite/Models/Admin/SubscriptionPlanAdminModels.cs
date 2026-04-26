@@ -130,6 +130,9 @@ public class AdminSubscriptionPlanDetailViewModel
 
     [JsonPropertyName("updatedAt")]
     public DateTime? UpdatedAt { get; set; }
+
+    [JsonPropertyName("isTrial")]
+    public bool IsTrial { get; set; }
 }
 
 public class AdminSubscriptionPlanFormViewModel
@@ -157,7 +160,7 @@ public class AdminSubscriptionPlanFormViewModel
     public string TargetRole { get; set; } = "Parent";
 
     [Display(Name = "Giá gói")]
-    [Range(typeof(decimal), "1000", "999999999")]
+    [Range(typeof(decimal), "0", "999999999")]
     public decimal Price { get; set; }
 
     [Display(Name = "Thời hạn sử dụng")]
@@ -190,6 +193,9 @@ public class AdminSubscriptionPlanFormViewModel
 
     public bool CanUseRecommendation { get; set; }
 
+    [Display(Name = "Gói dùng thử (welcome)")]
+    public bool IsTrial { get; set; }
+
     public List<string> GetFeatures() =>
         FeatureLines
             .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -217,6 +223,7 @@ public class AdminSubscriptionPlanFormViewModel
         FeaturedBadge = detail.Benefits.FeaturedBadge,
         SearchPriority = detail.Benefits.SearchPriority,
         ListingDurationDays = detail.Benefits.ListingDurationDays,
-        CanUseRecommendation = detail.CanUseRecommendation
+        CanUseRecommendation = detail.CanUseRecommendation,
+        IsTrial = detail.IsTrial
     };
 }

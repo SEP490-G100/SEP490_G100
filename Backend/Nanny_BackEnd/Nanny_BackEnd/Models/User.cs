@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace Nanny_BackEnd.Models;
@@ -56,6 +56,8 @@ public partial class User
     public Guid? UpdatedBy { get; set; }
 
     public bool IsDeleted { get; set; }
+
+    public DateTime? WelcomeTrialUsedAt { get; set; }
 
     public virtual ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
 

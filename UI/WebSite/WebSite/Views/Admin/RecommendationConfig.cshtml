@@ -12,7 +12,7 @@
         <h1 class="page-title mt-2">
             Cấu Hình <span class="gradient-text">Gợi Ý</span>
         </h1>
-        <p class="page-subtitle">Tinh chỉnh trọng số điểm và quản lý vector embedding. Thay đổi có hiệu lực trong vòng 5 phút.</p>
+        <p class="page-subtitle">Điều chỉnh mức độ ưu tiên của từng tiêu chí và cập nhật dữ liệu AI. Thay đổi có hiệu lực sau tối đa 5 phút.</p>
     </div>
 </div>
 
@@ -32,8 +32,8 @@
                 <span class="material-icons-round text-orange-500 text-2xl">tune</span>
             </div>
             <div>
-                <h2 class="font-bold text-gray-800">Trọng Số Điểm</h2>
-                <p class="text-xs text-gray-400">Tổng ngữ nghĩa + lương + khoảng cách phải bằng 1,0</p>
+                <h2 class="font-bold text-gray-800">Trọng số tiêu chí</h2>
+                <p class="text-xs text-gray-400">Tổng ba tiêu chí chính phải bằng 1,0</p>
             </div>
         </div>
 
@@ -43,13 +43,13 @@
             <div class="weight-row p-4 rounded-2xl border border-gray-100 bg-gray-50/50">
                 <div class="flex items-center justify-between mb-2">
                     <div>
-                        <span class="font-semibold text-sm text-gray-700">Ngữ nghĩa (độ tương đồng cosine)</span>
+                        <span class="font-semibold text-sm text-gray-700">Mức độ phù hợp nội dung</span>
                         <span class="ml-2 text-xs text-gray-400">rec:semantic_weight</span>
                     </div>
                     <span id="lbl-semantic" class="font-bold text-orange-500 text-sm">@Model.SemanticWeight.ToString("P0")</span>
                 </div>
                 <div class="flex items-center gap-3">
-                    <input type="range" min="0" max="1" step="0.01"
+                    <input id="range-semantic" type="range" min="0" max="1" step="0.01"
                            value="@Model.SemanticWeight.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)"
                            class="flex-1 accent-orange-500"
                            oninput="syncSlider('semantic', this.value)" />
@@ -64,13 +64,13 @@
             <div class="weight-row p-4 rounded-2xl border border-gray-100 bg-gray-50/50">
                 <div class="flex items-center justify-between mb-2">
                     <div>
-                        <span class="font-semibold text-sm text-gray-700">Khoảng Lương Phù Hợp</span>
+                        <span class="font-semibold text-sm text-gray-700">Mức lương kỳ vọng</span>
                         <span class="ml-2 text-xs text-gray-400">rec:salary_weight</span>
                     </div>
                     <span id="lbl-salary" class="font-bold text-orange-500 text-sm">@Model.SalaryWeight.ToString("P0")</span>
                 </div>
                 <div class="flex items-center gap-3">
-                    <input type="range" min="0" max="1" step="0.01"
+                    <input id="range-salary" type="range" min="0" max="1" step="0.01"
                            value="@Model.SalaryWeight.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)"
                            class="flex-1 accent-orange-500"
                            oninput="syncSlider('salary', this.value)" />
@@ -85,13 +85,13 @@
             <div class="weight-row p-4 rounded-2xl border border-gray-100 bg-gray-50/50">
                 <div class="flex items-center justify-between mb-2">
                     <div>
-                        <span class="font-semibold text-sm text-gray-700">Điểm Khoảng Cách</span>
+                        <span class="font-semibold text-sm text-gray-700">Khoảng cách địa lý</span>
                         <span class="ml-2 text-xs text-gray-400">rec:distance_weight</span>
                     </div>
                     <span id="lbl-distance" class="font-bold text-orange-500 text-sm">@Model.DistanceWeight.ToString("P0")</span>
                 </div>
                 <div class="flex items-center gap-3">
-                    <input type="range" min="0" max="1" step="0.01"
+                    <input id="range-distance" type="range" min="0" max="1" step="0.01"
                            value="@Model.DistanceWeight.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)"
                            class="flex-1 accent-orange-500"
                            oninput="syncSlider('distance', this.value)" />
@@ -99,27 +99,6 @@
                            value="@Model.DistanceWeight.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)"
                            class="w-20 border border-gray-200 rounded-xl px-3 py-1.5 text-sm text-center font-semibold"
                            oninput="syncSlider('distance', this.value)" />
-                </div>
-            </div>
-
-            <!-- Cold Start -->
-            <div class="weight-row p-4 rounded-2xl border border-gray-100 bg-gray-50/50">
-                <div class="flex items-center justify-between mb-2">
-                    <div>
-                        <span class="font-semibold text-sm text-gray-700">Điểm Khởi Đầu Lạnh</span>
-                        <span class="ml-2 text-xs text-gray-400">rec:cold_start_score — dùng khi chưa có embedding</span>
-                    </div>
-                    <span id="lbl-coldstart" class="font-bold text-orange-500 text-sm">@Model.ColdStartScore.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)</span>
-                </div>
-                <div class="flex items-center gap-3">
-                    <input type="range" min="0" max="1" step="0.01"
-                           value="@Model.ColdStartScore.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)"
-                           class="flex-1 accent-orange-500"
-                           oninput="syncSlider('coldstart', this.value)" />
-                    <input type="number" id="inp-coldstart" min="0" max="1" step="0.01"
-                           value="@Model.ColdStartScore.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)"
-                           class="w-20 border border-gray-200 rounded-xl px-3 py-1.5 text-sm text-center font-semibold"
-                           oninput="syncSlider('coldstart', this.value)" />
                 </div>
             </div>
 
@@ -135,12 +114,41 @@
             <span>Tổng trọng số = <strong id="sumValue">@((Model.SemanticWeight + Model.SalaryWeight + Model.DistanceWeight).ToString("F2", System.Globalization.CultureInfo.InvariantCulture))</strong> ✓</span>
         </div>
 
-        <!-- Save All -->
-        <div class="mt-5 flex justify-end">
-            <button onclick="saveAll()"
+        <!-- Cold Start — tách biệt, không thuộc ràng buộc tổng = 1.0 -->
+        <div class="mt-6 pt-5 border-t border-gray-100">
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Cài đặt bổ sung (không tính vào tổng)</p>
+            <div class="weight-row p-4 rounded-2xl border border-blue-100 bg-blue-50/30">
+                <div class="flex items-center justify-between mb-2">
+                    <div>
+                        <span class="font-semibold text-sm text-gray-700">Điểm dự phòng khi thiếu dữ liệu AI</span>
+                        <span class="ml-2 text-xs text-gray-400">rec:cold_start_score — áp dụng khi hồ sơ/tin đăng chưa được xử lý AI</span>
+                    </div>
+                    <span id="lbl-coldstart" class="font-bold text-blue-500 text-sm">@Model.ColdStartScore.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <input id="range-coldstart" type="range" min="0" max="1" step="0.01"
+                           value="@Model.ColdStartScore.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)"
+                           class="flex-1 accent-blue-500"
+                           oninput="syncSlider('coldstart', this.value)" />
+                    <input type="number" id="inp-coldstart" min="0" max="1" step="0.01"
+                           value="@Model.ColdStartScore.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)"
+                           class="w-20 border border-blue-200 rounded-xl px-3 py-1.5 text-sm text-center font-semibold"
+                           oninput="syncSlider('coldstart', this.value)" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Save / Reset -->
+        <div class="mt-5 flex items-center justify-end gap-3">
+            <button onclick="resetWeights()"
+                    class="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition-all">
+                <span class="material-icons-round text-base">restart_alt</span>
+                Đặt lại
+            </button>
+            <button id="saveAllBtn" onclick="saveAll()"
                     class="btn-primary flex items-center gap-2 px-6 py-2.5 text-sm font-semibold">
                 <span class="material-icons-round text-base">save</span>
-                Lưu Tất Cả Trọng Số
+                Lưu cấu hình
             </button>
         </div>
     </div>
@@ -155,37 +163,37 @@
                     <span class="material-icons-round text-blue-500 text-2xl">auto_fix_high</span>
                 </div>
                 <div>
-                    <h2 class="font-bold text-gray-800">Vector nhúng (embedding)</h2>
-                    <p class="text-xs text-gray-400">Tạo vector nhúng qua Azure AI</p>
+                    <h2 class="font-bold text-gray-800">Dữ liệu AI (Embedding)</h2>
+                    <p class="text-xs text-gray-400">Sinh embedding từ hồ sơ &amp; tin đăng qua Azure OpenAI</p>
                 </div>
             </div>
 
             <div class="space-y-3">
-                <button onclick="reembed(false)"
+                <button onclick="reembed(this, false)"
                         class="w-full flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white py-2.5 rounded-xl font-semibold text-sm transition-all">
                     <span class="material-icons-round text-base">play_circle_outline</span>
-                    Chỉ nhúng các mục chưa xử lý
+                    Tạo dữ liệu AI cho mục còn thiếu
                 </button>
-                <button onclick="reembed(true)"
+                <button onclick="reembed(this, true)"
                         class="w-full flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-800 text-white py-2.5 rounded-xl font-semibold text-sm transition-all">
                     <span class="material-icons-round text-base">refresh</span>
-                    Buộc nhúng lại toàn bộ
+                    Tạo lại toàn bộ dữ liệu AI
                 </button>
             </div>
 
             <div id="embedResult" class="mt-4 hidden text-sm rounded-xl p-3 border"></div>
         </div>
 
-        <!-- Info card -->
+        <!-- Info card — dynamic -->
         <div class="content-card p-5 fade-in-up bg-orange-50/50 border border-orange-100">
-            <p class="text-xs font-semibold text-orange-600 uppercase tracking-wider mb-3">Cách Thức Hoạt Động</p>
+            <p class="text-xs font-semibold text-orange-600 uppercase tracking-wider mb-3">Cách tính điểm gợi ý</p>
             <ul class="space-y-2 text-xs text-gray-600">
-                <li class="flex gap-2"><span class="text-orange-400 font-bold">80%</span> Ngữ nghĩa — độ tương đồng cosine của vector embedding</li>
-                <li class="flex gap-2"><span class="text-orange-400 font-bold">12%</span> Lương — khoảng phù hợp giữa người giữ trẻ &amp; việc làm</li>
-                <li class="flex gap-2"><span class="text-orange-400 font-bold">8%</span> Khoảng cách — điểm Haversine mềm</li>
-                <li class="flex gap-2"><span class="text-orange-400 font-bold">×</span> Tăng cường — hệ số đánh giá lên tới +15%</li>
+                <li class="flex gap-2"><span id="info-semantic" class="text-orange-400 font-bold">@Model.SemanticWeight.ToString("P0")</span> Nội dung phù hợp — so sánh mô tả hồ sơ và tin đăng</li>
+                <li class="flex gap-2"><span id="info-salary"   class="text-orange-400 font-bold">@Model.SalaryWeight.ToString("P0")</span> Lương — mức kỳ vọng của bảo mẫu so với tin đăng</li>
+                <li class="flex gap-2"><span id="info-distance" class="text-orange-400 font-bold">@Model.DistanceWeight.ToString("P0")</span> Khoảng cách — vị trí địa lý giữa bảo mẫu và tin đăng</li>
+                <li class="flex gap-2"><span class="text-orange-400 font-bold">×</span> Điểm thưởng theo đánh giá — tối đa +15%</li>
             </ul>
-            <p class="text-xs text-gray-400 mt-3">TTL bộ nhớ đệm: 5 phút sau mỗi lần cập nhật.</p>
+            <p class="text-xs text-gray-400 mt-3">Thay đổi có hiệu lực sau tối đa 5 phút.</p>
         </div>
 
     </div>
@@ -193,32 +201,48 @@
 
 @section Scripts {
 <script>
-    const token = '@Html.Raw(Context.Session.GetString("AccessToken") ?? "")';
-
     function syncSlider(name, val) {
         val = parseFloat(val) || 0;
+        val = Math.min(1, Math.max(0, val));
+
         document.getElementById('inp-' + name).value = val.toFixed(2);
-        document.querySelectorAll('input[type=range]').forEach(r => {
-            if (r.getAttribute('oninput')?.includes("'" + name + "'")) r.value = val;
-        });
-        const pct = name !== 'coldstart';
-        document.getElementById('lbl-' + name).textContent = pct
-            ? (val * 100).toFixed(0) + '%'
-            : val.toFixed(2);
+        document.getElementById('range-' + name).value = val;
+
+        const isPct = name !== 'coldstart';
+        const lblColor = name === 'coldstart' ? 'text-blue-500' : 'text-orange-500';
+        const lbl = document.getElementById('lbl-' + name);
+        lbl.textContent = isPct ? (val * 100).toFixed(0) + '%' : val.toFixed(2);
+
+        // Cập nhật info card (chỉ 3 weight có trong info card)
+        const infoEl = document.getElementById('info-' + name);
+        if (infoEl) infoEl.textContent = (val * 100).toFixed(0) + '%';
+
         updateSum();
     }
 
     function updateSum() {
-        const s = parseFloat(document.getElementById('inp-semantic').value)  || 0;
-        const sal = parseFloat(document.getElementById('inp-salary').value)  || 0;
-        const d = parseFloat(document.getElementById('inp-distance').value)  || 0;
+        const s   = parseFloat(document.getElementById('inp-semantic').value)  || 0;
+        const sal = parseFloat(document.getElementById('inp-salary').value)    || 0;
+        const d   = parseFloat(document.getElementById('inp-distance').value)  || 0;
         const sum = s + sal + d;
+
         document.getElementById('sumValue').textContent = sum.toFixed(2);
         const ok = Math.abs(sum - 1.0) < 0.005;
         document.getElementById('sumOk').classList.toggle('hidden', !ok);
         document.getElementById('sumWarning').classList.toggle('hidden', ok);
         if (!ok) document.getElementById('sumText').textContent =
-            `Ngữ nghĩa + lương + khoảng cách = ${sum.toFixed(2)} (cần bằng 1,00)`;
+            `Nội dung phù hợp + lương + khoảng cách = ${sum.toFixed(2)} (cần bằng 1,00)`;
+
+        // Block nút Lưu khi tổng sai — đổi sang xám khi bị block
+        const btn = document.getElementById('saveAllBtn');
+        btn.disabled = !ok;
+        if (!ok) {
+            btn.classList.remove('btn-primary');
+            btn.classList.add('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
+        } else {
+            btn.classList.add('btn-primary');
+            btn.classList.remove('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
+        }
     }
 
     async function saveWeight(key, name) {
@@ -234,7 +258,16 @@
     }
 
     async function saveAll() {
-        const btn = document.querySelector('button[onclick="saveAll()"]');
+        // Guard: không lưu khi tổng 3 weight ≠ 1.0
+        const s   = parseFloat(document.getElementById('inp-semantic').value)  || 0;
+        const sal = parseFloat(document.getElementById('inp-salary').value)    || 0;
+        const d   = parseFloat(document.getElementById('inp-distance').value)  || 0;
+        if (Math.abs(s + sal + d - 1.0) >= 0.005) {
+            showToast('Tổng ba tiêu chí (nội dung + lương + khoảng cách) phải bằng 1,00 trước khi lưu.', false);
+            return;
+        }
+
+        const btn = document.getElementById('saveAllBtn');
         btn.disabled = true;
         btn.innerHTML = '<span class="material-icons-round text-base animate-spin">sync</span> Đang lưu...';
         try {
@@ -244,26 +277,20 @@
                 { key: 'rec:distance_weight',  name: 'distance'  },
                 { key: 'rec:cold_start_score', name: 'coldstart' },
             ];
-            for (const p of pairs) {
-                const val = parseFloat(document.getElementById('inp-' + p.name).value);
-                if (isNaN(val) || val < 0 || val > 1) {
-                    showToast(`Giá trị không hợp lệ (${p.key})`, false); return;
-                }
-            }
             const results = await Promise.all(pairs.map(p => saveWeight(p.key, p.name)));
             const allOk = results.every(Boolean);
-            showToast(allOk ? 'Đã lưu tất cả trọng số ✓' : 'Một số trọng số lưu thất bại', allOk);
-        } catch { showToast('Lỗi kết nối mạng', false); }
+            showToast(allOk ? 'Đã lưu cấu hình thành công ✓' : 'Có lỗi khi lưu một số giá trị, vui lòng thử lại.', allOk);
+        } catch { showToast('Lỗi kết nối, vui lòng thử lại.', false); }
         finally {
             btn.disabled = false;
-            btn.innerHTML = '<span class="material-icons-round text-base">save</span> Lưu Tất Cả Trọng Số';
+            btn.innerHTML = '<span class="material-icons-round text-base">save</span> Lưu cấu hình';
+            updateSum(); // khôi phục trạng thái disabled đúng
         }
     }
 
-    async function reembed(force) {
-        const btn = event.currentTarget;
+    async function reembed(btn, force) {
         btn.disabled = true;
-        btn.innerHTML = '<span class="material-icons-round text-base animate-spin">sync</span> Đang chạy...';
+        btn.innerHTML = '<span class="material-icons-round text-base animate-spin">sync</span> Đang xử lý...';
         document.getElementById('embedResult').classList.add('hidden');
         try {
             const res = await fetch(`/Admin/ReembedBatch?force=${force}`, {
@@ -275,33 +302,48 @@
             el.classList.remove('hidden');
             if (data.success) {
                 el.className = 'mt-4 text-sm rounded-xl p-3 border bg-green-50 border-green-200 text-green-700';
-                el.innerHTML = `Đã tạo vector cho <strong>${data.nanniesEmbedded}</strong> bảo mẫu, <strong>${data.jobsEmbedded}</strong> việc làm${force ? ' (buộc)' : ''}.`;
+                el.innerHTML = `Đã xử lý <strong>${data.nanniesEmbedded}</strong> bảo mẫu và <strong>${data.jobsEmbedded}</strong> tin đăng${force ? ' (tạo lại toàn bộ)' : ''}.`;
             } else {
                 el.className = 'mt-4 text-sm rounded-xl p-3 border bg-red-50 border-red-200 text-red-700';
-                el.textContent = data.message || 'Tạo vector nhúng thất bại.';
+                el.textContent = data.message || 'Xử lý dữ liệu AI thất bại, vui lòng thử lại.';
             }
-        } catch { showToast('Lỗi kết nối mạng', false); }
+        } catch { showToast('Lỗi kết nối, vui lòng thử lại.', false); }
         finally {
             btn.disabled = false;
             btn.innerHTML = force
-                ? '<span class="material-icons-round text-base">refresh</span> Buộc nhúng lại toàn bộ'
-                : '<span class="material-icons-round text-base">play_circle_outline</span> Chỉ nhúng các mục chưa xử lý';
+                ? '<span class="material-icons-round text-base">refresh</span> Tạo lại toàn bộ dữ liệu AI'
+                : '<span class="material-icons-round text-base">play_circle_outline</span> Tạo dữ liệu AI cho mục còn thiếu';
         }
     }
 
     function showToast(msg, ok) {
-        const type = ok ? 'success' : 'error';
         if (typeof window.showToast === 'function') {
-            window.showToast(msg, { type });
+            window.showToast(msg, { type: ok ? 'success' : 'error' });
             return;
         }
-
         window.alert(String(msg || ''));
     }
 
     function getAntiForgery() {
         return document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
     }
+
+    // Lưu giá trị gốc từ server để dùng khi đặt lại
+    const _originals = {
+        semantic:  @Model.SemanticWeight.ToString("F2", System.Globalization.CultureInfo.InvariantCulture),
+        salary:    @Model.SalaryWeight.ToString("F2", System.Globalization.CultureInfo.InvariantCulture),
+        distance:  @Model.DistanceWeight.ToString("F2", System.Globalization.CultureInfo.InvariantCulture),
+        coldstart: @Model.ColdStartScore.ToString("F2", System.Globalization.CultureInfo.InvariantCulture),
+    };
+
+    function resetWeights() {
+        for (const [name, val] of Object.entries(_originals))
+            syncSlider(name, val);
+        showToast('Đã đặt lại về giá trị đang lưu.', true);
+    }
+
+    // Khởi tạo trạng thái sum khi load trang
+    updateSum();
 </script>
 @Html.AntiForgeryToken()
 }

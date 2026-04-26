@@ -38,7 +38,7 @@ public class AdminSubscriptionPlanUpsertRequest
     public string TargetRole { get; set; } = "";
 
     [Display(Name = "Giá gói")]
-    [Range(typeof(decimal), "1000", "999999999")]
+    [Range(typeof(decimal), "0", "999999999")]
     public decimal Price { get; set; }
 
     [Display(Name = "Thời hạn sử dụng")]
@@ -58,6 +58,9 @@ public class AdminSubscriptionPlanUpsertRequest
     public AdminSubscriptionPlanBenefitRequest Benefits { get; set; } = new();
 
     public bool CanUseRecommendation { get; set; }
+
+    /// <summary>Đánh dấu gói dùng thử (welcome / không bán công khai trên getPlans). Lưu trong metadata JSON Features.</summary>
+    public bool IsTrial { get; set; }
 }
 
 public class AdminSubscriptionPlanStatusRequest

@@ -1,7 +1,9 @@
-﻿using System.Text.Json;
+using System.Text.Json;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 using Nanny_BackEnd.DTOs.Subscription;
+using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Services;
@@ -25,14 +27,17 @@ public class AdminUpdateSubscriptionPlanAsyncTests
         var mockNotificationService = new Mock<INotificationService>();
         var mockCassoService = new Mock<ICassoService>();
         var mockPayOsService = new Mock<IPayOsService>();
+        var mockUserRepository = new Mock<IUserRepository>();
         var payOsOptions = Options.Create(new PayOsOptions { ExpiresAfterMinutes = 15 });
 
         _sut = new SubscriptionService(
             _mockRepo.Object,
+            mockUserRepository.Object,
             mockNotificationService.Object,
             mockCassoService.Object,
             mockPayOsService.Object,
-            payOsOptions);
+            payOsOptions,
+            NullLogger<SubscriptionService>.Instance);
     }
 
     private static string FeaturesJson() => JsonSerializer.Serialize(new List<string> { "old" });
@@ -83,27 +88,6 @@ public class AdminUpdateSubscriptionPlanAsyncTests
 
     }
 
-    // Condition: duplicate name (trimmed) with excludeId = editing plan id.
-    [Fact]
-    public async Task DuplicateName_Throws()
-    {
-        var id = Guid.NewGuid();
-        var plan = new SubscriptionPlan
-        {
-            Id = id,
-            Name = "A",
-            Features = FeaturesJson()
-        };
-        _mockRepo.Setup(r => r.findAdminPlanByIdIncludingDeleted(id)).ReturnsAsync(plan);
-        _mockRepo.Setup(r => r.existsPlanNameIncludingDeleted("Nanny Premium", id)).ReturnsAsync(true);
-
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _sut.updateAdminPlan(id, Guid.NewGuid(), ValidRequest()));
-
-        Assert.Contains("subscription", ex.Message, StringComparison.OrdinalIgnoreCase);
-        _mockRepo.Verify(r => r.saveChanges(), Times.Never);
-    }
-
     // Condition: update success; uses request.SortOrder and does not call create-only methods.
     [Fact]
     public async Task Update_Success_MutatesPlan_ReturnsDetail()
@@ -114,8 +98,8 @@ public class AdminUpdateSubscriptionPlanAsyncTests
         var plan = new SubscriptionPlan
         {
             Id = id,
-            Name = "Ten cu",
-            Description = "Cu",
+            Name = "Tên cũ",
+            Description = "Mô tả cũ",
             Features = FeaturesJson(),
             Price = 10_000m,
             DurationDays = 7,
@@ -127,20 +111,19 @@ public class AdminUpdateSubscriptionPlanAsyncTests
         };
 
         _mockRepo.Setup(r => r.findAdminPlanByIdIncludingDeleted(id)).ReturnsAsync(plan);
-        _mockRepo.Setup(r => r.existsPlanNameIncludingDeleted("Nanny Pro", id)).ReturnsAsync(false);
         _mockRepo.Setup(r => r.saveChanges()).Returns(Task.CompletedTask);
         _mockRepo.Setup(r => r.countActiveSubscriptionsByPlan(id, It.IsAny<DateTime>())).ReturnsAsync(3);
 
         var req = ValidRequest();
         req.Name = "  Nanny Pro  ";
-        req.Description = "  moi  ";
+        req.Description = "  mới  ";
         req.SortOrder = 7;
         req.Features = new List<string> { "Nang 1", "Nang 1", "Nang 2" };
 
         var r = await _sut.updateAdminPlan(id, adminId, req);
 
         Assert.Equal("Nanny Pro", plan.Name);
-        Assert.Equal("moi", plan.Description);
+        Assert.Equal("mới", plan.Description);
         Assert.Equal(120_000m, plan.Price);
         Assert.Equal(60, plan.DurationDays);
         Assert.Equal(7, plan.SortOrder);
@@ -148,11 +131,12 @@ public class AdminUpdateSubscriptionPlanAsyncTests
         Assert.Equal(adminId, plan.UpdatedBy);
         Assert.NotNull(plan.UpdatedAt);
 
-        var storedFeatures = JsonSerializer.Deserialize<List<string>>(plan.Features ?? "[]");
-        Assert.NotNull(storedFeatures);
-        Assert.Equal(2, storedFeatures!.Count);
-        Assert.Contains("Nang 1", storedFeatures);
-        Assert.Contains("Nang 2", storedFeatures);
+        var meta = SubscriptionPlanMetadataHelper.TryParse(plan.Features);
+        Assert.NotNull(meta);
+        Assert.Equal(2, meta!.Features.Count);
+        Assert.Contains("Nang 1", meta.Features);
+        Assert.Contains("Nang 2", meta.Features);
+        Assert.False(meta.IsTrial);
 
         Assert.Equal(id, r.Id);
         Assert.Equal("Nanny Pro", r.Name);
@@ -180,7 +164,6 @@ public class AdminUpdateSubscriptionPlanAsyncTests
             Features = FeaturesJson()
         };
         _mockRepo.Setup(r => r.findAdminPlanByIdIncludingDeleted(id)).ReturnsAsync(plan);
-        _mockRepo.Setup(r => r.existsPlanNameIncludingDeleted("Nanny A", id)).ReturnsAsync(false);
         _mockRepo.Setup(r => r.saveChanges()).Returns(Task.CompletedTask);
         _mockRepo.Setup(r => r.countActiveSubscriptionsByPlan(It.IsAny<Guid>(), It.IsAny<DateTime>()))
             .ReturnsAsync(0);

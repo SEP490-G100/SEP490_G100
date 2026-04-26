@@ -63,7 +63,10 @@ public class RecommendationRepository : IRecommendationRepository
 
         var candidates = await query.ToListAsync();
 
-        // In-memory filter: lịch và skill 
+        double? jLat = job.Latitude.HasValue ? (double)job.Latitude.Value : null;
+        double? jLng = job.Longitude.HasValue ? (double)job.Longitude.Value : null;
+
+        // In-memory filter: lịch, skill và khoảng cách
         var passed = new List<NannyProfile>();
         foreach (var n in candidates)
         {
@@ -79,6 +82,19 @@ public class RecommendationRepository : IRecommendationRepository
             {
                 var nannySkillIds = n.NannySkills.Select(s => s.SkillId).ToHashSet();
                 if (!requiredSkillIds.Overlaps(nannySkillIds)) continue;
+            }
+
+            // Hard cutoff khoảng cách: loại nanny ở xa hơn 2× MaxTravelDistance.
+            // Chỉ áp khi cả hai bên đều có tọa độ và nanny đã khai MaxTravelDistance.
+            if (jLat.HasValue && jLng.HasValue &&
+                n.User.Latitude.HasValue && n.User.Longitude.HasValue &&
+                n.MaxTravelDistance is > 0)
+            {
+                double distKm = HaversineKm(
+                    (double)n.User.Latitude.Value, (double)n.User.Longitude.Value,
+                    jLat.Value, jLng.Value);
+                if (distKm > n.MaxTravelDistance.Value * 2.0)
+                    continue;
             }
 
             passed.Add(n);
@@ -118,12 +134,16 @@ public class RecommendationRepository : IRecommendationRepository
     public async Task<List<JobCandidate>> GetJobCandidatesAsync(Guid nannyProfileId)
     {
         var nanny = await _db.NannyProfiles
+            .Include(n => n.User)
             .Include(n => n.NannySkills.Where(s => !s.IsDeleted))
             .FirstOrDefaultAsync(n => n.Id == nannyProfileId && !n.IsDeleted);
 
         if (nanny == null) return new List<JobCandidate>();
 
         var nannySkillIds = nanny.NannySkills.Select(s => s.SkillId).ToHashSet();
+
+        double? nLat = nanny.User?.Latitude.HasValue == true ? (double)nanny.User.Latitude!.Value : null;
+        double? nLng = nanny.User?.Longitude.HasValue == true ? (double)nanny.User.Longitude!.Value : null;
 
         // Lương đã bỏ khỏi hard filter — xử lý mềm bởi salaryScore
         var jobs = await _db.JobPostings
@@ -145,6 +165,19 @@ public class RecommendationRepository : IRecommendationRepository
 
             if (jobRequiredSkillIds.Count > 0 && !jobRequiredSkillIds.Overlaps(nannySkillIds))
                 continue;
+
+            // Hard cutoff khoảng cách: loại job xa hơn 2× MaxTravelDistance của nanny.
+            // Chỉ áp khi cả hai bên đều có tọa độ và nanny đã khai MaxTravelDistance.
+            if (nLat.HasValue && nLng.HasValue &&
+                j.Latitude.HasValue && j.Longitude.HasValue &&
+                nanny.MaxTravelDistance is > 0)
+            {
+                double distKm = HaversineKm(
+                    nLat.Value, nLng.Value,
+                    (double)j.Latitude.Value, (double)j.Longitude.Value);
+                if (distKm > nanny.MaxTravelDistance.Value * 2.0)
+                    continue;
+            }
 
             passed.Add(j);
         }
@@ -460,6 +493,17 @@ public class RecommendationRepository : IRecommendationRepository
         while (await reader.ReadAsync())
             result.Add(reader.GetGuid(0));
         return result;
+    }
+
+    private static double HaversineKm(double lat1, double lon1, double lat2, double lon2)
+    {
+        const double R = 6371;
+        var dLat = (lat2 - lat1) * Math.PI / 180;
+        var dLon = (lon2 - lon1) * Math.PI / 180;
+        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2)
+              + Math.Cos(lat1 * Math.PI / 180) * Math.Cos(lat2 * Math.PI / 180)
+              * Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+        return R * 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
     }
 
     private static void AddParam(System.Data.Common.DbCommand cmd, string name, object? value)
