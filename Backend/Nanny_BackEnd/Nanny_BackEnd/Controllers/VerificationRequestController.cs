@@ -109,6 +109,14 @@ public class VerificationRequestController : ControllerBase
         return await SubmitVerificationInternalAsync(model);
     }
 
+    [Authorize(Roles = "Nanny")]
+    [HttpPost("nanny-submit-degree-certificate")]
+    public async Task<IActionResult> NannySubmitDegreeCertificateRequest([FromBody] SubmitVerificationRequestDto model)
+    {
+        model.RequestType = (int)VerificationRequestType.DegreeCertificate;
+        return await SubmitVerificationInternalAsync(model);
+    }
+
     private async Task<IActionResult> SubmitVerificationInternalAsync(SubmitVerificationRequestDto model)
     {
         try

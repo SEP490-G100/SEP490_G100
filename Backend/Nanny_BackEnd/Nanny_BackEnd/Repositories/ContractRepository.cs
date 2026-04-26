@@ -49,8 +49,36 @@ public class ContractRepository : IContractRepository
                     .ThenInclude(n => n.User)
             .FirstOrDefaultAsync();
 
+    public async Task<Contract?> GetContractByHiringRecordIdAsync(Guid hiringRecordId) =>
+        await _db.Contracts
+            .Where(c => c.HiringRecordId == hiringRecordId && !c.IsDeleted)
+            .Include(c => c.ContractTemplate)
+            .Include(c => c.HiringRecord)
+                .ThenInclude(h => h.JobApplication)
+                    .ThenInclude(a => a.JobPosting)
+            .Include(c => c.HiringRecord)
+                .ThenInclude(h => h.ParentProfile)
+                    .ThenInclude(p => p.User)
+            .Include(c => c.HiringRecord)
+                .ThenInclude(h => h.NannyProfile)
+                    .ThenInclude(n => n.User)
+            .OrderByDescending(c => c.UpdatedAt ?? c.CreatedAt)
+            .FirstOrDefaultAsync();
+
     public Task<Contract?> GetContractForUpdateAsync(Guid contractId) =>
         GetContractDetailAsync(contractId);
+
+    public async Task<List<ContractTemplate>> GetActiveContractTemplatesAsync() =>
+        await _db.ContractTemplates
+            .Where(t => !t.IsDeleted && t.IsActive)
+            .OrderByDescending(t => t.UpdatedAt ?? t.CreatedAt)
+            .ThenBy(t => t.Name)
+            .ToListAsync();
+
+    public async Task<ContractTemplate?> GetActiveContractTemplateByIdAsync(Guid templateId) =>
+        await _db.ContractTemplates
+            .Where(t => t.Id == templateId && !t.IsDeleted && t.IsActive)
+            .FirstOrDefaultAsync();
 
     public void AddContract(Contract contract) => _db.Contracts.Add(contract);
 

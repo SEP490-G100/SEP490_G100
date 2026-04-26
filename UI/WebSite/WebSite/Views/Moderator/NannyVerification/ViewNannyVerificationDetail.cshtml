@@ -8,7 +8,12 @@
         .Where(value => !string.IsNullOrWhiteSpace(value)));
     var genderLabel = Model.NannyGender switch { 1 => "Nam", 2 => "Nữ" , 3 => "Khác" , _ => "Chưa xác định" };
     var salaryTypeLabel = Model.SalaryType == 1 ? "Theo giờ" : "Theo tháng";
-    var requestTypeLabel = Model.RequestType == 2 ? "Giấy khám sức khỏe" : "Hồ sơ xác minh";
+    var requestTypeLabel = Model.RequestType switch
+    {
+        2 => "Giấy khám sức khỏe",
+        3 => "Bằng cấp / Chứng chỉ",
+        _ => "Căn cước công dân"
+    };
     var identityDocuments = Model.Documents.Where(doc => doc.DocumentType == (int)WebSite.Enums.VerificationDocumentType.IdentityCard).ToList();
     var degreeDocuments = Model.Documents.Where(doc => doc.DocumentType == (int)WebSite.Enums.VerificationDocumentType.DegreeCertificate).ToList();
     var healthDocuments = Model.Documents.Where(doc => doc.DocumentType == (int)WebSite.Enums.VerificationDocumentType.HealthCertificate).ToList();
@@ -118,7 +123,7 @@
                                         <p class="font-semibold text-gray-800 break-all">@doc.FileName</p>
                                         <p class="text-xs text-gray-400 mt-1">Loại: @doc.TypeLabel</p>
                                         <p class="text-xs text-gray-400">Kích thước: @(string.IsNullOrEmpty(doc.FileSizeLabel) ? "-" : doc.FileSizeLabel)</p>
-                                        <p class="text-xs text-gray-400">Hết hạn: @(doc.ExpiryDate.HasValue ? doc.ExpiryDate.Value.ToString("dd/MM/yyyy") : "-")</p>
+                                        <p class="text-xs text-gray-400">Ngày cấp: @(doc.ExpiryDate.HasValue ? doc.ExpiryDate.Value.ToString("dd/MM/yyyy") : "-")</p>
                                         <a href="@doc.DocumentUrl" target="_blank" rel="noopener"
                                            class="inline-flex items-center gap-1 mt-3 rounded-xl bg-blue-50 border border-blue-200 px-3 py-2 text-xs font-semibold text-blue-600 hover:bg-blue-100">
                                             <span class="material-icons-round text-sm">open_in_new</span>

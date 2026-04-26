@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Hosting;
+﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Nanny_BackEnd.DTOs.Profile;
@@ -89,7 +89,7 @@ public class UpdateParentOnboardingProfileAsyncTests
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             _sut.UpdateParentOnboardingProfileAsync(id, req));
 
-        Assert.Equal("Không thể giảm tổng số trẻ xuống 2 vì bạn đã tạo 3 hồ sơ trẻ.", ex.Message);
+        Assert.Equal("Không thể giảm số lượng trẻ cần chăm xuống 2 vì bạn đã tạo 3 hồ sơ trẻ.", ex.Message);
     }
 
     [Fact]

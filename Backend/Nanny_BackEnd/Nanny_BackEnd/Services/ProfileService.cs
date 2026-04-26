@@ -1,4 +1,4 @@
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.SqlClient;
@@ -768,7 +768,7 @@ public class ProfileService : IProfileService
         if (numberOfChildren.HasValue && numberOfChildren.Value < createdChildrenCount)
         {
             throw new InvalidOperationException(
-                $"Không thể giảm tổng số trẻ xuống {numberOfChildren.Value} vì bạn đã tạo {createdChildrenCount} hồ sơ trẻ.");
+                $"Không thể giảm số lượng trẻ cần chăm xuống {numberOfChildren.Value} vì bạn đã tạo {createdChildrenCount} hồ sơ trẻ.");
         }
 
         if (normalizedFamilyDescription != null)

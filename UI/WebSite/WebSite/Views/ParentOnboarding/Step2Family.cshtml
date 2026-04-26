@@ -23,7 +23,7 @@
                         <span class="nm-flow-badge">Đăng ký phụ huynh</span>
                         <h1 class="nm-flow-title">Thông tin gia đình và trẻ</h1>
                         <p class="nm-flow-subtitle">
-                            Chọn tổng số trẻ, sau đó điền thông tin tương ứng cho từng bé ngay tại màn hình này.
+                            Chọn số lượng trẻ cần chăm, sau đó điền thông tin tương ứng cho từng bé ngay tại màn hình này.
                         </p>
                     </div>
                 </div>
@@ -48,7 +48,7 @@
 
                                     <div class="nm-col-6">
                                         <div class="nm-field">
-                                            <label asp-for="NumberOfChildren" class="nm-label">Tổng số trẻ trong gia đình <span class="required">*</span></label>
+                                            <label asp-for="NumberOfChildren" class="nm-label">Số lượng trẻ cần chăm <span class="required">*</span></label>
                                             <input asp-for="NumberOfChildren" id="NumberOfChildren" type="number" min="1" max="20" class="nm-input" />
                                             <div class="nm-field-hint">Chọn từ 1 đến 20 trẻ. Form bên dưới sẽ tự tăng/giảm theo số bạn chọn.</div>
                                             <span asp-validation-for="NumberOfChildren" class="nm-error"></span>

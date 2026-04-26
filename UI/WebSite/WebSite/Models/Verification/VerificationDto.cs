@@ -41,8 +41,14 @@ public class VerificationRequestListDto
         _ => "Đang chờ"
     };
     public string StatusClass => Status switch { 2 => "badge-active", 3 => "badge-inactive", _ => "badge-pending" };
-    public string RequestTypeLabel => RequestType == 2 ? "Giấy khám sức khỏe" : "Hồ sơ xác minh";
-    public string ExpiryDateLabel => ExpiryDate.HasValue ? ExpiryDate.Value.ToString("dd/MM/yyyy") : "-";
+    public string RequestTypeLabel => RequestType switch
+    {
+        2 => "Giấy khám sức khỏe",
+        3 => "Bằng cấp / Chứng chỉ",
+        _ => "Căn cước công dân"
+    };
+    public string IssueDateLabel => ExpiryDate.HasValue ? ExpiryDate.Value.ToString("dd/MM/yyyy") : "-";
+    public string ExpiryDateLabel => IssueDateLabel;
 }
 
 public class VerificationRequestDetailDto
@@ -91,7 +97,12 @@ public class VerificationRequestDetailDto
         _ => "Đang chờ"
     };
     public string StatusClass => Status switch { 2 => "badge-active", 3 => "badge-inactive", _ => "badge-pending" };
-    public string RequestTypeLabel => RequestType == 2 ? "Giấy khám sức khỏe" : "Hồ sơ xác minh";
+    public string RequestTypeLabel => RequestType switch
+    {
+        2 => "Giấy khám sức khỏe",
+        3 => "Bằng cấp / Chứng chỉ",
+        _ => "Căn cước công dân"
+    };
     public string EducationLabel => EducationLevel switch
     {
         0 => "Trung học",

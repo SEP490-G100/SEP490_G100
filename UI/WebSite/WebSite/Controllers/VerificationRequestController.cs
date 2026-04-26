@@ -268,32 +268,34 @@ public class VerificationRequestController : Controller
             nameof(model.IdentityCardFiles),
             "Ban phai tai anh cho muc can cuoc cong dan.",
             isRequired: true);
-        ValidateUploadSection(
-            model.CertificateFiles,
-            nameof(model.CertificateFiles),
-            requiredMessage: null,
-            isRequired: false);
+        ValidateIssueDate(
+            model.IdentityCardIssueDate,
+            nameof(model.IdentityCardIssueDate),
+            "căn cước công dân");
 
         if (!ModelState.IsValid)
+        {
+            ViewData["ActiveTab"] = "identity-card-panel";
             return View("NannySubmitVerificationRequest", model);
+        }
 
         try
         {
             var payload = await BuildSubmissionPayloadAsync(
-                model,
                 requestType: 1,
-                includeIdentity: true,
-                includeHealthCertificate: false,
-                includeDegreeCertificate: true);
+                files: model.IdentityCardFiles,
+                documentType: VerificationDocumentType.IdentityCard,
+                issueDate: model.IdentityCardIssueDate);
 
-            return await SubmitVerificationPayloadAsync(payload, "Bạn đã gửi yêu cầu xác minh hồ sơ thành công.");
+            return await SubmitVerificationPayloadAsync(payload, "Bạn đã gửi yêu cầu xác minh căn cước công dân thành công.");
         }
         catch (InvalidOperationException ex)
         {
             return RedirectToAction(nameof(NannySubmitVerificationRequest), new
             {
                 toastType = "error",
-                toastMessage = ex.Message
+                toastMessage = ex.Message,
+                tab = "identity-card-panel"
             });
         }
         catch (RequestFailedException)
@@ -301,7 +303,68 @@ public class VerificationRequestController : Controller
             return RedirectToAction(nameof(NannySubmitVerificationRequest), new
             {
                 toastType = "error",
-                toastMessage = "Không thể upload tài liệu lên Azure Blob Storage. Vui lòng thử lại sau."
+                toastMessage = "Không thể upload tài liệu lên Azure Blob Storage. Vui lòng thử lại sau.",
+                tab = "identity-card-panel"
+            });
+        }
+    }
+
+    [Authorize(Roles = "Nanny")]
+    [HttpPost("VerificationRequest/NannySubmitDegreeCertificateRequest")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> NannySubmitDegreeCertificateRequest(SubmitVerificationRequestViewModel model)
+    {
+        if (!await PopulateProfileInfoAsync(model))
+        {
+            return RedirectToAction("Index", "Profile", new
+            {
+                toastType = "error",
+                toastMessage = "Vui lòng cập nhật hồ sơ cá nhân trước khi gửi yêu cầu."
+            });
+        }
+
+        ValidateUploadSection(
+            model.CertificateFiles,
+            nameof(model.CertificateFiles),
+            "Bạn phải tải lên ít nhất một file bằng cấp/chứng chỉ.",
+            isRequired: true);
+        ValidateIssueDate(
+            model.CertificateIssueDate,
+            nameof(model.CertificateIssueDate),
+            "bằng cấp/chứng chỉ");
+
+        if (!ModelState.IsValid)
+        {
+            ViewData["ActiveTab"] = "degree-certificate-panel";
+            return View("NannySubmitVerificationRequest", model);
+        }
+
+        try
+        {
+            var payload = await BuildSubmissionPayloadAsync(
+                requestType: 3,
+                files: model.CertificateFiles,
+                documentType: VerificationDocumentType.DegreeCertificate,
+                issueDate: model.CertificateIssueDate);
+
+            return await SubmitVerificationPayloadAsync(payload, "Bạn đã gửi yêu cầu xác minh bằng cấp/chứng chỉ thành công.");
+        }
+        catch (InvalidOperationException ex)
+        {
+            return RedirectToAction(nameof(NannySubmitVerificationRequest), new
+            {
+                toastType = "error",
+                toastMessage = ex.Message,
+                tab = "degree-certificate-panel"
+            });
+        }
+        catch (RequestFailedException)
+        {
+            return RedirectToAction(nameof(NannySubmitVerificationRequest), new
+            {
+                toastType = "error",
+                toastMessage = "Không thể upload tài liệu lên Azure Blob Storage. Vui lòng thử lại sau.",
+                tab = "degree-certificate-panel"
             });
         }
     }
@@ -325,38 +388,34 @@ public class VerificationRequestController : Controller
             nameof(model.HealthCertificateFiles),
             "Bạn phải upload ảnh cho mục giấy khám sức khỏe.",
             isRequired: true);
-
-        if (!model.HealthCertificateExpiryDate.HasValue)
-        {
-            ModelState.AddModelError(nameof(model.HealthCertificateExpiryDate), "Bạn phải chọn ngày hết hạn cho giấy khám sức khỏe.");
-        }
-        else if (model.HealthCertificateExpiryDate.Value.Date <= DateTime.UtcNow.Date)
-        {
-            ModelState.AddModelError(nameof(model.HealthCertificateExpiryDate), "Ngày hết hạn phải lớn hơn ngày hiện tại.");
-        }
+        ValidateIssueDate(
+            model.HealthCertificateIssueDate,
+            nameof(model.HealthCertificateIssueDate),
+            "giấy khám sức khỏe");
 
         if (!ModelState.IsValid)
         {
+            ViewData["ActiveTab"] = "health-certificate-panel";
             return View("NannySubmitVerificationRequest", model);
         }
 
         try
         {
             var payload = await BuildSubmissionPayloadAsync(
-                model,
                 requestType: 2,
-                includeIdentity: false,
-                includeHealthCertificate: true,
-                includeDegreeCertificate: false);
+                files: model.HealthCertificateFiles,
+                documentType: VerificationDocumentType.HealthCertificate,
+                issueDate: model.HealthCertificateIssueDate);
 
-            return await SubmitVerificationPayloadAsync(payload, "Ban da gui yeu cau giay kham suc khoe thanh cong.");
+            return await SubmitVerificationPayloadAsync(payload, "Bạn đã gửi yêu cầu giấy khám sức khỏe thành công.");
         }
         catch (InvalidOperationException ex)
         {
             return RedirectToAction(nameof(NannySubmitVerificationRequest), new
             {
                 toastType = "error",
-                toastMessage = ex.Message
+                toastMessage = ex.Message,
+                tab = "health-certificate-panel"
             });
         }
         catch (RequestFailedException)
@@ -364,7 +423,8 @@ public class VerificationRequestController : Controller
             return RedirectToAction(nameof(NannySubmitVerificationRequest), new
             {
                 toastType = "error",
-                toastMessage = "Không thể tải tài liệu lên. Vui lòng thử lại sau."
+                toastMessage = "Không thể tải tài liệu lên. Vui lòng thử lại sau.",
+                tab = "health-certificate-panel"
             });
         }
     }
@@ -377,33 +437,17 @@ public class VerificationRequestController : Controller
     }
 
     private async Task<object> BuildSubmissionPayloadAsync(
-        SubmitVerificationRequestViewModel model,
         int requestType,
-        bool includeIdentity,
-        bool includeHealthCertificate,
-        bool includeDegreeCertificate)
+        List<IFormFile>? files,
+        VerificationDocumentType documentType,
+        DateTime? issueDate)
     {
         var documents = new List<object>();
-
-        if (includeIdentity)
-        {
-            await AddDocumentsAsync(model.IdentityCardFiles, VerificationDocumentType.IdentityCard, documents);
-        }
-
-        if (includeHealthCertificate)
-        {
-            await AddDocumentsAsync(model.HealthCertificateFiles, VerificationDocumentType.HealthCertificate, documents, model.HealthCertificateExpiryDate);
-        }
-
-        if (includeDegreeCertificate)
-        {
-            await AddDocumentsAsync(model.CertificateFiles, VerificationDocumentType.DegreeCertificate, documents);
-        }
+        await AddDocumentsAsync(files, documentType, documents, issueDate);
 
         return new
         {
             RequestType = requestType,
-            HealthCertificateExpiryDate = model.HealthCertificateExpiryDate,
             Documents = documents
         };
     }
@@ -511,6 +555,27 @@ public class VerificationRequestController : Controller
         }
     }
 
+    private void ValidateIssueDate(DateTime? issueDate, string fieldName, string documentLabel)
+    {
+        if (!issueDate.HasValue)
+        {
+            ModelState.AddModelError(fieldName, $"Bạn phải chọn ngày cấp cho {documentLabel}.");
+            return;
+        }
+
+        var date = issueDate.Value.Date;
+        if (date > DateTime.UtcNow.Date)
+        {
+            ModelState.AddModelError(fieldName, $"Ngày cấp của {documentLabel} không được lớn hơn ngày hiện tại.");
+            return;
+        }
+
+        if (date < new DateTime(1900, 1, 1))
+        {
+            ModelState.AddModelError(fieldName, $"Ngày cấp của {documentLabel} không hợp lệ.");
+        }
+    }
+
     private static bool IsSupportedDocument(IFormFile file)
     {
         if (file == null || string.IsNullOrWhiteSpace(file.FileName))
@@ -533,7 +598,7 @@ public class VerificationRequestController : Controller
         List<IFormFile>? files,
         VerificationDocumentType documentType,
         List<object> documents,
-        DateTime? expiryDate = null)
+        DateTime? issueDate = null)
     {
         if (files == null || files.Count == 0)
         {
@@ -550,7 +615,7 @@ public class VerificationRequestController : Controller
                 DocumentUrl = documentUrl,
                 FileName = file.FileName,
                 FileSize = (int)file.Length,
-                ExpiryDate = expiryDate
+                ExpiryDate = issueDate
             });
         }
     }

@@ -12,6 +12,18 @@ public class HiringRepository : IHiringRepository
 
     public HiringRepository(Sep490NannyDbContext db) => _db = db;
 
+    public async Task<List<ContractTemplate>> GetActiveContractTemplatesAsync() =>
+        await _db.ContractTemplates
+            .Where(t => !t.IsDeleted && t.IsActive)
+            .OrderByDescending(t => t.UpdatedAt ?? t.CreatedAt)
+            .ThenBy(t => t.Name)
+            .ToListAsync();
+
+    public async Task<ContractTemplate?> GetActiveContractTemplateByIdAsync(Guid id) =>
+        await _db.ContractTemplates
+            .Where(t => t.Id == id && !t.IsDeleted && t.IsActive)
+            .FirstOrDefaultAsync();
+
     public async Task<JobPosting?> GetJobPostingByIdAsync(Guid jobPostingId) =>
         await _db.JobPostings
             .Where(j => j.Id == jobPostingId && !j.IsDeleted)

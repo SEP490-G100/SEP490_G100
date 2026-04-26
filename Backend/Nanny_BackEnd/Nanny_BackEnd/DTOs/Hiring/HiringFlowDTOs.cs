@@ -4,6 +4,7 @@ public class ConfirmHiringDto
 {
     public DateOnly StartDate { get; set; }
     public DateOnly? EndDate { get; set; }
+    public Guid ContractTemplateId { get; set; }
 }
 
 public class RespondToOfferDto
@@ -45,6 +46,21 @@ public class HiringOfferDetailDto
     public int Status { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? SignedAt { get; set; }
+}
+
+public class ContractTemplateOptionDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Version { get; set; } = string.Empty;
+}
+
+public class ContractTemplatePreviewDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Version { get; set; } = string.Empty;
+    public string Content { get; set; } = string.Empty;
 }
 
 public class NannyHireContextDto

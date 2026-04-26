@@ -455,7 +455,7 @@
                         }
                         else
                         {
-                            <a href="@Url.Action("NannySubmitVerificationRequest", "VerificationRequest", new { tab = "verification-profile-panel", returnUrl = currentProfileUrl })" class="profile-status-btn">Xác minh ngay</a>
+                            <a href="@Url.Action("NannySubmitVerificationRequest", "VerificationRequest", new { tab = "identity-card-panel", returnUrl = currentProfileUrl })" class="profile-status-btn">Xác minh ngay</a>
 
                         }
                     </div>
@@ -552,7 +552,7 @@
                         </div>
                         <div class="profile-detail-grid">
                             <div class="profile-detail-item">
-                                <div class="label">Tổng số trẻ (khai báo)</div>
+                                <div class="label">Số lượng trẻ cần chăm (khai báo)</div>
                                 <div class="value">@(declaredChildrenCount > 0 ? declaredChildrenCount.ToString() : "--")</div>
                             </div>
                             <div class="profile-detail-item">
@@ -579,7 +579,7 @@
                         @if (missingChildProfilesCount > 0)
                         {
                             <p class="text-xs text-slate-500 mt-3">
-                                Còn thiếu <strong>@missingChildProfilesCount hồ sơ trẻ</strong> so với tổng số trẻ đã khai báo.
+                                Còn thiếu <strong>@missingChildProfilesCount hồ sơ trẻ</strong> so với số lượng trẻ cần chăm đã khai báo.
                                 Bạn có thể vào "Quản lý hồ sơ trẻ" để bổ sung.
                             </p>
                         }

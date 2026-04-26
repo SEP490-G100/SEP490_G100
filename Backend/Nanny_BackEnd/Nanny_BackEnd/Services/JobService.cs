@@ -142,7 +142,8 @@ public class JobService : IJobService
 
     public async Task<Guid> createJob(Guid parentProfileId, CreateJobPostingRequest req)
     {
-        const int freeParentActivePostingLimit = 3;
+        var freeParentPostingLimit = Math.Max(1, SubscriptionBenefitResponse.FreeParent.MonthlyJobPostLimit);
+        var freeParentListingDurationDays = Math.Max(1, SubscriptionBenefitResponse.FreeParent.ListingDurationDays);
         var benefits = await _subscriptionService.getBenefitsForParentProfile(parentProfileId);
         var parentProfile = await _jobRepo.getParentProfileSnapshot(parentProfileId)
             ?? throw new KeyNotFoundException("Không tìm thấy hồ sơ phụ huynh.");
@@ -162,16 +163,12 @@ public class JobService : IJobService
         if (!hasActiveParentSubscription)
         {
             var activePostingCount = await _jobRepo.countActiveJobPostings(parentProfileId);
-            if (activePostingCount >= freeParentActivePostingLimit)
-                throw new InvalidOperationException($"Tài khoản phụ huynh miễn phí chỉ được đăng tối đa {freeParentActivePostingLimit} bài đăng. Vui lòng mua gói để đăng thêm.");
-
-            // Với free user: giới hạn tháng theo FreeParent benefits
-            var countThisMonth = await _jobRepo.countJobPostingsInCurrentMonth(parentProfileId);
-            var freeMonthlyLimit = Nanny_BackEnd.DTOs.Subscription.SubscriptionBenefitResponse.FreeParent.MonthlyJobPostLimit;
-            if (countThisMonth >= freeMonthlyLimit)
-                throw new InvalidOperationException($"Bạn chỉ được đăng tối đa {freeMonthlyLimit} bài viết trong 1 tháng. Vui lòng mua gói để tăng giới hạn.");
+            if (activePostingCount >= freeParentPostingLimit)
+                throw new InvalidOperationException(
+                    $"Tài khoản phụ huynh miễn phí chỉ được duy trì tối đa {freeParentPostingLimit} bài đăng đang hoạt động. " +
+                    $"Mỗi bài có thời hạn {freeParentListingDurationDays} ngày. Vui lòng nâng cấp gói nếu muốn đăng thêm.");
         }
-        // Paid users: không giới hạn bài đăng tháng ở đây
+        // Paid users: không giới hạn số bài đăng đồng thời ở đây
         // (plan benefits được apply khi tính ExpiresAt và FeaturedBadge)
 
         if (!req.SalaryNegotiable && req.SalaryMin == null)
@@ -706,7 +703,7 @@ public class JobService : IJobService
         {
             if (requestedChildren.HasValue && requestedChildren.Value != explicitIds.Count)
                 throw new InvalidOperationException(
-                    "Số lượng trẻ khai báo phải trùng với danh sách hồ sơ trẻ đã chọn.");
+                    "Số lượng trẻ cần chăm phải trùng với danh sách hồ sơ trẻ đã chọn.");
 
             if (explicitIds.Count > children.Count)
                 throw new InvalidOperationException(

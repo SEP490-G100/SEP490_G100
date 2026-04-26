@@ -15,11 +15,37 @@ public class HiringController : ControllerBase
 
     public HiringController(IHiringService service) => _service = service;
 
+    [HttpGet("contract-templates")]
+    public async Task<IActionResult> GetContractTemplates()
+    {
+        try
+        {
+            var result = await _service.GetContractTemplatesAsync();
+            return Ok(OkResult(result));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, Fail(ex.Message));
+        }
+    }
+
+    [HttpGet("contract-templates/{templateId:guid}")]
+    public async Task<IActionResult> GetContractTemplatePreview(Guid templateId)
+    {
+        try
+        {
+            var result = await _service.GetContractTemplatePreviewAsync(templateId);
+            return Ok(OkResult(result));
+        }
+        catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
+        catch (Exception ex) { return StatusCode(500, Fail(ex.Message)); }
+    }
+
     [HttpGet("{jobPostingId:guid}/applicants")]
     public async Task<IActionResult> GetApplicants(Guid jobPostingId)
     {
         var userId = GetCurrentUserId();
-        if (!userId.HasValue) return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
 
         try
         {
@@ -35,7 +61,7 @@ public class HiringController : ControllerBase
     public async Task<IActionResult> ApproveApplicant(Guid jobPostingId, Guid jobAppId)
     {
         var userId = GetCurrentUserId();
-        if (!userId.HasValue) return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
 
         try
         {
@@ -53,7 +79,7 @@ public class HiringController : ControllerBase
     public async Task<IActionResult> GetNannyContext(Guid jobPostingId, Guid jobAppId)
     {
         var userId = GetCurrentUserId();
-        if (!userId.HasValue) return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
 
         try
         {
@@ -68,7 +94,7 @@ public class HiringController : ControllerBase
     public async Task<IActionResult> HireApplicant(Guid jobPostingId, Guid jobAppId, [FromBody] ConfirmHiringDto dto)
     {
         var userId = GetCurrentUserId();
-        if (!userId.HasValue) return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
 
         try
         {
@@ -86,7 +112,7 @@ public class HiringController : ControllerBase
     public async Task<IActionResult> HireByContactRequest(Guid contactRequestId, [FromBody] ConfirmHiringDto dto)
     {
         var userId = GetCurrentUserId();
-        if (!userId.HasValue) return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
 
         try
         {
@@ -104,7 +130,7 @@ public class HiringController : ControllerBase
     public async Task<IActionResult> GetHiringOfferDetail(Guid hiringRecordId)
     {
         var userId = GetCurrentUserId();
-        if (!userId.HasValue) return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
 
         try
         {
@@ -120,7 +146,7 @@ public class HiringController : ControllerBase
     public async Task<IActionResult> RespondToOffer(Guid hiringRecordId, [FromBody] RespondToOfferDto dto)
     {
         var userId = GetCurrentUserId();
-        if (!userId.HasValue) return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
 
         try
         {
@@ -138,7 +164,7 @@ public class HiringController : ControllerBase
     public async Task<IActionResult> CompleteHiring(Guid hiringRecordId)
     {
         var userId = GetCurrentUserId();
-        if (!userId.HasValue) return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
 
         try
         {

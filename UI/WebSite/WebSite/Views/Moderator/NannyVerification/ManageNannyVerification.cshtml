@@ -48,8 +48,9 @@
                 <select name="requestType" onchange="this.form.submit()"
                         class="search-input md:w-52 !pl-9 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
                     <option value="">Tất cả loại hồ sơ</option>
-                    <option value="1" selected="@(currentRequestType == 1 ? "selected" : null)">Hồ sơ xác minh</option>
+                    <option value="1" selected="@(currentRequestType == 1 ? "selected" : null)">Căn cước công dân</option>
                     <option value="2" selected="@(currentRequestType == 2 ? "selected" : null)">Giấy khám sức khỏe</option>
+                    <option value="3" selected="@(currentRequestType == 3 ? "selected" : null)">Bằng cấp / Chứng chỉ</option>
                 </select>
             </div>
 
@@ -88,7 +89,7 @@
                     <th class="text-left">Bảo mẫu</th>
                     <th class="text-left">Email</th>
                     <th class="text-left">Loại hồ sơ</th>
-                    <th class="text-left">Hết hạn</th>
+                    <th class="text-left">Ngày cấp</th>
                     <th class="text-left">Ngày nộp</th>
                     <th class="text-left">Trạng thái</th>
                     <th class="text-center">Hành động</th>
@@ -131,11 +132,11 @@
                         </td>
                         <td class="text-gray-500 text-sm">@item.NannyEmail</td>
                         <td class="text-gray-500 text-sm">
-                            <span class="badge @(item.RequestType == 2 ? "bg-emerald-100 text-emerald-700" : "bg-orange-100 text-orange-700")">
+                            <span class="badge @(item.RequestType == 2 ? "bg-emerald-100 text-emerald-700" : item.RequestType == 3 ? "bg-blue-100 text-blue-700" : "bg-orange-100 text-orange-700")">
                                 @item.RequestTypeLabel
                             </span>
                         </td>
-                        <td class="text-gray-500 text-sm">@item.ExpiryDateLabel</td>
+                        <td class="text-gray-500 text-sm">@item.IssueDateLabel</td>
                         <td class="text-gray-500 text-xs">@item.CreatedAt.ToString("dd/MM/yyyy")</td>
                         <td><span class="badge @item.StatusClass">@item.StatusLabel</span></td>
                         <td class="text-center">

@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -32,6 +33,40 @@ public class HiringController : Controller
             return RedirectToAction("Index", "Home");
 
         return View("~/Views/Hiring/ViewHiringHistory.cshtml");
+    }
+
+    [HttpGet("ContractTemplates")]
+    public async Task<IActionResult> ContractTemplates()
+    {
+        SetBearerToken();
+        return await Proxy(() => _http.GetAsync("/api/hiring/contract-templates"));
+    }
+
+    [HttpGet("ContractTemplatePreview/{templateId:guid}")]
+    public async Task<IActionResult> ContractTemplatePreview(Guid templateId)
+    {
+        SetBearerToken();
+        var response = await _http.GetAsync($"/api/hiring/contract-templates/{templateId}");
+        if (!response.IsSuccessStatusCode)
+            return Content("Không thể tải nội dung mẫu hợp đồng.");
+
+        var body = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(string.IsNullOrWhiteSpace(body) ? "{}" : body);
+        if (!doc.RootElement.TryGetProperty("success", out var successEl) || !successEl.GetBoolean())
+            return Content("Không thể tải nội dung mẫu hợp đồng.");
+
+        if (!doc.RootElement.TryGetProperty("data", out var dataEl) || dataEl.ValueKind != JsonValueKind.Object)
+            return Content("Không thể tải nội dung mẫu hợp đồng.");
+
+        var title = dataEl.TryGetProperty("name", out var nameEl) ? (nameEl.GetString() ?? "Mau hop dong") : "Mau hop dong";
+        var version = dataEl.TryGetProperty("version", out var versionEl) ? (versionEl.GetString() ?? "") : "";
+        var content = dataEl.TryGetProperty("content", out var contentEl) ? (contentEl.GetString() ?? "") : "";
+        content = Regex.Replace(content, @"\{\{\s*[^{}]+\s*\}\}", "...", RegexOptions.CultureInvariant);
+
+        ViewBag.TemplateTitle = title;
+        ViewBag.TemplateVersion = version;
+        ViewBag.TemplateContent = content;
+        return View("~/Views/Hiring/ContractTemplatePreview.cshtml");
     }
 
     [HttpGet("Api/History")]
