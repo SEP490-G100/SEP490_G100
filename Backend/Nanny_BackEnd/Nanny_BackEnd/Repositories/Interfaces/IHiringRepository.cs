@@ -4,6 +4,8 @@ namespace Nanny_BackEnd.Repositories.Interfaces;
 
 public interface IHiringRepository
 {
+    Task<List<ContractTemplate>> GetActiveContractTemplatesAsync();
+    Task<ContractTemplate?> GetActiveContractTemplateByIdAsync(Guid id);
     Task<JobPosting?> GetJobPostingByIdAsync(Guid jobPostingId);
     Task<List<JobApplication>> GetApplicantsByJobPostingIdAsync(Guid jobPostingId);
     Task<JobApplication?> GetJobApplicationByIdAsync(Guid id);

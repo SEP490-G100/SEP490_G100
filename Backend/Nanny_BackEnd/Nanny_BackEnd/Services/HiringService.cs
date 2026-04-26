@@ -25,7 +25,31 @@ public class HiringService : IHiringService
     // Constructor dùng cho Test (tương thích với GetApplicantsTests)
     public HiringService(IHiringRepository repo, CommunicationService _svc) => _repo = repo;
 
-   
+    public async Task<List<ContractTemplateOptionDto>> GetContractTemplatesAsync()
+    {
+        var templates = await _repo.GetActiveContractTemplatesAsync();
+        return templates.Select(t => new ContractTemplateOptionDto
+        {
+            Id = t.Id,
+            Name = t.Name,
+            Version = t.Version
+        }).ToList();
+    }
+
+    public async Task<ContractTemplatePreviewDto> GetContractTemplatePreviewAsync(Guid templateId)
+    {
+        var template = await _repo.GetActiveContractTemplateByIdAsync(templateId)
+            ?? throw new KeyNotFoundException("Không tìm thấy mẫu hợp đồng.");
+
+        return new ContractTemplatePreviewDto
+        {
+            Id = template.Id,
+            Name = template.Name,
+            Version = template.Version,
+            Content = template.Content ?? string.Empty
+        };
+    }
+
     public async Task<List<JobApplicantDto>> GetApplicantsAsync(Guid jobPostingId, Guid parentUserId)
     {
         var job = await _repo.GetJobPostingByIdAsync(jobPostingId)
@@ -108,7 +132,11 @@ public class HiringService : IHiringService
         var nannyProfile = app.NannyProfile
             ?? throw new InvalidOperationException("Không tìm thấy thông tin bảo mẫu.");
 
+        var contractTemplate = await _repo.GetActiveContractTemplateByIdAsync(dto.ContractTemplateId)
+            ?? throw new KeyNotFoundException("Không tìm thấy mẫu hợp đồng.");
+
         var now = DateTime.UtcNow;
+        var contractDurationMonths = CalculateContractDurationMonths(dto.StartDate, dto.EndDate);
 
         var hiringRecord = new HiringRecord
         {
@@ -116,10 +144,10 @@ public class HiringService : IHiringService
             JobApplicationId = app.Id,
             ParentProfileId = parentProfile.Id,
             NannyProfileId = nannyProfile.Id,
-            ContractTemplateId = null,
+            ContractTemplateId = contractTemplate.Id,
             StartDate = dto.StartDate,
             EndDate = dto.EndDate,
-            ContractDuration = null,
+            ContractDuration = contractDurationMonths,
             Status = (int)HiringRecordStatus.Pending,
             ParentConfirmedAt = now,
             CreatedAt = now,
@@ -132,10 +160,12 @@ public class HiringService : IHiringService
         {
             Id = Guid.NewGuid(),
             HiringRecordId = hiringRecord.Id,
-            ContractTemplateId = null,
-            ContractContent = BuildSimpleContractContent(
-                GetDisplayName(parentProfile.User),
-                GetDisplayName(nannyProfile.User),
+            ContractTemplateId = contractTemplate.Id,
+            ContractContent = BuildContractContentFromTemplate(
+                contractTemplate.Content,
+                app.JobPosting,
+                parentProfile.User,
+                nannyProfile.User,
                 dto.StartDate,
                 dto.EndDate),
             SignedByParent = false,
@@ -257,7 +287,11 @@ public class HiringService : IHiringService
         var nannyProfile = request.NannyProfile
             ?? throw new InvalidOperationException("Không tìm thấy hồ sơ bảo mẫu.");
 
+        var contractTemplate = await _repo.GetActiveContractTemplateByIdAsync(dto.ContractTemplateId)
+            ?? throw new KeyNotFoundException("Không tìm thấy mẫu hợp đồng.");
+
         var now = DateTime.UtcNow;
+        var contractDurationMonths = CalculateContractDurationMonths(dto.StartDate, dto.EndDate);
 
         var directJobPosting = new JobPosting
         {
@@ -309,10 +343,10 @@ public class HiringService : IHiringService
             JobApplicationId = directJobApplication.Id,
             ParentProfileId = parentProfile.Id,
             NannyProfileId = nannyProfile.Id,
-            ContractTemplateId = null,
+            ContractTemplateId = contractTemplate.Id,
             StartDate = dto.StartDate,
             EndDate = dto.EndDate,
-            ContractDuration = null,
+            ContractDuration = contractDurationMonths,
             Status = (int)HiringRecordStatus.Pending,
             ParentConfirmedAt = now,
             CreatedAt = now,
@@ -325,10 +359,12 @@ public class HiringService : IHiringService
         {
             Id = Guid.NewGuid(),
             HiringRecordId = hiringRecord.Id,
-            ContractTemplateId = null,
-            ContractContent = BuildSimpleContractContent(
-                GetDisplayName(parentProfile.User),
-                GetDisplayName(nannyProfile.User),
+            ContractTemplateId = contractTemplate.Id,
+            ContractContent = BuildContractContentFromTemplate(
+                contractTemplate.Content,
+                directJobPosting,
+                parentProfile.User,
+                nannyProfile.User,
                 dto.StartDate,
                 dto.EndDate),
             SignedByParent = false,
@@ -535,7 +571,7 @@ public class HiringService : IHiringService
             throw new UnauthorizedAccessException("Bạn không có quyền hoàn thành hợp đồng này.");
 
         if (hiringRecord.Status != (int)HiringRecordStatus.Active)
-            throw new InvalidOperationException("Chi co the hoan thanh hop dong dang hoat dong.");
+            throw new InvalidOperationException("Chỉ có thể hoàn thành hợp đồng đang hoạt động.");
 
         var now = DateTime.UtcNow;
         hiringRecord.Status = (int)HiringRecordStatus.Completed;
@@ -579,6 +615,9 @@ public class HiringService : IHiringService
 
     private static void ValidateContractDates(ConfirmHiringDto dto)
     {
+        if (dto.ContractTemplateId == Guid.Empty)
+            throw new ArgumentException("Vui lòng chọn mẫu hợp đồng.");
+
         var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
         if (dto.StartDate < today)
             throw new ArgumentException("Ngày bắt đầu không được trước ngày tạo hợp đồng.");
@@ -588,6 +627,49 @@ public class HiringService : IHiringService
 
         if (dto.EndDate.Value <= dto.StartDate)
             throw new ArgumentException("Ngày kết thúc phải lớn hơn ngày bắt đầu.");
+    }
+
+    private static string BuildContractContentFromTemplate(
+        string? templateContent,
+        JobPosting? jobPosting,
+        User? parentUser,
+        User? nannyUser,
+        DateOnly startDate,
+        DateOnly? endDate)
+    {
+        var content = string.IsNullOrWhiteSpace(templateContent)
+            ? "Hop dong lao dong cham soc tre gia dinh."
+            : templateContent;
+
+        var durationMonths = CalculateContractDurationMonths(startDate, endDate);
+
+        var values = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["StartDate"] = startDate.ToString("dd/MM/yyyy"),
+            ["EndDate"] = endDate?.ToString("dd/MM/yyyy") ?? "...",
+            ["ContractDurationMonths"] = durationMonths.ToString(),
+            ["JobDescription"] = string.IsNullOrWhiteSpace(jobPosting?.Description) ? "..." : jobPosting!.Description.Trim()
+        };
+
+        return ApplyTemplateValues(content, values);
+    }
+
+    private static string ApplyTemplateValues(string content, IDictionary<string, string?> values)
+    {
+        var result = content;
+        foreach (var pair in values)
+        {
+            if (string.IsNullOrWhiteSpace(pair.Key))
+                continue;
+
+            var token = $"{{{{{pair.Key}}}}}";
+            if (!result.Contains(token, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            result = result.Replace(token, pair.Value?.Trim() ?? "...", StringComparison.OrdinalIgnoreCase);
+        }
+
+        return result;
     }
 
     private static string BuildSimpleContractContent(
@@ -601,6 +683,15 @@ public class HiringService : IHiringService
         var safeEndDate = endDate.HasValue ? endDate.Value.ToString("dd/MM/yyyy") : "...";
 
         return $"Hợp đồng giữa Bố mẹ {safeParentName} và bảo mẫu {safeNannyName}, ngày bắt đầu là: {startDate:dd/MM/yyyy}, ngày kết thúc là: {safeEndDate}.";
+    }
+
+    private static int CalculateContractDurationMonths(DateOnly startDate, DateOnly? endDate)
+    {
+        if (!endDate.HasValue)
+            return 1;
+
+        var totalDays = (endDate.Value.ToDateTime(TimeOnly.MinValue) - startDate.ToDateTime(TimeOnly.MinValue)).TotalDays;
+        return Math.Max(1, (int)Math.Ceiling(totalDays / 30d));
     }
 
     private static string GetDisplayName(User? user)
