@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -249,7 +249,7 @@ public class AccountController : Controller
             status: status,
             search: search,
             page: page,
-            pageSize: 7);
+            pageSize: 10);
 
         if (result == null)
         {

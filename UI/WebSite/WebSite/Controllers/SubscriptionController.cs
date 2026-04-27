@@ -499,7 +499,7 @@ public class SubscriptionController : Controller
     {
         "Parent" => "Các gói dành cho phụ huynh",
         "Nanny" => "Các gói dành cho bảo mẫu",
-        _ => "Gói đăng ký dịch vụ"
+        _ => "Gói thành viên"
     };
 
     private static string getSummary(string role) => role switch

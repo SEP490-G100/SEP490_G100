@@ -15,7 +15,7 @@
         var isFailed = !isCancelled && Model.PaymentStatus?.TransactionStatus == 3;
         var state = isCancelled ? "cancelled" : isSuccess ? "success" : isFailed ? "failed" : "pending";
         var statusLabel = Model.PaymentStatus?.TransactionStatusLabel ?? (isCancelled ? "Đã hủy" : "Chờ thanh toán");
-        var planLabel = Model.PaymentStatus?.PlanName ?? "Gói dịch vụ";
+        var planLabel = Model.PaymentStatus?.PlanName ?? "Gói thành viên";
         var resultTitle = isCancelled
             ? "Đã bỏ qua giao dịch"
             : isSuccess
@@ -72,7 +72,7 @@
         </div>
 
         <div class="sub-result-actions">
-            <a href="@Url.Action("Index", "Subscription")" class="sub-primary-btn sub-result-btn">Về trang gói dịch vụ</a>
+            <a href="@Url.Action("Index", "Subscription")" class="sub-primary-btn sub-result-btn">Về trang gói thành viên</a>
             <a href="@Url.Action("Index", "Home")" class="sub-secondary-btn sub-result-btn">Về trang chủ</a>
         </div>
     </section>

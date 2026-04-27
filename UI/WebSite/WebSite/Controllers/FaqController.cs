@@ -32,7 +32,7 @@ public class FaqController : Controller
         ViewBag.IsActive = isActive?.ToString() ?? "";
         ViewBag.Category = category ?? "";
 
-        var qs = new List<string> { $"page={page}", "pageSize=3" };
+        var qs = new List<string> { $"page={page}", "pageSize=10" };
         if (!string.IsNullOrWhiteSpace(search)) qs.Add($"search={Uri.EscapeDataString(search)}");
         if (isActive.HasValue) qs.Add($"isActive={isActive.Value.ToString().ToLower()}");
         if (!string.IsNullOrWhiteSpace(category)) qs.Add($"category={Uri.EscapeDataString(category)}");
@@ -65,13 +65,13 @@ public class FaqController : Controller
                 ViewBag.Categories = new List<string>();
             }
 
-            return View("~/Views/Moderator/FAQ/ManageFAQ.cshtml", result?.Data ?? new FaqListResponse());
+            return View("~/Views/Moderator/FAQ/ManageFAQ.cshtml", result?.Data ?? new FaqListResponse { Page = page, PageSize = 10 });
         }
         catch
         {
             TempData["Error"] = "Không thể tải danh sách FAQ.";
             ViewBag.Categories = new List<string>();
-            return View("~/Views/Moderator/FAQ/ManageFAQ.cshtml", new FaqListResponse());
+            return View("~/Views/Moderator/FAQ/ManageFAQ.cshtml", new FaqListResponse { Page = page, PageSize = 10 });
         }
     }
 
