@@ -326,7 +326,7 @@ public class VerificationRequestController : Controller
         ValidateUploadSection(
             model.CertificateFiles,
             nameof(model.CertificateFiles),
-            "Bạn phải tải lên ít nhất một file bằng cấp/chứng chỉ.",
+            "Nếu muốn gửi yêu cầu bằng cấp/chứng chỉ, bạn phải tải lên ít nhất một file.",
             isRequired: true);
         ValidateIssueDate(
             model.CertificateIssueDate,
@@ -391,7 +391,9 @@ public class VerificationRequestController : Controller
         ValidateIssueDate(
             model.HealthCertificateIssueDate,
             nameof(model.HealthCertificateIssueDate),
-            "giấy khám sức khỏe");
+            "giấy khám sức khỏe",
+            earliestAllowedDate: DateTime.UtcNow.Date.AddMonths(-12),
+            earliestDateValidationMessage: "Ngày cấp của giấy khám sức khỏe phải trong vòng 12 tháng gần nhất.");
 
         if (!ModelState.IsValid)
         {
@@ -555,7 +557,12 @@ public class VerificationRequestController : Controller
         }
     }
 
-    private void ValidateIssueDate(DateTime? issueDate, string fieldName, string documentLabel)
+    private void ValidateIssueDate(
+        DateTime? issueDate,
+        string fieldName,
+        string documentLabel,
+        DateTime? earliestAllowedDate = null,
+        string? earliestDateValidationMessage = null)
     {
         if (!issueDate.HasValue)
         {
@@ -570,9 +577,12 @@ public class VerificationRequestController : Controller
             return;
         }
 
-        if (date < new DateTime(1900, 1, 1))
+        var minAllowedDate = earliestAllowedDate?.Date ?? new DateTime(1900, 1, 1);
+        if (date < minAllowedDate)
         {
-            ModelState.AddModelError(fieldName, $"Ngày cấp của {documentLabel} không hợp lệ.");
+            ModelState.AddModelError(
+                fieldName,
+                earliestDateValidationMessage ?? $"Ngày cấp của {documentLabel} không hợp lệ.");
         }
     }
 
