@@ -247,27 +247,9 @@ public class NannyController : Controller
 
     [AllowAnonymous]
     [HttpGet]
-    public async Task<IActionResult> List()
+    public IActionResult List()
     {
-        var vm = new NannyBrowsePageViewModel();
-        SetAuthHeader();
-
-        try
-        {
-            var response = await _http.GetAsync("/api/onboarding/skills");
-            if (response.IsSuccessStatusCode)
-            {
-                var json = await response.Content.ReadAsStringAsync();
-                var apiResult = JsonSerializer.Deserialize<ApiResult<List<NannySkillOptionViewModel>>>(json, JsonOpts);
-                vm.SkillOptions = apiResult?.Data ?? new();
-            }
-        }
-        catch
-        {
-            vm.SkillOptions = new();
-        }
-
-        return View(vm);
+        return View(new NannyBrowsePageViewModel());
     }
 
     [AllowAnonymous]

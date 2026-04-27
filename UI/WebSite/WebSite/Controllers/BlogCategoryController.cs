@@ -23,7 +23,7 @@ public class BlogCategoryController : Controller
     [HttpGet("ManageBlogCategory")]
     public async Task<IActionResult> ManageBlogCategory(string? search = null, int page = 1, bool? isDeleted = null)
     {
-        const int pageSize = 3;
+        const int pageSize = 10;
         var token = HttpContext.Session.GetString("AccessToken");
 
         var qs = $"?search={Uri.EscapeDataString(search ?? "")}&page={page}&pageSize={pageSize}";

@@ -106,7 +106,7 @@
                         </td>
                     </tr>
                 }
-                @{ int rowNum = ((currentPage - 1) * 10) + 1; }
+                @{ int rowNum = ((currentPage - 1) * (Model?.PageSize > 0 ? Model.PageSize : 10)) + 1; }
                 @foreach (var item in items)
                 {
                     var avatarColors = new[] { "#F97316", "#3B82F6", "#8B5CF6", "#10B981", "#F59E0B", "#EF4444", "#EC4899", "#6366F1" };

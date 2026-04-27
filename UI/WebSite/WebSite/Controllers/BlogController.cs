@@ -139,7 +139,7 @@ public class BlogController : Controller
     public async Task<IActionResult> ManageBlog(
         string? search = null, int page = 1, int? status = null, bool? isDeleted = null, Guid? categoryId = null)
     {
-        const int pageSize = 3;
+        const int pageSize = 10;
         var token = HttpContext.Session.GetString("AccessToken");
 
         var qs = $"?search={Uri.EscapeDataString(search ?? "")}&page={page}&pageSize={pageSize}";
