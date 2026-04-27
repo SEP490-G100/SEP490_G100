@@ -2,7 +2,7 @@
    Recommendation — NannyMatch
    ================================================================ */
 
-/* ── Upgrade prompt ──────────────────────────────────────────── */
+/* Upgrade prompt */
 .rec-upgrade-prompt {
     display: flex;
     flex-direction: column;
@@ -59,7 +59,7 @@
     font-size: 16px;
 }
 
-/* ── Tab bar ─────────────────────────────────────────────────── */
+/* Tab bar */
 .rec-tab-bar {
     display: inline-flex;
     align-items: center;
@@ -180,7 +180,7 @@
     }
 }
 
-/* ── Rec panel (tab 2 content) ───────────────────────────────── */
+/* Rec panel */
 .rec-panel {
     padding: 12px 12px 20px;
     display: none;
@@ -221,7 +221,7 @@
 
 .rec-panel__select:focus { border-color: #f97316; }
 
-/* ── Loading / empty state ──────────────────────────────────────*/
+/* Loading / empty state */
 .rec-panel__loading {
     display: flex;
     align-items: center;
@@ -248,14 +248,14 @@
 
 .rec-panel__empty p { font-size: .875rem; font-weight: 600; }
 
-/* ── Card list ───────────────────────────────────────────────── */
+/* Card list */
 .rec-card-list {
     display: flex;
     flex-direction: column;
     gap: 12px;
 }
 
-/* ── Full rec card ───────────────────────────────────────────── */
+/* Rec card */
 .rec-card {
     position: relative;
     background: #fff;
@@ -407,7 +407,7 @@
     text-align: right;
 }
 
-/* ── Chips ───────────────────────────────────────────────────── */
+/* Chips */
 .rec-chip {
     display: inline-flex;
     align-items: center;
@@ -423,7 +423,7 @@
 .rec-chip--distance { background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; }
 .rec-chip--salary   { background:#faf5ff; color:#7e22ce; border:1px solid #e9d5ff; }
 
-/* ── Match badge ─────────────────────────────────────────────── */
+/* Match badge */
 .rec-badge {
     display: inline-flex;
     align-items: center;
@@ -438,7 +438,7 @@
 .rec-badge--good { background:#eff6ff; color:#1d4ed8; border:1px solid #93c5fd; }
 .rec-badge--ok   { background:#f8fafc; color:#64748b; border:1px solid #e2e8f0; }
 
-/* ── Rating stars ─────────────────────────────────────────────── */
+/* Rating stars */
 .rec-stars {
     display: inline-flex;
     align-items: center;
@@ -448,7 +448,7 @@
     font-weight: 700;
 }
 
-/* ── Clickable card ───────────────────────────────────────────── */
+/* Clickable card */
 .rec-card--clickable {
     cursor: pointer;
     user-select: none;
@@ -458,7 +458,7 @@
     transform: scale(.99);
 }
 
-/* ── Score ring (circular % indicator) ───────────────────────── */
+/* Score ring */
 .rec-score-ring {
     width: 54px;
     height: 54px;
@@ -478,7 +478,7 @@
     text-align: center;
 }
 
-/* ── Card header (ring + meta side by side) ───────────────────── */
+/* Card header */
 .rec-card-header {
     display: flex;
     align-items: center;
@@ -513,7 +513,7 @@
     text-overflow: ellipsis;
 }
 
-/* ── Card chips row ───────────────────────────────────────────── */
+/* Card chips row */
 .rec-card-chips {
     display: flex;
     flex-wrap: wrap;
@@ -521,7 +521,7 @@
     margin-top: 10px;
 }
 
-/* ── Card footer (AI badge + match label) ─────────────────────── */
+/* Card footer */
 .rec-card-footer {
     display: flex;
     align-items: center;
@@ -531,7 +531,7 @@
     border-top: 1px solid #f1f5f9;
 }
 
-/* ── AI suggestion badge ──────────────────────────────────────── */
+/* AI suggestion badge */
 .rec-ai-badge {
     display: inline-flex;
     align-items: center;
@@ -546,7 +546,7 @@
     white-space: nowrap;
 }
 
-/* ── Card header meta top row (title + score badge) ───────────── */
+/* Card meta top row (title + score badge) */
 .rec-card-meta__top {
     display: flex;
     align-items: center;
@@ -559,7 +559,7 @@
     min-width: 0;
 }
 
-/* ── Compact % score badge (next to title) ────────────────────── */
+/* Score badge (% next to title) */
 .rec-score-badge {
     flex-shrink: 0;
     font-size: .73rem;
@@ -573,7 +573,7 @@
     line-height: 1.5;
 }
 
-/* ── Score breakdown collapsible ──────────────────────────────── */
+/* Score breakdown collapsible */
 .rec-score-breakdown {
     margin-top: 8px;
     border-radius: 10px;

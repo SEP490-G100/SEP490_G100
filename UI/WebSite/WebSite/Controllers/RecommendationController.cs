@@ -126,7 +126,7 @@ public class RecommendationController : Controller
         }
     }
 
-    // ── Admin: batch re-embed ────────────────────────────────
+    // Admin: batch re-embed
     [Authorize(Roles = "Admin,Moderator")]
     [HttpPost]
     public async Task<IActionResult> ReembedBatch()
@@ -144,8 +144,7 @@ public class RecommendationController : Controller
         }
     }
 
-    // ── Helpers ──────────────────────────────────────────────
-
+    // Helpers
     private static string MatchLabel(double score) => score switch
     {
         >= 0.82 => "Rất phù hợp",
@@ -161,7 +160,7 @@ public class RecommendationController : Controller
     };
 }
 
-// ── Internal DTOs cho deserialize backend response ──────────
+// Internal DTOs cho deserialize backend response
 internal class JobRecommendItem
 {
     public Guid JobId { get; set; }

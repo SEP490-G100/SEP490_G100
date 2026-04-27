@@ -655,11 +655,6 @@ function renderRecJobCard(j, idx) {
             </div>
             <div class="rec-score-breakdown__body">
                 <div class="rec-score-breakdown__row">
-                    <span class="rec-score-breakdown__label">Nội dung phù hợp</span>
-                    <div class="rec-mini-bar"><div class="rec-mini-bar__fill" style="width:${semPct}%;background:#3b82f6"></div></div>
-                    <span class="rec-score-breakdown__val">${semPct}%</span>
-                </div>
-                <div class="rec-score-breakdown__row">
                     <span class="rec-score-breakdown__label">Mức lương</span>
                     <div class="rec-mini-bar"><div class="rec-mini-bar__fill" style="width:${salPct}%;background:#8b5cf6"></div></div>
                     <span class="rec-score-breakdown__val">${salPct}%</span>
@@ -668,6 +663,11 @@ function renderRecJobCard(j, idx) {
                     <span class="rec-score-breakdown__label">Khoảng cách</span>
                     <div class="rec-mini-bar"><div class="rec-mini-bar__fill" style="width:${distPct}%;background:#0ea5e9"></div></div>
                     <span class="rec-score-breakdown__val">${distPct}%</span>
+                </div>
+                <div class="rec-score-breakdown__row">
+                    <span class="rec-score-breakdown__label">Các tiêu chí khác</span>
+                    <div class="rec-mini-bar"><div class="rec-mini-bar__fill" style="width:${semPct}%;background:#3b82f6"></div></div>
+                    <span class="rec-score-breakdown__val">${semPct}%</span>
                 </div>
             </div>
         </div>
