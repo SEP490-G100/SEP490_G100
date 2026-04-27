@@ -30,6 +30,7 @@ public class ContractDetailViewModel
     public Guid HiringRecordId { get; set; }
     public Guid? ContractTemplateId { get; set; }
     public string ContractContent { get; set; } = string.Empty;
+    public Dictionary<string, string> FieldValues { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public int ContractStatus { get; set; }
     public bool SignedByParent { get; set; }
     public bool SignedByNanny { get; set; }

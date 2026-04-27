@@ -4,8 +4,12 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Drawing.Text;
 using System.Text;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using System.Net.Mail;
 using Nanny_BackEnd.DTOs.Hiring;
 using Nanny_BackEnd.Enums;
+using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Services.Interfaces;
@@ -15,6 +19,7 @@ namespace Nanny_BackEnd.Services;
 public class ContractService : IContractService
 {
     private readonly IContractRepository _repo;
+    private const string FieldValuesMarker = "\n[[NANNYMATCH_FIELD_VALUES]]:";
 
     public ContractService(IContractRepository repo) => _repo = repo;
 
@@ -117,14 +122,18 @@ public class ContractService : IContractService
         if (!string.Equals(role, "Parent", StringComparison.OrdinalIgnoreCase))
             throw new UnauthorizedAccessException("Chỉ bố mẹ mới được phép thực hiện thao tác này.");
 
-        if (contract.Status != 0)
-            throw new InvalidOperationException("Hợp đồng không ở trạng thái chờ bố mẹ xác nhận thông tin.");
+        if (contract.Status == 3)
+            throw new InvalidOperationException("Hợp đồng đã được xác nhận hoàn tất, không thể chỉnh sửa.");
 
+        var (_, currentValues) = ParseStoredContractContent(contract.ContractContent);
+        ApplyParentDefaults(contract, request, currentValues);
         ValidateParentFillRequest(request);
 
         var values = BuildParentValues(request);
-        contract.ContractContent = ApplyTemplateValues(contract.ContractContent ?? string.Empty, values);
-        contract.Status = 1;
+        MergeFieldValues(currentValues, values);
+        contract.ContractContent = RenderTemplateWithValues(ContractTemplateDefaults.DefaultContent, currentValues);
+        if (contract.Status == 0)
+            contract.Status = 1;
         contract.UpdatedAt = DateTime.UtcNow;
         contract.UpdatedBy = userId;
 
@@ -148,13 +157,18 @@ public class ContractService : IContractService
         if (!string.Equals(role, "Nanny", StringComparison.OrdinalIgnoreCase))
             throw new UnauthorizedAccessException("Chỉ bảo mẫu mới được phép thực hiện thao tác này.");
 
-        if (contract.Status != 1)
-            throw new InvalidOperationException("Hợp đồng không ở trạng thái chờ bảo mẫu xác nhận thông tin.");
+        if (contract.Status == 0)
+            throw new InvalidOperationException("Bố mẹ chưa xác nhận thông tin nên bảo mẫu chưa thể điền.");
+        if (contract.Status == 3)
+            throw new InvalidOperationException("Hợp đồng đã được xác nhận hoàn tất, không thể chỉnh sửa.");
 
+        var (_, currentValues) = ParseStoredContractContent(contract.ContractContent);
+        ApplyNannyDefaults(contract, request, currentValues);
         ValidateNannyFillRequest(request);
 
         var values = BuildNannyValues(request);
-        contract.ContractContent = ApplyTemplateValues(contract.ContractContent ?? string.Empty, values);
+        MergeFieldValues(currentValues, values);
+        contract.ContractContent = RenderTemplateWithValues(ContractTemplateDefaults.DefaultContent, currentValues);
         contract.Status = 2;
         contract.UpdatedAt = DateTime.UtcNow;
         contract.UpdatedBy = userId;
@@ -255,7 +269,26 @@ public class ContractService : IContractService
 
         var parentName = GetDisplayName(contract.HiringRecord?.ParentProfile?.User);
         var nannyName = GetDisplayName(contract.HiringRecord?.NannyProfile?.User);
-        var generatedText = string.IsNullOrWhiteSpace(contract.ContractContent) ? "Hop dong." : contract.ContractContent!;
+        var generatedText = contract.ContractContent ?? string.Empty;
+
+        if (generatedText.Contains(FieldValuesMarker, StringComparison.Ordinal))
+        {
+            var (_, fieldValues) = ParseStoredContractContent(generatedText);
+            EnsureFieldValue(fieldValues, "ParentName", parentName);
+            EnsureFieldValue(fieldValues, "NannyName", nannyName);
+            EnsureFieldValue(fieldValues, "ParentPhone", contract.HiringRecord?.ParentProfile?.User?.PhoneNumber);
+            EnsureFieldValue(fieldValues, "ParentEmail", contract.HiringRecord?.ParentProfile?.User?.Email);
+            EnsureFieldValue(fieldValues, "NannyPhone", contract.HiringRecord?.NannyProfile?.User?.PhoneNumber);
+            EnsureFieldValue(fieldValues, "NannyEmail", contract.HiringRecord?.NannyProfile?.User?.Email);
+            EnsureFieldValue(fieldValues, "StartDate", contract.HiringRecord?.StartDate.ToString("dd/MM/yyyy"));
+            EnsureFieldValue(fieldValues, "EndDate", contract.HiringRecord?.EndDate?.ToString("dd/MM/yyyy"));
+            EnsureFieldValue(fieldValues, "ContractDurationMonths", CalculateContractDurationMonths(contract.HiringRecord?.StartDate, contract.HiringRecord?.EndDate));
+            EnsureFieldValue(fieldValues, "JobDescription", contract.HiringRecord?.JobApplication?.JobPosting?.Description);
+            EnsureFieldValue(fieldValues, "WorkAddress", contract.HiringRecord?.JobApplication?.JobPosting?.Location);
+            generatedText = RenderTemplateWithValues(ContractTemplateDefaults.DefaultContent, fieldValues);
+        }
+        if (string.IsNullOrWhiteSpace(generatedText))
+            generatedText = "Hợp đồng.";
         var generatedPdfBytes = BuildSimplePdf(generatedText);
         var generatedFileName = $"HopDong_{SanitizeFileName(parentName)}_{SanitizeFileName(nannyName)}_{DateTime.UtcNow:yyyyMMddHHmmss}.pdf";
         return (generatedPdfBytes, generatedFileName);
@@ -287,20 +320,37 @@ public class ContractService : IContractService
 
     private static ContractDetailDto MapToDetail(Contract contract, string currentUserRole)
     {
+        var (_, fieldValues) = ParseStoredContractContent(contract.ContractContent);
         var status = contract.Status;
-        var canParentConfirmInfo = string.Equals(currentUserRole, "Parent", StringComparison.OrdinalIgnoreCase) && status == 0;
-        var canNannyConfirmInfo = string.Equals(currentUserRole, "Nanny", StringComparison.OrdinalIgnoreCase) && status == 1;
+        var isParent = string.Equals(currentUserRole, "Parent", StringComparison.OrdinalIgnoreCase);
+        var isNanny = string.Equals(currentUserRole, "Nanny", StringComparison.OrdinalIgnoreCase);
+
+        var canParentConfirmInfo = isParent && status is >= 0 and < 3;
+        var canNannyConfirmInfo = isNanny && status is >= 1 and < 3;
         var canParentFinalConfirm = string.Equals(currentUserRole, "Parent", StringComparison.OrdinalIgnoreCase) && status == 2;
-        var isReadOnly = status == 3 || (!canParentConfirmInfo && !canNannyConfirmInfo && !canParentFinalConfirm);
+        var isReadOnly = status == 3 || (isNanny && status == 0);
         var parentUser = contract.HiringRecord?.ParentProfile?.User;
         var nannyUser = contract.HiringRecord?.NannyProfile?.User;
+        var hiring = contract.HiringRecord;
+        EnsureFieldValue(fieldValues, "ParentName", GetDisplayName(parentUser));
+        EnsureFieldValue(fieldValues, "ParentPhone", parentUser?.PhoneNumber);
+        EnsureFieldValue(fieldValues, "ParentEmail", parentUser?.Email);
+        EnsureFieldValue(fieldValues, "NannyName", GetDisplayName(nannyUser));
+        EnsureFieldValue(fieldValues, "NannyPhone", nannyUser?.PhoneNumber);
+        EnsureFieldValue(fieldValues, "NannyEmail", nannyUser?.Email);
+        EnsureFieldValue(fieldValues, "StartDate", hiring?.StartDate.ToString("dd/MM/yyyy"));
+        EnsureFieldValue(fieldValues, "EndDate", hiring?.EndDate?.ToString("dd/MM/yyyy"));
+        EnsureFieldValue(fieldValues, "ContractDurationMonths", CalculateContractDurationMonths(hiring?.StartDate, hiring?.EndDate));
+        EnsureFieldValue(fieldValues, "JobDescription", hiring?.JobApplication?.JobPosting?.Description);
+        EnsureFieldValue(fieldValues, "WorkAddress", hiring?.JobApplication?.JobPosting?.Location);
 
         return new ContractDetailDto
         {
             ContractId = contract.Id,
             HiringRecordId = contract.HiringRecordId,
             ContractTemplateId = contract.ContractTemplateId,
-            ContractContent = contract.ContractContent ?? string.Empty,
+            ContractContent = ContractTemplateDefaults.DefaultContent,
+            FieldValues = fieldValues,
             ContractStatus = contract.Status,
             SignedByParent = contract.SignedByParent,
             SignedByNanny = contract.SignedByNanny,
@@ -358,32 +408,384 @@ public class ContractService : IContractService
             ["NannyPhone"] = request.NannyPhone
         };
 
+    private static (string TemplateContent, Dictionary<string, string> FieldValues) ParseStoredContractContent(string? storedContent)
+    {
+        var raw = storedContent ?? string.Empty;
+        var fieldValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var markerIndex = raw.LastIndexOf(FieldValuesMarker, StringComparison.Ordinal);
+        if (markerIndex < 0)
+            return ParseRenderedContractContent(raw);
+
+        var template = raw[..markerIndex].TrimEnd();
+        var encoded = raw[(markerIndex + FieldValuesMarker.Length)..].Trim();
+        if (string.IsNullOrWhiteSpace(encoded))
+            return ParseRenderedContractContent(template);
+
+        try
+        {
+            string json;
+            try
+            {
+                json = Encoding.UTF8.GetString(Convert.FromBase64String(encoded));
+            }
+            catch (FormatException)
+            {
+                json = encoded;
+            }
+
+            var parsed = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
+            if (parsed != null)
+            {
+                foreach (var pair in parsed)
+                {
+                    if (string.IsNullOrWhiteSpace(pair.Key))
+                        continue;
+                    fieldValues[pair.Key.Trim()] = pair.Value?.Trim() ?? string.Empty;
+                }
+            }
+        }
+        catch
+        {
+            // Keep backward compatibility: if metadata is invalid, continue with empty field values.
+        }
+
+        if (fieldValues.Count == 0)
+            return ParseRenderedContractContent(template);
+
+        return (ContractTemplateDefaults.DefaultContent, fieldValues);
+    }
+
+    private static (string TemplateContent, Dictionary<string, string> FieldValues) ParseRenderedContractContent(string renderedContent)
+    {
+        var fieldValues = ExtractFieldValuesFromRenderedContent(renderedContent);
+        return (ContractTemplateDefaults.DefaultContent, fieldValues);
+    }
+
+    private static Dictionary<string, string> ExtractFieldValuesFromRenderedContent(string? content)
+    {
+        var text = content ?? string.Empty;
+        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (string.IsNullOrWhiteSpace(text))
+            return result;
+
+        var parentSection = ExtractBetween(text, "1. BÊN A", "2. BÊN B");
+        var nannySection = ExtractBetween(text, "2. BÊN B", "Hai bên cùng nhau thỏa thuận");
+
+        AssignIfFound(result, "ParentName", GetNthGroup(parentSection, @"Ông\/bà:\s*([^\r\n]*)", 1));
+        AssignIfFound(result, "ParentDOB", GetNthGroup(parentSection, @"Sinh ngày:\s*([^\r\n]*)", 1));
+        AssignIfFound(result, "ParentIdentityNumber", GetNthGroup(parentSection, @"Số CCCD\/CMND\/hộ chiếu:\s*(.*?)\.\s*Cấp ngày:", 1));
+        AssignIfFound(result, "ParentIdentityIssueDate", GetNthGroup(parentSection, @"Cấp ngày:\s*(.*?)\.\s*Nơi cấp:", 1));
+        AssignIfFound(result, "ParentIdentityIssuePlace", GetNthGroup(parentSection, @"Nơi cấp:\s*([^\r\n]*)", 1));
+        AssignIfFound(result, "ParentPermanentAddress", GetNthGroup(parentSection, @"Địa chỉ thường trú:\s*([^\r\n]*)", 1));
+        AssignIfFound(result, "ParentCurrentAddress", GetNthGroup(parentSection, @"Địa chỉ chỗ ở hiện tại:\s*([^\r\n]*)", 1));
+        AssignIfFound(result, "ParentPhone", GetNthGroup(parentSection, @"Điện thoại liên hệ:\s*(.*?)\.\s*Email:", 1));
+        AssignIfFound(result, "ParentEmail", GetNthGroup(parentSection, @"Email:\s*([^\r\n]*)", 1));
+
+        AssignIfFound(result, "NannyName", GetNthGroup(nannySection, @"Ông\/bà:\s*([^\r\n]*)", 1));
+        AssignIfFound(result, "NannyDOB", GetNthGroup(nannySection, @"Sinh ngày:\s*([^\r\n]*)", 1));
+        AssignIfFound(result, "NannyIdentityNumber", GetNthGroup(nannySection, @"Số CCCD\/CMND\/hộ chiếu:\s*(.*?)\.\s*Cấp ngày:", 1));
+        AssignIfFound(result, "NannyIdentityIssueDate", GetNthGroup(nannySection, @"Cấp ngày:\s*(.*?)\.\s*Nơi cấp:", 1));
+        AssignIfFound(result, "NannyIdentityIssuePlace", GetNthGroup(nannySection, @"Nơi cấp:\s*([^\r\n]*)", 1));
+        AssignIfFound(result, "NannyPermanentAddress", GetNthGroup(nannySection, @"Địa chỉ thường trú:\s*([^\r\n]*)", 1));
+        AssignIfFound(result, "NannyCurrentAddress", GetNthGroup(nannySection, @"Địa chỉ chỗ ở hiện tại:\s*([^\r\n]*)", 1));
+        AssignIfFound(result, "NannyPhone", GetNthGroup(nannySection, @"Điện thoại liên hệ:\s*([^\r\n]*)", 1));
+
+        AssignIfFound(result, "ContractDurationMonths", GetNthGroup(text, @"xác định thời hạn:\s*([^\r\n]*?)\s*tháng", 1));
+        AssignIfFound(result, "StartDate", GetNthGroup(text, @"1\.2\.\s*Thời hạn:\s*Từ ngày\s*(.*?)\s*đến ngày\s*([^\r\n]*)", 1));
+        AssignIfFound(result, "EndDate", GetNthGroup(text, @"1\.2\.\s*Thời hạn:\s*Từ ngày\s*(.*?)\s*đến ngày\s*([^\r\n]*)", 2));
+        AssignIfFound(result, "ProbationStartDate", GetNthGroup(text, @"1\.3\.[\s\S]*?Từ ngày\s*(.*?)\s*đến ngày\s*([^\r\n]*)", 1));
+        AssignIfFound(result, "ProbationEndDate", GetNthGroup(text, @"1\.3\.[\s\S]*?Từ ngày\s*(.*?)\s*đến ngày\s*([^\r\n]*)", 2));
+        AssignIfFound(result, "WorkAddress", GetNthGroup(text, @"2\.1\.\s*Địa điểm làm việc:\s*Tại nhà của Bên A,\s*địa chỉ:\s*([^\r\n]*)", 1));
+        AssignIfFound(result, "JobDescription", GetNthGroup(text, @"2\.2\.\s*Mô tả công việc chi tiết:\s*([\s\S]*?)\r?\nĐiều 3\.", 1));
+        AssignIfFound(result, "SalaryAmount", GetNthGroup(text, @"3\.1\.\s*Mức lương chính:\s*([^\r\n]*?)\s*VNĐ", 1));
+        AssignIfFound(result, "ProbationSalaryAmount", GetNthGroup(text, @"Mức lương thử việc[^:]*:\s*([^\r\n]*?)\s*VNĐ", 1));
+        AssignIfFound(result, "AllowanceAmount", GetNthGroup(text, @"Phụ cấp đi lại\/điện thoại\s*\(nếu có\):\s*([^\r\n]*?)\s*VNĐ\/tháng", 1));
+        AssignIfFound(result, "BankAccountNumber", GetNthGroup(text, @"Số tài khoản:\s*(.*?)\s*Ngân hàng:", 1));
+        AssignIfFound(result, "BankName", GetNthGroup(text, @"Ngân hàng:\s*([^\r\n]*)", 1));
+        AssignIfFound(result, "SalaryReceivedDate", GetNthGroup(text, @"Thời hạn trả lương:\s*Trả vào ngày\s*([^\r\n]*?)\s*hàng tháng", 1));
+        AssignIfFound(result, "MealPerDay", GetNthGroup(text, @"5\.2\.\s*Ăn uống:\s*Bên A phụ trách\s*([^\r\n]*?)\s*bữa ăn\/ngày", 1));
+
+        return result;
+    }
+
+    private static string ExtractBetween(string text, string startMarker, string endMarker)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return string.Empty;
+
+        var start = text.IndexOf(startMarker, StringComparison.OrdinalIgnoreCase);
+        if (start < 0)
+            return string.Empty;
+
+        var end = text.IndexOf(endMarker, start, StringComparison.OrdinalIgnoreCase);
+        if (end < 0)
+            end = text.Length;
+
+        return text[start..end];
+    }
+
+    private static string GetNthGroup(string text, string pattern, int groupIndex)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return string.Empty;
+
+        var match = Regex.Match(text, pattern, RegexOptions.IgnoreCase | RegexOptions.Multiline);
+        if (!match.Success || groupIndex >= match.Groups.Count)
+            return string.Empty;
+
+        return NormalizeExtractedValue(match.Groups[groupIndex].Value);
+    }
+
+    private static void AssignIfFound(IDictionary<string, string> values, string key, string? value)
+    {
+        var normalized = NormalizeExtractedValue(value);
+        if (string.IsNullOrWhiteSpace(normalized))
+            return;
+
+        values[key] = normalized;
+    }
+
+    private static string NormalizeExtractedValue(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+            return string.Empty;
+
+        var value = raw.Trim();
+        if (string.Equals(value, "...", StringComparison.Ordinal))
+            return string.Empty;
+
+        return value;
+    }
+
+    private static void MergeFieldValues(IDictionary<string, string> target, IDictionary<string, string?> updates)
+    {
+        foreach (var pair in updates)
+        {
+            if (string.IsNullOrWhiteSpace(pair.Key))
+                continue;
+
+            target[pair.Key.Trim()] = pair.Value?.Trim() ?? string.Empty;
+        }
+    }
+
+    private static void ApplyParentDefaults(Contract contract, ContractParentFillRequestDto request, IDictionary<string, string> existingValues)
+    {
+        var parentUser = contract.HiringRecord?.ParentProfile?.User;
+        request.ParentName = FirstNonEmpty(request.ParentName, GetFieldValue(existingValues, "ParentName"), GetDisplayName(parentUser));
+        request.ParentPhone = FirstNonEmpty(request.ParentPhone, GetFieldValue(existingValues, "ParentPhone"), parentUser?.PhoneNumber);
+        request.ParentEmail = FirstNonEmpty(request.ParentEmail, GetFieldValue(existingValues, "ParentEmail"), parentUser?.Email);
+        request.ContractDurationMonths = FirstNonEmpty(
+            request.ContractDurationMonths,
+            GetFieldValue(existingValues, "ContractDurationMonths"),
+            CalculateContractDurationMonths(contract.HiringRecord?.StartDate, contract.HiringRecord?.EndDate));
+        request.WorkAddress = FirstNonEmpty(
+            request.WorkAddress,
+            GetFieldValue(existingValues, "WorkAddress"),
+            contract.HiringRecord?.JobApplication?.JobPosting?.Location);
+    }
+
+    private static void ApplyNannyDefaults(Contract contract, ContractNannyFillRequestDto request, IDictionary<string, string> existingValues)
+    {
+        var nannyUser = contract.HiringRecord?.NannyProfile?.User;
+        request.NannyName = FirstNonEmpty(request.NannyName, GetFieldValue(existingValues, "NannyName"), GetDisplayName(nannyUser));
+        request.NannyPhone = FirstNonEmpty(request.NannyPhone, GetFieldValue(existingValues, "NannyPhone"), nannyUser?.PhoneNumber);
+    }
+
+    private static string FirstNonEmpty(params string?[] values)
+    {
+        foreach (var value in values)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+                return value.Trim();
+        }
+
+        return string.Empty;
+    }
+
+    private static string GetFieldValue(IDictionary<string, string> values, string key)
+    {
+        if (values.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value))
+            return value.Trim();
+
+        return string.Empty;
+    }
+
+    private static void EnsureFieldValue(IDictionary<string, string> values, string key, string? value)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+            return;
+
+        if (values.TryGetValue(key, out var existing) && !string.IsNullOrWhiteSpace(existing))
+            return;
+
+        if (!string.IsNullOrWhiteSpace(value))
+            values[key] = value.Trim();
+    }
+
+    private static string CalculateContractDurationMonths(DateOnly? startDate, DateOnly? endDate)
+    {
+        if (!startDate.HasValue || !endDate.HasValue || endDate.Value <= startDate.Value)
+            return string.Empty;
+
+        var totalDays = (endDate.Value.ToDateTime(TimeOnly.MinValue) - startDate.Value.ToDateTime(TimeOnly.MinValue)).TotalDays;
+        var months = Math.Max(1, (int)Math.Ceiling(totalDays / 30d));
+        return months.ToString();
+    }
+
+    private static string RenderTemplateWithValues(string templateContent, IDictionary<string, string> fieldValues)
+    {
+        var template = templateContent ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(template))
+            return string.Empty;
+
+        var rendered = Regex.Replace(template, @"\{\{\s*([A-Za-z0-9_]+)\s*\}\}", match =>
+        {
+            var key = match.Groups[1].Value;
+            if (fieldValues.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value))
+                return value.Trim();
+            return "...";
+        });
+
+        return rendered.Replace("[[CENTER]]", string.Empty, StringComparison.Ordinal);
+    }
+
     private static void ValidateParentFillRequest(ContractParentFillRequestDto request)
     {
-        Require(request.ParentName, "ParentName");
-        Require(request.ParentDob, "ParentDOB");
-        Require(request.ParentIdentityNumber, "ParentIdentityNumber");
-        Require(request.ParentIdentityIssueDate, "ParentIdentityIssueDate");
-        Require(request.ParentIdentityIssuePlace, "ParentIdentityIssuePlace");
-        Require(request.ParentPermanentAddress, "ParentPermanentAddress");
-        Require(request.ParentCurrentAddress, "ParentCurrentAddress");
-        Require(request.ParentPhone, "ParentPhone");
-        Require(request.ParentEmail, "ParentEmail");
-        Require(request.WorkAddress, "WorkAddress");
-        Require(request.SalaryAmount, "SalaryAmount");
-        Require(request.SalaryReceivedDate, "SalaryReceivedDate");
+        RequireField(request.ParentName, "ParentName");
+        RequireField(request.ParentDob, "ParentDOB");
+        RequireField(request.ParentIdentityNumber, "ParentIdentityNumber");
+        RequireField(request.ParentIdentityIssueDate, "ParentIdentityIssueDate");
+        RequireField(request.ParentIdentityIssuePlace, "ParentIdentityIssuePlace");
+        RequireField(request.ParentPermanentAddress, "ParentPermanentAddress");
+        RequireField(request.ParentCurrentAddress, "ParentCurrentAddress");
+        RequireField(request.ParentPhone, "ParentPhone");
+        RequireField(request.ParentEmail, "ParentEmail");
+        RequireField(request.ProbationStartDate, "ProbationStartDate");
+        RequireField(request.ProbationEndDate, "ProbationEndDate");
+        RequireField(request.WorkAddress, "WorkAddress");
+        RequireField(request.SalaryAmount, "SalaryAmount");
+        RequireField(request.ProbationSalaryAmount, "ProbationSalaryAmount");
+        RequireField(request.AllowanceAmount, "AllowanceAmount");
+        RequireField(request.BankAccountNumber, "BankAccountNumber");
+        RequireField(request.BankName, "BankName");
+        RequireField(request.SalaryReceivedDate, "SalaryReceivedDate");
+        RequireField(request.MealPerDay, "MealPerDay");
+
+        ValidateDateField(request.ParentDob, "ParentDOB");
+        ValidateDateField(request.ParentIdentityIssueDate, "ParentIdentityIssueDate");
+        ValidateDateField(request.ProbationStartDate, "ProbationStartDate");
+        ValidateDateField(request.ProbationEndDate, "ProbationEndDate");
+
+        if (!TryParseDate(request.ProbationStartDate, out var probationStart) ||
+            !TryParseDate(request.ProbationEndDate, out var probationEnd))
+        {
+            throw new InvalidOperationException("Ngày thử việc không hợp lệ.");
+        }
+
+        var probationDays = (probationEnd.ToDateTime(TimeOnly.MinValue) - probationStart.ToDateTime(TimeOnly.MinValue)).TotalDays;
+        if (probationDays < 0 || probationDays > 6)
+            throw new InvalidOperationException("Thời gian thử việc tối đa là 06 ngày.");
+
+        ValidatePhoneField(request.ParentPhone, "ParentPhone");
+        ValidateEmailField(request.ParentEmail, "ParentEmail");
+
+        var salary = ValidatePositiveDecimalField(request.SalaryAmount, "SalaryAmount");
+        var probationSalary = ValidatePositiveDecimalField(request.ProbationSalaryAmount, "ProbationSalaryAmount");
+        ValidatePositiveDecimalField(request.AllowanceAmount, "AllowanceAmount");
+
+        var expectedProbationSalary = salary * 0.85m;
+        if (Math.Abs(probationSalary - expectedProbationSalary) > 0.01m)
+            throw new InvalidOperationException("Mức lương thử việc phải bằng 85% mức lương chính.");
+
+        ValidateIntegerRangeField(request.SalaryReceivedDate, "SalaryReceivedDate", 1, 31);
+        ValidateNaturalNumberField(request.MealPerDay, "MealPerDay");
     }
 
     private static void ValidateNannyFillRequest(ContractNannyFillRequestDto request)
     {
-        Require(request.NannyName, "NannyName");
-        Require(request.NannyDob, "NannyDOB");
-        Require(request.NannyIdentityNumber, "NannyIdentityNumber");
-        Require(request.NannyIdentityIssueDate, "NannyIdentityIssueDate");
-        Require(request.NannyIdentityIssuePlace, "NannyIdentityIssuePlace");
-        Require(request.NannyPermanentAddress, "NannyPermanentAddress");
-        Require(request.NannyCurrentAddress, "NannyCurrentAddress");
-        Require(request.NannyPhone, "NannyPhone");
+        RequireField(request.NannyName, "NannyName");
+        RequireField(request.NannyDob, "NannyDOB");
+        RequireField(request.NannyIdentityNumber, "NannyIdentityNumber");
+        RequireField(request.NannyIdentityIssueDate, "NannyIdentityIssueDate");
+        RequireField(request.NannyIdentityIssuePlace, "NannyIdentityIssuePlace");
+        RequireField(request.NannyPermanentAddress, "NannyPermanentAddress");
+        RequireField(request.NannyCurrentAddress, "NannyCurrentAddress");
+        RequireField(request.NannyPhone, "NannyPhone");
+
+        ValidateDateField(request.NannyDob, "NannyDOB");
+        ValidateDateField(request.NannyIdentityIssueDate, "NannyIdentityIssueDate");
+        ValidatePhoneField(request.NannyPhone, "NannyPhone");
+    }
+
+    private static void ValidateDate(string value, string fieldName)
+    {
+        if (!TryParseDate(value, out _))
+            throw new InvalidOperationException($"{GetFieldDisplayName(fieldName)} không hợp lệ.");
+    }
+
+    private static bool TryParseDate(string value, out DateOnly date)
+    {
+        var formats = new[] { "yyyy-MM-dd", "dd/MM/yyyy", "dd-MM-yyyy", "d/M/yyyy", "d-M-yyyy" };
+        if (DateOnly.TryParseExact(value, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out date))
+            return true;
+
+        if (DateOnly.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.None, out date))
+            return true;
+
+        return DateOnly.TryParse(value, CultureInfo.CurrentCulture, DateTimeStyles.None, out date);
+    }
+
+    private static void ValidatePhone(string value, string fieldName)
+    {
+        if (!Regex.IsMatch(value.Trim(), @"^\d{10,11}$"))
+            throw new InvalidOperationException($"{GetFieldDisplayName(fieldName)} phải là dãy số gồm 10-11 ký tự.");
+    }
+
+    private static void ValidateEmail(string value, string fieldName)
+    {
+        try
+        {
+            _ = new MailAddress(value.Trim());
+        }
+        catch
+        {
+            throw new InvalidOperationException($"{GetFieldDisplayName(fieldName)} không đúng định dạng email.");
+        }
+    }
+
+    private static decimal ValidatePositiveDecimal(string value, string fieldName)
+    {
+        if (!TryParseDecimal(value, out var number) || number <= 0)
+            throw new InvalidOperationException($"{GetFieldDisplayName(fieldName)} phải là số lớn hơn 0.");
+
+        return number;
+    }
+
+    private static bool TryParseDecimal(string value, out decimal number)
+    {
+        var raw = (value ?? string.Empty).Trim();
+        if (decimal.TryParse(raw, NumberStyles.Number, CultureInfo.InvariantCulture, out number))
+            return true;
+
+        if (decimal.TryParse(raw, NumberStyles.Number, CultureInfo.GetCultureInfo("vi-VN"), out number))
+            return true;
+
+        return decimal.TryParse(raw, NumberStyles.Number, CultureInfo.CurrentCulture, out number);
+    }
+
+    private static void ValidateIntegerRange(string value, string fieldName, int min, int max)
+    {
+        if (!int.TryParse(value.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed) ||
+            parsed < min || parsed > max)
+        {
+            throw new InvalidOperationException($"{GetFieldDisplayName(fieldName)} phải nằm trong khoảng {min}-{max}.");
+        }
+    }
+
+    private static void ValidateNaturalNumber(string value, string fieldName)
+    {
+        if (!int.TryParse(value.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed) || parsed <= 0)
+            throw new InvalidOperationException($"{GetFieldDisplayName(fieldName)} phải là số nguyên dương.");
     }
 
     private static void Require(string? value, string fieldName)
@@ -425,24 +827,94 @@ public class ContractService : IContractService
         _ => fieldName
     };
 
-    private static string ApplyTemplateValues(string content, IDictionary<string, string?> values)
+    private static void RequireField(string? value, string fieldName)
     {
-        var result = content ?? string.Empty;
-        foreach (var pair in values)
-        {
-            if (string.IsNullOrWhiteSpace(pair.Key))
-                continue;
-
-            var token = $"{{{{{pair.Key}}}}}";
-            if (!result.Contains(token, StringComparison.OrdinalIgnoreCase))
-                continue;
-
-            var replacement = string.IsNullOrWhiteSpace(pair.Value) ? "..." : pair.Value!.Trim();
-            result = result.Replace(token, replacement, StringComparison.OrdinalIgnoreCase);
-        }
-
-        return result;
+        if (string.IsNullOrWhiteSpace(value))
+            throw new InvalidOperationException($"{GetFieldLabel(fieldName)} là bắt buộc.");
     }
+
+    private static void ValidateDateField(string value, string fieldName)
+    {
+        if (!TryParseDate(value, out _))
+            throw new InvalidOperationException($"{GetFieldLabel(fieldName)} không hợp lệ.");
+    }
+
+    private static void ValidatePhoneField(string value, string fieldName)
+    {
+        if (!Regex.IsMatch((value ?? string.Empty).Trim(), @"^\d{10,11}$"))
+            throw new InvalidOperationException($"{GetFieldLabel(fieldName)} phải là dãy số gồm 10-11 ký tự.");
+    }
+
+    private static void ValidateEmailField(string value, string fieldName)
+    {
+        try
+        {
+            _ = new MailAddress((value ?? string.Empty).Trim());
+        }
+        catch
+        {
+            throw new InvalidOperationException($"{GetFieldLabel(fieldName)} không đúng định dạng email.");
+        }
+    }
+
+    private static decimal ValidatePositiveDecimalField(string value, string fieldName)
+    {
+        if (!TryParseDecimal(value, out var number) || number <= 0)
+            throw new InvalidOperationException($"{GetFieldLabel(fieldName)} phải là số lớn hơn 0.");
+
+        return number;
+    }
+
+    private static void ValidateIntegerRangeField(string value, string fieldName, int min, int max)
+    {
+        if (!int.TryParse((value ?? string.Empty).Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed) ||
+            parsed < min || parsed > max)
+        {
+            throw new InvalidOperationException($"{GetFieldLabel(fieldName)} phải nằm trong khoảng {min}-{max}.");
+        }
+    }
+
+    private static void ValidateNaturalNumberField(string value, string fieldName)
+    {
+        if (!int.TryParse((value ?? string.Empty).Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed) ||
+            parsed <= 0)
+        {
+            throw new InvalidOperationException($"{GetFieldLabel(fieldName)} phải là số nguyên dương.");
+        }
+    }
+
+    private static string GetFieldLabel(string fieldName) => fieldName switch
+    {
+        "ParentName" => "Họ tên bố mẹ",
+        "ParentDOB" => "Ngày sinh bố mẹ",
+        "ParentIdentityNumber" => "Số CCCD/CMND/hộ chiếu bố mẹ",
+        "ParentIdentityIssueDate" => "Ngày cấp CCCD/CMND/hộ chiếu bố mẹ",
+        "ParentIdentityIssuePlace" => "Nơi cấp CCCD/CMND/hộ chiếu bố mẹ",
+        "ParentPermanentAddress" => "Địa chỉ thường trú của bố mẹ",
+        "ParentCurrentAddress" => "Địa chỉ chỗ ở hiện tại của bố mẹ",
+        "ParentPhone" => "Điện thoại liên hệ của bố mẹ",
+        "ParentEmail" => "Email của bố mẹ",
+        "ContractDurationMonths" => "Thời hạn hợp đồng",
+        "ProbationStartDate" => "Từ ngày thử việc",
+        "ProbationEndDate" => "Đến ngày thử việc",
+        "WorkAddress" => "Địa điểm làm việc",
+        "SalaryAmount" => "Mức lương chính",
+        "ProbationSalaryAmount" => "Mức lương thử việc",
+        "AllowanceAmount" => "Phụ cấp đi lại/điện thoại",
+        "BankAccountNumber" => "Số tài khoản",
+        "BankName" => "Ngân hàng",
+        "SalaryReceivedDate" => "Ngày trả lương",
+        "MealPerDay" => "Số bữa ăn mỗi ngày",
+        "NannyName" => "Họ tên bảo mẫu",
+        "NannyDOB" => "Ngày sinh bảo mẫu",
+        "NannyIdentityNumber" => "Số CCCD/CMND/hộ chiếu bảo mẫu",
+        "NannyIdentityIssueDate" => "Ngày cấp CCCD/CMND/hộ chiếu bảo mẫu",
+        "NannyIdentityIssuePlace" => "Nơi cấp CCCD/CMND/hộ chiếu bảo mẫu",
+        "NannyPermanentAddress" => "Địa chỉ thường trú của bảo mẫu",
+        "NannyCurrentAddress" => "Địa chỉ chỗ ở hiện tại của bảo mẫu",
+        "NannyPhone" => "Điện thoại liên hệ của bảo mẫu",
+        _ => fieldName
+    };
 
     private static string ResolveCurrentUserRole(Contract contract, Guid userId)
     {

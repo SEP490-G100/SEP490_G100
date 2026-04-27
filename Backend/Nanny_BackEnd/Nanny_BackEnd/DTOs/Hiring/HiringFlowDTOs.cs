@@ -4,7 +4,6 @@ public class ConfirmHiringDto
 {
     public DateOnly StartDate { get; set; }
     public DateOnly? EndDate { get; set; }
-    public Guid ContractTemplateId { get; set; }
 }
 
 public class RespondToOfferDto

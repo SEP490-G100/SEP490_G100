@@ -34,24 +34,6 @@
                 <p id="hireEndDateInlineError" class="hidden mt-1 text-xs font-semibold text-rose-600"></p>
             </div>
 
-            <div>
-                <label for="hireContractTemplate" class="mb-1 block text-sm font-bold text-slate-700">
-                    Chon hop dong <span class="text-rose-500">*</span>
-                </label>
-                <div class="flex items-center gap-2">
-                    <select id="hireContractTemplate"
-                            class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 transition focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100">
-                        <option value="">-- Chon mau hop dong --</option>
-                    </select>
-                    <button type="button"
-                            id="hireTemplatePreviewBtn"
-                            disabled
-                            class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
-                        Preview
-                    </button>
-                </div>
-            </div>
-
             <p id="hireModalError" class="hidden text-sm font-semibold text-rose-600"></p>
         </div>
 
@@ -83,9 +65,6 @@
     const confirmBtn = document.getElementById('hireConfirmBtn');
     const startInput = document.getElementById('hireStartDate');
     const endInput = document.getElementById('hireEndDate');
-    const templateSelect = document.getElementById('hireContractTemplate');
-    const templatePreviewBtn = document.getElementById('hireTemplatePreviewBtn');
-
     const show = () => {
         modal.classList.remove('hidden');
         modal.classList.add('flex');
@@ -132,11 +111,8 @@
         const startDate = startInput.value;
         const endDate = endInput.value;
         const today = new Date().toISOString().slice(0, 10);
-        const contractTemplateId = templateSelect?.value || '';
-
         if (!startDate) return 'Vui long chon ngay bat dau.';
         if (!endDate) return 'Vui long chon ngay ket thuc.';
-        if (!contractTemplateId) return 'Vui long chon mau hop dong.';
         if (startDate < today) return 'Ngay bat dau khong duoc truoc ngay hien tai.';
         if (endDate <= startDate) return 'Ngay ket thuc phai lon hon ngay bat dau.';
         return '';
@@ -150,34 +126,6 @@
 
         setEndDateInlineError(hasEndDateOrderError ? 'Ngay ket thuc phai lon hon ngay bat dau.' : '');
         confirmBtn.disabled = !!getValidationError();
-        if (templatePreviewBtn) {
-            templatePreviewBtn.disabled = !templateSelect?.value;
-        }
-    };
-
-    const loadContractTemplates = async () => {
-        if (!templateSelect) return;
-
-        templateSelect.innerHTML = '<option value="">-- Chon mau hop dong --</option>';
-        try {
-            const response = await fetch('/Hiring/ContractTemplates', { credentials: 'include' });
-            const json = await response.json();
-            if (!response.ok || !json?.success || !Array.isArray(json?.data)) {
-                return;
-            }
-
-            for (const template of json.data) {
-                if (!template?.id) continue;
-                const option = document.createElement('option');
-                option.value = template.id;
-                option.textContent = template.version
-                    ? `${template.name} (${template.version})`
-                    : (template.name || template.id);
-                templateSelect.appendChild(option);
-            }
-        } catch {
-            // keep default option
-        }
     };
 
     window.__openHireModal = async (jobPostingId, jobAppId, nannyName, contactRequestId = null) => {
@@ -195,9 +143,6 @@
         endInput.value = '';
         endInput.setAttribute('min', addDays(today, 1));
 
-        await loadContractTemplates();
-        if (templateSelect) templateSelect.value = '';
-
         setError('');
         setEndDateInlineError('');
         updateConfirmState();
@@ -213,8 +158,6 @@
     window.__submitHiring = async () => {
         const startDate = startInput.value;
         const endDate = endInput.value;
-        const contractTemplateId = templateSelect?.value || '';
-
         const validationError = getValidationError();
         if (validationError) {
             setError(validationError);
@@ -236,8 +179,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     startDate,
-                    endDate: endDate || null,
-                    contractTemplateId
+                    endDate: endDate || null
                 })
             });
 
@@ -289,11 +231,5 @@
     });
 
     endInput.addEventListener('change', updateConfirmState);
-    templateSelect?.addEventListener('change', updateConfirmState);
-    templatePreviewBtn?.addEventListener('click', () => {
-        const templateId = templateSelect?.value || '';
-        if (!templateId) return;
-        window.open(`/Hiring/ContractTemplatePreview/${encodeURIComponent(templateId)}`, '_blank', 'noopener');
-    });
 })();
 </script>
