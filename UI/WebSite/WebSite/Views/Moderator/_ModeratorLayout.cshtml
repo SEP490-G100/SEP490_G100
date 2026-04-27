@@ -1,14 +1,17 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>@ViewData["Title"] - Moderator | NannyMatch</title>
+    <title>@ViewData["Title"] - Kiểm duyệt viên | NannyMatch</title>
     <link href="~/css/tailwind.generated.css" rel="stylesheet" asp-append-version="true" />
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
-    <link href="~/css/moderator.css" rel="stylesheet" />
+    <link href="~/css/moderator.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/unified-dropdown.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/toast.css" rel="stylesheet" asp-append-version="true" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    @await RenderSectionAsync("Head", required: false)
 </head>
 <body class="font-display bg-gray-50 text-gray-800" style="font-family:'Quicksand',sans-serif;">
 
@@ -20,36 +23,36 @@
 
             <!-- Brand -->
             <div class="flex items-center gap-3 px-5 py-5 border-b border-white/10">
-                <img src="~/img/nanny-logo.jpg" alt="Logo" class="w-9 h-9 rounded-xl object-cover shadow-lg flex-shrink-0" />
+                <img src="~/img/nanny-logo.jpg" alt="Logo NannyMatch" class="w-9 h-9 rounded-xl object-cover shadow-lg flex-shrink-0" />
                 <div class="sidebar-text overflow-hidden">
                     <span class="text-lg font-bold tracking-tight" style="background:linear-gradient(135deg,#F97316,#FB923C);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">NannyMatch</span>
-                    <p class="text-[10px] text-gray-400 -mt-0.5 uppercase tracking-widest">Moderator Panel</p>
+                    <p class="text-[10px] text-gray-400 -mt-0.5 uppercase tracking-widest">Trang Quản trị viên</p>
                 </div>
             </div>
 
             <!-- Nav -->
             <nav class="flex-1 px-3 py-5 space-y-1 overflow-y-auto overflow-x-hidden">
 
-                <p class="sidebar-text px-2 text-[10px] uppercase tracking-widest text-gray-500 mb-2 font-semibold">Overview</p>
+                <p class="sidebar-text px-2 text-[10px] uppercase tracking-widest text-gray-500 mb-2 font-semibold">Tổng quan</p>
 
                 <a href="/Moderator/Dashboard"
-                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() == "Dashboard" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
+                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() is "Dashboard" or "DashboardModerator" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">dashboard</span>
-                    <span class="sidebar-text">Dashboard</span>
+                    <span class="sidebar-text">Bảng điều khiển</span>
                 </a>
 
-                <p class="sidebar-text px-2 text-[10px] uppercase tracking-widest text-gray-500 mt-5 mb-2 font-semibold">Management</p>
+                <p class="sidebar-text px-2 text-[10px] uppercase tracking-widest text-gray-500 mt-5 mb-2 font-semibold">Quản lý</p>
 
                 <a href="/Moderator/ManageAccount"
                    class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() == "ManageAccount" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">manage_accounts</span>
-                    <span class="sidebar-text">Manage Accounts</span>
+                    <span class="sidebar-text">Quản lý tài khoản</span>
                 </a>
 
                 <a href="/Moderator/ManageNannyVerification"
-                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() == "NannyVerification" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
+                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() is "ManageNannyVerification" or "ViewNannyVerificationDetail" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">verified_user</span>
-                    <span class="sidebar-text">Manage Nanny Verification Requests</span>
+                    <span class="sidebar-text">Xác minh bảo mẫu</span>
                 </a>
 
                  
@@ -57,32 +60,32 @@
                 <a href="/Moderator/ManageJobPosting"
                    class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() == "ManageJobPosting" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">work</span>
-                    <span class="sidebar-text">Manage Job Postings</span>
+                    <span class="sidebar-text">Quản lý bài đăng việc</span>
                 </a>
                 <a href="/Moderator/ManageReport"
-                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() == "ViewReports" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
+                   class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() is "ManageReport" or "ViewReportDetail" or "ViewReportedJobPostingDetail" or "ViewReportedProfileDetail" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">flag</span>
-                    <span class="sidebar-text">Reports</span>
+                    <span class="sidebar-text">Khiếu nại</span>
                 </a>
 
-                <p class="sidebar-text px-2 text-[10px] uppercase tracking-widest text-gray-500 mt-5 mb-2 font-semibold">Content</p>
+                <p class="sidebar-text px-2 text-[10px] uppercase tracking-widest text-gray-500 mt-5 mb-2 font-semibold">Nội dung</p>
 
                 <a href="/Moderator/ManageBlog"
                    class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() is "ManageBlog" or "CreateBlog" or "ViewBlogDetail" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">article</span>
-                    <span class="sidebar-text">Manage Blogs</span>
+                    <span class="sidebar-text">Quản lý blog</span>
                 </a>
 
                 <a href="/Moderator/ManageFAQ"
                    class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() is "ManageFAQ" or "CreateFAQ" or "ViewFAQDetail" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">help_outline</span>
-                    <span class="sidebar-text">Manage FAQ</span>
+                    <span class="sidebar-text">Quản lý hỏi đáp</span>
                 </a>
 
                 <a href="/Moderator/ManageBlogCategory"
                    class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 @(ViewContext.RouteData.Values["action"]?.ToString() is "ManageBlogCategory" or "CreateBlogCategory" or "ViewBlogCategoryDetail" ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-gray-300 hover:bg-white/8 hover:text-white")">
                     <span class="material-icons-round text-xl flex-shrink-0">category</span>
-                    <span class="sidebar-text">Manage Blog Categories</span>
+                    <span class="sidebar-text">Danh mục blog</span>
                 </a>
             </nav>
 
@@ -94,13 +97,13 @@
                     </div>
                     <div class="sidebar-text flex-1 min-w-0">
                         <p class="text-sm font-semibold text-white truncate">
-                            @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? "Moderator")
+                            @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? "Điều hành viên")
                         </p>
-                        <p class="text-xs text-gray-400 truncate">Moderator</p>
+                        <p class="text-xs text-gray-400 truncate">Kiểm duyệt viên</p>
                     </div>
                     <form asp-controller="Auth" asp-action="Logout" method="post" class="sidebar-text flex-shrink-0">
                         @Html.AntiForgeryToken()
-                        <button type="submit" title="Sign out"
+                        <button type="submit" title="Đăng xuất"
                                 class="w-8 h-8 rounded-lg hover:bg-red-500/20 flex items-center justify-center text-gray-400 hover:text-red-400 transition-all">
                             <span class="material-icons-round text-xl">logout</span>
                         </button>
@@ -132,16 +135,40 @@
                     </div>
 
                     <div class="flex items-center gap-3">
-                        <button class="relative w-9 h-9 rounded-xl hover:bg-orange-50 flex items-center justify-center text-gray-400 hover:text-orange-500 transition-all">
-                            <span class="material-icons-round">notifications_none</span>
-                            <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
-                        </button>
+                        <div class="relative" id="notificationDropdown">
+                            <button type="button"
+                                    id="notificationToggle"
+                                    class="nm-icon-btn"
+                                    aria-label="Thông báo">
+                                <span class="material-icons-round text-[20px]">notifications</span>
+                                <span id="notificationBadge" class="nm-badge-dot hidden"></span>
+                            </button>
+
+                            <div id="notificationMenu" class="nm-panel hidden">
+                                <div class="nm-panel-header">
+                                    <div>
+                                        <p class="nm-panel-title">Thông báo</p>
+                                        <p class="nm-panel-subtitle">Nhắc nhở và cập nhật quan trọng</p>
+                                    </div>
+                                    <div class="nm-panel-actions">
+                                        <a href="/Notification/Center" class="nm-panel-link nm-panel-link--ghost">Xem tất cả</a>
+                                        <button type="button" id="markAllNotificationsRead" class="nm-panel-link">Đánh dấu đã đọc</button>
+                                    </div>
+                                </div>
+                                <div id="notificationList" class="nm-notification-list">
+                                    <div class="nm-empty-state">
+                                        <span class="material-icons-round">notifications_none</span>
+                                        <p class="text-sm font-semibold text-gray-700">Đang tải thông báo...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <div class="flex items-center gap-2 pl-3 border-l border-gray-100">
                             <div class="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
                                 @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value?.Substring(0, 1).ToUpper() ?? "M")
                             </div>
                             <span class="text-sm font-semibold text-gray-700 hidden sm:block">
-                                @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? "Moderator")
+                                @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? "Kiểm duyệt viên")
                             </span>
                         </div>
                     </div>
@@ -176,6 +203,283 @@
                 sidebar.classList.remove('collapsed');
             }
         }
+
+        (() => {
+            const notificationDropdown = document.getElementById('notificationDropdown');
+            const notificationToggle = document.getElementById('notificationToggle');
+            const notificationMenu = document.getElementById('notificationMenu');
+            const notificationBadge = document.getElementById('notificationBadge');
+            const notificationList = document.getElementById('notificationList');
+            const markAllButton = document.getElementById('markAllNotificationsRead');
+
+            if (!notificationDropdown || !notificationToggle || !notificationMenu || !notificationBadge || !notificationList || !markAllButton) {
+                return;
+            }
+
+            const UI_TEXT = {
+                bellLabel: 'Thông báo',
+                panelTitle: 'Thông báo',
+                panelSubtitle: 'Nhắc nhở và cập nhật quan trọng',
+                markAll: 'Đánh dấu đã đọc',
+                viewAll: 'Xem tất cả',
+                loading: 'Đang tải thông báo...',
+                empty: 'Bạn chưa có thông báo nào.',
+                fallbackTitle: 'Thông báo mới',
+                fallbackBody: 'Bạn có thông báo mới từ hệ thống.',
+                fallbackType: 'Thông báo',
+                senderPrefix: 'Từ',
+                loadError: 'Không thể tải thông báo lúc này.'
+            };
+
+            notificationToggle.setAttribute('aria-label', UI_TEXT.bellLabel);
+
+            const titleEl = notificationMenu.querySelector('.nm-panel-title');
+            const subtitleEl = notificationMenu.querySelector('.nm-panel-subtitle');
+            const emptyEl = notificationMenu.querySelector('.nm-empty-state p');
+            titleEl && (titleEl.textContent = UI_TEXT.panelTitle);
+            subtitleEl && (subtitleEl.textContent = UI_TEXT.panelSubtitle);
+            emptyEl && (emptyEl.textContent = UI_TEXT.loading);
+            markAllButton.textContent = UI_TEXT.markAll;
+
+            const escapeHtml = (value) => String(value ?? '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
+
+            const formatTime = (value) => {
+                if (!value) return '';
+                const date = new Date(value);
+                if (Number.isNaN(date.getTime())) return '';
+                return new Intl.DateTimeFormat('vi-VN', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }).format(date);
+            };
+
+            const normalizeText = (value) => String(value ?? '')
+                .trim()
+                .toLowerCase()
+                .replace(/\s+/g, ' ');
+
+            const shouldShowTypeChip = (item) => {
+                const typeLabel = normalizeText(item?.typeLabel);
+                const title = normalizeText(item?.title);
+                if (!typeLabel) return false;
+                if (typeLabel.includes('moderator')) return true;
+                if (typeLabel.includes('kiểm duyệt')) return true;
+                return typeLabel !== title;
+            };
+
+            const buildNotificationMeta = (item) => {
+                const parts = [];
+                if (shouldShowTypeChip(item)) {
+                    parts.push(`<span class="nm-notification-chip">${escapeHtml(item.typeLabel || UI_TEXT.fallbackType)}</span>`);
+                }
+
+                const sender = String(item?.senderLabel || '').trim();
+                if (sender) {
+                    parts.push(`<span class="nm-notification-sender">${UI_TEXT.senderPrefix} ${escapeHtml(sender)}</span>`);
+                }
+
+                if (!parts.length) return '';
+                return `<div class="nm-notification-item-meta">${parts.join('')}</div>`;
+            };
+
+            const renderEmpty = (message) => {
+                notificationList.innerHTML = `
+                    <div class="nm-empty-state">
+                        <span class="material-icons-round">notifications_none</span>
+                        <p class="text-sm font-semibold text-gray-700">${escapeHtml(message)}</p>
+                    </div>`;
+            };
+
+            const updateBadge = (count) => {
+                if (!count || count <= 0) {
+                    notificationBadge.textContent = '';
+                    notificationBadge.classList.add('hidden');
+                    return;
+                }
+
+                notificationBadge.textContent = count > 99 ? '99+' : String(count);
+                notificationBadge.classList.remove('hidden');
+            };
+
+            const loadUnreadCount = async () => {
+                try {
+                    const response = await fetch('/Notification/UnreadCount', { credentials: 'same-origin' });
+                    const result = await response.json();
+                    updateBadge(result?.data?.unreadCount ?? 0);
+                } catch {
+                    updateBadge(0);
+                }
+            };
+
+            const loadNotifications = async () => {
+                try {
+                    const response = await fetch('/Notification/My?page=1&pageSize=6', { credentials: 'same-origin' });
+                    const result = await response.json();
+                    const items = result?.data ?? [];
+                    const unreadCount = result?.unreadCount ?? 0;
+                    updateBadge(unreadCount);
+
+                    if (!items.length) {
+                        renderEmpty(UI_TEXT.empty);
+                        return;
+                    }
+
+                    notificationList.innerHTML = items.map(item => `
+                        <button type="button"
+                                class="nm-notification-item ${item.isRead ? '' : 'unread'}"
+                                data-id="${escapeHtml(item.id)}"
+                                data-url="${escapeHtml(item.actionUrl || '')}">
+                            <div class="nm-notification-item-title-row">
+                                <div class="nm-notification-item-title">${escapeHtml(item.title || UI_TEXT.fallbackTitle)}</div>
+                                ${item.isRead ? '' : '<span class="nm-notification-unread-dot" aria-hidden="true"></span>'}
+                            </div>
+                            ${buildNotificationMeta(item)}
+                            <div class="nm-notification-item-body">${escapeHtml(item.content || UI_TEXT.fallbackBody)}</div>
+                            <div class="nm-notification-item-time">${escapeHtml(formatTime(item.createdAt))}</div>
+                        </button>
+                    `).join('');
+                } catch {
+                    renderEmpty(UI_TEXT.loadError);
+                }
+            };
+
+            const getRealtimeToastConfig = (payload) => {
+                if (!payload) return null;
+
+                const type = String(payload.type || '').trim().toLowerCase();
+                const message = payload.message || payload.title;
+                if (message) {
+                    return {
+                        message,
+                        type: payload.toastType || 'success'
+                    };
+                }
+
+                switch (type) {
+                    case 'verification-request-submitted':
+                        return { message: 'Có yêu cầu xác minh mới đang chờ duyệt.', type: 'success' };
+                    case 'job-posting-review-required':
+                        return { message: 'Có bài đăng mới đang chờ kiểm duyệt viên duyệt.', type: 'success' };
+                    case 'complain-submitted':
+                        return { message: 'Có báo cáo mới cần xử lý.', type: 'error' };
+                    case 'system-warning':
+                        return { message: 'Có cảnh báo hệ thống cần xử lý.', type: 'error' };
+                    default:
+                        return null;
+                }
+            };
+
+            notificationToggle.addEventListener('click', async () => {
+                notificationMenu.classList.toggle('hidden');
+                if (!notificationMenu.classList.contains('hidden')) {
+                    await loadNotifications();
+                }
+            });
+
+            notificationList.addEventListener('click', async (event) => {
+                const item = event.target.closest('.nm-notification-item[data-id]');
+                if (!item) return;
+
+                const actionUrl = item.dataset.url;
+
+                try {
+                    await fetch(`/Notification/MarkRead/${item.dataset.id}`, {
+                        method: 'POST',
+                        credentials: 'same-origin'
+                    });
+                } catch {
+                }
+
+                item.classList.remove('unread');
+                await loadUnreadCount();
+
+                window.location.href = actionUrl
+                    ? actionUrl
+                    : `/Notification/Center?notificationId=${encodeURIComponent(item.dataset.id)}`;
+            });
+
+            markAllButton.addEventListener('click', async () => {
+                try {
+                    await fetch('/Notification/MarkAllRead', {
+                        method: 'POST',
+                        credentials: 'same-origin'
+                    });
+                } catch {
+                }
+
+                await loadNotifications();
+            });
+
+            window.addEventListener('nm:notifications-refresh', async () => {
+                await loadUnreadCount();
+                if (!notificationMenu.classList.contains('hidden')) {
+                    await loadNotifications();
+                }
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!notificationDropdown.contains(e.target)) {
+                    notificationMenu.classList.add('hidden');
+                }
+            });
+
+            const connectNotificationRealtime = async () => {
+                if (!window.signalR) return;
+
+                const connection = new signalR.HubConnectionBuilder()
+                    .withUrl('/hubs/notifications')
+                    .withAutomaticReconnect()
+                    .build();
+
+                connection.on('notification:new', async (payload) => {
+                    const toastConfig = getRealtimeToastConfig(payload);
+                    if (toastConfig && typeof window.showToast === 'function') {
+                        window.showToast(toastConfig.message, { type: toastConfig.type });
+                    }
+                    window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
+                });
+
+                connection.onreconnected(() => {
+                    window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
+                });
+
+                try {
+                    await connection.start();
+                } catch {
+                }
+            };
+
+            loadUnreadCount();
+            connectNotificationRealtime();
+        })();
+    </script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        (() => {
+            const params = new URLSearchParams(window.location.search);
+            const toastMessage = params.get('toastMessage');
+            const toastType = params.get('toastType') || 'success';
+
+            if (!toastMessage || typeof window.showToast !== 'function') {
+                return;
+            }
+
+            window.showToast(toastMessage, { type: toastType });
+            params.delete('toastMessage');
+            params.delete('toastType');
+
+            const nextQuery = params.toString();
+            const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ''}${window.location.hash || ''}`;
+            window.history.replaceState({}, document.title, nextUrl);
+        })();
     </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

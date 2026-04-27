@@ -86,6 +86,10 @@
     color: #111827;
 }
 
+.sub-hero-copy > h1:first-child {
+    margin-top: 0;
+}
+
 .sub-hero p,
 .sub-status-card p,
 .sub-section-head p,
@@ -173,6 +177,13 @@
     font-weight: 800;
     letter-spacing: 0.08em;
     text-transform: uppercase;
+}
+
+.sub-section-label--plans {
+    margin-bottom: 0;
+    padding: 10px 16px;
+    font-size: 16px;
+    letter-spacing: 0.1em;
 }
 
 .sub-section-head h2,
@@ -311,6 +322,17 @@
     box-shadow: 0 22px 52px rgba(249, 115, 22, 0.18);
 }
 
+/* Gói Basic: giữ cùng bề ngang bảng gói, không nâng cả thẻ (tránh lệch so gói trả phí) */
+.sub-grid .free-card.current-card {
+    transform: none;
+    box-shadow: 0 22px 52px rgba(249, 115, 22, 0.18);
+}
+
+/* Căn cùng mốc từ mô tả xuống: mô tả gói Basic ngắn hơn gói trả phí */
+.sub-grid .plan-top p {
+    min-height: calc(1.7em * 3);
+}
+
 .plan-top {
     margin-bottom: 18px;
 }
@@ -406,6 +428,80 @@
 
 .accent-card .plan-list li::before {
     background: #fbbf24;
+}
+
+.plan-list-lock {
+    position: relative;
+    margin: -8px 0 22px;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px dashed rgba(249, 115, 22, 0.28);
+    background: rgba(255, 255, 255, 0.84);
+    min-height: 130px;
+}
+
+.plan-list--blurred {
+    margin: 0;
+    padding: 14px 14px 16px 0;
+    opacity: 0.72;
+    filter: blur(3px);
+    pointer-events: none;
+    user-select: none;
+}
+
+.plan-list-lock-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
+    padding: 16px;
+    background: linear-gradient(180deg, rgba(255, 247, 237, 0.52) 0%, rgba(255, 255, 255, 0.98) 100%);
+}
+
+.plan-list-lock-pill {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: rgba(249, 115, 22, 0.14);
+    border: 1px solid rgba(249, 115, 22, 0.28);
+    color: #c2410c;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.plan-list-lock-overlay p {
+    margin: 0;
+    color: #7c2d12;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.45;
+}
+
+.accent-card .plan-list-lock {
+    border-color: rgba(251, 191, 36, 0.35);
+    background: rgba(17, 24, 39, 0.48);
+}
+
+.accent-card .plan-list-lock-overlay {
+    background: linear-gradient(180deg, rgba(17, 24, 39, 0.42) 0%, rgba(17, 24, 39, 0.9) 100%);
+}
+
+.accent-card .plan-list-lock-pill {
+    background: rgba(251, 191, 36, 0.14);
+    border-color: rgba(251, 191, 36, 0.36);
+    color: #fde68a;
+}
+
+.accent-card .plan-list-lock-overlay p {
+    color: #fef3c7;
 }
 
 .sub-primary-btn,

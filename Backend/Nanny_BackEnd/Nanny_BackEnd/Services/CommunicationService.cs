@@ -1,14 +1,48 @@
+using Microsoft.AspNetCore.SignalR;
 using Nanny_BackEnd.DTOs.Communication;
+using Nanny_BackEnd.Helpers;
+using Nanny_BackEnd.Hubs;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class CommunicationService
+public class CommunicationService : ICommunicationService
 {
-    private readonly CommunicationRepository _repo;
+    private readonly ICommunicationRepository _repo;
+    private readonly INotificationService _notificationService;
+    private readonly IUserRepository _userRepo;
+    private readonly IReportService _reportService;
+    private readonly IHubContext<ChatHub> _chatHub;
 
-    public CommunicationService(CommunicationRepository repo) => _repo = repo;
+    public CommunicationService(
+        ICommunicationRepository repo,
+        INotificationService notificationService,
+        IUserRepository userRepo,
+        IReportService reportService,
+        IHubContext<ChatHub> chatHub)
+    {
+        _repo = repo;
+        _notificationService = notificationService;
+        _userRepo = userRepo;
+        _reportService = reportService;
+        _chatHub = chatHub;
+    }
+
+    /// <summary>
+    /// Broadcast a message already saved in DB (e.g. hiring-offer card created by <see cref="HiringService"/>).
+    /// Same channel as <see cref="Hubs.ChatHub.SendMessage"/>.
+    /// </summary>
+    public async Task BroadcastPersistedMessageAsync(Guid messageId)
+    {
+        var m = await _repo.GetMessageByIdForHubAsync(messageId);
+        if (m == null) return;
+
+        var dto = mapMessage(m, m.SenderUserId);
+        await _chatHub.Clients.Group(m.ConversationId.ToString()).SendAsync("ReceiveMessage", dto);
+    }
 
     // ─── Lấy danh sách hội thoại ─────────────────────────────────────────────
 
@@ -16,6 +50,18 @@ public class CommunicationService
     {
         var conversations = await _repo.GetConversationsByUserIdAsync(userId);
         return conversations.Select(c => mapConversation(c, userId)).ToList();
+    }
+
+    public Task<int> GetTotalUnreadMessageCountAsync(Guid userId) =>
+        _repo.CountUnreadMessagesForUserAsync(userId);
+
+    /// <summary>Đánh dấu đã đọc toàn bộ tin nhận được trong một cuộc hội thoại.</summary>
+    public async Task<int> MarkConversationReadAsync(Guid conversationId, Guid userId)
+    {
+        _ = await _repo.GetParticipantAsync(conversationId, userId)
+            ?? throw new UnauthorizedAccessException("Bạn không phải thành viên của cuộc hội thoại này.");
+
+        return await _repo.MarkConversationMessagesReadForUserAsync(conversationId, userId);
     }
 
     // ─── Lấy lịch sử tin nhắn (phân trang) ──────────────────────────────────
@@ -27,11 +73,11 @@ public class CommunicationService
         pageSize = Math.Clamp(pageSize, 1, 100);
 
         var conversation = await _repo.GetConversationByIdAsync(conversationId)
-            ?? throw new KeyNotFoundException("Khong tim thay cuoc hoi thoai.");
+            ?? throw new KeyNotFoundException("Không tìm thấy cuộc hội thoại.");
 
         var myParticipant = conversation.ConversationParticipants
             .FirstOrDefault(p => p.UserId == currentUserId)
-            ?? throw new UnauthorizedAccessException("Ban khong phai thanh vien cua cuoc hoi thoai nay.");
+            ?? throw new UnauthorizedAccessException("Bạn không phải thành viên của cuộc hội thoại này.");
 
         var otherParticipant = conversation.ConversationParticipants
             .FirstOrDefault(p => p.UserId != currentUserId);
@@ -40,6 +86,8 @@ public class CommunicationService
             conversationId,
             skip: (page - 1) * pageSize,
             take: pageSize);
+
+
 
         return new MessageHistoryDto
         {
@@ -62,7 +110,7 @@ public class CommunicationService
         Guid currentUserId, Guid otherUserId)
     {
         if (currentUserId == otherUserId)
-            throw new InvalidOperationException("Khong the tu nhan tin voi chinh minh.");
+            throw new InvalidOperationException("Không thể tự nhắn tin với chính mình.");
 
         var existing = await _repo.FindOneToOneConversationAsync(currentUserId, otherUserId);
         if (existing != null)
@@ -112,13 +160,13 @@ public class CommunicationService
     public async Task<MessageDto> SendMessageAsync(SendMessageDto dto, Guid senderId)
     {
         if (string.IsNullOrWhiteSpace(dto.Content))
-            throw new ArgumentException("Noi dung tin nhan khong duoc de trong.");
+            throw new ArgumentException("Nội dung tin nhắn không được để trống.");
 
         var myParticipant = await _repo.GetParticipantAsync(dto.ConversationId, senderId)
-            ?? throw new UnauthorizedAccessException("Ban khong phai thanh vien cua cuoc hoi thoai nay.");
+            ?? throw new UnauthorizedAccessException("Bạn không phải thành viên của cuộc hội thoại này.");
 
         if (myParticipant.IsBlocked)
-            throw new InvalidOperationException("Cuoc hoi thoai nay dang bi chan. Ban khong the gui tin nhan.");
+            throw new InvalidOperationException("Cuộc hội thoại này đang bị chặn. Bạn không thể gửi tin nhắn.");
 
         var message = new Message
         {
@@ -148,6 +196,26 @@ public class CommunicationService
         var saved = await _repo.GetMessageByIdAsync(message.Id) ?? message;
         saved.SenderUser = myParticipant.User ?? new User { Id = senderId, FirstName = "Nguoi", LastName = "Dung", Email = "" };
 
+        var participants = await _repo.GetParticipantsByConversationIdAsync(dto.ConversationId);
+        var moderatorRecipientIds = new List<Guid>();
+        foreach (var participant in participants.Where(p => p.UserId != senderId))
+        {
+            if (await _userRepo.HasRolesAsync(participant.UserId, ["Moderator"]))
+                moderatorRecipientIds.Add(participant.UserId);
+        }
+
+        if (moderatorRecipientIds.Count > 0)
+        {
+            await _notificationService.createNotificationForUsers(
+                moderatorRecipientIds,
+                "Có tin nhắn mới gửi tới moderator",
+                $"{getDisplayName(saved.SenderUser)} vừa gửi một tin nhắn mới cần moderator phản hồi.",
+                NotificationTypes.MessageToModerator,
+                dto.ConversationId,
+                "Conversation",
+                senderId);
+        }
+
         return mapMessage(saved, senderId);
     }
 
@@ -156,10 +224,10 @@ public class CommunicationService
     public async Task<(Guid ConversationId, Guid MessageId)> DeleteMessageAsync(Guid messageId, Guid userId)
     {
         var message = await _repo.GetMessageByIdAsync(messageId)
-            ?? throw new KeyNotFoundException("Khong tim thay tin nhan.");
+            ?? throw new KeyNotFoundException("Không tìm thấy tin nhắn.");
 
         if (message.SenderUserId != userId)
-            throw new UnauthorizedAccessException("Ban khong co quyen xoa tin nhan nay.");
+            throw new UnauthorizedAccessException("Bạn không có quyền xóa tin nhắn này.");
 
         message.IsDeleted = true;
         message.UpdatedAt = DateTime.UtcNow;
@@ -173,10 +241,10 @@ public class CommunicationService
     public async Task ReportMessageAsync(Guid messageId, Guid reporterUserId, ReportMessageDto dto)
     {
         var message = await _repo.GetMessageByIdAsync(messageId)
-            ?? throw new KeyNotFoundException("Khong tim thay tin nhan.");
+            ?? throw new KeyNotFoundException("Không tìm thấy tin nhắn.");
 
         if (message.SenderUserId == reporterUserId)
-            throw new InvalidOperationException("Ban khong the bao cao tin nhan cua chinh minh.");
+            throw new InvalidOperationException("Bạn không thể báo cáo tin nhắn của chính mình.");
 
         _repo.AddReport(new Report
         {
@@ -201,7 +269,7 @@ public class CommunicationService
         Guid conversationId, Guid userId, UpdateConversationStatusDto dto)
     {
         var participant = await _repo.GetParticipantAsync(conversationId, userId)
-            ?? throw new UnauthorizedAccessException("Ban khong phai thanh vien cua cuoc hoi thoai nay.");
+            ?? throw new UnauthorizedAccessException("Bạn không phải thành viên của cuộc hội thoại này.");
 
         var participants = await _repo.GetParticipantsByConversationIdAsync(conversationId);
         var now = DateTime.UtcNow;
@@ -217,7 +285,7 @@ public class CommunicationService
                 break;
             case "unblock":
                 if (participant.UpdatedBy != userId)
-                    throw new InvalidOperationException("Chi nguoi da chan cuoc tro chuyen moi co quyen mo chan.");
+                    throw new InvalidOperationException("Chỉ người đã chặn cuộc trò chuyện mới có quyền mở chặn.");
 
                 foreach (var p in participants)
                 {
@@ -227,7 +295,7 @@ public class CommunicationService
                 }
                 break;
             default:
-                throw new ArgumentException($"Hanh dong '{dto.Action}' khong hop le. Cac gia tri hop le: block, unblock.");
+                throw new ArgumentException($"Hành động '{dto.Action}' không hợp lệ. Các giá trị hợp lệ: block, unblock.");
         }
 
         participant.UpdatedAt = now;
@@ -251,7 +319,7 @@ public class CommunicationService
             OtherUserId = otherParticipant?.UserId ?? Guid.Empty,
             OtherUserName = getDisplayName(otherParticipant?.User),
             OtherUserAvatar = otherParticipant?.User?.AvatarUrl,
-            LastMessage = lastMsg?.IsDeleted == true ? "[Tin nhan da bi xoa]" : lastMsg?.Content,
+            LastMessage = lastMsg?.IsDeleted == true ? "[Tin nhắn đã bị xóa]" : lastMsg?.Content,
             LastMessageAt = c.LastMessageAt,
             IsBlocked = myParticipant?.IsBlocked ?? false,
             IsHidden = myParticipant?.IsHidden ?? false,
@@ -266,7 +334,7 @@ public class CommunicationService
         SenderId = m.SenderUserId,
         SenderName = getDisplayName(m.SenderUser),
         SenderAvatar = m.SenderUser?.AvatarUrl,
-        Content = m.IsDeleted ? "[Tin nhan da bi xoa]" : m.Content,
+        Content = m.IsDeleted ? "[Tin nhắn đã bị xóa]" : m.Content,
         MessageType = m.MessageType,
         AttachmentUrl = m.IsDeleted ? null : m.AttachmentUrl,
         ReadAt = m.ReadAt,

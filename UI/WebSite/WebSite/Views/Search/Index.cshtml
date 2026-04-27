@@ -1,4 +1,4 @@
-@{
+﻿@{
     ViewData["Title"] = "Tìm bảo mẫu - NannyMatch";
     Layout = "~/Views/Shared/_Layout.cshtml";
     var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
@@ -17,15 +17,15 @@
 
 <div class="sticky top-[72px] z-40 bg-white/95 backdrop-blur-lg border-b border-gray-100" style="box-shadow:0 2px 8px rgba(0,0,0,.04);">
     <div class="px-6 py-3 flex items-center gap-3 flex-wrap">
-        @* ── Tab bar (hiện với Nanny) — ngoài cùng bên trái ── *@
+        @* Tab bar (hiện với Nanny) - ngoài cùng bên trái *@
         @if (User.IsInRole("Nanny"))
         {
             <div class="rec-tab-bar">
-                <button id="tabAll" class="rec-tab active" onclick="switchSearchTab('all')">
+                <button id="tabAll" class="rec-tab active" type="button" onclick="switchSearchTab('all')">
                     <span class="material-icons-round">list</span>Tất cả
                 </button>
-                <button id="tabRec" class="rec-tab" onclick="switchSearchTab('rec')">
-                    <span class="material-icons-round">auto_awesome</span>Gợi ý
+                <button id="tabRec" class="rec-tab rec-tab--smart" type="button" onclick="switchSearchTab('rec')">
+                    <span class="material-icons-round">auto_awesome</span>Gợi ý thông minh
                 </button>
             </div>
         }
@@ -52,7 +52,7 @@
         {
             <a href="/Search/Applications"
                class="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-bold transition-all">
-                <span class="material-icons-round text-base">work_history</span>Lich su ung tuyen
+                <span class="material-icons-round text-base">work_history</span>Lịch sử ứng tuyển
             </a>
             <a href="/Search/SavedJobs"
                class="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-orange-200 bg-white hover:bg-orange-50 text-orange-600 text-sm font-bold transition-all">
@@ -62,7 +62,7 @@
         <button onclick="openPremium()"
                 class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-white text-sm font-bold shadow-md transition-all"
                 style="background:linear-gradient(135deg,#f59e0b,#d97706)">
-            <span class="material-icons-round text-[16px]">workspace_premium</span>Premium
+            <span class="material-icons-round text-[16px]">workspace_premium</span>Gói đăng ký
         </button>
     </div>
 </div>
@@ -70,7 +70,7 @@
 <div class="search-body">
     <div class="list-panel">
 
-        @* ── Rec panel (Tab 2) — chỉ render với Nanny ── *@
+        @* Rec panel (Tab 2) - chỉ render với Nanny *@
         @if (User.IsInRole("Nanny"))
         {
             <div id="recJobPanel" class="rec-panel">
@@ -96,7 +96,7 @@
             <div>
                 <p class="modal-kicker">Bài đăng mới</p>
                 <h2 class="text-2xl font-bold text-gray-900">Đăng tin tìm bảo mẫu</h2>
-                <p class="modal-subtitle">Tạo bài đăng rõ ràng để moderator duyệt nhanh hơn và nanny dễ ứng tuyển hơn.</p>
+                <p class="modal-subtitle">Tạo bài đăng rõ ràng để kiểm duyệt viên xử lý nhanh hơn và bảo mẫu dễ ứng tuyển hơn.</p>
             </div>
             <button onclick="closeCreate()" class="modal-close material-icons-round">close</button>
         </div>
@@ -122,29 +122,37 @@
                             <label class="form-label">Loại công việc</label>
                             <input type="text" id="cf-typeText" class="form-input form-select-picker-input" autocomplete="off" placeholder="Chọn loại công việc" />
                             <select id="cf-type" class="form-input form-select-native-hidden">
-                                <option value="1">Full-time</option>
-                                <option value="2">Part-time</option>
+                                <option value="1">Toàn thời gian</option>
+                                <option value="2">Bán thời gian</option>
                                 <option value="3">Qua đêm</option>
                             </select>
                         </div>
                         <div>
                             <label class="form-label">Số trẻ cần chăm</label>
-                            <input type="number" id="cf-children" class="form-input bg-gray-50" min="1" max="10" readonly />
+                            <select id="cf-children" class="form-input" disabled>
+                                @for (var childCount = 1; childCount <= 10; childCount++)
+                                {
+                                    <option value="@childCount">@childCount bé</option>
+                                }
+                            </select>
                         </div>
                         <div>
-                            <label class="form-label" >Lương tối thiểu</label>
+                                    <label class="form-label" >Lương từ</label>
                             <input type="text" id="cf-salMin" inputmode="numeric" style="border-radius: 10px;" class="form-input" placeholder="VD: 1.000.000" />
                         </div>
                         <div>
-                            <label class="form-label" >Lương tối đa</label>
+                                    <label class="form-label" >Đến</label>
                             <input type="text" id="cf-salMax" inputmode="numeric" style="border-radius: 10px;" class="form-input" placeholder="VD: 3.000.000" />
+                        </div>
+                        <div class="md:col-span-2 text-xs font-semibold text-slate-500">
+                            Để trống nếu chưa xác định. Lương hợp lệ từ 8.000.000 đến 50.000.000 VND.
                         </div>
                         <div class="md:col-span-2">
                             <label class="form-label">Tùy chọn lương</label>
                             <label class="negotiable-field negotiable-field-large">
                                 <input type="checkbox" id="cf-negotiable" class="rounded accent-orange-500" />
-                                <span class="negotiable-title">Lương thương lượng</span>
-                                <span class="negotiable-caption">Bật nếu bạn muốn trao đổi mức lương trực tiếp với nanny.</span>
+                                <span class="negotiable-title">Lương thỏa thuận</span>
+                                <span class="negotiable-caption">Bật nếu bạn muốn trao đổi mức lương trực tiếp với bảo mẫu.</span>
                             </label>
                         </div>
                         <div class="md:col-span-2">
@@ -182,23 +190,34 @@
                     <div class="schedule-header">
                         <div>
                             <p class="section-title">Lịch ngày muốn tuyển</p>
-                            <p class="section-caption">Chọn các khung giờ bạn muốn nanny có thể làm việc.</p>
+                            <p class="section-caption">Chọn các khung giờ bạn muốn bảo mẫu có thể làm việc.</p>
                         </div>
+                    </div>
+                    <div class="schedule-preset-wrap">
+                        <label class="schedule-preset-label" for="cf-schedulePreset">Mẫu lịch nhanh</label>
+                        <select id="cf-schedulePreset" class="schedule-preset-select">
+                            <option value="">-- Chọn mẫu lịch nhanh --</option>
+                            <option value="morning-afternoon">Từ sáng đến chiều</option>
+                            <option value="afternoon-evening">Từ chiều đến tối</option>
+                            <option value="weekday-only">Làm các ngày trong tuần trừ cuối tuần</option>
+                            <option value="all-week">Làm cả tuần</option>
+                        </select>
+                        <p class="schedule-preset-hint">Chọn mẫu để tự động tích lịch, sau đó bạn vẫn có thể chỉnh tay.</p>
                     </div>
                     <div id="cf-schedule" class="schedule-grid"></div>
                 </div>
 
                 <div class="section-card section-card-soft">
-                    <div class="section-heading">
-                        <div>
-                            <p class="section-title">Thông tin từ profile Parent</p>
-                            <p class="section-caption">Chọn bé cần đăng bài, hệ thống sẽ tự lấy thông tin liên quan từ Child Profile.</p>
+                        <div class="section-heading">
+                            <div>
+                                <p class="section-title">Thông tin từ hồ sơ phụ huynh</p>
+                                <p class="section-caption">Chọn số trẻ cần chăm.</p>
+                            </div>
                         </div>
-                    </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div class="md:col-span-2">
-                            <label class="form-label">Chọn trẻ</label>
-                            <input type="text" id="cf-childProfileText" class="form-input form-select-picker-input" autocomplete="off" placeholder="Chọn trẻ" />
+                            <label class="form-label">Chọn bé thứ 1</label>
+                            <input type="text" id="cf-childProfileText" class="form-input form-select-picker-input" autocomplete="off" placeholder="Chọn bé thứ 1" />
                             <select id="cf-childProfileId" class="form-input form-select-native-hidden"></select>
                         </div>
                         <div>
@@ -214,6 +233,7 @@
                             <textarea id="cf-specialNeeds" class="form-input resize-none bg-white/80" rows="2" readonly></textarea>
                         </div>
                     </div>
+                    <div id="cf-extraChildProfiles" class="child-profile-stack"></div>
                 </div>
 
                 <div class="section-card section-card-plain">
@@ -254,7 +274,7 @@
             <div>
                 <p class="modal-kicker">Cập nhật bài đăng</p>
                 <h2 class="text-2xl font-bold text-gray-900">Chỉnh sửa bài đăng</h2>
-                <p class="modal-subtitle">Sau khi cập nhật, bài đăng sẽ quay về trạng thái chờ moderator duyệt lại.</p>
+                <p class="modal-subtitle">Sau khi cập nhật, bài đăng sẽ quay về trạng thái chờ kiểm duyệt viên duyệt lại.</p>
             </div>
             <button onclick="closeEdit()" class="modal-close material-icons-round">close</button>
         </div>
@@ -265,7 +285,7 @@
                     <div class="section-heading">
                         <div>
                             <p class="section-title">Thông tin cơ bản</p>
-                            <p class="section-caption">Chỉnh sửa nội dung, lương, địa điểm và độ tuổi nanny mong muốn.</p>
+                            <p class="section-caption">Chỉnh sửa nội dung, lương, địa điểm và độ tuổi bảo mẫu mong muốn.</p>
                         </div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -280,8 +300,8 @@
                         <div>
                             <label class="form-label">Loại công việc</label>
                             <select id="ef-type" class="form-input">
-                                <option value="1">Full-time</option>
-                                <option value="2">Part-time</option>
+                                <option value="1">Toàn thời gian</option>
+                                <option value="2">Bán thời gian</option>
                                 <option value="3">Qua đêm</option>
                             </select>
                         </div>
@@ -290,19 +310,19 @@
                             <input type="number" id="ef-children" class="form-input bg-gray-50" min="1" max="10" readonly />
                         </div>
                         <div>
-                            <label class="form-label">Lương tối thiểu</label>
+                                <label class="form-label">Lương từ</label>
                             <input type="text" id="ef-salMin" inputmode="numeric" class="form-input" placeholder="VD: 1.000.000" />
                         </div>
                         <div>
-                            <label class="form-label">Lương tối đa</label>
+                                <label class="form-label">Đến</label>
                             <input type="text" id="ef-salMax" inputmode="numeric" class="form-input" placeholder="VD: 3.000.000" />
                         </div>
                         <div class="md:col-span-2">
                             <label class="form-label">Tùy chọn lương</label>
                             <label class="negotiable-field negotiable-field-large">
                                 <input type="checkbox" id="ef-negotiable" class="rounded accent-orange-500" />
-                                <span class="negotiable-title">Lương thương lượng</span>
-                                <span class="negotiable-caption">Bật nếu bạn muốn trao đổi mức lương trực tiếp với nanny.</span>
+                                <span class="negotiable-title">Lương thỏa thuận</span>
+                                <span class="negotiable-caption">Bật nếu bạn muốn trao đổi mức lương trực tiếp với bảo mẫu.</span>
                             </label>
                         </div>
                         <div class="md:col-span-2">
@@ -340,22 +360,33 @@
                     <div class="schedule-header">
                         <div>
                             <p class="section-title">Lịch ngày muốn tuyển</p>
-                            <p class="section-caption">Cập nhật các buổi cần nanny hỗ trợ trong tuần.</p>
+                            <p class="section-caption">Cập nhật các buổi cần bảo mẫu hỗ trợ trong tuần.</p>
                         </div>
+                    </div>
+                    <div class="schedule-preset-wrap">
+                        <label class="schedule-preset-label" for="ef-schedulePreset">Mẫu lịch nhanh</label>
+                        <select id="ef-schedulePreset" class="schedule-preset-select">
+                            <option value="">-- Chọn mẫu lịch nhanh --</option>
+                            <option value="morning-afternoon">Từ sáng đến chiều</option>
+                            <option value="afternoon-evening">Từ chiều đến tối</option>
+                            <option value="weekday-only">Làm các ngày trong tuần trừ cuối tuần</option>
+                            <option value="all-week">Làm cả tuần</option>
+                        </select>
+                        <p class="schedule-preset-hint">Chọn mẫu để tự động tích lịch, sau đó bạn vẫn có thể chỉnh tay.</p>
                     </div>
                     <div id="ef-schedule" class="schedule-grid"></div>
                 </div>
 
                 <div class="section-card section-card-soft">
-                    <div class="section-heading">
-                        <div>
-                            <p class="section-title">Thông tin từ profile Parent</p>
-                            <p class="section-caption">Chọn lại bé nếu cần, hệ thống sẽ cập nhật thông tin Child Profile tương ứng.</p>
+                        <div class="section-heading">
+                            <div>
+                                <p class="section-title">Thông tin từ hồ sơ phụ huynh</p>
+                                <p class="section-caption">Chọn lại bé nếu cần, hệ thống sẽ cập nhật hồ sơ trẻ tương ứng.</p>
+                            </div>
                         </div>
-                    </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div class="md:col-span-2">
-                            <label class="form-label">Chọn trẻ</label>
+                            <label class="form-label">Chọn bé thứ 1</label>
                             <select id="ef-childProfileId" class="form-input" onchange="handleEditChildChange()"></select>
                         </div>
                         <div>
@@ -377,7 +408,7 @@
                     <div class="section-heading">
                         <div>
                             <p class="section-title">Kỹ năng yêu cầu</p>
-                            <p class="section-caption">Tinh chỉnh bộ kỹ năng yêu cầu bằng danh sách skill chuẩn của hệ thống.</p>
+                            <p class="section-caption">Tinh chỉnh bộ kỹ năng yêu cầu bằng danh sách kỹ năng chuẩn của hệ thống.</p>
                         </div>
                     </div>
                     <div class="flex gap-2 items-center">
@@ -418,52 +449,59 @@
                     <div class="search-detail-hero__content">
                         <div class="search-detail-badge">
                             <span class="material-icons-round text-[16px]">article</span>
-                            Chi tiet tin dang
+                            Chi tiết tin đăng
                         </div>
-                        <h2 id="pv-title" class="search-detail-title">Ten bai viet</h2>
-                        <p id="pv-parentName" class="search-detail-subtitle">Dang boi phu huynh</p>
+                        <h2 id="pv-title" class="search-detail-title">Tiêu đề bài đăng</h2>
+                        <p id="pv-parentName" class="search-detail-subtitle">Đăng bởi phụ huynh</p>
                         <div id="pv-premiumBadges" class="mt-3 flex flex-wrap gap-2"></div>
                         <div class="search-detail-chips">
-                            <span id="pv-type" class="search-detail-chip">Loai viec</span>
-                            <span id="pv-sal" class="search-detail-chip search-detail-chip--strong">Luong</span>
-                            <span id="pv-status" class="search-detail-chip search-detail-chip--muted">Trang thai</span>
+                            <span id="pv-type" class="search-detail-chip">Loại việc</span>
+                            <span id="pv-sal" class="search-detail-chip search-detail-chip--strong">Lương</span>
+                            <span id="pv-status" class="search-detail-chip search-detail-chip--muted">Trạng thái</span>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="search-detail-grid">
                 <section class="search-detail-card">
-                    <h3>Mo ta cong viec</h3>
+                    <h3>Mô tả công việc</h3>
                     <p id="pv-desc" class="search-detail-text"></p>
                 </section>
                 <section class="search-detail-card">
-                    <h3>Thong tin chinh</h3>
+                    <h3>Thông tin chính</h3>
                     <div class="search-detail-meta-list">
-                        <div><span>Dia diem</span><strong id="pv-loc"></strong></div>
-                        <div><span>So tre can cham</span><strong id="pv-kids"></strong></div>
-                        <div><span>Toa do ban do</span><strong id="pv-coords"></strong></div>
-                        <div><span>Khoang cach</span><strong id="pv-distance"></strong></div>
+                        <div><span>Địa điểm</span><strong id="pv-loc"></strong></div>
+                        <div><span>Số trẻ cần chăm</span><strong id="pv-kids"></strong></div>
+                        <div><span>Tọa độ bản đồ</span><strong id="pv-coords"></strong></div>
+                        <div><span>Khoảng cách</span><strong id="pv-distance"></strong></div>
                     </div>
                 </section>
                 <section class="search-detail-card search-detail-card--wide">
-                    <h3>Thong tin tu profile Parent</h3>
+                    <h3>Thông tin từ hồ sơ phụ huynh</h3>
                     <div class="search-detail-info-grid">
-                        <div class="search-detail-info-box"><p>Dac diem</p><strong id="pv-characteristic"></strong></div>
-                        <div class="search-detail-info-box"><p>Nhom tuoi cua be</p><strong id="pv-birthType"></strong></div>
-                        <div class="search-detail-info-box"><p>Nhu cau dac biet</p><strong id="pv-specialNeeds"></strong></div>
-                        <div class="search-detail-info-box"><p>Do tuoi bao mau</p><strong id="pv-ageRange"></strong></div>
+                        <div class="search-detail-info-box"><p>Đặc điểm</p><strong id="pv-characteristic"></strong></div>
+                        <div class="search-detail-info-box"><p>Nhóm tuổi của bé</p><strong id="pv-birthType"></strong></div>
+                        <div class="search-detail-info-box"><p>Nhu cầu đặc biệt</p><strong id="pv-specialNeeds"></strong></div>
+                        <div class="search-detail-info-box"><p>Độ tuổi bảo mẫu</p><strong id="pv-ageRange"></strong></div>
+                    </div>
+                    <div class="search-detail-child-block">
+                        <div class="search-detail-child-block__head">
+                            <p class="search-detail-child-block__title">Danh sách từng bé</p>
+                            <span class="search-detail-child-block__hint">Dữ liệu từ hồ sơ trẻ</span>
+                        </div>
+                        <div id="pv-childProfiles" class="child-profile-stack child-profile-stack--preview hidden"></div>
                     </div>
                 </section>
                 <section class="search-detail-card search-detail-card--wide">
-                    <h3>Ky nang yeu cau</h3>
+                    <h3>Kỹ năng yêu cầu</h3>
                     <div id="pv-skills" class="search-detail-skill-list"></div>
                 </section>
                 <section class="search-detail-card search-detail-card--wide">
-                    <h3>Lich ngay muon tuyen</h3>
+                    <h3>Lịch ngày muốn tuyển</h3>
                     <div id="pv-schedule"></div>
                 </section>
                 <section class="search-detail-card search-detail-card--wide">
-                    <h3>Trang thai duyet</h3>
+                    <h3>Trạng thái duyệt</h3>
                     <div class="search-detail-moderation-box">
                         <strong id="pv-moderation"></strong>
                         <p id="pv-note" class="search-detail-note hidden"></p>
@@ -475,28 +513,63 @@
                         type="button"
                         class="hidden search-detail-action-btn search-detail-action-btn--primary">
                     <span class="material-icons-round text-base">send</span>
-                    <span id="pv-applyBtnText">Ung tuyen ngay</span>
+                    <span id="pv-applyBtnText">Ứng tuyển ngay</span>
                 </button>
                 <a id="pv-editBtn"
                    href="#"
                    class="hidden search-detail-action-btn search-detail-action-btn--secondary">
                     <span class="material-icons-round text-base">edit</span>
-                    <span>Chinh sua bai dang</span>
+                    <span>Chỉnh sửa bài đăng</span>
                 </a>
                 <a id="pv-parentBtn" href="#" target="_blank" class="search-detail-action-btn search-detail-action-btn--ghost">
                     <span class="material-icons-round text-base">person</span>
-                    <span id="pv-parentBtnText">Xem chi tiet ho so nguoi dang</span>
+                    <span id="pv-parentBtnText">Xem chi tiết hồ sơ người đăng</span>
                 </a>
+                <button id="pv-complainBtn"
+                        type="button"
+                        class="hidden py-3 rounded-xl border border-rose-200 text-rose-600 bg-rose-50 hover:bg-rose-100 font-bold text-sm transition-all inline-flex items-center justify-center gap-2 px-4">
+                    <span class="material-icons-round text-base">flag</span>
+                    <span>Khiếu nại bài đăng</span>
+                </button>
             </div>
         </div>
     </div>
 </div>
+
+<div id="jobComplainModal" class="nmodal fixed inset-0 z-50 bg-black/50 backdrop-blur-sm items-center justify-center px-4" onclick="if(event.target===this)closeJobComplainModal()">
+    <div class="nmodal-box bg-white rounded-2xl w-full max-w-xl shadow-2xl relative">
+        <div class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
+            <div>
+                <h2 class="text-lg font-bold text-gray-900">Gửi khiếu nại bài đăng</h2>
+                <p id="jobComplainTarget" class="text-xs text-gray-400 font-semibold mt-0.5">Bài đăng</p>
+            </div>
+            <button onclick="closeJobComplainModal()" class="text-gray-300 hover:text-gray-700 material-icons-round text-2xl transition-colors">close</button>
+        </div>
+        <form id="jobComplainForm" method="post" asp-controller="Report" asp-action="ReportJobPosting" class="px-6 py-5 space-y-4">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="jobComplainJobPostingId" name="JobPostingId" />
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Lý do khiếu nại <span class="text-red-500">*</span></label>
+                <textarea id="jobComplainReason" name="Reason" rows="4" class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400" placeholder="Nhập lý do khiếu nại..."></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Bằng chứng (không bắt buộc)</label>
+                <textarea id="jobComplainEvidence" name="Evidence" rows="3" class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400" placeholder="Link, mô tả bổ sung, thông tin liên quan..."></textarea>
+            </div>
+            <div class="flex gap-2">
+                <button type="button" onclick="closeJobComplainModal()" class="modal-btn modal-btn-secondary w-full">Hủy</button>
+                <button id="jobComplainSubmitBtn" type="submit" class="modal-btn modal-btn-primary w-full">Gửi khiếu nại</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div id="historyModal" class="nmodal fixed inset-0 z-50 bg-black/50 backdrop-blur-sm items-center justify-center px-4" onclick="if(event.target===this)closeHistory()">
     <div class="nmodal-box bg-white rounded-2xl w-full max-w-3xl shadow-2xl relative">
         <div class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
             <div>
                 <h2 class="text-lg font-bold text-gray-900">Lịch sử bài đăng</h2>
-                <p class="text-xs text-gray-400 font-semibold mt-0.5">Xem trạng thái chờ duyệt, đã duyệt, từ chối và ghi chú từ moderator.</p>
+                <p class="text-xs text-gray-400 font-semibold mt-0.5">Xem trạng thái chờ duyệt, đã duyệt, từ chối và ghi chú từ kiểm duyệt viên.</p>
             </div>
             <button onclick="closeHistory()" class="text-gray-300 hover:text-gray-700 material-icons-round text-2xl transition-colors">close</button>
         </div>
@@ -508,12 +581,14 @@
 
 @section Scripts {
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="~/lib/tinymce/tinymce.min.js" asp-append-version="true"></script>
 
 @if (User.IsInRole("Nanny"))
 {
 <script>
 // ── Recommendation tab (Nanny) ──────────────────────────────
 let recJobsLoaded = false;
+let recUpgradeRequired = false;
 window.recJobs = [];
 
 function escRecHtml(v) {
@@ -521,7 +596,7 @@ function escRecHtml(v) {
 }
 
 function recSalaryText(min, max, neg) {
-    if (neg) return 'Thương lượng';
+    if (neg) return 'Thỏa thuận';
     if (min != null && max != null)
         return `${(min/1e6).toFixed(1).replace(/\.0$/,'')}M – ${(max/1e6).toFixed(1).replace(/\.0$/,'')}M`;
     if (min != null) return `Từ ${(min/1e6).toFixed(1).replace(/\.0$/,'')}M`;
@@ -549,14 +624,22 @@ function renderRecJobCard(j, idx) {
         .map(s => `<span class="rec-chip rec-chip--skill">${escRecHtml(s.skillName ?? s)}</span>`).join('');
     const badgeCls = `rec-badge rec-badge--${j.matchTier || 'ok'}`;
 
+    // Score breakdown sub-components
+    const semPct  = Math.round((j.semanticScore  ?? 0) * 100);
+    const salPct  = Math.round((j.salaryScore    ?? 0) * 100);
+    const distPct = Math.round((j.distanceScore  ?? 0) * 100);
+
     return `
     <div class="rec-card rec-card--clickable" data-rec-idx="${idx}" onclick="openRecPreview(${idx})">
         <div class="rec-card-header">
-            <div class="rec-score-ring" style="--score-color:${color}">
-                <span class="rec-score-value" style="color:${color}">${pct}%</span>
+            <div class="rec-card__job-icon">
+                <span class="material-icons-round" style="font-size:22px;color:#3b82f6">work_outline</span>
             </div>
             <div class="rec-card-meta">
-                <h3 class="rec-card-title">${escRecHtml(j.title)}</h3>
+                <div class="rec-card-meta__top">
+                    <h3 class="rec-card-title">${escRecHtml(j.title)}</h3>
+                    <span class="rec-score-badge" style="--score-color:${color}">${pct}%</span>
+                </div>
                 ${loc ? `<p class="rec-card-sub"><span class="material-icons-round" style="font-size:12px;vertical-align:middle">location_on</span> ${escRecHtml(loc)}</p>` : ''}
             </div>
         </div>
@@ -564,75 +647,171 @@ function renderRecJobCard(j, idx) {
             ${salChip}${distChip}
         </div>
         ${skills ? `<div class="rec-card__skills" style="margin-top:8px">${skills}</div>` : ''}
+        <div class="rec-score-breakdown" onclick="event.stopPropagation(); toggleScoreBreakdown(this)">
+            <div class="rec-score-breakdown__toggle">
+                <span class="material-icons-round rec-score-breakdown__icon">info_outline</span>
+                <span>Thông số gợi ý chi tiết</span>
+                <span class="material-icons-round rec-score-breakdown__chevron">expand_more</span>
+            </div>
+            <div class="rec-score-breakdown__body">
+                <div class="rec-score-breakdown__row">
+                    <span class="rec-score-breakdown__label">Mức lương</span>
+                    <div class="rec-mini-bar"><div class="rec-mini-bar__fill" style="width:${salPct}%;background:#8b5cf6"></div></div>
+                    <span class="rec-score-breakdown__val">${salPct}%</span>
+                </div>
+                <div class="rec-score-breakdown__row">
+                    <span class="rec-score-breakdown__label">Khoảng cách</span>
+                    <div class="rec-mini-bar"><div class="rec-mini-bar__fill" style="width:${distPct}%;background:#0ea5e9"></div></div>
+                    <span class="rec-score-breakdown__val">${distPct}%</span>
+                </div>
+                <div class="rec-score-breakdown__row">
+                    <span class="rec-score-breakdown__label">Các tiêu chí khác</span>
+                    <div class="rec-mini-bar"><div class="rec-mini-bar__fill" style="width:${semPct}%;background:#3b82f6"></div></div>
+                    <span class="rec-score-breakdown__val">${semPct}%</span>
+                </div>
+            </div>
+        </div>
         <div class="rec-card-footer">
-            <span class="rec-ai-badge"><span class="material-icons-round" style="font-size:13px">auto_awesome</span>AI Gợi ý</span>
+            <span class="rec-ai-badge"><span class="material-icons-round" style="font-size:13px">auto_awesome</span>Hệ thống gợi ý</span>
             <span class="${badgeCls}">${escRecHtml(j.matchLabel || '')}</span>
         </div>
     </div>`;
 }
 
-function openRecPreview(idx) {
+function toggleScoreBreakdown(el) {
+    const body    = el.querySelector('.rec-score-breakdown__body');
+    const chevron = el.querySelector('.rec-score-breakdown__chevron');
+    const isOpen  = el.classList.contains('open');
+    el.classList.toggle('open', !isOpen);
+    body.style.display    = isOpen ? 'none' : 'flex';
+    chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+}
+
+async function openRecPreview(idx) {
     const j = window.recJobs[idx];
-    if (!j) return;
-    if (typeof openPreview !== 'function') return;
-    openPreview({
-        id:               j.jobId,
-        title:            j.title,
-        city:             j.city,
-        district:         j.district,
-        location:         j.district || j.city || '',
-        salaryMin:        j.salaryMin,
-        salaryMax:        j.salaryMax,
-        salaryNegotiable: j.salaryNegotiable,
-        distanceKm:       j.distanceKm,
-        skills:           j.requiredSkills || [],
-        scheduleSlots:    [],
-        parentName:       null,
-        jobType:          null,
-        status:           null,
-        numberOfChildren: null,
-        characteristic:   null,
-        birthTypeLabel:   null,
-        specialNeeds:     null,
-        minNannyAge:      null,
-        maxNannyAge:      null,
-        latitude:         j.latitude ?? null,
-        longitude:        j.longitude ?? null,
-        description:      j.description ?? null,
-        moderationStatus: null,
-        moderationNote:   null,
-        parentProfileId:  null
-    });
-    // Fly to job marker on map
+    if (!j || typeof openPreview !== 'function') return;
+
+    // Show modal immediately with loading state
+    const pvTitle = document.getElementById('pv-title');
+    const pvParent = document.getElementById('pv-parentName');
+    const modal = document.getElementById('previewModal');
+    if (pvTitle)  pvTitle.textContent  = j.title || 'Đang tải...';
+    if (pvParent) pvParent.textContent = 'Đang tải thông tin...';
+    modal?.classList.add('show');
+
+    try {
+        const res = await fetch(`/Search/Detail/${j.jobId}`, { credentials: 'same-origin' });
+        if (!res.ok) throw new Error('detail_not_found');
+        const detailJson = await res.json();
+        const d = detailJson?.data || detailJson;
+
+        // Normalize skills to string array (detail may return strings or objects)
+        const normalizeSkills = (arr) =>
+            Array.isArray(arr) ? arr.map(s => typeof s === 'string' ? s : (s.skillName ?? String(s))) : [];
+
+        openPreview({
+            id:               j.jobId,
+            title:            d.title            ?? j.title,
+            description:      d.description      ?? j.description ?? null,
+            parentName:       d.parentName       ?? null,
+            parentUserId:     d.parentUserId      ?? null,
+            jobType:          d.jobType           ?? null,
+            status:           d.status            ?? null,
+            moderationStatus: d.moderationStatus  ?? null,
+            moderationNote:   d.moderationNote    ?? null,
+            salaryMin:        d.salaryMin         ?? j.salaryMin,
+            salaryMax:        d.salaryMax         ?? j.salaryMax,
+            salaryNegotiable: d.salaryNegotiable  ?? j.salaryNegotiable,
+            location:         d.location          ?? null,
+            city:             d.city              ?? j.city,
+            district:         d.district          ?? j.district,
+            numberOfChildren: d.numberOfChildren  ?? null,
+            characteristic:   d.characteristic    ?? null,
+            birthTypeLabel:   d.birthTypeLabel    ?? null,
+            specialNeeds:     d.specialNeeds      ?? null,
+            minNannyAge:      d.minNannyAge       ?? null,
+            maxNannyAge:      d.maxNannyAge       ?? null,
+            children:         Array.isArray(d.children) ? d.children : [],
+            skills:           normalizeSkills(d.skills).length
+                                ? normalizeSkills(d.skills)
+                                : (j.requiredSkills ?? []),
+            scheduleSlots:    Array.isArray(d.scheduleSlots) ? d.scheduleSlots : [],
+            // Rec-specific fields
+            distanceKm:       j.distanceKm,
+            latitude:         j.latitude  ?? d.latitude  ?? null,
+            longitude:        j.longitude ?? d.longitude ?? null,
+        });
+    } catch (err) {
+        console.warn('[Rec] Preview detail fetch failed, using partial data:', err.message);
+        // Fallback: show what we have from the rec card
+        openPreview({
+            id:               j.jobId,
+            title:            j.title,
+            description:      j.description      ?? null,
+            city:             j.city,
+            district:         j.district,
+            salaryMin:        j.salaryMin,
+            salaryMax:        j.salaryMax,
+            salaryNegotiable: j.salaryNegotiable,
+            distanceKm:       j.distanceKm,
+            latitude:         j.latitude  ?? null,
+            longitude:        j.longitude ?? null,
+            skills:           j.requiredSkills ?? [],
+            scheduleSlots:    [],
+        });
+    }
+
     if (typeof highlightOnMap === 'function') highlightOnMap(idx);
 }
 
 function plotRecJobMarkers(jobs) {
     if (typeof clearMapMarkers === 'function') clearMapMarkers();
-    if (!window.map || !window.L) return;
+    // __leafletMap is set by search.js initMap(); window.map = DOM element (browser quirk)
+    const leafletMap = window.__leafletMap;
+    if (!leafletMap || typeof L === 'undefined') return;
+    // Ensure map knows its current container dimensions before adding layers
+    try { leafletMap.invalidateSize({ animate: false }); } catch (_) {}
     jobs.forEach((j, idx) => {
         if (!j.latitude || !j.longitude) return;
-        const pct = Math.round((j.finalScore ?? 0) * 100);
-        const color = recScoreColor(pct);
-        const el = document.createElement('div');
-        el.innerHTML = `<span style="font-size:11px;font-weight:800;color:${color}">${pct}%</span>`;
-        el.style.cssText = `background:#fff;border:2px solid ${color};border-radius:999px;padding:2px 7px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.15);cursor:pointer`;
-        const marker = window.L.marker([j.latitude, j.longitude], {
-            icon: window.L.divIcon({ html: el, className: '', iconAnchor: [20, 12] })
-        }).addTo(window.map);
-        marker.bindPopup(`<div style="font-size:.82rem;font-weight:700">${escRecHtml(j.title)}</div><div style="font-size:.75rem;color:#64748b">${pct}% phù hợp</div>`);
-        const circle = window.L.circle([j.latitude, j.longitude], {
-            radius: 600, color: '#fdba74', fillColor: '#fdba74',
-            fillOpacity: 0.1, weight: 1
-        }).addTo(window.map);
-        window.markers.push({ marker, circle, point: { lat: j.latitude, lng: j.longitude, zoom: 14 }, element: el });
+        try {
+            const recIcon = L.divIcon({
+                className: '',
+                html: `<div class="job-map-marker">
+                    <span class="job-map-marker__halo"></span>
+                    <span class="job-map-marker__pin"><span class="job-map-marker__core"></span></span>
+                </div>`,
+                iconSize: [26, 34],
+                iconAnchor: [13, 28]
+            });
+            const marker = L.marker([j.latitude, j.longitude], { icon: recIcon }).addTo(leafletMap);
+            marker.bindPopup(`<div style="font-size:.82rem;font-weight:700">${escRecHtml(j.title)}</div><div style="font-size:.75rem;color:#64748b">Gợi ý từ hệ thống</div>`);
+            const circle = L.circle([j.latitude, j.longitude], {
+                radius: 600, color: '#fdba74', fillColor: '#fdba74',
+                fillOpacity: 0.1, weight: 1
+            }).addTo(leafletMap);
+            if (typeof pushRecMarker === 'function')
+                pushRecMarker({ marker, circle, point: { lat: j.latitude, lng: j.longitude, zoom: 14 }, element: marker.getElement() });
+        } catch (markerErr) {
+            console.warn('[rec-job] marker error at idx', idx, markerErr);
+        }
     });
-    // Fit map to rec markers
+    // Fit map — only use jobs that are reasonably clustered (skip far outliers)
     const valid = jobs.filter(j => j.latitude && j.longitude);
-    if (valid.length && window.map) {
-        const bounds = window.L.latLngBounds(valid.map(j => [j.latitude, j.longitude]));
-        window.suppressNextMapSearch = true;
-        window.map.fitBounds(bounds, { padding: [32, 32], maxZoom: 14 });
+    if (valid.length) {
+        try {
+            const top = valid.slice(0, 5);
+            const cLat = top.reduce((s, j) => s + j.latitude, 0) / top.length;
+            const cLng = top.reduce((s, j) => s + j.longitude, 0) / top.length;
+            const nearby = valid.filter(j =>
+                Math.abs(j.latitude - cLat) < 1.5 && Math.abs(j.longitude - cLng) < 1.5);
+            const fitSet = nearby.length ? nearby : top;
+            const bounds = L.latLngBounds(fitSet.map(j => [j.latitude, j.longitude]));
+            if (typeof setSuppressNextSearch === 'function') setSuppressNextSearch();
+            // animate:false avoids mid-animation layer re-projection (layerPointToContainerPoint null)
+            leafletMap.fitBounds(bounds, { padding: [48, 48], maxZoom: 13, animate: false });
+        } catch (boundsErr) {
+            console.warn('[rec-job] fitBounds error', boundsErr);
+        }
     }
 }
 
@@ -649,19 +828,23 @@ function bindRecJobHover() {
 }
 
 function loadRecJobs() {
-    if (recJobsLoaded) return;
+    if (recJobsLoaded || recUpgradeRequired) return;
     const content = document.getElementById('recJobContent');
     if (!content) return;
 
     fetch('/Recommendation/JobsData?topK=10')
-        .then(r => r.json())
+        .then(r => {
+            if (!r.ok) throw new Error(`HTTP_${r.status}`);
+            return r.json();
+        })
         .then(res => {
             if (res.requiresUpgrade) {
+                recUpgradeRequired = true;
                 if (typeof clearMapMarkers === 'function') clearMapMarkers();
                 content.innerHTML = `
                 <div class="rec-upgrade-prompt">
                     <span class="material-icons-round rec-upgrade-icon">auto_awesome</span>
-                    <h3 class="rec-upgrade-title">Tính năng dành cho gói Plus / Pro</h3>
+                    <h3 class="rec-upgrade-title">Tính năng dành cho gói trả phí</h3>
                     <p class="rec-upgrade-desc">Nâng cấp để AI tự động gợi ý những công việc phù hợp nhất với hồ sơ của bạn — tiết kiệm thời gian tìm kiếm.</p>
                     <a href="/Subscription" class="rec-upgrade-btn">
                         <span class="material-icons-round">rocket_launch</span>Nâng cấp ngay
@@ -678,15 +861,27 @@ function loadRecJobs() {
                 </div>`;
             } else {
                 window.recJobs = res.data;
-                content.innerHTML = `<div class="rec-card-list">${res.data.map((j, i) => renderRecJobCard(j, i)).join('')}</div>`;
+                try {
+                    content.innerHTML = `<div class="rec-card-list">${res.data.map((j, i) => renderRecJobCard(j, i)).join('')}</div>`;
+                } catch (renderErr) {
+                    console.error('[Rec] Render error:', renderErr);
+                    content.innerHTML = `<div class="rec-panel__empty"><span class="material-icons-round">wifi_off</span><p>Lỗi hiển thị: ${renderErr.message}</p></div>`;
+                    recJobsLoaded = true;
+                    return;
+                }
                 plotRecJobMarkers(res.data);
                 bindRecJobHover();
             }
             recJobsLoaded = true;
         })
-        .catch(() => {
+        .catch(err => {
+            console.error('[Rec] Load error:', err?.message ?? err);
+            const isHttp = String(err?.message).startsWith('HTTP_');
+            const hint   = isHttp ? ` (${err.message.replace('HTTP_','')})` : '';
             content.innerHTML = `<div class="rec-panel__empty">
-                <span class="material-icons-round">wifi_off</span><p>Không tải được gợi ý.</p>
+                <span class="material-icons-round">wifi_off</span>
+                <p>Không tải được gợi ý${hint}.</p>
+                <p style="font-size:.75rem;margin-top:4px;color:#94a3b8">Xem Console (F12) để biết chi tiết.</p>
             </div>`;
         });
 }

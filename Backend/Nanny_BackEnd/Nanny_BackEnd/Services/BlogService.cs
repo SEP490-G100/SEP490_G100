@@ -1,22 +1,38 @@
 using Nanny_BackEnd.DTOs.Blog;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Enums;
+
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class BlogService
+public class BlogService : IBlogService
 {
-    private readonly BlogRepository _repo;
-    public BlogService(BlogRepository repo) => _repo = repo;
+    private readonly IBlogRepository _repo;
+    public BlogService(IBlogRepository repo) => _repo = repo;
 
-    // ── List (paged) ──────────────────────────────────────────────────────
-    public async Task<BlogListResponse> GetBlogsAsync(
+    public async Task<List<BlogCategoryOptionDto>> GetActiveCategoriesAsync()
+    {
+        var categories = await _repo.GetActiveCategoriesAsync();
+        return categories
+            .Select(c => new BlogCategoryOptionDto
+            {
+                Id = c.Id,
+                Name = c.Name,
+                Slug = c.Slug
+            })
+            .ToList();
+    }
+
+
+    public async Task<BlogListResponse> ModeratorViewBlogListAsync(
         string? search, int page, int pageSize,
         int? status = null, bool? isDeleted = null, Guid? categoryId = null,
         string? sort = null)
     {
-        var (items, total) = await _repo.GetPagedAsync(search, page, pageSize, status, isDeleted, categoryId, sort);
+        var (items, total) = await _repo.GetBlogListAsync(search, page, pageSize, status, isDeleted, categoryId, sort);
 
         var dtos = items.Select(MapToDto).ToList();
 
@@ -31,7 +47,7 @@ public class BlogService
 
     // ── Get single (by ID) ───────────────────────────────────────────────
     public async Task<(bool Success, int StatusCode, string Message, BlogDto? Data)>
-        GetBlogAsync(Guid id)
+        ModeratorViewBlogDetailAsync(Guid id)
     {
         var blog = await _repo.GetByIdAsync(id);
         if (blog == null) return (false, 404, "Không tìm thấy bài viết.", null);
@@ -53,7 +69,7 @@ public class BlogService
 
     // ── Create ────────────────────────────────────────────────────────────
     public async Task<(bool Success, int StatusCode, string Message, BlogDto? Data)>
-        CreateBlogAsync(CreateBlogRequest req, Guid authorId)
+        ModeratorCreateBlogAsync(CreateBlogRequest req, Guid authorId)
     {
         if (string.IsNullOrWhiteSpace(req.Title))
             return (false, 400, "Title không được để trống.", null);
@@ -92,7 +108,7 @@ public class BlogService
 
     // ── Update ────────────────────────────────────────────────────────────
     public async Task<(bool Success, int StatusCode, string Message)>
-        UpdateBlogAsync(Guid id, UpdateBlogRequest req, Guid? updatedBy)
+        ModeratorUpdateBlogAsync(Guid id, UpdateBlogRequest req, Guid? updatedBy)
     {
         if (string.IsNullOrWhiteSpace(req.Title))
             return (false, 400, "Title không được để trống.");
@@ -128,7 +144,7 @@ public class BlogService
 
     // ── Toggle Status (IsDeleted) ─────────────────────────────────────────
     public async Task<(bool Success, int StatusCode, string Message)>
-        ToggleBlogStatusAsync(Guid id, bool activate)
+        ModeratorToggleBlogStatusAsync(Guid id, bool activate)
     {
         var blog = await _repo.GetByIdAsync(id);
         if (blog == null) return (false, 404, "Không tìm thấy bài viết.");

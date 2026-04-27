@@ -7,9 +7,15 @@ public class VerificationRequestListDto
 {
     public Guid Id { get; set; }
     public Guid NannyProfileId { get; set; }
+    public int RequestType { get; set; }           // 1=ProfileVerification, 2=HealthCertificate
+    public List<int> DocumentTypes { get; set; } = new();
+    public DateTime? ExpiryDate { get; set; }
     public int Status { get; set; }                // 1=Pending, 2=Approved, 3=Rejected
     public DateTime CreatedAt { get; set; }
     public DateTime? ReviewedAt { get; set; }
+    public Guid? ReviewedBy { get; set; }
+    public string? ReviewedByName { get; set; }
+    public string? RejectionReason { get; set; }
 
     // Nanny info (from User via NannyProfile)
     public Guid NannyUserId { get; set; }
@@ -25,11 +31,13 @@ public class VerificationRequestDetailDto
 {
     public Guid Id { get; set; }
     public Guid NannyProfileId { get; set; }
+    public int RequestType { get; set; }
     public int Status { get; set; }
     public string? RejectionReason { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? ReviewedAt { get; set; }
     public Guid? ReviewedBy { get; set; }
+    public string? ReviewedByName { get; set; }
 
     // Nanny info
     public Guid NannyUserId { get; set; }
@@ -55,8 +63,31 @@ public class VerificationRequestDetailDto
     public int SalaryType { get; set; }
     public int? MaxTravelDistance { get; set; }
 
+    public List<VerificationSkillDto> Skills { get; set; } = new();
+    public List<VerificationCertificateDto> Certificates { get; set; } = new();
+
     // Documents
     public List<VerificationDocumentDto> Documents { get; set; } = new();
+}
+
+public class VerificationSkillDto
+{
+    public Guid Id { get; set; }
+    public Guid SkillId { get; set; }
+    public string SkillName { get; set; } = null!;
+    public string SkillCategory { get; set; } = null!;
+    public int? ProficiencyLevel { get; set; }
+}
+
+public class VerificationCertificateDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = null!;
+    public string? IssuingOrganization { get; set; }
+    public DateOnly? IssueDate { get; set; }
+    public DateOnly? ExpiryDate { get; set; }
+    public string? CertificateUrl { get; set; }
+    public int VerificationStatus { get; set; }
 }
 
 public class VerificationDocumentDto
@@ -66,6 +97,7 @@ public class VerificationDocumentDto
     public string DocumentUrl { get; set; } = null!;
     public string FileName { get; set; } = null!;
     public int? FileSize { get; set; }
+    public DateTime? ExpiryDate { get; set; }
 }
 
 /// <summary>Paginated list response</summary>
@@ -94,12 +126,16 @@ public class ReviewVerificationRequest
 /// <summary>Request body for a Nanny to submit verification documents</summary>
 public class SubmitVerificationRequestDto
 {
+    public int RequestType { get; set; }
+    public DateTime? HealthCertificateExpiryDate { get; set; }
     public List<UploadedVerificationDocumentDto> Documents { get; set; } = new();
 }
 
 public class UploadedVerificationDocumentDto
 {
+    public int DocumentType { get; set; }
     public string DocumentUrl { get; set; } = null!;
     public string FileName { get; set; } = null!;
     public int FileSize { get; set; }
+    public DateTime? ExpiryDate { get; set; }
 }

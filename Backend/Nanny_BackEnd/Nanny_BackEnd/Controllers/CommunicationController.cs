@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Nanny_BackEnd.DTOs.Communication;
+using Nanny_BackEnd.DTOs.Report;
+using Nanny_BackEnd.Exceptions;
 using Nanny_BackEnd.Hubs;
-using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Controllers;
 
@@ -13,10 +15,10 @@ namespace Nanny_BackEnd.Controllers;
 [Route("api/communication")]
 public class CommunicationController : ControllerBase
 {
-    private readonly CommunicationService _service;
+    private readonly ICommunicationService _service;
     private readonly IHubContext<ChatHub> _hubContext;
 
-    public CommunicationController(CommunicationService service, IHubContext<ChatHub> hubContext)
+    public CommunicationController(ICommunicationService service, IHubContext<ChatHub> hubContext)
     {
         _service = service;
         _hubContext = hubContext;
@@ -31,6 +33,32 @@ public class CommunicationController : ControllerBase
 
         var result = await _service.GetConversationsAsync(userId.Value);
         return Ok(new { success = true, data = result });
+    }
+
+    // GET /api/communication/unread-count — tổng tin chưa đọc (navbar)
+    [HttpGet("unread-count")]
+    public async Task<IActionResult> GetUnreadCount()
+    {
+        var userId = getCurrentUserId();
+        if (!userId.HasValue) return Unauthorized(fail("Khong xac dinh duoc nguoi dung."));
+
+        var count = await _service.GetTotalUnreadMessageCountAsync(userId.Value);
+        return Ok(new { success = true, data = new { unreadCount = count } });
+    }
+
+    // POST /api/communication/conversations/{id}/mark-read
+    [HttpPost("conversations/{id:guid}/mark-read")]
+    public async Task<IActionResult> MarkConversationRead(Guid id)
+    {
+        var userId = getCurrentUserId();
+        if (!userId.HasValue) return Unauthorized(fail("Khong xac dinh duoc nguoi dung."));
+
+        try
+        {
+            var marked = await _service.MarkConversationReadAsync(id, userId.Value);
+            return Ok(new { success = true, data = new { markedCount = marked } });
+        }
+        catch (UnauthorizedAccessException) { return Forbid(); }
     }
 
     // GET /api/communication/conversations/{id}/messages
@@ -113,6 +141,8 @@ public class CommunicationController : ControllerBase
     [HttpPost("messages/{id:guid}/report")]
     public async Task<IActionResult> ReportMessage(Guid id, [FromBody] ReportMessageDto dto)
     {
+        if (!ModelState.IsValid) return BadRequest(fail("Du lieu bao cao khong hop le."));
+
         var userId = getCurrentUserId();
         if (!userId.HasValue) return Unauthorized(fail("Khong xac dinh duoc nguoi dung."));
 
@@ -122,6 +152,18 @@ public class CommunicationController : ControllerBase
             return Ok(new { success = true, message = "Bao cao da duoc gui. Chung toi se kiem tra trong thoi gian som nhat." });
         }
         catch (KeyNotFoundException ex) { return NotFound(fail(ex.Message)); }
+        catch (RateLimitExceededException ex)
+        {
+            Response.Headers.RetryAfter = ex.RetryAfterSeconds.ToString();
+            return StatusCode(429, new
+            {
+                success = false,
+                code = ex.Code,
+                message = ex.Message,
+                retryAfterSeconds = ex.RetryAfterSeconds,
+                cooldownUntilUtc = ex.CooldownUntilUtc
+            });
+        }
         catch (InvalidOperationException ex) { return BadRequest(fail(ex.Message)); }
     }
 

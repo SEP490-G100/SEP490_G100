@@ -1,159 +1,150 @@
-@using WebSite.Models.Account
+@model WebSite.Models.Moderator.ModeratorDashboardDto
+@using System.Globalization
+@using System.Text.Json
 @{
     Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
-    ViewData["Title"] = "Dashboard";
+    ViewData["Title"] = "Bảng điều khiển";
 
-    int totalUsers    = ViewBag.TotalUsers    ?? 0;
-    int totalParents  = ViewBag.TotalParents  ?? 0;
-    int totalNannies  = ViewBag.TotalNannies  ?? 0;
-    int totalInactive = ViewBag.TotalInactive ?? 0;
-    var recentAccounts = ViewBag.RecentAccounts as List<AccountDto> ?? new List<AccountDto>();
+    var totalModerationQueue = Model.PendingVerifications + Model.PendingJobPostings + Model.PendingReports;
+    var moderationHandledLast30 = Model.ModerationResults30Days.Sum(item =>
+        item.VerificationApproved + item.VerificationRejected + item.JobApproved + item.JobRejected);
 }
 
-<!-- ====================================================
-     PAGE HEADER  — Home-style section label + gradient title
-     ==================================================== -->
 <div class="mb-7 fade-in-up">
-    <span class="section-label">System Overview</span>
+    <span class="section-label">Tổng quan hệ thống</span>
     <h1 class="page-title mt-2">
-        Welcome back,
-        <span class="gradient-text">@(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? "Moderator")</span>!
+        Chào mừng trở lại,
+        <span class="gradient-text">@(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? "Kiểm duyệt viên")</span>!
     </h1>
-    <p class="page-subtitle">Here's what's happening on NannyMatch today.</p>
+    <p class="page-subtitle">Theo dõi khối lượng kiểm duyệt, tốc độ xử lý và hoạt động người dùng từ một nơi.</p>
 </div>
 
-<!-- ===================================================
-     STAT CARDS
-     =================================================== -->
 <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-7">
-
-    <!-- Total Users -->
     <div class="stat-card p-5 fade-in-up fade-in-up-delay-1">
         <div class="flex items-start justify-between mb-4">
             <div class="icon-badge" style="background:linear-gradient(135deg,#FFF7ED,#FED7AA);">
                 <span class="material-icons-round text-orange-500 text-2xl">people</span>
             </div>
-            <span class="section-label text-[10px] px-2 py-0.5">All</span>
+            <span class="section-label text-[10px] px-2 py-0.5">Tổng số</span>
         </div>
-        <div class="stat-number mb-0.5">@totalUsers.ToString("N0")</div>
-        <div class="text-sm text-gray-500 font-semibold mb-3">Total Users</div>
+        <div class="stat-number mb-0.5">@Model.TotalUsers.ToString("N0")</div>
+        <div class="text-sm text-gray-500 font-semibold mb-3">Tổng người dùng</div>
         <div class="flex gap-3 text-xs text-gray-400">
             <span class="flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-violet-400 inline-block"></span>
-                @totalParents Parents
+                <span class="w-2 h-2 rounded-full bg-violet-400 inline-block"></span>@Model.TotalParents Phụ huynh
             </span>
             <span class="flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-blue-400 inline-block"></span>
-                @totalNannies Nannies
+                <span class="w-2 h-2 rounded-full bg-blue-400 inline-block"></span>@Model.TotalNannies Bảo mẫu
             </span>
         </div>
     </div>
 
-    <!-- Parents -->
     <div class="stat-card p-5 fade-in-up fade-in-up-delay-2">
         <div class="flex items-start justify-between mb-4">
-            <div class="icon-badge" style="background:linear-gradient(135deg,#EDE9FE,#DDD6FE);">
-                <span class="material-icons-round text-violet-500 text-2xl">supervisor_account</span>
+            <div class="icon-badge" style="background:linear-gradient(135deg,#ECFDF5,#D1FAE5);">
+                <span class="material-icons-round text-emerald-500 text-2xl">how_to_reg</span>
             </div>
-            <span class="badge badge-parent">Parent</span>
+            <span class="badge badge-active">Tốt</span>
         </div>
-        <div class="stat-number mb-0.5">@totalParents.ToString("N0")</div>
-        <div class="text-sm text-gray-500 font-semibold mb-3">Parents</div>
-        @if (totalUsers > 0)
-        {
-            var pct = (double)totalParents / totalUsers * 100;
-            <div>
-                <div class="flex justify-between text-[10px] text-gray-400 mb-1">
-                    <span>Share</span><span class="font-bold text-violet-500">@pct.ToString("F0")%</span>
-                </div>
-                <div class="w-full bg-gray-100 rounded-full h-1.5">
-                    <div class="progress-fill bg-gradient-to-r from-violet-400 to-violet-500 h-1.5 rounded-full" style="width:@pct.ToString("F0")%"></div>
-                </div>
-            </div>
-        }
+        <div class="stat-number mb-0.5 text-emerald-600">@Model.ActiveUsers.ToString("N0")</div>
+        <div class="text-sm text-gray-500 font-semibold mb-3">Người dùng hoạt động</div>
+        <div class="text-xs text-gray-400">Vô hiệu hóa: @Model.InactiveUsers.ToString("N0")</div>
     </div>
 
-    <!-- Nannies -->
     <div class="stat-card p-5 fade-in-up fade-in-up-delay-3">
         <div class="flex items-start justify-between mb-4">
-            <div class="icon-badge" style="background:linear-gradient(135deg,#DBEAFE,#BFDBFE);">
-                <span class="material-icons-round text-blue-500 text-2xl">child_care</span>
+            <div class="icon-badge" style="background:linear-gradient(135deg,#FEF3C7,#FDE68A);">
+                <span class="material-icons-round text-amber-500 text-2xl">pending_actions</span>
             </div>
-            <span class="badge badge-nanny">Nanny</span>
+            <span class="badge badge-pending">Chờ duyệt</span>
         </div>
-        <div class="stat-number mb-0.5">@totalNannies.ToString("N0")</div>
-        <div class="text-sm text-gray-500 font-semibold mb-3">Nannies</div>
-        @if (totalUsers > 0)
-        {
-            var pct = (double)totalNannies / totalUsers * 100;
-            <div>
-                <div class="flex justify-between text-[10px] text-gray-400 mb-1">
-                    <span>Share</span><span class="font-bold text-blue-500">@pct.ToString("F0")%</span>
-                </div>
-                <div class="w-full bg-gray-100 rounded-full h-1.5">
-                    <div class="progress-fill bg-gradient-to-r from-blue-400 to-blue-500 h-1.5 rounded-full" style="width:@pct.ToString("F0")%"></div>
-                </div>
-            </div>
-        }
+        <div class="stat-number mb-0.5 text-amber-600">@totalModerationQueue.ToString("N0")</div>
+        <div class="text-sm text-gray-500 font-semibold mb-3">Hàng chờ kiểm duyệt</div>
+        <div class="text-xs text-gray-400">
+            @Model.PendingVerifications.ToString("N0") xác minh, @Model.PendingJobPostings.ToString("N0") việc làm, @Model.PendingReports.ToString("N0") báo cáo
+        </div>
     </div>
 
-    <!-- Inactive accounts -->
     <div class="stat-card p-5 fade-in-up fade-in-up-delay-4">
         <div class="flex items-start justify-between mb-4">
-            <div class="icon-badge" style="background:linear-gradient(135deg,#FEE2E2,#FECACA);">
-                <span class="material-icons-round text-red-500 text-2xl">block</span>
+            <div class="icon-badge" style="background:linear-gradient(135deg,#DBEAFE,#BFDBFE);">
+                <span class="material-icons-round text-blue-500 text-2xl">work</span>
             </div>
-            <span class="badge badge-inactive">Inactive</span>
+            <span class="badge badge-nanny">Việc làm</span>
         </div>
-        <div class="stat-number mb-0.5">@totalInactive.ToString("N0")</div>
-        <div class="text-sm text-gray-500 font-semibold mb-3">Inactive Accounts</div>
-        @if (totalUsers > 0)
-        {
-            var pct = (double)totalInactive / totalUsers * 100;
-            <div>
-                <div class="flex justify-between text-[10px] text-gray-400 mb-1">
-                    <span>Rate</span><span class="font-bold text-red-500">@pct.ToString("F0")%</span>
-                </div>
-                <div class="w-full bg-gray-100 rounded-full h-1.5">
-                    <div class="progress-fill bg-gradient-to-r from-red-400 to-red-500 h-1.5 rounded-full" style="width:@pct.ToString("F0")%"></div>
-                </div>
-            </div>
-        }
+        <div class="stat-number mb-0.5 text-blue-600">@Model.ActiveJobPostings.ToString("N0")</div>
+        <div class="text-sm text-gray-500 font-semibold mb-3">Bài đăng việc đang hoạt động</div>
+        <div class="text-xs text-gray-400">Tổng hợp đồng: @Model.TotalContracts.ToString("N0")</div>
     </div>
 </div>
 
-<!-- ===================================================
-     ROW 2: Quick Actions + Recent Accounts
-     =================================================== -->
 <div class="grid grid-cols-1 xl:grid-cols-3 gap-5 mb-7">
+    <div class="xl:col-span-2 content-card p-6 fade-in-up">
+        <div class="flex items-center justify-between mb-5 gap-3">
+            <div>
+                <h2 class="font-bold text-gray-900">Hàng chờ kiểm duyệt</h2>
+                <p class="text-sm text-gray-400">Xem khối lượng công việc vào hàng chờ và đang chờ xử lý.</p>
+            </div>
+            <div class="inline-flex rounded-xl border border-orange-100 bg-orange-50 p-1">
+                <button type="button"
+                        class="queue-range-btn px-3 py-1.5 text-xs font-bold rounded-lg bg-white text-orange-500 shadow-sm"
+                        data-range="7">
+                    7 ngày
+                </button>
+                <button type="button"
+                        class="queue-range-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500"
+                        data-range="30">
+                    30 ngày
+                </button>
+                <button type="button"
+                        class="queue-range-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500"
+                        data-range="12">
+                    12 tháng
+                </button>
+            </div>
+        </div>
+        <div class="h-[320px]">
+            <canvas id="queueChart"></canvas>
+        </div>
+    </div>
 
-    <!-- Quick Actions -->
     <div class="content-card p-0 fade-in-up">
         <div class="card-header">
-            <h2>⚡ Quick Actions</h2>
+            <h2>Thao tác nhanh</h2>
         </div>
         <div class="p-4 space-y-2.5">
-
-            <a href="/Moderator/NannyVerification"
+            <a href="/Moderator/ManageNannyVerification"
                class="quick-action-item hover:bg-amber-50 hover:border-amber-200">
                 <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center flex-shrink-0">
                     <span class="material-icons-round text-amber-600 text-lg">verified_user</span>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-bold text-gray-700">Review Verifications</p>
-                    <p class="text-xs text-gray-400">Pending requests</p>
+                    <p class="text-sm font-bold text-gray-700">Xem xét xác minh</p>
+                    <p class="text-xs text-gray-400">@Model.PendingVerifications yêu cầu chờ</p>
                 </div>
                 <span class="material-icons-round text-gray-300 text-base">arrow_forward_ios</span>
             </a>
 
-            <a href="/Moderator/ViewReports"
-               class="quick-action-item hover:bg-red-50 hover:border-red-200">
-                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center flex-shrink-0">
-                    <span class="material-icons-round text-red-500 text-lg">flag</span>
+            <a href="/Moderator/ManageJobPosting"
+               class="quick-action-item hover:bg-violet-50 hover:border-violet-200">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-100 to-violet-200 flex items-center justify-center flex-shrink-0">
+                    <span class="material-icons-round text-violet-500 text-lg">work</span>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-bold text-gray-700">Handle Reports</p>
-                    <p class="text-xs text-gray-400">Violation reports</p>
+                    <p class="text-sm font-bold text-gray-700">Xem xét bài đăng việc</p>
+                    <p class="text-xs text-gray-400">@Model.PendingJobPostings bài chờ duyệt</p>
+                </div>
+                <span class="material-icons-round text-gray-300 text-base">arrow_forward_ios</span>
+            </a>
+
+            <a href="/Moderator/ManageReport"
+               class="quick-action-item hover:bg-red-50 hover:border-red-200">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center flex-shrink-0">
+                    <span class="material-icons-round text-red-500 text-lg">report_problem</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-bold text-gray-700">Xem khiếu nại</p>
+                    <p class="text-xs text-gray-400">@Model.PendingReports khiếu nại chờ</p>
                 </div>
                 <span class="material-icons-round text-gray-300 text-base">arrow_forward_ios</span>
             </a>
@@ -164,150 +155,578 @@
                     <span class="material-icons-round text-orange-500 text-lg">manage_accounts</span>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-bold text-gray-700">Manage Accounts</p>
-                    <p class="text-xs text-gray-400">@totalUsers total accounts</p>
+                    <p class="text-sm font-bold text-gray-700">Quản lý tài khoản</p>
+                    <p class="text-xs text-gray-400">@Model.ActiveUsers người dùng hoạt động</p>
                 </div>
                 <span class="material-icons-round text-gray-300 text-base">arrow_forward_ios</span>
             </a>
-
-            <a href="/Moderator/ModerateJobPostings"
-               class="quick-action-item hover:bg-violet-50 hover:border-violet-200">
-                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-100 to-violet-200 flex items-center justify-center flex-shrink-0">
-                    <span class="material-icons-round text-violet-500 text-lg">work</span>
-                </div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-sm font-bold text-gray-700">Review Job Postings</p>
-                    <p class="text-xs text-gray-400">Pending approval</p>
-                </div>
-                <span class="material-icons-round text-gray-300 text-base">arrow_forward_ios</span>
-            </a>
-
         </div>
-    </div>
-
-    <!-- Recent Accounts -->
-    <div class="xl:col-span-2 content-card overflow-hidden fade-in-up" style="animation-delay:.1s;">
-        <div class="card-header">
-            <h2>🕐 Recently Joined</h2>
-            <a href="/Moderator/ManageAccount"
-               class="text-sm font-bold px-3 py-1 rounded-lg transition-all"
-               style="color:#F97316;" onmouseover="this.style.background='#FFF7ED'" onmouseout="this.style.background='transparent'">
-                View all →
-            </a>
-        </div>
-
-        @if (!recentAccounts.Any())
-        {
-            <div class="px-6 py-12 text-center text-gray-400 text-sm">
-                <span class="material-icons-round text-4xl mb-2 block text-gray-200">people_outline</span>
-                No user data available yet.
-            </div>
-        }
-        else
-        {
-            <div class="divide-y divide-gray-50">
-                @foreach (var acc in recentAccounts)
-                {
-                    var avatarColors = new[] { "#F97316","#3B82F6","#8B5CF6","#10B981","#F59E0B" };
-                    var bg = avatarColors[Math.Abs(acc.Id.GetHashCode()) % avatarColors.Length];
-                    <div class="flex items-center gap-3 px-5 py-3.5 hover:bg-orange-50/50 transition-colors">
-                        @if (!string.IsNullOrEmpty(acc.AvatarUrl))
-                        {
-                            <img src="@acc.AvatarUrl" class="user-avatar object-cover" style="background:@bg;" />
-                        }
-                        else
-                        {
-                            <div class="user-avatar" style="background:@bg;">@acc.Avatar</div>
-                        }
-                        <div class="flex-1 min-w-0">
-                            <p class="text-sm font-bold text-gray-800 truncate">@acc.FullName</p>
-                            <p class="text-xs text-gray-400 truncate">@acc.Email</p>
-                        </div>
-                        <div class="flex flex-col items-end gap-1 flex-shrink-0">
-                            <span class="badge @(acc.PrimaryRole == "Parent" ? "badge-parent" : acc.PrimaryRole == "Nanny" ? "badge-nanny" : "badge-mod")">@acc.PrimaryRole</span>
-                            <span class="text-[10px] text-gray-400">@acc.CreatedAt.ToString("MMM dd, yyyy")</span>
-                        </div>
-                    </div>
-                }
-            </div>
-        }
     </div>
 </div>
 
-<!-- ===================================================
-     User Breakdown — Home-style card with progress bars
-     =================================================== -->
-<div class="content-card p-6 fade-in-up" style="animation-delay:.15s;">
-    <div class="flex items-center gap-3 mb-5">
-        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center">
-            <span class="material-icons-round text-orange-500 text-lg">bar_chart</span>
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-5 mb-7">
+    <div class="xl:col-span-2 content-card p-6 fade-in-up">
+        <div class="flex items-center justify-between mb-5 gap-3">
+            <div>
+                <h2 class="font-bold text-gray-900">Kết quả kiểm duyệt</h2>
+                <p class="text-sm text-gray-400">Theo dõi phê duyệt và từ chối trong xác minh và bài đăng việc.</p>
+            </div>
+            <div class="inline-flex rounded-xl border border-orange-100 bg-orange-50 p-1">
+                <button type="button"
+                        class="moderation-range-btn px-3 py-1.5 text-xs font-bold rounded-lg bg-white text-orange-500 shadow-sm"
+                        data-range="7">
+                    7 ngày
+                </button>
+                <button type="button"
+                        class="moderation-range-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500"
+                        data-range="30">
+                    30 ngày
+                </button>
+                <button type="button"
+                        class="moderation-range-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500"
+                        data-range="12">
+                    12 tháng
+                </button>
+            </div>
         </div>
-        <h2 class="font-bold text-gray-900">User Breakdown</h2>
+        <div class="h-[340px]">
+            <canvas id="moderationResultsChart"></canvas>
+        </div>
     </div>
 
-    @if (totalUsers == 0)
+    <div class="content-card p-6 fade-in-up">
+        <div class="flex items-center gap-3 mb-5">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center">
+                <span class="material-icons-round text-orange-500 text-lg">insights</span>
+            </div>
+            <h2 class="font-bold text-gray-900">Nổi bật</h2>
+        </div>
+
+        <div class="space-y-4">
+            <div class="bg-orange-50 rounded-2xl border border-orange-100 p-4">
+                <div class="text-xs uppercase tracking-widest text-orange-500 font-bold mb-1">Xem xét 30 ngày</div>
+                <div class="text-2xl font-bold text-gray-900">@moderationHandledLast30.ToString("N0")</div>
+                <div class="text-xs text-gray-400 mt-1">Các quyết định kiểm duyệt hoàn thành trong 30 ngày qua.</div>
+            </div>
+
+            <div class="bg-red-50 rounded-2xl border border-red-100 p-4">
+                <div class="text-xs uppercase tracking-widest text-red-500 font-bold mb-1">Báo cáo đang chờ</div>
+                <div class="text-2xl font-bold text-gray-900">@Model.PendingReports.ToString("N0")</div>
+                <div class="text-xs text-gray-400 mt-1">Báo cáo đang chờ kiểm duyệt viên xử lý.</div>
+            </div>
+
+            <div class="bg-blue-50 rounded-2xl border border-blue-100 p-4">
+                <div class="text-xs uppercase tracking-widest text-blue-500 font-bold mb-1">Tỷ lệ hoạt động</div>
+                <div class="text-2xl font-bold text-gray-900">
+                    @(Model.TotalUsers > 0 ? ((double)Model.ActiveUsers / Model.TotalUsers * 100).ToString("F0") : "0")%
+                </div>
+                <div class="text-xs text-gray-400 mt-1">Người dùng hiện đang sử dụng được nền tảng.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-5 mb-7">
+    <div class="xl:col-span-2 content-card p-6 fade-in-up">
+        <div class="flex items-center justify-between mb-5 gap-3">
+            <div>
+                <h2 class="font-bold text-gray-900">Người dùng mới theo thời gian</h2>
+                <p class="text-sm text-gray-400">Theo dõi xu hướng tăng trưởng người dùng trong kỳ được chọn.</p>
+            </div>
+            <div class="inline-flex rounded-xl border border-orange-100 bg-orange-50 p-1">
+                <button type="button"
+                        class="users-range-btn px-3 py-1.5 text-xs font-bold rounded-lg bg-white text-orange-500 shadow-sm"
+                        data-range="7">
+                    7 ngày
+                </button>
+                <button type="button"
+                        class="users-range-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500"
+                        data-range="30">
+                    30 ngày
+                </button>
+                <button type="button"
+                        class="users-range-btn px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500"
+                        data-range="12">
+                    12 tháng
+                </button>
+            </div>
+        </div>
+        <div class="h-[320px]">
+            <canvas id="newUsersChart"></canvas>
+        </div>
+    </div>
+
+    <div class="content-card p-6 fade-in-up">
+        <div class="flex items-center justify-between mb-5">
+            <div>
+                <h2 class="font-bold text-gray-900">Tổng quan trạng thái người dùng</h2>
+                <p class="text-sm text-gray-400">Xem số lượng tài khoản hoạt động và vô hiệu hóa.</p>
+            </div>
+            <span class="section-label text-[10px] px-2 py-0.5">Biểu đồ</span>
+        </div>
+        <div class="h-[320px]">
+            <canvas id="statusChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="content-card overflow-hidden fade-in-up" style="animation-delay:.1s;">
+    <div class="card-header">
+        <h2>Tài khoản tham gia gần đây</h2>
+        <a href="/Moderator/ManageAccount"
+           class="text-sm font-bold px-3 py-1 rounded-lg transition-all"
+           style="color:#F97316;"
+           onmouseover="this.style.background='#FFF7ED'"
+           onmouseout="this.style.background='transparent'">
+           Xem tất cả →
+        </a>
+    </div>
+
+    @if (!Model.RecentAccounts.Any())
     {
-        <div class="text-center py-8">
-            <span class="material-icons-round text-4xl text-gray-200 block mb-2">insert_chart_outlined</span>
-            <p class="text-sm text-gray-400">No data available.</p>
+        <div class="px-6 py-12 text-center text-gray-400 text-sm">
+            <span class="material-icons-round text-4xl mb-2 block text-gray-200">people_outline</span>
+            Chưa có dữ liệu người dùng nào.
         </div>
     }
     else
     {
-        var pParent = (double)totalParents / totalUsers * 100;
-        var pNanny  = (double)totalNannies / totalUsers * 100;
-        var pOther  = Math.Max(0, 100 - pParent - pNanny);
-
-        <div class="space-y-4">
-            <!-- Parents -->
-            <div class="bg-violet-50/60 rounded-2xl p-4 border border-violet-100">
-                <div class="flex justify-between text-sm mb-2">
-                    <span class="text-gray-700 font-semibold flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-violet-400 inline-block"></span>Parents
-                    </span>
-                    <span class="font-bold text-gray-800">
-                        @totalParents.ToString("N0")
-                        <span class="text-violet-500 font-bold text-xs ml-1">(@pParent.ToString("F0")%)</span>
-                    </span>
-                </div>
-                <div class="w-full bg-violet-100 rounded-full h-2.5">
-                    <div class="progress-fill bg-gradient-to-r from-violet-400 to-violet-600 h-2.5 rounded-full" style="width:@pParent.ToString("F0")%"></div>
-                </div>
-            </div>
-
-            <!-- Nannies -->
-            <div class="bg-blue-50/60 rounded-2xl p-4 border border-blue-100">
-                <div class="flex justify-between text-sm mb-2">
-                    <span class="text-gray-700 font-semibold flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-blue-400 inline-block"></span>Nannies
-                    </span>
-                    <span class="font-bold text-gray-800">
-                        @totalNannies.ToString("N0")
-                        <span class="text-blue-500 font-bold text-xs ml-1">(@pNanny.ToString("F0")%)</span>
-                    </span>
-                </div>
-                <div class="w-full bg-blue-100 rounded-full h-2.5">
-                    <div class="progress-fill bg-gradient-to-r from-blue-400 to-blue-600 h-2.5 rounded-full" style="width:@pNanny.ToString("F0")%"></div>
-                </div>
-            </div>
-
-            @if (pOther > 0)
+        <div class="divide-y divide-gray-50">
+            @foreach (var acc in Model.RecentAccounts)
             {
-                <!-- Others -->
-                <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100">
-                    <div class="flex justify-between text-sm mb-2">
-                        <span class="text-gray-700 font-semibold flex items-center gap-2">
-                            <span class="w-2.5 h-2.5 rounded-full bg-gray-400 inline-block"></span>Others <span class="text-gray-400 text-xs font-normal">(Mod / Admin)</span>
-                        </span>
-                        <span class="font-bold text-gray-800">
-                            <span class="text-gray-500 font-bold text-xs">(@pOther.ToString("F0")%)</span>
-                        </span>
+                var roleLabelVi = acc.PrimaryRole switch
+                {
+                    "Parent" => "Phụ huynh",
+                    "Nanny" => "Bảo mẫu",
+                    "Moderator" => "Kiểm duyệt viên",
+                    "Admin" => "Quản trị viên",
+                    _ => acc.PrimaryRole
+                };
+                var avatarColors = new[] { "#F97316", "#3B82F6", "#8B5CF6", "#10B981", "#F59E0B" };
+                var bg = avatarColors[Math.Abs(acc.Id.GetHashCode()) % avatarColors.Length];
+                <div class="flex items-center gap-3 px-5 py-3.5 hover:bg-orange-50/50 transition-colors">
+                    @if (!string.IsNullOrEmpty(acc.AvatarUrl))
+                    {
+                        <img src="@acc.AvatarUrl" class="user-avatar object-cover" style="background:@bg;" />
+                    }
+                    else
+                    {
+                        <div class="user-avatar" style="background:@bg;">@acc.Avatar</div>
+                    }
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-bold text-gray-800 truncate">@acc.FullName</p>
+                        <p class="text-xs text-gray-400 truncate">@acc.Email</p>
                     </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2.5">
-                        <div class="progress-fill bg-gradient-to-r from-gray-400 to-gray-500 h-2.5 rounded-full" style="width:@pOther.ToString("F0")%"></div>
+                    <div class="flex flex-col items-end gap-1 flex-shrink-0">
+                        <span class="badge @(acc.PrimaryRole == "Parent" ? "badge-parent" : acc.PrimaryRole == "Nanny" ? "badge-nanny" : "badge-mod")">@roleLabelVi</span>
+                        <span class="text-[10px] text-gray-400">@acc.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy", CultureInfo.GetCultureInfo("vi-VN"))</span>
                     </div>
                 </div>
             }
         </div>
     }
 </div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script>
+        const queueData7 = @Html.Raw(JsonSerializer.Serialize(Model.Queue7Days));
+        const queueData30 = @Html.Raw(JsonSerializer.Serialize(Model.Queue30Days));
+        const queueData12 = @Html.Raw(JsonSerializer.Serialize(Model.Queue12Months));
+        const statusData = @Html.Raw(JsonSerializer.Serialize(new[] { Model.ActiveUsers, Model.InactiveUsers }));
+        const moderationResults7 = @Html.Raw(JsonSerializer.Serialize(Model.ModerationResults7Days));
+        const moderationResults30 = @Html.Raw(JsonSerializer.Serialize(Model.ModerationResults30Days));
+        const moderationResults12 = @Html.Raw(JsonSerializer.Serialize(Model.ModerationResults12Months));
+        const newUsersSeries7 = @Html.Raw(JsonSerializer.Serialize(Model.NewUsers7Days));
+        const newUsersSeries30 = @Html.Raw(JsonSerializer.Serialize(Model.NewUsers30Days));
+        const newUsersSeries12 = @Html.Raw(JsonSerializer.Serialize(Model.NewUsers12Months));
+
+        const chartFont = {
+            family: 'Quicksand, sans-serif',
+            size: 12
+        };
+
+        const valueLabelPlugin = {
+            id: 'valueLabelPlugin',
+            afterDatasetsDraw(chart) {
+                if (chart.canvas.id !== 'statusChart') {
+                    return;
+                }
+
+                const { ctx } = chart;
+                const meta = chart.getDatasetMeta(0);
+                const data = chart.data.datasets[0].data;
+
+                ctx.save();
+                ctx.font = '700 12px Quicksand, sans-serif';
+                ctx.fillStyle = '#374151';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+
+                meta.data.forEach((bar, index) => {
+                    const value = data[index];
+                    const y = value > 0 ? bar.y - 8 : chart.scales.y.getPixelForValue(0) - 8;
+                    ctx.fillText(String(value), bar.x, y);
+                });
+
+                ctx.restore();
+            }
+        };
+
+        const buildModerationChartData = (points) => ({
+            labels: points.map(item => item.Label),
+            datasets: [
+                {
+                    label: 'Đã duyệt xác minh',
+                    data: points.map(item => item.VerificationApproved),
+                    borderColor: '#10B981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                    pointBackgroundColor: '#10B981',
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    borderWidth: 3,
+                    tension: 0.35,
+                    fill: false
+                },
+                {
+                    label: 'Đã từ chối xác minh',
+                    data: points.map(item => item.VerificationRejected),
+                    borderColor: '#F59E0B',
+                    backgroundColor: 'rgba(245, 158, 11, 0.12)',
+                    pointBackgroundColor: '#F59E0B',
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    borderWidth: 3,
+                    tension: 0.35,
+                    fill: false
+                },
+                {
+                    label: 'Đã duyệt việc làm',
+                    data: points.map(item => item.JobApproved),
+                    borderColor: '#3B82F6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.12)',
+                    pointBackgroundColor: '#3B82F6',
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    borderWidth: 3,
+                    tension: 0.35,
+                    fill: false
+                },
+                {
+                    label: 'Đã từ chối việc làm',
+                    data: points.map(item => item.JobRejected),
+                    borderColor: '#EF4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                    pointBackgroundColor: '#EF4444',
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    borderWidth: 3,
+                    tension: 0.35,
+                    fill: false
+                }
+            ]
+        });
+
+        const buildQueueChartData = (queueRange) => ({
+            labels: queueRange.Timeline.map(item => item.Label),
+            datasets: [
+                {
+                    label: 'Xác minh chờ duyệt',
+                    data: queueRange.Timeline.map(item => item.PendingVerifications),
+                    borderColor: '#F59E0B',
+                    backgroundColor: 'rgba(245, 158, 11, 0.12)',
+                    pointBackgroundColor: '#F59E0B',
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    borderWidth: 3,
+                    tension: 0.35,
+                    fill: false
+                },
+                {
+                    label: 'Việc làm chờ duyệt',
+                    data: queueRange.Timeline.map(item => item.PendingJobPostings),
+                    borderColor: '#8B5CF6',
+                    backgroundColor: 'rgba(139, 92, 246, 0.12)',
+                    pointBackgroundColor: '#8B5CF6',
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    borderWidth: 3,
+                    tension: 0.35,
+                    fill: false
+                },
+                {
+                    label: 'Báo cáo chờ xử lý',
+                    data: queueRange.Timeline.map(item => item.PendingReports),
+                    borderColor: '#EF4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                    pointBackgroundColor: '#EF4444',
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    borderWidth: 3,
+                    tension: 0.35,
+                    fill: false
+                }
+            ]
+        });
+
+        const queueCanvas = document.getElementById('queueChart');
+        let queueChart = null;
+        if (queueCanvas) {
+            queueChart = new Chart(queueCanvas, {
+                type: 'line',
+                data: buildQueueChartData(queueData7),
+                options: {
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                padding: 18,
+                                font: chartFont
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                maxRotation: 0,
+                                font: chartFont
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0,
+                                font: chartFont
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        document.querySelectorAll('.queue-range-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                if (!queueChart) {
+                    return;
+                }
+
+                const range = button.dataset.range;
+                const nextData = range === '30'
+                    ? queueData30
+                    : range === '12'
+                        ? queueData12
+                        : queueData7;
+                const nextChartData = buildQueueChartData(nextData);
+
+                queueChart.data.labels = nextChartData.labels;
+                queueChart.data.datasets.forEach((dataset, index) => {
+                    dataset.data = nextChartData.datasets[index].data;
+                });
+                queueChart.update();
+
+                document.querySelectorAll('.queue-range-btn').forEach(item => {
+                    item.classList.remove('bg-white', 'text-orange-500', 'shadow-sm');
+                    item.classList.add('text-gray-500');
+                });
+
+                button.classList.add('bg-white', 'text-orange-500', 'shadow-sm');
+                button.classList.remove('text-gray-500');
+            });
+        });
+
+        const moderationCanvas = document.getElementById('moderationResultsChart');
+        let moderationChart = null;
+
+        if (moderationCanvas) {
+            moderationChart = new Chart(moderationCanvas, {
+                type: 'line',
+                data: buildModerationChartData(moderationResults7),
+                options: {
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                padding: 18,
+                                font: chartFont
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                maxRotation: 0,
+                                font: chartFont
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0,
+                                font: chartFont
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        document.querySelectorAll('.moderation-range-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                if (!moderationChart) {
+                    return;
+                }
+
+                const range = button.dataset.range;
+                const nextData = range === '30'
+                    ? moderationResults30
+                    : range === '12'
+                        ? moderationResults12
+                        : moderationResults7;
+                const nextChartData = buildModerationChartData(nextData);
+
+                moderationChart.data.labels = nextChartData.labels;
+                moderationChart.data.datasets.forEach((dataset, index) => {
+                    dataset.data = nextChartData.datasets[index].data;
+                });
+                moderationChart.update();
+
+                document.querySelectorAll('.moderation-range-btn').forEach(item => {
+                    item.classList.remove('bg-white', 'text-orange-500', 'shadow-sm');
+                    item.classList.add('text-gray-500');
+                });
+
+                button.classList.add('bg-white', 'text-orange-500', 'shadow-sm');
+                button.classList.remove('text-gray-500');
+            });
+        });
+
+        const newUsersCanvas = document.getElementById('newUsersChart');
+        let newUsersChart = null;
+        if (newUsersCanvas) {
+            newUsersChart = new Chart(newUsersCanvas, {
+                type: 'line',
+                data: {
+                    labels: newUsersSeries7.map(item => item.Label),
+                    datasets: [{
+                        label: 'Người dùng mới',
+                        data: newUsersSeries7.map(item => item.NewUsers),
+                        borderColor: '#F97316',
+                        backgroundColor: 'rgba(249, 115, 22, 0.14)',
+                        fill: true,
+                        tension: 0.35,
+                        borderWidth: 3,
+                        pointRadius: 2,
+                        pointHoverRadius: 4
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                maxRotation: 0,
+                                autoSkip: true,
+                                maxTicksLimit: 10,
+                                font: chartFont
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0,
+                                font: chartFont
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        document.querySelectorAll('.users-range-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                if (!newUsersChart) {
+                    return;
+                }
+
+                const range = button.dataset.range;
+                const nextData = range === '30'
+                    ? newUsersSeries30
+                    : range === '12'
+                        ? newUsersSeries12
+                        : newUsersSeries7;
+
+                newUsersChart.data.labels = nextData.map(item => item.Label);
+                newUsersChart.data.datasets[0].data = nextData.map(item => item.NewUsers);
+                newUsersChart.update();
+
+                document.querySelectorAll('.users-range-btn').forEach(item => {
+                    item.classList.remove('bg-white', 'text-orange-500', 'shadow-sm');
+                    item.classList.add('text-gray-500');
+                });
+
+                button.classList.add('bg-white', 'text-orange-500', 'shadow-sm');
+                button.classList.remove('text-gray-500');
+            });
+        });
+
+        const statusCanvas = document.getElementById('statusChart');
+        if (statusCanvas) {
+            new Chart(statusCanvas, {
+                type: 'bar',
+                data: {
+                    labels: ['Hoạt động', 'Vô hiệu hóa'],
+                    datasets: [{
+                        label: 'Người dùng',
+                        data: statusData,
+                        backgroundColor: ['#10B981', '#EF4444'],
+                        borderRadius: 12,
+                        borderSkipped: false,
+                        maxBarThickness: 60,
+                        minBarLength: 10
+                    }]
+                },
+                plugins: [valueLabelPlugin],
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: chartFont }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grace: '5%',
+                            ticks: {
+                                precision: 0,
+                                font: chartFont
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+}

@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
+using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Models;
 
 namespace Nanny_BackEnd.Repositories;
 
-public class SubscriptionRepository
+public class SubscriptionRepository : ISubscriptionRepository
 {
     private readonly Sep490NannyDbContext _db;
 
@@ -17,6 +18,21 @@ public class SubscriptionRepository
             .ThenBy(p => p.Price)
             .ToListAsync();
 
+    /// <summary>Admin: all plans including inactive (but not soft-deleted).</summary>
+    public async Task<List<SubscriptionPlan>> getAllPlansIncludingInactive() =>
+        await _db.SubscriptionPlans
+            .Include(p => p.UserSubscriptions)
+            .Where(p => !p.IsDeleted)
+            .OrderBy(p => p.SortOrder)
+            .ThenBy(p => p.Price)
+            .ToListAsync();
+
+    /// <summary>Admin: find plan by ID including inactive, with subscriber count.</summary>
+    public async Task<SubscriptionPlan?> findPlanByIdIncludingInactive(Guid planId) =>
+        await _db.SubscriptionPlans
+            .Include(p => p.UserSubscriptions)
+            .FirstOrDefaultAsync(p => p.Id == planId && !p.IsDeleted);
+
     public async Task<List<SubscriptionPlan>> getPlansByNames(IEnumerable<string> names)
     {
         var normalizedNames = names.ToList();
@@ -27,9 +43,65 @@ public class SubscriptionRepository
             .ToListAsync();
     }
 
+    public async Task<List<SubscriptionPlan>> getPlansByNamesIncludingDeleted(IEnumerable<string> names)
+    {
+        var normalizedNames = names.ToList();
+        return await _db.SubscriptionPlans
+            .Where(p => normalizedNames.Contains(p.Name))
+            .OrderBy(p => p.SortOrder)
+            .ThenBy(p => p.Price)
+            .ToListAsync();
+    }
+
     public async Task<SubscriptionPlan?> findPlanById(Guid planId) =>
         await _db.SubscriptionPlans
             .FirstOrDefaultAsync(p => p.Id == planId && !p.IsDeleted && p.IsActive);
+
+    public async Task<SubscriptionPlan?> findAdminPlanById(Guid planId) =>
+        await _db.SubscriptionPlans
+            .FirstOrDefaultAsync(p => p.Id == planId && !p.IsDeleted);
+
+    public async Task<SubscriptionPlan?> findAdminPlanByIdIncludingDeleted(Guid planId) =>
+        await _db.SubscriptionPlans
+            .FirstOrDefaultAsync(p => p.Id == planId);
+
+    public async Task<List<SubscriptionPlan>> getAdminPlans() =>
+        await _db.SubscriptionPlans
+            .Where(p => !p.IsDeleted)
+            .OrderBy(p => p.SortOrder)
+            .ThenBy(p => p.Price)
+            .ThenBy(p => p.Name)
+            .ToListAsync();
+
+    public async Task<List<SubscriptionPlan>> getAdminPlansIncludingDeleted() =>
+        await _db.SubscriptionPlans
+            .OrderBy(p => p.SortOrder)
+            .ThenBy(p => p.Price)
+            .ThenBy(p => p.Name)
+            .ToListAsync();
+
+    public async Task<bool> existsPlanName(string name, Guid? excludeId = null) =>
+        await _db.SubscriptionPlans
+            .AnyAsync(p => !p.IsDeleted &&
+                           p.Name == name &&
+                           (!excludeId.HasValue || p.Id != excludeId.Value));
+
+    public async Task<bool> existsPlanNameIncludingDeleted(string name, Guid? excludeId = null) =>
+        await _db.SubscriptionPlans
+            .AnyAsync(p => p.Name == name &&
+                           (!excludeId.HasValue || p.Id != excludeId.Value));
+
+    public async Task<int> getNextSubscriptionPlanSortOrder() =>
+        (await _db.SubscriptionPlans
+            .Select(p => (int?)p.SortOrder)
+            .MaxAsync() ?? 0) + 1;
+
+    public async Task<int> countActiveSubscriptionsByPlan(Guid planId, DateTime nowUtc) =>
+        await _db.UserSubscriptions
+            .CountAsync(s => s.SubscriptionPlanId == planId &&
+                             !s.IsDeleted &&
+                             s.Status == 1 &&
+                             s.EndDate >= nowUtc);
 
     public async Task<UserSubscription?> findCurrentSubscription(Guid userId, DateTime nowUtc) =>
         await _db.UserSubscriptions
@@ -118,6 +190,40 @@ public class SubscriptionRepository
     public async Task<List<Notification>> getUnreadNotifications(Guid userId) =>
         await _db.Notifications
             .Where(n => n.UserId == userId && !n.IsDeleted && !n.IsRead)
+            .OrderByDescending(n => n.CreatedAt)
+            .ToListAsync();
+
+    public async Task<List<Notification>> getAdminNotificationRows(string? search = null, bool? isDeleted = null)
+    {
+        var query = _db.Notifications
+            .Where(n => n.Type == Helpers.NotificationTypes.AdminBroadcast
+                && n.RelatedEntityId.HasValue
+                && n.RelatedEntityType != null
+                && n.RelatedEntityType.StartsWith("AdminNotification"))
+            .AsQueryable();
+
+        if (isDeleted.HasValue)
+            query = query.Where(n => n.IsDeleted == isDeleted.Value);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var keyword = search.Trim().ToLower();
+            query = query.Where(n =>
+                n.Title.ToLower().Contains(keyword) ||
+                n.Content.ToLower().Contains(keyword));
+        }
+
+        return await query
+            .OrderByDescending(n => n.CreatedAt)
+            .ToListAsync();
+    }
+
+    public async Task<List<Notification>> getAdminNotificationRowsByBroadcastId(Guid broadcastId) =>
+        await _db.Notifications
+            .Where(n => n.Type == Helpers.NotificationTypes.AdminBroadcast
+                && n.RelatedEntityId == broadcastId
+                && n.RelatedEntityType != null
+                && n.RelatedEntityType.StartsWith("AdminNotification"))
             .OrderByDescending(n => n.CreatedAt)
             .ToListAsync();
 

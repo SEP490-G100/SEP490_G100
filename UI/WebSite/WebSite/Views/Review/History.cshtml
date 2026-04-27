@@ -9,11 +9,18 @@
     <div class="flex items-center justify-between mb-8">
         <div>
             <h1 class="text-2xl font-bold text-gray-800">Đánh giá của tôi</h1>
-            <p class="text-gray-500 text-sm mt-1">Các hợp đồng đã hoàn thành mà bạn chưa đánh giá</p>
+            <p class="text-gray-500 text-sm mt-1">Xem và gửi đánh giá cho bảo mẫu sau khi hợp đồng hoàn thành.</p>
         </div>
     </div>
 
-    @* Success toast *@
+    @if (TempData["Error"] != null)
+    {
+        <div class="mb-6 flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
+            <span class="material-icons-round flex-shrink-0 text-xl">error_outline</span>
+            <span class="text-sm font-medium">@TempData["Error"]</span>
+        </div>
+    }
+
     @if (TempData["Success"] != null)
     {
         <div class="mb-6 flex items-center gap-3 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl">
@@ -24,62 +31,140 @@
         </div>
     }
 
-    @if (!Model.Reviewable.Any())
-    {
-        @* Empty state *@
-        <div class="text-center py-20 bg-white rounded-2xl border border-gray-100">
-            <div class="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg class="w-8 h-8 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
-                </svg>
-            </div>
-            <p class="text-gray-600 font-medium">Không có hợp đồng nào cần đánh giá</p>
-            <p class="text-gray-400 text-sm mt-1">Các hợp đồng đã hoàn thành sẽ hiện ở đây</p>
-        </div>
-    }
-    else
-    {
-        <div class="space-y-4">
-            @foreach (var record in Model.Reviewable)
+    <div class="flex gap-2 mb-6 border-b border-gray-200">
+        <button id="tabPending" onclick="switchTab('pending')"
+                class="tab-btn px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors">
+            Chờ đánh giá
+            @if (Model.Reviewable.Any())
             {
-                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
-
-                    @* Avatar *@
-                    @if (!string.IsNullOrEmpty(record.NannyAvatarUrl))
-                    {
-                        <img src="@record.NannyAvatarUrl" alt="@record.NannyName"
-                             class="w-14 h-14 rounded-full object-cover flex-shrink-0 ring-2 ring-gray-100" />
-                    }
-                    else
-                    {
-                        <div class="w-14 h-14 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center text-xl font-bold flex-shrink-0">
-                            @record.NannyName.FirstOrDefault()
-                        </div>
-                    }
-
-                    @* Info *@
-                    <div class="flex-1 min-w-0">
-                        <p class="font-semibold text-gray-800">@record.NannyName</p>
-                        <p class="text-sm text-gray-400 mt-0.5">
-                            @record.StartDate.ToString("dd/MM/yyyy")
-                            @if (record.EndDate.HasValue)
-                            {
-                                <span> – @record.EndDate.Value.ToString("dd/MM/yyyy")</span>
-                            }
-                        </p>
-                        <span class="inline-block mt-1 text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-medium">
-                            Hoàn thành
-                        </span>
-                    </div>
-
-                    @* CTA *@
-                    <a href="/Review/Create/@record.HiringRecordId"
-                       class="flex-shrink-0 bg-rose-500 hover:bg-rose-600 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-colors">
-                        Đánh giá
-                    </a>
-                </div>
+                <span class="ml-1.5 bg-orange-100 text-orange-600 text-xs font-bold px-2 py-0.5 rounded-full">@Model.Reviewable.Count</span>
             }
-        </div>
-    }
+        </button>
+        <button id="tabDone" onclick="switchTab('done')"
+                class="tab-btn px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors">
+            Đã đánh giá
+            @if (Model.Submitted.Any())
+            {
+                <span class="ml-1.5 bg-gray-100 text-gray-500 text-xs font-bold px-2 py-0.5 rounded-full">@Model.Submitted.Count</span>
+            }
+        </button>
+    </div>
+
+    <div id="panelPending">
+        @if (!Model.Reviewable.Any())
+        {
+            <div class="text-center py-16 bg-white rounded-2xl border border-gray-100">
+                <div class="w-14 h-14 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <span class="material-icons-round text-orange-300 text-2xl">star_border</span>
+                </div>
+                <p class="text-gray-600 font-medium">Không có hợp đồng nào cần đánh giá</p>
+                <p class="text-gray-400 text-sm mt-1">Các hợp đồng đã hoàn thành sẽ hiển thị ở đây.</p>
+            </div>
+        }
+        else
+        {
+            <div class="space-y-4">
+                @foreach (var record in Model.Reviewable)
+                {
+                    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
+                        @if (!string.IsNullOrEmpty(record.NannyAvatarUrl))
+                        {
+                            <img src="@record.NannyAvatarUrl" alt="Ảnh đại diện @record.NannyName"
+                                 class="w-14 h-14 rounded-full object-cover flex-shrink-0 ring-2 ring-gray-100" />
+                        }
+                        else
+                        {
+                            <div class="w-14 h-14 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center text-xl font-bold flex-shrink-0">
+                                @record.NannyName.FirstOrDefault()
+                            </div>
+                        }
+                        <div class="flex-1 min-w-0">
+                            <p class="font-semibold text-gray-800">@record.NannyName</p>
+                            <p class="text-sm text-gray-400 mt-0.5">
+                                @record.StartDate.ToString("dd/MM/yyyy")
+                                @if (record.EndDate.HasValue)
+                                {
+                                    <span> – @record.EndDate.Value.ToString("dd/MM/yyyy")</span>
+                                }
+                            </p>
+                            <span class="inline-block mt-1 text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-medium">Đã hoàn thành</span>
+                        </div>
+                        <a href="/Review/Create?hiringRecordId=@record.HiringRecordId"
+                           class="flex-shrink-0 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors"
+                           style="background: linear-gradient(135deg, #f97316, #ea580c);">
+                            Đánh giá
+                        </a>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <div id="panelDone" class="hidden">
+        @if (!Model.Submitted.Any())
+        {
+            <div class="text-center py-16 bg-white rounded-2xl border border-gray-100">
+                <div class="w-14 h-14 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <span class="material-icons-round text-gray-300 text-2xl">rate_review</span>
+                </div>
+                <p class="text-gray-600 font-medium">Bạn chưa gửi đánh giá nào</p>
+            </div>
+        }
+        else
+        {
+            <div class="space-y-4">
+                @foreach (var r in Model.Submitted)
+                {
+                    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-start gap-4">
+                        @if (!string.IsNullOrEmpty(r.NannyAvatarUrl))
+                        {
+                            <img src="@r.NannyAvatarUrl" alt="Ảnh đại diện @r.NannyName"
+                                 class="w-12 h-12 rounded-full object-cover flex-shrink-0 ring-2 ring-gray-100" />
+                        }
+                        else
+                        {
+                            <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-lg font-bold flex-shrink-0">
+                                @r.NannyName.FirstOrDefault()
+                            </div>
+                        }
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between gap-2">
+                                <p class="font-semibold text-gray-800">@r.NannyName</p>
+                                <span class="text-xs text-gray-400 flex-shrink-0">@r.CreatedAt.ToString("dd/MM/yyyy")</span>
+                            </div>
+                            <div class="text-orange-400 text-base mt-0.5">@r.Stars</div>
+                            @if (!string.IsNullOrWhiteSpace(r.Comment))
+                            {
+                                <p class="text-sm text-gray-600 mt-1">@r.Comment</p>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
 </div>
+
+<script>
+    const tabPending = document.getElementById('tabPending');
+    const tabDone    = document.getElementById('tabDone');
+    const panelPending = document.getElementById('panelPending');
+    const panelDone    = document.getElementById('panelDone');
+
+    function switchTab(tab) {
+        const isPending = tab === 'pending';
+        tabPending.classList.toggle('border-orange-500', isPending);
+        tabPending.classList.toggle('text-orange-600', isPending);
+        tabPending.classList.toggle('border-transparent', !isPending);
+        tabPending.classList.toggle('text-gray-500', !isPending);
+        tabDone.classList.toggle('border-orange-500', !isPending);
+        tabDone.classList.toggle('text-orange-600', !isPending);
+        tabDone.classList.toggle('border-transparent', isPending);
+        tabDone.classList.toggle('text-gray-500', isPending);
+        panelPending.classList.toggle('hidden', !isPending);
+        panelDone.classList.toggle('hidden', isPending);
+    }
+
+    // Khởi tạo tab
+    switchTab('@(TempData["Success"] != null ? "done" : "pending")');
+</script>

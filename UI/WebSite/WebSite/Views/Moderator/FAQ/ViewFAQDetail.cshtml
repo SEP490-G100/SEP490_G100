@@ -1,0 +1,295 @@
+@model WebSite.Models.FAQ.FaqDto
+@{
+    Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
+    ViewData["Title"] = "Chi tiết hỏi đáp";
+    var statusLabel = Model.IsActive ? "Hoạt động" : "Đã ẩn";
+    var questionError = ViewData.ModelState["Question"]?.Errors.Count > 0
+        ? ViewData.ModelState["Question"]?.Errors[0].ErrorMessage
+        : null;
+    var answerError = ViewData.ModelState["Answer"]?.Errors.Count > 0
+        ? ViewData.ModelState["Answer"]?.Errors[0].ErrorMessage
+        : null;
+}
+
+<!-- PAGE HEADER -->
+<div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
+    <div>
+        <span class="section-label">📋 Quản lý nội dung</span>
+        <h1 class="page-title mt-2">Hỏi đáp <span class="gradient-text">Chi tiết &amp; sửa</span></h1>
+        <p class="page-subtitle">Xem thông tin chi tiết và cập nhật câu hỏi, câu trả lời.</p>
+    </div>
+    <a href="/Moderator/ManageFAQ" class="btn-outline flex-shrink-0">
+        <span class="material-icons-round text-base">arrow_back</span>
+        Quay lại danh sách
+    </a>
+</div>
+
+<form method="post" action="/Moderator/ViewFAQDetail/@Model.Id" id="faqEditForm" novalidate>
+    @Html.AntiForgeryToken()
+
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+
+        <!-- LEFT — Detail fields -->
+        <div class="xl:col-span-2 space-y-5">
+
+            <!-- Read-only Info -->
+            <div class="content-card p-0 fade-in-up">
+                <div class="card-header">
+                    <div class="flex items-center gap-2">
+                        <span class="material-icons-round text-orange-400">info</span>
+                        <h2>Thông tin mục <span class="text-xs text-gray-400 font-normal ml-1">(chỉ xem)</span></h2>
+                    </div>
+                </div>
+                <div class="p-5 space-y-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                        <div class="field-group sm:col-span-2">
+                            <label class="field-label">Mã định danh</label>
+                            <div class="field-readonly font-mono text-xs break-all">@Model.Id</div>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Danh mục</label>
+                            <div class="field-readonly">
+                                <span class="material-icons-round text-gray-300 text-base">label_outline</span>
+                                @(string.IsNullOrEmpty(Model.Category) ? "—" : Model.Category)
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Thứ tự hiển thị</label>
+                            <div class="field-readonly">
+                                <span class="material-icons-round text-gray-300 text-base">sort</span>
+                                <span class="font-semibold text-gray-700">@Model.SortOrder</span>
+                                <span class="text-xs text-gray-300 ml-1">(chỉ xem)</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="field-group">
+                            <label class="field-label">Lượt xem</label>
+                            <div class="field-readonly">
+                                <span class="material-icons-round text-gray-300 text-base">visibility</span>
+                                <span class="font-semibold text-gray-700">@Model.ViewCount</span>
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Ngày tạo</label>
+                            <div class="field-readonly text-xs">
+                                <span class="material-icons-round text-gray-300 text-base">calendar_today</span>
+                                @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Cập nhật lần cuối</label>
+                            <div class="field-readonly text-xs">
+                                <span class="material-icons-round text-gray-300 text-base">update</span>
+                                @(Model.UpdatedAt.HasValue ? Model.UpdatedAt.Value.ToString("dd/MM/yyyy HH:mm") : "Chưa từng")
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Editable Content -->
+            <div class="content-card p-0 fade-in-up" style="animation-delay:.05s;">
+                <div class="card-header">
+                    <div class="flex items-center gap-2">
+                        <span class="material-icons-round text-orange-400">edit</span>
+                        <h2>Sửa đổi nội dung <span class="text-xs text-green-500 font-semibold ml-1">✏️ có thể sửa</span></h2>
+                    </div>
+                </div>
+                <div class="p-5 space-y-4">
+
+                    <!-- Question -->
+                    <div class="field-group">
+                        <label class="field-label">
+                            Câu hỏi <span class="text-red-400">*</span>
+                            <span class="text-orange-400 text-[10px] ml-1">✏️ có thể sửa</span>
+                        </label>
+                        <div class="relative">
+                            <span class="material-icons-round absolute left-3 top-3 text-gray-300 text-base pointer-events-none">help_outline</span>
+                            <textarea id="questionInput" name="Question" rows="3"
+                                      placeholder="Hãy nhập câu hỏi..."
+                                      class="search-input !pl-9 w-full resize-none @(!string.IsNullOrWhiteSpace(questionError) ? "!border-red-400" : "")">@Model.Question</textarea>
+                        </div>
+                        <p id="questionError" class="text-xs text-red-500 mt-0.5 flex items-center gap-1 @((string.IsNullOrWhiteSpace(questionError) ? "hidden" : ""))">
+                            <span class="material-icons-round text-xs">error</span>
+                            @(questionError ?? "Câu hỏi không được để trống.")
+                        </p>
+                    </div>
+
+                    <!-- Answer -->
+                    <div class="field-group">
+                        <label class="field-label">
+                            Câu trả lời <span class="text-red-400">*</span>
+                            <span class="text-orange-400 text-[10px] ml-1">✏️ có thể sửa</span>
+                        </label>
+                        <div class="relative">
+                            <span class="material-icons-round absolute left-3 top-3 text-gray-300 text-base pointer-events-none">chat_bubble_outline</span>
+                            <textarea id="answerInput" name="Answer" rows="7"
+                                      placeholder="Hãy nhập nội dung trả lời..."
+                                      class="search-input !pl-9 w-full resize-y @(!string.IsNullOrWhiteSpace(answerError) ? "!border-red-400" : "")">@Model.Answer</textarea>
+                        </div>
+                        <p id="answerError" class="text-xs text-red-500 mt-0.5 flex items-center gap-1 @((string.IsNullOrWhiteSpace(answerError) ? "hidden" : ""))">
+                            <span class="material-icons-round text-xs">error</span>
+                            @(answerError ?? "Câu trả lời không được để trống.")
+                        </p>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="field-group">
+                        <label class="field-label">
+                            Trạng thái <span class="text-orange-400 text-[10px] ml-1">✏️ chọn</span>
+                        </label>
+                        <div class="flex gap-3">
+                            <label class="flex items-center gap-2.5 px-4 py-3 rounded-2xl border-2 cursor-pointer transition-all @(Model.IsActive ? "border-emerald-400 bg-emerald-50" : "border-gray-200 bg-gray-50 hover:border-gray-300")"
+                                   id="label-active">
+                                <input type="radio" name="IsActive" value="true"
+                                       @(Model.IsActive ? "checked" : "") class="accent-emerald-500"
+                                       onchange="updateStatusLabel(true)" />
+                                <div class="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
+                                <span class="text-sm font-semibold text-gray-700">Hoạt động</span>
+                            </label>
+                            <label class="flex items-center gap-2.5 px-4 py-3 rounded-2xl border-2 cursor-pointer transition-all @(!Model.IsActive ? "border-gray-400 bg-gray-100" : "border-gray-200 bg-gray-50 hover:border-gray-300")"
+                                   id="label-inactive">
+                                <input type="radio" name="IsActive" value="false"
+                                       @(!Model.IsActive ? "checked" : "") class="accent-gray-500"
+                                       onchange="updateStatusLabel(false)" />
+                                <div class="w-2.5 h-2.5 rounded-full bg-gray-400"></div>
+                                <span class="text-sm font-semibold text-gray-700">Đã ẩn</span>
+                            </label>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT — Summary + Actions -->
+        <div class="space-y-5">
+
+            <!-- FAQ Summary -->
+            <div class="content-card p-6 text-center fade-in-up" style="animation-delay:.08s;">
+                <div class="w-20 h-20 rounded-full bg-orange-50 flex items-center justify-center text-orange-300 ring-4 ring-orange-100 mb-4 mx-auto shadow-inner">
+                    <span class="material-icons-round text-3xl text-orange-400">help_outline</span>
+                </div>
+                <h3 class="font-bold text-gray-900 text-sm leading-tight px-2">
+                    @(Model.Question.Length > 60 ? Model.Question.Substring(0, 60) + "…" : Model.Question)
+                </h3>
+                <div class="flex flex-wrap gap-1.5 justify-center mt-3">
+                    @if (!string.IsNullOrEmpty(Model.Category))
+                    {
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-600 border border-blue-100">@Model.Category</span>
+                    }
+                    <span class="badge">Thứ tự #@Model.SortOrder</span>
+                </div>
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <div id="current-status-display"
+                         class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold @(Model.IsActive ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-gray-100 text-gray-600 border border-gray-200")">
+                        <div id="status-dot" class="w-2 h-2 rounded-full @(Model.IsActive ? "bg-emerald-400" : "bg-gray-400")"></div>
+                        <span id="status-text">@statusLabel</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audit Info -->
+            <div class="content-card p-4 space-y-3 fade-in-up" style="animation-delay:.1s;">
+                <div>
+                    <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-0.5">Lượt xem</p>
+                    <p class="text-2xl font-bold text-gray-800">@Model.ViewCount</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-0.5">Thứ tự ưu tiên hiển thị</p>
+                    <p class="text-lg font-bold text-gray-700">@Model.SortOrder <span class="text-xs text-gray-400 font-normal">(không thể sửa)</span></p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-0.5">Ngày tạo</p>
+                    <p class="text-sm text-gray-600">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</p>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="content-card p-4 space-y-2.5 fade-in-up" style="animation-delay:.15s;">
+                <button type="button" onclick="submitEditForm()" class="btn-primary w-full justify-center">
+                    <span class="material-icons-round text-base">save</span>
+                    Lưu thay đổi
+                </button>
+                <a href="/Moderator/ManageFAQ" class="btn-outline w-full justify-center">
+                    <span class="material-icons-round text-base">close</span>
+                    Hủy
+                </a>
+            </div>
+
+        </div>
+    </div>
+</form>
+
+<style>
+.field-group { display:flex; flex-direction:column; gap:.4rem; }
+.field-label { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#9CA3AF; }
+.field-readonly {
+    display:flex; align-items:center; gap:.5rem;
+    background:#F9FAFB; border:1px solid #F3F4F6;
+    border-radius:.85rem; padding:.6rem .9rem;
+    font-size:.875rem; color:#374151; min-height:2.6rem;
+}
+</style>
+
+@section Scripts {
+<script>
+function setFieldError(inputId, errorId, hasError) {
+    var el  = document.getElementById(inputId);
+    var err = document.getElementById(errorId);
+    if (hasError) {
+        el.classList.add('!border-red-400');
+        err.classList.remove('hidden');
+    } else {
+        el.classList.remove('!border-red-400');
+        err.classList.add('hidden');
+    }
+}
+
+function submitEditForm() {
+    var q = (document.getElementById('questionInput').value || '').trim();
+    var a = (document.getElementById('answerInput').value  || '').trim();
+
+    setFieldError('questionInput','questionError', !q);
+    setFieldError('answerInput',  'answerError',   !a);
+
+    if (!q || !a) {
+        return;
+    }
+
+    document.getElementById('faqEditForm').submit();
+}
+
+// Clear error on input
+['questionInput','answerInput'].forEach(function(id) {
+    document.getElementById(id).addEventListener('input', function() {
+        var errId = id === 'questionInput' ? 'questionError' : 'answerError';
+        if (this.value.trim()) setFieldError(id, errId, false);
+    });
+});
+
+function updateStatusLabel(isActive) {
+    var display = document.getElementById('current-status-display');
+    var dot     = document.getElementById('status-dot');
+    var text    = document.getElementById('status-text');
+    var la = document.getElementById('label-active');
+    var li = document.getElementById('label-inactive');
+
+    if (isActive) {
+        display.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold bg-emerald-50 text-emerald-700 border border-emerald-200';
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+        text.textContent = 'Hoạt động';
+        la.className = la.className.replace('border-gray-200 bg-gray-50 hover:border-gray-300','border-emerald-400 bg-emerald-50');
+        li.className = li.className.replace('border-gray-400 bg-gray-100','border-gray-200 bg-gray-50 hover:border-gray-300');
+    } else {
+        display.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold bg-gray-100 text-gray-600 border border-gray-200';
+        dot.className = 'w-2 h-2 rounded-full bg-gray-400';
+        text.textContent = 'Đã ẩn';
+        li.className = li.className.replace('border-gray-200 bg-gray-50 hover:border-gray-300','border-gray-400 bg-gray-100');
+        la.className = la.className.replace('border-emerald-400 bg-emerald-50','border-gray-200 bg-gray-50 hover:border-gray-300');
+    }
+}
+</script>
+}

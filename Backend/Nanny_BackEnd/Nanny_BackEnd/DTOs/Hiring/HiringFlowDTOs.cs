@@ -4,14 +4,11 @@ public class ConfirmHiringDto
 {
     public DateOnly StartDate { get; set; }
     public DateOnly? EndDate { get; set; }
-    public int? ContractDuration { get; set; }
-    public Guid ContractTemplateId { get; set; }
 }
 
 public class RespondToOfferDto
 {
     public string Action { get; set; } = string.Empty;
-    public string? DeclineReason { get; set; }
 }
 
 public class JobApplicantDto
@@ -27,6 +24,7 @@ public class JobApplicantDto
     public decimal? ExpectedSalaryMax { get; set; }
     public DateTime AppliedAt { get; set; }
     public int Status { get; set; }
+    public string? RejectionReason { get; set; }
 }
 
 public class HiringOfferDetailDto
@@ -49,6 +47,21 @@ public class HiringOfferDetailDto
     public DateTime? SignedAt { get; set; }
 }
 
+public class ContractTemplateOptionDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Version { get; set; } = string.Empty;
+}
+
+public class ContractTemplatePreviewDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Version { get; set; } = string.Empty;
+    public string Content { get; set; } = string.Empty;
+}
+
 public class NannyHireContextDto
 {
     public bool CanHire { get; set; }
@@ -65,5 +78,8 @@ public class HiringConfirmedDto
     public Guid HiringRecordId { get; set; }
     public Guid ContractId { get; set; }
     public Guid ConversationId { get; set; }
+    public Guid ParentUserId { get; set; }
+    public Guid NannyUserId { get; set; }
+    public string ParentName { get; set; } = string.Empty;
     public int BatchRejectedCount { get; set; }
 }

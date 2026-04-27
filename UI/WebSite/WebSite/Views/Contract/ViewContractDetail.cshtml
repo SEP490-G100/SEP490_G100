@@ -1,0 +1,556 @@
+@model WebSite.Models.Contract.ContractDetailViewModel
+@{
+    ViewData["Title"] = "Chi tiết hợp đồng";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<section class="mx-auto max-w-6xl px-4 py-8 md:py-10">
+    <div class="rounded-3xl border border-orange-100 bg-white shadow-sm">
+        <div class="border-b border-orange-100 px-5 py-5 md:px-7">
+            <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-orange-500">Hợp đồng</p>
+            <h1 class="mt-1 text-2xl font-bold text-slate-900">Chi tiết hợp đồng</h1>
+            <div class="mt-3 flex flex-wrap items-center gap-2">
+                @if (Model.CanParentConfirmInfo)
+                {
+                    <button type="button" id="btnParentConfirm"
+                            class="inline-flex items-center rounded-xl px-4 py-2 text-sm font-bold text-white"
+                            style="background-color:#f97316;border:1px solid #ea580c;"
+                            onmouseover="this.style.backgroundColor='#ea580c'"
+                            onmouseout="this.style.backgroundColor='#f97316'">
+                        Xác nhận thông tin
+                    </button>
+                }
+                @if (Model.CanNannyConfirmInfo)
+                {
+                    <button type="button" id="btnNannyConfirm"
+                            class="inline-flex items-center rounded-xl px-4 py-2 text-sm font-bold text-white"
+                            style="background-color:#4f46e5;border:1px solid #4338ca;"
+                            onmouseover="this.style.backgroundColor='#4338ca'"
+                            onmouseout="this.style.backgroundColor='#4f46e5'">
+                        Xác nhận thông tin
+                    </button>
+                }
+                @if (Model.CanParentFinalConfirm)
+                {
+                    <button type="button" id="btnParentFinalConfirm"
+                            class="inline-flex items-center rounded-xl px-4 py-2 text-sm font-bold text-white"
+                            style="background-color:#059669;border:1px solid #047857;"
+                            onmouseover="this.style.backgroundColor='#047857'"
+                            onmouseout="this.style.backgroundColor='#059669'">
+                        Xác nhận hợp đồng
+                    </button>
+                }
+            </div>
+        </div>
+
+        <div class="px-5 pb-6 pt-5 md:px-7">
+            <div id="contractEditor"
+                 class="min-h-[520px] whitespace-pre-wrap rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-800"></div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        (() => {
+            const FIELD_VALUES_MARKER = '[[NANNYMATCH_FIELD_VALUES]]:';
+            const contractId = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ContractId));
+
+            const contractStatus = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ContractStatus));
+            const currentUserRole = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CurrentUserRole ?? ""));
+            const canNannyConfirmInfo = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CanNannyConfirmInfo));
+            const isReadOnly = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.IsReadOnly));
+            const initialFieldValues = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.FieldValues ?? new System.Collections.Generic.Dictionary<string, string>()));
+
+            const parentName = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ParentName ?? ""));
+            const parentPhone = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ParentPhone ?? ""));
+            const parentEmail = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ParentEmail ?? ""));
+            const nannyName = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.NannyName ?? ""));
+            const nannyPhone = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.NannyPhone ?? ""));
+            const nannyEmail = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.NannyEmail ?? ""));
+
+            const editorEl = document.getElementById('contractEditor');
+            const btnParentConfirm = document.getElementById('btnParentConfirm');
+            const btnNannyConfirm = document.getElementById('btnNannyConfirm');
+            const btnParentFinalConfirm = document.getElementById('btnParentFinalConfirm');
+
+            const parentFields = {
+                ParentName: 'parentName',
+                ParentDOB: 'parentDob',
+                ParentIdentityNumber: 'parentIdentityNumber',
+                ParentIdentityIssueDate: 'parentIdentityIssueDate',
+                ParentIdentityIssuePlace: 'parentIdentityIssuePlace',
+                ParentPermanentAddress: 'parentPermanentAddress',
+                ParentCurrentAddress: 'parentCurrentAddress',
+                ParentPhone: 'parentPhone',
+                ParentEmail: 'parentEmail',
+                ProbationStartDate: 'probationStartDate',
+                ProbationEndDate: 'probationEndDate',
+                WorkAddress: 'workAddress',
+                SalaryAmount: 'salaryAmount',
+                ProbationSalaryAmount: 'probationSalaryAmount',
+                AllowanceAmount: 'allowanceAmount',
+                BankAccountNumber: 'bankAccountNumber',
+                BankName: 'bankName',
+                SalaryReceivedDate: 'salaryReceivedDate',
+                MealPerDay: 'mealPerDay'
+            };
+
+            const nannyFields = {
+                NannyName: 'nannyName',
+                NannyDOB: 'nannyDob',
+                NannyIdentityNumber: 'nannyIdentityNumber',
+                NannyIdentityIssueDate: 'nannyIdentityIssueDate',
+                NannyIdentityIssuePlace: 'nannyIdentityIssuePlace',
+                NannyPermanentAddress: 'nannyPermanentAddress',
+                NannyCurrentAddress: 'nannyCurrentAddress',
+                NannyPhone: 'nannyPhone'
+            };
+
+            const normalizedRole = String(currentUserRole || '').toLowerCase();
+            const editableFieldMap = isReadOnly
+                ? {}
+                : (normalizedRole === 'parent'
+                    ? parentFields
+                    : (normalizedRole === 'nanny' ? nannyFields : {}));
+            const editableFieldSet = new Set(Object.keys(editableFieldMap));
+            const dateFieldSet = new Set([
+                'ParentDOB',
+                'ParentIdentityIssueDate',
+                'ProbationStartDate',
+                'ProbationEndDate',
+                'NannyDOB',
+                'NannyIdentityIssueDate'
+            ]);
+
+            const fieldLabelMap = {
+                ParentName: 'Họ tên bố/mẹ',
+                ParentDOB: 'Sinh ngày (bố/mẹ)',
+                ParentIdentityNumber: 'Số CCCD/CMND/hộ chiếu (bố/mẹ)',
+                ParentIdentityIssueDate: 'Cấp ngày (bố/mẹ)',
+                ParentIdentityIssuePlace: 'Nơi cấp (bố/mẹ)',
+                ParentPermanentAddress: 'Địa chỉ thường trú (bố/mẹ)',
+                ParentCurrentAddress: 'Địa chỉ ở hiện tại (bố/mẹ)',
+                ParentPhone: 'Điện thoại liên hệ (bố/mẹ)',
+                ParentEmail: 'Email (bố/mẹ)',
+                ProbationStartDate: 'Từ ngày thử việc',
+                ProbationEndDate: 'Đến ngày thử việc',
+                WorkAddress: 'Địa điểm làm việc',
+                SalaryAmount: 'Mức lương chính',
+                ProbationSalaryAmount: 'Mức lương thử việc',
+                AllowanceAmount: 'Phụ cấp đi lại/điện thoại',
+                BankAccountNumber: 'Số tài khoản',
+                BankName: 'Ngân hàng',
+                SalaryReceivedDate: 'Trả vào ngày',
+                MealPerDay: 'Bên A phụ trách số bữa ăn',
+                NannyName: 'Họ tên bảo mẫu',
+                NannyDOB: 'Sinh ngày (bảo mẫu)',
+                NannyIdentityNumber: 'Số CCCD/CMND/hộ chiếu (bảo mẫu)',
+                NannyIdentityIssueDate: 'Cấp ngày (bảo mẫu)',
+                NannyIdentityIssuePlace: 'Nơi cấp (bảo mẫu)',
+                NannyPermanentAddress: 'Địa chỉ thường trú (bảo mẫu)',
+                NannyCurrentAddress: 'Địa chỉ ở hiện tại (bảo mẫu)',
+                NannyPhone: 'Điện thoại liên hệ (bảo mẫu)'
+            };
+
+            const escapeHtml = (value) => String(value ?? '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
+
+            const decodeBase64Utf8 = (base64) => {
+                try {
+                    const binary = atob(base64);
+                    const bytes = Uint8Array.from(binary, (ch) => ch.charCodeAt(0));
+                    return new TextDecoder('utf-8').decode(bytes);
+                } catch {
+                    return '';
+                }
+            };
+
+            const parseStoredContractContent = (source) => {
+                const raw = String(source ?? '');
+                const index = raw.lastIndexOf(FIELD_VALUES_MARKER);
+                if (index < 0) return { templateContent: raw, fieldValues: {} };
+
+                const templateContent = raw.slice(0, index).trimEnd();
+                const encoded = raw.slice(index + FIELD_VALUES_MARKER.length).trim();
+                if (!encoded) return { templateContent, fieldValues: {} };
+
+                try {
+                    const decoded = decodeBase64Utf8(encoded) || encoded;
+                    const values = JSON.parse(decoded);
+                    if (values && typeof values === 'object') {
+                        return { templateContent, fieldValues: values };
+                    }
+                } catch { }
+
+                return { templateContent, fieldValues: {} };
+            };
+
+            const getFieldLabel = (fieldKey) => fieldLabelMap[fieldKey] || fieldKey;
+
+            const parseFlexibleDate = (value) => {
+                const raw = String(value ?? '').trim();
+                if (!raw) return null;
+
+                const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+                if (iso) {
+                    const d = new Date(`${iso[1]}-${iso[2]}-${iso[3]}T00:00:00`);
+                    return Number.isNaN(d.getTime()) ? null : d;
+                }
+
+                const dm = raw.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+                if (dm) {
+                    const dd = dm[1].padStart(2, '0');
+                    const mm = dm[2].padStart(2, '0');
+                    const yyyy = dm[3];
+                    const d = new Date(`${yyyy}-${mm}-${dd}T00:00:00`);
+                    return Number.isNaN(d.getTime()) ? null : d;
+                }
+
+                const d = new Date(raw);
+                return Number.isNaN(d.getTime()) ? null : d;
+            };
+
+            const toInputDateValue = (value) => {
+                const d = parseFlexibleDate(value);
+                if (!d) return '';
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                return `${yyyy}-${mm}-${dd}`;
+            };
+
+            const parsePositiveNumber = (value) => {
+                const normalized = String(value ?? '').trim().replaceAll(',', '.');
+                if (!normalized) return null;
+                const n = Number(normalized);
+                if (!Number.isFinite(n)) return null;
+                return n;
+            };
+
+            const validateRequiredFields = (fieldMap, payload) => {
+                for (const [fieldKey, propName] of Object.entries(fieldMap)) {
+                    const value = String(payload[propName] ?? '').trim();
+                    if (!value) return `${getFieldLabel(fieldKey)} là bắt buộc.`;
+                }
+                return null;
+            };
+
+            const validateParentPayload = (payload) => {
+                const requiredError = validateRequiredFields(parentFields, payload);
+                if (requiredError) return requiredError;
+
+                if (!/^\d{10,11}$/.test(payload.parentPhone || '')) {
+                    return 'Điện thoại liên hệ (bố/mẹ) phải là dãy số 10-11 ký tự.';
+                }
+
+                if (!/^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/.test(payload.parentEmail || '')) {
+                    return 'Email (bố/mẹ) không đúng định dạng.';
+                }
+
+                const parentIssueDate = parseFlexibleDate(payload.parentIdentityIssueDate);
+                const probationStartDate = parseFlexibleDate(payload.probationStartDate);
+                const probationEndDate = parseFlexibleDate(payload.probationEndDate);
+                if (!parentIssueDate || !probationStartDate || !probationEndDate) {
+                    return 'Ngày tháng không hợp lệ.';
+                }
+
+                const probationDiffDays = Math.floor((probationEndDate - probationStartDate) / (1000 * 60 * 60 * 24));
+                if (probationDiffDays < 0 || probationDiffDays > 6) {
+                    return 'Thời gian thử việc tối đa là 06 ngày.';
+                }
+
+                const salaryAmount = parsePositiveNumber(payload.salaryAmount);
+                const probationSalaryAmount = parsePositiveNumber(payload.probationSalaryAmount);
+                const allowanceAmount = parsePositiveNumber(payload.allowanceAmount);
+                if (!salaryAmount || salaryAmount <= 0) {
+                    return 'Mức lương chính phải là số lớn hơn 0.';
+                }
+                if (!probationSalaryAmount || probationSalaryAmount <= 0) {
+                    return 'Mức lương thử việc phải là số lớn hơn 0.';
+                }
+                if (!allowanceAmount || allowanceAmount <= 0) {
+                    return 'Phụ cấp đi lại/điện thoại phải lớn hơn 0.';
+                }
+
+                if (Math.abs(probationSalaryAmount - salaryAmount * 0.85) > 0.01) {
+                    return 'Mức lương thử việc phải bằng 85% mức lương chính.';
+                }
+
+                const salaryDay = Number.parseInt(String(payload.salaryReceivedDate ?? ''), 10);
+                if (!Number.isInteger(salaryDay) || salaryDay < 1 || salaryDay > 31) {
+                    return 'Ngày trả lương chỉ được từ 1 đến 31.';
+                }
+
+                const mealPerDay = Number.parseInt(String(payload.mealPerDay ?? ''), 10);
+                if (!Number.isInteger(mealPerDay) || mealPerDay <= 0) {
+                    return 'Số bữa ăn mỗi ngày phải là số nguyên dương.';
+                }
+
+                return null;
+            };
+
+            const validateNannyPayload = (payload) => {
+                const requiredError = validateRequiredFields(nannyFields, payload);
+                if (requiredError) return requiredError;
+
+                const nannyDob = parseFlexibleDate(payload.nannyDob);
+                const nannyIssueDate = parseFlexibleDate(payload.nannyIdentityIssueDate);
+                if (!nannyDob || !nannyIssueDate) {
+                    return 'Ngày tháng không hợp lệ.';
+                }
+
+                if (!/^\d{10,11}$/.test(payload.nannyPhone || '')) {
+                    return 'Điện thoại liên hệ (bảo mẫu) phải là dãy số 10-11 ký tự.';
+                }
+
+                return null;
+            };
+
+            const showToast = (message, type = 'info') => {
+                if (typeof window.showToast === 'function') {
+                    window.showToast(message, { type, duration: 4500 });
+                    return;
+                }
+                alert(message);
+            };
+
+            const reloadToastKey = 'contract:reload-toast';
+            const saveToastForReload = (message, type) => {
+                try {
+                    sessionStorage.setItem(reloadToastKey, JSON.stringify({ message, type }));
+                } catch { }
+            };
+
+            const consumeToastAfterReload = () => {
+                try {
+                    const raw = sessionStorage.getItem(reloadToastKey);
+                    if (!raw) return;
+                    sessionStorage.removeItem(reloadToastKey);
+                    const toast = JSON.parse(raw);
+                    if (toast?.message) showToast(toast.message, toast.type || 'success');
+                } catch { }
+            };
+
+            const reloadWithToast = (message, type = 'success') => {
+                saveToastForReload(message, type);
+                window.location.reload();
+            };
+
+            // Template is stored in DB (DefaultContractTemplateContent in HiringService).
+            // [[CENTER]] markers are handled by processStaticText for rendering.
+            const contractContentRaw = @Html.Raw(Json.Serialize(Model.ContractContent ?? string.Empty));
+            const parsedStored = parseStoredContractContent(contractContentRaw);
+
+            const normalizeFieldValue = (value) => {
+                const raw = String(value ?? '').trim();
+                if (!raw) return '';
+                if (raw === '...' || raw.toLowerCase() === 'null' || raw.toLowerCase() === 'undefined') return '';
+                if (raw.includes(FIELD_VALUES_MARKER)) return '';
+                if ((raw.startsWith('{') && raw.endsWith('}')) || (raw.startsWith('[') && raw.endsWith(']'))) return '';
+                return raw;
+            };
+
+            const sanitizeFieldMap = (source) => {
+                if (!source || typeof source !== 'object') return {};
+                const normalized = {};
+                for (const [key, value] of Object.entries(source)) {
+                    normalized[key] = normalizeFieldValue(value);
+                }
+                return normalized;
+            };
+
+            const contractContent = String(parsedStored.templateContent || contractContentRaw || '');
+
+            const fieldState = {
+                ...sanitizeFieldMap(parsedStored.fieldValues),
+                ...sanitizeFieldMap(initialFieldValues)
+            };
+            if (!fieldState.ParentName && parentName) fieldState.ParentName = parentName;
+            if (!fieldState.ParentPhone && parentPhone) fieldState.ParentPhone = parentPhone;
+            if (!fieldState.ParentEmail && parentEmail) fieldState.ParentEmail = parentEmail;
+            if (!fieldState.NannyName && nannyName) fieldState.NannyName = nannyName;
+            if (!fieldState.NannyPhone && nannyPhone) fieldState.NannyPhone = nannyPhone;
+            if (!fieldState.NannyEmail && nannyEmail) fieldState.NannyEmail = nannyEmail;
+
+            const resolveDisplayValue = (fieldKey) => {
+                const value = normalizeFieldValue(fieldState[fieldKey]);
+                return value || '...';
+            };
+
+            const processStaticText = (text) => {
+                const lines = text.split('\n');
+                const endsWithNewline = text.endsWith('\n');
+                return lines.map((line, index) => {
+                    const isLastSegment = index === lines.length - 1;
+                    if (line.startsWith('[[CENTER]]')) {
+                        const content = escapeHtml(line.slice('[[CENTER]]'.length));
+                        return `<div style="text-align:center;font-weight:bold;">${content}</div>`;
+                    }
+                    // Last segment before a token (no trailing newline) → no <br>,
+                    // so the inline input renders on the same line as the label.
+                    if (isLastSegment && !endsWithNewline) {
+                        return escapeHtml(line);
+                    }
+                    return escapeHtml(line) + '<br>';
+                }).join('');
+            };
+
+            const renderContractEditor = () => {
+                const tokenRegex = /\{\{\s*([A-Za-z0-9_]+)\s*\}\}/g;
+                let cursor = 0;
+                let html = '';
+                let match;
+
+                while ((match = tokenRegex.exec(contractContent)) !== null) {
+                    const tokenStart = match.index;
+                    const tokenEnd = tokenRegex.lastIndex;
+                    const fieldKey = match[1];
+                    const staticText = contractContent.slice(cursor, tokenStart);
+                    html += processStaticText(staticText);
+
+                    if (editableFieldSet.has(fieldKey)) {
+                        const isDateField = dateFieldSet.has(fieldKey);
+                        const currentRaw = normalizeFieldValue(fieldState[fieldKey]);
+                        const current = isDateField ? toInputDateValue(currentRaw) : currentRaw;
+                        const inputType = isDateField ? 'date' : 'text';
+
+                        html += `<input type="${inputType}"
+                                       class="contract-inline-input"
+                                       data-field="${escapeHtml(fieldKey)}"
+                                       value="${escapeHtml(current)}"
+                                       style="min-width:220px;max-width:100%;display:inline-block;border:1px solid #f59e0b;border-radius:8px;padding:2px 8px;background:#ffffff;color:#0f172a;font-size:0.95rem;" />`;
+                    } else {
+                        html += `<span data-value-field="${escapeHtml(fieldKey)}" class="font-semibold text-slate-700">${escapeHtml(resolveDisplayValue(fieldKey))}</span>`;
+                    }
+
+                    cursor = tokenEnd;
+                }
+
+                html += processStaticText(contractContent.slice(cursor));
+                editorEl.innerHTML = html;
+            };
+
+            const syncFieldValue = (fieldKey, value) => {
+                fieldState[fieldKey] = value ?? '';
+                const siblings = editorEl.querySelectorAll(`input.contract-inline-input[data-field="${fieldKey}"]`);
+                siblings.forEach((inputEl) => {
+                    if (inputEl.value !== (value ?? '')) inputEl.value = value ?? '';
+                });
+            };
+
+            editorEl.addEventListener('input', (event) => {
+                const target = event.target;
+                if (!(target instanceof HTMLInputElement)) return;
+                const fieldKey = target.dataset.field;
+                if (!fieldKey) return;
+                syncFieldValue(fieldKey, target.value);
+            });
+
+            const buildPayload = (fieldMap) => {
+                const payload = {};
+                for (const [fieldKey, propName] of Object.entries(fieldMap)) {
+                    payload[propName] = String(fieldState[fieldKey] ?? '').trim();
+                }
+                return payload;
+            };
+
+            const requestJson = async (url, method, payload) => {
+                const options = {
+                    method,
+                    credentials: 'include',
+                    headers: {}
+                };
+
+                if (method !== 'GET') {
+                    options.headers['Content-Type'] = 'application/json';
+                    options.body = payload ? JSON.stringify(payload) : '{}';
+                }
+
+                const response = await fetch(url, options);
+                const text = await response.text();
+                let json = {};
+                if (text) {
+                    try { json = JSON.parse(text); } catch { json = {}; }
+                }
+
+                if (!response.ok || json?.success === false) {
+                    throw new Error(json?.message || 'Thao tác thất bại.');
+                }
+                return json;
+            };
+
+            const startNannyStatusPolling = () => {
+                if (canNannyConfirmInfo) return;
+                if (normalizedRole !== 'nanny') return;
+                if (Number(contractStatus) !== 0) return;
+
+                const poll = async () => {
+                    try {
+                        const detail = await requestJson(`/Contract/Api/Detail?contractId=${encodeURIComponent(contractId)}`, 'GET');
+                        if (detail?.data?.canNannyConfirmInfo === true) {
+                            reloadWithToast('Bố mẹ đã xác nhận thông tin. Bạn có thể xác nhận hợp đồng ngay bây giờ.', 'success');
+                        }
+                    } catch { }
+                };
+
+                const timer = window.setInterval(poll, 5000);
+                window.addEventListener('beforeunload', () => window.clearInterval(timer), { once: true });
+                poll();
+            };
+
+            if (btnParentConfirm) {
+                btnParentConfirm.addEventListener('click', async () => {
+                    try {
+                        const payload = buildPayload(parentFields);
+                        const validationError = validateParentPayload(payload);
+                        if (validationError) {
+                            showToast(validationError, 'error');
+                            return;
+                        }
+                        await requestJson(`/Contract/Api/${encodeURIComponent(contractId)}/ParentConfirmInfo`, 'PATCH', payload);
+                        reloadWithToast('Bố mẹ đã xác nhận thông tin hợp đồng.', 'success');
+                    } catch (error) {
+                        showToast(error.message || 'Không thể xác nhận thông tin.', 'error');
+                    }
+                });
+            }
+
+            if (btnNannyConfirm) {
+                btnNannyConfirm.addEventListener('click', async () => {
+                    try {
+                        const payload = buildPayload(nannyFields);
+                        const validationError = validateNannyPayload(payload);
+                        if (validationError) {
+                            showToast(validationError, 'error');
+                            return;
+                        }
+                        await requestJson(`/Contract/Api/${encodeURIComponent(contractId)}/NannyConfirmInfo`, 'PATCH', payload);
+                        reloadWithToast('Bảo mẫu đã xác nhận thông tin hợp đồng.', 'success');
+                    } catch (error) {
+                        showToast(error.message || 'Không thể xác nhận thông tin.', 'error');
+                    }
+                });
+            }
+
+            if (btnParentFinalConfirm) {
+                btnParentFinalConfirm.addEventListener('click', async () => {
+                    try {
+                        await requestJson(`/Contract/Api/${encodeURIComponent(contractId)}/ParentFinalConfirm`, 'POST');
+                        reloadWithToast('Bố mẹ đã xác nhận hoàn tất hợp đồng.', 'success');
+                    } catch (error) {
+                        showToast(error.message || 'Không thể hoàn tất hợp đồng.', 'error');
+                    }
+                });
+            }
+
+            consumeToastAfterReload();
+            renderContractEditor();
+            startNannyStatusPolling();
+        })();
+    </script>
+}

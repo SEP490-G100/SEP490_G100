@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
+using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Models;
 
 namespace Nanny_BackEnd.Repositories;
 
-public class CommunicationRepository
+public class CommunicationRepository : ICommunicationRepository
 {
     private readonly Sep490NannyDbContext _db;
 
@@ -77,10 +78,52 @@ public class CommunicationRepository
     public async Task<Message?> GetMessageByIdAsync(Guid messageId) =>
         await _db.Messages.FindAsync(messageId);
 
+    /// <summary>Load message with sender for SignalR broadcast (after SaveChanges).</summary>
+    public async Task<Message?> GetMessageByIdForHubAsync(Guid messageId) =>
+        await _db.Messages
+            .AsNoTracking()
+            .Include(m => m.SenderUser)
+            .FirstOrDefaultAsync(m => m.Id == messageId && !m.IsDeleted);
+
     public void AddMessage(Message message) => _db.Messages.Add(message);
 
-    // ─── Report ───────────────────────────────────────────────────────────────
+    /// <summary>
+    /// Tổng số tin chưa đọc (người khác gửi, ReadAt null) trong các hội thoại mà user tham gia.
+    /// Cùng quy tắc với <see cref="CommunicationService"/> mapConversation UnreadCount.
+    /// </summary>
+    public async Task<int> CountUnreadMessagesForUserAsync(Guid userId) =>
+        await (
+            from m in _db.Messages.AsNoTracking()
+            join c in _db.Conversations.AsNoTracking() on m.ConversationId equals c.Id
+            join p in _db.ConversationParticipants.AsNoTracking() on m.ConversationId equals p.ConversationId
+            where !c.IsDeleted
+                  && !m.IsDeleted
+                  && m.ReadAt == null
+                  && m.SenderUserId != userId
+                  && p.UserId == userId
+                  && !p.IsDeleted
+            select m.Id).Distinct().CountAsync();
 
+    /// <summary>Đánh dấu mọi tin do người khác gửi trong hội thoại là đã đọc (navbar / unread đồng bộ DB).</summary>
+    public async Task<int> MarkConversationMessagesReadForUserAsync(Guid conversationId, Guid readerUserId)
+    {
+        var canAccess = await _db.ConversationParticipants
+            .AnyAsync(p => p.ConversationId == conversationId && p.UserId == readerUserId && !p.IsDeleted);
+        if (!canAccess) return 0;
+
+        var now = DateTime.UtcNow;
+        return await _db.Messages
+            .Where(m =>
+                m.ConversationId == conversationId &&
+                !m.IsDeleted &&
+                m.ReadAt == null &&
+                m.SenderUserId != readerUserId)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(m => m.ReadAt, now)
+                .SetProperty(m => m.UpdatedAt, now));
+    }
+
+    // ─── Report ───────────────────────────────────────────────────────────────
     public void AddReport(Report report) => _db.Reports.Add(report);
 
     // ─── Persist ──────────────────────────────────────────────────────────────

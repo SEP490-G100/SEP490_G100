@@ -1,24 +1,23 @@
-﻿
+
 @model WebSite.Models.Home.HomePageViewModel
 
 <section class="bg-white dark:bg-card-dark py-24 relative scroll-section dir-up">
     <div class="max-w-7xl mx-auto px-6 lg:px-10">
         <div class="text-center mb-16 sec-reveal">
-            <span class="section-label">✨ Dịch vụ của chúng tôi</span>
+            <span class="section-label">✨ Kết nối trên NannyMatch</span>
             <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-4"
                 style="font-family:'Quicksand',sans-serif">
-                Tìm dịch vụ chăm sóc
+                Tìm người chăm sóc
                 <span class="gradient-text">phù hợp nhất</span> với gia đình bạn
             </h2>
             <div class="section-divider"></div>
             <p class="text-gray-500 dark:text-gray-400 mt-4 max-w-lg mx-auto">
-                Mọi lúc, mọi nơi, với sự an tâm tuyệt
-                đối.
+                Mọi lúc, mọi nơi, với sự an tâm trọn vẹn.
             </p>
         </div>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div class="relative order-2 lg:order-1 sec-reveal reveal from-left">              
-                <img alt="Family playing" class="rounded-3xl shadow-soft w-4/5 mx-auto ring-1 ring-black/5"
+                <img alt="Gia đình vui chơi cùng con" class="rounded-3xl shadow-soft w-4/5 mx-auto ring-1 ring-black/5"
                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuDd59ENtfZGTxDL1Qz3oDZVFH2M1sDGZ8-oZRw_ID7rb3ITw1PI2ZLJJBwDb5O6qzNqbXqIpo4nmDYFXR7y53Jz8t2tfbmBh0xa__ZqsSm-OQ6ZjdKZDmksugwcYaHH0c6KNOJKuDunMmrf5ivIPaWYyDMGlFTya7i4PuZsDczBnneNstY1lE2bc0NonauSDQKGv0lQShfZcP5UB3cJX9-LoeY2wtuBooQTZ3FivDYxTE18g_15JbUFcnp4OU6xMNKUPnSpDwujCYbj" />
             </div>
             <div class="space-y-5 order-1 lg:order-2 sec-reveal reveal from-right">
@@ -29,8 +28,8 @@
                         </div>
                         <div>
                             <h3 class="font-bold text-lg text-gray-900 dark:text-white mb-2">
-                                Chúng tôi đáp ứng mọi
-                                lịch trình của bạn
+                                Linh hoạt theo
+                                lịch gia đình bạn
                             </h3>
                             <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1 list-disc list-inside">
                                 <li>Lên kế hoạch vui chơi</li>
@@ -49,7 +48,7 @@
                             <h3 class="font-bold text-lg text-gray-900 dark:text-white mb-2">Nhắn tin bảo mật</h3>
                             <p class="text-sm text-gray-600 dark:text-gray-300">
                                 Các tính năng cơ bản miễn phí cho
-                                tất cả thành viên. Phụ huynh nhận thêm quyền lợi với gói Premium.
+                                tất cả thành viên. Phụ huynh nhận thêm quyền lợi khi dùng gói trả phí.
                             </p>
                             <a class="text-primary hover:underline text-sm font-semibold mt-2 inline-block"
                                asp-controller="Subscription"
@@ -65,5 +64,4 @@
 <partial name="_NanniesSection" model="Model" />
 <partial name="_HowItWork"/>
 <partial name="_SayAboutUs" model="Model" />
-<partial name="_FAQ" />
 <partial name="_Testimonials" />

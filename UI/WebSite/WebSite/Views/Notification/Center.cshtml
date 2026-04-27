@@ -457,6 +457,8 @@
                 const typeLabel = normalizeText(item?.typeLabel);
                 const title = normalizeText(item?.title);
                 if (!typeLabel) return false;
+                if (typeLabel.includes('moderator')) return true;
+                if (typeLabel.includes('kiểm duyệt')) return true;
                 return typeLabel !== title;
             };
 

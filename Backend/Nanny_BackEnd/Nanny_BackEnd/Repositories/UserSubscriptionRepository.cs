@@ -1,9 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
+using Nanny_BackEnd.Enums;
+using Nanny_BackEnd.Repositories.Interfaces;
 
 namespace Nanny_BackEnd.Repositories;
 
-public class UserSubscriptionRepository
+public class UserSubscriptionRepository : IUserSubscriptionRepository
 {
     private readonly Sep490NannyDbContext _db;
 
@@ -17,9 +19,9 @@ public class UserSubscriptionRepository
     public async Task<int> GetActiveSubscriptionsAsync() =>
         await _db.UserSubscriptions.CountAsync(s => !s.IsDeleted && s.Status == 1);
 
-    /// <summary>Total expired subscriptions (Status = 0 = Expired/Inactive).</summary>
+    /// <summary>Total expired/inactive/cancelled subscriptions (Status != Active).</summary>
     public async Task<int> GetExpiredSubscriptionsAsync() =>
-        await _db.UserSubscriptions.CountAsync(s => !s.IsDeleted && s.Status == 0);
+        await _db.UserSubscriptions.CountAsync(s => !s.IsDeleted && s.Status != (int)UserSubscriptionStatus.Active);
 
     /// <summary>Subscription count grouped by month, last N months.</summary>
     public async Task<List<(int Year, int Month, int Count)>> GetMonthlySubscriptionsAsync(int months = 12)

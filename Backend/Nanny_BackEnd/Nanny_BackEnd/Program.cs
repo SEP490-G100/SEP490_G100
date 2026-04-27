@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
@@ -8,8 +9,10 @@ using Microsoft.OpenApi.Models;
 using Nanny_BackEnd.Data;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Hubs;
+using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Repositories;
 using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 using Nanny_BackEnd.Validations;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -29,10 +32,14 @@ builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionPath))
     .SetApplicationName("Nanny_BackEnd");
 
-builder.Services.AddControllers()
+builder.Services.AddControllers(options =>
+    {
+        options.ModelMetadataDetailsProviders.Add(new VietnameseValidationMetadataProvider());
+    })
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
         options.JsonSerializerOptions.Converters.Add(new DateOnlyJsonConverter());
     });
 builder.Services.AddMemoryCache();
@@ -148,66 +155,75 @@ builder.Services.AddHttpClient("Nominatim", c =>
 });
 
 // DI — Repositories
-builder.Services.AddScoped<UserRepository>();
-builder.Services.AddScoped<RefreshTokenRepository>();
-builder.Services.AddScoped<OtpRepository>();
-builder.Services.AddScoped<ParentRepository>();
-builder.Services.AddScoped<ChildRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+builder.Services.AddScoped<IOtpRepository, OtpRepository>();
+builder.Services.AddScoped<IJobApplicationRepository, JobApplicationRepository>();
+builder.Services.AddScoped<IParentRepository, ParentRepository>();
+builder.Services.AddScoped<IContactRequestRepository, ContactRequestRepository>();
+builder.Services.AddScoped<IChildRepository, ChildRepository>();
 // Search feature (SD1B)
-builder.Services.AddScoped<JobRepository>();
-builder.Services.AddScoped<FavoriteRepository>();
-builder.Services.AddScoped<VerificationRequestRepository>();
-builder.Services.AddScoped<TransactionRepository>();
-builder.Services.AddScoped<UserSubscriptionRepository>();
-builder.Services.AddScoped<SubscriptionRepository>();
-builder.Services.AddScoped<ContractRepository>();
-builder.Services.AddScoped<HiringRepository>();
-builder.Services.AddScoped<CommunicationRepository>();
-builder.Services.AddScoped<FaqRepository>();
-builder.Services.AddScoped<BlogCategoryRepository>();
-builder.Services.AddScoped<BlogRepository>();
-builder.Services.AddScoped<ReviewRepository>();
+builder.Services.AddScoped<IJobRepository, JobRepository>();
+builder.Services.AddScoped<IFavoriteRepository, FavoriteRepository>();
+builder.Services.AddScoped<IVerificationRequestRepository, VerificationRequestRepository>();
+builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
+builder.Services.AddScoped<IUserSubscriptionRepository, UserSubscriptionRepository>();
+builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
+builder.Services.AddScoped<IContractRepository, ContractRepository>();
+builder.Services.AddScoped<IHiringRepository, HiringRepository>();
+builder.Services.AddScoped<ICommunicationRepository, CommunicationRepository>();
+builder.Services.AddScoped<IReportRepository, ReportRepository>();
+builder.Services.AddScoped<IExportRepository, ExportRepository>();
+builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
+builder.Services.AddScoped<IFaqRepository, FaqRepository>();
+builder.Services.AddScoped<IBlogCategoryRepository, BlogCategoryRepository>();
+builder.Services.AddScoped<IBlogRepository, BlogRepository>();
+builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
+builder.Services.AddScoped<INannyProfileRepository, NannyProfileRepository>();
+builder.Services.AddScoped<INannySkillRepository, NannySkillRepository>();
+builder.Services.AddScoped<INannyCertificateRepository, NannyCertificateRepository>();
+builder.Services.AddScoped<INannyAvailabilityRepository, NannyAvailabilityRepository>();
+builder.Services.AddScoped<IRecommendationRepository, RecommendationRepository>();
+builder.Services.AddScoped<IRecommendationConfigRepository, RecommendationConfigRepository>();
 
 // DI — Services
-builder.Services.AddScoped<JwtService>();
-builder.Services.AddScoped<OtpService>();
-builder.Services.AddScoped<EmailService>();
-builder.Services.AddScoped<AuthService>();
-builder.Services.AddScoped<ProfileService>();
-builder.Services.AddScoped<OnboardingService>();
-builder.Services.AddScoped<NannyService>();
-builder.Services.AddScoped<NannyProfileRepository>();
-builder.Services.AddScoped<NannySkillRepository>();
-builder.Services.AddScoped<NannyCertificateRepository>();
-builder.Services.AddScoped<NannyAvailabilityRepository>();
+builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<IOtpService, OtpService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IProfileService, ProfileService>();
+builder.Services.AddScoped<IOnboardingService, OnboardingService>();
+builder.Services.AddScoped<INannyService, NannyService>();
 builder.Services.AddSingleton<PasswordValidator>();
 // Search feature (SD1B)
-builder.Services.AddScoped<JobService>();
-builder.Services.AddScoped<GeocodingService>();
-builder.Services.AddScoped<LocationService>();
-builder.Services.AddScoped<UserService>();
-builder.Services.AddScoped<VerificationRequestService>();
-builder.Services.AddScoped<DashboardService>();
-builder.Services.AddScoped<SubscriptionService>();
-builder.Services.AddScoped<ExportService>();
-builder.Services.AddScoped<NotificationService>();
-builder.Services.AddScoped<CassoService>();
-builder.Services.AddScoped<PayOsService>();
-builder.Services.AddScoped<CommunicationService>();
-builder.Services.AddScoped<HiringService>();
-builder.Services.AddScoped<ContractService>();
-builder.Services.AddScoped<FaqService>();
-builder.Services.AddScoped<BlogCategoryService>();
-builder.Services.AddScoped<BlogService>();
-builder.Services.AddScoped<ReviewService>();
+builder.Services.AddScoped<IJobService, JobService>();
+builder.Services.AddScoped<IGeocodingService, GeocodingService>();
+builder.Services.AddScoped<ILocationService, LocationService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IVerificationRequestService, VerificationRequestService>();
+builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
+builder.Services.AddScoped<IExportService, ExportService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IContactRequestService, ContactRequestService>();
+builder.Services.AddScoped<ICassoService, CassoService>();
+builder.Services.AddScoped<IPayOsService, PayOsService>();
+builder.Services.AddScoped<ICommunicationService, CommunicationService>();
+builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IHiringService, HiringService>();
+builder.Services.AddScoped<IContractService, ContractService>();
+builder.Services.AddScoped<IFaqService, FaqService>();
+builder.Services.AddScoped<IBlogCategoryService, BlogCategoryService>();
+builder.Services.AddScoped<IBlogService, BlogService>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
 
 // Recommendation feature
 builder.Services.Configure<AzureOpenAIOptions>(builder.Configuration.GetSection("AzureOpenAI"));
-builder.Services.AddScoped<RecommendationRepository>();
-builder.Services.AddScoped<RecommendationConfigRepository>();
-builder.Services.AddScoped<EmbeddingService>();
-builder.Services.AddScoped<RecommendationService>();
-
+builder.Services.AddScoped<IEmbeddingService, EmbeddingService>();
+builder.Services.AddScoped<IRecommendationService, RecommendationService>();
+builder.Services.AddScoped<ISearchService, SearchService>();
 
 // Background Services
 if (!builder.Environment.IsDevelopment())

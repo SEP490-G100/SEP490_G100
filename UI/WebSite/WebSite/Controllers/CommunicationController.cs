@@ -18,7 +18,7 @@ public class CommunicationController : Controller
         _apiBaseUrl = (config["ApiSettings:BaseUrl"] ?? "").TrimEnd('/');
     }
 
-    // GET /Communication  — Trang chat chính
+    // GET /Communication - Trang chat chính
     [HttpGet]
     public IActionResult Index(Guid? conversationId = null)
     {
@@ -28,12 +28,32 @@ public class CommunicationController : Controller
         return View();
     }
 
-    // GET /Communication/Conversations — proxy API
+    // GET /Communication/Conversations - Proxy API
     [HttpGet]
     public async Task<IActionResult> Conversations()
     {
         setAuthHeader();
         return await proxy(() => _http.GetAsync("/api/communication/conversations"));
+    }
+
+    /// <summary>GET /Communication/UnreadCount — badge tin nhắn trên header (giống Notification/UnreadCount).</summary>
+    [HttpGet]
+    public async Task<IActionResult> UnreadCount()
+    {
+        var token = HttpContext.Session.GetString("AccessToken");
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return Json(new { success = true, data = new { unreadCount = 0 } });
+        }
+
+        setAuthHeader();
+        var result = await proxy(() => _http.GetAsync("/api/communication/unread-count"));
+        if (result is ContentResult { StatusCode: 401 })
+        {
+            return Json(new { success = true, data = new { unreadCount = 0 } });
+        }
+
+        return result;
     }
 
     // GET /Communication/Messages?conversationId=...&page=...&pageSize=...
@@ -43,6 +63,15 @@ public class CommunicationController : Controller
         setAuthHeader();
         return await proxy(() =>
             _http.GetAsync($"/api/communication/conversations/{conversationId}/messages?page={page}&pageSize={pageSize}"));
+    }
+
+    /// <summary>POST /Communication/MarkRead?conversationId= — đánh dấu đã đọc mọi tin trong hội thoại (đồng bộ badge).</summary>
+    [HttpPost]
+    public async Task<IActionResult> MarkRead([FromQuery] Guid conversationId)
+    {
+        setAuthHeader();
+        return await proxy(() =>
+            _http.PostAsync($"/api/communication/conversations/{conversationId}/mark-read", null));
     }
 
     // POST /Communication/GetOrCreate
@@ -116,9 +145,9 @@ public class CommunicationController : Controller
                 StatusCode = (int)response.StatusCode
             };
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            return new JsonResult(new { success = false, message = ex.Message }) { StatusCode = 500 };
+            return new JsonResult(new { success = false, message = "Không thể kết nối máy chủ lúc này. Vui lòng thử lại." }) { StatusCode = 500 };
         }
     }
 }

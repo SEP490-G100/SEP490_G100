@@ -3,145 +3,14 @@ let nannyMarkers = [];
 let nannyProfiles = [];
 let nannyAllProfiles = [];
 let nannySearchTimer = null;
-let nannyProvinces = [];
-let nannyLocationPromise = null;
-let nannyProvinceCatalog = [];
-let nannyProvinceCatalogPromise = null;
-const nannyAutocompleteDropdowns = new Map();
 const nannyAddressSuggestionCache = new Map();
-const nannyDistrictOptionsCache = new Map();
 const nannyGeoCache = new Map();
-const nannySelectPickerSyncHandlers = [];
-let nannyScheduleFilters = [];
 let suppressNextNannyMapMove = false;
 let currentNannyDetailId = null;
 let currentNannyDetailUserId = null;
 window.currentNannyDetailUserId = null;
-const NANNY_DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
-const NANNY_TIME_LABELS = ['Morning', 'Afternoon', 'Evening', 'Night'];
-const NANNY_FALLBACK_PROVINCES = [
-    'Thành phố Hà Nội',
-    'Tỉnh Cao Bằng',
-    'Tỉnh Tuyên Quang',
-    'Tỉnh Điện Biên',
-    'Tỉnh Lai Châu',
-    'Tỉnh Sơn La',
-    'Tỉnh Lào Cai',
-    'Tỉnh Thái Nguyên',
-    'Tỉnh Lạng Sơn',
-    'Tỉnh Quảng Ninh',
-    'Tỉnh Bắc Ninh',
-    'Tỉnh Phú Thọ',
-    'Thành phố Hải Phòng',
-    'Tỉnh Hưng Yên',
-    'Tỉnh Ninh Bình',
-    'Tỉnh Thanh Hóa',
-    'Tỉnh Nghệ An',
-    'Tỉnh Hà Tĩnh',
-    'Tỉnh Quảng Trị',
-    'Thành phố Huế',
-    'Thành phố Đà Nẵng',
-    'Tỉnh Quảng Ngãi',
-    'Tỉnh Gia Lai',
-    'Tỉnh Khánh Hòa',
-    'Tỉnh Đắk Lắk',
-    'Tỉnh Lâm Đồng',
-    'Tỉnh Đồng Nai',
-    'Thành phố Hồ Chí Minh',
-    'Tỉnh Tây Ninh',
-    'Tỉnh Đồng Tháp',
-    'Tỉnh Vĩnh Long',
-    'Tỉnh An Giang',
-    'Thành phố Cần Thơ',
-    'Tỉnh Cà Mau'
-];
-const NANNY_FALLBACK_DISTRICTS_BY_CITY = {
-  'ho chi minh': [
-    'Quận 1', 'Quận 3', 'Quận 4', 'Quận 5', 'Quận 6', 'Quận 7', 'Quận 8',
-    'Quận 10', 'Quận 11', 'Quận 12', 'Quận Bình Thạnh', 'Quận Gò Vấp',
-    'Quận Phú Nhuận', 'Quận Tân Bình', 'Quận Tân Phú', 'Thành phố Thủ Đức',
-    'Huyện Bình Chánh', 'Huyện Cần Giờ', 'Huyện Củ Chi', 'Huyện Hóc Môn', 'Huyện Nhà Bè'
-  ],
-    'ha noi': [
-        'Phường Hoàn Kiếm',
-        'Phường Cửa Nam',
-        'Phường Ba Đình',
-        'Phường Ngọc Hà',
-        'Phường Giảng Võ',
-        'Phường Kim Mã',
-        'Phường Đống Đa',
-        'Phường Ô Chợ Dừa',
-        'Phường Văn Miếu - Quốc Tử Giám',
-        'Phường Kim Liên',
-        'Phường Láng',
-        'Phường Ô Chợ Dừa',
-        'Phường Hai Bà Trưng',
-        'Phường Bạch Mai',
-        'Phường Vĩnh Tuy',
-        'Phường Thanh Nhàn',
-        'Phường Hoàng Mai',
-        'Phường Tương Mai',
-        'Phường Định Công',
-        'Phường Hoàng Liệt',
-        'Phường Yên Sở',
-        'Phường Thanh Xuân',
-        'Phường Khương Đình',
-        'Phường Phương Liệt',
-        'Phường Hạ Đình',
-        'Phường Cầu Giấy',
-        'Phường Nghĩa Đô',
-        'Phường Yên Hòa',
-        'Phường Tây Hồ',
-        'Phường Phú Thượng',
-        'Phường Đông Ngạc',
-        'Phường Thượng Cát',
-        'Phường Xuân Đỉnh',
-        'Phường Từ Liêm',
-        'Phường Tây Tựu',
-        'Phường Đại Mỗ',
-        'Phường Long Biên',
-        'Phường Bồ Đề',
-        'Phường Việt Hưng',
-        'Phường Phúc Lợi',
-        'Phường Hà Đông',
-        'Phường Dương Nội',
-        'Phường Yên Nghĩa',
-        'Phường Phú Lương',
-        'Phường Kiến Hưng',
-        'Phường Thanh Liệt',
-        'Phường Sơn Tây',
-        'Phường Tùng Thiện',
-
-        'Xã Thanh Trì',
-        'Xã Đại Thanh',
-        'Xã Nam Phù',
-        'Xã Ngọc Hồi',
-        'Xã Thượng Phúc',
-        'Xã Thường Tín',
-        'Xã Chương Dương',
-        'Xã Hồng Vân',
-        'Xã Phú Xuyên',
-        'Xã Phượng Dực',
-        'Xã Chuyên Mỹ',
-        'Xã Vân Đình',
-        'Xã Quảng Bị',
-        'Xã Quốc Oai',
-        'Xã Hưng Đạo',
-        'Xã Kiều Phú',
-        'Xã Phú Cát',
-        'Xã Hoài Đức',
-        'Xã Dương Hòa',
-        'Xã Sơn Đồng',
-        'Xã An Khánh',
-        'Xã Đan Phượng',
-        'Xã Tiến Thắng'
-    ],
-  'da nang': ['Quận Hải Châu', 'Quận Thanh Khê', 'Quận Sơn Trà', 'Quận Ngũ Hành Sơn', 'Quận Liên Chiểu', 'Huyện Hòa Vang'],
-  'can tho': ['Quận Ninh Kiều', 'Quận Bình Thủy', 'Quận Cái Răng', 'Quận Ô Môn', 'Quận Thốt Nốt'],
-  'hai phong': ['Quận Hồng Bàng', 'Quận Ngô Quyền', 'Quận Lê Chân', 'Quận Hải An', 'Quận Kiến An', 'Quận Dương Kinh', 'Quận Đồ Sơn'],
-  'hue': ['Quận Phú Xuân', 'Quận Thuận Hóa', 'Thị xã Hương Thủy', 'Thị xã Hương Trà']
-};
-
+const NANNY_DAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+const NANNY_TIME_LABELS = ['Sáng', 'Chiều', 'Tối', 'Đêm'];
 const NANNY_GEO_DEFAULT = { lat: 16.047, lng: 108.206, zoom: 6 };
 const NANNY_GEO_FALLBACK = {
   'ho chi minh': { lat: 10.776, lng: 106.701, zoom: 11 },
@@ -205,8 +74,8 @@ function formatSalary(min, max) {
 
 function getNannyPlanLabel(profile) {
   const code = String(profile?.subscriptionPlanCode || '').trim().toUpperCase();
-  if (code === 'NANNY_PRO') return 'Nanny Pro';
-  if (code === 'NANNY_PLUS') return 'Nanny Plus';
+  if (code === 'NANNY_PRO') return 'Gói Pro';
+  if (code === 'NANNY_PLUS') return 'Gói Plus';
   return '';
 }
 
@@ -219,9 +88,9 @@ function renderNannyBenefitPills(profile) {
   }
 
   if (profile?.searchPriority) {
-    pills.push('<span class="nanny-pill nanny-pill--orange">Uu tien hien thi</span>');
+    pills.push('<span class="nanny-pill nanny-pill--orange">Ưu tiên hiển thị</span>');
   } else if (profile?.featuredBadge) {
-    pills.push('<span class="nanny-pill">Ho so noi bat</span>');
+    pills.push('<span class="nanny-pill">Hồ sơ nổi bật</span>');
   }
 
   return pills.join('');
@@ -251,7 +120,7 @@ function updateNannyFavoriteUi(nannyId, isFavorite) {
   document.querySelectorAll(`.nanny-card-favorite[data-nanny-id="${normalized}"]`).forEach((button) => {
     button.classList.toggle('active', !!isFavorite);
     button.setAttribute('aria-pressed', isFavorite ? 'true' : 'false');
-    button.title = isFavorite ? 'Bo yeu thich' : 'Yeu thich nanny';
+    button.title = isFavorite ? 'Bỏ yêu thích' : 'Yêu thích bảo mẫu';
     const icon = button.querySelector('.material-icons-round');
     if (icon) icon.textContent = isFavorite ? 'favorite' : 'favorite_border';
   });
@@ -262,7 +131,7 @@ function updateNannyFavoriteUi(nannyId, isFavorite) {
   if (detailButton && currentNannyDetailId && normalizeGuid(currentNannyDetailId) === normalized) {
     detailButton.classList.toggle('active', !!isFavorite);
     if (detailIcon) detailIcon.textContent = isFavorite ? 'favorite' : 'favorite_border';
-    if (detailText) detailText.textContent = isFavorite ? 'Bo yeu thich' : 'Yeu thich';
+    if (detailText) detailText.textContent = isFavorite ? 'Bỏ yêu thích' : 'Yêu thích';
   }
 }
 
@@ -286,12 +155,12 @@ async function toggleNannyFavorite(nannyId, event) {
   event?.stopPropagation?.();
 
   if (!isLoggedIn()) {
-    showNannyToast('Vui long dang nhap de yeu thich nanny.', 'warning');
+    showNannyToast('Vui lòng đăng nhập để yêu thích bảo mẫu.', 'error');
     return;
   }
 
   if (!isParentRole()) {
-    showNannyToast('Chi Parent moi co quyen yeu thich nanny.', 'warning');
+    showNannyToast('Chỉ phụ huynh mới có quyền yêu thích bảo mẫu.', 'error');
     return;
   }
 
@@ -302,18 +171,18 @@ async function toggleNannyFavorite(nannyId, event) {
     });
     const json = await response.json();
     if (!json?.success) {
-      showNannyToast(json?.message || 'Khong the cap nhat yeu thich nanny.', 'error');
+      showNannyToast(json?.message || 'Không thể cập nhật yêu thích.', 'error');
       return;
     }
 
     const favoriteState = !!json.isFavorite;
     setNannyFavoriteState(nannyId, favoriteState);
     showNannyToast(
-      json.message || (favoriteState ? 'Da yeu thich nanny.' : 'Da bo yeu thich nanny.'),
-      favoriteState ? 'success' : 'info'
+      json.message || (favoriteState ? 'Đã yêu thích bảo mẫu.' : 'Đã bỏ yêu thích.'),
+      'success'
     );
   } catch {
-    showNannyToast('Khong the cap nhat yeu thich nanny.', 'error');
+    showNannyToast('Không thể cập nhật yêu thích.', 'error');
   }
 }
 
@@ -324,17 +193,17 @@ function toggleNannyFavoriteFromDetail(event) {
 
 async function sendContactRequest(nannyProfileId, message) {
   if (!isLoggedIn()) {
-    showNannyToast('Vui long dang nhap de gui request contact.', 'warning');
+    showNannyToast('Vui lòng đăng nhập để gửi yêu cầu liên hệ.', 'error');
     return null;
   }
 
   if (!isParentRole()) {
-    showNannyToast('Chi Parent moi co quyen gui request contact.', 'warning');
+    showNannyToast('Chỉ phụ huynh mới có quyền gửi yêu cầu liên hệ.', 'error');
     return null;
   }
 
   if (!nannyProfileId) {
-    showNannyToast('Khong tim thay ho so nanny de gui request.', 'error');
+    showNannyToast('Không tìm thấy hồ sơ bảo mẫu để gửi yêu cầu.', 'error');
     return null;
   }
 
@@ -351,15 +220,15 @@ async function sendContactRequest(nannyProfileId, message) {
 
     const json = await response.json();
     if (!response.ok || !json?.success) {
-      showNannyToast(json?.message || 'Khong the gui request contact.', 'error');
+      showNannyToast(json?.message || 'Không thể gửi yêu cầu liên hệ.', 'error');
       return null;
     }
 
-    showNannyToast(json?.message || 'Da gui request contact thanh cong.', 'success');
+    showNannyToast(json?.message || 'Đã gửi yêu cầu liên hệ thành công.', 'success');
     window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
     return json;
   } catch {
-    showNannyToast('Khong the gui request contact.', 'error');
+    showNannyToast('Không thể gửi yêu cầu liên hệ.', 'error');
     return null;
   }
 }
@@ -371,8 +240,8 @@ async function sendContactRequestFromDetail(event) {
   const contactButton = document.getElementById('nd-contactBtn');
   if (contactButton) contactButton.disabled = true;
 
-  const defaultMessage = 'Toi muon trao doi them ve cong viec va lich lam viec.';
-  const message = window.prompt('Nhap loi nhan gui den nanny (co the bo trong):', defaultMessage);
+  const defaultMessage = 'Tôi muốn trao đổi thêm về công việc và lịch làm việc.';
+  const message = window.prompt('Nhập lời nhắn gửi đến bảo mẫu (có thể bỏ trống):', defaultMessage);
   if (message === null) {
     if (contactButton) contactButton.disabled = false;
     return;
@@ -385,98 +254,6 @@ async function sendContactRequestFromDetail(event) {
 function debounceNannySearch() {
   clearTimeout(nannySearchTimer);
   nannySearchTimer = setTimeout(doNannySearch, 320);
-}
-
-function getAutocompleteKey(kind) {
-  return `nanny-${kind}`;
-}
-
-function hideAutocomplete(kind) {
-  const dropdown = nannyAutocompleteDropdowns.get(getAutocompleteKey(kind));
-  if (!dropdown) return;
-  dropdown.classList.remove('show');
-}
-
-function getProvinceOptions() {
-  return nannyProvinces.map((province) => province.name);
-}
-
-function getDistrictOptions(cityName) {
-  const normalizedCity = normalizeAdministrativeName(cityName);
-  const selectedProvince = nannyProvinces.find((province) =>
-    normalizeAdministrativeName(province.name) === normalizedCity
-  );
-  return (selectedProvince?.districts || []).map((district) => district.name);
-}
-
-function getNannyFallbackDistrictOptions(cityName) {
-  return NANNY_FALLBACK_DISTRICTS_BY_CITY[normalizeAdministrativeName(cityName)] || [];
-}
-
-function getNannyDistrictCacheKey(cityName) {
-  return normalizeAdministrativeName(cityName);
-}
-
-function cacheNannyDistrictOptions(cityName, values) {
-  nannyDistrictOptionsCache.set(getNannyDistrictCacheKey(cityName), values);
-  return values;
-}
-
-function getCachedNannyDistrictOptions(cityName) {
-  return nannyDistrictOptionsCache.get(getNannyDistrictCacheKey(cityName)) || [];
-}
-
-function loadNannyProvinceCatalog() {
-  if (nannyProvinceCatalogPromise) return nannyProvinceCatalogPromise;
-
-  nannyProvinceCatalogPromise = fetch('https://provinces.open-api.vn/api/v2/p/')
-    .then((response) => response.ok ? response.json() : [])
-    .then((data) => {
-      nannyProvinceCatalog = Array.isArray(data) ? data : [];
-      return nannyProvinceCatalog;
-    })
-    .catch(() => {
-      nannyProvinceCatalog = [];
-      return nannyProvinceCatalog;
-    });
-
-  return nannyProvinceCatalogPromise;
-}
-
-async function fetchNannyDistrictOptionsByCity(cityName) {
-  const normalizedCity = String(cityName ?? '').trim();
-  if (!normalizedCity) return [];
-
-  const cached = getCachedNannyDistrictOptions(normalizedCity);
-  if (cached.length) return cached;
-
-  const localOptions = getDistrictOptions(normalizedCity);
-  if (localOptions.length) {
-    return cacheNannyDistrictOptions(normalizedCity, localOptions);
-  }
-
-  const fallbackOptions = getNannyFallbackDistrictOptions(normalizedCity);
-  if (fallbackOptions.length) {
-    return cacheNannyDistrictOptions(normalizedCity, fallbackOptions);
-  }
-
-  try {
-    const response = await fetch(`/Address/Districts?city=${encodeURIComponent(normalizedCity)}`, {
-      credentials: 'same-origin'
-    });
-    if (!response.ok) return [];
-
-    const data = await response.json();
-    const districts = Array.isArray(data)
-      ? data.filter(Boolean)
-      : [];
-    if (districts.length) {
-      return cacheNannyDistrictOptions(normalizedCity, districts);
-    }
-    return cacheNannyDistrictOptions(normalizedCity, fallbackOptions);
-  } catch {
-    return cacheNannyDistrictOptions(normalizedCity, fallbackOptions);
-  }
 }
 
 async function fetchNannyAddressSuggestions(query) {
@@ -557,346 +334,31 @@ async function hydrateNannyGeoForMap(items) {
   });
 }
 
-function uniqueNannyValues(values, query) {
-  const seen = new Set();
-  return values
-    .filter((value) => value && (!query || normalizeText(value).includes(normalizeText(query))))
-    .filter((value) => {
-      const key = normalizeText(value);
-      if (!key || seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    })
-    .slice(0, 12);
-}
-
-async function getProvinceOptionsAsync(query) {
-  if (nannyProvinces.length) {
-    return uniqueNannyValues(getProvinceOptions(), query);
-  }
-
-  if (!String(query ?? '').trim()) {
-    return [...NANNY_FALLBACK_PROVINCES];
-  }
-
-  const suggestions = await fetchNannyAddressSuggestions(query);
-  const values = uniqueNannyValues(suggestions.map((item) => item.city), query);
-  return values.length ? values : uniqueNannyValues(NANNY_FALLBACK_PROVINCES, query);
-}
-
-async function getDistrictOptionsAsync(cityName, query) {
-  const normalizedCity = String(cityName ?? '').trim();
-  if (!normalizedCity) return [];
-  const normalizedCityKey = normalizeAdministrativeName(normalizedCity);
-
-  const localValues = uniqueNannyValues(await fetchNannyDistrictOptionsByCity(normalizedCity), query);
-  if (localValues.length) {
-    return localValues;
-  }
-
-  if (!String(query ?? '').trim()) {
-    return [];
-  }
-
-  const compositeQuery = [query, normalizedCity].filter(Boolean).join(', ');
-  const suggestions = await fetchNannyAddressSuggestions(compositeQuery);
-  return uniqueNannyValues(
-    suggestions
-      .filter((item) => {
-        if (!item.city) return true;
-        return normalizeAdministrativeName(item.city).includes(normalizedCityKey);
-      })
-      .map((item) => item.district),
-    query
-  );
-}
-
-function handleNannyCityChange(explicitCityValue) {
-  const cityInput = document.getElementById('nannyCity');
-  const districtInput = document.getElementById('nannyDistrict');
-  if (!cityInput) return;
-
-  const cityValue = (explicitCityValue ?? cityInput.value).trim();
-  const allowedDistricts = getCachedNannyDistrictOptions(cityValue);
-  if (districtInput && districtInput.value && !allowedDistricts.includes(districtInput.value.trim())) {
-    districtInput.value = '';
-  }
-
-  if (cityValue) {
-    fetchNannyDistrictOptionsByCity(cityValue);
-  }
-}
-
-function renderAutocompleteOptions(kind, options, onSelect) {
-  const dropdown = nannyAutocompleteDropdowns.get(getAutocompleteKey(kind));
-  if (!dropdown) return;
-
-  if (!options.length) {
-    dropdown.innerHTML = '';
-    dropdown.classList.remove('show');
-    return;
-  }
-
-  dropdown.innerHTML = options.map((option) => `<li data-value="${escapeHtml(option)}">${escapeHtml(option)}</li>`).join('');
-  dropdown.classList.add('show');
-
-  dropdown.querySelectorAll('li').forEach((item) => {
-    item.addEventListener('mousedown', (event) => {
-      event.preventDefault();
-      onSelect(item.dataset.value || '');
-    });
-  });
-}
-
-function getAutocompleteInputId(kind) {
-  if (kind === 'city') return 'nannyCity';
-  if (kind === 'district') return 'nannyDistrict';
-  return '';
-}
-
-function attachAutocomplete(kind, optionGetter, onSelect) {
-  const inputId = getAutocompleteInputId(kind);
-  const input = inputId ? document.getElementById(inputId) : null;
-  if (!input || input.dataset.acReady === 'true') return;
-
-  input.dataset.acReady = 'true';
-  input.parentElement?.classList.add('autocomplete-field');
-
-  const dropdown = document.createElement('ul');
-  dropdown.className = 'ac-dropdown';
-  input.insertAdjacentElement('afterend', dropdown);
-  nannyAutocompleteDropdowns.set(getAutocompleteKey(kind), dropdown);
-
-  let requestToken = 0;
-  const showForQuery = async () => {
-    const currentToken = ++requestToken;
-    const rawQuery = input.value.trim();
-    const filtered = await Promise.resolve(optionGetter(rawQuery));
-    if (currentToken !== requestToken) return;
-
-    renderAutocompleteOptions(kind, filtered, (value) => {
-      input.value = value;
-      onSelect(value);
-      hideAutocomplete(kind);
-    });
-  };
-
-  input.addEventListener('focus', showForQuery);
-  input.addEventListener('input', showForQuery);
-  input.addEventListener('blur', () => {
-    setTimeout(() => hideAutocomplete(kind), 120);
-  });
-}
-
-function attachLocationAutocomplete() {
-  attachAutocomplete('city', (query) => getProvinceOptionsAsync(query), (value) => {
-    const districtInput = document.getElementById('nannyDistrict');
-    if (districtInput) districtInput.value = '';
-    handleNannyCityChange(value);
-  });
-
-  attachAutocomplete(
-    'district',
-    (query) => getDistrictOptionsAsync(document.getElementById('nannyCity')?.value.trim() || '', query),
-    () => {}
-  );
-}
-
-function attachSelectPicker(kind, selectId, textInputId, emptyLabel) {
-  const select = document.getElementById(selectId);
-  const input = document.getElementById(textInputId);
-  if (!select || !input || input.dataset.acReady === 'true') return;
-
-  input.dataset.acReady = 'true';
-  input.parentElement?.classList.add('autocomplete-field');
-  input.classList.add('nanny-filter--picker');
-
-  const dropdown = document.createElement('ul');
-  dropdown.className = 'ac-dropdown';
-  input.insertAdjacentElement('afterend', dropdown);
-  nannyAutocompleteDropdowns.set(getAutocompleteKey(kind), dropdown);
-
-  const syncTextFromSelect = () => {
-    const selectedOption = select.options[select.selectedIndex];
-    input.value = selectedOption ? selectedOption.text.trim() : emptyLabel;
-  };
-
-  if (!nannySelectPickerSyncHandlers.includes(syncTextFromSelect)) {
-    nannySelectPickerSyncHandlers.push(syncTextFromSelect);
-  }
-
-  const getFilteredOptions = (query) => {
-    const normalizedQuery = normalizeText(query);
-    return Array.from(select.options)
-      .map((option) => ({ value: option.value, label: option.text.trim() }))
-      .filter((option) => option.label && (!normalizedQuery || normalizeText(option.label).includes(normalizedQuery)))
-      .slice(0, 16);
-  };
-
-  const renderOptions = (query) => {
-    const options = getFilteredOptions(query);
-    if (!options.length) {
-      dropdown.innerHTML = '';
-      dropdown.classList.remove('show');
-      return;
-    }
-
-    dropdown.innerHTML = options.map((option) => `
-      <li data-value="${escapeHtml(option.value)}" data-label="${escapeHtml(option.label)}">${escapeHtml(option.label)}</li>
-    `).join('');
-    dropdown.classList.add('show');
-
-    dropdown.querySelectorAll('li').forEach((item) => {
-      item.addEventListener('mousedown', (event) => {
-        event.preventDefault();
-        select.value = item.dataset.value || '';
-        input.value = item.dataset.label || emptyLabel;
-        hideAutocomplete(kind);
-      });
-    });
-  };
-
-  syncTextFromSelect();
-  input.addEventListener('focus', () => renderOptions(input.value === emptyLabel ? '' : input.value.trim()));
-  input.addEventListener('click', () => renderOptions(input.value === emptyLabel ? '' : input.value.trim()));
-  input.addEventListener('input', () => renderOptions(input.value.trim()));
-  input.addEventListener('blur', () => {
-    setTimeout(() => {
-      hideAutocomplete(kind);
-      syncTextFromSelect();
-    }, 120);
-  });
-}
-
-function syncSelectPickerText() {
-  nannySelectPickerSyncHandlers.forEach((syncFn) => syncFn());
-}
-
-function attachSkillAndVerificationAutocomplete() {
-  attachSelectPicker('skill', 'nannySkillId', 'nannySkillText', 'Tất cả kỹ năng');
-  attachSelectPicker('verification', 'nannyVerification', 'nannyVerificationText', 'Tất cả trạng thái');
-}
-
-function getNannyScheduleFilterKey(dayOfWeek, timeSlot) {
-  return `${dayOfWeek}-${timeSlot}`;
-}
-
-function renderNannyScheduleFilter() {
-  const container = document.getElementById('nannyScheduleFilter');
-  if (!container) return;
-
-  const selected = new Set(
-    nannyScheduleFilters.map((slot) => getNannyScheduleFilterKey(slot.dayOfWeek, slot.timeSlot))
-  );
-
-  let html = '<div></div>';
-  NANNY_DAY_LABELS.forEach((label) => { html += `<div class="nanny-schedule-col-label">${label}</div>`; });
-
-  NANNY_TIME_LABELS.forEach((rowLabel, timeSlot) => {
-    html += `<div class="nanny-schedule-row-label">${rowLabel}</div>`;
-    for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek += 1) {
-      const isActive = selected.has(getNannyScheduleFilterKey(dayOfWeek, timeSlot));
-      html += `
-        <button type="button"
-                class="nanny-schedule-cell ${isActive ? 'active' : ''}"
-                onclick="toggleNannyScheduleFilter(${dayOfWeek}, ${timeSlot})"
-                aria-label="${rowLabel} - ${NANNY_DAY_LABELS[dayOfWeek]}">
-          <span class="nanny-schedule-check">${isActive ? '&#10003;' : ''}</span>
-        </button>`;
-    }
-  });
-
-  container.innerHTML = html;
-}
-
-function toggleNannyScheduleFilter(dayOfWeek, timeSlot) {
-  const key = getNannyScheduleFilterKey(dayOfWeek, timeSlot);
-  const index = nannyScheduleFilters.findIndex((slot) => getNannyScheduleFilterKey(slot.dayOfWeek, slot.timeSlot) === key);
-  if (index >= 0) nannyScheduleFilters.splice(index, 1);
-  else nannyScheduleFilters.push({ dayOfWeek, timeSlot });
-  renderNannyScheduleFilter();
-}
-
-function applyNannyScheduleFilter(items) {
-  if (!Array.isArray(items) || !nannyScheduleFilters.length) return Array.isArray(items) ? items : [];
-  const selected = new Set(
-    nannyScheduleFilters.map((slot) => getNannyScheduleFilterKey(slot.dayOfWeek, slot.timeSlot))
-  );
-
-  return items.filter((profile) => {
-    const slots = Array.isArray(profile?.availabilitySlots) ? profile.availabilitySlots : [];
-    return slots.some((slot) => selected.has(getNannyScheduleFilterKey(Number(slot.dayOfWeek), Number(slot.timeSlot))));
-  });
-}
-
-function loadLocationData() {
-  if (nannyLocationPromise) return nannyLocationPromise;
-
-  // Attach autocomplete ngay, để người dùng vẫn chọn được khi API ngoài chậm/lỗi.
-  attachLocationAutocomplete();
-
-  nannyLocationPromise = fetch('https://provinces.open-api.vn/api/v2/?depth=2')
-    .then((response) => (response.ok ? response.json() : []))
-    .then((data) => {
-      nannyProvinces = Array.isArray(data) ? data : [];
-      return nannyProvinces;
-    })
-    .catch(() => {
-      nannyProvinces = [];
-      return nannyProvinces;
-    });
-
-  return nannyLocationPromise;
-}
-
-function openNannyFilters() {
-  renderNannyScheduleFilter();
-  document.getElementById('nannyFilterModal')?.classList.add('show');
-}
-
-function closeNannyFilters() {
-  document.getElementById('nannyFilterModal')?.classList.remove('show');
-}
-
-function resetNannyFilters() {
-  const ids = [
-    'nannyCity',
-    'nannyDistrict',
-    'nannySkillId',
-    'nannySkillText',
-    'nannyVerification',
-    'nannyVerificationText',
-    'nannyExperience',
-    'nannyAgeMin',
-    'nannySalaryMin',
-    'nannySalaryMax'
-  ];
-
-  ids.forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-  nannyScheduleFilters = [];
-  syncSelectPickerText();
-  renderNannyScheduleFilter();
-
-  doNannySearch();
-}
-
-function applyNannyFilters() {
-  closeNannyFilters();
-  doNannySearch();
-}
-
 function initNannyMap() {
   const mapEl = document.getElementById('nannyMap');
   if (nannyMap || !mapEl || typeof L === 'undefined') return;
 
   nannyMap = L.map('nannyMap', { zoomControl: true }).setView([10.776, 106.701], 11);
+  window.__leafletNannyMap = nannyMap;  // expose for rec panel (window.nannyMap = DOM element)
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; CartoDB',
     maxZoom: 19
   }).addTo(nannyMap);
+
+  nannyMap.whenReady(() => {
+    try {
+      nannyMap.invalidateSize({ animate: false });
+    } catch (_) {
+      /* ignore */
+    }
+  });
+  setTimeout(() => {
+    try {
+      nannyMap?.invalidateSize({ animate: false });
+    } catch (_) {
+      /* ignore */
+    }
+  }, 0);
 
   nannyMap.on('moveend', () => {
     if (suppressNextNannyMapMove) {
@@ -961,6 +423,30 @@ function clearNannyMarkers() {
   nannyMarkers = [];
 }
 
+// Helpers for rec panel (window.xxx ≠ let vars in this file)
+function pushRecNannyMarker(item) { nannyMarkers.push(item); }
+function setSuppressNextNannySearch() { suppressNextNannyMapMove = true; }
+
+/** Tránh Leaflet gọi layerPointToContainerPoint khi map/container chưa sẵn (openPopup trực tiếp dễ lỗi). */
+function safeOpenNannyPopup(marker) {
+  if (!marker || !nannyMap) return;
+  try {
+    nannyMap.invalidateSize({ animate: false });
+  } catch (_) {
+    /* ignore */
+  }
+  requestAnimationFrame(() => {
+    try {
+      const c = nannyMap.getContainer?.();
+      if (!c || !c.isConnected) return;
+      if (marker.getMap?.() !== nannyMap) return;
+      marker.openPopup();
+    } catch (_) {
+      /* ignore */
+    }
+  });
+}
+
 function setNannyMarkerHover(idx, active, openPopup = false) {
   const markerData = nannyMarkers[idx];
   if (!markerData) return;
@@ -971,8 +457,9 @@ function setNannyMarkerHover(idx, active, openPopup = false) {
     fillOpacity: active ? 0.18 : 0.1,
     weight: active ? 2 : 1
   });
-  if (active && openPopup) markerData.marker?.openPopup();
-  if (!active) markerData.marker?.closePopup();
+  if (openPopup && active) {
+    safeOpenNannyPopup(markerData.marker);
+  }
 }
 
 function focusNannyMarker(idx) {
@@ -980,7 +467,7 @@ function focusNannyMarker(idx) {
   if (!markerData || !nannyMap) return;
   suppressNextNannyMapMove = true;
   nannyMap.flyTo([markerData.point.lat, markerData.point.lng], markerData.point.zoom || 13, { duration: 0.4 });
-  setNannyMarkerHover(idx, true, true);
+  setNannyMarkerHover(idx, true, false);
 }
 
 function renderNannyCards(items, options = {}) {
@@ -991,6 +478,9 @@ function renderNannyCards(items, options = {}) {
 
   count.textContent = `${items.length} hồ sơ`;
   clearNannyMarkers();
+  if (nannyMap) {
+    try { nannyMap.invalidateSize({ animate: false }); } catch (_) {}
+  }
 
   if (!items.length) {
     list.innerHTML = `
@@ -1000,6 +490,10 @@ function renderNannyCards(items, options = {}) {
         <p>Thử thay đổi từ khóa, khu vực hoặc kỹ năng để mở rộng kết quả.</p>
       </div>`;
     return;
+  }
+
+  if (!nannyMap) {
+    initNannyMap();
   }
 
   list.innerHTML = items.map((profile, idx) => {
@@ -1022,7 +516,7 @@ function renderNannyCards(items, options = {}) {
                         class="nanny-card-favorite ${profile.isFavorite ? 'active' : ''}"
                         data-nanny-id="${escapeHtml(normalizeGuid(profile.id))}"
                         aria-pressed="${profile.isFavorite ? 'true' : 'false'}"
-                        title="${profile.isFavorite ? 'Bo yeu thich' : 'Yeu thich nanny'}"
+                        title="${profile.isFavorite ? 'Bỏ yêu thích' : 'Yêu thích bảo mẫu'}"
                         onclick="toggleNannyFavorite('${escapeHtml(profile.id)}', event)">
                   <span class="material-icons-round">${profile.isFavorite ? 'favorite' : 'favorite_border'}</span>
                 </button>` : ''}
@@ -1033,7 +527,7 @@ function renderNannyCards(items, options = {}) {
             ${renderNannyBenefitPills(profile)}
             <span class="nanny-pill nanny-pill--orange">${escapeHtml(profile.verificationStatusLabel || 'Chưa xác minh')}</span>
             <span class="nanny-pill">${profile.age ? `${profile.age} tuổi` : 'Chưa rõ tuổi'}</span>
-            <span class="nanny-pill">${profile.yearsOfExperience ? `${profile.yearsOfExperience} năm KN` : 'Chưa rõ KN'}</span>
+            <span class="nanny-pill">${profile.yearsOfExperience ? `${profile.yearsOfExperience} năm kinh nghiệm` : 'Chưa rõ kinh nghiệm'}</span>
           </div>
           <div class="nanny-card__skills">
             ${topSkills.length
@@ -1044,47 +538,53 @@ function renderNannyCards(items, options = {}) {
       </article>`;
   }).join('');
 
-  items.forEach((profile, idx) => {
-    const point = getNannyPoint(profile, idx);
-    const icon = L.divIcon({
-      className: '',
-      html: `
+  if (nannyMap && typeof L !== 'undefined') {
+    items.forEach((profile, idx) => {
+      const point = getNannyPoint(profile, idx);
+      const icon = L.divIcon({
+        className: '',
+        html: `
         <div class="nanny-map-marker">
           <span class="nanny-map-marker__halo"></span>
           <span class="nanny-map-marker__pin"><span class="nanny-map-marker__core"></span></span>
         </div>`,
-      iconSize: [28, 36],
-      iconAnchor: [14, 30]
-    });
+        iconSize: [28, 36],
+        iconAnchor: [14, 30]
+      });
 
-    const marker = L.marker([point.lat, point.lng], { icon }).addTo(nannyMap);
-    const circle = L.circle([point.lat, point.lng], {
-      radius: point.radius,
-      color: '#fdba74',
-      fillColor: '#fdba74',
-      fillOpacity: 0.1,
-      weight: 1
-    }).addTo(nannyMap);
+      const marker = L.marker([point.lat, point.lng], { icon }).addTo(nannyMap);
+      const circle = L.circle([point.lat, point.lng], {
+        radius: point.radius,
+        color: '#fdba74',
+        fillColor: '#fdba74',
+        fillOpacity: 0.1,
+        weight: 1
+      }).addTo(nannyMap);
 
-    marker.bindPopup(`
-      <div class="text-sm font-semibold text-slate-700">${escapeHtml(profile.fullName || 'Bao mau')}</div>
-      <div class="text-xs text-slate-500 mt-1">${escapeHtml([profile.district, profile.city].filter(Boolean).join(', ') || 'Chua cap nhat khu vuc')}</div>
+      marker.bindPopup(`
+      <div class="text-sm font-semibold text-slate-700">${escapeHtml(profile.fullName || 'Bảo mẫu')}</div>
+      <div class="text-xs text-slate-500 mt-1">${escapeHtml([profile.district, profile.city].filter(Boolean).join(', ') || 'Chưa cập nhật khu vực')}</div>
     `);
 
-    nannyMarkers.push({ marker, circle, point, element: marker.getElement() });
-  });
+      nannyMarkers.push({ marker, circle, point, element: marker.getElement() });
+    });
+  }
 
   if (fitToMarkers && nannyMap && nannyMarkers.length) {
     const bounds = L.latLngBounds(
       nannyMarkers.map((entry) => [entry.point.lat, entry.point.lng])
     );
     suppressNextNannyMapMove = true;
-    nannyMap.fitBounds(bounds, { padding: [24, 24], maxZoom: 13 });
+    try {
+      nannyMap.fitBounds(bounds, { padding: [24, 24], maxZoom: 13, animate: false });
+    } catch (e) {
+      console.warn('[nanny-list] fitBounds error', e);
+    }
   }
 
   list.querySelectorAll('.nanny-card').forEach((card) => {
     const idx = Number(card.dataset.idx);
-    card.addEventListener('mouseenter', () => setNannyMarkerHover(idx, true, true));
+    card.addEventListener('mouseenter', () => setNannyMarkerHover(idx, true, false));
     card.addEventListener('mouseleave', () => setNannyMarkerHover(idx, false, false));
     card.addEventListener('click', () => {
       list.querySelectorAll('.nanny-card').forEach((item) => item.classList.remove('active'));
@@ -1098,40 +598,18 @@ function renderNannyCards(items, options = {}) {
 async function doNannySearch() {
   const params = new URLSearchParams({
     page: '1',
-    pageSize: '20'
+    pageSize: '100'
   });
 
   const keyword = document.getElementById('nannyKeyword')?.value.trim();
-  const city = document.getElementById('nannyCity')?.value.trim();
-  const district = document.getElementById('nannyDistrict')?.value.trim();
-  const skillId = document.getElementById('nannySkillId')?.value.trim();
-  const verificationStatus = document.getElementById('nannyVerification')?.value.trim();
-  const minExperience = document.getElementById('nannyExperience')?.value.trim();
-  const minAge = document.getElementById('nannyAgeMin')?.value.trim();
-  const minExpectedSalary = document.getElementById('nannySalaryMin')?.value.trim();
-  const maxExpectedSalary = document.getElementById('nannySalaryMax')?.value.trim();
-  const singleScheduleFilter = nannyScheduleFilters.length === 1 ? nannyScheduleFilters[0] : null;
-
   if (keyword) params.append('keyword', keyword);
-  if (city) params.append('city', city);
-  if (district) params.append('district', district);
-  if (skillId) params.append('skillIds', skillId);
-  if (verificationStatus) params.append('verificationStatus', verificationStatus);
-  if (minExperience) params.append('minExperience', minExperience);
-  if (minAge) params.append('minAge', minAge);
-  if (minExpectedSalary) params.append('minExpectedSalary', minExpectedSalary);
-  if (maxExpectedSalary) params.append('maxExpectedSalary', maxExpectedSalary);
-  if (singleScheduleFilter) {
-    params.append('dayOfWeek', String(singleScheduleFilter.dayOfWeek));
-    params.append('timeSlot', String(singleScheduleFilter.timeSlot));
-  }
 
   try {
     const response = await fetch(`/Nanny/BrowseData?${params.toString()}`, { credentials: 'same-origin' });
     const json = await response.json();
     const rawProfiles = Array.isArray(json.data) ? json.data : [];
     await hydrateNannyGeoForMap(rawProfiles);
-    nannyAllProfiles = nannyScheduleFilters.length > 1 ? applyNannyScheduleFilter(rawProfiles) : rawProfiles;
+    nannyAllProfiles = rawProfiles;
     nannyProfiles = nannyAllProfiles;
     renderNannyCards(nannyAllProfiles, { fitToMarkers: true });
   } catch {
@@ -1143,7 +621,7 @@ async function doNannySearch() {
 
 function renderAvailability(slots) {
   if (!Array.isArray(slots) || !slots.length) {
-    return '<span class="nanny-card__muted">Chua cap nhat lich ranh.</span>';
+    return '<span class="nanny-card__muted">Chưa cập nhật lịch rảnh.</span>';
   }
 
   const dayAliases = {
@@ -1223,13 +701,12 @@ async function openNannyDetail(id) {
     document.getElementById('nd-avatar').src = detail.avatarUrl || '/img/nanny-logo.jpg';
     document.getElementById('nd-name').textContent = detail.fullName || 'Bảo mẫu';
     const publicLocation = formatPublicLocation(detail);
-    document.getElementById('nd-location').textContent = publicLocation || 'Chua cap nhat khu vuc';
+    document.getElementById('nd-location').textContent = publicLocation || 'Chưa cập nhật khu vực';
     document.getElementById('nd-verify').textContent = detail.verificationStatusLabel || 'Đang cập nhật';
     document.getElementById('nd-bio').textContent = detail.bio || 'Hồ sơ chưa có mô tả.';
-    document.getElementById('nd-phone').textContent = isParentRole() ? 'Gui request contact de trao doi truc tiep voi nanny' : 'Thong tin lien he chi hien sau khi da ket noi';
-    document.getElementById('nd-address').textContent = publicLocation || 'Chua cap nhat';
+    document.getElementById('nd-phone').textContent = isParentRole() ? 'Gửi yêu cầu liên hệ để trao đổi trực tiếp với bảo mẫu' : 'Thông tin liên hệ chỉ hiện sau khi đã kết nối';
+    document.getElementById('nd-address').textContent = publicLocation || 'Chưa cập nhật';
     document.getElementById('nd-travel').textContent = detail.maxTravelDistance ? `${detail.maxTravelDistance} km` : 'Chưa cập nhật';
-    document.getElementById('nd-completeness').textContent = `${detail.profileCompleteness || 0}%`;
     document.getElementById('nd-age').textContent = detail.age ? `${detail.age} tuổi` : 'Chưa rõ tuổi';
     document.getElementById('nd-exp').textContent = detail.yearsOfExperience ? `${detail.yearsOfExperience} năm kinh nghiệm` : 'Chưa rõ kinh nghiệm';
     document.getElementById('nd-education').textContent = detail.educationLevelLabel || 'Chưa cập nhật học vấn';
@@ -1238,9 +715,9 @@ async function openNannyDetail(id) {
     if (planChip) {
       const planLabel = getNannyPlanLabel(detail);
       const planText = detail.searchPriority
-        ? `${planLabel || 'Ho so noi bat'} • Uu tien hien thi`
+        ? `${planLabel || 'Hồ sơ nổi bật'} • Ưu tiên hiển thị`
         : detail.featuredBadge
-          ? (planLabel || 'Ho so noi bat')
+          ? (planLabel || 'Hồ sơ nổi bật')
           : '';
       planChip.textContent = planText;
       planChip.classList.toggle('hidden', !planText);
@@ -1266,7 +743,7 @@ async function openNannyDetail(id) {
       const icon = favoriteButton.querySelector('.material-icons-round');
       const text = document.getElementById('nd-favoriteBtnText');
       if (icon) icon.textContent = detail.isFavorite ? 'favorite' : 'favorite_border';
-      if (text) text.textContent = detail.isFavorite ? 'Bo yeu thich' : 'Yeu thich';
+      if (text) text.textContent = detail.isFavorite ? 'Bỏ yêu thích' : 'Yêu thích';
     }
 
     const contactButton = document.getElementById('nd-contactBtn');
@@ -1305,15 +782,16 @@ function tryOpenNannyDetailFromQuery() {
 }
 
 function bootstrapNannyListPage() {
-  ['nannyCity', 'nannyDistrict', 'nannySkillText', 'nannyVerificationText'].forEach((id) => {
-    document.getElementById(id)?.setAttribute('autocomplete', 'off');
-  });
-  attachSkillAndVerificationAutocomplete();
-  renderNannyScheduleFilter();
+  document.getElementById('nannyKeyword')?.setAttribute('autocomplete', 'off');
   initNannyMap();
-  loadLocationData();
-  doNannySearch();
-  tryOpenNannyDetailFromQuery();
+  void (async () => {
+    try {
+      await doNannySearch();
+      tryOpenNannyDetailFromQuery();
+    } catch (_) {
+      tryOpenNannyDetailFromQuery();
+    }
+  })();
 }
 
 if (document.readyState === 'loading') {
@@ -1321,3 +799,13 @@ if (document.readyState === 'loading') {
 } else {
   bootstrapNannyListPage();
 }
+
+window.addEventListener('pageshow', () => {
+  try {
+    if (nannyMap) {
+      nannyMap.invalidateSize({ animate: false });
+    }
+  } catch (_) {
+    /* ignore */
+  }
+});

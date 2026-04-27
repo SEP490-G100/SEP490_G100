@@ -1,10 +1,35 @@
 (() => {
   const ROOT_ID = 'nm-toast-root';
   const DEFAULT_DURATION = 2800;
-  const ICON_BY_TYPE = {
-    info: 'info',
+  const ICON_BY_VARIANT = {
     success: 'check_circle',
-    warning: 'warning_amber',
+    error: 'error'
+  };
+  const TYPE_ALIASES = {
+    info: 'info',
+    'thong bao': 'info',
+    thongbao: 'info',
+    notification: 'info',
+    success: 'success',
+    ok: 'success',
+    'thanh cong': 'success',
+    thanhcong: 'success',
+    warning: 'warning',
+    warn: 'warning',
+    'canh bao': 'warning',
+    canhbao: 'warning',
+    error: 'error',
+    err: 'error',
+    loi: 'error',
+    failed: 'error',
+    failure: 'error',
+    'that bai': 'error',
+    thatbai: 'error'
+  };
+  const VARIANT_BY_TYPE = {
+    info: 'success',
+    success: 'success',
+    warning: 'error',
     error: 'error'
   };
 
@@ -24,9 +49,22 @@
     return options || {};
   }
 
+  function normalizeTypeKey(rawType) {
+    const type = String(rawType || 'success').trim().toLowerCase();
+    const normalized = typeof type.normalize === 'function'
+      ? type.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      : type;
+
+    return normalized.replace(/\s+/g, ' ');
+  }
+
   function getType(rawType) {
-    const type = String(rawType || 'info').trim().toLowerCase();
-    return Object.prototype.hasOwnProperty.call(ICON_BY_TYPE, type) ? type : 'info';
+    const typeKey = normalizeTypeKey(rawType);
+    return TYPE_ALIASES[typeKey] || 'success';
+  }
+
+  function getVariant(type) {
+    return VARIANT_BY_TYPE[type] || 'error';
   }
 
   function getDuration(rawDuration) {
@@ -40,18 +78,21 @@
 
     const opts = normalizeOptions(options);
     const type = getType(opts.type);
+    const variant = getVariant(type);
     const duration = getDuration(opts.duration);
     const dismissible = opts.dismissible !== false;
 
     const root = ensureRoot();
     const toast = document.createElement('div');
-    toast.className = `nm-toast nm-toast--${type}`;
+    toast.className = `nm-toast nm-toast--${variant}`;
+    toast.dataset.toastType = type;
+    toast.dataset.toastVariant = variant;
     toast.setAttribute('role', 'status');
-    toast.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
+    toast.setAttribute('aria-live', variant === 'error' ? 'assertive' : 'polite');
 
     const icon = document.createElement('span');
     icon.className = 'material-icons-round nm-toast__icon';
-    icon.textContent = ICON_BY_TYPE[type];
+    icon.textContent = ICON_BY_VARIANT[variant];
 
     const text = document.createElement('div');
     text.className = 'nm-toast__text';
@@ -61,7 +102,7 @@
     closeButton.type = 'button';
     closeButton.className = 'nm-toast__close material-icons-round';
     closeButton.textContent = 'close';
-    closeButton.setAttribute('aria-label', 'Dong thong bao');
+    closeButton.setAttribute('aria-label', '\u0110\u00f3ng th\u00f4ng b\u00e1o');
     closeButton.hidden = !dismissible;
 
     toast.appendChild(icon);
@@ -84,5 +125,59 @@
     return removeToast;
   }
 
+  function syncCurrentUserAvatarSlot(slot, avatarUrl) {
+    if (!slot) return;
+
+    const nextUrl = typeof avatarUrl === 'string' ? avatarUrl.trim() : '';
+    const fallback = slot.querySelector('[data-current-user-avatar-fallback]');
+    let image = slot.querySelector('[data-current-user-avatar-img]');
+    const imageClassName = slot.getAttribute('data-current-user-avatar-img-class') || '';
+
+    if (nextUrl) {
+      if (!image) {
+        image = document.createElement('img');
+        image.alt = 'Avatar';
+        image.setAttribute('data-current-user-avatar-img', '');
+        if (imageClassName) {
+          image.className = imageClassName;
+        }
+
+        slot.insertBefore(image, fallback || null);
+      } else if (imageClassName) {
+        image.className = imageClassName;
+      }
+
+      image.src = nextUrl;
+      image.hidden = false;
+
+      if (fallback) {
+        fallback.classList.add('hidden');
+      }
+
+      return;
+    }
+
+    if (image) {
+      image.remove();
+    }
+
+    if (fallback) {
+      if (!fallback.textContent || !fallback.textContent.trim()) {
+        fallback.textContent = slot.getAttribute('data-current-user-avatar-initial') || 'U';
+      }
+
+      fallback.classList.remove('hidden');
+    }
+  }
+
+  function updateCurrentUserAvatar(avatarUrl) {
+    document.querySelectorAll('[data-current-user-avatar-slot]').forEach((slot) => {
+      syncCurrentUserAvatarSlot(slot, avatarUrl);
+    });
+
+    return typeof avatarUrl === 'string' ? avatarUrl.trim() : '';
+  }
+
   window.showToast = showToast;
+  window.updateCurrentUserAvatar = updateCurrentUserAvatar;
 })();

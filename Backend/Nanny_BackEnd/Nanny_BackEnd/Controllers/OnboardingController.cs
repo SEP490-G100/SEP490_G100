@@ -2,7 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nanny_BackEnd.DTOs.Profile;
-using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Controllers;
 
@@ -11,11 +11,13 @@ namespace Nanny_BackEnd.Controllers;
 [Authorize]
 public class OnboardingController : ControllerBase
 {
-    private readonly OnboardingService _onboarding;
+    private readonly IOnboardingService _onboarding;
+    private readonly ILogger<OnboardingController> _logger;
 
-    public OnboardingController(OnboardingService onboarding)
+    public OnboardingController(IOnboardingService onboarding, ILogger<OnboardingController> logger)
     {
         _onboarding = onboarding;
+        _logger = logger;
     }
 
     [HttpGet("status")]
@@ -46,6 +48,12 @@ public class OnboardingController : ControllerBase
         {
             return BadRequest(new { success = false, message = ex.Message });
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error while updating nanny profile.");
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { success = false, message = "Lỗi máy chủ khi cập nhật hồ sơ bảo mẫu. Vui lòng thử lại." });
+        }
     }
 
     [HttpPut("nanny/skills")]
@@ -60,6 +68,12 @@ public class OnboardingController : ControllerBase
         catch (InvalidOperationException ex)
         {
             return BadRequest(new { success = false, message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error while updating nanny skills.");
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { success = false, message = "Lỗi máy chủ khi cập nhật kỹ năng bảo mẫu. Vui lòng thử lại." });
         }
     }
 
@@ -76,6 +90,12 @@ public class OnboardingController : ControllerBase
         {
             return BadRequest(new { success = false, message = ex.Message });
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error while updating nanny availability.");
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { success = false, message = "Lỗi máy chủ khi cập nhật lịch làm việc. Vui lòng thử lại." });
+        }
     }
 
     private Guid GetCurrentUserId()
@@ -85,4 +105,3 @@ public class OnboardingController : ControllerBase
         return Guid.Parse(sub!);
     }
 }
-

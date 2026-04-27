@@ -2,7 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nanny_BackEnd.DTOs.Profile;
-using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Controllers;
 
@@ -11,16 +11,13 @@ namespace Nanny_BackEnd.Controllers;
 [Authorize]
 public class ProfileController : ControllerBase
 {
-    private readonly ProfileService _profileService;
+    private readonly IProfileService _profileService;
 
-    public ProfileController(ProfileService profileService)
+    public ProfileController(IProfileService profileService)
     {
         _profileService = profileService;
     }
 
-    /// <summary>
-    /// Get personal profile information
-    /// </summary>
     [HttpGet]
     public async Task<IActionResult> GetPersonalProfile()
     {
@@ -30,19 +27,29 @@ public class ProfileController : ControllerBase
             var profile = await _profileService.GetPersonalProfileAsync(userId);
             return Ok(new { success = true, data = profile });
         }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized(Fail("Phiên đăng nhập không hợp lệ."));
+        }
         catch (InvalidOperationException ex)
         {
             return BadRequest(Fail(ex.Message));
         }
     }
 
+    [AllowAnonymous]
     [HttpGet("public/{userId:guid}")]
     public async Task<IActionResult> GetPublicProfile(Guid userId)
     {
         try
         {
-            var profile = await _profileService.GetPublicProfileAsync(userId);
+            var requesterUserId = TryGetCurrentUserId();
+            var profile = await _profileService.GetPublicProfileAsync(requesterUserId, userId);
             return Ok(new { success = true, data = profile });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized(Fail("Phiên đăng nhập không hợp lệ."));
         }
         catch (InvalidOperationException ex)
         {
@@ -50,9 +57,6 @@ public class ProfileController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Update personal information
-    /// </summary>
     [HttpPut]
     public async Task<IActionResult> UpdatePersonalInfo([FromBody] UpdatePersonalInfoRequest request)
     {
@@ -62,15 +66,16 @@ public class ProfileController : ControllerBase
             var profile = await _profileService.UpdatePersonalInfoAsync(userId, request);
             return Ok(new { success = true, message = "Cập nhật thông tin cá nhân thành công.", data = profile });
         }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized(Fail("Phiên đăng nhập không hợp lệ."));
+        }
         catch (InvalidOperationException ex)
         {
             return BadRequest(Fail(ex.Message));
         }
     }
 
-    /// <summary>
-    /// Upload user avatar
-    /// </summary>
     [HttpPost("upload-avatar")]
     public async Task<IActionResult> UploadAvatar(IFormFile file)
     {
@@ -82,6 +87,10 @@ public class ProfileController : ControllerBase
             var userId = GetCurrentUserId();
             var avatarUrl = await _profileService.UploadAvatarAsync(userId, file);
             return Ok(new { success = true, message = "Cập nhật ảnh đại diện thành công.", data = avatarUrl });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized(Fail("Phiên đăng nhập không hợp lệ."));
         }
         catch (InvalidOperationException ex)
         {
@@ -98,15 +107,16 @@ public class ProfileController : ControllerBase
             await _profileService.AddNannyCertificateAsync(userId, request);
             return Ok(new { success = true, message = "Thêm chứng chỉ thành công." });
         }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized(Fail("Phiên đăng nhập không hợp lệ."));
+        }
         catch (InvalidOperationException ex)
         {
             return BadRequest(Fail(ex.Message));
         }
     }
 
-    /// <summary>
-    /// Get all child profiles (Parent only)
-    /// </summary>
     [HttpGet("children")]
     public async Task<IActionResult> GetChildProfiles()
     {
@@ -116,7 +126,7 @@ public class ProfileController : ControllerBase
             var children = await _profileService.GetChildProfilesAsync(userId);
             return Ok(new { success = true, data = children });
         }
-        catch (UnauthorizedAccessException ex)
+        catch (UnauthorizedAccessException)
         {
             return Forbid();
         }
@@ -126,9 +136,6 @@ public class ProfileController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Create a new child profile (Parent only)
-    /// </summary>
     [HttpPost("children")]
     public async Task<IActionResult> CreateChildProfile([FromBody] CreateChildProfileRequest request)
     {
@@ -138,7 +145,7 @@ public class ProfileController : ControllerBase
             var child = await _profileService.CreateChildProfileAsync(userId, request);
             return CreatedAtAction(nameof(GetChildProfiles), new { }, new { success = true, message = "Thêm con em thành công.", data = child });
         }
-        catch (UnauthorizedAccessException ex)
+        catch (UnauthorizedAccessException)
         {
             return Forbid();
         }
@@ -148,9 +155,6 @@ public class ProfileController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Update child profile information (Parent only)
-    /// </summary>
     [HttpPut("children/{childId}")]
     public async Task<IActionResult> UpdateChildProfile(Guid childId, [FromBody] UpdateChildProfileRequest request)
     {
@@ -160,7 +164,7 @@ public class ProfileController : ControllerBase
             var child = await _profileService.UpdateChildProfileAsync(userId, childId, request);
             return Ok(new { success = true, message = "Cập nhật thông tin con em thành công.", data = child });
         }
-        catch (UnauthorizedAccessException ex)
+        catch (UnauthorizedAccessException)
         {
             return Forbid();
         }
@@ -170,9 +174,6 @@ public class ProfileController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Delete child profile (Parent only)
-    /// </summary>
     [HttpDelete("children/{childId}")]
     public async Task<IActionResult> DeleteChildProfile(Guid childId)
     {
@@ -182,7 +183,7 @@ public class ProfileController : ControllerBase
             await _profileService.DeleteChildProfileAsync(userId, childId);
             return Ok(new { success = true, message = "Xóa con em thành công." });
         }
-        catch (UnauthorizedAccessException ex)
+        catch (UnauthorizedAccessException)
         {
             return Forbid();
         }
@@ -196,7 +197,22 @@ public class ProfileController : ControllerBase
     {
         var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                ?? User.FindFirst("sub")?.Value;
-        return Guid.Parse(sub!);
+
+        if (string.IsNullOrWhiteSpace(sub) || !Guid.TryParse(sub, out var userId))
+            throw new UnauthorizedAccessException("Token không hợp lệ.");
+
+        return userId;
+    }
+
+    private Guid? TryGetCurrentUserId()
+    {
+        var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+               ?? User.FindFirst("sub")?.Value;
+
+        if (string.IsNullOrWhiteSpace(sub) || !Guid.TryParse(sub, out var userId))
+            return null;
+
+        return userId;
     }
 
     private static object Fail(string message) => new { success = false, message };

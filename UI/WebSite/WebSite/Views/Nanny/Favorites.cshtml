@@ -1,5 +1,5 @@
 @{
-    ViewData["Title"] = "Nanny yeu thich - NannyMatch";
+    ViewData["Title"] = "Bảo mẫu yêu thích - NannyMatch";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
@@ -9,16 +9,16 @@
             <div class="px-6 py-6 sm:px-8 border-b border-orange-100 bg-[radial-gradient(circle_at_top_right,rgba(255,237,213,.85),transparent_28%),linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <p class="text-xs font-extrabold uppercase tracking-[0.24em] text-orange-500">Parent zone</p>
-                        <h1 class="mt-2 text-3xl font-bold text-slate-900">Danh sach nanny yeu thich</h1>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.24em] text-orange-500">Khu vực phụ huynh</p>
+                        <h1 class="mt-2 text-3xl font-bold text-slate-900">Danh sách bảo mẫu yêu thích</h1>
                         <p class="mt-2 text-sm leading-6 text-slate-500 max-w-2xl">
-                            Quan ly cac ho so nanny ban da tim va bo luu de lien he nhanh hon khi can.
+                            Quản lý các hồ sơ bảo mẫu bạn đã tìm và bộ lưu để liên hệ nhanh hơn khi cần.
                         </p>
                     </div>
                     <div class="flex items-center gap-3">
                         <a href="/Nanny/List"
                            class="inline-flex items-center justify-center min-h-[48px] px-5 rounded-2xl border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 transition-all">
-                            Quay lai tim nanny
+                                Quay lại tìm bảo mẫu
                         </a>
                     </div>
                 </div>
@@ -26,13 +26,13 @@
 
             <div class="px-6 py-6 sm:px-8">
                 <div class="mb-5 rounded-3xl border border-slate-100 bg-slate-50 px-5 py-4">
-                    <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Tong nanny yeu thich</p>
+                    <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Tổng bảo mẫu yêu thích</p>
                     <p id="favoriteNannyCount" class="mt-2 text-3xl font-extrabold text-slate-900">0</p>
                 </div>
 
                 <div id="favoriteNannyList" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <div class="rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center text-slate-500 lg:col-span-2">
-                        Dang tai danh sach nanny yeu thich...
+                        Đang tải danh sách bảo mẫu yêu thích...
                     </div>
                 </div>
             </div>
@@ -68,9 +68,9 @@
             const minText = formatCurrency(min);
             const maxText = formatCurrency(max);
             if (minText && maxText) return `${minText} - ${maxText}`;
-            if (minText) return `Tu ${minText}`;
-            if (maxText) return `Den ${maxText}`;
-            return 'Thuong luong';
+            if (minText) return `Từ ${minText}`;
+            if (maxText) return `Đến ${maxText}`;
+            return 'Thỏa thuận';
         };
 
         async function removeFavorite(nannyId) {
@@ -81,19 +81,19 @@
                 });
                 const json = await response.json();
                 if (!json?.success) {
-                    notify(json?.message || 'Khong the cap nhat yeu thich.', 'error');
+                    notify(json?.message || 'Không thể cập nhật yêu thích.', 'error');
                     return;
                 }
 
                 if (json.isFavorite) {
-                    notify('Nanny nay van dang o trang thai yeu thich.', 'warning');
+                    notify('Bảo mẫu này vẫn đang ở trạng thái yêu thích.', 'error');
                     return;
                 }
 
-                notify('Da bo nanny khoi danh sach yeu thich.', 'info');
+                notify('Đã bỏ bảo mẫu khỏi danh sách yêu thích.', 'success');
                 await loadFavorites();
             } catch {
-                notify('Loi ket noi server.', 'error');
+                notify('Lỗi kết nối máy chủ.', 'error');
             }
         }
 
@@ -102,52 +102,52 @@
                 listEl.innerHTML = `
                     <div class="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-6 py-14 text-center lg:col-span-2">
                         <span class="material-icons-round text-[34px] text-orange-300">favorite_border</span>
-                        <h3 class="mt-3 text-lg font-bold text-slate-900">Ban chua yeu thich nanny nao</h3>
-                        <p class="mt-2 text-sm text-slate-500">Khi ban tim nanny, danh sach yeu thich se hien thi tai day.</p>
+                        <h3 class="mt-3 text-lg font-bold text-slate-900">Bạn chưa yêu thích bảo mẫu nào</h3>
+                        <p class="mt-2 text-sm text-slate-500">Khi bạn tìm bảo mẫu, danh sách yêu thích sẽ hiển thị tại đây.</p>
                     </div>`;
                 return;
             }
 
             listEl.innerHTML = items.map((item) => {
-                const location = [item.district, item.city].filter(Boolean).join(', ') || 'Chua cap nhat khu vuc';
+                const location = [item.district, item.city].filter(Boolean).join(', ') || 'Chưa cập nhật khu vực';
                 const skills = Array.isArray(item.skills) ? item.skills : [];
                 const shownSkills = skills.slice(0, 4)
-                    .map((skill) => `<span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">${escapeHtml(skill.skillName || 'Skill')}</span>`)
+                    .map((skill) => `<span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">${escapeHtml(skill.skillName || 'Kỹ năng')}</span>`)
                     .join('');
 
                 return `
                     <article class="rounded-[24px] border border-orange-100 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,.05)]">
                         <div class="flex items-start justify-between gap-3">
                             <div class="flex items-center gap-3 min-w-0">
-                                <img src="${escapeHtml(item.avatarUrl || '/img/nanny-logo.jpg')}" alt="Avatar"
+                                <img src="${escapeHtml(item.avatarUrl || '/img/nanny-logo.jpg')}" alt="Ảnh đại diện"
                                      class="w-14 h-14 rounded-2xl object-cover border border-orange-100 bg-orange-50" />
                                 <div class="min-w-0">
-                                    <h3 class="text-lg font-extrabold text-slate-900 truncate">${escapeHtml(item.fullName || 'Nanny')}</h3>
+                                    <h3 class="text-lg font-extrabold text-slate-900 truncate">${escapeHtml(item.fullName || 'Bảo mẫu')}</h3>
                                     <p class="text-sm font-semibold text-orange-600 mt-1">${escapeHtml(location)}</p>
                                 </div>
                             </div>
                             <button type="button"
                                     onclick="window.__removeFavoriteNanny('${escapeHtml(item.id)}')"
                                     class="inline-flex items-center justify-center min-h-[36px] px-3 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 text-xs font-extrabold hover:bg-rose-100 transition-all">
-                                Bo yeu thich
+                                Bỏ yêu thích
                             </button>
                         </div>
 
-                        <p class="mt-3 text-sm text-slate-600 leading-6 line-clamp-2">${escapeHtml(item.bio || 'Ho so chua co mo ta.')}</p>
+                        <p class="mt-3 text-sm text-slate-600 leading-6 line-clamp-2">${escapeHtml(item.bio || 'Hồ sơ chưa có mô tả.')}</p>
 
                         <div class="mt-4 flex flex-wrap gap-2">
                             ${item.searchPriority
-                                ? '<span class="px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold">Nanny Pro</span><span class="px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold">Uu tien hien thi</span>'
+                                ? '<span class="px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold">Gói Pro</span><span class="px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold">Ưu tiên hiển thị</span>'
                                 : item.featuredBadge
-                                    ? '<span class="px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold">Nanny Plus</span>'
+                                    ? '<span class="px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold">Gói Plus</span>'
                                     : ''}
                             <span class="px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold">${escapeHtml(formatSalary(item.expectedSalaryMin, item.expectedSalaryMax))}</span>
-                            <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">${item.yearsOfExperience ? `${item.yearsOfExperience} nam KN` : 'Chua ro kinh nghiem'}</span>
-                            <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">${item.age ? `${item.age} tuoi` : 'Chua ro tuoi'}</span>
+                            <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">${item.yearsOfExperience ? `${item.yearsOfExperience} năm kinh nghiệm` : 'Chưa rõ kinh nghiệm'}</span>
+                            <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">${item.age ? `${item.age} tuổi` : 'Chưa rõ tuổi'}</span>
                         </div>
 
                         <div class="mt-4 flex flex-wrap gap-2">
-                            ${shownSkills || '<span class="text-sm text-slate-400">Chua co ky nang noi bat.</span>'}
+                            ${shownSkills || '<span class="text-sm text-slate-400">Chưa có kỹ năng nổi bật.</span>'}
                         </div>
                     </article>`;
             }).join('');
@@ -165,7 +165,7 @@
             } catch {
                 listEl.innerHTML = `
                     <div class="rounded-3xl border border-red-100 bg-red-50 px-6 py-10 text-center text-red-600 lg:col-span-2">
-                        Khong tai duoc danh sach nanny yeu thich.
+                        Không tải được danh sách bảo mẫu yêu thích.
                     </div>`;
             }
         }

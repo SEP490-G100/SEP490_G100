@@ -1,8 +1,11 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Http;
+using WebSite.Models.Nanny;
+using WebSite.Validation;
 
 namespace WebSite.Models.Profile
 {
-    public class EditPersonalInfoViewModel
+    public class EditPersonalInfoViewModel : IValidatableObject
     {
         public string FirstName { get; set; } = null!;
         public string LastName { get; set; } = null!;
@@ -29,6 +32,30 @@ namespace WebSite.Models.Profile
         public int? MaxTravelDistance { get; set; }
         public List<Guid> SelectedSkillIds { get; set; } = new();
         public List<SelectableSkillViewModel> AvailableSkills { get; set; } = new();
+        public List<DayAvailabilityViewModel> Availability { get; set; } = new()
+        {
+            new() { DayOfWeek = 1, DayName = "Thứ 2" },
+            new() { DayOfWeek = 2, DayName = "Thứ 3" },
+            new() { DayOfWeek = 3, DayName = "Thứ 4" },
+            new() { DayOfWeek = 4, DayName = "Thứ 5" },
+            new() { DayOfWeek = 5, DayName = "Thứ 6" },
+            new() { DayOfWeek = 6, DayName = "Thứ 7" },
+            new() { DayOfWeek = 0, DayName = "Chủ nhật" }
+        };
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (!IsNanny)
+                yield break;
+
+            foreach (var error in SalaryValidationRules.Validate(
+                         ExpectedSalaryMin,
+                         ExpectedSalaryMax,
+                         nameof(ExpectedSalaryMin),
+                         nameof(ExpectedSalaryMax)))
+            {
+                yield return error;
+            }
+        }
     }
 
     public class SelectableSkillViewModel
@@ -38,3 +65,4 @@ namespace WebSite.Models.Profile
         public string Category { get; set; } = string.Empty;
     }
 }
+

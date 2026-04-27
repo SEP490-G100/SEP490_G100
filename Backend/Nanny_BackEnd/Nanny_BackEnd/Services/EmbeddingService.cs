@@ -5,15 +5,17 @@ using Microsoft.Extensions.Options;
 using Nanny_BackEnd.DTOs.Recommendation;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
+using Nanny_BackEnd.Services.Interfaces;
 using OpenAI.Embeddings;
 
 namespace Nanny_BackEnd.Services;
 
-public class EmbeddingService
+public class EmbeddingService : IEmbeddingService
 {
     private readonly AzureOpenAIClient _azureClient;
     private readonly AzureOpenAIOptions _options;
-    private readonly RecommendationRepository _repo;
+    private readonly IRecommendationRepository _repo;
     private readonly ILogger<EmbeddingService> _logger;
 
     private static readonly string[] EducationLabels =
@@ -29,7 +31,7 @@ public class EmbeddingService
 
     public EmbeddingService(
         IOptions<AzureOpenAIOptions> options,
-        RecommendationRepository repo,
+        IRecommendationRepository repo,
         ILogger<EmbeddingService> logger)
     {
         _options = options.Value;
@@ -142,7 +144,7 @@ public class EmbeddingService
     {
         var sb = new StringBuilder();
 
-        // Dòng 1: kinh nghiệm + học vấn
+        //  kinh nghiệm + học vấn
         var years = m.YearsOfExperience ?? 0;
         var edu = m.EducationLevel.HasValue && m.EducationLevel.Value >= 0 && m.EducationLevel.Value < EducationLabels.Length
             ? EducationLabels[m.EducationLevel.Value]
@@ -153,11 +155,11 @@ public class EmbeddingService
             : $"Nanny {years} năm kinh nghiệm.";
         sb.AppendLine(line1);
 
-        // Dòng 2: Skills (nếu có)
+        //  Skills (nếu có)
         if (m.SkillNames.Count > 0)
             sb.AppendLine("Kỹ năng: " + string.Join(", ", m.SkillNames) + ".");
 
-        // Dòng 3: Bio (nếu có)
+        //  Bio (nếu có)
         if (!string.IsNullOrWhiteSpace(m.Bio))
             sb.AppendLine(m.Bio.Trim() + ".");
 

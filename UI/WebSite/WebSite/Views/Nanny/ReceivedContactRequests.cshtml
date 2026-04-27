@@ -1,5 +1,5 @@
 @{
-    ViewData["Title"] = "Request contact da nhan - NannyMatch";
+    ViewData["Title"] = "Yêu cầu liên hệ đã nhận - NannyMatch";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
@@ -9,16 +9,16 @@
             <div class="px-6 py-6 sm:px-8 border-b border-orange-100 bg-[radial-gradient(circle_at_top_right,rgba(255,237,213,.82),transparent_32%),linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-orange-500">Nanny zone</p>
-                        <h1 class="ncr-page-title mt-2 text-3xl font-bold text-slate-900">Request contact da nhan</h1>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-orange-500">Khu vực bảo mẫu</p>
+                        <h1 class="ncr-page-title mt-2 text-3xl font-bold text-slate-900">Yêu cầu liên hệ đã nhận</h1>
                         <p class="mt-2 text-sm leading-6 text-slate-500 max-w-2xl">
-                            Kiem tra request contact tu Parent, chap nhan hoac tu choi voi ly do ro rang.
+                            Kiểm tra yêu cầu liên hệ từ Phụ huynh, chấp nhận hoặc từ chối với lý do rõ ràng.
                         </p>
                     </div>
                     <div class="ncr-header-actions flex items-center gap-3">
                         <a href="/Nanny/List"
                            class="inline-flex items-center justify-center min-h-[46px] px-5 rounded-2xl border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 transition-all">
-                            Quay lai tim nanny
+                            Quay lại tìm bảo mẫu
                         </a>
                     </div>
                 </div>
@@ -28,31 +28,31 @@
                 <div id="receivedContactSummary" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
                     <div class="ncr-stat-card ncr-stat-card--total rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
                         <span class="material-icons-round ncr-stat-icon">stacked_bar_chart</span>
-                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-400">Tong request</p>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-400">Tổng yêu cầu</p>
                         <p id="rcSummaryTotal" class="mt-2 text-2xl font-extrabold text-slate-900">0</p>
                     </div>
                     <div class="ncr-stat-card ncr-stat-card--pending rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
                         <span class="material-icons-round ncr-stat-icon">hourglass_top</span>
-                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-amber-600">Dang cho duyet</p>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-amber-600">Đang chờ duyệt</p>
                         <p id="rcSummaryPending" class="mt-2 text-2xl font-extrabold text-amber-700">0</p>
                     </div>
                     <div class="ncr-stat-card ncr-stat-card--accepted rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
                         <span class="material-icons-round ncr-stat-icon">verified</span>
-                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-emerald-600">Da chap nhan</p>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-emerald-600">Đã chấp nhận</p>
                         <p id="rcSummaryAccepted" class="mt-2 text-2xl font-extrabold text-emerald-700">0</p>
                     </div>
                     <div class="ncr-stat-card ncr-stat-card--rejected rounded-2xl border border-rose-200 bg-rose-50 px-4 py-4">
                         <span class="material-icons-round ncr-stat-icon">do_not_disturb_on</span>
-                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-rose-600">Da tu choi</p>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-rose-600">Đã từ chối</p>
                         <p id="rcSummaryRejected" class="mt-2 text-2xl font-extrabold text-rose-700">0</p>
                     </div>
                 </div>
 
                 <div class="ncr-filter-shell flex flex-wrap items-center gap-2 mb-5">
-                    <button type="button" class="ncr-filter-btn active" data-status="">Tat ca</button>
-                    <button type="button" class="ncr-filter-btn" data-status="0">Dang cho duyet</button>
-                    <button type="button" class="ncr-filter-btn" data-status="1">Da chap nhan</button>
-                    <button type="button" class="ncr-filter-btn" data-status="2">Da tu choi</button>
+                    <button type="button" class="ncr-filter-btn active" data-status="">Tất cả</button>
+                    <button type="button" class="ncr-filter-btn" data-status="0">Đang chờ</button>
+                    <button type="button" class="ncr-filter-btn" data-status="1">Đã chấp nhận</button>
+                    <button type="button" class="ncr-filter-btn" data-status="2">Đã từ chối</button>
                 </div>
 
                 <div id="receivedContactList" class="space-y-3"></div>
@@ -64,14 +64,14 @@
 <div id="receivedContactDetailModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/45 backdrop-blur-sm p-4">
     <div class="ncr-modal-panel w-full max-w-3xl max-h-[88vh] rounded-[24px] border border-slate-200 bg-white shadow-[0_22px_56px_rgba(15,23,42,.22)] overflow-hidden flex flex-col">
         <div class="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
-            <h3 class="text-lg font-extrabold text-slate-900">Chi tiet request contact</h3>
+            <h3 class="text-lg font-extrabold text-slate-900">Chi tiết yêu cầu liên hệ</h3>
             <button type="button" id="closeReceivedContactDetail"
                     class="inline-flex items-center justify-center w-9 h-9 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-100">
                 <span class="material-icons-round text-[20px]">close</span>
             </button>
         </div>
         <div id="receivedContactDetailBody" class="ncr-modal-body overflow-y-auto px-6 py-5 space-y-4">
-            <p class="text-sm text-slate-500">Dang tai chi tiet request...</p>
+            <p class="text-sm text-slate-500">Đang tải chi tiết yêu cầu...</p>
         </div>
     </div>
 </div>
@@ -486,9 +486,9 @@
         };
 
         const formatDateTime = (value) => {
-            if (!value) return 'Chua cap nhat';
+            if (!value) return 'Chưa cập nhật';
             const date = new Date(value);
-            if (Number.isNaN(date.getTime())) return 'Chua cap nhat';
+            if (Number.isNaN(date.getTime())) return 'Chưa cập nhật';
             return new Intl.DateTimeFormat('vi-VN', {
                 day: '2-digit',
                 month: '2-digit',
@@ -500,12 +500,12 @@
 
         const getStatusBadge = (status, statusLabel) => {
             if (status === 1) {
-                return `<span class="ncr-status-chip ncr-status-chip--accepted"><span class="material-icons-round">check_circle</span>${escapeHtml(statusLabel || 'Da chap nhan')}</span>`;
+                return `<span class="ncr-status-chip ncr-status-chip--accepted"><span class="material-icons-round">check_circle</span>${escapeHtml(statusLabel || 'Đã chấp nhận')}</span>`;
             }
             if (status === 2) {
-                return `<span class="ncr-status-chip ncr-status-chip--rejected"><span class="material-icons-round">cancel</span>${escapeHtml(statusLabel || 'Da tu choi')}</span>`;
+                return `<span class="ncr-status-chip ncr-status-chip--rejected"><span class="material-icons-round">cancel</span>${escapeHtml(statusLabel || 'Đã từ chối')}</span>`;
             }
-            return `<span class="ncr-status-chip ncr-status-chip--pending"><span class="material-icons-round">schedule</span>${escapeHtml(statusLabel || 'Dang cho duyet')}</span>`;
+            return `<span class="ncr-status-chip ncr-status-chip--pending"><span class="material-icons-round">schedule</span>${escapeHtml(statusLabel || 'Đang chờ duyệt')}</span>`;
         };
 
         const getParentInitial = (fullName) => {
@@ -554,15 +554,15 @@
                 listEl.innerHTML = `
                     <div class="ncr-empty-state">
                         <span class="material-icons-round">inbox</span>
-                        <p class="font-bold text-slate-600">Chua co request contact nao theo bo loc hien tai.</p>
+                        <p class="font-bold text-slate-600">Chưa có yêu cầu liên hệ nào theo bộ lọc hiện tại.</p>
                     </div>`;
                 return;
             }
 
             listEl.innerHTML = items.map((item) => {
-                const parentName = item?.parent?.fullName || 'Parent';
-                const parentLocation = [item?.parent?.district, item?.parent?.city].filter(Boolean).join(', ') || 'Chua cap nhat khu vuc';
-                const parentPhone = item?.parent?.phoneNumber || 'Chua cap nhat';
+                const parentName = item?.parent?.fullName || 'Phụ huynh';
+                const parentLocation = [item?.parent?.district, item?.parent?.city].filter(Boolean).join(', ') || 'Chưa cập nhật khu vực';
+                const parentPhone = item?.parent?.phoneNumber || 'Chưa cập nhật';
                 const status = Number(item?.status ?? 0);
 
                 return `
@@ -582,22 +582,22 @@
 
                         <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <div class="ncr-meta-tile">
-                                <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Ngay gui</p>
+                                <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Ngày gửi</p>
                                 <p class="mt-1 text-sm font-bold text-slate-700">${escapeHtml(formatDateTime(item?.requestedAt))}</p>
                             </div>
                             <div class="ncr-meta-tile">
-                                <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">So dien thoai</p>
+                                <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Số điện thoại</p>
                                 <p class="mt-1 text-sm font-bold text-slate-700">${escapeHtml(parentPhone)}</p>
                             </div>
                             <div class="ncr-meta-tile">
-                                <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Phan hoi luc</p>
+                                <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Phản hồi lúc</p>
                                 <p class="mt-1 text-sm font-bold text-slate-700">${escapeHtml(formatDateTime(item?.respondedAt))}</p>
                             </div>
                         </div>
 
                         <div class="ncr-message-box mt-4">
-                            <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-orange-500">Loi nhan tu parent</p>
-                            <p class="mt-1 text-sm text-slate-700">${escapeHtml(item?.message || 'Khong co loi nhan.')}</p>
+                            <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-orange-500">Lời nhắn từ phụ huynh</p>
+                            <p class="mt-1 text-sm text-slate-700">${escapeHtml(item?.message || 'Không có lời nhắn.')}</p>
                         </div>
 
                         <div class="ncr-actions mt-4 flex flex-wrap items-center justify-end gap-2">
@@ -605,7 +605,7 @@
                                     class="ncr-action-btn ncr-action-btn--primary"
                                     data-request-id="${escapeHtml(item?.id)}">
                                 <span class="material-icons-round">pageview</span>
-                                Xem chi tiet request
+                                Xem chi tiết yêu cầu
                             </button>
                         </div>
                     </article>`;
@@ -649,9 +649,9 @@
             const rejectReason = String(reasonEl?.value ?? '').trim();
 
             if (action === 2 && !rejectReason) {
-                setRejectError('Vui long nhap ly do tu choi request.');
+                setRejectError('Vui lòng nhập lý do từ chối yêu cầu.');
                 reasonEl?.focus();
-                showToast('Vui long nhap ly do khi tu choi request.', 'warning');
+                showToast('Vui lòng nhập lý do khi từ chối yêu cầu.', 'error');
                 return;
             }
 
@@ -671,16 +671,16 @@
 
                 const json = await response.json();
                 if (!response.ok || !json?.success) {
-                    showToast(json?.message || 'Khong the xu ly request contact.', 'error');
+                    showToast(json?.message || 'Không thể xử lý yêu cầu.', 'error');
                     return;
                 }
 
-                showToast(json?.message || (action === 1 ? 'Da chap nhan request contact.' : 'Da tu choi request contact.'), 'success');
+                showToast(json?.message || (action === 1 ? 'Đã chấp nhận yêu cầu liên hệ.' : 'Đã từ chối yêu cầu liên hệ.'), 'success');
                 window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
                 closeDetail();
                 await loadRequests();
             } catch {
-                showToast('Khong the xu ly request contact.', 'error');
+                showToast('Không thể xử lý yêu cầu.', 'error');
             } finally {
                 setSubmittingState(false);
             }
@@ -689,47 +689,47 @@
         const renderDetail = (detail) => {
             const status = Number(detail?.status ?? 0);
             const parent = detail?.parent || {};
-            const parentName = parent?.fullName || 'Parent';
-            const parentLocation = [parent?.district, parent?.city].filter(Boolean).join(', ') || 'Chua cap nhat';
-            const parentPhone = parent?.phoneNumber || 'Chua cap nhat';
-            const parentAddress = parent?.address || 'Chua cap nhat';
-            const requestMessage = detail?.message || 'Khong co loi nhan.';
-            const responseMessage = detail?.responseMessage || 'Chua co phan hoi.';
+            const parentName = parent?.fullName || 'Phụ huynh';
+            const parentLocation = [parent?.district, parent?.city].filter(Boolean).join(', ') || 'Chưa cập nhật';
+            const parentPhone = parent?.phoneNumber || 'Chưa cập nhật';
+            const parentAddress = parent?.address || 'Chưa cập nhật';
+            const requestMessage = detail?.message || 'Không có lời nhắn.';
+            const responseMessage = detail?.responseMessage || 'Chưa có phản hồi.';
             const canReview = !!detail?.canReview;
 
             modalBodyEl.innerHTML = `
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div class="ncr-meta-tile">
-                        <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Parent</p>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Phụ huynh</p>
                         <p class="mt-1 text-base font-extrabold text-slate-900">${escapeHtml(parentName)}</p>
                         <p class="mt-1 text-sm text-slate-500">${escapeHtml(parentLocation)}</p>
                     </div>
                     <div class="ncr-meta-tile">
-                        <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Trang thai</p>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Trạng thái</p>
                         <div class="mt-2">${getStatusBadge(status, detail?.statusLabel)}</div>
-                        <p class="mt-2 text-xs text-slate-500">Gui luc: ${escapeHtml(formatDateTime(detail?.requestedAt))}</p>
-                        <p class="mt-1 text-xs text-slate-500">Phan hoi luc: ${escapeHtml(formatDateTime(detail?.respondedAt))}</p>
+                        <p class="mt-2 text-xs text-slate-500">Gửi lúc: ${escapeHtml(formatDateTime(detail?.requestedAt))}</p>
+                        <p class="mt-1 text-xs text-slate-500">Phản hồi lúc: ${escapeHtml(formatDateTime(detail?.respondedAt))}</p>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div class="ncr-meta-tile">
-                        <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">So dien thoai</p>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Số điện thoại</p>
                         <p class="mt-1 text-sm font-bold text-slate-700">${escapeHtml(parentPhone)}</p>
                     </div>
                     <div class="ncr-meta-tile">
-                        <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Dia chi</p>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Địa chỉ</p>
                         <p class="mt-1 text-sm font-bold text-slate-700">${escapeHtml(parentAddress)}</p>
                     </div>
                 </div>
 
                 <div class="ncr-message-box">
-                    <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-orange-500">Loi nhan tu parent</p>
+                    <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-orange-500">Lời nhắn từ phụ huynh</p>
                     <p class="mt-2 text-sm leading-6 text-slate-700">${escapeHtml(requestMessage)}</p>
                 </div>
 
                 <div class="ncr-meta-tile">
-                    <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Phan hoi cua ban</p>
+                    <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Phản hồi của bạn</p>
                     <p class="mt-2 text-sm leading-6 text-slate-700">${escapeHtml(responseMessage)}</p>
                 </div>
             `;
@@ -737,11 +737,11 @@
             if (canReview) {
                 modalBodyEl.insertAdjacentHTML('beforeend', `
                     <div class="rounded-2xl border border-orange-200 bg-orange-50/40 px-4 py-4 space-y-2">
-                        <label for="ncrRejectReason" class="text-sm font-extrabold text-orange-700">Ly do tu choi (bat buoc khi Reject)</label>
+                        <label for="ncrRejectReason" class="text-sm font-extrabold text-orange-700">Lý do từ chối (bắt buộc khi Từ chối)</label>
                         <textarea id="ncrRejectReason"
                                   rows="3"
                                   class="w-full rounded-2xl border border-orange-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-orange-400"
-                                  placeholder="Nhap ly do tu choi request..."></textarea>
+                                  placeholder="Nhập lý do từ chối yêu cầu..."></textarea>
                         <p id="ncrRejectError" class="hidden text-sm font-semibold text-rose-600"></p>
                     </div>
 
@@ -750,13 +750,13 @@
                                 id="ncrAcceptBtn"
                                 class="inline-flex items-center justify-center gap-1 min-h-[40px] px-4 rounded-full border border-emerald-300 bg-emerald-50 text-emerald-700 font-bold hover:bg-emerald-100">
                             <span class="material-icons-round text-[17px]">check_circle</span>
-                            Chap nhan
+                            Chấp nhận
                         </button>
                         <button type="button"
                                 id="ncrRejectBtn"
                                 class="inline-flex items-center justify-center gap-1 min-h-[40px] px-4 rounded-full border border-rose-300 bg-rose-50 text-rose-700 font-bold hover:bg-rose-100">
                             <span class="material-icons-round text-[17px]">cancel</span>
-                            Tu choi
+                            Từ chối
                         </button>
                     </div>
                 `);
@@ -794,14 +794,14 @@
                 });
                 const json = await response.json();
                 if (!response.ok || !json?.success) {
-                    showToast(json?.message || 'Khong the tai chi tiet request.', 'error');
-                    modalBodyEl.innerHTML = '<p class="text-sm text-rose-600">Khong the tai chi tiet request.</p>';
+                    showToast(json?.message || 'Không thể tải chi tiết yêu cầu.', 'error');
+                    modalBodyEl.innerHTML = '<p class="text-sm text-rose-600">Không thể tải chi tiết yêu cầu.</p>';
                     return;
                 }
                 renderDetail(json.data);
             } catch {
-                showToast('Khong the tai chi tiet request.', 'error');
-                modalBodyEl.innerHTML = '<p class="text-sm text-rose-600">Khong the tai chi tiet request.</p>';
+                showToast('Không thể tải chi tiết yêu cầu.', 'error');
+                modalBodyEl.innerHTML = '<p class="text-sm text-rose-600">Không thể tải chi tiết yêu cầu.</p>';
             }
         };
 
@@ -835,7 +835,7 @@
                 if (!response.ok || !json?.success) {
                     listEl.innerHTML = `
                         <div class="rounded-2xl border border-red-100 bg-red-50 px-5 py-8 text-center text-red-600">
-                            ${escapeHtml(json?.message || 'Khong tai duoc danh sach request contact.')}
+                            ${escapeHtml(json?.message || 'Không tải được danh sách yêu cầu liên hệ.')}
                         </div>`;
                     return;
                 }
@@ -846,7 +846,7 @@
             } catch {
                 listEl.innerHTML = `
                     <div class="rounded-2xl border border-red-100 bg-red-50 px-5 py-8 text-center text-red-600">
-                        Khong tai duoc danh sach request contact.
+                        Không tải được danh sách yêu cầu liên hệ.
                     </div>`;
             } finally {
                 window.setTimeout(() => {

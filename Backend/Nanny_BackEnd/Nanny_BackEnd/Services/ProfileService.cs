@@ -1,35 +1,47 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.SqlClient;
 using Nanny_BackEnd.DTOs.Profile;
+using Nanny_BackEnd.Enums;
+using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
+using Nanny_BackEnd.Services.Interfaces;
+using System.Text.RegularExpressions;
 
 namespace Nanny_BackEnd.Services;
 
-public class ProfileService
+public class ProfileService : IProfileService
 {
-    private readonly UserRepository _userRepo;
-    private readonly ParentRepository _parentRepo;
-    private readonly ChildRepository _childRepo;
-    private readonly NannyProfileRepository _nannyProfileRepo;
-    private readonly NannySkillRepository _nannySkillRepo;
-    private readonly NannyCertificateRepository _nannyCertificateRepo;
-    private readonly NannyAvailabilityRepository _nannyAvailabilityRepo;
+    private const int MinParentAge = 18;
+    private const int MaxParentChildren = 20;
+
+    private readonly IUserRepository _userRepo;
+    private readonly IParentRepository _parentRepo;
+    private readonly IChildRepository _childRepo;
+    private readonly INannyProfileRepository _nannyProfileRepo;
+    private readonly INannySkillRepository _nannySkillRepo;
+    private readonly INannyCertificateRepository _nannyCertificateRepo;
+    private readonly INannyAvailabilityRepository _nannyAvailabilityRepo;
+    private readonly IVerificationRequestRepository _verificationRequestRepo;
     private readonly IWebHostEnvironment _env;
-    private readonly GeocodingService _geo;
+    private readonly IGeocodingService _geo;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<ProfileService> _logger;
 
     public ProfileService(
-        UserRepository userRepo,
-        ParentRepository parentRepo,
-        ChildRepository childRepo,
-        NannyProfileRepository nannyProfileRepo,
-        NannySkillRepository nannySkillRepo,
-        NannyCertificateRepository nannyCertificateRepo,
-        NannyAvailabilityRepository nannyAvailabilityRepo,
+        IUserRepository userRepo,
+        IParentRepository parentRepo,
+        IChildRepository childRepo,
+        INannyProfileRepository nannyProfileRepo,
+        INannySkillRepository nannySkillRepo,
+        INannyCertificateRepository nannyCertificateRepo,
+        INannyAvailabilityRepository nannyAvailabilityRepo,
+        IVerificationRequestRepository verificationRequestRepo,
         IWebHostEnvironment env,
-        GeocodingService geo,
+        IGeocodingService geo,
         IServiceScopeFactory scopeFactory,
         ILogger<ProfileService> logger)
     {
@@ -40,6 +52,7 @@ public class ProfileService
         _nannySkillRepo = nannySkillRepo;
         _nannyCertificateRepo = nannyCertificateRepo;
         _nannyAvailabilityRepo = nannyAvailabilityRepo;
+        _verificationRequestRepo = verificationRequestRepo;
         _env = env;
         _geo = geo;
         _scopeFactory = scopeFactory;
@@ -49,20 +62,20 @@ public class ProfileService
     public async Task<string> UploadAvatarAsync(Guid userId, IFormFile file)
     {
         var user = await _userRepo.FindByIdAsync(userId)
-            ?? throw new InvalidOperationException("NgÆ°á»i dÃ¹ng khÃ´ng tá»“n táº¡i.");
+            ?? throw new InvalidOperationException("Người dùng không tồn tại.");
 
         var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
         var allowedExts = new[] { ".jpg", ".jpeg", ".png" };
         if (!allowedExts.Contains(ext))
-            throw new InvalidOperationException("Chá»‰ cháº¥p nháº­n file áº£nh .jpg, .jpeg hoáº·c .png.");
+            throw new InvalidOperationException("Chỉ chấp nhận file ảnh .jpg, .jpeg hoặc .png.");
 
         var contentType = (file.ContentType ?? string.Empty).ToLowerInvariant();
         var allowedTypes = new[] { "image/jpeg", "image/png" };
         if (!allowedTypes.Contains(contentType))
-            throw new InvalidOperationException("Chá»‰ cháº¥p nháº­n áº£nh JPEG/PNG há»£p lá»‡.");
+            throw new InvalidOperationException("Chỉ chấp nhận ảnh JPEG/PNG hợp lệ.");
 
         if (file.Length > 5 * 1024 * 1024)
-            throw new InvalidOperationException("File áº£nh khÃ´ng Ä‘Æ°á»£c vÆ°á»£t quÃ¡ 5MB.");
+            throw new InvalidOperationException("File ảnh không được vượt quá 5MB.");
 
         var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", "avatars");
         Directory.CreateDirectory(uploadsFolder);
@@ -90,15 +103,59 @@ public class ProfileService
         return await BuildProfileDtoAsync(userId);
     }
 
-    public async Task<PersonalProfileDto> GetPublicProfileAsync(Guid userId)
+    public async Task<PersonalProfileDto> GetPublicProfileAsync(Guid? requesterUserId, Guid targetUserId)
     {
-        return await BuildProfileDtoAsync(userId);
+        var profile = await BuildProfileDtoAsync(targetUserId);
+
+        if (requesterUserId.HasValue && requesterUserId.Value == targetUserId)
+            return profile;
+
+        var isTargetParent = profile.Roles.Any(r => r.Equals("parent", StringComparison.OrdinalIgnoreCase));
+        var isTargetNanny = profile.Roles.Any(r => r.Equals("nanny", StringComparison.OrdinalIgnoreCase));
+
+        // Parent profile remains private for public view.
+        if (isTargetParent)
+        {
+            profile.Email = string.Empty;
+            profile.PhoneNumber = null;
+            profile.DateOfBirth = null;
+            profile.Age = null;
+            profile.Address = null;
+            profile.Ward = null;
+            profile.Latitude = null;
+            profile.Longitude = null;
+            profile.FamilyDescription = null;
+            profile.NumberOfChildren = null;
+            profile.Children = null;
+            profile.SpecialNeeds = null;
+            profile.Notes = null;
+            profile.Characteristic = null;
+            profile.ChildAgeGroup = null;
+        }
+        else if (isTargetNanny)
+        {
+            // Keep basic contact/location + DOB for age display on nanny detail page.
+            // Phone privacy will be handled by UI masking in read-only view.
+        }
+        else
+        {
+            profile.Email = string.Empty;
+            profile.PhoneNumber = null;
+            profile.DateOfBirth = null;
+            profile.Age = null;
+            profile.Address = null;
+            profile.Ward = null;
+            profile.Latitude = null;
+            profile.Longitude = null;
+        }
+
+        return profile;
     }
 
     private async Task<PersonalProfileDto> BuildProfileDtoAsync(Guid userId)
     {
         var user = await _userRepo.FindByIdAsync(userId)
-            ?? throw new InvalidOperationException("NgÆ°á»i dÃ¹ng khÃ´ng tá»“n táº¡i.");
+            ?? throw new InvalidOperationException("Người dùng không tồn tại.");
 
         var roles = await _userRepo.GetRolesAsync(userId);
         var isParent = roles.Any(r => r.Equals("parent", StringComparison.OrdinalIgnoreCase));
@@ -118,6 +175,7 @@ public class ProfileService
         List<NannySkillItemDto>? skills = null;
         List<NannyAvailabilityItemDto>? availabilities = null;
         List<NannyCertificateItemDto>? certificates = null;
+        var hasHealthCertificate = false;
 
         if (isNanny)
         {
@@ -175,10 +233,24 @@ public class ProfileService
                         VerificationStatus = c.VerificationStatus
                     })
                     .ToList();
+
+                try
+                {
+                    var verificationRequests = await _verificationRequestRepo.GetRequestsByNannyProfileAsync(nannyProfile.Id);
+                    hasHealthCertificate = verificationRequests
+                        .SelectMany(r => r.VerificationDocuments)
+                        .Any(d => d.DocumentType == (int)Enums.VerificationDocumentType.HealthCertificate && !d.IsDeleted);
+                }
+                catch (Exception ex)
+                {
+                    // Avoid breaking profile page if verification schema is temporarily out of sync.
+                    _logger.LogWarning(ex, "Skip loading verification request summary for NannyProfileId={NannyProfileId}", nannyProfile.Id);
+                    hasHealthCertificate = false;
+                }
             }
             else
             {
-                verificationStatus = "ChÆ°a Ä‘Æ°á»£c xÃ¡c thá»±c";
+                verificationStatus = "Chưa được xác thực";
             }
         }
 
@@ -234,6 +306,7 @@ public class ProfileService
             PhoneNumber = user.PhoneNumber,
             AvatarUrl = user.AvatarUrl,
             DateOfBirth = user.DateOfBirth,
+            Age = CalculateAge(user.DateOfBirth),
             Gender = user.Gender,
             Address = user.Address,
             City = user.City,
@@ -263,38 +336,100 @@ public class ProfileService
             TotalReviews = totalReviews,
             Skills = skills,
             Availabilities = availabilities,
-            Certificates = certificates
+            Certificates = certificates,
+            HasHealthCertificate = hasHealthCertificate
         };
+    }
+
+    private static int? CalculateAge(DateOnly? dateOfBirth)
+    {
+        if (!dateOfBirth.HasValue)
+            return null;
+
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var age = CalculateAge(dateOfBirth.Value, today);
+        return age >= 0 ? age : null;
+    }
+
+    private static int CalculateAge(DateOnly dateOfBirth, DateOnly today)
+    {
+        var age = today.Year - dateOfBirth.Year;
+        if (dateOfBirth > today.AddYears(-age))
+            age--;
+        return age;
     }
 
     public async Task<PersonalProfileDto> UpdatePersonalInfoAsync(Guid userId, UpdatePersonalInfoRequest request)
     {
         var user = await _userRepo.FindByIdAsync(userId)
-            ?? throw new InvalidOperationException("NgÆ°á»i dÃ¹ng khÃ´ng tá»“n táº¡i.");
+            ?? throw new InvalidOperationException("Người dùng không tồn tại.");
 
         var roles = await _userRepo.GetRolesAsync(userId);
         var isNanny = roles.Any(r => r.Equals("nanny", StringComparison.OrdinalIgnoreCase));
-        if (isNanny)
+        var isParent = roles.Any(r => r.Equals("parent", StringComparison.OrdinalIgnoreCase));
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var normalizedFirstName = request.FirstName?.Trim();
+        var normalizedLastName = request.LastName?.Trim();
+
+        if (string.IsNullOrWhiteSpace(normalizedFirstName))
+            throw new InvalidOperationException("Họ là bắt buộc.");
+
+        if (string.IsNullOrWhiteSpace(normalizedLastName))
+            throw new InvalidOperationException("Tên là bắt buộc.");
+
+        if (normalizedFirstName.Length > 100 || normalizedLastName.Length > 100)
+            throw new InvalidOperationException("Họ và tên không được vượt quá 100 ký tự.");
+
+        if (request.DateOfBirth.HasValue && request.DateOfBirth.Value > today)
+            throw new InvalidOperationException("Ngày sinh không được lớn hơn ngày hiện tại.");
+
+        if (isParent)
         {
             var dobToValidate = request.DateOfBirth ?? user.DateOfBirth;
-            if (!dobToValidate.HasValue)
-                throw new InvalidOperationException("Nanny pháº£i nháº­p ngÃ ,áy sinh.");
+            if (dobToValidate.HasValue)
+            {
+                var parentAge = CalculateAge(dobToValidate.Value, today);
+                if (parentAge < MinParentAge)
+                    throw new InvalidOperationException($"Phụ huynh phải đủ {MinParentAge} tuổi trở lên.");
+            }
+        }
 
-            var today = DateOnly.FromDateTime(DateTime.Today);
-            var dob = dobToValidate.Value;
-            var age = today.Year - dob.Year;
-            if (dob > today.AddYears(-age)) age--;
-            if (age < 18)
-                throw new InvalidOperationException("Nanny phải đủ 18 tuổi trở lên.");
+        if (isNanny)
+        {
+            var salaryValidationError = SalaryValidationRules.GetFirstError(
+                request.ExpectedSalaryMin,
+                request.ExpectedSalaryMax,
+                "Lương từ",
+                "Đến");
+            if (!string.IsNullOrWhiteSpace(salaryValidationError))
+                throw new InvalidOperationException(salaryValidationError);
+
+            var dobToValidate = request.DateOfBirth ?? user.DateOfBirth;
+            if (!dobToValidate.HasValue)
+                throw new InvalidOperationException("Nanny phải nhập ngày sinh.");
+
+            var age = CalculateAge(dobToValidate.Value, today);
+            if (age <= 30)
+                throw new InvalidOperationException("Nanny phải lớn hơn 30 tuổi.");
         }
 
         // Map required core fields
-        user.FirstName = request.FirstName?.Trim() ?? user.FirstName;
-        user.LastName = request.LastName?.Trim() ?? user.LastName;
+        user.FirstName = normalizedFirstName;
+        user.LastName = normalizedLastName;
 
         // Partial update for optional fields: keep old values when input is empty
-        if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
-            user.PhoneNumber = request.PhoneNumber.Trim();
+        var normalizedPhone = NormalizePhoneNumber(request.PhoneNumber);
+        if (!string.IsNullOrWhiteSpace(normalizedPhone))
+        {
+            if (!IsValidPhoneNumber(normalizedPhone))
+                throw new InvalidOperationException("Số điện thoại phải gồm 10 chữ số và bắt đầu bằng 0.");
+
+            var isPhoneChanged = !string.Equals(user.PhoneNumber, normalizedPhone, StringComparison.Ordinal);
+            if (isPhoneChanged && await _userRepo.IsPhoneInUseAsync(normalizedPhone))
+                throw new InvalidOperationException("Số điện thoại đã được đăng ký.");
+
+            user.PhoneNumber = normalizedPhone;
+        }
         if (!string.IsNullOrWhiteSpace(request.AvatarUrl))
             user.AvatarUrl = request.AvatarUrl;
 
@@ -334,13 +469,18 @@ public class ProfileService
 
         if (isNanny)
         {
+            var hasNannySpecificPayload = HasNannySpecificPayload(request);
             var nannyProfile = await _nannyProfileRepo.FindByUserIdAsync(userId);
-            if (nannyProfile == null)
+            if (nannyProfile == null && hasNannySpecificPayload)
             {
                 nannyProfile = new NannyProfile
                 {
                     Id = Guid.NewGuid(),
                     UserId = userId,
+                    SalaryType = 0,
+                    ProfileCompleteness = 0,
+                    TotalReviews = 0,
+                    IsDeleted = false,
                     CreatedAt = DateTime.UtcNow,
                     CreatedBy = userId,
                     VerificationStatus = (int)Enums.VerificationStatus.NotSubmitted
@@ -348,56 +488,67 @@ public class ProfileService
                 _nannyProfileRepo.Add(nannyProfile);
             }
 
-            if (!string.IsNullOrWhiteSpace(request.Bio))
-                nannyProfile.Bio = request.Bio.Trim();
-
-            if (request.YearsOfExperience.HasValue)
-                nannyProfile.YearsOfExperience = request.YearsOfExperience.Value;
-
-            if (request.EducationLevel.HasValue)
-                nannyProfile.EducationLevel = request.EducationLevel.Value;
-
-            if (request.ExpectedSalaryMin.HasValue)
-                nannyProfile.ExpectedSalaryMin = request.ExpectedSalaryMin.Value;
-
-            if (request.ExpectedSalaryMax.HasValue)
-                nannyProfile.ExpectedSalaryMax = request.ExpectedSalaryMax.Value;
-
-            if (request.MaxTravelDistance.HasValue)
-                nannyProfile.MaxTravelDistance = request.MaxTravelDistance.Value;
-
-            if (request.SkillIds != null)
+            if (nannyProfile != null)
             {
-                var selectedSkillIds = request.SkillIds
-                    .Where(x => x != Guid.Empty)
-                    .Distinct()
-                    .ToList();
+                if (!string.IsNullOrWhiteSpace(request.Bio))
+                    nannyProfile.Bio = request.Bio.Trim();
 
-                var existingSkills = await _nannySkillRepo.GetByNannyProfileIdAsync(nannyProfile.Id);
-                if (existingSkills.Any())
-                    _nannySkillRepo.RemoveRange(existingSkills);
+                if (request.YearsOfExperience.HasValue)
+                    nannyProfile.YearsOfExperience = request.YearsOfExperience.Value;
 
-                if (selectedSkillIds.Any())
+                if (request.EducationLevel.HasValue)
+                    nannyProfile.EducationLevel = request.EducationLevel.Value;
+
+                if (request.ExpectedSalaryMin.HasValue)
+                    nannyProfile.ExpectedSalaryMin = request.ExpectedSalaryMin.Value;
+
+                if (request.ExpectedSalaryMax.HasValue)
+                    nannyProfile.ExpectedSalaryMax = request.ExpectedSalaryMax.Value;
+
+                if (request.MaxTravelDistance.HasValue)
+                    nannyProfile.MaxTravelDistance = request.MaxTravelDistance.Value;
+
+                if (request.SkillIds != null)
                 {
-                    var now = DateTime.UtcNow;
-                    var newSkills = selectedSkillIds.Select(skillId => new NannySkill
-                    {
-                        Id = Guid.NewGuid(),
-                        NannyProfileId = nannyProfile.Id,
-                        SkillId = skillId,
-                        ProficiencyLevel = null,
-                        CreatedAt = now,
-                        CreatedBy = userId
-                    });
-                    _nannySkillRepo.AddRange(newSkills);
-                }
-            }
+                    var selectedSkillIds = request.SkillIds
+                        .Where(x => x != Guid.Empty)
+                        .Distinct()
+                        .ToList();
 
-            nannyProfile.UpdatedAt = DateTime.UtcNow;
-            nannyProfile.UpdatedBy = userId;
+                    var existingSkills = await _nannySkillRepo.GetByNannyProfileIdAsync(nannyProfile.Id);
+                    if (existingSkills.Any())
+                        _nannySkillRepo.RemoveRange(existingSkills);
+
+                    if (selectedSkillIds.Any())
+                    {
+                        var now = DateTime.UtcNow;
+                        var newSkills = selectedSkillIds.Select(skillId => new NannySkill
+                        {
+                            Id = Guid.NewGuid(),
+                            NannyProfileId = nannyProfile.Id,
+                            SkillId = skillId,
+                            ProficiencyLevel = null,
+                            CreatedAt = now,
+                            CreatedBy = userId
+                        });
+                        _nannySkillRepo.AddRange(newSkills);
+                    }
+                }
+
+                nannyProfile.UpdatedAt = DateTime.UtcNow;
+                nannyProfile.UpdatedBy = userId;
+            }
         }
 
-        await _userRepo.SaveChangesAsync();
+        try
+        {
+            await _userRepo.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogError(ex, "Lỗi lưu hồ sơ cá nhân cho UserId={UserId}", userId);
+            throw new InvalidOperationException(BuildFriendlyDbUpdateMessage(ex));
+        }
 
         // Fire-and-forget: cập nhật embedding sau khi nanny sửa profile
         if (isNanny)
@@ -427,6 +578,10 @@ public class ProfileService
             {
                 Id = Guid.NewGuid(),
                 UserId = userId,
+                SalaryType = 0,
+                ProfileCompleteness = 0,
+                TotalReviews = 0,
+                IsDeleted = false,
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = userId,
                 VerificationStatus = (int)Enums.VerificationStatus.NotSubmitted
@@ -455,7 +610,7 @@ public class ProfileService
     {
         var roles = await _userRepo.GetRolesAsync(userId);
         if (!roles.Any(r => r.ToLower() == "parent"))
-            throw new UnauthorizedAccessException("Chá»‰ ngÆ°á»i dÃ¹ng cÃ³ vá»‹ trÃ­ Parent má»›i cÃ³ thá»ƒ xem.");
+            throw new UnauthorizedAccessException("Chỉ người dùng có vị trí Parent mới có thể xem.");
 
         var parentProfile = await _parentRepo.FindByUserIdAsync(userId);
         if (parentProfile == null) return new();
@@ -477,8 +632,13 @@ public class ProfileService
     public async Task<ChildProfileDto> CreateChildProfileAsync(Guid userId, CreateChildProfileRequest request)
     {
         var roles = await _userRepo.GetRolesAsync(userId);
-        if (!roles.Any(r => r.ToLower() == "parent"))
-            throw new UnauthorizedAccessException("Chá»‰ dÃ nh cho Parent.");
+        if (!roles.Any(r => r.Equals("parent", StringComparison.OrdinalIgnoreCase)))
+            throw new UnauthorizedAccessException("Chỉ dành cho Parent.");
+
+        var normalizedSpecialNeeds = NormalizeOptionalText(request.SpecialNeeds, 1000, "Nhu cầu đặc biệt");
+        var normalizedNotes = NormalizeOptionalText(request.Notes, 1000, "Ghi chú");
+        var normalizedCharacteristic = NormalizeOptionalText(request.Characteristic, 1000, "Đặc điểm tính cách");
+        var childAgeGroup = ValidateAndGetChildAgeGroup(request.ChildAgeGroup);
 
         var parentProfile = await _parentRepo.FindByUserIdAsync(userId);
         if (parentProfile == null)
@@ -492,10 +652,10 @@ public class ProfileService
         {
             Id = Guid.NewGuid(),
             ParentProfileId = parentProfile.Id,
-            SpecialNeeds = request.SpecialNeeds,
-            Notes = request.Notes,
-            Characteristic = request.Characteristic,
-            ChildAgeGroup = (byte)request.ChildAgeGroup,
+            SpecialNeeds = normalizedSpecialNeeds,
+            Notes = normalizedNotes,
+            Characteristic = normalizedCharacteristic,
+            ChildAgeGroup = childAgeGroup,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = userId
         };
@@ -503,21 +663,32 @@ public class ProfileService
         _childRepo.Add(child);
         await _childRepo.SaveChangesAsync();
 
+        await EnsureDeclaredChildrenCountAtLeastCreatedAsync(parentProfile, userId);
+
         return MapToChildDto(child);
     }
 
     public async Task<ChildProfileDto> UpdateChildProfileAsync(Guid userId, Guid childId, UpdateChildProfileRequest request)
     {
+        var roles = await _userRepo.GetRolesAsync(userId);
+        if (!roles.Any(r => r.Equals("parent", StringComparison.OrdinalIgnoreCase)))
+            throw new UnauthorizedAccessException("Chỉ dành cho Parent.");
+
+        var normalizedSpecialNeeds = NormalizeOptionalText(request.SpecialNeeds, 1000, "Nhu cầu đặc biệt");
+        var normalizedNotes = NormalizeOptionalText(request.Notes, 1000, "Ghi chú");
+        var normalizedCharacteristic = NormalizeOptionalText(request.Characteristic, 1000, "Đặc điểm tính cách");
+        var childAgeGroup = ValidateAndGetChildAgeGroup(request.ChildAgeGroup);
+
         var parentProfile = await _parentRepo.FindByUserIdAsync(userId)
-            ?? throw new InvalidOperationException("KhÃ´ng tÃ¬m tháº¥y há»“ sÆ¡ Parent.");
+            ?? throw new InvalidOperationException("Không tìm thấy hồ sơ Parent.");
 
         var child = await _childRepo.FindByIdAndParentAsync(childId, parentProfile.Id)
-            ?? throw new InvalidOperationException("KhÃ´ng tÃ¬m tháº¥y con hoáº·c khÃ´ng cÃ³ quyá»n.");
+            ?? throw new InvalidOperationException("Không tìm thấy con hoặc không có quyền.");
 
-        child.SpecialNeeds = request.SpecialNeeds;
-        child.Notes = request.Notes;
-        child.Characteristic = request.Characteristic;
-        child.ChildAgeGroup = (byte)request.ChildAgeGroup;
+        child.SpecialNeeds = normalizedSpecialNeeds;
+        child.Notes = normalizedNotes;
+        child.Characteristic = normalizedCharacteristic;
+        child.ChildAgeGroup = childAgeGroup;
         child.UpdatedAt = DateTime.UtcNow;
         child.UpdatedBy = userId;
 
@@ -529,11 +700,15 @@ public class ProfileService
 
     public async Task DeleteChildProfileAsync(Guid userId, Guid childId)
     {
+        var roles = await _userRepo.GetRolesAsync(userId);
+        if (!roles.Any(r => r.Equals("parent", StringComparison.OrdinalIgnoreCase)))
+            throw new UnauthorizedAccessException("Chỉ dành cho Parent.");
+
         var parentProfile = await _parentRepo.FindByUserIdAsync(userId)
-            ?? throw new InvalidOperationException("KhÃ´ng tÃ¬m tháº¥y há»“ sÆ¡ Parent.");
+            ?? throw new InvalidOperationException("Không tìm thấy hồ sơ Parent.");
 
         var child = await _childRepo.FindByIdAndParentAsync(childId, parentProfile.Id)
-            ?? throw new InvalidOperationException("KhÃ´ng tÃ¬m tháº¥y con.");
+            ?? throw new InvalidOperationException("Không tìm thấy con.");
 
         child.IsDeleted = true;
         child.UpdatedAt = DateTime.UtcNow;
@@ -541,6 +716,68 @@ public class ProfileService
 
         _childRepo.Update(child);
         await _childRepo.SaveChangesAsync();
+    }
+
+    public Task<ParentProfile?> GetParentProfileByUserIdAsync(Guid userId) =>
+        _parentRepo.FindByUserIdAsync(userId);
+
+    public async Task<Guid?> GetParentProfileIdByUserIdAsync(Guid userId)
+    {
+        var p = await _parentRepo.FindByUserIdAsync(userId);
+        return p?.Id;
+    }
+
+    public async Task UpdateParentOnboardingProfileAsync(Guid userId, UpdateParentProfileRequest request)
+    {
+        var normalizedFamilyDescription = NormalizeOptionalText(
+            request.FamilyDescription,
+            1000,
+            "Mô tả gia đình");
+
+        int? numberOfChildren = request.NumberOfChildren;
+        if (numberOfChildren.HasValue && numberOfChildren.Value < 1)
+            throw new InvalidOperationException("Số lượng trẻ phải lớn hơn hoặc bằng 1.");
+
+        if (numberOfChildren.HasValue && numberOfChildren.Value > MaxParentChildren)
+            throw new InvalidOperationException(
+                $"Số lượng trẻ phải trong khoảng 1-{MaxParentChildren}.");
+
+        var parentProfile = await _parentRepo.FindByUserIdAsync(userId);
+        if (parentProfile == null)
+        {
+            parentProfile = new ParentProfile
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = userId
+            };
+            _parentRepo.Add(parentProfile);
+        }
+
+        var createdChildrenCount = (await _childRepo.GetByParentProfileIdAsync(parentProfile.Id)).Count;
+        if (!numberOfChildren.HasValue)
+            numberOfChildren = parentProfile.NumberOfChildren;
+
+        if (!numberOfChildren.HasValue && createdChildrenCount > 0)
+            numberOfChildren = createdChildrenCount;
+
+        if (numberOfChildren.HasValue && numberOfChildren.Value < createdChildrenCount)
+        {
+            throw new InvalidOperationException(
+                $"Không thể giảm số lượng trẻ cần chăm xuống {numberOfChildren.Value} vì bạn đã tạo {createdChildrenCount} hồ sơ trẻ.");
+        }
+
+        if (normalizedFamilyDescription != null)
+            parentProfile.FamilyDescription = normalizedFamilyDescription;
+
+        if (numberOfChildren.HasValue)
+            parentProfile.NumberOfChildren = numberOfChildren.Value;
+
+        parentProfile.UpdatedAt = DateTime.UtcNow;
+        parentProfile.UpdatedBy = userId;
+
+        await _parentRepo.SaveChangesAsync();
     }
 
     private ChildProfileDto MapToChildDto(ChildProfile c) => new ChildProfileDto
@@ -553,14 +790,125 @@ public class ProfileService
         ChildAgeGroup = (byte?)c.ChildAgeGroup,
         CreatedAt = c.CreatedAt
     };
-    
+
+    private static byte ValidateAndGetChildAgeGroup(ChildAgeGroup? childAgeGroup)
+    {
+        if (!childAgeGroup.HasValue || !Enum.IsDefined(typeof(ChildAgeGroup), childAgeGroup.Value))
+            throw new InvalidOperationException("Nhóm tuổi của trẻ không hợp lệ.");
+
+        return (byte)childAgeGroup.Value;
+    }
+
+    private static string? NormalizeOptionalText(string? value, int maxLength, string fieldName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        var normalized = value.Trim();
+        if (normalized.Length > maxLength)
+            throw new InvalidOperationException($"{fieldName} không được vượt quá {maxLength} ký tự.");
+
+        return normalized;
+    }
+
+    private static string? NormalizePhoneNumber(string? phoneNumber) =>
+        string.IsNullOrWhiteSpace(phoneNumber) ? null : phoneNumber.Trim();
+
+    private static bool IsValidPhoneNumber(string phoneNumber) =>
+        Regex.IsMatch(phoneNumber, @"^0\d{9}$");
+
+    private static bool IsUniquePhoneConstraintViolation(DbUpdateException ex)
+    {
+        var sqlEx = ex.GetBaseException() as SqlException;
+        if (sqlEx == null)
+            return false;
+
+        var isUniqueViolation = sqlEx.Number == 2601 || sqlEx.Number == 2627;
+        if (!isUniqueViolation)
+            return false;
+
+        return sqlEx.Message.Contains("UQ_Users_PhoneNumber", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string BuildFriendlyDbUpdateMessage(DbUpdateException ex)
+    {
+        var sqlEx = ex.GetBaseException() as SqlException;
+        if (sqlEx == null)
+            return "Không thể lưu dữ liệu hồ sơ. Vui lòng kiểm tra lại thông tin.";
+
+        if (IsUniquePhoneConstraintViolation(ex))
+            return "Số điện thoại đã được đăng ký.";
+
+        if ((sqlEx.Number == 2601 || sqlEx.Number == 2627)
+            && sqlEx.Message.Contains("UQ_Users_Email", StringComparison.OrdinalIgnoreCase))
+            return "Email đã được đăng ký.";
+
+        if (sqlEx.Number == 515)
+        {
+            var (column, table) = TryExtractSqlColumnAndTable(sqlEx.Message);
+            if (!string.IsNullOrWhiteSpace(column))
+            {
+                var target = string.IsNullOrWhiteSpace(table) ? column : $"{table}.{column}";
+                return $"Thiếu dữ liệu bắt buộc: {target}. Vui lòng kiểm tra lại thông tin.";
+            }
+
+            return "Thiếu dữ liệu bắt buộc để lưu hồ sơ. Vui lòng kiểm tra lại các trường bắt buộc.";
+        }
+
+        if (sqlEx.Number == 8152 || sqlEx.Number == 2628)
+            return "Một số trường vượt quá độ dài cho phép. Vui lòng kiểm tra họ tên, số điện thoại và địa chỉ.";
+
+        if (sqlEx.Number == 547)
+            return "Dữ liệu cập nhật không hợp lệ theo ràng buộc hệ thống.";
+
+        return $"Không thể lưu dữ liệu hồ sơ (SQL {sqlEx.Number}).";
+    }
+
+    private static bool HasNannySpecificPayload(UpdatePersonalInfoRequest request) =>
+        !string.IsNullOrWhiteSpace(request.Bio)
+        || request.YearsOfExperience.HasValue
+        || request.EducationLevel.HasValue
+        || request.ExpectedSalaryMin.HasValue
+        || request.ExpectedSalaryMax.HasValue
+        || request.MaxTravelDistance.HasValue
+        || (request.SkillIds?.Any(x => x != Guid.Empty) == true);
+
+    private static (string? Column, string? Table) TryExtractSqlColumnAndTable(string? sqlMessage)
+    {
+        if (string.IsNullOrWhiteSpace(sqlMessage))
+            return (null, null);
+
+        var match = Regex.Match(sqlMessage, @"column '([^']+)'.*table '([^']+)'", RegexOptions.IgnoreCase);
+        if (!match.Success)
+            return (null, null);
+
+        var column = match.Groups.Count > 1 ? match.Groups[1].Value : null;
+        var table = match.Groups.Count > 2 ? match.Groups[2].Value : null;
+        return (column, table);
+    }
+
+    private async Task EnsureDeclaredChildrenCountAtLeastCreatedAsync(ParentProfile parentProfile, Guid userId)
+    {
+        var activeChildrenCount = (await _childRepo.GetByParentProfileIdAsync(parentProfile.Id)).Count;
+        if (activeChildrenCount <= 0)
+            return;
+
+        if (!parentProfile.NumberOfChildren.HasValue || parentProfile.NumberOfChildren.Value < activeChildrenCount)
+        {
+            parentProfile.NumberOfChildren = activeChildrenCount;
+            parentProfile.UpdatedAt = DateTime.UtcNow;
+            parentProfile.UpdatedBy = userId;
+            await _parentRepo.SaveChangesAsync();
+        }
+    }
+
     // Background embedding helper
     private async Task EmbedNannyInBackgroundAsync(Guid nannyProfileId)
     {
         try
         {
             using var scope = _scopeFactory.CreateScope();
-            var embedService = scope.ServiceProvider.GetRequiredService<EmbeddingService>();
+            var embedService = scope.ServiceProvider.GetRequiredService<IEmbeddingService>();
             await embedService.EmbedNannyAsync(nannyProfileId);
         }
         catch (Exception ex)

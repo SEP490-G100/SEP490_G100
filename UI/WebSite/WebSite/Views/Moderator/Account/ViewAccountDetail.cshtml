@@ -1,0 +1,301 @@
+@model WebSite.Models.Account.AccountDto
+@{
+    Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
+    ViewData["Title"] = "Chi tiết tài khoản";
+
+    var avatarColors = new[] { "#F97316", "#3B82F6", "#8B5CF6", "#10B981", "#F59E0B" };
+    var avatarBg = avatarColors[Math.Abs(Model.Id.GetHashCode()) % avatarColors.Length];
+    var statusLabel = Model.Status == 1 ? "Hoạt động" : "Vô hiệu hóa";
+    var genderLabel = Model.Gender switch { 1 => "Nam", 2 => "Nữ", _ => "Chưa xác định" };
+    var fullAddress = string.Join(", ", new[] { Model.Address, Model.Ward, Model.District, Model.City }
+        .Where(s => !string.IsNullOrWhiteSpace(s)));
+}
+
+<div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
+    <div>
+        <span class="section-label">Quản lý tài khoản</span>
+        <h1 class="page-title mt-2">
+            <span class="gradient-text">Chi tiết</span> Tài khoản
+        </h1>
+        <p class="page-subtitle">Xem thông tin người dùng và quản lý trạng thái tài khoản.</p>
+    </div>
+    <a href="/Moderator/ManageAccount" class="btn-outline flex-shrink-0">
+        <span class="material-icons-round text-base">arrow_back</span>
+        Quay lại danh sách
+    </a>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 fade-in-up">
+        <span class="material-icons-round text-base">error_outline</span>
+        @TempData["Error"]
+    </div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 fade-in-up">
+        <span class="material-icons-round text-base">check_circle_outline</span>
+        @TempData["Success"]
+    </div>
+}
+
+<form method="post" action="/Moderator/ViewAccountDetail/@Model.Id">
+    @Html.AntiForgeryToken()
+
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div class="xl:col-span-2 space-y-5">
+            <div class="content-card p-0 fade-in-up">
+                <div class="card-header">
+                    <div class="flex items-center gap-2">
+                        <span class="material-icons-round text-orange-400">person</span>
+                        <h2>Thông tin danh tính <span class="text-xs text-gray-400 font-normal ml-1">(chỉ xem)</span></h2>
+                    </div>
+                </div>
+                <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="field-group sm:col-span-2">
+                        <label class="field-label">Email</label>
+                        <div class="field-readonly">
+                            <span class="material-icons-round text-gray-300 text-base">email</span>
+                            @Model.Email
+                            @if (!Model.EmailConfirmed)
+                            {
+                                <span class="ml-2 text-[10px] text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">Chưa xác minh</span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label">Tên</label>
+                        <div class="field-readonly">@(string.IsNullOrWhiteSpace(Model.FirstName) ? "-" : Model.FirstName)</div>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label">Họ</label>
+                        <div class="field-readonly">@(string.IsNullOrWhiteSpace(Model.LastName) ? "-" : Model.LastName)</div>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label">Số điện thoại</label>
+                        <div class="field-readonly">
+                            <span class="material-icons-round text-gray-300 text-base">phone</span>
+                            @(string.IsNullOrWhiteSpace(Model.PhoneNumber) ? "-" : Model.PhoneNumber)
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label">Ngày sinh</label>
+                        <div class="field-readonly">
+                            <span class="material-icons-round text-gray-300 text-base">cake</span>
+                            @(Model.DateOfBirth.HasValue ? Model.DateOfBirth.Value.ToString("dd MMM yyyy") : "-")
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label">Giới tính</label>
+                        <div class="field-readonly">
+                            <span class="material-icons-round text-gray-300 text-base">wc</span>
+                            @genderLabel
+                        </div>
+                    </div>
+
+                    <div class="field-group sm:col-span-2">
+                        <label class="field-label">Địa chỉ</label>
+                        <div class="field-readonly">
+                            <span class="material-icons-round text-gray-300 text-base">location_on</span>
+                            @(string.IsNullOrWhiteSpace(fullAddress) ? "-" : fullAddress)
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-card p-0 fade-in-up" style="animation-delay:.05s;">
+                <div class="card-header">
+                    <div class="flex items-center gap-2">
+                        <span class="material-icons-round text-orange-400">manage_accounts</span>
+                        <h2>Cài đặt tài khoản <span class="text-xs text-green-500 font-semibold ml-1">chỉ trạng thái</span></h2>
+                    </div>
+                </div>
+                <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="field-group">
+                        <label class="field-label">Vai trò</label>
+                        <div class="field-readonly">
+                            <span class="material-icons-round text-gray-300 text-base">badge</span>
+                            @foreach (var r in Model.Roles)
+                            {
+                                var rb = r switch { "Parent" => "badge-parent", "Nanny" => "badge-nanny", _ => "badge-mod" };
+                                <span class="badge @rb">@r</span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="field-group sm:col-span-2">
+                        <label class="field-label">
+                            Trạng thái tài khoản
+                            <span class="text-orange-400 text-[10px] ml-1">có thể sửa</span>
+                        </label>
+                        <div class="flex gap-3">
+                            <label class="flex items-center gap-2.5 px-4 py-3 rounded-2xl border-2 cursor-pointer transition-all @(Model.Status == 1 ? "border-emerald-400 bg-emerald-50" : "border-gray-200 bg-gray-50 hover:border-gray-300")"
+                                   id="label-active">
+                                <input type="radio" name="Status" value="1"
+                                       @(Model.Status == 1 ? "checked" : "")
+                                       class="accent-emerald-500"
+                                       onchange="updateStatusLabel(1)" />
+                                <div class="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
+                                <span class="text-sm font-semibold text-gray-700">Hoạt động</span>
+                            </label>
+                            <label class="flex items-center gap-2.5 px-4 py-3 rounded-2xl border-2 cursor-pointer transition-all @(Model.Status == 2 ? "border-red-400 bg-red-50" : "border-gray-200 bg-gray-50 hover:border-gray-300")"
+                                   id="label-inactive">
+                                <input type="radio" name="Status" value="2"
+                                       @(Model.Status == 2 ? "checked" : "")
+                                       class="accent-red-500"
+                                       onchange="updateStatusLabel(2)" />
+                                <div class="w-2.5 h-2.5 rounded-full bg-red-400"></div>
+                                <span class="text-sm font-semibold text-gray-700">Vô hiệu hóa</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-card p-0 fade-in-up" style="animation-delay:.1s;">
+                <div class="card-header">
+                    <div class="flex items-center gap-2">
+                        <span class="material-icons-round text-orange-400">history</span>
+                        <h2>Thông tin hệ thống <span class="text-xs text-gray-400 font-normal ml-1">(chỉ xem)</span></h2>
+                    </div>
+                </div>
+                <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="field-group">
+                        <label class="field-label">Đăng nhập lần cuối</label>
+                        <div class="field-readonly">
+                            <span class="material-icons-round text-gray-300 text-base">login</span>
+                            @(Model.LastLoginAt.HasValue ? Model.LastLoginAt.Value.ToString("dd MMM yyyy, HH:mm") : "Chưa từng")
+                        </div>
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Ngày tạo</label>
+                        <div class="field-readonly">
+                            <span class="material-icons-round text-gray-300 text-base">calendar_today</span>
+                            @Model.CreatedAt.ToString("dd MMM yyyy, HH:mm")
+                        </div>
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Ngày cập nhật</label>
+                        <div class="field-readonly">
+                            <span class="material-icons-round text-gray-300 text-base">update</span>
+                            @(Model.UpdatedAt.HasValue ? Model.UpdatedAt.Value.ToString("dd MMM yyyy, HH:mm") : "-")
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-5">
+            <div class="content-card p-6 text-center fade-in-up" style="animation-delay:.08s;">
+                <div class="relative inline-block mb-4">
+                    @if (!string.IsNullOrEmpty(Model.AvatarUrl))
+                    {
+                        <img src="@Model.AvatarUrl" alt="@Model.FullName"
+                             class="w-24 h-24 rounded-full object-cover ring-4 ring-orange-100 shadow-lg mx-auto" />
+                    }
+                    else
+                    {
+                        <div class="w-24 h-24 rounded-full flex items-center justify-center text-white text-4xl font-bold ring-4 ring-orange-100 shadow-lg mx-auto"
+                             style="background:@avatarBg;">
+                            @Model.Avatar
+                        </div>
+                    }
+                    <div class="absolute bottom-1 right-1 w-5 h-5 rounded-full border-2 border-white @(Model.Status == 1 ? "bg-emerald-400" : "bg-red-400") shadow"></div>
+                </div>
+
+                <h3 class="font-bold text-gray-900 text-lg">@Model.FullName</h3>
+                <p class="text-sm text-gray-400 mt-0.5">@Model.Email</p>
+
+                <div class="flex flex-wrap gap-1.5 justify-center mt-3">
+                    @foreach (var r in Model.Roles)
+                    {
+                        var rb = r switch { "Parent" => "badge-parent", "Nanny" => "badge-nanny", _ => "badge-mod" };
+                        <span class="badge @rb">@r</span>
+                    }
+                </div>
+
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <div id="current-status-display"
+                         class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold @(Model.Status == 1 ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-red-50 text-red-700 border border-red-200")">
+                        <div id="status-dot" class="w-2 h-2 rounded-full @(Model.Status == 1 ? "bg-emerald-400" : "bg-red-400")"></div>
+                        <span id="status-text">@statusLabel</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-card p-4 fade-in-up" style="animation-delay:.12s;">
+                <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Mã tài khoản</p>
+                <p class="font-mono text-xs text-gray-600 break-all">@Model.Id</p>
+            </div>
+
+            <div class="content-card p-4 space-y-2.5 fade-in-up" style="animation-delay:.15s;">
+                <button type="submit" class="btn-primary w-full justify-center">
+                    <span class="material-icons-round text-base">save</span>
+                    Lưu trạng thái
+                </button>
+                <a href="/Moderator/ManageAccount" class="btn-outline w-full justify-center">
+                    <span class="material-icons-round text-base">close</span>
+                    Hủy bỏ
+                </a>
+            </div>
+        </div>
+    </div>
+</form>
+
+<style>
+.field-group { display: flex; flex-direction: column; gap: .4rem; }
+.field-label {
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: #9CA3AF;
+}
+.field-readonly {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    background: #F9FAFB;
+    border: 1px solid #F3F4F6;
+    border-radius: .85rem;
+    padding: .6rem .9rem;
+    font-size: .875rem;
+    color: #374151;
+    min-height: 2.6rem;
+}
+</style>
+
+@section Scripts {
+<script>
+function updateStatusLabel(val) {
+    var display = document.getElementById('current-status-display');
+    var dot = document.getElementById('status-dot');
+    var text = document.getElementById('status-text');
+    var avatarDot = document.querySelector('.absolute.bottom-1.right-1');
+
+    if (val === 1) {
+        display.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold bg-emerald-50 text-emerald-700 border border-emerald-200';
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+        text.textContent = 'Hoạt động';
+        if (avatarDot) avatarDot.className = avatarDot.className.replace('bg-red-400', 'bg-emerald-400');
+
+        document.getElementById('label-active').className = document.getElementById('label-active').className.replace('border-gray-200 bg-gray-50 hover:border-gray-300', 'border-emerald-400 bg-emerald-50');
+        document.getElementById('label-inactive').className = document.getElementById('label-inactive').className.replace('border-red-400 bg-red-50', 'border-gray-200 bg-gray-50 hover:border-gray-300');
+    } else {
+        display.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold bg-red-50 text-red-700 border border-red-200';
+        dot.className = 'w-2 h-2 rounded-full bg-red-400';
+        text.textContent = 'Vô hiệu hóa';
+        if (avatarDot) avatarDot.className = avatarDot.className.replace('bg-emerald-400', 'bg-red-400');
+
+        document.getElementById('label-inactive').className = document.getElementById('label-inactive').className.replace('border-gray-200 bg-gray-50 hover:border-gray-300', 'border-red-400 bg-red-50');
+        document.getElementById('label-active').className = document.getElementById('label-active').className.replace('border-emerald-400 bg-emerald-50', 'border-gray-200 bg-gray-50 hover:border-gray-300');
+    }
+}
+</script>
+}

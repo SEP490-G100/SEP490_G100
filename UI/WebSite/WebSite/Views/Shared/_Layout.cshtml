@@ -1,4 +1,4 @@
-@using System.Net.Http.Headers
+﻿@using System.Net.Http.Headers
 @using System.Text.Json
 @using WebSite.Models
 @using WebSite.Models.Profile
@@ -11,7 +11,7 @@
         string.Equals(verifyPromptCurrentAction, "Index", StringComparison.OrdinalIgnoreCase);
     var verifyPromptSkipControllers = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
-        "Auth", "Onboarding", "ParentOnboarding", "NannyBasicInfo", "NannyVerificationRequest"
+        "Auth", "Onboarding", "ParentOnboarding", "NannyBasicInfo", "VerificationRequest"
     };
 
     var canCheckNannyVerifyPrompt =
@@ -23,10 +23,16 @@
 
     PersonalProfileViewModel? nannyVerifyPromptProfile = null;
     var showNannyVerifyPrompt = false;
-    var nannyVerifyPromptUrl = "/NannyVerificationRequest/Submit";
-    var nannyVerifyPromptButton = "Xác minh ID ngay";
+    var nannyVerifyPromptUrl = "/VerificationRequest/NannySubmitVerificationRequest";
+    var nannyVerifyPromptButton = "Xác minh hồ sơ ngay";
     var nannyVerifyPromptStatusClass = "is-not-submitted";
-    var nannyVerifyPromptStatusText = "Chưa gửi xác minh";
+    var nannyVerifyPromptStatusText = "Chưa hoàn tất xác minh";
+    var currentUserFirstName = User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? string.Empty;
+    var currentUserLastName = User.FindFirst(System.Security.Claims.ClaimTypes.Surname)?.Value ?? string.Empty;
+    var currentUserInitial = !string.IsNullOrWhiteSpace(currentUserFirstName)
+        ? currentUserFirstName[..1].ToUpperInvariant()
+        : "U";
+    var currentUserAvatar = User.FindFirst("AvatarUrl")?.Value;
 
     if (canCheckNannyVerifyPrompt)
     {
@@ -63,14 +69,14 @@
 
                             if (verificationCode == 1)
                             {
-                                nannyVerifyPromptUrl = "/NannyVerificationRequest";
+                                nannyVerifyPromptUrl = "/VerificationRequest/NannyGetVerificationRequestList";
                                 nannyVerifyPromptButton = "Xem yêu cầu xác minh";
                                 nannyVerifyPromptStatusClass = "is-pending";
                                 nannyVerifyPromptStatusText = "Đang chờ duyệt";
                             }
                             else if (verificationCode == 3)
                             {
-                                nannyVerifyPromptUrl = "/NannyVerificationRequest";
+                                nannyVerifyPromptUrl = "/VerificationRequest/NannyGetVerificationRequestList";
                                 nannyVerifyPromptButton = "Xem và gửi lại hồ sơ";
                                 nannyVerifyPromptStatusClass = "is-rejected";
                                 nannyVerifyPromptStatusText = "Đã bị từ chối";
@@ -86,7 +92,7 @@
     }
 }
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 
 
 <!--=============HEADER================-->
@@ -95,11 +101,12 @@
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>NannyMatch - Dịch vụ chăm sóc trẻ đáng tin cậy</title>
+    <title>NannyMatch - Kết nối phụ huynh &amp; bảo mẫu</title>
     <link href="~/css/tailwind.generated.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/onboarding.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/verification-prompt.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/unified-dropdown.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/toast.css" rel="stylesheet" asp-append-version="true" />
     <link href="~/css/homepage.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&amp;display=swap"
           rel="stylesheet" />
@@ -524,96 +531,6 @@
             margin-bottom: 10px;
         }
 
-        .nm-toast-root {
-            position: fixed;
-            right: 18px;
-            bottom: 18px;
-            z-index: 12050;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 10px;
-            pointer-events: none;
-        }
-
-        .nm-toast {
-            width: min(420px, calc(100vw - 24px));
-            display: grid;
-            grid-template-columns: auto 1fr auto;
-            align-items: center;
-            gap: 9px;
-            padding: 12px 14px;
-            border-radius: 15px;
-            border: 1px solid rgba(255, 255, 255, .14);
-            box-shadow: 0 18px 36px rgba(15, 23, 42, .2);
-            color: #fff;
-            transform: translateY(12px) scale(.98);
-            opacity: 0;
-            transition: opacity .22s ease, transform .22s ease;
-            pointer-events: auto;
-            backdrop-filter: blur(6px);
-        }
-
-        .nm-toast.show {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
-
-        .nm-toast__icon {
-            width: 22px;
-            height: 22px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            border-radius: 999px;
-            background: rgba(255,255,255,.78);
-            color: rgba(15,23,42,.68);
-        }
-
-        .nm-toast__text {
-            font-size: 13px;
-            line-height: 1.45;
-            font-weight: 800;
-            word-break: break-word;
-        }
-
-        .nm-toast__close {
-            width: 22px;
-            height: 22px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 999px;
-            border: none;
-            background: rgba(255, 255, 255, .22);
-            color: #fff;
-            cursor: pointer;
-            font-size: 17px;
-            transition: background .18s ease, transform .18s ease;
-        }
-
-        .nm-toast__close:hover {
-            background: rgba(255, 255, 255, .35);
-            transform: scale(1.03);
-        }
-
-        .nm-toast--info {
-            background: linear-gradient(135deg, rgba(15,23,42,.94), rgba(30,41,59,.94));
-        }
-
-        .nm-toast--success {
-            background: linear-gradient(135deg, #0f8c67, #10946d);
-        }
-
-        .nm-toast--warning {
-            background: linear-gradient(135deg, #c56a09, #ea580c);
-        }
-
-        .nm-toast--error {
-            background: linear-gradient(135deg, #c22525, #dc2626);
-        }
-
         .nm-user-sheet-backdrop {
             position: fixed;
             top: 0;
@@ -736,6 +653,14 @@
             background: linear-gradient(135deg, #f97316, #ea580c);
             box-shadow: 0 10px 22px rgba(249, 115, 22, .34);
             flex-shrink: 0;
+        }
+
+        .nm-user-sheet__avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: inherit;
+            display: block;
         }
 
         .nm-user-sheet__name {
@@ -952,17 +877,6 @@
                 width: min(360px, calc(100vw - 16px));
             }
 
-            .nm-toast-root {
-                right: 10px;
-                left: 10px;
-                bottom: 12px;
-                align-items: stretch;
-            }
-
-            .nm-toast {
-                width: 100%;
-            }
-
             .nm-user-sheet {
                 width: min(370px, calc(100vw - 8px));
             }
@@ -986,6 +900,11 @@
                           currentAction.Equals("List", StringComparison.OrdinalIgnoreCase)
         ? "nm-nav-link active"
         : "nm-nav-link";
+    var homeNavCls = isHomePage ? "nm-nav-link active" : "nm-nav-link";
+    var faqNavCls = currentCtrl.Equals("Home", StringComparison.OrdinalIgnoreCase) &&
+                    currentAction.Equals("Faq", StringComparison.OrdinalIgnoreCase)
+        ? "nm-nav-link active"
+        : "nm-nav-link";
 }
 <body class="font-display bg-background-light dark:bg-background-dark text-gray-800 dark:text-gray-200 transition-colors duration-300" style="background-color: #f9fafb; color: #1f2937;" data-page="@(isHomePage ? "home" : "other")">
     <nav class="sticky top-0 z-50 bg-white/95 dark:bg-card-dark/95 backdrop-blur-lg border-b border-gray-100/80 dark:border-gray-800"
@@ -996,7 +915,7 @@
                 <!-- Logo -->
                 <a href="/" class="flex items-center gap-3 hover:opacity-90 transition-opacity flex-shrink-0">
                     <div class="w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center bg-gradient-to-br from-orange-100 to-orange-50 shadow-sm">
-                        <img src="~/img/nanny-logo.jpg" alt="NannyMatch Logo" class="w-full h-full object-contain" />
+                        <img src="~/img/nanny-logo.jpg" alt="Logo NannyMatch" class="w-full h-full object-contain" />
                     </div>
                     <span class="text-xl font-bold tracking-tight"
                           style="font-family:'Quicksand',sans-serif; background:linear-gradient(135deg,#EA580C,#F97316); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent">NannyMatch</span>
@@ -1004,15 +923,11 @@
 
                 <!-- Nav Links (giữa) -->
                 <div class="hidden md:flex items-center gap-1 nm-nav-links">
-                    <a href="/" class="@NavCls("Home")">Trang chủ</a>
-                    <a href="/Search" class="@NavCls("Search")">Tìm bảo mẫu</a>
-                    <a href="/Nanny/List" class="@nannyListNavCls">Tìm nanny</a>
+                    <a href="/" class="@homeNavCls">Trang chủ</a>
+                    <a href="/Search" class="@NavCls("Search")">Tìm công việc</a>
+                    <a href="/Nanny/List" class="@nannyListNavCls">Tìm bảo mẫu</a>
                     <a href="/Blog" class="@NavCls("Blog")">Blog</a>
-                    @if (User.Identity != null && User.Identity.IsAuthenticated && (User.IsInRole("Parent") || User.IsInRole("Nanny")))
-                    {
-                        <a href="/Contract" class="@NavCls("Contract")">Hợp đồng của tôi</a>
-                    }
-                    <a href="#how-it-works" class="nm-nav-link">Cách hoạt động</a>
+                    <a href="/Home/Faq" class="@faqNavCls">Hỏi đáp</a>
                 </div>
 
                 <!-- Actions -->
@@ -1021,9 +936,11 @@
                     @if (User.Identity != null && User.Identity.IsAuthenticated)
                     {
                         <a href="/Communication"
-                           class="nm-icon-btn nm-icon-btn--mini"
-                           aria-label="Tin nhan">
-                            <span class="material-icons-round text-[18px]">chat_bubble_outline</span>
+                           class="nm-icon-btn"
+                           id="chatNavLink"
+                           aria-label="Tin nhắn">
+                            <span class="material-icons-round text-[20px]">chat_bubble_outline</span>
+                            <span id="chatUnreadBadge" class="nm-badge-dot hidden" aria-hidden="true"></span>
                         </a>
 
 
@@ -1065,11 +982,22 @@
                                     aria-controls="dropdownMenu"
                                     aria-expanded="false"
                                     class="flex items-center gap-2 px-3 py-2 rounded-2xl border border-orange-100 bg-white/80 hover:bg-orange-50 dark:hover:bg-gray-800 transition-all">
-                                <div class="w-8 h-8 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                                    @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value?.Substring(0, 1).ToUpper())
+                                <div class="w-8 h-8 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full overflow-hidden flex items-center justify-center text-white text-sm font-bold"
+                                     data-current-user-avatar-slot
+                                     data-current-user-avatar-img-class="w-full h-full object-cover"
+                                     data-current-user-avatar-initial="@currentUserInitial">
+                                    @if (!string.IsNullOrWhiteSpace(currentUserAvatar))
+                                    {
+                                        <img src="@currentUserAvatar"
+                                             alt="Avatar"
+                                             class="w-full h-full object-cover"
+                                             data-current-user-avatar-img />
+                                    }
+                                    <span data-current-user-avatar-fallback
+                                          class="@(string.IsNullOrWhiteSpace(currentUserAvatar) ? string.Empty : "hidden")">@currentUserInitial</span>
                                 </div>
                                 <span class="hidden sm:block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                    @User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value
+                                    @currentUserFirstName
                                 </span>
                                 <span class="material-icons-round text-gray-400 text-lg">expand_more</span>
                             </button>
@@ -1082,12 +1010,19 @@
                                     </button>
                                 </div>
                                 <div class="nm-user-sheet__profile flex flex-col px-3 py-2 border-b border-gray-100 dark:border-gray-700 mb-1 rounded-md">
-                                    <span class="nm-user-sheet__avatar">
-                                        @(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value?.Substring(0, 1).ToUpper())
+                                    <span class="nm-user-sheet__avatar"
+                                          data-current-user-avatar-slot
+                                          data-current-user-avatar-initial="@currentUserInitial">
+                                        @if (!string.IsNullOrWhiteSpace(currentUserAvatar))
+                                        {
+                                            <img src="@currentUserAvatar" alt="Avatar" data-current-user-avatar-img />
+                                        }
+                                        <span data-current-user-avatar-fallback
+                                              class="@(string.IsNullOrWhiteSpace(currentUserAvatar) ? string.Empty : "hidden")">@currentUserInitial</span>
                                     </span>
                                     <div class="nm-user-sheet__profile-meta">
                                         <p class="nm-user-sheet__name">
-                                            @User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value @User.FindFirst(System.Security.Claims.ClaimTypes.Surname)?.Value
+                                            @currentUserFirstName @currentUserLastName
                                         </p>
                                         <p class="nm-user-sheet__email">@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</p>
                                     </div>
@@ -1113,28 +1048,51 @@
                                     Gói của tôi
                                 </a>
 
-                                <a href="/Search/History" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                    <span class="material-icons-round text-base">history</span>
-                                    Lịch sử bài đăng
-                                </a>
-
-                                @if (User.IsInRole("Parent") || User.IsInRole("Nanny"))
+                                @if (User.IsInRole("Parent"))
                                 {
-                                    <a href="/Contract" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                        <span class="material-icons-round text-base">description</span>
-                                        Hợp đồng của tôi
+                                    <a href="/Search/History" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        <span class="material-icons-round text-base">history</span>
+                                        Lịch sử bài đăng
                                     </a>
                                 }
 
                                 @if (User.IsInRole("Parent"))
                                 {
+                                    <a href="/Hiring/ViewHiringHistory" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        <span class="material-icons-round text-base">history</span>
+                                        Lịch sử thuê bảo mẫu
+                                    </a>
+                                }
+
+                                @if (User.IsInRole("Nanny"))
+                                {
+                                    <a href="/Hiring/ViewHiringHistory" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        <span class="material-icons-round text-base">history_toggle_off</span>
+                                        Lịch sử được thuê
+                                    </a>
+                                }
+
+                                @if (User.IsInRole("Parent") || User.IsInRole("Nanny"))
+                                {
+                                    <a href="/Contract" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        <span class="material-icons-round text-base">folder</span>
+                                        Quản lí hợp đồng
+                                    </a>
+                                }
+
+                                @if (User.IsInRole("Parent"))
+                                {
+                                    <a href="/Review/History" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        <span class="material-icons-round text-base">star</span>
+                                        Đánh giá của tôi
+                                    </a>
                                     <a href="/Nanny/Favorites" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                         <span class="material-icons-round text-base">favorite</span>
-                                        Nanny yêu thích
+                                        Bảo mẫu yêu thích
                                     </a>
                                     <a href="/Nanny/ContactRequests" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                         <span class="material-icons-round text-base">contact_phone</span>
-                                        Lịch sử contact
+                                        Lịch sử yêu cầu liên hệ
                                     </a>
                                 }
 
@@ -1150,9 +1108,9 @@
                                     </a>
                                     <a href="/Nanny/ReceivedContactRequests" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                         <span class="material-icons-round text-base">contact_mail</span>
-                                        Request contact đã nhận
+                                        Yêu cầu liên hệ đã nhận
                                     </a>
-                                    <a href="/NannyVerificationRequest" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                    <a href="/VerificationRequest/NannyGetVerificationRequestList" class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                         <span class="material-icons-round text-base">verified_user</span>
                                         Yêu cầu xác minh
                                     </a>
@@ -1257,6 +1215,8 @@
                                     const typeLabel = normalizeText(item?.typeLabel);
                                     const title = normalizeText(item?.title);
                                     if (!typeLabel) return false;
+                                    if (typeLabel.includes('moderator')) return true;
+                                    if (typeLabel.includes('kiểm duyệt')) return true;
                                     return typeLabel !== title;
                                 };
 
@@ -1281,6 +1241,59 @@
                                             <span class="material-icons-round">notifications_none</span>
                                             <p class="text-sm font-semibold text-gray-700">${escapeHtml(message)}</p>
                                         </div>`;
+                                };
+
+                                const getRealtimeToastConfig = (payload) => {
+                                    if (!payload) return null;
+
+                                    const type = String(payload.type || '').trim().toLowerCase();
+                                    const message = payload.message || payload.title;
+                                    if (message) {
+                                        return {
+                                            message,
+                                            type: payload.toastType || 'success'
+                                        };
+                                    }
+
+                                        switch (type) {
+                                            case 'verification-request-submitted':
+                                                return { message: 'Có yêu cầu xác minh mới đang chờ duyệt.', type: 'success' };
+                                            case 'verification-request-created':
+                                                return { message: 'Bạn vừa gửi yêu cầu xác minh thành công.', type: 'success' };
+                                            case 'job-posting-review-required':
+                                                return { message: 'Có bài đăng mới đang chờ kiểm duyệt viên duyệt.', type: 'success' };
+                                            case 'complain-submitted':
+                                                return { message: 'Có báo cáo mới cần xử lý.', type: 'error' };
+                                            case 'verification-approved':
+                                                return { message: 'Yêu cầu xác minh của bạn đã được chấp nhận.', type: 'success' };
+                                            case 'verification-rejected':
+                                                return { message: 'Yêu cầu xác minh của bạn đã bị từ chối.', type: 'error' };
+                                            case 'job-posting-approved':
+                                                return { message: 'Bài đăng của bạn đã được duyệt.', type: 'success' };
+                                            case 'job-posting-rejected':
+                                                return { message: 'Bài đăng của bạn đã bị từ chối.', type: 'error' };
+                                            case 'job-posting-pending':
+                                                return { message: 'Bài đăng của bạn đang chờ kiểm duyệt viên duyệt.', type: 'success' };
+                                            case 'nanny-profile-favorited':
+                                                return { message: 'Hồ sơ của bạn vừa được yêu thích.', type: 'success' };
+                                            case 'system-warning':
+                                                return { message: 'Có cảnh báo hệ thống cần xử lý.', type: 'error' };
+                                        default:
+                                            return null;
+                                    }
+                                };
+
+                                const shouldSuppressRealtimeToast = (payload) => {
+                                    const incomingType = String(payload?.type || '').trim().toLowerCase();
+                                    const suppressType = String(window.__nmNotificationToastSuppressType || '').trim().toLowerCase();
+                                    const suppressUntil = Number(window.__nmNotificationToastSuppressUntil || 0);
+                                    if (!incomingType || !suppressType) return false;
+                                    if (incomingType !== suppressType) return false;
+                                    if (Date.now() > suppressUntil) return false;
+
+                                    window.__nmNotificationToastSuppressType = '';
+                                    window.__nmNotificationToastSuppressUntil = 0;
+                                    return true;
                                 };
 
                                 const updateBadge = (count) => {
@@ -1380,6 +1393,12 @@
                                     }
                                 });
 
+                                document.addEventListener('click', function(e) {
+                                    if (!notificationDropdown.contains(e.target)) {
+                                        notificationMenu.classList.add('hidden');
+                                    }
+                                });
+
                                 const connectNotificationRealtime = async () => {
                                     if (!window.signalR) return;
 
@@ -1388,7 +1407,17 @@
                                         .withAutomaticReconnect()
                                         .build();
 
-                                    connection.on('notification:new', async () => {
+                                    connection.on('notification:new', async (payload) => {
+                                        window.__nmLastRealtimeNotificationType = String(payload?.type || '').trim().toLowerCase();
+                                        window.__nmLastRealtimeNotificationMessage = String(payload?.message || payload?.title || '').trim();
+                                        window.__nmLastRealtimeNotificationAt = Date.now();
+
+                                        const toastConfig = shouldSuppressRealtimeToast(payload)
+                                            ? null
+                                            : getRealtimeToastConfig(payload);
+                                        if (toastConfig && typeof window.showToast === 'function') {
+                                            window.showToast(toastConfig.message, { type: toastConfig.type });
+                                        }
                                         window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
                                     });
 
@@ -1402,14 +1431,60 @@
                                     }
                                 };
 
-                                document.addEventListener('click', function(e) {
-                                    if (!notificationDropdown.contains(e.target)) {
-                                        notificationMenu.classList.add('hidden');
-                                    }
-                                });
-
                                 loadUnreadCount();
                                 connectNotificationRealtime();
+                            })();
+
+                            (() => {
+                                const chatBadge = document.getElementById('chatUnreadBadge');
+                                if (!chatBadge) return;
+
+                                const updateChatBadge = (count) => {
+                                    if (!count || count <= 0) {
+                                        chatBadge.textContent = '';
+                                        chatBadge.classList.add('hidden');
+                                        return;
+                                    }
+                                    chatBadge.textContent = count > 99 ? '99+' : String(count);
+                                    chatBadge.classList.remove('hidden');
+                                };
+
+                                const loadChatUnread = async () => {
+                                    try {
+                                        const response = await fetch(`/Communication/UnreadCount?_=${Date.now()}`, {
+                                            credentials: 'same-origin',
+                                            cache: 'no-store'
+                                        });
+                                        const result = await response.json();
+                                        updateChatBadge(result?.data?.unreadCount ?? 0);
+                                    } catch {
+                                        updateChatBadge(0);
+                                    }
+                                };
+
+                                let chatUnreadTimer = null;
+                                const CHAT_UNREAD_POLL_VISIBLE_MS = 2000;
+                                const CHAT_UNREAD_POLL_HIDDEN_MS = 10000;
+
+                                const restartChatUnreadPolling = () => {
+                                    if (chatUnreadTimer) {
+                                        window.clearInterval(chatUnreadTimer);
+                                    }
+                                    const interval = document.hidden
+                                        ? CHAT_UNREAD_POLL_HIDDEN_MS
+                                        : CHAT_UNREAD_POLL_VISIBLE_MS;
+                                    chatUnreadTimer = window.setInterval(loadChatUnread, interval);
+                                };
+
+                                window.addEventListener('nm:chat-unread-refresh', () => { loadChatUnread(); });
+                                window.addEventListener('nm:notifications-refresh', () => { loadChatUnread(); });
+                                window.addEventListener('focus', () => { loadChatUnread(); });
+                                document.addEventListener('visibilitychange', () => {
+                                    if (!document.hidden) loadChatUnread();
+                                    restartChatUnreadPolling();
+                                });
+                                loadChatUnread();
+                                restartChatUnreadPolling();
                             })();
 
                             (() => {
@@ -1484,14 +1559,15 @@
                         <a class="hidden sm:inline-flex nm-auth-link"
                            href="/Auth/Login">Đăng nhập</a>
                         <a class="nm-primary-btn"
-                           href="/Auth/Register">Đăng ký miễn phí</a>
+                           href="/Auth/Register">Đăng ký</a>
                     }
                 </div>
             </div>
         </div>
     </nav>
 
-    @if (ViewContext.RouteData.Values["controller"]?.ToString() == "Home")
+    @if (ViewContext.RouteData.Values["controller"]?.ToString() == "Home" &&
+         ViewContext.RouteData.Values["action"]?.ToString() == "Index")
     {
     <header class="relative overflow-hidden pt-24 pb-28 lg:pt-32 lg:pb-36">
         <canvas class="hero-beam-canvas" id="heroBeamCanvas" aria-hidden="true"></canvas>
@@ -1523,9 +1599,9 @@
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                 <div class="hero-col-left text-center lg:text-left space-y-8">
                     <h1 class="text-4xl lg:text-6xl font-bold text-gray-900 dark:text-white leading-tight">
-                        Dịch vụ chăm sóc trẻ <br />
+                        Nền tảng kết nối cha mẹ với bảo&nbsp;mẫu <br />
                         <span class="text-primary relative">
-                            đáng tin cậy
+                            an tâm &amp; minh bạch
                             <svg class="absolute w-full h-3 -bottom-1 left-0 text-orange-200 dark:text-orange-800 opacity-60"
                                  preserveAspectRatio="none" viewBox="0 0 100 10">
                                 <path d="M0 5 Q 50 10 100 5" fill="none" stroke="currentColor" stroke-width="8"></path>
@@ -1533,8 +1609,8 @@
                         </span>
                     </h1>
                     <p class="text-lg text-gray-600 dark:text-gray-400 max-w-lg mx-auto lg:mx-0">
-                        Được tin dùng bởi hơn 7 triệu gia đình và bảo mẫu. Tìm người phù hợp hoàn hảo cho nhu cầu gia
-                        đình bạn, mọi lúc, mọi nơi.
+                        Kết nối phụ huynh với bảo mẫu đã qua xác minh. Tìm người trông trẻ phù hợp với lịch và nhu cầu
+                        gia đình bạn.
                     </p>
                     <div class="bg-white dark:bg-card-dark p-2 rounded-2xl shadow-xl shadow-gray-200/50 dark:shadow-none max-w-md mx-auto lg:mx-0 flex flex-col sm:flex-row gap-2">
                         <div class="flex-1 relative">
@@ -1554,8 +1630,7 @@
                         <span class="material-icons-round text-yellow-500 text-lg">star</span>
                         <span class="material-icons-round text-yellow-500 text-lg">star_half</span>
                         <span class="text-sm font-bold text-gray-600 dark:text-gray-400 ml-2">
-                            4.8/5 dựa trên 25k đánh
-                            giá
+                            Đánh giá từ phụ huynh &amp; bảo mẫu
                         </span>
                     </div>
                 </div>
@@ -1566,7 +1641,7 @@
                             <path d="M44.7,-76.4C58.9,-69.2,71.8,-59.1,81.6,-46.6C91.4,-34.1,98.1,-19.2,95.8,-5.3C93.5,8.6,82.2,21.5,70.6,32.2C59,42.9,47.1,51.4,34.7,58.8C22.3,66.2,9.4,72.5,-3.1,77.9C-15.6,83.3,-27.7,87.8,-38.7,82.6C-49.7,77.4,-59.6,62.5,-68.6,48.2C-77.6,33.9,-85.7,20.2,-87.6,5.8C-89.5,-8.6,-85.2,-23.7,-76.1,-36.5C-67,-49.3,-53.1,-59.8,-39.5,-67.3C-25.9,-74.8,-12.6,-79.3,1.8,-82.4C16.2,-85.5,30.5,-73.6,44.7,-76.4Z"
                                   fill="currentColor" transform="translate(100 100)"></path>
                         </svg>
-                        <img alt="Happy mother holding baby"
+                        <img alt="Phụ huynh bồng em bé"
                              class="absolute bottom-0 right-10 w-3/4 mask-image-gradient z-10 rounded-3xl shadow-2xl rotate-3 hover:rotate-0 transition-all duration-500"
                              src="https://lh3.googleusercontent.com/aida-public/AB6AXuD3Ob6-Tah8IPvi5QvVXumvaUcQjeWr5H0VIIggZPlMFIlTIsIFcG8U6fWb1uIUBmilAGbtW9vXNDvOnk6APiaLuht8Sgo7euMXFOnpVAVwHE22tJYiaQjEPElfBsbgwFUX4_eRYQJdKanKq3-u6X7y3eJzUDh7KeS3T82WgSYGNqK7732RZluwL1ZbPhRB1_GhpsS5WcHQjHM6Mok6Z660fjttnZo9mjFvJPuk6D58zYNDIWhe9b7PLaqCYmcN99OybOC1rsn1UYae" />
                         <div class="absolute top-20 left-10 bg-white dark:bg-card-dark p-4 rounded-2xl shadow-lg z-20 animate-bounce"
@@ -1608,10 +1683,10 @@
                         <span class="material-icons-round">shield</span>
                         <span>@nannyVerifyPromptStatusText</span>
                     </span>
-                    <h2 id="nmVerifyPromptTitle" class="nm-verify-title">Xác minh ID để mở khóa kết nối</h2>
+                    <h2 id="nmVerifyPromptTitle" class="nm-verify-title">Cần xác minh CCCD và giấy khám sức khỏe để ứng tuyển</h2>
                     <p class="nm-verify-subtitle">
-                        Hồ sơ nanny của @(string.IsNullOrWhiteSpace(nannyVerifyPromptProfile?.FirstName) ? "bạn" : nannyVerifyPromptProfile!.FirstName)
-                        chưa hoàn tất xác minh giấy tờ. Khi xác minh xong, phụ huynh sẽ tin tưởng hơn khi xem hồ sơ và gửi contact request.
+                        Hồ sơ bảo mẫu của @(string.IsNullOrWhiteSpace(nannyVerifyPromptProfile?.FirstName) ? "bạn" : nannyVerifyPromptProfile!.FirstName)
+                        chưa hoàn tất xác minh căn cước công dân và giấy khám sức khỏe. Bạn chỉ có thể gửi yêu cầu ứng tuyển sau khi cả hai giấy tờ được xác minh.
                     </p>
 
                     <div class="nm-verify-hero" aria-hidden="true">
@@ -1650,7 +1725,7 @@
                         <span class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">NannyMatch</span>
                     </a>
                     <p class="text-gray-500 dark:text-gray-400 text-sm mb-8 leading-relaxed max-w-sm">
-                        Nền tảng kết nối gia đình với những chuyên gia chăm sóc trẻ hàng đầu. Sứ mệnh của chúng tôi là mang lại sự bình yên cho cha mẹ và sự linh hoạt tối đa cho người trông trẻ.
+                        Nền tảng kết nối gia đình với những bảo mẫu hàng đầu. Sứ mệnh của chúng tôi là mang lại sự bình yên cho phụ huynh và sự linh hoạt tối đa cho bảo mẫu.
                     </p>
                     <a class="inline-flex items-center gap-2 px-5 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/50 rounded-xl text-sm font-bold text-gray-700 dark:text-gray-300 hover:border-primary hover:text-primary hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 w-fit"
                        href="#">
@@ -1686,7 +1761,7 @@
                     <h4 class="font-bold text-gray-900 dark:text-white mb-6 uppercase tracking-wider text-xs">Pháp Lý</h4>
                     <ul class="space-y-4 text-sm font-medium text-gray-500 dark:text-gray-400">
                         <li><a class="hover:text-primary transition-colors hover:translate-x-1 inline-block transform duration-200" href="#">Điều khoản &amp; Quyền riêng tư</a></li>
-                        <li><a class="hover:text-primary transition-colors hover:translate-x-1 inline-block transform duration-200" href="#">Bảng giá dịch vụ</a></li>
+                        <li><a class="hover:text-primary transition-colors hover:translate-x-1 inline-block transform duration-200" asp-controller="Subscription" asp-action="Index">Bảng giá gói thành viên</a></li>
                         <li><a class="hover:text-primary transition-colors hover:translate-x-1 inline-block transform duration-200" href="#">Thông tin công ty</a></li>
                     </ul>
                 </div>
@@ -1749,13 +1824,13 @@
                     <div class="logo-ring"></div>
                     <div class="logo-bg"></div>
                     <div class="logo-svg">
-                        <img src="img/nanny-logo.jpg" alt="NannyMatch Logo"
+                        <img src="img/nanny-logo.jpg" alt="Logo NannyMatch"
                              style="width:110px;height:110px;object-fit:contain;border-radius:50%;" />
                     </div>
                 </div>
 
                 <div class="brand-name">Nanny<span class="accent">Match</span></div>
-                <div class="brand-tag">🏠 Kết nối gia đình – Tin tưởng vào mỗi nụ cười 💕</div>
+                <div class="brand-tag">🏠 Kết nối gia đình - Tin tưởng vào mỗi nụ cười 💕</div>
 
                 <div class="progress-section">
                     <div class="progress-status">
@@ -1774,7 +1849,7 @@
                 </div>
 
                 <div class="tip-text" id="nl-tipText">
-                    💡 Mẹo: <span>Tìm Nanny đã xác minh gần bạn chỉ trong 30 giây.</span>
+                    💡 Mẹo: <span>Tìm bảo mẫu đã xác minh gần bạn chỉ trong 30 giây.</span>
                 </div>
             </div>
         </div>
@@ -1829,6 +1904,24 @@
     }
 
     <script>
+        (() => {
+            const params = new URLSearchParams(window.location.search);
+            const toastMessage = params.get('toastMessage');
+            const toastType = params.get('toastType') || 'success';
+
+            if (!toastMessage || typeof window.showToast !== 'function') {
+                return;
+            }
+
+            window.showToast(toastMessage, { type: toastType });
+            params.delete('toastMessage');
+            params.delete('toastType');
+
+            const nextQuery = params.toString();
+            const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ''}${window.location.hash || ''}`;
+            window.history.replaceState({}, document.title, nextUrl);
+        })();
+
         /* Auto-scroll & Drag/Swipe Marquee */
         document.querySelectorAll('.marquee-container').forEach(function (container) {
             var track = container.querySelector('.marquee-track');

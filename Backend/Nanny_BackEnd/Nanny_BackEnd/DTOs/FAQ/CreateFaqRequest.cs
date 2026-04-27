@@ -6,15 +6,15 @@ namespace Nanny_BackEnd.DTOs.FAQ;
 public class CreateFaqRequest
 {
     [JsonPropertyName("question")]
-    [Required(ErrorMessage = "Question không được để trống.")]
+    [Required(ErrorMessage = "Câu hỏi không được để trống.")]
     public string Question { get; set; } = null!;
 
     [JsonPropertyName("answer")]
-    [Required(ErrorMessage = "Answer không được để trống.")]
+    [Required(ErrorMessage = "Câu trả lời không được để trống.")]
     public string Answer { get; set; } = null!;
 
     [JsonPropertyName("category")]
-    [Required(ErrorMessage = "Category không được để trống.")]
+    [Required(ErrorMessage = "Danh mục không được để trống.")]
     public string Category { get; set; } = null!;
 
     [JsonPropertyName("isActive")]
@@ -25,14 +25,17 @@ public class CreateFaqRequest
 public class UpdateFaqRequest
 {
     [JsonPropertyName("question")]
-    [Required(ErrorMessage = "Question không được để trống.")]
+    [Required(ErrorMessage = "Câu hỏi không được để trống.")]
     public string Question { get; set; } = null!;
 
     [JsonPropertyName("answer")]
-    [Required(ErrorMessage = "Answer không được để trống.")]
+    [Required(ErrorMessage = "Câu trả lời không được để trống.")]
     public string Answer { get; set; } = null!;
 
     [JsonPropertyName("isActive")]
     public bool IsActive { get; set; } = true;
+
+    [JsonPropertyName("isDeleted")]
+    public bool IsDeleted { get; set; } = false;
     // SortOrder is read-only, not updatable by client
 }

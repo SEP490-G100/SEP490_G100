@@ -1,8 +1,10 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebSite.Models;
+using WebSite.Models.Admin;
 using WebSite.Models.Subscription;
 
 namespace WebSite.Controllers;
@@ -24,7 +26,7 @@ public class SubscriptionController : Controller
     {
         var token = getToken();
         if (string.IsNullOrWhiteSpace(token))
-            return RedirectToAction("Login", "Auth", new { returnUrl = Url.Action("Index", "Subscription") });
+            return RedirectToAction("đăng nhập", "Auth", new { returnUrl = Url.Action("Index", "Subscription") });
 
         var vm = await buildPageModel(token);
         return View(vm);
@@ -36,7 +38,7 @@ public class SubscriptionController : Controller
     {
         var token = getToken();
         if (string.IsNullOrWhiteSpace(token))
-            return RedirectToAction("Login", "Auth", new { returnUrl = Url.Action("Index", "Subscription") });
+            return RedirectToAction("đăng nhập", "Auth", new { returnUrl = Url.Action("Index", "Subscription") });
 
         setAuthHeader(token);
 
@@ -54,19 +56,6 @@ public class SubscriptionController : Controller
 
             TempData["SubscriptionError"] = message;
             return RedirectToAction(nameof(Index));
-        }
-
-        if (string.Equals(result.Data?.Status, "WAITING_REVIEW", StringComparison.OrdinalIgnoreCase))
-        {
-            if (isAjaxRequest())
-                return Json(new
-                {
-                    success = true,
-                    message = "Giao dich dang cho xet duyet.",
-                    data = result.Data
-                });
-
-            return RedirectToAction(nameof(PaymentResult), new { transactionId = result.Data!.TransactionId });
         }
 
         if (string.IsNullOrWhiteSpace(result.Data?.QrCodeUrl) &&
@@ -97,7 +86,7 @@ public class SubscriptionController : Controller
     {
         var token = getToken();
         if (string.IsNullOrWhiteSpace(token))
-            return RedirectToAction("Login", "Auth", new { returnUrl = Url.Action("Index", "Subscription") });
+            return RedirectToAction("đăng nhập", "Auth", new { returnUrl = Url.Action("Index", "Subscription") });
 
         setAuthHeader(token);
 
@@ -109,7 +98,7 @@ public class SubscriptionController : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        TempData["SubscriptionSuccess"] = "Đã hủy gói hiện tại.";
+        TempData["SubscriptionSuccess"] = "Đã dừng gói. Bạn có thể mua gói khác khi cần.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -118,7 +107,7 @@ public class SubscriptionController : Controller
     {
         var token = getToken();
         if (string.IsNullOrWhiteSpace(token))
-            return RedirectToAction("Login", "Auth", new { returnUrl = Url.Action(nameof(PaymentResult), "Subscription", new { transactionId, cancelled }) });
+            return RedirectToAction("đăng nhập", "Auth", new { returnUrl = Url.Action(nameof(PaymentResult), "Subscription", new { transactionId, cancelled }) });
 
         setAuthHeader(token);
         var vm = new SubscriptionPaymentResultPageViewModel
@@ -173,6 +162,199 @@ public class SubscriptionController : Controller
         });
     }
 
+    [Authorize(Roles = "Admin")]
+    [HttpGet("/Admin/ManageSubscriptionPlan")]
+    public async Task<IActionResult> ManageSubscriptionPlan(
+        string? search = null,
+        string? targetRole = null,
+        bool? isActive = null,
+        int page = 1)
+    {
+        ViewBag.Search = search ?? "";
+        ViewBag.TargetRole = targetRole ?? "";
+        ViewBag.IsActive = isActive;
+
+        var qs = new List<string> { $"page={page}", "pageSize=3" };
+        if (!string.IsNullOrWhiteSpace(search)) qs.Add($"search={Uri.EscapeDataString(search)}");
+        if (!string.IsNullOrWhiteSpace(targetRole)) qs.Add($"targetRole={Uri.EscapeDataString(targetRole)}");
+        if (isActive.HasValue) qs.Add($"isActive={isActive.Value.ToString().ToLowerInvariant()}");
+
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/Admin/admin-view-subscription-plan-list?{string.Join("&", qs)}");
+        AttachToken(request);
+        try
+        {
+            var response = await _http.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult<AdminSubscriptionPlanListResponse>>(json, JsonOptions);
+            return View("~/Views/Admin/SubscriptionPlan/ManageSubscriptionPlan.cshtml", result?.Data ?? new AdminSubscriptionPlanListResponse());
+        }
+        catch
+        {
+            TempData["Error"] = "Khong the tai danh sach goi dich vu.";
+            return View("~/Views/Admin/SubscriptionPlan/ManageSubscriptionPlan.cshtml", new AdminSubscriptionPlanListResponse());
+        }
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpGet("/Admin/CreateSubscriptionPlan")]
+    public IActionResult CreateSubscriptionPlan() =>
+        View("~/Views/Admin/SubscriptionPlan/CreateSubscriptionPlan.cshtml", new AdminSubscriptionPlanFormViewModel());
+
+    [Authorize(Roles = "Admin")]
+    [HttpPost("/Admin/CreateSubscriptionPlan")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateSubscriptionPlan(AdminSubscriptionPlanFormViewModel model)
+    {
+        ValidateSubscriptionPlanForm(model);
+        if (!ModelState.IsValid)
+            return View("~/Views/Admin/SubscriptionPlan/CreateSubscriptionPlan.cshtml", model);
+
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/Admin/admin-create-subscription-plan")
+        {
+            Content = new StringContent(JsonSerializer.Serialize(BuildSubscriptionPlanPayload(model)), Encoding.UTF8, "application/json")
+        };
+        AttachToken(request);
+
+        try
+        {
+            var response = await _http.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult<AdminSubscriptionPlanDetailViewModel>>(json, JsonOptions);
+
+            if (result?.Success == true && result.Data != null)
+            {
+                return RedirectToAction(nameof(ManageSubscriptionPlan), new
+                {
+                    toastType = "success",
+                    toastMessage = "Ban da tao goi subscription thanh cong"
+                });
+            }
+
+            ModelState.AddModelError(nameof(model.Name), result?.Message ?? "Khong the tao goi dang ky.");
+            return View("~/Views/Admin/SubscriptionPlan/CreateSubscriptionPlan.cshtml", model);
+        }
+        catch (Exception ex)
+        {
+            ModelState.AddModelError(nameof(model.Name), $"Loi ket noi: {ex.Message}");
+            return View("~/Views/Admin/SubscriptionPlan/CreateSubscriptionPlan.cshtml", model);
+        }
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpGet("/Admin/ViewSubscriptionPlanDetail/{id:guid}")]
+    public async Task<IActionResult> ViewSubscriptionPlanDetail(Guid id)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/Admin/admin-view-subscription-plan-detail/{id}");
+        AttachToken(request);
+        try
+        {
+            var response = await _http.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult<AdminSubscriptionPlanDetailViewModel>>(json, JsonOptions);
+            if (result?.Success != true || result.Data == null)
+            {
+                TempData["Error"] = result?.Message ?? "Khong tim thay goi dang ky.";
+                return RedirectToAction(nameof(ManageSubscriptionPlan));
+            }
+
+            return View("~/Views/Admin/SubscriptionPlan/ViewSubscriptionPlanDetail.cshtml", AdminSubscriptionPlanFormViewModel.FromDetail(result.Data));
+        }
+        catch
+        {
+            TempData["Error"] = "Loi ket noi den API.";
+            return RedirectToAction(nameof(ManageSubscriptionPlan));
+        }
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpPost("/Admin/UpdateSubscriptionPlan/{id:guid}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateSubscriptionPlan(Guid id, AdminSubscriptionPlanFormViewModel model)
+    {
+        ValidateSubscriptionPlanForm(model);
+        if (!ModelState.IsValid)
+        {
+            model.Id = id;
+            return View("~/Views/Admin/SubscriptionPlan/ViewSubscriptionPlanDetail.cshtml", model);
+        }
+
+        var request = new HttpRequestMessage(HttpMethod.Patch, $"/api/Admin/admin-update-subscription-plan/{id}")
+        {
+            Content = new StringContent(JsonSerializer.Serialize(BuildSubscriptionPlanPayload(model)), Encoding.UTF8, "application/json")
+        };
+        AttachToken(request);
+
+        try
+        {
+            var response = await _http.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult<AdminSubscriptionPlanDetailViewModel>>(json, JsonOptions);
+
+            if (result?.Success == true)
+            {
+                return RedirectToAction(nameof(ManageSubscriptionPlan), new
+                {
+                    toastType = "success",
+                    toastMessage = "Ban da chinh sua goi subscription thanh cong"
+                });
+            }
+
+            ModelState.AddModelError(nameof(model.Name), result?.Message ?? "Khong the cap nhat goi dang ky.");
+            model.Id = id;
+            return View("~/Views/Admin/SubscriptionPlan/ViewSubscriptionPlanDetail.cshtml", model);
+        }
+        catch (Exception ex)
+        {
+            ModelState.AddModelError(nameof(model.Name), $"Loi ket noi: {ex.Message}");
+            model.Id = id;
+            return View("~/Views/Admin/SubscriptionPlan/ViewSubscriptionPlanDetail.cshtml", model);
+        }
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpPost("/Admin/ToggleSubscriptionPlanStatus")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ToggleSubscriptionPlanStatus(
+        [FromForm] Guid id,
+        [FromForm] bool isActive,
+        [FromForm] string? returnUrl = null)
+    {
+        var request = new HttpRequestMessage(
+            HttpMethod.Patch,
+            $"/api/Admin/admin-update-subscription-plan-status/{id}?isActive={isActive.ToString().ToLowerInvariant()}")
+        {
+            Content = new StringContent(JsonSerializer.Serialize(new { isActive }), Encoding.UTF8, "application/json")
+        };
+        AttachToken(request);
+        try
+        {
+            var response = await _http.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult>(json, JsonOptions);
+
+            if (result?.Success == true)
+            {
+                var toastMessage = isActive
+                    ? "Da kich hoat goi thanh cong"
+                    : "Da vo hieu hoa goi thanh cong";
+                var toastType = isActive ? "success" : "warning";
+                return RedirectToReturnUrlOrList(
+                    returnUrl,
+                    toastType,
+                    toastMessage);
+            }
+
+            return RedirectToReturnUrlOrList(
+                returnUrl,
+                "error",
+                result?.Message ?? "Khong the cap nhat trang thai goi dang ky.");
+        }
+        catch (Exception ex)
+        {
+            return RedirectToReturnUrlOrList(returnUrl, "error", $"Loi ket noi: {ex.Message}");
+        }
+    }
+
     private async Task<SubscriptionPageViewModel> buildPageModel(string token)
     {
         setAuthHeader(token);
@@ -219,6 +401,79 @@ public class SubscriptionController : Controller
         _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
     }
 
+    private void AttachToken(HttpRequestMessage request)
+    {
+        var token = HttpContext.Session.GetString("AccessToken");
+        if (!string.IsNullOrEmpty(token))
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+    }
+
+    private void ValidateSubscriptionPlanForm(AdminSubscriptionPlanFormViewModel model)
+    {
+        if (string.IsNullOrWhiteSpace(model.Description))
+            ModelState.AddModelError(nameof(model.Description), "Vui long nhap mo ta.");
+
+        if (model.GetFeatures().Count == 0)
+            ModelState.AddModelError(nameof(model.FeatureLines), "Vui long nhap it nhat mot tinh nang.");
+    }
+
+    private static object BuildSubscriptionPlanPayload(AdminSubscriptionPlanFormViewModel model) => new
+    {
+        name = model.Name.Trim(),
+        description = model.Description.Trim(),
+        targetRole = model.TargetRole,
+        price = model.Price,
+        durationDays = model.DurationDays,
+        sortOrder = model.SortOrder,
+        features = model.GetFeatures(),
+        canUseRecommendation = model.CanUseRecommendation,
+        benefits = new
+        {
+            monthlyJobPostLimit = model.MonthlyJobPostLimit,
+            monthlyApplicationLimit = model.MonthlyApplicationLimit,
+            featuredBadge = model.FeaturedBadge,
+            searchPriority = model.SearchPriority,
+            listingDurationDays = model.ListingDurationDays
+        }
+    };
+
+    private IActionResult RedirectToReturnUrlOrList(
+        string? returnUrl,
+        string? toastType = null,
+        string? toastMessage = null)
+    {
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            return Redirect(AppendToastQuery(returnUrl, toastType, toastMessage));
+
+        if (!string.IsNullOrWhiteSpace(toastMessage))
+        {
+            return RedirectToAction(
+                nameof(ManageSubscriptionPlan),
+                new { toastType = toastType ?? "info", toastMessage });
+        }
+
+        return RedirectToAction(nameof(ManageSubscriptionPlan));
+    }
+
+    private static string AppendToastQuery(string url, string? toastType, string? toastMessage)
+    {
+        var updatedUrl = url;
+
+        if (!string.IsNullOrWhiteSpace(toastType))
+            updatedUrl = AppendQuery(updatedUrl, "toastType", toastType);
+
+        if (!string.IsNullOrWhiteSpace(toastMessage))
+            updatedUrl = AppendQuery(updatedUrl, "toastMessage", toastMessage);
+
+        return updatedUrl;
+    }
+
+    private static string AppendQuery(string url, string key, string value)
+    {
+        var separator = url.Contains('?') ? "&" : "?";
+        return $"{url}{separator}{Uri.EscapeDataString(key)}={Uri.EscapeDataString(value)}";
+    }
+
     private string getCurrentRole()
     {
         if (User.IsInRole("Parent"))
@@ -242,27 +497,27 @@ public class SubscriptionController : Controller
 
     private static string getHeadline(string role) => role switch
     {
-        "Parent" => "Chọn gói đăng tin phù hợp cho gia đình",
-        "Nanny" => "Chọn gói ứng tuyển phù hợp cho hồ sơ của bạn",
-        _ => "Subscription của NannyMatch"
+        "Parent" => "Các gói dành cho phụ huynh",
+        "Nanny" => "Các gói dành cho bảo mẫu",
+        _ => "Gói thành viên"
     };
 
     private static string getSummary(string role) => role switch
     {
-        "Parent" => "Các gói subscription được lấy trực tiếp từ hệ thống quản trị, giúp phụ huynh mở rộng quyền đăng tin và tăng khả năng tiếp cận bảo mẫu.",
-        "Nanny" => "Các gói subscription được lấy trực tiếp từ hệ thống quản trị, giúp bảo mẫu tăng quyền ứng tuyển và cải thiện độ nổi bật của hồ sơ.",
-        _ => "Đăng nhập bằng tài khoản Parent hoặc Nanny để xem các gói phù hợp."
+        "Parent" => "Nâng cấp khi cần nhiều bài đăng hơn, thời gian hiển thị dài hơn và ưu tiên xuất hiện trước bảo mẫu. Giá và quyền lợi cập nhật theo từng thời điểm trên hệ thống.",
+        "Nanny" => "Nâng cấp để ứng tuyển nhiều hơn mỗi tháng và tăng độ nổi bật hồ sơ. Giá và quyền lợi cập nhật theo từng thời điểm trên hệ thống.",
+        _ => "Vui lòng đăng nhập bằng tài khoản phụ huynh hoặc bảo mẫu để xem gói phù hợp."
     };
 
     private static SubscriptionBenefitViewModel getFreeBenefits(string role) => role switch
     {
         "Parent" => new SubscriptionBenefitViewModel
         {
-            MonthlyJobPostLimit = 3,
+            MonthlyJobPostLimit = 1,
             MonthlyApplicationLimit = 0,
             FeaturedBadge = false,
             SearchPriority = false,
-            ListingDurationDays = 30
+            ListingDurationDays = 7
         },
         "Nanny" => new SubscriptionBenefitViewModel
         {
@@ -279,17 +534,17 @@ public class SubscriptionController : Controller
     {
         "Parent" =>
         [
-            "Tối đa 3 bài đăng đang hoạt động theo thiết lập Free hiện tại",
-            "Thời gian hiển thị bài đăng cơ bản 30 ngày",
-            "Không có badge nổi bật",
-            "Không ưu tiên trong kết quả tìm kiếm"
+            "Tối đa 1 tin đang hiển thị cùng lúc",
+            "Mỗi tin hiển thị tối đa 7 ngày",
+            "Bài đăng không kèm huy hiệu nổi bật",
+            "Vị trí tìm kiếm: mức cơ bản, không ưu tiên"
         ],
         "Nanny" =>
         [
-            "Tối đa 2 lượt ứng tuyển mỗi tháng theo thiết lập Free hiện tại",
-            "Hồ sơ hiển thị cơ bản",
-            "Không có badge nổi bật",
-            "Không ưu tiên trong kết quả tìm kiếm"
+            "Tối đa 2 lượt ứng tuyển mỗi tháng (gói miễn phí)",
+            "Hồ sơ hiển thị dạng thường",
+            "Hồ sơ không kèm huy hiệu nổi bật",
+            "Vị trí tìm kiếm: mức cơ bản, không ưu tiên"
         ],
         _ => []
     };

@@ -1,16 +1,17 @@
 using ClosedXML.Excel;
-using Microsoft.EntityFrameworkCore;
-using Nanny_BackEnd.Data;
+using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class ExportService
+public class ExportService : IExportService
 {
-    private readonly Sep490NannyDbContext _db;
+    private readonly IExportRepository _exportRepository;
 
-    public ExportService(Sep490NannyDbContext db)
+    public ExportService(IExportRepository exportRepository)
     {
-        _db = db;
+        _exportRepository = exportRepository;
     }
 
     public async Task<byte[]> ExportSystemDataToExcelAsync()
@@ -26,21 +27,8 @@ public class ExportService
         summaryHeaderRow.Style.Font.Bold = true;
         summaryHeaderRow.Style.Fill.BackgroundColor = XLColor.LightGray;
 
-        var now = DateTime.UtcNow;
-        var startOfMonth = new DateTime(now.Year, now.Month, 1);
-
-        var totalRevenue = await _db.Transactions
-            .Where(t => !t.IsDeleted && t.Status == 1) // 1 = Completed
-            .SumAsync(t => (decimal?)t.Amount) ?? 0;
-
-        var currentMonthRevenue = await _db.Transactions
-            .Where(t => !t.IsDeleted && t.Status == 1 && t.CreatedAt >= startOfMonth)
-            .SumAsync(t => (decimal?)t.Amount) ?? 0;
-
-        var totalSubscriptions = await _db.UserSubscriptions.CountAsync(s => !s.IsDeleted);
-
-        var currentMonthSubscriptions = await _db.UserSubscriptions
-            .CountAsync(s => !s.IsDeleted && s.CreatedAt >= startOfMonth);
+        var (totalRevenue, currentMonthRevenue, totalSubscriptions, currentMonthSubscriptions) =
+            await _exportRepository.GetExportSummaryAsync(DateTime.UtcNow);
 
         summarySheet.Cell(2, 1).Value = "Total Revenue";
         summarySheet.Cell(2, 2).Value = totalRevenue;
@@ -68,16 +56,12 @@ public class ExportService
         usersSheet.Cell(1, 6).Value = "Status";
         usersSheet.Cell(1, 7).Value = "Roles";
         usersSheet.Cell(1, 8).Value = "CreatedAt";
-        
+
         var usersSheetHeaderRow = usersSheet.Row(1);
         usersSheetHeaderRow.Style.Font.Bold = true;
         usersSheetHeaderRow.Style.Fill.BackgroundColor = XLColor.LightGray;
 
-        var users = await _db.Users
-            .Include(u => u.UserRoles)
-            .ThenInclude(ur => ur.Role)
-            .OrderByDescending(u => u.CreatedAt)
-            .ToListAsync();
+        var users = await _exportRepository.GetUsersForExportAsync();
 
         int userRow = 2;
         foreach (var u in users)
@@ -108,10 +92,7 @@ public class ExportService
         txSheetHeaderRow.Style.Font.Bold = true;
         txSheetHeaderRow.Style.Fill.BackgroundColor = XLColor.LightGray;
 
-        var transactions = await _db.Transactions
-            .Include(t => t.User)
-            .OrderByDescending(t => t.CreatedAt)
-            .ToListAsync();
+        var transactions = await _exportRepository.GetTransactionsForExportAsync();
 
         int txRow = 2;
         foreach (var t in transactions)
@@ -140,11 +121,7 @@ public class ExportService
         subSheetHeaderRow.Style.Font.Bold = true;
         subSheetHeaderRow.Style.Fill.BackgroundColor = XLColor.LightGray;
 
-        var subs = await _db.UserSubscriptions
-            .Include(s => s.User)
-            .Include(s => s.SubscriptionPlan)
-            .OrderByDescending(s => s.CreatedAt)
-            .ToListAsync();
+        var subs = await _exportRepository.GetSubscriptionsForExportAsync();
 
         int subRow = 2;
         foreach (var s in subs)
@@ -164,7 +141,6 @@ public class ExportService
         workbook.SaveAs(stream);
         return stream.ToArray();
     }
-
     private static string GetUserStatusString(int status) => status switch
     {
         0 => "Pending",

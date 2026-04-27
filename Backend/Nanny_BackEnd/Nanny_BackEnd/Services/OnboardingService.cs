@@ -1,30 +1,38 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Nanny_BackEnd.Data;
 using Nanny_BackEnd.DTOs.Profile;
+using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
-using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Enums;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+using System.Text.RegularExpressions;
+
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class OnboardingService
+public class OnboardingService : IOnboardingService
 {
-    private readonly UserRepository _userRepo;
-    private readonly ParentRepository _parentRepo;
-    private readonly ChildRepository _childRepo;
-    private readonly NannyProfileRepository _nannyProfileRepo;
-    private readonly NannySkillRepository _nannySkillRepo;
-    private readonly NannyAvailabilityRepository _nannyAvailabilityRepo;
-    private readonly Sep490NannyDbContext _db;
+    private const int MinWorkingAgeForExperience = 18;
+
+    private readonly IUserRepository _userRepo;
+    private readonly IParentRepository _parentRepo;
+    private readonly IChildRepository _childRepo;
+    private readonly INannyProfileRepository _nannyProfileRepo;
+    private readonly INannySkillRepository _nannySkillRepo;
+    private readonly INannyAvailabilityRepository _nannyAvailabilityRepo;
+    private readonly IJobRepository _jobRepo;
+    private readonly ILogger<OnboardingService> _logger;
 
     public OnboardingService(
-        UserRepository userRepo,
-        ParentRepository parentRepo,
-        ChildRepository childRepo,
-        NannyProfileRepository nannyProfileRepo,
-        NannySkillRepository nannySkillRepo,
-        NannyAvailabilityRepository nannyAvailabilityRepo,
-        Sep490NannyDbContext db)
+        IUserRepository userRepo,
+        IParentRepository parentRepo,
+        IChildRepository childRepo,
+        INannyProfileRepository nannyProfileRepo,
+        INannySkillRepository nannySkillRepo,
+        INannyAvailabilityRepository nannyAvailabilityRepo,
+        IJobRepository jobRepo,
+        ILogger<OnboardingService> logger)
     {
         _userRepo = userRepo;
         _parentRepo = parentRepo;
@@ -32,7 +40,8 @@ public class OnboardingService
         _nannyProfileRepo = nannyProfileRepo;
         _nannySkillRepo = nannySkillRepo;
         _nannyAvailabilityRepo = nannyAvailabilityRepo;
-        _db = db;
+        _jobRepo = jobRepo;
+        _logger = logger;
     }
 
     public async Task<OnboardingStatusDto> GetStatusAsync(Guid userId)
@@ -111,15 +120,7 @@ public class OnboardingService
                 return finalStatus;
             }
 
-            var children = await _childRepo.GetByParentProfileIdAsync(parentProfile.Id);
-            if (children.Count == 0)
-            {
-                finalStatus.RequiresOnboarding = true;
-                finalStatus.NextStep = "ParentChildren";
-                return finalStatus;
-            }
-
-            // Parent đã đủ thông tin
+            // Parent đã đủ thông tin (children là tùy chọn, không bắt buộc để hoàn thành onboarding)
             finalStatus.RequiresOnboarding = false;
             finalStatus.NextStep = "Completed";
             return finalStatus;
@@ -166,11 +167,7 @@ public class OnboardingService
 
     public async Task<List<SkillSelectionDto>> GetAllSkillsAsync()
     {
-        var skills = await _db.Skills
-            .Where(s => s.IsActive && !s.IsDeleted)
-            .OrderBy(s => s.SortOrder)
-            .ThenBy(s => s.Name)
-            .ToListAsync();
+        var skills = await _jobRepo.getActiveSkills();
 
         return skills.Select(s => new SkillSelectionDto
         {
@@ -182,6 +179,46 @@ public class OnboardingService
 
     public async Task<NannyProfile> UpdateNannyProfileAsync(Guid userId, UpdateNannyProfileRequest request)
     {
+        var normalizedBio = NormalizeOptionalText(request.Bio, 2000, "Giới thiệu bản thân");
+        if (request.YearsOfExperience is < 0 or > 80)
+            throw new InvalidOperationException("Số năm kinh nghiệm phải trong khoảng 0-80.");
+
+        if (request.MaxTravelDistance is < 0 or > 1000)
+            throw new InvalidOperationException("Khoảng cách di chuyển tối đa phải trong khoảng 0-1000 km.");
+
+        if (request.EducationLevel.HasValue &&
+            !Enum.IsDefined(typeof(EducationLevel), request.EducationLevel.Value))
+        {
+            throw new InvalidOperationException("Trình độ học vấn không hợp lệ.");
+        }
+
+        var salaryValidationError = SalaryValidationRules.GetFirstError(
+            request.ExpectedSalaryMin,
+            request.ExpectedSalaryMax,
+            "Lương từ",
+            "Đến");
+        if (!string.IsNullOrWhiteSpace(salaryValidationError))
+            throw new InvalidOperationException(salaryValidationError);
+
+        var user = await _userRepo.FindByIdAsync(userId)
+            ?? throw new InvalidOperationException("Không tìm thấy người dùng.");
+
+        if (!user.DateOfBirth.HasValue)
+            throw new InvalidOperationException("Vui lòng hoàn tất Bước 1 và nhập ngày sinh trước khi khai báo kinh nghiệm.");
+
+        if (request.YearsOfExperience.HasValue)
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var age = CalculateAge(user.DateOfBirth.Value, today);
+            var maxLogicalExperience = Math.Max(0, age - MinWorkingAgeForExperience);
+
+            if (request.YearsOfExperience.Value > maxLogicalExperience)
+            {
+                throw new InvalidOperationException(
+                    $"Số năm kinh nghiệm không hợp lý với ngày sinh đã chọn.");
+            }
+        }
+
         var profile = await _nannyProfileRepo.FindByUserIdAsync(userId);
         if (profile == null)
         {
@@ -189,6 +226,10 @@ public class OnboardingService
             {
                 Id = Guid.NewGuid(),
                 UserId = userId,
+                SalaryType = 0,
+                ProfileCompleteness = 0,
+                TotalReviews = 0,
+                IsDeleted = false,
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = userId,
                 VerificationStatus = (int)VerificationStatus.NotSubmitted
@@ -196,7 +237,7 @@ public class OnboardingService
             _nannyProfileRepo.Add(profile);
         }
 
-        profile.Bio = request.Bio;
+        profile.Bio = normalizedBio;
         profile.YearsOfExperience = request.YearsOfExperience;
         profile.EducationLevel = (int?)request.EducationLevel;
         profile.ExpectedSalaryMin = request.ExpectedSalaryMin;
@@ -205,14 +246,23 @@ public class OnboardingService
         profile.UpdatedAt = DateTime.UtcNow;
         profile.UpdatedBy = userId;
 
-        await _nannyProfileRepo.SaveChangesAsync();
+        try
+        {
+            await _nannyProfileRepo.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogError(ex, "Lỗi lưu hồ sơ onboarding nanny cho UserId={UserId}", userId);
+            throw new InvalidOperationException(BuildFriendlyDbUpdateMessage(ex));
+        }
+
         return profile;
     }
 
     public async Task UpdateNannySkillsAsync(Guid userId, UpdateNannySkillsRequest request)
     {
         var profile = await _nannyProfileRepo.FindByUserIdAsync(userId)
-            ?? throw new InvalidOperationException("Chua co ho so nanny.");
+            ?? throw new InvalidOperationException("Chưa có hồ sơ nanny.");
 
         var existing = await _nannySkillRepo.GetByNannyProfileIdAsync(profile.Id);
         if (existing.Any())
@@ -230,13 +280,21 @@ public class OnboardingService
         });
 
         _nannySkillRepo.AddRange(newSkills);
-        await _nannySkillRepo.SaveChangesAsync();
+        try
+        {
+            await _nannySkillRepo.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogError(ex, "Lỗi lưu kỹ năng onboarding nanny cho UserId={UserId}", userId);
+            throw new InvalidOperationException(BuildFriendlyDbUpdateMessage(ex));
+        }
     }
 
     public async Task UpdateNannyAvailabilityAsync(Guid userId, UpdateNannyAvailabilityRequest request)
     {
         var profile = await _nannyProfileRepo.FindByUserIdAsync(userId)
-            ?? throw new InvalidOperationException("Chua co ho so nanny.");
+            ?? throw new InvalidOperationException("Chưa có hồ sơ nanny.");
 
         var existing = await _nannyAvailabilityRepo.GetByNannyProfileIdAsync(profile.Id);
         if (existing.Any())
@@ -261,7 +319,15 @@ public class OnboardingService
         if (items.Any())
             _nannyAvailabilityRepo.AddRange(items);
 
-        await _nannyAvailabilityRepo.SaveChangesAsync();
+        try
+        {
+            await _nannyAvailabilityRepo.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogError(ex, "Lỗi lưu lịch làm việc onboarding nanny cho UserId={UserId}", userId);
+            throw new InvalidOperationException(BuildFriendlyDbUpdateMessage(ex));
+        }
     }
 
     private static NannyAvailability CreateAvailability(Guid nannyProfileId, int dayOfWeek, int timeSlot, Guid userId, DateTime now) =>
@@ -275,5 +341,77 @@ public class OnboardingService
             CreatedAt = now,
             CreatedBy = userId
         };
-}
 
+    private static string? NormalizeOptionalText(string? value, int maxLength, string fieldName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        var normalized = value.Trim();
+        if (normalized.Length > maxLength)
+            throw new InvalidOperationException($"{fieldName} không được vượt quá {maxLength} ký tự.");
+
+        return normalized;
+    }
+
+    private static int CalculateAge(DateOnly dateOfBirth, DateOnly today)
+    {
+        var age = today.Year - dateOfBirth.Year;
+        if (dateOfBirth > today.AddYears(-age))
+            age--;
+        return age;
+    }
+
+    private static string BuildFriendlyDbUpdateMessage(DbUpdateException ex)
+    {
+        var sqlEx = ex.GetBaseException() as SqlException;
+        if (sqlEx == null)
+            return "Không thể lưu dữ liệu hồ sơ. Vui lòng kiểm tra lại thông tin.";
+
+        if ((sqlEx.Number == 2601 || sqlEx.Number == 2627) &&
+            sqlEx.Message.Contains("UQ_NannyProfiles_UserId", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Hồ sơ bảo mẫu đã tồn tại. Vui lòng tải lại trang và thử lại.";
+        }
+
+        if ((sqlEx.Number == 2601 || sqlEx.Number == 2627) &&
+            sqlEx.Message.Contains("UQ_NannySkills_NannyProfileId_SkillId", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Danh sách kỹ năng có mục bị trùng. Vui lòng kiểm tra lại.";
+        }
+
+        if (sqlEx.Number == 515)
+        {
+            var (column, table) = TryExtractSqlColumnAndTable(sqlEx.Message);
+            if (!string.IsNullOrWhiteSpace(column))
+            {
+                var target = string.IsNullOrWhiteSpace(table) ? column : $"{table}.{column}";
+                return $"Thiếu dữ liệu bắt buộc: {target}.";
+            }
+
+            return "Thiếu dữ liệu bắt buộc để lưu hồ sơ.";
+        }
+
+        if (sqlEx.Number == 8152 || sqlEx.Number == 2628)
+            return "Một số trường vượt quá độ dài cho phép. Vui lòng rút gọn nội dung và thử lại.";
+
+        if (sqlEx.Number == 547)
+            return "Dữ liệu cập nhật không hợp lệ theo ràng buộc hệ thống.";
+
+        return $"Không thể lưu dữ liệu hồ sơ (SQL {sqlEx.Number}).";
+    }
+
+    private static (string? Column, string? Table) TryExtractSqlColumnAndTable(string? sqlMessage)
+    {
+        if (string.IsNullOrWhiteSpace(sqlMessage))
+            return (null, null);
+
+        var match = Regex.Match(sqlMessage, @"column '([^']+)'.*table '([^']+)'", RegexOptions.IgnoreCase);
+        if (!match.Success)
+            return (null, null);
+
+        var column = match.Groups.Count > 1 ? match.Groups[1].Value : null;
+        var table = match.Groups.Count > 2 ? match.Groups[2].Value : null;
+        return (column, table);
+    }
+}

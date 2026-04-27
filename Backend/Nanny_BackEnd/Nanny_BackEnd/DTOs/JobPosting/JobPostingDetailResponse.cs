@@ -4,6 +4,7 @@ public class JobPostingDetailResponse
 {
     public Guid Id { get; set; }
     public Guid ParentProfileId { get; set; }
+    public Guid ParentUserId { get; set; }
     public Guid? ChildProfileId { get; set; }
     public string ParentName { get; set; } = "";
     public string Title { get; set; } = "";
@@ -24,6 +25,7 @@ public class JobPostingDetailResponse
     public int? MaxNannyAge { get; set; }
     public List<string> Skills { get; set; } = [];
     public List<JobScheduleSlotResponse> ScheduleSlots { get; set; } = [];
+    public List<JobPostingPrefillChildResponse> Children { get; set; } = [];
     public double? Latitude { get; set; }
     public double? Longitude { get; set; }
     public int Status { get; set; }

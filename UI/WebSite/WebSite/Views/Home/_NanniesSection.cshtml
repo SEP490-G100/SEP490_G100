@@ -6,24 +6,53 @@
         .ToList();
     var viVn = CultureInfo.GetCultureInfo("vi-VN");
 
+    string InitialsFromName(string? fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName)) return "?";
+        var parts = fullName.Trim().Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0) return "?";
+        if (parts.Length == 1)
+        {
+            var s = parts[0];
+            if (s.Length == 0) return "?";
+            if (s.Length == 1) return s.ToUpper(viVn);
+            return string.Concat(char.ToUpper(s[0], viVn), char.ToUpper(s[1], viVn));
+        }
+        return string.Concat(char.ToUpper(parts[0][0], viVn), char.ToUpper(parts[^1][0], viVn));
+    }
+
+    string AvatarGradientClass(string? name)
+    {
+        var palette = new[]
+        {
+            "from-orange-400 to-amber-500",
+            "from-rose-400 to-orange-400",
+            "from-sky-400 to-cyan-500",
+            "from-violet-400 to-fuchsia-500",
+            "from-emerald-400 to-teal-500",
+        };
+        var i = string.IsNullOrEmpty(name) ? 0 : Math.Abs(name.GetHashCode()) % palette.Length;
+        return "bg-gradient-to-br " + palette[i];
+    }
+
     string FormatMoney(decimal? amount) =>
         amount.HasValue && amount.Value > 0
             ? $"{amount.Value.ToString("N0", viVn)} VND"
-            : "Thoa thuan";
+            : "Thỏa thuận";
 
     string FormatSalary(decimal? min, decimal? max)
     {
         if (min.HasValue && max.HasValue) return $"{FormatMoney(min)} - {FormatMoney(max)}";
-        if (min.HasValue) return $"Tu {FormatMoney(min)}";
-        if (max.HasValue) return $"Den {FormatMoney(max)}";
-        return "Thoa thuan";
+        if (min.HasValue) return $"Từ {FormatMoney(min)}";
+        if (max.HasValue) return $"Đến {FormatMoney(max)}";
+        return "Thỏa thuận";
     }
 }
 
 <section class="py-24 bg-white dark:bg-card-dark scroll-section dir-up" style="background: linear-gradient(to bottom, #ffffff, #f9fafb)">
     <div class="max-w-7xl mx-auto px-6 lg:px-10">
         <div class="text-center mb-14 sec-reveal">
-            <span class="section-label">👶 Bảo mẫu của chúng tôi</span>
+            <span class="section-label">👶 Bảo mẫu trên nền tảng</span>
             <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mt-1"
                 style="font-family:'Quicksand',sans-serif">
                 Tìm người trông trẻ mà
@@ -49,18 +78,28 @@
                            asp-action="List"
                            asp-route-detailId="@nanny.Id">
                             <div class="relative mb-4">
-                                <img alt="Nanny Profile" class="w-full aspect-square object-cover rounded-xl"
-                                     src="@(string.IsNullOrWhiteSpace(nanny.AvatarUrl) ? "/img/nanny-logo.jpg" : nanny.AvatarUrl)" />
+                                @if (!string.IsNullOrWhiteSpace(nanny.AvatarUrl))
+                                {
+                                    <img alt="Ảnh đại diện @nanny.FullName" class="w-full aspect-square object-cover rounded-xl"
+                                         src="@nanny.AvatarUrl" loading="lazy" decoding="async" />
+                                }
+                                else
+                                {
+                                    <div class="w-full aspect-square rounded-xl flex items-center justify-center text-white text-4xl font-bold shadow-inner @AvatarGradientClass(nanny.FullName)"
+                                         role="img" aria-label="Ảnh đại diện @nanny.FullName">
+                                        @InitialsFromName(nanny.FullName)
+                                    </div>
+                                }
                                 @if (nanny.FeaturedBadge || nanny.SearchPriority)
                                 {
                                     <div class="absolute top-2 left-2 flex flex-wrap gap-2">
                                         @if (nanny.SearchPriority)
                                         {
-                                            <span class="rounded-full bg-slate-900/85 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.14em] text-white">Nanny Pro</span>
+                                            <span class="rounded-full bg-slate-900/85 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.14em] text-white">Gói Pro</span>
                                         }
                                         else if (nanny.FeaturedBadge)
                                         {
-                                            <span class="rounded-full bg-orange-500/90 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.14em] text-white">Nanny Plus</span>
+                                            <span class="rounded-full bg-orange-500/90 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.14em] text-white">Gói Plus</span>
                                         }
                                     </div>
                                 }
@@ -99,7 +138,7 @@
         else
         {
             <div class="sec-reveal text-center bg-white rounded-2xl border border-gray-100 p-10 shadow-sm">
-                <p class="text-gray-500">Chua co du lieu nanny de hien thi.</p>
+                <p class="text-gray-500">Chưa có dữ liệu bảo mẫu để hiển thị.</p>
             </div>
         }
 

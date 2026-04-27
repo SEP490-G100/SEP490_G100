@@ -2,17 +2,17 @@ using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
 using Nanny_BackEnd.DTOs.Search;
 using Nanny_BackEnd.Enums;
+using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Models;
 
 namespace Nanny_BackEnd.Repositories;
 
-public class JobRepository
+public class JobRepository : IJobRepository
 {
     private readonly Sep490NannyDbContext _db;
 
     public JobRepository(Sep490NannyDbContext db) => _db = db;
 
-    public IQueryable<JobPosting> GetQuery() => _db.JobPostings.AsQueryable();
     public async Task<List<JobPosting>> searchJobPosting(
         SearchJobRequest filters,
         Guid? currentUserId = null,
@@ -144,6 +144,10 @@ public class JobRepository
             .Include(j => j.ParentProfile).ThenInclude(p => p.ChildProfiles.Where(c => !c.IsDeleted))
             .Include(j => j.JobApplications)
             .FirstOrDefaultAsync();
+
+    public async Task<bool> JobPostingExistsForParentAsync(Guid jobId, Guid parentProfileId) =>
+        await _db.JobPostings
+            .AnyAsync(j => j.Id == jobId && j.ParentProfileId == parentProfileId && !j.IsDeleted);
 
     public async Task<ParentProfile?> getParentProfileSnapshot(Guid parentProfileId) =>
         await _db.ParentProfiles
@@ -282,5 +286,42 @@ public class JobRepository
         return (items, totalCount);
     }
 
+    public async Task<(List<JobPosting> Items, int TotalCount)> ModeratorViewJobListAsync(
+        int? status,
+        int? moderationStatus,
+        string? search,
+        int page,
+        int pageSize) =>
+        await GetModeratorJobPostingsAsync(status, moderationStatus, search, page, pageSize);
+
+    public async Task<JobPosting?> ModeratorViewJobDetailAsync(Guid jobId) =>
+        await viewDetailPosting(jobId);
+
+    public async Task SaveModeratedJobAsync(JobPosting job) =>
+        await updateJobPosting(job);
+
+    public async Task SaveChangesAsync() =>
+        await saveChanges();
+
     public async Task saveChanges() => await _db.SaveChangesAsync();
+
+    public async Task<List<JobPosting>> GetJobsForCoordinateBackfillAsync(
+        DateTime? createdBeforeUtc,
+        int maxItems)
+    {
+        var take = Math.Clamp(maxItems, 1, 1000);
+        var query = _db.JobPostings
+            .Where(j => !j.IsDeleted)
+            .AsQueryable();
+
+        if (createdBeforeUtc.HasValue)
+            query = query.Where(j => j.CreatedAt < createdBeforeUtc.Value);
+
+        return await query
+            .OrderBy(j => j.CreatedAt)
+            .ThenBy(j => j.Id)
+            .Take(take)
+            .ToListAsync();
+    }
+
 }

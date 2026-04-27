@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
+using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Models;
 
 namespace Nanny_BackEnd.Repositories;
 
-public class UserRepository
+public class UserRepository : IUserRepository
 {
     private readonly Sep490NannyDbContext _db;
 
@@ -116,42 +117,51 @@ public class UserRepository
             .Select(ur => ur.Role.Name)
             .AnyAsync(n => roleNames.Contains(n));
 
+    public async Task<List<Guid>> GetActiveUserIdsByRoleAsync(string roleName) =>
+        await _db.Users
+            .Where(u => !u.IsDeleted
+                && u.Status == 1
+                && u.UserRoles.Any(ur => !ur.IsDeleted && ur.Role.Name == roleName))
+            .Select(u => u.Id)
+            .ToListAsync();
+
+    public async Task<List<Guid>> GetActiveUserIdsByRolesAsync(IEnumerable<string> roleNames)
+    {
+        var normalizedRoles = roleNames
+            .Where(role => !string.IsNullOrWhiteSpace(role))
+            .Select(role => role.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (normalizedRoles.Count == 0)
+            return [];
+
+        return await _db.Users
+            .Where(u => !u.IsDeleted
+                && u.Status == 1
+                && u.UserRoles.Any(ur => !ur.IsDeleted && normalizedRoles.Contains(ur.Role.Name)))
+            .Select(u => u.Id)
+            .Distinct()
+            .ToListAsync();
+    }
+
     // ── Admin moderator management ─────────────────────────────────────────
 
     /// <summary>Paginated list of users who have a specific role.</summary>
-    public async Task<(List<User> Users, int TotalCount)> GetPagedUsersByRoleAsync(
-        string roleName, string? search, int? status, int page, int pageSize)
-    {
-        var query = _db.Users
-            .Where(u => !u.IsDeleted &&
-                u.UserRoles.Any(ur => !ur.IsDeleted && ur.Role.Name == roleName))
-            .AsQueryable();
-
-        if (status.HasValue)
-            query = query.Where(u => u.Status == status.Value);
-
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var s = search.Trim().ToLower();
-            query = query.Where(u =>
-                u.Email.ToLower().Contains(s) ||
-                u.FirstName.ToLower().Contains(s) ||
-                u.LastName.ToLower().Contains(s));
-        }
-
-        var totalCount = await query.CountAsync();
-        var users = await query
-            .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
-            .OrderByDescending(u => u.CreatedAt)
-            .Skip((page - 1) * pageSize).Take(pageSize)
+    public async Task<List<string>> GetNotificationAssignableRolesAsync() =>
+        await _db.Roles
+            .Where(r => !r.IsDeleted && r.Name != "Admin")
+            .OrderBy(r => r.Name)
+            .Select(r => r.Name)
             .ToListAsync();
-
-        return (users, totalCount);
-    }
 
     /// <summary>Check whether an email is already registered.</summary>
     public async Task<bool> IsEmailInUseAsync(string email) =>
         await _db.Users.AnyAsync(u => u.Email == email && !u.IsDeleted);
+
+    /// <summary>Check whether a phone number is already registered.</summary>
+    public async Task<bool> IsPhoneInUseAsync(string phoneNumber) =>
+        await _db.Users.AnyAsync(u => u.PhoneNumber == phoneNumber && !u.IsDeleted);
 
     /// <summary>Fetch a Role entity by name.</summary>
     public async Task<Role?> GetRoleByNameAsync(string roleName) =>
@@ -163,17 +173,6 @@ public class UserRepository
             u.UserRoles.Any(ur => !ur.IsDeleted && ur.Role.Name == roleName));
 
     public void AddUserRole(UserRole userRole) => _db.UserRoles.Add(userRole);
-
-    // ── Dashboard stats ────────────────────────────────────────────────────
-
-    /// <summary>Total number of non-deleted users.</summary>
-    public async Task<int> GetTotalUsersCountAsync() =>
-        await _db.Users.CountAsync(u => !u.IsDeleted);
-
-    /// <summary>Number of users holding a specific role.</summary>
-    public async Task<int> GetUserCountByRoleAsync(string roleName) =>
-        await _db.Users.CountAsync(u => !u.IsDeleted &&
-            u.UserRoles.Any(ur => !ur.IsDeleted && ur.Role.Name == roleName));
 
     /// <summary>
     /// Hard-delete: remove UserRoles first (FK), then the User row itself.
@@ -189,4 +188,3 @@ public class UserRepository
     }
     public async Task SaveChangesAsync() => await _db.SaveChangesAsync();
 }
-

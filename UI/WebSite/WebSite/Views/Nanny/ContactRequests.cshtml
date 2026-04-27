@@ -1,5 +1,5 @@
 @{
-    ViewData["Title"] = "Lich su contact request - NannyMatch";
+    ViewData["Title"] = "Lịch sử yêu cầu liên hệ - NannyMatch";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
@@ -9,16 +9,16 @@
             <div class="px-6 py-6 sm:px-8 border-b border-orange-100 bg-[radial-gradient(circle_at_top_right,rgba(255,237,213,.82),transparent_32%),linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-orange-500">Parent zone</p>
-                        <h1 class="cr-page-title mt-2 text-3xl font-bold text-slate-900">Lich su contact request</h1>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-orange-500">Khu vực phụ huynh</p>
+                        <h1 class="cr-page-title mt-2 text-3xl font-bold text-slate-900">Lịch sử yêu cầu liên hệ</h1>
                         <p class="mt-2 text-sm leading-6 text-slate-500 max-w-2xl">
-                            Theo doi cac request ban da gui den nanny, trang thai phan hoi va ly do tu choi (neu co).
+                            Theo dõi các yêu cầu bạn đã gửi đến bảo mẫu, trạng thái phản hồi và lý do từ chối (nếu có).
                         </p>
                     </div>
                     <div class="cr-header-actions flex items-center gap-3">
                         <a href="/Nanny/List"
                            class="inline-flex items-center justify-center min-h-[46px] px-5 rounded-2xl border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 transition-all">
-                            Quay lai tim nanny
+                            Quay lại tìm bảo mẫu
                         </a>
                     </div>
                 </div>
@@ -28,31 +28,31 @@
                 <div id="contactRequestSummary" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
                     <div class="cr-stat-card cr-stat-card--total rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
                         <span class="material-icons-round cr-stat-icon">stacked_bar_chart</span>
-                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-400">Tong request</p>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-400">Tổng yêu cầu</p>
                         <p id="summaryTotal" class="mt-2 text-2xl font-extrabold text-slate-900">0</p>
                     </div>
                     <div class="cr-stat-card cr-stat-card--pending rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
                         <span class="material-icons-round cr-stat-icon">hourglass_top</span>
-                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-amber-600">Dang cho duyet</p>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-amber-600">Đang chờ duyệt</p>
                         <p id="summaryPending" class="mt-2 text-2xl font-extrabold text-amber-700">0</p>
                     </div>
                     <div class="cr-stat-card cr-stat-card--accepted rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
                         <span class="material-icons-round cr-stat-icon">verified</span>
-                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-emerald-600">Chap nhan</p>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-emerald-600">Đã chấp nhận</p>
                         <p id="summaryAccepted" class="mt-2 text-2xl font-extrabold text-emerald-700">0</p>
                     </div>
                     <div class="cr-stat-card cr-stat-card--rejected rounded-2xl border border-rose-200 bg-rose-50 px-4 py-4">
                         <span class="material-icons-round cr-stat-icon">do_not_disturb_on</span>
-                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-rose-600">Tu choi</p>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-rose-600">Từ chối</p>
                         <p id="summaryRejected" class="mt-2 text-2xl font-extrabold text-rose-700">0</p>
                     </div>
                 </div>
 
                 <div class="cr-filter-shell flex flex-wrap items-center gap-2 mb-5">
-                    <button type="button" class="cr-filter-btn active" data-status="">Tat ca</button>
-                    <button type="button" class="cr-filter-btn" data-status="0">Dang cho duyet</button>
-                    <button type="button" class="cr-filter-btn" data-status="1">Da chap nhan</button>
-                    <button type="button" class="cr-filter-btn" data-status="2">Da tu choi</button>
+                    <button type="button" class="cr-filter-btn active" data-status="">Tất cả</button>
+                    <button type="button" class="cr-filter-btn" data-status="0">Đang chờ duyệt</button>
+                    <button type="button" class="cr-filter-btn" data-status="1">Đã chấp nhận</button>
+                    <button type="button" class="cr-filter-btn" data-status="2">Đã từ chối</button>
                 </div>
 
                 <div id="contactRequestList" class="space-y-3"></div>
@@ -64,14 +64,14 @@
 <div id="contactRequestDetailModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/45 backdrop-blur-sm p-4">
     <div class="cr-modal-panel w-full max-w-2xl max-h-[88vh] rounded-[24px] border border-slate-200 bg-white shadow-[0_22px_56px_rgba(15,23,42,.22)] overflow-hidden flex flex-col">
         <div class="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
-            <h3 class="text-lg font-extrabold text-slate-900">Chi tiet contact request</h3>
+            <h3 class="text-lg font-extrabold text-slate-900">Chi tiết yêu cầu liên hệ</h3>
             <button type="button" id="closeContactRequestDetail"
                     class="inline-flex items-center justify-center w-9 h-9 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-100">
                 <span class="material-icons-round text-[20px]">close</span>
             </button>
         </div>
         <div id="contactRequestDetailBody" class="cr-modal-body overflow-y-auto px-6 py-5 space-y-4">
-            <p class="text-sm text-slate-500">Dang tai chi tiet request...</p>
+            <p class="text-sm text-slate-500">Đang tải chi tiết yêu cầu...</p>
         </div>
     </div>
 </div>
@@ -503,9 +503,9 @@
         };
 
         const formatDateTime = (value) => {
-            if (!value) return 'Chua cap nhat';
+            if (!value) return 'Chưa cập nhật';
             const date = new Date(value);
-            if (Number.isNaN(date.getTime())) return 'Chua cap nhat';
+            if (Number.isNaN(date.getTime())) return 'Chưa cập nhật';
             return new Intl.DateTimeFormat('vi-VN', {
                 day: '2-digit',
                 month: '2-digit',
@@ -517,12 +517,12 @@
 
         const getStatusBadge = (status, statusLabel) => {
             if (status === 1) {
-                return `<span class="cr-status-chip cr-status-chip--accepted"><span class="material-icons-round">check_circle</span>${escapeHtml(statusLabel || 'Da chap nhan')}</span>`;
+                return `<span class="cr-status-chip cr-status-chip--accepted"><span class="material-icons-round">check_circle</span>${escapeHtml(statusLabel || 'Đã chấp nhận')}</span>`;
             }
             if (status === 2) {
-                return `<span class="cr-status-chip cr-status-chip--rejected"><span class="material-icons-round">cancel</span>${escapeHtml(statusLabel || 'Da tu choi')}</span>`;
+                return `<span class="cr-status-chip cr-status-chip--rejected"><span class="material-icons-round">cancel</span>${escapeHtml(statusLabel || 'Đã từ chối')}</span>`;
             }
-            return `<span class="cr-status-chip cr-status-chip--pending"><span class="material-icons-round">schedule</span>${escapeHtml(statusLabel || 'Dang cho duyet')}</span>`;
+            return `<span class="cr-status-chip cr-status-chip--pending"><span class="material-icons-round">schedule</span>${escapeHtml(statusLabel || 'Đang chờ duyệt')}</span>`;
         };
 
         const getNannyInitial = (fullName) => {
@@ -571,19 +571,19 @@
                 listEl.innerHTML = `
                     <div class="cr-empty-state">
                         <span class="material-icons-round">inbox</span>
-                        <p class="font-bold text-slate-600">Khong co contact request nao theo bo loc hien tai.</p>
+                        <p class="font-bold text-slate-600">Không có yêu cầu liên hệ nào theo bộ lọc hiện tại.</p>
                     </div>`;
                 return;
             }
 
             listEl.innerHTML = items.map((item) => {
-                const nannyName = item?.nanny?.fullName || 'Nanny';
-                const nannyLocation = [item?.nanny?.district, item?.nanny?.city].filter(Boolean).join(', ') || 'Chua cap nhat khu vuc';
+                const nannyName = item?.nanny?.fullName || 'Bảo mẫu';
+                const nannyLocation = [item?.nanny?.district, item?.nanny?.city].filter(Boolean).join(', ') || 'Chưa cập nhật khu vực';
                 const salaryMin = Number(item?.nanny?.expectedSalaryMin ?? 0);
                 const salaryMax = Number(item?.nanny?.expectedSalaryMax ?? 0);
                 const salaryText = salaryMin > 0 || salaryMax > 0
                     ? `${salaryMin > 0 ? new Intl.NumberFormat('vi-VN').format(salaryMin) : '0'} - ${salaryMax > 0 ? new Intl.NumberFormat('vi-VN').format(salaryMax) : '0'} VND`
-                    : 'Thuong luong';
+                    : 'Thỏa thuận';
 
                 return `
                     <article class="cr-list-card ${getCardToneClass(Number(item?.status ?? 0))} p-5">
@@ -600,35 +600,35 @@
 
                         <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <div class="cr-meta-tile">
-                                <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Ngay gui</p>
+                                <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Ngày gửi</p>
                                 <p class="mt-1 text-sm font-bold text-slate-700">${escapeHtml(formatDateTime(item?.requestedAt))}</p>
                             </div>
                             <div class="cr-meta-tile">
-                                <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Kinh nghiem</p>
-                                <p class="mt-1 text-sm font-bold text-slate-700">${Number(item?.nanny?.yearsOfExperience ?? 0)} nam</p>
+                                <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Kinh nghiệm</p>
+                                <p class="mt-1 text-sm font-bold text-slate-700">${Number(item?.nanny?.yearsOfExperience ?? 0)} năm</p>
                             </div>
                             <div class="cr-meta-tile">
-                                <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Luong mong muon</p>
+                                <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Lương mong muốn</p>
                                 <p class="mt-1 text-sm font-bold text-slate-700">${escapeHtml(salaryText)}</p>
                             </div>
                         </div>
 
                         <div class="cr-message-box mt-4">
-                            <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-orange-500">Loi nhan cua ban</p>
-                            <p class="mt-1 text-sm text-slate-700">${escapeHtml(item?.message || 'Khong co loi nhan.')}</p>
+                            <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-orange-500">Lời nhắn của bạn</p>
+                            <p class="mt-1 text-sm text-slate-700">${escapeHtml(item?.message || 'Không có lời nhắn.')}</p>
                         </div>
 
                         <div class="cr-actions mt-4 flex flex-wrap items-center justify-end gap-2">
                             <a href="/Profile/ViewUser?userId=${encodeURIComponent(item?.nanny?.userId || '')}&nannyProfileId=${encodeURIComponent(item?.nanny?.profileId || '')}&contactRequestId=${encodeURIComponent(item?.id || '')}&source=contact_request"
                                class="cr-action-btn cr-action-btn--outline">
                                 <span class="material-icons-round">visibility</span>
-                                Xem ho so nanny
+                                Xem hồ sơ bảo mẫu
                             </a>
                             <button type="button"
                                     class="cr-action-btn cr-action-btn--primary"
                                     data-request-id="${escapeHtml(item?.id)}">
                                 <span class="material-icons-round">pageview</span>
-                                Xem chi tiet request
+                                Xem chi tiết yêu cầu
                             </button>
                         </div>
                     </article>`;
@@ -641,33 +641,33 @@
 
         const renderDetail = (detail) => {
             const status = Number(detail?.status ?? 0);
-            const statusLabel = detail?.statusLabel || 'Dang cap nhat';
-            const nannyName = detail?.nanny?.fullName || 'Nanny';
-            const parentMessage = detail?.message || 'Khong co loi nhan.';
-            const responseMessage = detail?.responseMessage || 'Chua co phan hoi tu nanny.';
+            const statusLabel = detail?.statusLabel || 'Đang cập nhật';
+            const nannyName = detail?.nanny?.fullName || 'Bảo mẫu';
+            const parentMessage = detail?.message || 'Không có lời nhắn.';
+            const responseMessage = detail?.responseMessage || 'Chưa có phản hồi từ bảo mẫu.';
 
             modalBodyEl.innerHTML = `
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div class="cr-meta-tile">
-                        <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Nanny</p>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Bảo mẫu</p>
                         <p class="mt-1 text-base font-extrabold text-slate-900">${escapeHtml(nannyName)}</p>
-                        <p class="mt-1 text-sm text-slate-500">${escapeHtml([detail?.nanny?.district, detail?.nanny?.city].filter(Boolean).join(', ') || 'Chua cap nhat')}</p>
+                        <p class="mt-1 text-sm text-slate-500">${escapeHtml([detail?.nanny?.district, detail?.nanny?.city].filter(Boolean).join(', ') || 'Chưa cập nhật')}</p>
                     </div>
                     <div class="cr-meta-tile">
-                        <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Trang thai</p>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Trạng thái</p>
                         <div class="mt-2">${getStatusBadge(status, statusLabel)}</div>
-                        <p class="mt-2 text-xs text-slate-500">Gui luc: ${escapeHtml(formatDateTime(detail?.requestedAt))}</p>
-                        <p class="mt-1 text-xs text-slate-500">Phan hoi luc: ${escapeHtml(formatDateTime(detail?.respondedAt))}</p>
+                        <p class="mt-2 text-xs text-slate-500">Gửi lúc: ${escapeHtml(formatDateTime(detail?.requestedAt))}</p>
+                        <p class="mt-1 text-xs text-slate-500">Phản hồi lúc: ${escapeHtml(formatDateTime(detail?.respondedAt))}</p>
                     </div>
                 </div>
 
                 <div class="cr-message-box">
-                    <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-orange-500">Loi nhan parent</p>
+                    <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-orange-500">Lời nhắn phụ huynh</p>
                     <p class="mt-2 text-sm leading-6 text-slate-700">${escapeHtml(parentMessage)}</p>
                 </div>
 
                 <div class="cr-meta-tile">
-                    <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Phan hoi tu nanny</p>
+                    <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">Phản hồi từ bảo mẫu</p>
                     <p class="mt-2 text-sm leading-6 text-slate-700">${escapeHtml(responseMessage)}</p>
                 </div>`;
         };
@@ -692,14 +692,14 @@
                 });
                 const json = await response.json();
                 if (!response.ok || !json?.success) {
-                    showToast(json?.message || 'Khong the tai chi tiet request.', 'error');
-                    modalBodyEl.innerHTML = '<p class="text-sm text-rose-600">Khong the tai chi tiet request.</p>';
+                    showToast(json?.message || 'Không thể tải chi tiết yêu cầu.', 'error');
+                    modalBodyEl.innerHTML = '<p class="text-sm text-rose-600">Không thể tải chi tiết yêu cầu.</p>';
                     return;
                 }
                 renderDetail(json.data);
             } catch {
-                showToast('Khong the tai chi tiet request.', 'error');
-                modalBodyEl.innerHTML = '<p class="text-sm text-rose-600">Khong the tai chi tiet request.</p>';
+                showToast('Không thể tải chi tiết yêu cầu.', 'error');
+                modalBodyEl.innerHTML = '<p class="text-sm text-rose-600">Không thể tải chi tiết yêu cầu.</p>';
             }
         };
 
@@ -730,7 +730,7 @@
                 if (!response.ok || !json?.success) {
                     listEl.innerHTML = `
                         <div class="rounded-2xl border border-red-100 bg-red-50 px-5 py-8 text-center text-red-600">
-                            ${escapeHtml(json?.message || 'Khong tai duoc lich su contact request.')}
+                            ${escapeHtml(json?.message || 'Không tải được lịch sử yêu cầu.')}
                         </div>`;
                     return;
                 }
@@ -741,7 +741,7 @@
             } catch {
                 listEl.innerHTML = `
                     <div class="rounded-2xl border border-red-100 bg-red-50 px-5 py-8 text-center text-red-600">
-                        Khong tai duoc lich su contact request.
+                        Không tải được lịch sử yêu cầu.
                     </div>`;
             } finally {
                 window.setTimeout(() => {

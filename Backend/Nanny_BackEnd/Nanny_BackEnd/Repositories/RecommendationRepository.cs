@@ -2,59 +2,19 @@ using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
 using Nanny_BackEnd.DTOs.Recommendation;
+using Nanny_BackEnd.Helpers;
+using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Models;
 
 namespace Nanny_BackEnd.Repositories;
 
-public class RecommendationRepository
+public class RecommendationRepository : IRecommendationRepository
 {
     private readonly Sep490NannyDbContext _db;
 
     public RecommendationRepository(Sep490NannyDbContext db)
     {
         _db = db;
-    }
-
-    // ──────────────────────────────────────────────────────────────
-    // Internal transfer types
-    // ──────────────────────────────────────────────────────────────
-
-    public class NannyCandidate
-    {
-        public Guid NannyProfileId { get; set; }
-        public Guid UserId { get; set; }
-        public string FullName { get; set; } = string.Empty;
-        public string? AvatarUrl { get; set; }
-        public string? Bio { get; set; }
-        public int? YearsOfExperience { get; set; }
-        public int? EducationLevel { get; set; }
-        public decimal? AverageRating { get; set; }
-        public int TotalReviews { get; set; }
-        public int? MaxTravelDistance { get; set; }
-        public decimal? Latitude { get; set; }
-        public decimal? Longitude { get; set; }
-        public decimal? ExpectedSalaryMin { get; set; }
-        public decimal? ExpectedSalaryMax { get; set; }
-        public List<Guid> SkillIds { get; set; } = new();
-        public string? Embedding { get; set; }
-        public List<NannySkillDto> Skills { get; set; } = new();
-    }
-
-    public class JobCandidate
-    {
-        public Guid JobId { get; set; }
-        public string Title { get; set; } = string.Empty;
-        public string? Description { get; set; }
-        public string? City { get; set; }
-        public string? District { get; set; }
-        public decimal? SalaryMin { get; set; }
-        public decimal? SalaryMax { get; set; }
-        public bool SalaryNegotiable { get; set; }
-        public decimal? Latitude { get; set; }
-        public decimal? Longitude { get; set; }
-        public List<Guid> RequiredSkillIds { get; set; } = new();
-        public string? Embedding { get; set; }
-        public List<JobRequiredSkillDto> RequiredSkills { get; set; } = new();
     }
 
     // Hard Filter: Nanny candidates cho một Job
@@ -103,7 +63,10 @@ public class RecommendationRepository
 
         var candidates = await query.ToListAsync();
 
-        // In-memory filter: lịch và skill 
+        double? jLat = job.Latitude.HasValue ? (double)job.Latitude.Value : null;
+        double? jLng = job.Longitude.HasValue ? (double)job.Longitude.Value : null;
+
+        // In-memory filter: lịch, skill và khoảng cách
         var passed = new List<NannyProfile>();
         foreach (var n in candidates)
         {
@@ -119,6 +82,19 @@ public class RecommendationRepository
             {
                 var nannySkillIds = n.NannySkills.Select(s => s.SkillId).ToHashSet();
                 if (!requiredSkillIds.Overlaps(nannySkillIds)) continue;
+            }
+
+            // Hard cutoff khoảng cách: loại nanny ở xa hơn 2× MaxTravelDistance.
+            // Chỉ áp khi cả hai bên đều có tọa độ và nanny đã khai MaxTravelDistance.
+            if (jLat.HasValue && jLng.HasValue &&
+                n.User.Latitude.HasValue && n.User.Longitude.HasValue &&
+                n.MaxTravelDistance is > 0)
+            {
+                double distKm = HaversineKm(
+                    (double)n.User.Latitude.Value, (double)n.User.Longitude.Value,
+                    jLat.Value, jLng.Value);
+                if (distKm > n.MaxTravelDistance.Value * 2.0)
+                    continue;
             }
 
             passed.Add(n);
@@ -158,12 +134,16 @@ public class RecommendationRepository
     public async Task<List<JobCandidate>> GetJobCandidatesAsync(Guid nannyProfileId)
     {
         var nanny = await _db.NannyProfiles
+            .Include(n => n.User)
             .Include(n => n.NannySkills.Where(s => !s.IsDeleted))
             .FirstOrDefaultAsync(n => n.Id == nannyProfileId && !n.IsDeleted);
 
         if (nanny == null) return new List<JobCandidate>();
 
         var nannySkillIds = nanny.NannySkills.Select(s => s.SkillId).ToHashSet();
+
+        double? nLat = nanny.User?.Latitude.HasValue == true ? (double)nanny.User.Latitude!.Value : null;
+        double? nLng = nanny.User?.Longitude.HasValue == true ? (double)nanny.User.Longitude!.Value : null;
 
         // Lương đã bỏ khỏi hard filter — xử lý mềm bởi salaryScore
         var jobs = await _db.JobPostings
@@ -185,6 +165,19 @@ public class RecommendationRepository
 
             if (jobRequiredSkillIds.Count > 0 && !jobRequiredSkillIds.Overlaps(nannySkillIds))
                 continue;
+
+            // Hard cutoff khoảng cách: loại job xa hơn 2× MaxTravelDistance của nanny.
+            // Chỉ áp khi cả hai bên đều có tọa độ và nanny đã khai MaxTravelDistance.
+            if (nLat.HasValue && nLng.HasValue &&
+                j.Latitude.HasValue && j.Longitude.HasValue &&
+                nanny.MaxTravelDistance is > 0)
+            {
+                double distKm = HaversineKm(
+                    nLat.Value, nLng.Value,
+                    (double)j.Latitude.Value, (double)j.Longitude.Value);
+                if (distKm > nanny.MaxTravelDistance.Value * 2.0)
+                    continue;
+            }
 
             passed.Add(j);
         }
@@ -256,6 +249,8 @@ public class RecommendationRepository
     {
         var j = await _db.JobPostings
             .Include(x => x.ChildProfile)
+            .Include(x => x.ParentProfile)
+                .ThenInclude(parent => parent.ChildProfiles.Where(child => !child.IsDeleted))
             .Include(x => x.JobRequirements.Where(r => !r.IsDeleted))
                 .ThenInclude(r => r.Skill)
             .FirstOrDefaultAsync(x => x.Id == jobId && !x.IsDeleted);
@@ -264,29 +259,10 @@ public class RecommendationRepository
 
         var (embedding, updatedAt) = await LoadJobEmbeddingWithTimestampAsync(jobId);
 
-        return new JobReadModelDto
-        {
-            JobId = j.Id,
-            Title = j.Title,
-            ChildAgeGroup = j.ChildProfile?.ChildAgeGroup,
-            NumberOfChildren = j.NumberOfChildren,
-            Description = j.Description,
-            Characteristic = j.ChildProfile?.Characteristic,
-            SpecialNeeds = j.ChildProfile?.SpecialNeeds,
-            RequiredSkillNames = j.JobRequirements.Select(r => r.Skill.Name).ToList(),
-            RequiredSkillIds = j.JobRequirements.Where(r => r.IsRequired).Select(r => r.SkillId).ToList(),
-            SalaryMin = j.SalaryMin,
-            SalaryMax = j.SalaryMax,
-            SalaryNegotiable = j.SalaryNegotiable,
-            MinNannyAge = j.MinNannyAge,
-            MaxNannyAge = j.MaxNannyAge,
-            Latitude = j.Latitude,
-            Longitude = j.Longitude,
-            City = j.City,
-            District = j.District,
-            Embedding = embedding,
-            EmbeddingUpdatedAt = updatedAt
-        };
+        var model = mapJobReadModel(j);
+        model.Embedding = embedding;
+        model.EmbeddingUpdatedAt = updatedAt;
+        return model;
     }
 
     public async Task<List<NannyReadModelDto>> GetAllNannyReadModelsAsync()
@@ -324,34 +300,14 @@ public class RecommendationRepository
     {
         var jobs = await _db.JobPostings
             .Include(j => j.ChildProfile)
+            .Include(j => j.ParentProfile)
+                .ThenInclude(parent => parent.ChildProfiles.Where(child => !child.IsDeleted))
             .Include(j => j.JobRequirements.Where(r => !r.IsDeleted))
                 .ThenInclude(r => r.Skill)
             .Where(j => !j.IsDeleted)
             .ToListAsync();
 
-        return jobs.Select(j => new JobReadModelDto
-        {
-            JobId = j.Id,
-            Title = j.Title,
-            ChildAgeGroup = j.ChildProfile?.ChildAgeGroup,
-            NumberOfChildren = j.NumberOfChildren,
-            Description = j.Description,
-            Characteristic = j.ChildProfile?.Characteristic,
-            SpecialNeeds = j.ChildProfile?.SpecialNeeds,
-            RequiredSkillNames = j.JobRequirements.Select(r => r.Skill.Name).ToList(),
-            RequiredSkillIds = j.JobRequirements.Where(r => r.IsRequired).Select(r => r.SkillId).ToList(),
-            SalaryMin = j.SalaryMin,
-            SalaryMax = j.SalaryMax,
-            SalaryNegotiable = j.SalaryNegotiable,
-            MinNannyAge = j.MinNannyAge,
-            MaxNannyAge = j.MaxNannyAge,
-            Latitude = j.Latitude,
-            Longitude = j.Longitude,
-            City = j.City,
-            District = j.District,
-            Embedding = null,
-            EmbeddingUpdatedAt = null
-        }).ToList();
+        return jobs.Select(mapJobReadModel).ToList();
     }
 
     public async Task<List<NannyReadModelDto>> GetPendingEmbedNanniesAsync()
@@ -395,34 +351,49 @@ public class RecommendationRepository
 
         var jobs = await _db.JobPostings
             .Include(j => j.ChildProfile)
+            .Include(j => j.ParentProfile)
+                .ThenInclude(parent => parent.ChildProfiles.Where(child => !child.IsDeleted))
             .Include(j => j.JobRequirements.Where(r => !r.IsDeleted))
                 .ThenInclude(r => r.Skill)
             .Where(j => pendingIds.Contains(j.Id))
             .ToListAsync();
 
-        return jobs.Select(j => new JobReadModelDto
+        return jobs.Select(mapJobReadModel).ToList();
+    }
+
+    private static JobReadModelDto mapJobReadModel(JobPosting job)
+    {
+        var selectedChildren = ChildProfileSnapshotHelper.ResolveChildren(
+            job.ParentProfile,
+            job.ChildProfileId ?? job.ChildProfile?.Id,
+            job.NumberOfChildren);
+        var childSnapshot = ChildProfileSnapshotHelper.BuildSnapshot(
+            selectedChildren,
+            job.ParentProfile?.FamilyDescription);
+
+        return new JobReadModelDto
         {
-            JobId = j.Id,
-            Title = j.Title,
-            ChildAgeGroup = j.ChildProfile?.ChildAgeGroup,
-            NumberOfChildren = j.NumberOfChildren,
-            Description = j.Description,
-            Characteristic = j.ChildProfile?.Characteristic,
-            SpecialNeeds = j.ChildProfile?.SpecialNeeds,
-            RequiredSkillNames = j.JobRequirements.Select(r => r.Skill.Name).ToList(),
-            RequiredSkillIds = j.JobRequirements.Where(r => r.IsRequired).Select(r => r.SkillId).ToList(),
-            SalaryMin = j.SalaryMin,
-            SalaryMax = j.SalaryMax,
-            SalaryNegotiable = j.SalaryNegotiable,
-            MinNannyAge = j.MinNannyAge,
-            MaxNannyAge = j.MaxNannyAge,
-            Latitude = j.Latitude,
-            Longitude = j.Longitude,
-            City = j.City,
-            District = j.District,
+            JobId = job.Id,
+            Title = job.Title,
+            ChildAgeGroup = childSnapshot.BirthType.HasValue ? (byte?)childSnapshot.BirthType.Value : null,
+            NumberOfChildren = job.NumberOfChildren,
+            Description = job.Description,
+            Characteristic = childSnapshot.Characteristic,
+            SpecialNeeds = childSnapshot.SpecialNeeds,
+            RequiredSkillNames = job.JobRequirements.Select(requirement => requirement.Skill.Name).ToList(),
+            RequiredSkillIds = job.JobRequirements.Where(requirement => requirement.IsRequired).Select(requirement => requirement.SkillId).ToList(),
+            SalaryMin = job.SalaryMin,
+            SalaryMax = job.SalaryMax,
+            SalaryNegotiable = job.SalaryNegotiable,
+            MinNannyAge = job.MinNannyAge,
+            MaxNannyAge = job.MaxNannyAge,
+            Latitude = job.Latitude,
+            Longitude = job.Longitude,
+            City = job.City,
+            District = job.District,
             Embedding = null,
             EmbeddingUpdatedAt = null
-        }).ToList();
+        };
     }
 
     // Embedding persistence (raw SQL — EF Core ignores these columns)
@@ -524,6 +495,17 @@ public class RecommendationRepository
         return result;
     }
 
+    private static double HaversineKm(double lat1, double lon1, double lat2, double lon2)
+    {
+        const double R = 6371;
+        var dLat = (lat2 - lat1) * Math.PI / 180;
+        var dLon = (lon2 - lon1) * Math.PI / 180;
+        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2)
+              + Math.Cos(lat1 * Math.PI / 180) * Math.Cos(lat2 * Math.PI / 180)
+              * Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+        return R * 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+    }
+
     private static void AddParam(System.Data.Common.DbCommand cmd, string name, object? value)
     {
         var p = cmd.CreateParameter();
@@ -532,3 +514,6 @@ public class RecommendationRepository
         cmd.Parameters.Add(p);
     }
 }
+
+
+

@@ -1,6 +1,6 @@
 @model WebSite.Models.Subscription.SubscriptionPaymentResultPageViewModel
 @{
-    ViewData["Title"] = "Ket qua thanh toan";
+    ViewData["Title"] = "Kết quả thanh toán";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
@@ -12,34 +12,29 @@
     @{
         var isCancelled = Model.Cancelled;
         var isSuccess = Model.PaymentStatus?.SubscriptionActivated == true;
-        var isWaitingReview = !isCancelled && Model.PaymentStatus?.TransactionStatus == 5;
         var isFailed = !isCancelled && Model.PaymentStatus?.TransactionStatus == 3;
         var state = isCancelled ? "cancelled" : isSuccess ? "success" : isFailed ? "failed" : "pending";
-        var statusLabel = Model.PaymentStatus?.TransactionStatusLabel ?? (isCancelled ? "Da huy" : "Cho thanh toan");
-        var planLabel = Model.PaymentStatus?.PlanName ?? "Subscription";
+        var statusLabel = Model.PaymentStatus?.TransactionStatusLabel ?? (isCancelled ? "Đã hủy" : "Chờ thanh toán");
+        var planLabel = Model.PaymentStatus?.PlanName ?? "Gói thành viên";
         var resultTitle = isCancelled
-            ? "Ban da huy giao dich"
+            ? "Đã bỏ qua giao dịch"
             : isSuccess
-                ? "Thanh toan thanh cong"
-                : isWaitingReview
-                    ? "Dang cho xet duyet"
+                ? "Thanh toán thành công"
                 : isFailed
-                    ? "Thanh toan that bai"
-                    : "Cho thanh toan";
+                    ? "Giao dịch không thành công"
+                    : "Đang xác nhận thanh toán";
         var resultDescription = isCancelled
-            ? "Giao dich chua hoan tat. Ban co the quay lai trang subscription de tao giao dich moi."
+            ? "Bạn rời khỏi bước thanh toán. Vào lại trang gói nếu muốn thử lần nữa."
             : isSuccess
-                ? "Goi subscription cua ban da duoc kich hoat va san sang su dung."
-                : isWaitingReview
-                    ? "He thong da ghi nhan ban da chuyen khoan va dang doi PayOS/callback doi soat giao dich."
+                ? "Gói đã được kích hoạt. Bạn có thể dùng quyền lợi theo mô tả gói."
                 : isFailed
-                    ? "He thong doi soat callback noi bo khong thanh cong. Ban co the tao giao dich moi."
-                    : "Sau khi ban chuyen khoan, bam nut Toi da chuyen khoan de he thong chuyen sang trang thai dang cho xet duyet.";
+                    ? "Chưa ghi nhận thanh toán thành công. Bạn có thể tạo giao dịch mới từ trang gói."
+                    : "Chúng tôi sẽ xác nhận với PayOS. Nếu bạn vừa chuyển khoản, vui lòng đợi vài phút rồi tải lại trang.";
     }
 
     <section class="sub-result-hero">
         <article class="sub-result-overview">
-            <div class="sub-role">Ket qua thanh toan</div>
+            <div class="sub-role">Sau khi thanh toán</div>
             <h1 id="paymentResultTitle">@resultTitle</h1>
             <p id="paymentResultDescription">@resultDescription</p>
 
@@ -47,12 +42,12 @@
                 <span id="paymentResultStatusBadge" class="sub-result-status-pill sub-result-status-pill--@state">
                     <span id="paymentResultStatus">@statusLabel</span>
                 </span>
-                <span class="sub-result-plan-pill">Goi: <b id="paymentResultPlan">@planLabel</b></span>
+                <span class="sub-result-plan-pill">Gói: <b id="paymentResultPlan">@planLabel</b></span>
             </div>
         </article>
 
         <aside id="paymentResultMetaCard" class="sub-result-id-card sub-result-id-card--@state">
-            <span class="sub-status-label">Ma giao dich</span>
+            <span class="sub-status-label">Mã giao dịch</span>
             <strong>@Model.TransactionId</strong>
             <p id="paymentStatusText">@statusLabel - @planLabel</p>
         </aside>
@@ -60,32 +55,25 @@
 
     <section class="sub-result-action-card">
         <div class="sub-result-action-head">
-            <span class="sub-section-label">Thanh toan</span>
-            <h2>Thong tin giao dich</h2>
-            <p>Neu callback den cham, trang se tiep tuc kiem tra va cap nhat ket qua cho ban.</p>
+            <span class="sub-section-label">Thanh toán</span>
+            <h2>Thông tin giao dịch</h2>
+            <p>Trang có thể tự cập nhật khi PayOS gửi kết quả. Nếu vẫn “Chờ” sau vài phút, hãy tải lại trang.</p>
         </div>
 
         <div class="sub-result-facts">
             <div class="sub-result-fact">
-                <span>Trang thai hien tai</span>
+                <span>Trạng thái</span>
                 <b id="paymentResultStatusText">@statusLabel</b>
             </div>
             <div class="sub-result-fact">
-                <span>Goi subscription</span>
+                <span>Tên gói</span>
                 <b id="paymentResultPlanText">@planLabel</b>
             </div>
         </div>
 
         <div class="sub-result-actions">
-            @if (!Model.Cancelled && !isSuccess && !isFailed && !isWaitingReview)
-            {
-                <form id="markTransferredForm" class="sub-result-inline-form">
-                    @Html.AntiForgeryToken()
-                    <button type="submit" id="markTransferredBtn" class="sub-primary-btn sub-result-btn">Toi da chuyen khoan</button>
-                </form>
-            }
-            <a href="@Url.Action("Index", "Subscription")" class="sub-primary-btn sub-result-btn">Quay lai trang goi</a>
-            <a href="@Url.Action("Index", "Home")" class="sub-secondary-btn sub-result-btn">Ve trang chu</a>
+            <a href="@Url.Action("Index", "Subscription")" class="sub-primary-btn sub-result-btn">Về trang gói thành viên</a>
+            <a href="@Url.Action("Index", "Home")" class="sub-secondary-btn sub-result-btn">Về trang chủ</a>
         </div>
     </section>
 </div>
@@ -105,9 +93,6 @@
                 const resultPlanText = document.getElementById('paymentResultPlanText');
                 const resultStatusBadge = document.getElementById('paymentResultStatusBadge');
                 const resultMetaCard = document.getElementById('paymentResultMetaCard');
-                const markTransferredForm = document.getElementById('markTransferredForm');
-                const markTransferredBtn = document.getElementById('markTransferredBtn');
-                const antiForgeryToken = markTransferredForm?.querySelector('input[name="__RequestVerificationToken"]')?.value;
 
                 let attempts = 0;
                 const maxAttempts = 40;
@@ -133,8 +118,8 @@
                 const applyStatus = (data) => {
                     if (!data) return false;
 
-                    const status = data.transactionStatusLabel || 'Dang cho doi soat';
-                    const plan = data.planName || 'Subscription';
+                    const status = data.transactionStatusLabel || 'Đang chờ đối soát';
+                    const plan = data.planName || 'Gói đăng ký';
 
                     if (resultStatus) resultStatus.textContent = status;
                     if (resultPlan) resultPlan.textContent = plan;
@@ -144,74 +129,23 @@
 
                     if (data.subscriptionActivated) {
                         setVisualState('success');
-                        if (resultTitle) resultTitle.textContent = 'Thanh toan thanh cong';
-                        if (resultDescription) resultDescription.textContent = 'Goi subscription cua ban da duoc kich hoat.';
-                        if (markTransferredForm) markTransferredForm.style.display = 'none';
+                        if (resultTitle) resultTitle.textContent = 'Thanh toán thành công';
+                        if (resultDescription) resultDescription.textContent = 'Gói đăng ký của bạn đã được kích hoạt.';
                         return true;
                     }
 
                     if (data.transactionStatus === 3) {
                         setVisualState('failed');
-                        if (resultTitle) resultTitle.textContent = 'Thanh toan that bai';
-                        if (resultDescription) resultDescription.textContent = 'He thong doi soat callback noi bo khong thanh cong.';
-                        if (markTransferredForm) markTransferredForm.style.display = 'none';
+                        if (resultTitle) resultTitle.textContent = 'Thanh toán thất bại';
+                        if (resultDescription) resultDescription.textContent = 'Hệ thống xác nhận thanh toán nội bộ không thành công.';
                         return true;
                     }
 
-                    if (data.transactionStatus === 5) {
-                        setVisualState('pending');
-                        if (resultTitle) resultTitle.textContent = 'Dang cho xet duyet';
-                        if (resultDescription) resultDescription.textContent = 'He thong da ghi nhan ban da chuyen khoan va dang doi PayOS/callback doi soat.';
-                        if (markTransferredForm) markTransferredForm.style.display = 'none';
-                        return false;
-                    }
-
                     setVisualState('pending');
-                    if (resultTitle) resultTitle.textContent = 'Cho thanh toan';
-                    if (resultDescription) resultDescription.textContent = 'Sau khi ban chuyen khoan, bam nut Toi da chuyen khoan de gui yeu cau doi soat.';
+                    if (resultTitle) resultTitle.textContent = 'Chờ thanh toán';
+                    if (resultDescription) resultDescription.textContent = 'Hệ thống sẽ tự động kiểm tra kết quả thanh toán từ PayOS.';
                     return false;
                 };
-
-                markTransferredForm?.addEventListener('submit', async (event) => {
-                    event.preventDefault();
-                    if (!markTransferredBtn) return;
-
-                    markTransferredBtn.disabled = true;
-                    const oldLabel = markTransferredBtn.textContent;
-                    markTransferredBtn.textContent = 'Dang gui xac nhan...';
-
-                    try {
-                        const response = await fetch(`/Subscription/MarkTransferred?transactionId=${transactionId}`, {
-                            method: 'POST',
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest',
-                                ...(antiForgeryToken ? { 'RequestVerificationToken': antiForgeryToken } : {})
-                            },
-                            credentials: 'same-origin'
-                        });
-
-                        const result = await response.json();
-                        if (!result?.success) {
-                            alert(result?.message || 'Khong the ghi nhan xac nhan chuyen khoan.');
-                            return;
-                        }
-
-                        applyStatus({
-                            transactionStatus: result.data?.transactionStatus,
-                            transactionStatusLabel: result.data?.transactionStatusLabel,
-                            planName: '@planLabel',
-                            subscriptionActivated: false
-                        });
-
-                        attempts = 0;
-                        window.setTimeout(poll, 2500);
-                    } catch {
-                        alert('Khong the ghi nhan xac nhan chuyen khoan.');
-                    } finally {
-                        markTransferredBtn.disabled = false;
-                        markTransferredBtn.textContent = oldLabel;
-                    }
-                });
 
                 const poll = async () => {
                     attempts += 1;

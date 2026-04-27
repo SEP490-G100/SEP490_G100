@@ -1,28 +1,26 @@
-@model WebSite.Models.Profile.NannyBasicInfoWizardViewModel
+﻿@model WebSite.Models.Profile.NannyBasicInfoWizardViewModel
 @{
-    ViewData["Title"] = "Nanny - Thong tin co ban";
+    ViewData["Title"] = "Bảo mẫu - Thông tin cơ bản";
 }
 
-<div class="nm-flow-shell nm-flow-shell--cool">
+<div class="nm-flow-shell nm-flow-shell--homepage">
     <div class="nm-flow-container">
         <div class="nm-flow-card">
             <div class="nm-flow-card__inner">
                 <div class="nm-flow-header">
                     <div class="nm-flow-header__content">
-                        <span class="nm-flow-badge nm-flow-badge--cool">Nanny onboarding</span>
-                        <h1 class="nm-flow-title">Hoan thien ho so co ban</h1>
+                        <span class="nm-flow-badge">Khởi tạo hồ sơ bảo mẫu</span>
+                        <h1 class="nm-flow-title">Hoàn thiện hồ sơ cơ bản</h1>
                         <p class="nm-flow-subtitle">
-                            Day la thong tin nen ban dau de ho so nanny hien thi tot hon trong tim kiem va de parent nhan dien nhanh kha nang phu hop.
+                            Đây là thông tin nền để hồ sơ bảo mẫu hiển thị rõ trong tìm kiếm và giúp phụ huynh đánh giá nhanh mức độ phù hợp.
                         </p>
-                    </div>
-                    <div class="nm-flow-progress" aria-hidden="true">
-                        <span class="nm-progress-step is-active is-cool">1</span>
+                        <div class="nm-flow-divider" aria-hidden="true"></div>
                     </div>
                 </div>
 
                 <div asp-validation-summary="ModelOnly" class="nm-alert"></div>
 
-                <form asp-action="Step1BasicInfo" method="post" enctype="multipart/form-data" data-nm-unified-skip="true">
+                <form asp-action="Step1BasicInfo" method="post" enctype="multipart/form-data">
                     @Html.AntiForgeryToken()
 
                     <input type="hidden" asp-for="Latitude" id="Latitude" />
@@ -31,27 +29,31 @@
 
                     <div class="nm-form-grid">
                         <div class="nm-col-12">
-                            <div class="nm-section-card nm-section-card--cool">
-                                <div class="nm-section-title">Thong tin ca nhan</div>
-                                <div class="nm-section-note">Anh dai dien, ngay sinh va dia chi se duoc dung de hoan thien ho so nghe nghiep o cac buoc tiep theo.</div>
+                            <div class="nm-section-card">
+                                <div class="nm-section-title">Thông tin cá nhân</div>
+                                <div class="nm-section-note">Ảnh đại diện, ngày sinh và địa chỉ sẽ được dùng để hoàn thiện hồ sơ nghề nghiệp ở các bước tiếp theo.</div>
 
                                 <div class="nm-form-grid">
                                     <div class="nm-col-12">
                                         <div class="nm-field">
-                                            <label asp-for="FullName" class="nm-label">Ho va ten <span class="required">*</span></label>
-                                            <input asp-for="FullName" class="nm-input" placeholder="Nguyen Thi A" />
+                                            <label asp-for="FullName" class="nm-label">Họ và tên <span class="required">*</span></label>
+                                            <input asp-for="FullName" class="nm-input" placeholder="Nguyễn Thị A" />
                                             <span asp-validation-for="FullName" class="nm-error"></span>
                                         </div>
                                     </div>
 
                                     <div class="nm-col-12">
                                         <div class="nm-field">
-                                            <label asp-for="AvatarFile" class="nm-label">Anh dai dien</label>
-                                            <input type="file" asp-for="AvatarFile" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="nm-file" />
-                                            <div class="nm-field-hint">Nen dung anh ro mat, dung dinh dang .jpg, .jpeg, .png.</div>
+                                            <label asp-for="AvatarFile" class="nm-label">Ảnh đại diện</label>
+                                            <div class="nm-avatar-upload">
+                                                <input type="file" asp-for="AvatarFile" id="AvatarFile" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="nm-avatar-file-input" />
+                                                <button id="avatarPickBtn" type="button" class="nm-avatar-pick-btn">Chọn ảnh</button>
+                                                <span id="avatarFileName" class="nm-avatar-file-name">Chưa chọn tệp</span>
+                                            </div>
+                                            <div class="nm-field-hint">Nên dùng ảnh rõ mặt, đúng định dạng .jpg, .jpeg, .png.</div>
                                             <div id="avatarUploadError" class="nm-error hidden"></div>
                                             <div class="mt-3">
-                                                <img id="avatarPreview" class="nm-avatar-preview hidden" alt="Avatar preview" />
+                                                <img id="avatarPreview" class="nm-avatar-preview hidden" alt="Xem trước ảnh đại diện" />
                                             </div>
                                             <span asp-validation-for="AvatarFile" class="nm-error"></span>
                                         </div>
@@ -59,21 +61,30 @@
 
                                     <div class="nm-col-6">
                                         <div class="nm-field">
-                                            <label asp-for="DateOfBirth" class="nm-label">Ngay sinh <span class="required">*</span></label>
-                                            <input asp-for="DateOfBirth" type="date" class="nm-input" max="@DateTime.Today.ToString("yyyy-MM-dd")" />
-                                            <span asp-validation-for="DateOfBirth" class="nm-error"></span>
-                                            <div id="dateOfBirthClientError" class="nm-error hidden">Ngay sinh khong duoc lon hon ngay hien tai.</div>
+                                            <label asp-for="PhoneNumber" class="nm-label">Số điện thoại</label>
+                                            <input asp-for="PhoneNumber" class="nm-input" placeholder="+84901234567" />
+                                            <div class="nm-field-hint">Nhập 10 số, có thể bắt đầu bằng dấu +.</div>
+                                            <span asp-validation-for="PhoneNumber" class="nm-error"></span>
                                         </div>
                                     </div>
 
                                     <div class="nm-col-6">
                                         <div class="nm-field">
-                                            <label asp-for="Gender" class="nm-label">Gioi tinh <span class="required">*</span></label>
-                                            <select asp-for="Gender" class="nm-select">
-                                                <option value="">Chon gioi tinh</option>
+                                            <label asp-for="DateOfBirth" class="nm-label">Ngày sinh <span class="required">*</span></label>
+                                            <input asp-for="DateOfBirth" asp-format="{0:yyyy-MM-dd}" type="date" class="nm-input" max="@DateTime.Today.AddYears(-31).ToString("yyyy-MM-dd")" />
+                                            <span asp-validation-for="DateOfBirth" class="nm-error"></span>
+                                            <div id="dateOfBirthClientError" class="nm-error hidden">Bảo mẫu phải lớn hơn 30 tuổi.</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="nm-col-6">
+                                        <div class="nm-field">
+                                            <label asp-for="Gender" class="nm-label">Giới tính <span class="required">*</span></label>
+                                            <select asp-for="Gender" class="nm-select" data-nm-select-mode="click">
+                                                <option value="">Chọn giới tính</option>
                                                 <option value="0">Nam</option>
-                                                <option value="1">Nu</option>
-                                                <option value="2">Khac</option>
+                                                <option value="1">Nữ</option>
+                                                <option value="2">Khác</option>
                                             </select>
                                             <span asp-validation-for="Gender" class="nm-error"></span>
                                         </div>
@@ -81,28 +92,24 @@
 
                                     <div class="nm-col-12">
                                         <div class="nm-field">
-                                            <label asp-for="Address" class="nm-label">Dia chi chi tiet <span class="required">*</span></label>
-                                            <input asp-for="Address" id="Address" class="nm-input" placeholder="So nha, ten duong..." />
+                                            <label asp-for="Address" class="nm-label">Địa chỉ chi tiết <span class="required">*</span></label>
+                                            <input asp-for="Address" id="Address" class="nm-input" placeholder="Số nhà, tên đường..." />
                                             <span asp-validation-for="Address" class="nm-error"></span>
                                         </div>
                                     </div>
 
                                     <div class="nm-col-6">
                                         <div class="nm-field">
-                                            <label asp-for="City" class="nm-label">Tinh / Thanh pho <span class="required">*</span></label>
-                                            <select asp-for="City" id="City" class="nm-select">
-                                                <option value="">Chon tinh / thanh</option>
-                                            </select>
+                                            <label asp-for="City" class="nm-label">Tỉnh / Thành phố <span class="required">*</span></label>
+                                            <input asp-for="City" id="City" class="nm-input nm-location-input" autocomplete="off" placeholder="Nhập hoặc chọn thành phố" />
                                             <span asp-validation-for="City" class="nm-error"></span>
                                         </div>
                                     </div>
 
                                     <div class="nm-col-6">
                                         <div class="nm-field">
-                                            <label asp-for="District" class="nm-label">Quan / Huyen / Phuong <span class="required">*</span></label>
-                                            <select asp-for="District" id="District" class="nm-select">
-                                                <option value="">Chon khu vuc</option>
-                                            </select>
+                                            <label asp-for="District" class="nm-label">Quận / Huyện / Phường <span class="required">*</span></label>
+                                            <input asp-for="District" id="District" class="nm-input nm-location-input" autocomplete="off" placeholder="Nhập hoặc chọn phường/xã" />
                                             <span asp-validation-for="District" class="nm-error"></span>
                                         </div>
                                     </div>
@@ -114,8 +121,8 @@
                     </div>
 
                     <div class="nm-flow-actions">
-                        <a href="@Url.Action("Index", "Home")" class="nm-btn nm-btn--ghost">Bo qua</a>
-                        <button type="submit" name="direction" value="next" class="nm-btn nm-btn--primary nm-btn--cool">Tiep tuc</button>
+                        <a href="@Url.Action("Index", "Home")" class="nm-btn nm-btn--ghost">Bỏ qua</a>
+                        <button type="submit" name="direction" value="next" class="nm-btn nm-btn--primary">Tiếp tục</button>
                     </div>
                 </form>
             </div>
@@ -123,12 +130,98 @@
     </div>
 </div>
 
+<style>
+    .nm-avatar-upload {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        padding: 12px 14px;
+        border: 1px dashed #fdba74;
+        border-radius: 16px;
+        background: #fff7ed;
+    }
+
+    .nm-avatar-file-input {
+        display: none;
+    }
+
+    .nm-avatar-pick-btn {
+        width: fit-content;
+        min-height: 40px;
+        padding: 0 16px;
+        border-radius: 999px;
+        border: 1px solid #f97316;
+        background: #fff;
+        color: #ea580c;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: .15s ease;
+    }
+
+    .nm-avatar-pick-btn:hover {
+        background: #fff7ed;
+        transform: translateY(-1px);
+    }
+
+    .nm-avatar-file-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: #64748b;
+    }
+
+    .nm-field.autocomplete-field {
+        position: relative;
+    }
+
+    .nm-field .ac-dropdown {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        right: 0;
+        z-index: 80;
+        margin: 0;
+        padding: 6px;
+        list-style: none;
+        max-height: 230px;
+        overflow-y: auto;
+        border-radius: 16px;
+        border: 1px solid #fed7aa;
+        background: #fff;
+        box-shadow: 0 14px 28px rgba(15, 23, 42, .12);
+        display: none;
+    }
+
+    .nm-field .ac-dropdown.show {
+        display: block;
+    }
+
+    .nm-field .ac-dropdown li {
+        padding: 10px 12px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #334155;
+        cursor: pointer;
+        transition: background .12s ease, color .12s ease;
+    }
+
+    .nm-field .ac-dropdown li:hover {
+        background: #fff7ed;
+        color: #c2410c;
+    }
+</style>
+
+<script src="~/js/location-autocomplete.js" asp-append-version="true"></script>
 <script>
 (function () {
     var avatarInput = document.getElementById('AvatarFile');
+    var avatarPickBtn = document.getElementById('avatarPickBtn');
+    var avatarFileName = document.getElementById('avatarFileName');
     var avatarErr = document.getElementById('avatarUploadError');
     var avatarPreview = document.getElementById('avatarPreview');
-    var currentAvatarUrl = '@(Model.AvatarUrl ?? "")';
+    var currentAvatarUrl = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AvatarUrl ?? ""));
     var objectUrl = null;
 
     function showAvatarError(msg) {
@@ -161,6 +254,20 @@
 
     if (currentAvatarUrl) {
         setPreview(currentAvatarUrl);
+
+        if (avatarFileName) {
+            avatarFileName.textContent = 'Đang dùng ảnh hiện tại';
+        }
+
+        if (typeof window.updateCurrentUserAvatar === 'function') {
+            window.updateCurrentUserAvatar(currentAvatarUrl);
+        }
+    }
+
+    if (avatarPickBtn && avatarInput) {
+        avatarPickBtn.addEventListener('click', function () {
+            avatarInput.click();
+        });
     }
 
     if (avatarInput) {
@@ -170,17 +277,29 @@
 
             var file = avatarInput.files && avatarInput.files[0] ? avatarInput.files[0] : null;
             if (!file) {
+                if (avatarFileName) avatarFileName.textContent = currentAvatarUrl ? 'Đang dùng ảnh hiện tại' : 'Chưa chọn tệp';
                 if (currentAvatarUrl) setPreview(currentAvatarUrl);
                 return;
             }
 
             if (!isAllowedImage(file)) {
                 avatarInput.value = '';
-                showAvatarError('Chi cho phep upload anh .png, .jpg, .jpeg.');
+                showAvatarError('Chỉ cho phép upload ảnh .png, .jpg, .jpeg.');
+                if (avatarFileName) avatarFileName.textContent = currentAvatarUrl ? 'Đang dùng ảnh hiện tại' : 'Chưa chọn tệp';
                 if (currentAvatarUrl) setPreview(currentAvatarUrl);
                 return;
             }
 
+            var maxSize = 5 * 1024 * 1024;
+            if (file.size > maxSize) {
+                avatarInput.value = '';
+                showAvatarError('Dung lượng ảnh không được vượt quá 5MB.');
+                if (avatarFileName) avatarFileName.textContent = currentAvatarUrl ? 'Đang dùng ảnh hiện tại' : 'Chưa chọn tệp';
+                if (currentAvatarUrl) setPreview(currentAvatarUrl);
+                return;
+            }
+
+            if (avatarFileName) avatarFileName.textContent = file.name;
             objectUrl = URL.createObjectURL(file);
             setPreview(objectUrl);
         });
@@ -189,17 +308,24 @@
     var form = document.querySelector('form[asp-action], form');
     var dateOfBirthInput = document.getElementById('DateOfBirth');
     var dateOfBirthClientError = document.getElementById('dateOfBirthClientError');
-    var citySelect = document.getElementById('City');
-    var districtSelect = document.getElementById('District');
+    var cityInput = document.getElementById('City');
+    var districtInput = document.getElementById('District');
     var addressInput = document.getElementById('Address');
     var latEl = document.getElementById('Latitude');
     var lngEl = document.getElementById('Longitude');
     var addressLoadError = document.getElementById('addressLoadError');
-    var provinces = [];
     if (dateOfBirthInput) {
+        function toIsoLocal(date) {
+            var year = date.getFullYear();
+            var month = String(date.getMonth() + 1).padStart(2, '0');
+            var day = String(date.getDate()).padStart(2, '0');
+            return year + '-' + month + '-' + day;
+        }
+
         var today = new Date();
-        var todayStr = today.toISOString().split('T')[0];
-        dateOfBirthInput.max = todayStr;
+        var maxAllowedDate = new Date(today.getFullYear() - 31, today.getMonth(), today.getDate());
+        var maxAllowedStr = toIsoLocal(maxAllowedDate);
+        dateOfBirthInput.max = maxAllowedStr;
 
         function validateDateOfBirth() {
             if (!dateOfBirthInput.value) {
@@ -208,8 +334,8 @@
                 return true;
             }
 
-            if (dateOfBirthInput.value > todayStr) {
-                dateOfBirthInput.setCustomValidity('Ngay sinh khong duoc lon hon ngay hien tai.');
+            if (dateOfBirthInput.value > maxAllowedStr) {
+                dateOfBirthInput.setCustomValidity('Bảo mẫu phải lớn hơn 30 tuổi.');
                 if (dateOfBirthClientError) dateOfBirthClientError.classList.remove('hidden');
                 return false;
             }
@@ -221,6 +347,7 @@
 
         dateOfBirthInput.addEventListener('input', validateDateOfBirth);
         dateOfBirthInput.addEventListener('change', validateDateOfBirth);
+        validateDateOfBirth();
 
         if (form) {
             form.addEventListener('submit', function (e) {
@@ -233,122 +360,25 @@
         }
     }
 
-    setAddressSelectState(true);
-
-    fetch('/Address/LocationTree')
-        .then(function (r) {
-            if (!r.ok) throw new Error('address-load-failed');
-            return r.json();
-        })
-        .then(function (data) {
-            provinces = data || [];
-            provinces.forEach(function (p) {
-                var opt = document.createElement('option');
-                opt.value = p.name;
-                opt.textContent = p.name;
-                opt.dataset.code = p.code;
-                citySelect.appendChild(opt);
-            });
-
-            preselectFromModel();
-            showAddressLoadError('');
-            setAddressSelectState(false);
-        })
-        .catch(function () {
-            provinces = [];
-            setAddressSelectState(true);
-            showAddressLoadError('Khong tai duoc danh sach tinh thanh. Vui long thu lai sau.');
-        });
-
-    function setAddressSelectState(disabled) {
-        citySelect.disabled = disabled;
-        districtSelect.disabled = disabled;
-    }
-
     function showAddressLoadError(message) {
         if (!addressLoadError) return;
         addressLoadError.textContent = message || '';
         addressLoadError.classList.toggle('hidden', !message);
     }
 
-    function normalizeText(value) {
-        return (value || '')
-            .toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .replace(/đ/g, 'd')
-            .trim();
+    var geoDebounceTimer;
+    function scheduleGeocode() {
+        clearTimeout(geoDebounceTimer);
+        geoDebounceTimer = setTimeout(autoGeocode, 300);
     }
 
-    function setSelectByNormalized(selectEl, value) {
-        var target = normalizeText(value);
-        if (!target) return;
-        for (var i = 0; i < selectEl.options.length; i++) {
-            if (normalizeText(selectEl.options[i].value) === target) {
-                selectEl.value = selectEl.options[i].value;
-                return;
-            }
-        }
+    if (addressInput) {
+        addressInput.addEventListener('blur', scheduleGeocode);
     }
-
-    function preselectFromModel() {
-        var currentCity = '@(Model.City ?? "")';
-        var currentDistrict = '@(Model.District ?? "")';
-        if (currentCity) {
-            setSelectByNormalized(citySelect, currentCity);
-            onCityChange(function () {
-                if (currentDistrict) {
-                    setSelectByNormalized(districtSelect, currentDistrict);
-                    onDistrictChange();
-                }
-            });
-        }
-    }
-
-    function onCityChange(callback) {
-        districtSelect.innerHTML = '<option value="">Chon khu vuc</option>';
-
-        var selectedCity = normalizeText(citySelect.value);
-        var selected = provinces.find(function (p) { return normalizeText(p.name) === selectedCity; });
-        if (!selected) { if (callback) callback(); return; }
-
-        selected.districts.forEach(function (d) {
-            var opt = document.createElement('option');
-            opt.value = d.name;
-            opt.textContent = d.name;
-            opt.dataset.code = d.code;
-            districtSelect.appendChild(opt);
-        });
-
-        if (callback) callback();
-        autoGeocode();
-    }
-
-    function onDistrictChange(callback) {
-        var selectedCity = normalizeText(citySelect.value);
-        var selectedProv = provinces.find(function (p) { return normalizeText(p.name) === selectedCity; });
-        if (!selectedProv) { if (callback) callback(); return; }
-
-        var selectedDistrict = normalizeText(districtSelect.value);
-        var selectedDist = selectedProv.districts.find(function (d) { return normalizeText(d.name) === selectedDistrict; });
-        if (!selectedDist) { if (callback) callback(); return; }
-
-        if (callback) callback();
-        autoGeocode();
-    }
-
-    citySelect.addEventListener('change', function () { onCityChange(); });
-    districtSelect.addEventListener('change', function () { onDistrictChange(); });
-
-    var debounceTimer;
-    addressInput.addEventListener('blur', function () {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(autoGeocode, 300);
-    });
 
     function autoGeocode() {
-        var city = (citySelect.value || '').trim();
-        var dist = (districtSelect.value || '').trim();
+        var city = (cityInput && cityInput.value ? cityInput.value : '').trim();
+        var dist = (districtInput && districtInput.value ? districtInput.value : '').trim();
         if (!city) return;
 
         var parts = [];
@@ -367,6 +397,22 @@
                 if (lngEl && lng != null) lngEl.value = lng;
             })
             .catch(function () { });
+    }
+
+    if (window.NMLocationAutocomplete && cityInput && districtInput) {
+        window.NMLocationAutocomplete.initPair({
+            cityInputId: 'City',
+            districtInputId: 'District',
+            onLocationChange: scheduleGeocode
+        })
+            .then(function () {
+                showAddressLoadError('');
+            })
+            .catch(function () {
+                showAddressLoadError('Không tải được danh sách tỉnh thành. Vui lòng thử lại sau.');
+            });
+    } else {
+        showAddressLoadError('Không tải được danh sách tỉnh thành. Vui lòng thử lại sau.');
     }
 })();
 </script>

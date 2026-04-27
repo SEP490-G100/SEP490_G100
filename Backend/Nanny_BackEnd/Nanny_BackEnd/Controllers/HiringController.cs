@@ -2,7 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nanny_BackEnd.DTOs.Hiring;
-using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Controllers;
 
@@ -11,15 +11,41 @@ namespace Nanny_BackEnd.Controllers;
 [Route("api/hiring")]
 public class HiringController : ControllerBase
 {
-    private readonly HiringService _service;
+    private readonly IHiringService _service;
 
-    public HiringController(HiringService service) => _service = service;
+    public HiringController(IHiringService service) => _service = service;
+
+    [HttpGet("contract-templates")]
+    public async Task<IActionResult> GetContractTemplates()
+    {
+        try
+        {
+            var result = await _service.GetContractTemplatesAsync();
+            return Ok(OkResult(result));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, Fail(ex.Message));
+        }
+    }
+
+    [HttpGet("contract-templates/{templateId:guid}")]
+    public async Task<IActionResult> GetContractTemplatePreview(Guid templateId)
+    {
+        try
+        {
+            var result = await _service.GetContractTemplatePreviewAsync(templateId);
+            return Ok(OkResult(result));
+        }
+        catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
+        catch (Exception ex) { return StatusCode(500, Fail(ex.Message)); }
+    }
 
     [HttpGet("{jobPostingId:guid}/applicants")]
     public async Task<IActionResult> GetApplicants(Guid jobPostingId)
     {
         var userId = GetCurrentUserId();
-        if (!userId.HasValue) return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
 
         try
         {
@@ -35,12 +61,12 @@ public class HiringController : ControllerBase
     public async Task<IActionResult> ApproveApplicant(Guid jobPostingId, Guid jobAppId)
     {
         var userId = GetCurrentUserId();
-        if (!userId.HasValue) return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
 
         try
         {
             await _service.ApproveApplicantAsync(jobPostingId, jobAppId, userId.Value);
-            return Ok(OkResult("Da dong y ung vien. Vui long vao ho so nanny de chon thue."));
+            return Ok(OkResult("Da dong y ung vien. Vui long vao ho so bao mau de chon thue."));
         }
         catch (UnauthorizedAccessException) { return Forbid(); }
         catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
@@ -53,7 +79,7 @@ public class HiringController : ControllerBase
     public async Task<IActionResult> GetNannyContext(Guid jobPostingId, Guid jobAppId)
     {
         var userId = GetCurrentUserId();
-        if (!userId.HasValue) return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
 
         try
         {
@@ -68,7 +94,7 @@ public class HiringController : ControllerBase
     public async Task<IActionResult> HireApplicant(Guid jobPostingId, Guid jobAppId, [FromBody] ConfirmHiringDto dto)
     {
         var userId = GetCurrentUserId();
-        if (!userId.HasValue) return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
 
         try
         {
@@ -79,14 +105,14 @@ public class HiringController : ControllerBase
         catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
         catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
         catch (ArgumentException ex) { return BadRequest(Fail(ex.Message)); }
-        catch (Exception ex) { return StatusCode(500, Fail(ex.Message)); }
+        catch (Exception ex) { return StatusCode(500, Fail(GetDeepestMessage(ex))); }
     }
 
     [HttpPost("contact-requests/{contactRequestId:guid}/hire")]
     public async Task<IActionResult> HireByContactRequest(Guid contactRequestId, [FromBody] ConfirmHiringDto dto)
     {
         var userId = GetCurrentUserId();
-        if (!userId.HasValue) return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
 
         try
         {
@@ -97,14 +123,14 @@ public class HiringController : ControllerBase
         catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
         catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
         catch (ArgumentException ex) { return BadRequest(Fail(ex.Message)); }
-        catch (Exception ex) { return StatusCode(500, Fail(ex.Message)); }
+        catch (Exception ex) { return StatusCode(500, Fail(GetDeepestMessage(ex))); }
     }
 
     [HttpGet("records/{hiringRecordId:guid}")]
     public async Task<IActionResult> GetHiringOfferDetail(Guid hiringRecordId)
     {
         var userId = GetCurrentUserId();
-        if (!userId.HasValue) return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
 
         try
         {
@@ -120,12 +146,12 @@ public class HiringController : ControllerBase
     public async Task<IActionResult> RespondToOffer(Guid hiringRecordId, [FromBody] RespondToOfferDto dto)
     {
         var userId = GetCurrentUserId();
-        if (!userId.HasValue) return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
 
         try
         {
             await _service.RespondToOfferAsync(hiringRecordId, userId.Value, dto);
-            return Ok(OkResult("Phan hoi thanh cong."));
+            return Ok(OkResult("Bao mau da chap nhan de nghi viec lam."));
         }
         catch (UnauthorizedAccessException) { return Forbid(); }
         catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
@@ -134,14 +160,20 @@ public class HiringController : ControllerBase
         catch (Exception ex) { return StatusCode(500, Fail(ex.Message)); }
     }
 
-    [HttpGet("templates")]
-    public async Task<IActionResult> GetTemplates()
+    [HttpPost("records/{hiringRecordId:guid}/complete")]
+    public async Task<IActionResult> CompleteHiring(Guid hiringRecordId)
     {
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
+
         try
         {
-            var result = await _service.GetActiveTemplatesAsync();
-            return Ok(OkResult(result));
+            await _service.CompleteHiringAsync(hiringRecordId, userId.Value);
+            return Ok(OkResult("Hop dong da duoc danh dau hoan thanh."));
         }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
+        catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
         catch (Exception ex) { return StatusCode(500, Fail(ex.Message)); }
     }
 
@@ -153,4 +185,13 @@ public class HiringController : ControllerBase
 
     private static object OkResult(object? data, string? message = null) => new { success = true, message, data };
     private static object Fail(string message) => new { success = false, message };
+
+    private static string GetDeepestMessage(Exception ex)
+    {
+        var current = ex;
+        while (current.InnerException != null)
+            current = current.InnerException;
+
+        return current.Message;
+    }
 }

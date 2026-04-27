@@ -50,21 +50,21 @@ public class BlogCategoryListResponse
 public class CreateBlogCategoryRequest
 {
     [JsonPropertyName("name")]
-    [Required(ErrorMessage = "Name không được để trống.")]
+    [Required(ErrorMessage = "Tên danh mục không được để trống.")]
     public string Name { get; set; } = null!;
 
     [JsonPropertyName("slug")]
-    [Required(ErrorMessage = "Slug không được để trống.")]
+    [Required(ErrorMessage = "Đường dẫn không được để trống.")]
     public string Slug { get; set; } = null!;
 }
 
 public class UpdateBlogCategoryRequest
 {
     [JsonPropertyName("name")]
-    [Required(ErrorMessage = "Name không được để trống.")]
+    [Required(ErrorMessage = "Tên danh mục không được để trống.")]
     public string Name { get; set; } = null!;
 
     [JsonPropertyName("slug")]
-    [Required(ErrorMessage = "Slug không được để trống.")]
+    [Required(ErrorMessage = "Đường dẫn không được để trống.")]
     public string Slug { get; set; } = null!;
 }

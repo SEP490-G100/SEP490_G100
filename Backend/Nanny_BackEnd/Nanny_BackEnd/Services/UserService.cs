@@ -1,18 +1,20 @@
 using Nanny_BackEnd.DTOs.Account;
 using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
 using System.Text.RegularExpressions;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
 /// <summary>
 /// Handles account management operations used by Moderator (and potentially Admin).
-/// Works with Users and UserRoles tables via UserRepository.
+/// Works with Users and UserRoles tables via IUserRepository.
 /// </summary>
-public class UserService
+public class UserService : IUserService
 {
-    private readonly UserRepository _userRepo;
+    private readonly IUserRepository _userRepo;
 
-    public UserService(UserRepository userRepo)
+    public UserService(IUserRepository userRepo)
     {
         _userRepo = userRepo;
     }
@@ -31,7 +33,7 @@ public class UserService
         int pageSize)
     {
         if (page < 1) page = 1;
-        if (pageSize < 1 || pageSize > 100) pageSize = 10;
+        if (pageSize < 1 || pageSize > 100) pageSize = 3;
 
         var (users, totalCount) = await _userRepo.GetPagedUsersAsync(
             role, status, search, page, pageSize, ExcludedRoles, AllowedRoles);
@@ -104,38 +106,7 @@ public class UserService
         return (true, dto, null);
     }
 
-    /// <summary>
-    /// Update Status and PhoneNumber of a Nanny/Parent account.
-    /// Blocks update if the target is a Moderator or Admin.
-    /// </summary>
-    public async Task<(bool Success, int StatusCode, string Message)> UpdateAccountAsync(Guid id, UpdateAccountRequest request)
-    {
-        var user = await _userRepo.GetUserWithRolesAsync(id);
-        if (user == null)
-            return (false, 404, "Không tìm thấy tài khoản.");
-
-        if (await _userRepo.HasRolesAsync(id, ExcludedRoles))
-            return (false, 403, "Không có quyền cập nhật tài khoản Moderator/Admin.");
-
-        if (request.Status != 0 && request.Status != 1)
-            return (false, 400, "Status không hợp lệ. Chỉ chấp nhận 0 (Inactive) hoặc 1 (Active).");
-
-        if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
-        {
-            var phone = request.PhoneNumber.Trim();
-            if (!Regex.IsMatch(phone, @"^\d{10,11}$"))
-                return (false, 400, "Số điện thoại phải là chuỗi số từ 10 đến 11 chữ số.");
-            request.PhoneNumber = phone;
-        }
-
-        user.Status      = request.Status;
-        user.PhoneNumber = string.IsNullOrWhiteSpace(request.PhoneNumber) ? null : request.PhoneNumber;
-        user.UpdatedAt   = DateTime.UtcNow;
-
-        await _userRepo.saveChanges();
-
-        return (true, 200, "Cập nhật tài khoản thành công.");
-    }
+   
 
     /// <summary>
     /// Update only the Status of a user account.
@@ -169,8 +140,14 @@ public class UserService
         if (page < 1) page = 1;
         if (pageSize < 1 || pageSize > 100) pageSize = 10;
 
-        var (users, totalCount) = await _userRepo.GetPagedUsersByRoleAsync(
-            ModeratorRole, search, status, page, pageSize);
+        var (users, totalCount) = await _userRepo.GetPagedUsersAsync(
+            ModeratorRole,
+            status,
+            search,
+            page,
+            pageSize,
+            Array.Empty<string>(),
+            new[] { ModeratorRole });
 
         var items = users.Select(u => new AccountDto
         {
@@ -243,8 +220,9 @@ public class UserService
     {
         if (string.IsNullOrWhiteSpace(request.Email) || !request.Email.Contains('@'))
             return (false, 400, "Email không hợp lệ.", null);
-        if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 8)
-            return (false, 400, "Mật khẩu phải có ít nhất 8 ký tự.", null);
+        if (string.IsNullOrWhiteSpace(request.Password) ||
+            !Regex.IsMatch(request.Password, @"^(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$"))
+            return (false, 400, "Mat khau phai co it nhat 8 ky tu, it nhat 1 ky tu in hoa va 1 ky tu dac biet.", null);
         if (!string.IsNullOrWhiteSpace(request.PhoneNumber) &&
             !Regex.IsMatch(request.PhoneNumber.Trim(), @"^\d{10,11}$"))
             return (false, 400, "Số điện thoại phải là 10-11 chữ số.", null);
@@ -283,45 +261,6 @@ public class UserService
         return (true, 200, "Tạo tài khoản Moderator thành công.", new { newUser.Id });
     }
 
-    /// <summary>Update a Moderator's info (name, phone, status).</summary>
-    public async Task<(bool Success, int StatusCode, string Message)> UpdateModeratorAsync(
-        Guid id, UpdateModeratorRequest request)
-    {
-        var user = await _userRepo.GetUserByIdAndRoleAsync(id, ModeratorRole);
-        if (user == null)
-            return (false, 404, "Không tìm thấy Moderator.");
+  
 
-        if (!string.IsNullOrWhiteSpace(request.PhoneNumber) &&
-            !Regex.IsMatch(request.PhoneNumber.Trim(), @"^\d{10,11}$"))
-            return (false, 400, "Số điện thoại phải là 10-11 chữ số.");
-
-        if (request.Status != 0 && request.Status != 1)
-            return (false, 400, "Status không hợp lệ.");
-
-        user.FirstName   = request.FirstName.Trim();
-        user.LastName    = request.LastName.Trim();
-        user.PhoneNumber = string.IsNullOrWhiteSpace(request.PhoneNumber) ? null : request.PhoneNumber.Trim();
-        user.Status      = request.Status;
-        user.UpdatedAt   = DateTime.UtcNow;
-
-        await _userRepo.saveChanges();
-        return (true, 200, "Cập nhật Moderator thành công.");
-    }
-
-    /// <summary>Hard-delete a Moderator account (removes from Users + UserRoles tables).</summary>
-    public async Task<(bool Success, int StatusCode, string Message)> DeleteModeratorAsync(Guid id)
-    {
-        var user = await _userRepo.GetUserWithRolesAsync(id);
-        if (user == null)
-            return (false, 404, "Không tìm thấy tài khoản.");
-
-        var roles = user.UserRoles.Where(ur => !ur.IsDeleted).Select(ur => ur.Role.Name).ToList();
-        if (!roles.Contains(ModeratorRole))
-            return (false, 403, "Tài khoản này không phải Moderator.");
-
-        await _userRepo.HardDeleteUserAsync(id);
-        await _userRepo.saveChanges();
-
-        return (true, 200, "Đã xoá tài khoản Moderator.");
-    }
 }

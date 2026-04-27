@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Controllers;
 
@@ -9,9 +9,9 @@ namespace Nanny_BackEnd.Controllers;
 [AllowAnonymous]
 public class AddressController : ControllerBase
 {
-    private readonly LocationService _locationService;
+    private readonly ILocationService _locationService;
 
-    public AddressController(LocationService locationService)
+    public AddressController(ILocationService locationService)
     {
         _locationService = locationService;
     }

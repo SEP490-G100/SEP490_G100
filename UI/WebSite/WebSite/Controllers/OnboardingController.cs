@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebSite.Models;
@@ -11,6 +12,7 @@ public class OnboardingController : Controller
 {
     private readonly HttpClient _http;
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
+    private const string NannyOnboardingCompletedSessionKey = "NannyOnboardingCompleted";
 
     public OnboardingController(IHttpClientFactory httpFactory)
     {
@@ -18,6 +20,21 @@ public class OnboardingController : Controller
     }
 
     private string? GetToken() => HttpContext.Session.GetString("AccessToken");
+
+    private static ApiResultDto? TryDeserializeApiResult(string? content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return null;
+
+        try
+        {
+            return JsonSerializer.Deserialize<ApiResultDto>(content, JsonOpts);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
 
     private async Task<OnboardingStatusViewModel?> GetStatusAsync()
     {
@@ -29,8 +46,9 @@ public class OnboardingController : Controller
         if (!response.IsSuccessStatusCode) return null;
 
         var json = await response.Content.ReadAsStringAsync();
-        var apiResult = JsonSerializer.Deserialize<ApiResultDto>(json, JsonOpts);
-        if (apiResult?.Data is System.Text.Json.JsonElement element)
+        var apiResult = TryDeserializeApiResult(json);
+        if (apiResult?.Data is System.Text.Json.JsonElement element &&
+            element.ValueKind == JsonValueKind.Object)
         {
             return JsonSerializer.Deserialize<OnboardingStatusViewModel>(element.GetRawText(), JsonOpts);
         }
@@ -41,7 +59,16 @@ public class OnboardingController : Controller
     [HttpGet]
     public async Task<IActionResult> Start()
     {
+        if (IsNannyOnboardingLocked())
+            return RedirectToAction("Index", "Home");
+
         var status = await GetStatusAsync();
+        if (status != null)
+            SyncNannyOnboardingCompletedFlag(status);
+
+        if (IsNannyOnboardingLocked())
+            return RedirectToAction("Index", "Home");
+
         if (status == null || !status.RequiresOnboarding || status.NextStep == "Completed")
             return RedirectToAction("Index", "Home");
 
@@ -66,5 +93,34 @@ public class OnboardingController : Controller
             _ => RedirectToAction("Index", "Home")
         };
     }
-}
 
+    private static bool IsCompletedNannyOnboardingStatus(OnboardingStatusViewModel status) =>
+        string.Equals(status.Role, "Nanny", StringComparison.OrdinalIgnoreCase) &&
+        (!status.RequiresOnboarding || string.Equals(status.NextStep, "Completed", StringComparison.OrdinalIgnoreCase));
+
+    private void SyncNannyOnboardingCompletedFlag(OnboardingStatusViewModel status)
+    {
+        if (IsCompletedNannyOnboardingStatus(status))
+        {
+            HttpContext.Session.SetString(NannyOnboardingCompletedSessionKey, "1");
+            return;
+        }
+
+        if (string.Equals(status.Role, "Nanny", StringComparison.OrdinalIgnoreCase))
+            HttpContext.Session.Remove(NannyOnboardingCompletedSessionKey);
+    }
+
+    private bool IsNannyOnboardingLocked() =>
+        IsNannyRole() &&
+        string.Equals(HttpContext.Session.GetString(NannyOnboardingCompletedSessionKey), "1", StringComparison.Ordinal);
+
+    private bool IsNannyRole()
+    {
+        if (User.IsInRole("Nanny"))
+            return true;
+
+        return User.Claims.Any(c =>
+            c.Type == ClaimTypes.Role &&
+            string.Equals(c.Value, "Nanny", StringComparison.OrdinalIgnoreCase));
+    }
+}

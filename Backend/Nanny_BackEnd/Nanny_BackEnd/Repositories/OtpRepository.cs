@@ -1,11 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
 using Nanny_BackEnd.Helpers;
+using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Models;
 
 namespace Nanny_BackEnd.Repositories;
 
-public class OtpRepository
+public class OtpRepository : IOtpRepository
 {
     private readonly Sep490NannyDbContext _db;
 

@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
+using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Models;
 
 namespace Nanny_BackEnd.Repositories;
 
-public class ContractRepository
+public class ContractRepository : IContractRepository
 {
     private readonly Sep490NannyDbContext _db;
 
@@ -39,6 +40,7 @@ public class ContractRepository
             .Include(c => c.HiringRecord)
                 .ThenInclude(h => h.JobApplication)
                     .ThenInclude(a => a.JobPosting)
+                        .ThenInclude(p => p.JobScheduleRequirements)
             .Include(c => c.HiringRecord)
                 .ThenInclude(h => h.ParentProfile)
                     .ThenInclude(p => p.User)
@@ -46,5 +48,39 @@ public class ContractRepository
                 .ThenInclude(h => h.NannyProfile)
                     .ThenInclude(n => n.User)
             .FirstOrDefaultAsync();
-}
 
+    public async Task<Contract?> GetContractByHiringRecordIdAsync(Guid hiringRecordId) =>
+        await _db.Contracts
+            .Where(c => c.HiringRecordId == hiringRecordId && !c.IsDeleted)
+            .Include(c => c.ContractTemplate)
+            .Include(c => c.HiringRecord)
+                .ThenInclude(h => h.JobApplication)
+                    .ThenInclude(a => a.JobPosting)
+            .Include(c => c.HiringRecord)
+                .ThenInclude(h => h.ParentProfile)
+                    .ThenInclude(p => p.User)
+            .Include(c => c.HiringRecord)
+                .ThenInclude(h => h.NannyProfile)
+                    .ThenInclude(n => n.User)
+            .OrderByDescending(c => c.UpdatedAt ?? c.CreatedAt)
+            .FirstOrDefaultAsync();
+
+    public Task<Contract?> GetContractForUpdateAsync(Guid contractId) =>
+        GetContractDetailAsync(contractId);
+
+    public async Task<List<ContractTemplate>> GetActiveContractTemplatesAsync() =>
+        await _db.ContractTemplates
+            .Where(t => !t.IsDeleted && t.IsActive)
+            .OrderByDescending(t => t.UpdatedAt ?? t.CreatedAt)
+            .ThenBy(t => t.Name)
+            .ToListAsync();
+
+    public async Task<ContractTemplate?> GetActiveContractTemplateByIdAsync(Guid templateId) =>
+        await _db.ContractTemplates
+            .Where(t => t.Id == templateId && !t.IsDeleted && t.IsActive)
+            .FirstOrDefaultAsync();
+
+    public void AddContract(Contract contract) => _db.Contracts.Add(contract);
+
+    public Task SaveChangesAsync() => _db.SaveChangesAsync();
+}

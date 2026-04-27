@@ -4,451 +4,759 @@
 }
 
 @section Head {
-<style>
-    /* ─── Chat Layout ─────────────────────────────────────────── */
-    .chat-shell {
-        display: flex;
-        height: calc(100vh - 72px);
-        background: #f9fafb;
-        overflow: hidden;
-    }
-
-    /* ─── Sidebar (Conversation List) ────────────────────────── */
-    .chat-sidebar {
-        width: 340px;
-        flex-shrink: 0;
-        display: flex;
-        flex-direction: column;
-        background: #ffffff;
-        border-right: 1px solid rgba(226,232,240,.8);
-        box-shadow: 2px 0 12px rgba(15,23,42,.04);
-    }
-
-    .chat-sidebar-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 20px 18px 14px;
-        border-bottom: 1px solid #f1f5f9;
-    }
-
-    .chat-sidebar-title {
-        font-size: 18px;
-        font-weight: 800;
-        color: #111827;
-    }
-
-    .chat-search-box {
-        padding: 10px 14px 12px;
-        border-bottom: 1px solid #f1f5f9;
-    }
-
-    .chat-search-input {
-        width: 100%;
-        padding: 9px 14px 9px 36px;
-        border-radius: 12px;
-        border: 1.5px solid #e5e7eb;
-        font-size: 14px;
-        background: #f9fafb;
-        color: #374151;
-        outline: none;
-        transition: border .2s;
-    }
-
-    .chat-search-input:focus { border-color: #f97316; background: #fff; }
-
-    .conv-list { flex: 1; overflow-y: auto; padding: 6px; }
-
-    .conv-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px 12px;
-        border-radius: 16px;
-        cursor: pointer;
-        transition: all .18s ease;
-        margin-bottom: 2px;
-        position: relative;
-    }
-
-    .conv-item:hover { background: #fff7ed; }
-    .conv-item.active { background: linear-gradient(135deg,#fff7ed,#ffffff); box-shadow: 0 4px 12px rgba(249,115,22,.1); }
-
-    .conv-avatar {
-        width: 48px; height: 48px;
-        border-radius: 16px;
-        background: linear-gradient(135deg, #f97316, #ea580c);
-        display: flex; align-items: center; justify-content: center;
-        color: #fff; font-size: 18px; font-weight: 800;
-        flex-shrink: 0;
-        overflow: hidden;
-    }
-
-    .conv-avatar img { width: 100%; height: 100%; object-fit: cover; }
-
-    .conv-info { flex: 1; min-width: 0; }
-
-    .conv-name {
-        font-size: 14px; font-weight: 700; color: #111827;
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-
-    .conv-preview {
-        font-size: 13px; color: #9ca3af;
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        margin-top: 2px;
-    }
-
-    .conv-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
-
-    .conv-time { font-size: 11px; color: #9ca3af; }
-
-    .unread-dot {
-        width: 8px; height: 8px; border-radius: 50%;
-        background: #f97316;
-    }
-
-    .conv-badge {
-        min-width: 20px; height: 20px;
-        padding: 0 5px;
-        border-radius: 999px;
-        background: linear-gradient(135deg,#f97316,#ea580c);
-        color: #fff; font-size: 11px; font-weight: 800;
-        display: flex; align-items: center; justify-content: center;
-    }
-
-    /* ─── Main Chat Area ──────────────────────────────────────── */
-    .chat-main {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        min-width: 0;
-    }
-
-    /* Empty state */
-    .chat-empty {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        color: #9ca3af;
-        gap: 12px;
-    }
-
-    .chat-empty .material-icons-round { font-size: 56px; color: #fdba74; }
-    .chat-empty h3 { font-size: 18px; font-weight: 700; color: #374151; }
-
-    /* Chat header */
-    .chat-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 14px 20px;
-        background: #fff;
-        border-bottom: 1px solid #f1f5f9;
-        box-shadow: 0 1px 8px rgba(15,23,42,.05);
-    }
-
-    .chat-header-left { display: flex; align-items: center; gap: 12px; }
-
-    .chat-header-avatar {
-        width: 42px; height: 42px; border-radius: 14px;
-        background: linear-gradient(135deg,#f97316,#ea580c);
-        display: flex; align-items: center; justify-content: center;
-        color: #fff; font-size: 16px; font-weight: 800;
-        overflow: hidden;
-    }
-
-    .chat-header-name { font-size: 16px; font-weight: 800; color: #111827; }
-    .chat-header-status { font-size: 12px; color: #9ca3af; }
-
-    .chat-header-actions { display: flex; gap: 8px; }
-
-    .chat-action-btn {
-        display: flex; align-items: center; justify-content: center;
-        width: 38px; height: 38px; border-radius: 12px;
-        border: 1px solid #e5e7eb; background: #fff;
-        color: #6b7280; cursor: pointer;
-        transition: all .18s ease;
-    }
-
-    .chat-action-btn:hover { color: #ea580c; background: #fff7ed; border-color: #fed7aa; }
-    .chat-action-btn.danger:hover { color: #dc2626; background: #fef2f2; border-color: #fecaca; }
-
-    /* Messages area */
-    .chat-messages {
-        flex: 1;
-        overflow-y: auto;
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        scroll-behavior: smooth;
-    }
-
-    .msg-group-date {
-        display: flex; align-items: center; gap: 10px;
-        margin: 8px 0;
-    }
-
-    .msg-group-date::before, .msg-group-date::after {
-        content: ''; flex: 1; height: 1px; background: #f1f5f9;
-    }
-
-    .msg-group-date span {
-        font-size: 12px; color: #9ca3af; font-weight: 600;
-        white-space: nowrap;
-    }
-
-    .msg-row {
-        display: flex;
-        align-items: flex-end;
-        gap: 8px;
-        max-width: 75%;
-    }
-
-    .msg-row.mine { margin-left: auto; flex-direction: row-reverse; }
-
-    .msg-avatar {
-        width: 32px; height: 32px; border-radius: 10px;
-        background: linear-gradient(135deg,#f97316,#ea580c);
-        display: flex; align-items: center; justify-content: center;
-        color: #fff; font-size: 13px; font-weight: 800;
-        flex-shrink: 0; overflow: hidden;
-    }
-
-    .msg-avatar img { width: 100%; height: 100%; object-fit: cover; }
-
-    .msg-bubble {
-        padding: 10px 14px;
-        border-radius: 18px;
-        font-size: 14px; line-height: 1.55;
-        word-break: break-word;
-        position: relative;
-    }
-
-    .msg-row:not(.mine) .msg-bubble {
-        background: #fff;
-        color: #111827;
-        border: 1.5px solid #f1f5f9;
-        border-bottom-left-radius: 6px;
-        box-shadow: 0 2px 8px rgba(15,23,42,.06);
-    }
-
-    .msg-row.mine .msg-bubble {
-        background: linear-gradient(135deg,#f97316,#ea580c);
-        color: #fff;
-        border-bottom-right-radius: 6px;
-        box-shadow: 0 4px 12px rgba(249,115,22,.22);
-    }
-
-    .msg-bubble.deleted {
-        opacity: .5;
-        font-style: italic;
-        font-size: 13px;
-    }
-
-    .msg-time {
-        font-size: 11px; color: #9ca3af;
-        margin-top: 3px;
-        text-align: right;
-    }
-
-    .msg-row.mine .msg-time { text-align: left; }
-
-    /* Context menu */
-    .msg-ctx-menu {
-        position: absolute;
-        top: 100%; right: 0; margin-top: 4px;
-        background: #fff;
-        border: 1px solid #e5e7eb;
-        border-radius: 14px;
-        box-shadow: 0 10px 28px rgba(15,23,42,.12);
-        padding: 6px;
-        z-index: 100;
-        min-width: 140px;
-        display: none;
-    }
-
-    .msg-row.mine .msg-ctx-menu { right: 0; }
-    .msg-row:not(.mine) .msg-ctx-menu { left: 0; right: auto; }
-
-    .msg-ctx-menu.open { display: block; }
-
-    .ctx-item {
-        display: flex; align-items: center; gap: 8px;
-        padding: 8px 10px; border-radius: 10px;
-        font-size: 13px; font-weight: 600; cursor: pointer;
-        color: #374151; transition: background .15s;
-    }
-
-    .ctx-item:hover { background: #f9fafb; }
-    .ctx-item.danger { color: #dc2626; }
-    .ctx-item.danger:hover { background: #fef2f2; }
-
-    /* Input area */
-    .chat-input-area {
-        padding: 14px 20px;
-        background: #fff;
-        border-top: 1px solid #f1f5f9;
-        display: flex; align-items: flex-end; gap: 10px;
-    }
-
-    .chat-input-wrap {
-        flex: 1;
-        display: flex; align-items: flex-end;
-        border: 1.5px solid #e5e7eb;
-        border-radius: 18px;
-        background: #f9fafb;
-        padding: 8px 14px;
-        gap: 8px;
-        transition: border .2s;
-    }
-
-    .chat-input-wrap:focus-within { border-color: #f97316; background: #fff; }
-
-    .chat-textarea {
-        flex: 1; resize: none; border: none; outline: none;
-        background: transparent; font-size: 14px; color: #374151;
-        line-height: 1.5; max-height: 120px; overflow-y: auto;
-        font-family: 'Quicksand', sans-serif;
-    }
-
-    .chat-send-btn {
-        width: 42px; height: 42px; border-radius: 14px;
-        background: linear-gradient(135deg,#f97316,#ea580c);
-        border: none; cursor: pointer;
-        display: flex; align-items: center; justify-content: center;
-        color: #fff;
-        box-shadow: 0 6px 16px rgba(249,115,22,.3);
-        transition: all .18s ease;
-        flex-shrink: 0;
-    }
-
-    .chat-send-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 20px rgba(249,115,22,.36); }
-    .chat-send-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
-
-    .chat-blocked-banner {
-        text-align: center; padding: 12px 16px;
-        background: #fef2f2; border-top: 1px solid #fecaca;
-        font-size: 13px; font-weight: 600; color: #dc2626;
-    }
-
-    /* Loading spinner */
-    .spin {
-        border: 3px solid #f1f5f9; border-top-color: #f97316;
-        border-radius: 50%; width: 32px; height: 32px;
-        animation: spin .7s linear infinite; margin: 20px auto;
-    }
-
-    @@keyframes spin { to { transform: rotate(360deg); } }
-
-    /* Modals */
-    .modal-backdrop {
-        position: fixed; inset: 0; background: rgba(15,23,42,.4);
-        display: flex; align-items: center; justify-content: center;
-        z-index: 200; backdrop-filter: blur(4px);
-    }
-
-    .modal-card {
-        background: #fff; border-radius: 24px;
-        padding: 28px 28px 24px; width: min(440px, calc(100vw - 32px));
-        box-shadow: 0 32px 80px rgba(15,23,42,.18);
-    }
-
-    .modal-title { font-size: 18px; font-weight: 800; color: #111827; margin-bottom: 6px; }
-    .modal-sub { font-size: 14px; color: #6b7280; margin-bottom: 20px; }
-
-    .modal-input {
-        width: 100%; padding: 10px 14px; border-radius: 12px;
-        border: 1.5px solid #e5e7eb; font-size: 14px; color: #374151;
-        outline: none; transition: border .2s; margin-bottom: 10px;
-        font-family: 'Quicksand', sans-serif;
-    }
-
-    .modal-input:focus { border-color: #f97316; }
-
-    .modal-actions { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
-
-    .btn-cancel {
-        padding: 10px 20px; border-radius: 12px;
-        border: 1.5px solid #e5e7eb; background: #fff;
-        font-size: 14px; font-weight: 700; color: #6b7280;
-        cursor: pointer; transition: all .18s;
-    }
-
-    .btn-cancel:hover { background: #f9fafb; }
-
-    .btn-danger {
-        padding: 10px 20px; border-radius: 12px;
-        border: none; background: linear-gradient(135deg,#ef4444,#dc2626);
-        font-size: 14px; font-weight: 700; color: #fff;
-        cursor: pointer; box-shadow: 0 6px 16px rgba(220,38,38,.24);
-        transition: all .18s;
-    }
-
-    .btn-danger:hover { transform: translateY(-1px); }
-
-    .btn-primary {
-        padding: 10px 20px; border-radius: 12px;
-        border: none; background: linear-gradient(135deg,#f97316,#ea580c);
-        font-size: 14px; font-weight: 700; color: #fff;
-        cursor: pointer; box-shadow: 0 6px 16px rgba(249,115,22,.24);
-        transition: all .18s;
-    }
-
-    .btn-primary:hover { transform: translateY(-1px); }
-
-    @@media (max-width: 767px) {
-        .chat-sidebar { width: 100%; display: none; }
-        .chat-sidebar.mobile-open { display: flex; position: fixed; inset: 72px 0 0; z-index: 50; }
-        .chat-main { width: 100%; }
-    }
-
-    .hiring-offer-card {
-        cursor: pointer;
-        border-radius: 18px;
-        overflow: hidden;
-        border: 1.5px solid #fed7aa;
-        background: #fff;
-        max-width: 280px;
-        box-shadow: 0 4px 16px rgba(249,115,22,.14);
-        transition: transform .18s ease, box-shadow .18s ease;
-    }
-
-    .hiring-offer-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 24px rgba(249,115,22,.22);
-    }
-
-    .hiring-offer-card__header {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 10px 14px;
-        background: linear-gradient(135deg,#f97316,#ea580c);
-        color: #fff;
-        font-size: 14px;
-        font-weight: 800;
-    }
-
-    .hiring-offer-card__body { padding: 10px 14px 6px; }
-    .hiring-offer-card__label { font-size: 13px; font-weight: 700; color: #111827; }
-    .hiring-offer-card__hint { font-size: 11px; color: #9ca3af; margin-top: 3px; }
-
-    .hiring-offer-card__footer {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        padding: 7px 14px;
-        border-top: 1px solid #fed7aa;
-        background: #fff7ed;
-        font-size: 12px;
-        font-weight: 700;
-        color: #c2410c;
-    }
-</style>
+    <style>
+        /* ─── Chat Layout ─────────────────────────────────────────── */
+        .chat-shell {
+            display: flex;
+            height: calc(100vh - 72px);
+            background: #f9fafb;
+            overflow: hidden;
+        }
+
+        /* ─── Sidebar (Conversation List) ────────────────────────── */
+        .chat-sidebar {
+            width: 340px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            background: #ffffff;
+            border-right: 1px solid rgba(226,232,240,.8);
+            box-shadow: 2px 0 12px rgba(15,23,42,.04);
+        }
+
+        .chat-sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 18px 14px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .chat-sidebar-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: #111827;
+        }
+
+        .chat-search-box {
+            padding: 10px 14px 12px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .chat-search-input {
+            width: 100%;
+            padding: 9px 14px 9px 36px;
+            border-radius: 12px;
+            border: 1.5px solid #e5e7eb;
+            font-size: 14px;
+            background: #f9fafb;
+            color: #374151;
+            outline: none;
+            transition: border .2s;
+        }
+
+            .chat-search-input:focus {
+                border-color: #f97316;
+                background: #fff;
+            }
+
+        .conv-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 6px;
+        }
+
+        .conv-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 12px;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all .18s ease;
+            margin-bottom: 2px;
+            position: relative;
+        }
+
+            .conv-item:hover {
+                background: #fff7ed;
+            }
+
+            .conv-item.active {
+                background: linear-gradient(135deg,#fff7ed,#ffffff);
+                box-shadow: 0 4px 12px rgba(249,115,22,.1);
+            }
+
+        .conv-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 18px;
+            font-weight: 800;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+            .conv-avatar img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+
+        .conv-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .conv-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #111827;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .conv-preview {
+            font-size: 13px;
+            color: #9ca3af;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 2px;
+        }
+
+        .conv-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+
+        .conv-time {
+            font-size: 11px;
+            color: #9ca3af;
+        }
+
+        .unread-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #f97316;
+        }
+
+        .conv-badge {
+            min-width: 20px;
+            height: 20px;
+            padding: 0 5px;
+            border-radius: 999px;
+            background: linear-gradient(135deg,#f97316,#ea580c);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ─── Main Chat Area ──────────────────────────────────────── */
+        .chat-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        /* Empty state */
+        .chat-empty {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #9ca3af;
+            gap: 12px;
+        }
+
+            .chat-empty .material-icons-round {
+                font-size: 56px;
+                color: #fdba74;
+            }
+
+            .chat-empty h3 {
+                font-size: 18px;
+                font-weight: 700;
+                color: #374151;
+            }
+
+        /* Chat header */
+        .chat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            background: #fff;
+            border-bottom: 1px solid #f1f5f9;
+            box-shadow: 0 1px 8px rgba(15,23,42,.05);
+        }
+
+        .chat-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chat-header-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            background: linear-gradient(135deg,#f97316,#ea580c);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 800;
+            overflow: hidden;
+        }
+
+        .chat-header-name {
+            font-size: 16px;
+            font-weight: 800;
+            color: #111827;
+        }
+
+        .chat-header-status {
+            font-size: 12px;
+            color: #9ca3af;
+        }
+
+        .chat-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .chat-header-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 700;
+            font-family: 'Quicksand', sans-serif;
+            border: 1.5px solid #e5e7eb;
+            background: #fff;
+            color: #374151;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all .18s ease;
+        }
+
+            .chat-header-pill:hover:not(:disabled) {
+                color: #ea580c;
+                background: #fff7ed;
+                border-color: #fed7aa;
+            }
+
+            .chat-header-pill--primary {
+                background: linear-gradient(135deg,#f97316,#ea580c);
+                color: #fff;
+                border-color: transparent;
+                box-shadow: 0 4px 12px rgba(249,115,22,.22);
+            }
+
+                .chat-header-pill--primary:hover:not(:disabled) {
+                    transform: translateY(-1px);
+                    box-shadow: 0 8px 18px rgba(249,115,22,.3);
+                }
+
+            .chat-header-pill:disabled {
+                opacity: .45;
+                cursor: not-allowed;
+                transform: none;
+            }
+
+        .chat-action-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            background: #fff;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all .18s ease;
+        }
+
+            .chat-action-btn:hover {
+                color: #ea580c;
+                background: #fff7ed;
+                border-color: #fed7aa;
+            }
+
+            .chat-action-btn.danger:hover {
+                color: #dc2626;
+                background: #fef2f2;
+                border-color: #fecaca;
+            }
+
+        /* Messages area */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            scroll-behavior: smooth;
+        }
+
+        .msg-group-date {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 8px 0;
+        }
+
+            .msg-group-date::before, .msg-group-date::after {
+                content: '';
+                flex: 1;
+                height: 1px;
+                background: #f1f5f9;
+            }
+
+            .msg-group-date span {
+                font-size: 12px;
+                color: #9ca3af;
+                font-weight: 600;
+                white-space: nowrap;
+            }
+
+        .msg-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            max-width: 75%;
+        }
+
+            .msg-row.mine {
+                margin-left: auto;
+                flex-direction: row-reverse;
+            }
+
+        .msg-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            background: linear-gradient(135deg,#f97316,#ea580c);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 800;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+            .msg-avatar img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+
+        .msg-bubble {
+            padding: 10px 14px;
+            border-radius: 18px;
+            font-size: 14px;
+            line-height: 1.55;
+            word-break: break-word;
+            position: relative;
+        }
+
+        .msg-row:not(.mine) .msg-bubble {
+            background: #fff;
+            color: #111827;
+            border: 1.5px solid #f1f5f9;
+            border-bottom-left-radius: 6px;
+            box-shadow: 0 2px 8px rgba(15,23,42,.06);
+        }
+
+        .msg-row.mine .msg-bubble {
+            background: linear-gradient(135deg,#f97316,#ea580c);
+            color: #fff;
+            border-bottom-right-radius: 6px;
+            box-shadow: 0 4px 12px rgba(249,115,22,.22);
+        }
+
+        .msg-bubble.deleted {
+            opacity: .5;
+            font-style: italic;
+            font-size: 13px;
+        }
+
+        .msg-time {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-top: 3px;
+            text-align: right;
+        }
+
+        .msg-row.mine .msg-time {
+            text-align: left;
+        }
+
+        /* Context menu */
+        .msg-ctx-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 4px;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            box-shadow: 0 10px 28px rgba(15,23,42,.12);
+            padding: 6px;
+            z-index: 100;
+            min-width: 140px;
+            display: none;
+        }
+
+        .msg-row.mine .msg-ctx-menu {
+            right: 0;
+        }
+
+        .msg-row:not(.mine) .msg-ctx-menu {
+            left: 0;
+            right: auto;
+        }
+
+        .msg-ctx-menu.open {
+            display: block;
+        }
+
+        .ctx-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #374151;
+            transition: background .15s;
+        }
+
+            .ctx-item:hover {
+                background: #f9fafb;
+            }
+
+            .ctx-item.danger {
+                color: #dc2626;
+            }
+
+                .ctx-item.danger:hover {
+                    background: #fef2f2;
+                }
+
+        /* Input area */
+        .chat-input-area {
+            padding: 14px 20px;
+            background: #fff;
+            border-top: 1px solid #f1f5f9;
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        .chat-input-wrap {
+            flex: 1;
+            display: flex;
+            align-items: flex-end;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 18px;
+            background: #f9fafb;
+            padding: 8px 14px;
+            gap: 8px;
+            transition: border .2s;
+        }
+
+            .chat-input-wrap:focus-within {
+                border-color: #f97316;
+                background: #fff;
+            }
+
+        .chat-textarea {
+            flex: 1;
+            resize: none;
+            border: none;
+            outline: none;
+            box-shadow: none;
+            background: transparent;
+            font-size: 14px;
+            color: #374151;
+            line-height: 1.5;
+            max-height: 120px;
+            overflow-y: auto;
+            font-family: 'Quicksand', sans-serif;
+        }
+
+            .chat-textarea:focus,
+            .chat-textarea:focus-visible {
+                border: none !important;
+                outline: none !important;
+                box-shadow: none !important;
+                --tw-ring-shadow: 0 0 #0000;
+                --tw-ring-offset-shadow: 0 0 #0000;
+            }
+
+        .chat-send-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            background: linear-gradient(135deg,#f97316,#ea580c);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            box-shadow: 0 6px 16px rgba(249,115,22,.3);
+            transition: all .18s ease;
+            flex-shrink: 0;
+        }
+
+            .chat-send-btn:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 10px 20px rgba(249,115,22,.36);
+            }
+
+            .chat-send-btn:disabled {
+                opacity: .5;
+                cursor: not-allowed;
+                transform: none;
+            }
+
+        .chat-blocked-banner {
+            text-align: center;
+            padding: 12px 16px;
+            background: #fef2f2;
+            border-top: 1px solid #fecaca;
+            font-size: 13px;
+            font-weight: 600;
+            color: #dc2626;
+        }
+
+        /* Loading spinner */
+        .spin {
+            border: 3px solid #f1f5f9;
+            border-top-color: #f97316;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            animation: spin .7s linear infinite;
+            margin: 20px auto;
+        }
+
+        @@keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Modals */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15,23,42,.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-card {
+            background: #fff;
+            border-radius: 24px;
+            padding: 28px 28px 24px;
+            width: min(440px, calc(100vw - 32px));
+            box-shadow: 0 32px 80px rgba(15,23,42,.18);
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: #111827;
+            margin-bottom: 6px;
+        }
+
+        .modal-sub {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 20px;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1.5px solid #e5e7eb;
+            font-size: 14px;
+            color: #374151;
+            outline: none;
+            transition: border .2s;
+            margin-bottom: 10px;
+            font-family: 'Quicksand', sans-serif;
+        }
+
+            .modal-input:focus {
+                border-color: #f97316;
+            }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+            justify-content: flex-end;
+        }
+
+        .btn-cancel {
+            padding: 10px 20px;
+            border-radius: 12px;
+            border: 1.5px solid #e5e7eb;
+            background: #fff;
+            font-size: 14px;
+            font-weight: 700;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all .18s;
+        }
+
+            .btn-cancel:hover {
+                background: #f9fafb;
+            }
+
+        .btn-danger {
+            padding: 10px 20px;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg,#ef4444,#dc2626);
+            font-size: 14px;
+            font-weight: 700;
+            color: #fff;
+            cursor: pointer;
+            box-shadow: 0 6px 16px rgba(220,38,38,.24);
+            transition: all .18s;
+        }
+
+            .btn-danger:hover {
+                transform: translateY(-1px);
+            }
+
+        .btn-primary {
+            padding: 10px 20px;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg,#f97316,#ea580c);
+            font-size: 14px;
+            font-weight: 700;
+            color: #fff;
+            cursor: pointer;
+            box-shadow: 0 6px 16px rgba(249,115,22,.24);
+            transition: all .18s;
+        }
+
+            .btn-primary:hover {
+                transform: translateY(-1px);
+            }
+
+        @@media (max-width: 767px) {
+            .chat-sidebar {
+                width: 100%;
+                display: none;
+            }
+
+                .chat-sidebar.mobile-open {
+                    display: flex;
+                    position: fixed;
+                    inset: 72px 0 0;
+                    z-index: 50;
+                }
+
+            .chat-main {
+                width: 100%;
+            }
+        }
+
+        .hiring-offer-card {
+            cursor: pointer;
+            border-radius: 18px;
+            overflow: hidden;
+            border: 1.5px solid #fed7aa;
+            background: #fff;
+            max-width: 280px;
+            box-shadow: 0 4px 16px rgba(249,115,22,.14);
+            transition: transform .18s ease, box-shadow .18s ease;
+        }
+
+            .hiring-offer-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 24px rgba(249,115,22,.22);
+            }
+
+        .hiring-offer-card__header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            background: linear-gradient(135deg,#f97316,#ea580c);
+            color: #fff;
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        .hiring-offer-card__body {
+            padding: 10px 14px 6px;
+        }
+
+        .hiring-offer-card__label {
+            font-size: 13px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .hiring-offer-card__hint {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-top: 3px;
+        }
+
+        .hiring-offer-card__footer {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 7px 14px;
+            border-top: 1px solid #fed7aa;
+            background: #fff7ed;
+            font-size: 12px;
+            font-weight: 700;
+            color: #c2410c;
+        }
+    </style>
 }
 
 <div class="chat-shell" id="chatShell">
@@ -489,7 +797,8 @@
                     </div>
                 </div>
                 <div class="chat-header-actions">
-                    <button class="chat-action-btn danger" id="btnBlockConv" title="Chặn">
+                    <button type="button" class="chat-header-pill" id="btnChatViewProfile" disabled title="Xem trang cá nhân đối phương">Xem trang cá nhân</button>
+                    <button type="button" class="chat-action-btn danger" id="btnBlockConv" title="Khóa hội thoại" aria-label="Khóa hoặc mở khóa hội thoại">
                         <span class="material-icons-round" style="font-size:18px;">block</span>
                     </button>
                 </div>
@@ -527,7 +836,7 @@
         <textarea class="modal-input" id="reportReason" placeholder="Lý do báo cáo..." rows="3" style="resize:none;"></textarea>
         <textarea class="modal-input" id="reportEvidence" placeholder="Bằng chứng / mô tả thêm (tùy chọn)..." rows="2" style="resize:none;"></textarea>
         <div class="modal-actions">
-            <button class="btn-cancel" onclick="closeReportModal()">Huỷ</button>
+            <button class="btn-cancel" onclick="closeReportModal()">Hủy</button>
             <button class="btn-danger" onclick="submitReport()">Gửi báo cáo</button>
         </div>
     </div>
@@ -536,599 +845,769 @@
 <!-- ═══ MODAL: Delete confirm ═════════════════════════════════════════ -->
 <div id="deleteModal" class="modal-backdrop" style="display:none;">
     <div class="modal-card">
-        <div class="modal-title">Xoá tin nhắn</div>
-        <div class="modal-sub">Tin nhắn sẽ bị xoá khỏi cuộc hội thoại này. Hành động này không thể hoàn tác.</div>
+        <div class="modal-title">Xóa tin nhắn</div>
+        <div class="modal-sub">Tin nhắn sẽ bị xóa khỏi cuộc hội thoại này. Hành động này không thể hoàn tác.</div>
         <div class="modal-actions">
-            <button class="btn-cancel" onclick="closeDeleteModal()">Huỷ</button>
-            <button class="btn-danger" onclick="confirmDelete()">Xoá</button>
+            <button class="btn-cancel" onclick="closeDeleteModal()">Hủy</button>
+            <button class="btn-danger" onclick="confirmDelete()">Xóa</button>
         </div>
     </div>
 </div>
 
 @section Scripts {
-<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
-<script>
-// ════════════════════════════════════════════════════════════════════
-//  STATE
-// ════════════════════════════════════════════════════════════════════
-const apiBaseUrl = '@(ViewBag.ApiBaseUrl ?? "")';
-const currentUserId = '@(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value ?? "")';
-let activeConvId = null;
-let activeConvData = null; // { isBlocked, isHidden, blockedByUserId, otherUserId, otherUserName }
-let pendingDeleteMsgId = null;
-let pendingReportMsgId = null;
-let allConversations = [];
-let hubConnection = null;
-let joinedConvId = null;
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script>
+        // ════════════════════════════════════════════════════════════════════
+        //  STATE
+        // ════════════════════════════════════════════════════════════════════
+        const apiBaseUrl = '@(ViewBag.ApiBaseUrl ?? "")';
+        const currentUserId = '@(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value ?? "")';
+        let activeConvId = null;
+        let activeConvData = null; // { isBlocked, isHidden, blockedByUserId, otherUserId, otherUserName }
+        let pendingDeleteMsgId = null;
+        let pendingReportMsgId = null;
+        let allConversations = [];
+        let hubConnection = null;
+        const joinedConversationIds = new Set();
+        const lastRenderedSignatureByConversation = new Map();
+        let conversationsPollTimer = null;
+        let messagesPollTimer = null;
+        let isLoadingConversations = false;
+        let isLoadingMessages = false;
+        let isSyncingConversationGroups = false;
+        const CONVERSATIONS_POLL_INTERVAL_MS = 5000;
+        const MESSAGES_POLL_INTERVAL_MS = 2500;
 
-// ════════════════════════════════════════════════════════════════════
-//  INIT
-// ════════════════════════════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', async () => {
-    await loadConversations();
-    await initSignalR();
+        function notifyHeaderChatUnread() {
+            try {
+                window.dispatchEvent(new CustomEvent('nm:chat-unread-refresh'));
+            } catch { /* ignore */ }
+        }
 
-    const initialId = '@(ViewBag.InitialConversationId?.ToString() ?? "")';
-    if (initialId && initialId !== '') {
-        openConversation(initialId);
-    }
+        function hasValidOtherUserId() {
+            const uid = activeConvData?.otherUserId;
+            if (uid == null || uid === '') return false;
+            const s = String(uid).toLowerCase();
+            return s !== '00000000-0000-0000-0000-000000000000';
+        }
 
-    // Search filter
-    document.getElementById('convSearch').addEventListener('input', e => {
-        filterConversations(e.target.value.trim().toLowerCase());
-    });
+        function getOtherUserProfileUrl() {
+            if (!hasValidOtherUserId()) return '';
+            return '/Profile/ViewUser?userId=' + encodeURIComponent(String(activeConvData.otherUserId));
+        }
 
-    // Auto-resize textarea
-    const ta = document.getElementById('msgInput');
-    ta.addEventListener('input', () => {
-        ta.style.height = 'auto';
-        ta.style.height = Math.min(ta.scrollHeight, 120) + 'px';
-    });
+        function updateChatHeaderActionButtons() {
+            const can = hasValidOtherUserId();
+            const v = document.getElementById('btnChatViewProfile');
+            if (v) v.disabled = !can;
+        }
 
-    // Send on Enter (Shift+Enter = newline)
-    ta.addEventListener('keydown', e => {
-        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-    });
+        function goToOtherUserProfile() {
+            const href = getOtherUserProfileUrl();
+            if (href) window.location.href = href;
+        }
 
-    document.getElementById('sendBtn').addEventListener('click', sendMessage);
-    document.getElementById('btnBlockConv').addEventListener('click', toggleBlock);
+        /** Đồng bộ DB (ReadAt) — badge header / danh sách hội thoại cập nhật đúng. */
+        async function markConversationReadOnServer(convId) {
+            if (!convId) return;
+            try {
+                const res = await fetch(`/Communication/MarkRead?conversationId=${encodeURIComponent(convId)}`, {
+                    method: 'POST',
+                    credentials: 'same-origin'
+                });
+                if (res.ok) {
+                    const conv = allConversations.find(c => String(c.id) === String(convId));
+                    if (conv) {
+                        conv.unreadCount = 0;
+                        renderConversations(allConversations);
+                    }
+                }
+            } catch { /* ignore */ }
+            notifyHeaderChatUnread();
+        }
 
-    // Close context menus on outside click
-    document.addEventListener('click', () => {
-        document.querySelectorAll('.msg-ctx-menu.open').forEach(m => m.classList.remove('open'));
-    });
-});
+        // ════════════════════════════════════════════════════════════════════
+        //  INIT
+        // ════════════════════════════════════════════════════════════════════
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadConversations();
+            await initSignalR();
+            startRealtimeSync();
 
-// ════════════════════════════════════════════════════════════════════
-//  CONVERSATIONS
-// ════════════════════════════════════════════════════════════════════
-async function loadConversations() {
-    try {
-        const res = await fetch('/Communication/Conversations');
-        const json = await res.json();
-        allConversations = json.data ?? [];
-        renderConversations(allConversations);
-    } catch {
-        document.getElementById('convList').innerHTML = '<p style="text-align:center;color:#9ca3af;padding:20px;font-size:14px;">Không thể tải danh sách.</p>';
-    }
-}
+            const initialId = '@(ViewBag.InitialConversationId?.ToString() ?? "")';
+            if (initialId && initialId !== '') {
+                openConversation(initialId);
+            }
 
-function renderConversations(list) {
-    const el = document.getElementById('convList');
-    if (!list.length) {
-        el.innerHTML = '<div style="text-align:center;color:#9ca3af;padding:30px 16px;font-size:14px;"><span class="material-icons-round" style="font-size:36px;color:#fdba74;display:block;margin-bottom:10px;">forum</span>Chưa có hội thoại nào.</div>';
-        return;
-    }
-    el.innerHTML = list.map(c => {
-        const initial = (c.otherUserName || 'U').charAt(0).toUpperCase();
-        const avatarHtml = c.otherUserAvatar
-            ? `<img src="${esc(c.otherUserAvatar)}" alt="${esc(c.otherUserName)}">`
-            : initial;
-        const isActive = c.id === activeConvId;
-        const time = c.lastMessageAt ? fmtTime(c.lastMessageAt) : '';
-        const badge = c.unreadCount > 0 ? `<span class="conv-badge">${c.unreadCount > 99 ? '99+' : c.unreadCount}</span>` : '';
-        return `<div class="conv-item ${isActive ? 'active' : ''}" onclick="openConversation('${c.id}')" data-id="${c.id}" data-name="${esc(c.otherUserName)}" id="conv-${c.id}">
-            <div class="conv-avatar">${avatarHtml}</div>
-            <div class="conv-info">
-                <div class="conv-name">${esc(c.otherUserName || 'Người dùng')}</div>
-                <div class="conv-preview">${esc(c.lastMessage || 'Bắt đầu cuộc trò chuyện...')}</div>
-            </div>
-            <div class="conv-meta">
-                <span class="conv-time">${time}</span>
-                ${badge}
-            </div>
-        </div>`;
-    }).join('');
-}
-
-function filterConversations(q) {
-    if (!q) { renderConversations(allConversations); return; }
-    renderConversations(allConversations.filter(c => (c.otherUserName || '').toLowerCase().includes(q)));
-}
-
-// ════════════════════════════════════════════════════════════════════
-//  OPEN CONVERSATION
-// ════════════════════════════════════════════════════════════════════
-async function openConversation(id) {
-    if (activeConvId === id) return;
-    const previousId = activeConvId;
-    activeConvId = id;
-
-    // Highlight sidebar item
-    document.querySelectorAll('.conv-item').forEach(el => el.classList.remove('active'));
-    const conv = document.getElementById(`conv-${id}`);
-    if (conv) conv.classList.add('active');
-
-    // Show chat area, hide empty
-    document.getElementById('chatEmpty').style.display = 'none';
-    const area = document.getElementById('chatArea');
-    area.style.display = 'flex';
-    area.style.flexDirection = 'column';
-
-    document.getElementById('chatMessages').innerHTML = '<div style="text-align:center;padding:40px;"><div class="spin"></div></div>';
-    document.getElementById('headerName').textContent = conv?.dataset?.name ?? '...';
-
-    await loadMessages(id);
-    await joinConversationIfReady(id, previousId);
-    resetUnreadCount(id);
-}
-
-// ════════════════════════════════════════════════════════════════════
-//  MESSAGES
-// ════════════════════════════════════════════════════════════════════
-async function loadMessages(convId, page = 1) {
-    try {
-        const res = await fetch(`/Communication/Messages?conversationId=${convId}&page=${page}&pageSize=50`);
-        const json = await res.json();
-        const data = json.data;
-
-        // Update header
-        document.getElementById('headerName').textContent = data.otherUserName || 'Người dùng';
-        const avatarEl = document.getElementById('headerAvatar');
-        avatarEl.textContent = (data.otherUserName || 'U').charAt(0).toUpperCase();
-
-        activeConvData = {
-            isBlocked: data.isBlocked,
-            isHidden: data.isHidden,
-            blockedByUserId: data.blockedByUserId || null,
-            otherUserId: data.otherUserId,
-            otherUserName: data.otherUserName
-        };
-
-        updateBlockUI(data.isBlocked);
-        renderMessages(data.messages ?? []);
-    } catch {
-        document.getElementById('chatMessages').innerHTML = '<p style="text-align:center;color:#9ca3af;padding:20px;">Không thể tải tin nhắn.</p>';
-    }
-}
-
-function renderMessages(messages) {
-    const el = document.getElementById('chatMessages');
-    if (!messages.length) {
-        el.innerHTML = '<div style="text-align:center;color:#9ca3af;padding:40px;font-size:14px;"><span class="material-icons-round" style="font-size:36px;color:#fdba74;display:block;margin-bottom:10px;">chat_bubble_outline</span>Chưa có tin nhắn nào. Hãy bắt đầu cuộc trò chuyện!</div>';
-        return;
-    }
-
-    // Messages come ordered desc, reverse for display
-    const sorted = [...messages].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-    let lastDate = '';
-
-    el.innerHTML = sorted.map(m => {
-        const isMine = resolveMessageIsMine(m);
-        const dateStr = new Date(m.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        const dateSep = dateStr !== lastDate ? `<div class="msg-group-date"><span>${dateStr}</span></div>` : '';
-        lastDate = dateStr;
-
-        const initial = (m.senderName || 'U').charAt(0).toUpperCase();
-        const avatarHtml = m.senderAvatar
-            ? `<img src="${esc(m.senderAvatar)}" alt="${esc(m.senderName)}">`
-            : initial;
-
-        const ctx = isMine
-            ? `<div class="msg-ctx-menu" id="ctx-${m.id}">
-                <div class="ctx-item danger" onclick="openDeleteModal('${m.id}')"><span class="material-icons-round" style="font-size:16px;">delete</span>Xoá</div>
-               </div>`
-            : `<div class="msg-ctx-menu" id="ctx-${m.id}">
-                <div class="ctx-item danger" onclick="openReportModal('${m.id}')"><span class="material-icons-round" style="font-size:16px;">flag</span>Báo cáo</div>
-               </div>`;
-
-        return `${dateSep}
-        <div class="msg-row ${isMine ? 'mine' : ''}" id="msg-${m.id}">
-            ${!isMine ? `<div class="msg-avatar">${avatarHtml}</div>` : ''}
-            <div style="display:flex;flex-direction:column;gap:3px;position:relative;">
-                <div class="msg-bubble ${m.isDeleted ? 'deleted' : ''}"
-                     oncontextmenu="openCtxMenu(event,'${m.id}')"
-                     ondblclick="openCtxMenu(event,'${m.id}')">
-                    ${Number(m.messageType) === 4 ? renderHiringOfferCard(m, isMine) : esc(m.content)}
-                    ${ctx}
-                </div>
-                <div class="msg-time">${fmtMsgTime(m.createdAt)}${m.readAt ? ' ✓✓' : ''}</div>
-            </div>
-            ${isMine ? `<div class="msg-avatar">${avatarHtml}</div>` : ''}
-        </div>`;
-    }).join('');
-
-    // Scroll to bottom
-    el.scrollTop = el.scrollHeight;
-}
-
-function appendMessage(m) {
-    const el = document.getElementById('chatMessages');
-    // Remove empty state if present
-    const empty = el.querySelector('.chat-empty, [style*="chat_bubble_outline"]');
-    if (empty) empty.remove();
-
-    const isMine = resolveMessageIsMine(m);
-    const initial = (m.senderName || 'U').charAt(0).toUpperCase();
-    const ctx = isMine
-        ? `<div class="msg-ctx-menu" id="ctx-${m.id}"><div class="ctx-item danger" onclick="openDeleteModal('${m.id}')"><span class="material-icons-round" style="font-size:16px;">delete</span>Xoá</div></div>`
-        : `<div class="msg-ctx-menu" id="ctx-${m.id}"><div class="ctx-item danger" onclick="openReportModal('${m.id}')"><span class="material-icons-round" style="font-size:16px;">flag</span>Báo cáo</div></div>`;
-
-    const row = document.createElement('div');
-    row.className = `msg-row ${isMine ? 'mine' : ''}`;
-    row.id = `msg-${m.id}`;
-    row.innerHTML = `
-        ${!isMine ? `<div class="msg-avatar">${initial}</div>` : ''}
-        <div style="display:flex;flex-direction:column;gap:3px;position:relative;">
-            <div class="msg-bubble" oncontextmenu="openCtxMenu(event,'${m.id}')" ondblclick="openCtxMenu(event,'${m.id}')">${Number(m.messageType) === 4 ? renderHiringOfferCard(m, isMine) : esc(m.content)}${ctx}</div>
-            <div class="msg-time">${fmtMsgTime(m.createdAt)}</div>
-        </div>
-        ${isMine ? `<div class="msg-avatar">${initial}</div>` : ''}`;
-    el.appendChild(row);
-    el.scrollTop = el.scrollHeight;
-}
-
-// ════════════════════════════════════════════════════════════════════
-//  SEND MESSAGE
-// ════════════════════════════════════════════════════════════════════
-async function sendMessage() {
-    const ta = document.getElementById('msgInput');
-    const text = ta.value.trim();
-    if (!text || !activeConvId) return;
-
-    ta.value = '';
-    ta.style.height = 'auto';
-
-    try {
-        const usedHub = await sendMessageViaHub(text);
-        if (!usedHub) {
-            const res = await fetch(`/Communication/SendMessage?conversationId=${activeConvId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getAntiForgery() },
-                body: JSON.stringify({ content: text, messageType: 1 })
+            // Search filter
+            document.getElementById('convSearch').addEventListener('input', e => {
+                filterConversations(e.target.value.trim().toLowerCase());
             });
-            const json = await res.json();
-            if (json.success) {
-                appendMessage(json.data);
-                updateConversationPreview(json.data, true);
+
+            // Auto-resize textarea
+            const ta = document.getElementById('msgInput');
+            ta.addEventListener('input', () => {
+                ta.style.height = 'auto';
+                ta.style.height = Math.min(ta.scrollHeight, 120) + 'px';
+            });
+
+            // Send on Enter (Shift+Enter = newline)
+            ta.addEventListener('keydown', e => {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+            });
+
+            document.getElementById('sendBtn').addEventListener('click', sendMessage);
+            document.getElementById('btnBlockConv').addEventListener('click', toggleBlock);
+            document.getElementById('btnChatViewProfile')?.addEventListener('click', goToOtherUserProfile);
+
+            // Close context menus on outsiđ click
+            document.addEventListener('click', () => {
+                document.querySelectorAll('.msg-ctx-menu.open').forEach(m => m.classList.remove('open'));
+            });
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) return;
+                loadConversations(true);
+                if (activeConvId) {
+                    loadMessages(activeConvId, 1, true);
+                }
+            });
+
+            window.addEventListener('beforeunload', stopRealtimeSync);
+        });
+
+        // ════════════════════════════════════════════════════════════════════
+        //  CONVERSATIONS
+        // ════════════════════════════════════════════════════════════════════
+        async function loadConversations(silent = false) {
+            if (isLoadingConversations) return;
+            isLoadingConversations = true;
+            try {
+                const res = await fetch('/Communication/Conversations');
+                const json = await res.json();
+                allConversations = json.data ?? [];
+                renderConversations(allConversations);
+                await syncConversationGroups();
+                notifyHeaderChatUnread();
+            } catch {
+                if (!silent) {
+                document.getElementById('convList').innerHTML = '<p style="text-align:center;color:#9ca3af;padding:20px;font-size:14px;">Không thể tải danh sách.</p>';
+                }
+            } finally {
+                isLoadingConversations = false;
             }
         }
-    } catch {}
-}
 
-// ════════════════════════════════════════════════════════════════════
-//  BLOCK / HIDE
-// ════════════════════════════════════════════════════════════════════
-async function toggleBlock() {
-    if (!activeConvId || !activeConvData) return;
-    if (activeConvData.isBlocked && !canCurrentUserUnblock()) {
-        alert('Chỉ người đã khóa cuộc trò chuyện mới có thể mở khóa.');
-        return;
-    }
-    const action = activeConvData.isBlocked ? 'unblock' : 'block';
-    const status = await updateStatus(action);
-    if (!status) return;
-    activeConvData.isBlocked = !!status.isBlocked;
-    activeConvData.isHidden = !!status.isHidden;
-    activeConvData.blockedByUserId = status.blockedByUserId || null;
-    updateBlockUI(activeConvData.isBlocked);
-}
+        function renderConversations(list) {
+            const el = document.getElementById('convList');
+            if (!list.length) {
+                el.innerHTML = '<div style="text-align:center;color:#9ca3af;padding:30px 16px;font-size:14px;"><span class="material-icons-round" style="font-size:36px;color:#fdba74;display:block;margin-bottom:10px;">forum</span>Chưa có hội thoại nào.</div>';
+                return;
+            }
+            el.innerHTML = list.map(c => {
+                const initial = (c.otherUserName || 'U').charAt(0).toUpperCase();
+                const avatarHtml = c.otherUserAvatar
+                    ? `<img src="${esc(c.otherUserAvatar)}" alt="${esc(c.otherUserName)}">`
+                    : initial;
+                const isActive = c.id === activeConvId;
+                const time = c.lastMessageAt ? fmtTime(c.lastMessageAt) : '';
+                const badge = c.unreadCount > 0 ? `<span class="conv-badge">${c.unreadCount > 99 ? '99+' : c.unreadCount}</span>` : '';
+                return `<div class="conv-item ${isActive ? 'active' : ''}" onclick="openConversation('${c.id}')" data-id="${c.id}" data-name="${esc(c.otherUserName)}" id="conv-${c.id}">
+                    <div class="conv-avatar">${avatarHtml}</div>
+                    <div class="conv-info">
+                        <div class="conv-name">${esc(c.otherUserName || 'Người dùng')}</div>
+                        <div class="conv-preview">${esc(c.lastMessage || 'Bắt đầu cuộc trò chuyện...')}</div>
+                    </div>
+                    <div class="conv-meta">
+                        <span class="conv-time">${time}</span>
+                        ${badge}
+                    </div>
+                </div>`;
+            }).join('');
+        }
 
-async function unblockConv() {
-    if (!canCurrentUserUnblock()) {
-        alert('Chỉ người đã khóa cuộc trò chuyện mới có thể mở khóa.');
-        return;
-    }
-    const status = await updateStatus('unblock');
-    if (!status) return;
-    activeConvData.isBlocked = !!status.isBlocked;
-    activeConvData.isHidden = !!status.isHidden;
-    activeConvData.blockedByUserId = status.blockedByUserId || null;
-    updateBlockUI(activeConvData.isBlocked);
-}
+        function filterConversations(q) {
+            if (!q) { renderConversations(allConversations); return; }
+            renderConversations(allConversations.filter(c => (c.otherUserName || '').toLowerCase().includes(q)));
+        }
 
-async function hideConv() {
-    if (!activeConvId) return;
-    const action = activeConvData?.isHidden ? 'unhide' : 'hide';
-    const status = await updateStatus(action);
-    if (!status) return;
-    activeConvData.isHidden = !!status.isHidden;
-    if (action === 'hide') {
-        alert('Hội thoại đã được ẩn.');
-        allConversations = allConversations.filter(c => String(c.id) !== String(activeConvId));
-        renderConversations(allConversations);
-        // Reset main area
-        activeConvId = null;
-        activeConvData = null;
-        document.getElementById('chatArea').style.display = 'none';
-        document.getElementById('chatEmpty').style.display = 'flex';
-    }
-}
+        // ════════════════════════════════════════════════════════════════════
+        //  OPEN CONVERSATION
+        // ════════════════════════════════════════════════════════════════════
+        async function openConversation(id) {
+            if (activeConvId === id) return;
+            activeConvId = id;
 
-async function updateStatus(action) {
-    try {
-        const res = await fetch(`/Communication/UpdateStatus/${activeConvId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getAntiForgery() },
-            body: JSON.stringify({ action })
-        });
-        const json = await res.json();
-        if (!res.ok || !json?.success) {
-            alert(json?.message || 'Không thể cập nhật trạng thái hội thoại.');
+            // Highlight sidebar item
+            document.querySelectorAll('.conv-item').forEach(el => el.classList.remove('active'));
+            const conv = document.getElementById(`conv-${id}`);
+            if (conv) conv.classList.add('active');
+
+            // Show chat area, hiđ empty
+            document.getElementById('chatEmpty').style.display = 'none';
+            const area = document.getElementById('chatArea');
+            area.style.display = 'flex';
+            area.style.flexDirection = 'column';
+
+            document.getElementById('chatMessages').innerHTML = '<div style="text-align:center;padding:40px;"><div class="spin"></div></div>';
+            document.getElementById('headerName').textContent = conv?.dataset?.name ?? '...';
+            activeConvData = null;
+            updateChatHeaderActionButtons();
+
+            await loadMessages(id);
+            resetUnreadCount(id);
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  MESSAGES
+        // ════════════════════════════════════════════════════════════════════
+        async function loadMessages(convId, page = 1, silent = false) {
+            if (!convId) return;
+            try {
+                const res = await fetch(`/Communication/Messages?conversationId=${convId}&page=${page}&pageSize=50`);
+                const json = await res.json();
+                const data = json.data;
+                if (!data) return;
+
+                // Update header
+                document.getElementById('headerName').textContent = data.otherUserName || 'Người dùng';
+                const avatarEl = document.getElementById('headerAvatar');
+                avatarEl.textContent = (data.otherUserName || 'U').charAt(0).toUpperCase();
+
+                activeConvData = {
+                    isBlocked: data.isBlocked,
+                    isHidden: data.isHidden,
+                    blockedByUserId: data.blockedByUserId || null,
+                    otherUserId: data.otherUserId,
+                    otherUserName: data.otherUserName
+                };
+                updateChatHeaderActionButtons();
+
+                updateBlockUI(data.isBlocked);
+                const messages = data.messages ?? [];
+                const signature = buildMessageSignature(messages);
+                const signatureKey = String(convId);
+                const previousSignature = lastRenderedSignatureByConversation.get(signatureKey);
+                if (previousSignature !== signature) {
+                    renderMessages(messages);
+                    lastRenderedSignatureByConversation.set(signatureKey, signature);
+                }
+
+                const hasUnreadIncoming = messages.some(m =>
+                    String(m.senderId || '') === String(data.otherUserId || '') && !m.readAt && !m.isDeleted
+                );
+                if (hasUnreadIncoming) {
+                    await markConversationReadOnServer(convId);
+                }
+            } catch {
+                document.getElementById('chatMessages').innerHTML = '<p style="text-align:center;color:#9ca3af;padding:20px;">Không thể tải tin nhắn.</p>';
+            }
+        }
+
+        function renderMessages(messages) {
+            const el = document.getElementById('chatMessages');
+            if (!messages.length) {
+                el.innerHTML = '<div style="text-align:center;color:#9ca3af;padding:40px;font-size:14px;"><span class="material-icons-round" style="font-size:36px;color:#fdba74;display:block;margin-bottom:10px;">chat_bubble_outline</span>Chưa có tin nhắn nào. Hãy bắt đầu cuộc trò chuyện!</div>';
+                return;
+            }
+
+            // Messages come ordered desc, reverse for display
+            const sorted = [...messages].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+            let lastDate = '';
+
+            el.innerHTML = sorted.map(m => {
+                const isMine = resolveMessageIsMine(m);
+                const dateStr = new Date(m.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                const dateSep = dateStr !== lastDate ? `<div class="msg-group-date"><span>${dateStr}</span></div>` : '';
+                lastDate = dateStr;
+
+                const initial = (m.senderName || 'U').charAt(0).toUpperCase();
+                const avatarHtml = m.senderAvatar
+                    ? `<img src="${esc(m.senderAvatar)}" alt="${esc(m.senderName)}">`
+                    : initial;
+
+                const ctx = isMine
+                    ? `<div class="msg-ctx-menu" id="ctx-${m.id}">
+                        <div class="ctx-item danger" onclick="openDeleteModal('${m.id}')"><span class="material-icons-round" style="font-size:16px;">delete</span>Xóa</div>
+                       </div>`
+                    : `<div class="msg-ctx-menu" id="ctx-${m.id}">
+                        <div class="ctx-item danger" onclick="openReportModal('${m.id}')"><span class="material-icons-round" style="font-size:16px;">flag</span>Báo cáo</div>
+                       </div>`;
+
+                return `${dateSep}
+                <div class="msg-row ${isMine ? 'mine' : ''}" id="msg-${m.id}">
+                    ${!isMine ? `<div class="msg-avatar">${avatarHtml}</div>` : ''}
+                    <div style="display:flex;flex-direction:column;gap:3px;position:relative;">
+                        <div class="msg-bubble ${m.isDeleted ? 'deleted' : ''}"
+                             oncontextmenu="openCtxMenu(event,'${m.id}')"
+                             ondblclick="openCtxMenu(event,'${m.id}')">
+                            ${Number(m.messageType) === 4 ? renderHiringOfferCard(m, isMine) : esc(m.content)}
+                            ${ctx}
+                        </div>
+                        <div class="msg-time">${fmtMsgTime(m.createdAt)}${m.readAt ? ' ✓✓' : ''}</div>
+                    </div>
+                    ${isMine ? `<div class="msg-avatar">${avatarHtml}</div>` : ''}
+                </div>`;
+            }).join('');
+
+            // Scroll to bottom
+            el.scrollTop = el.scrollHeight;
+        }
+
+        function appendMessage(m) {
+            const el = document.getElementById('chatMessages');
+            // Remove empty state if present
+            const empty = el.querySelector('.chat-empty, [style*="chat_bubble_outline"]');
+            if (empty) empty.remove();
+
+            const isMine = resolveMessageIsMine(m);
+            const initial = (m.senderName || 'U').charAt(0).toUpperCase();
+            const ctx = isMine
+                ? `<div class="msg-ctx-menu" id="ctx-${m.id}"><div class="ctx-item danger" onclick="openDeleteModal('${m.id}')"><span class="material-icons-round" style="font-size:16px;">delete</span>Xóa</div></div>`
+                : `<div class="msg-ctx-menu" id="ctx-${m.id}"><div class="ctx-item danger" onclick="openReportModal('${m.id}')"><span class="material-icons-round" style="font-size:16px;">flag</span>Báo cáo</div></div>`;
+
+            const row = document.createElement('div');
+            row.className = `msg-row ${isMine ? 'mine' : ''}`;
+            row.id = `msg-${m.id}`;
+            row.innerHTML = `
+                ${!isMine ? `<div class="msg-avatar">${initial}</div>` : ''}
+                <div style="display:flex;flex-direction:column;gap:3px;position:relative;">
+                    <div class="msg-bubble" oncontextmenu="openCtxMenu(event,'${m.id}')" ondblclick="openCtxMenu(event,'${m.id}')">${Number(m.messageType) === 4 ? renderHiringOfferCard(m, isMine) : esc(m.content)}${ctx}</div>
+                    <div class="msg-time">${fmtMsgTime(m.createdAt)}</div>
+                </div>
+                ${isMine ? `<div class="msg-avatar">${initial}</div>` : ''}`;
+            el.appendChild(row);
+            el.scrollTop = el.scrollHeight;
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  SEND MESSAGE
+        // ════════════════════════════════════════════════════════════════════
+        async function sendMessage() {
+            const ta = document.getElementById('msgInput');
+            const text = ta.value.trim();
+            if (!text || !activeConvId) return;
+
+            ta.value = '';
+            ta.style.height = 'auto';
+
+            try {
+                const usedHub = await sendMessageViaHub(text);
+                if (!usedHub) {
+                    const res = await fetch(`/Communication/SendMessage?conversationId=${activeConvId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getAntiForgery() },
+                        body: JSON.stringify({ content: text, messageType: 1 })
+                    });
+                    const json = await res.json();
+                    if (json.success) {
+                        appendMessage(json.data);
+                        updateConversationPreview(json.data, true);
+                    }
+                }
+            } catch {}
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  BLOCK / HIDE
+        // ════════════════════════════════════════════════════════════════════
+        async function toggleBlock() {
+            if (!activeConvId || !activeConvData) return;
+            if (activeConvData.isBlocked && !canCurrentUserUnblock()) {
+                alert('Chỉ người đã khóa cuộc trò chuyện mới có thể mở khóa.');
+                return;
+            }
+            const action = activeConvData.isBlocked ? 'unblock' : 'block';
+            const status = await updateStatus(action);
+            if (!status) return;
+            activeConvData.isBlocked = !!status.isBlocked;
+            activeConvData.isHidden = !!status.isHidden;
+            activeConvData.blockedByUserId = status.blockedByUserId || null;
+            updateBlockUI(activeConvData.isBlocked);
+        }
+
+        async function unblockConv() {
+            if (!canCurrentUserUnblock()) {
+                alert('Chỉ người đã khóa cuộc trò chuyện mới có thể mở khóa.');
+                return;
+            }
+            const status = await updateStatus('unblock');
+            if (!status) return;
+            activeConvData.isBlocked = !!status.isBlocked;
+            activeConvData.isHidden = !!status.isHidden;
+            activeConvData.blockedByUserId = status.blockedByUserId || null;
+            updateBlockUI(activeConvData.isBlocked);
+        }
+
+        async function hideConv() {
+            if (!activeConvId) return;
+            const action = activeConvData?.isHidden ? 'unhide' : 'hide';
+            const status = await updateStatus(action);
+            if (!status) return;
+            activeConvData.isHidden = !!status.isHidden;
+            if (action === 'hide') {
+                alert('Hội thoại đã được ẩn.');
+                allConversations = allConversations.filter(c => String(c.id) !== String(activeConvId));
+                renderConversations(allConversations);
+                // Reset main area
+                activeConvId = null;
+                activeConvData = null;
+                document.getElementById('chatArea').style.display = 'none';
+                document.getElementById('chatEmpty').style.display = 'flex';
+            }
+        }
+
+        async function updateStatus(action) {
+            try {
+                const res = await fetch(`/Communication/UpdateStatus/${activeConvId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getAntiForgery() },
+                    body: JSON.stringify({ action })
+                });
+                const json = await res.json();
+                if (!res.ok || !json?.success) {
+                    alert(json?.message || 'Không thể cập nhật trạng thái hội thoại.');
+                    return null;
+                }
+                return json.data ?? null;
+            } catch {}
             return null;
         }
-        return json.data ?? null;
-    } catch {}
-    return null;
-}
 
-function canCurrentUserUnblock() {
-    if (!activeConvData?.isBlocked) return true;
-    return !!activeConvData.blockedByUserId && String(activeConvData.blockedByUserId) === String(currentUserId);
-}
-
-function updateBlockUI(isBlocked) {
-    const banner = document.getElementById('blockedBanner');
-    const inputArea = document.getElementById('chatInputArea');
-    const blockBtn = document.getElementById('btnBlockConv');
-    const canUnblock = canCurrentUserUnblock();
-
-    banner.style.display = isBlocked ? 'block' : 'none';
-    inputArea.style.display = isBlocked ? 'none' : 'flex';
-    blockBtn.title = isBlocked ? (canUnblock ? 'Bỏ chặn' : 'Cuộc trò chuyện đang bị khóa') : 'Chặn';
-    blockBtn.querySelector('.material-icons-round').textContent = isBlocked ? 'lock_open' : 'block';
-    blockBtn.disabled = isBlocked && !canUnblock;
-    blockBtn.style.opacity = blockBtn.disabled ? '.55' : '1';
-    blockBtn.style.cursor = blockBtn.disabled ? 'not-allowed' : 'pointer';
-}
-
-// ════════════════════════════════════════════════════════════════════
-//  CONTEXT MENU
-// ════════════════════════════════════════════════════════════════════
-function openCtxMenu(e, msgId) {
-    e.preventDefault();
-    e.stopPropagation();
-    document.querySelectorAll('.msg-ctx-menu.open').forEach(m => m.classList.remove('open'));
-    document.getElementById(`ctx-${msgId}`)?.classList.add('open');
-}
-
-// ════════════════════════════════════════════════════════════════════
-//  DELETE
-// ════════════════════════════════════════════════════════════════════
-function openDeleteModal(msgId) {
-    pendingDeleteMsgId = msgId;
-    document.getElementById('deleteModal').style.display = 'flex';
-}
-
-function closeDeleteModal() {
-    document.getElementById('deleteModal').style.display = 'none';
-    pendingDeleteMsgId = null;
-}
-
-async function confirmDelete() {
-    if (!pendingDeleteMsgId) return;
-    try {
-        const res = await fetch(`/Communication/DeleteMessage/${pendingDeleteMsgId}`, {
-            method: 'DELETE',
-            headers: { 'RequestVerificationToken': getAntiForgery() }
-        });
-        const json = await res.json();
-        if (json.success) {
-            applyMessageDeleted(pendingDeleteMsgId, activeConvId);
+        function canCurrentUserUnblock() {
+            if (!activeConvData?.isBlocked) return true;
+            return !!activeConvData.blockedByUserId && String(activeConvData.blockedByUserId) === String(currentUserId);
         }
-    } catch {}
-    closeDeleteModal();
-}
 
-// ════════════════════════════════════════════════════════════════════
-//  REPORT
-// ════════════════════════════════════════════════════════════════════
-function openReportModal(msgId) {
-    pendingReportMsgId = msgId;
-    document.getElementById('reportModal').style.display = 'flex';
-    document.getElementById('reportReason').value = '';
-    document.getElementById('reportEvidence').value = '';
-}
+        function updateBlockUI(isBlocked) {
+            const banner = document.getElementById('blockedBanner');
+            const inputArea = document.getElementById('chatInputArea');
+            const blockBtn = document.getElementById('btnBlockConv');
+            const canUnblock = canCurrentUserUnblock();
+            const blockIcon = '<span class="material-icons-round" style="font-size:18px;">block</span>';
 
-function closeReportModal() {
-    document.getElementById('reportModal').style.display = 'none';
-    pendingReportMsgId = null;
-}
-
-async function submitReport() {
-    const reason = document.getElementById('reportReason').value.trim();
-    if (!reason) { alert('Vui lòng nhập lý do báo cáo.'); return; }
-    try {
-        await fetch(`/Communication/ReportMessage/${pendingReportMsgId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getAntiForgery() },
-            body: JSON.stringify({ reason, evidence: document.getElementById('reportEvidence').value.trim() })
-        });
-        alert('✅ Báo cáo đã được gửi. Cảm ơn bạn đã giúp giữ gìn cộng đồng!');
-    } catch {}
-    closeReportModal();
-}
-
-// ════════════════════════════════════════════════════════════════════
-//  UTILS
-// ════════════════════════════════════════════════════════════════════
-function esc(v) {
-    return String(v ?? '')
-        .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;').replaceAll("'", '&#39;');
-}
-
-function fmtTime(v) {
-    if (!v) return '';
-    const d = new Date(v);
-    const now = new Date();
-    const diff = (now - d) / 1000;
-    if (diff < 60) return 'Vừa xong';
-    if (diff < 3600) return `${Math.floor(diff / 60)} phút`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)} giờ`;
-    return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
-}
-
-function fmtMsgTime(v) {
-    if (!v) return '';
-    return new Date(v).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-}
-
-function getAntiForgery() {
-    return document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
-}
-
-function resolveMessageIsMine(message) {
-    if (activeConvData?.otherUserId && message?.senderId) {
-        return String(message.senderId) !== String(activeConvData.otherUserId);
-    }
-    if (typeof message?.isMine === 'boolean') {
-        return message.isMine;
-    }
-    return false;
-}
-
-function applyMessageDeleted(messageId, conversationId) {
-    const bubble = document.querySelector(`#msg-${messageId} .msg-bubble`);
-    if (bubble) {
-        bubble.textContent = '[Tin nhắn đã bị xoá]';
-        bubble.classList.add('deleted');
-    }
-    if (conversationId) {
-        updateConversationPreview(
-            { conversationId, content: '[Tin nhắn đã bị xoá]', createdAt: new Date().toISOString() },
-            true
-        );
-    }
-}
-
-function renderHiringOfferCard(message, isMine) {
-    const hiringRecordId = message.attachmentUrl || '';
-    return `
-    <div class="hiring-offer-card" onclick="window.__openOfferDetail?.('${esc(hiringRecordId)}')" title="Bam de xem chi tiet de nghi viec lam">
-        <div class="hiring-offer-card__header">
-            <span class="material-icons-round" style="font-size:20px;">handshake</span>
-            <span>De nghi viec lam</span>
-        </div>
-        <div class="hiring-offer-card__body">
-            <p class="hiring-offer-card__label">
-                ${isMine ? 'Ban da gui de nghi thue nanny.' : 'Ban nhan duoc de nghi viec lam!'}
-            </p>
-            <p class="hiring-offer-card__hint">${isMine ? 'Bam de xem chi tiet hop dong.' : 'Bam de xem hop dong va phan hoi.'}</p>
-        </div>
-        <div class="hiring-offer-card__footer">
-            <span class="material-icons-round" style="font-size:16px;opacity:.8;">open_in_new</span>
-            Xem chi tiet hop dong
-        </div>
-    </div>`;
-}
-
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-//  SIGNALR
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-async function initSignalR() {
-    if (!apiBaseUrl || typeof signalR === 'undefined') return;
-    const token = '@ViewBag.AccessToken';
-    if (!token) return;
-
-    hubConnection = new signalR.HubConnectionBuilder()
-        .withUrl(`${apiBaseUrl}/hubs/chat`, { accessTokenFactory: () => token })
-        .withAutomaticReconnect()
-        .build();
-
-    hubConnection.on('ReceiveMessage', message => {
-        if (!message || !message.conversationId) return;
-        if (String(message.conversationId) === String(activeConvId)) {
-            const isMine = resolveMessageIsMine(message);
-            appendMessage({ ...message, isMine });
-        } else {
-            const isMine = typeof message.isMine === 'boolean' ? message.isMine : false;
-            updateConversationPreview(message, isMine);
+            if (isBlocked) {
+                if (banner) banner.style.display = 'flex';
+                if (inputArea) inputArea.style.display = 'none';
+                if (blockBtn) {
+                    blockBtn.innerHTML = blockIcon;
+                    blockBtn.title = canUnblock ? 'Mở khóa hội thoại' : 'Đã khóa — chỉ người khóa mới có thể mở khóa';
+                    blockBtn.setAttribute('aria-label', canUnblock ? 'Mở khóa hội thoại' : 'Không thể mở khóa');
+                    blockBtn.disabled = !canUnblock;
+                }
+            } else {
+                if (banner) banner.style.display = 'none';
+                if (inputArea) inputArea.style.display = 'flex';
+                if (blockBtn) {
+                    blockBtn.innerHTML = blockIcon;
+                    blockBtn.title = 'Khóa hội thoại';
+                    blockBtn.setAttribute('aria-label', 'Khóa hội thoại');
+                    blockBtn.disabled = false;
+                }
+            }
         }
-    });
 
-    hubConnection.on('ConversationStatusChanged', status => {
-        if (!status || !status.conversationId || !activeConvId || !activeConvData) return;
-        if (String(status.conversationId) !== String(activeConvId)) return;
-        activeConvData.isBlocked = !!status.isBlocked;
-        activeConvData.blockedByUserId = status.blockedByUserId || null;
-        updateBlockUI(activeConvData.isBlocked);
-    });
-
-    hubConnection.on('MessageDeleted', data => {
-        if (!data?.messageId) return;
-        applyMessageDeleted(data.messageId, data.conversationId);
-    });
-
-    hubConnection.on('Error', msg => {
-        console.warn('SignalR error:', msg);
-    });
-
-    hubConnection.onreconnected(async () => {
-        if (activeConvId) await joinConversationIfReady(activeConvId, null);
-    });
-
-    try {
-        await hubConnection.start();
-        if (activeConvId) await joinConversationIfReady(activeConvId, null);
-    } catch (err) {
-        console.warn('SignalR connect failed:', err);
-    }
-}
-
-async function joinConversationIfReady(convId, previousId) {
-    if (!hubConnection || hubConnection.state !== signalR.HubConnectionState.Connected) return;
-    try {
-        if (previousId && String(previousId) !== String(convId)) {
-            await hubConnection.invoke('LeaveConversation', previousId);
+        // ════════════════════════════════════════════════════════════════════
+        //  CONTEXT MENU
+        // ════════════════════════════════════════════════════════════════════
+        function openCtxMenu(e, msgId) {
+            e.preventDefault();
+            e.stopPropagation();
+            document.querySelectorAll('.msg-ctx-menu.open').forEach(m => m.classList.remove('open'));
+            document.getElementById(`ctx-${msgId}`)?.classList.add('open');
         }
-        if (joinedConvId !== convId) {
-            await hubConnection.invoke('JoinConversation', convId);
-            joinedConvId = convId;
+
+        // ════════════════════════════════════════════════════════════════════
+        //  DELETE
+        // ════════════════════════════════════════════════════════════════════
+        function openDeleteModal(msgId) {
+            pendingDeleteMsgId = msgId;
+            document.getElementById('deleteModal').style.display = 'flex';
         }
-    } catch {}
-}
 
-async function sendMessageViaHub(text) {
-    if (!hubConnection || hubConnection.state !== signalR.HubConnectionState.Connected) return false;
-    try {
-        await hubConnection.invoke('SendMessage', activeConvId, text, 1);
-        return true;
-    } catch {
-        return false;
-    }
-}
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').style.display = 'none';
+            pendingDeleteMsgId = null;
+        }
 
-function updateConversationPreview(message, isMine) {
-    const conv = allConversations.find(c => String(c.id) === String(message.conversationId));
-    if (!conv) return;
-    conv.lastMessage = message.content || conv.lastMessage;
-    conv.lastMessageAt = message.createdAt || new Date().toISOString();
-    if (!isMine && String(message.conversationId) !== String(activeConvId)) {
-        conv.unreadCount = (conv.unreadCount || 0) + 1;
-    }
-    renderConversations(allConversations);
-}
+        async function confirmDelete() {
+            if (!pendingDeleteMsgId) return;
+            try {
+                const res = await fetch(`/Communication/DeleteMessage/${pendingDeleteMsgId}`, {
+                    method: 'DELETE',
+                    headers: { 'RequestVerificationToken': getAntiForgery() }
+                });
+                const json = await res.json();
+                if (json.success) {
+                    applyMessageDeleted(pendingDeleteMsgId, activeConvId);
+                }
+            } catch {}
+            closeDeleteModal();
+        }
 
-function resetUnreadCount(convId) {
-    const conv = allConversations.find(c => String(c.id) === String(convId));
-    if (!conv) return;
-    conv.unreadCount = 0;
-    renderConversations(allConversations);
-}
-</script>
-@Html.AntiForgeryToken()
-}
+        // ════════════════════════════════════════════════════════════════════
+        //  REPORT
+        // ════════════════════════════════════════════════════════════════════
+        function openReportModal(msgId) {
+            pendingReportMsgId = msgId;
+            document.getElementById('reportModal').style.display = 'flex';
+            document.getElementById('reportReason').value = '';
+            document.getElementById('reportEvidence').value = '';
+        }
 
-<partial name="~/Views/Hiring/_OfferCard.cshtml" />
-<partial name="~/Views/Hiring/_OfferDetailModal.cshtml" />
+        function closeReportModal() {
+            document.getElementById('reportModal').style.display = 'none';
+            pendingReportMsgId = null;
+        }
+
+        async function submitReport() {
+            const reason = document.getElementById('reportReason').value.trim();
+            if (!reason) { alert('Vui lòng nhập lý do báo cáo.'); return; }
+            try {
+                await fetch(`/Communication/ReportMessage/${pendingReportMsgId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getAntiForgery() },
+                    body: JSON.stringify({ reason, evidence: document.getElementById('reportEvidence').value.trim() })
+                });
+                alert('Báo cáo đã được gửi. Cảm ơn bạn đã giúp giữ gìn cộng đồng.');
+            } catch {}
+            closeReportModal();
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  UTILS
+        // ════════════════════════════════════════════════════════════════════
+        function esc(v) {
+            return String(v ?? '')
+                .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;').replaceAll("'", '&#39;');
+        }
+
+        function fmtTime(v) {
+            if (!v) return '';
+            const d = new Date(v);
+            const now = new Date();
+            const diff = (now - d) / 1000;
+            if (diff < 60) return 'Vừa xong';
+            if (diff < 3600) return `${Math.floor(diff / 60)} phút`;
+            if (diff < 86400) return `${Math.floor(diff / 3600)} giờ`;
+            return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+        }
+
+        function fmtMsgTime(v) {
+            if (!v) return '';
+            return new Date(v).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function getAntiForgery() {
+            return document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+        }
+
+        function resolveMessageIsMine(message) {
+            if (activeConvData?.otherUserId && message?.senderId) {
+                return String(message.senderId) !== String(activeConvData.otherUserId);
+            }
+            if (typeof message?.isMine === 'boolean') {
+                return message.isMine;
+            }
+            return false;
+        }
+
+        function applyMessageDeleted(messageId, conversationId) {
+            const bubble = document.querySelector(`#msg-${messageId} .msg-bubble`);
+            if (bubble) {
+                bubble.textContent = '[Tin nhắn đã bị xóa]';
+                bubble.classList.add('deleted');
+            }
+            if (conversationId) {
+                updateConversationPreview(
+                    { conversationId, content: '[Tin nhắn đã bị xóa]', createdAt: new Date().toISOString() },
+                    true
+                );
+            }
+        }
+
+        async function goToContractDetailByHiringRecord(hiringRecordId) {
+            if (!hiringRecordId) return;
+            window.open(`/Contract/ViewContractDetail?hiringRecordId=${encodeURIComponent(hiringRecordId)}`, '_blank', 'noopener');
+        }
+
+        function renderHiringOfferCard(message, isMine) {
+            const hiringRecordId = message.attachmentUrl || '';
+            return `
+            <div class="hiring-offer-card" onclick="goToContractDetailByHiringRecord('${esc(hiringRecordId)}')" title="Bam de xem chi tiet de nghi viec lam">
+                <div class="hiring-offer-card__header">
+                    <span class="material-icons-round" style="font-size:20px;">handshake</span>
+                    <span>Đề nghị việc làm</span>
+                </div>
+                <div class="hiring-offer-card__body">
+                    <p class="hiring-offer-card__label">
+                        ${isMine ? 'Bạn đã gửi đề nghị thuê bảo mẫu.' : 'Bạn nhận được đề nghị việc làm!'}
+                    </p>
+                    <p class="hiring-offer-card__hint">${isMine ? 'Bấm để xem chi tiết đề nghị việc làm.' : 'Bấm để xem đề nghị và phản hồi.'}</p>
+                </div>
+                <div class="hiring-offer-card__footer">
+                    <span class="material-icons-round" style="font-size:16px;opacity:.8;">open_in_new</span>
+                    Xem chi tiết đề nghị việc làm
+                </div>
+            </div>`;
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        function buildMessageSignature(messages) {
+            if (!Array.isArray(messages) || !messages.length) return 'empty';
+            return messages
+                .map(m => `${m.id || ''}|${m.readAt || ''}|${m.isDeleted ? 1 : 0}|${m.createdAt || ''}`)
+                .join('~');
+        }
+
+        async function syncConversationGroups() {
+            if (!hubConnection || hubConnection.state !== signalR.HubConnectionState.Connected) return;
+            if (isSyncingConversationGroups) return;
+
+            isSyncingConversationGroups = true;
+            try {
+                const wantedConversationIds = new Set(
+                    (allConversations || [])
+                        .map(c => String(c?.id || ''))
+                        .filter(Boolean)
+                );
+
+                const joinedSnapshot = Array.from(joinedConversationIds);
+                for (const joinedId of joinedSnapshot) {
+                    if (wantedConversationIds.has(joinedId)) continue;
+                    await hubConnection.invoke('LeaveConversation', joinedId);
+                    joinedConversationIds.delete(joinedId);
+                }
+
+                for (const convId of wantedConversationIds) {
+                    if (joinedConversationIds.has(convId)) continue;
+                    await hubConnection.invoke('JoinConversation', convId);
+                    joinedConversationIds.add(convId);
+                }
+            } catch {
+                // no-op
+            } finally {
+                isSyncingConversationGroups = false;
+            }
+        }
+
+        function startRealtimeSync() {
+            stopRealtimeSync();
+
+            conversationsPollTimer = window.setInterval(() => {
+                loadConversations(true);
+            }, CONVERSATIONS_POLL_INTERVAL_MS);
+
+            messagesPollTimer = window.setInterval(() => {
+                if (!activeConvId) return;
+                loadMessages(activeConvId, 1, true);
+            }, MESSAGES_POLL_INTERVAL_MS);
+        }
+
+        function stopRealtimeSync() {
+            if (conversationsPollTimer) {
+                window.clearInterval(conversationsPollTimer);
+                conversationsPollTimer = null;
+            }
+            if (messagesPollTimer) {
+                window.clearInterval(messagesPollTimer);
+                messagesPollTimer = null;
+            }
+        }
+
+        //  SIGNALR
+        // ════════════════════════════════════════════════════════════════════
+        async function initSignalR() {
+            if (!apiBaseUrl || typeof signalR === 'undefined') return;
+            const token = '@ViewBag.AccessToken';
+            if (!token) return;
+
+            hubConnection = new signalR.HubConnectionBuilder()
+                .withUrl(`${apiBaseUrl}/hubs/chat`, { accessTokenFactory: () => token })
+                .withAutomaticReconnect()
+                .build();
+
+            hubConnection.on('ReceiveMessage', async (message) => {
+                if (!message || !message.conversationId) return;
+                const isMine = resolveMessageIsMine(message);
+                if (String(message.conversationId) === String(activeConvId)) {
+                    appendMessage({ ...message, isMine });
+                    updateConversationPreview(message, isMine);
+                    if (!isMine) {
+                        await markConversationReadOnServer(message.conversationId);
+                    }
+                } else {
+                    updateConversationPreview(message, isMine);
+                    notifyHeaderChatUnread();
+                }
+            });
+
+            hubConnection.on('ConversationStatusChanged', status => {
+                if (!status || !status.conversationId || !activeConvId || !activeConvData) return;
+                if (String(status.conversationId) !== String(activeConvId)) return;
+                activeConvData.isBlocked = !!status.isBlocked;
+                activeConvData.blockedByUserId = status.blockedByUserId || null;
+                updateBlockUI(activeConvData.isBlocked);
+            });
+
+            hubConnection.on('MessageDeleted', data => {
+                if (!data?.messageId) return;
+                applyMessageDeleted(data.messageId, data.conversationId);
+            });
+
+            hubConnection.on('Error', msg => {
+                console.warn('SignalR error:', msg);
+            });
+
+            hubConnection.onreconnected(async () => {
+                joinedConversationIds.clear();
+                await loadConversations(true);
+                await syncConversationGroups();
+                if (activeConvId) {
+                    await loadMessages(activeConvId, 1, true);
+                }
+            });
+
+            try {
+                await hubConnection.start();
+                await syncConversationGroups();
+            } catch (err) {
+                console.warn('SignalR connect failed:', err);
+            }
+        }
+
+        async function joinConversationIfReady() {
+            await syncConversationGroups();
+        }
+
+        async function sendMessageViaHub(text) {
+            if (!hubConnection || hubConnection.state !== signalR.HubConnectionState.Connected) return false;
+            try {
+                await hubConnection.invoke('SendMessage', activeConvId, text, 1);
+                return true;
+            } catch {
+                return false;
+            }
+        }
+
+        function updateConversationPreview(message, isMine) {
+            const conv = allConversations.find(c => String(c.id) === String(message.conversationId));
+            if (!conv) return;
+            conv.lastMessage = message.content || conv.lastMessage;
+            conv.lastMessageAt = message.createdAt || new Date().toISOString();
+            if (!isMine && String(message.conversationId) !== String(activeConvId)) {
+                conv.unreadCount = (conv.unreadCount || 0) + 1;
+            }
+            renderConversations(allConversations);
+        }
+
+        function resetUnreadCount(convId) {
+            const conv = allConversations.find(c => String(c.id) === String(convId));
+            if (!conv) return;
+            conv.unreadCount = 0;
+            renderConversations(allConversations);
+        }
+    </script>
+    @Html.AntiForgeryToken()
+}

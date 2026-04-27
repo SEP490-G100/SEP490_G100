@@ -71,18 +71,30 @@ public class BlogListResponse
     public int TotalPages => (int)Math.Ceiling(TotalCount / (double)Math.Max(PageSize, 1));
 }
 
+public class BlogCategoryOptionDto
+{
+    [JsonPropertyName("id")]
+    public Guid Id { get; set; }
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = null!;
+
+    [JsonPropertyName("slug")]
+    public string Slug { get; set; } = null!;
+}
+
 public class CreateBlogRequest
 {
     [JsonPropertyName("title")]
-    [Required(ErrorMessage = "Title không được để trống.")]
+    [Required(ErrorMessage = "Tiêu đề không được để trống.")]
     public string Title { get; set; } = null!;
 
     [JsonPropertyName("slug")]
-    [Required(ErrorMessage = "Slug không được để trống.")]
+    [Required(ErrorMessage = "Đường dẫn không được để trống.")]
     public string Slug { get; set; } = null!;
 
     [JsonPropertyName("content")]
-    [Required(ErrorMessage = "Content không được để trống.")]
+    [Required(ErrorMessage = "Nội dung không được để trống.")]
     public string Content { get; set; } = null!;
 
     [JsonPropertyName("summary")]
@@ -101,15 +113,15 @@ public class CreateBlogRequest
 public class UpdateBlogRequest
 {
     [JsonPropertyName("title")]
-    [Required(ErrorMessage = "Title không được để trống.")]
+    [Required(ErrorMessage = "Tiêu đề không được để trống.")]
     public string Title { get; set; } = null!;
 
     [JsonPropertyName("slug")]
-    [Required(ErrorMessage = "Slug không được để trống.")]
+    [Required(ErrorMessage = "Đường dẫn không được để trống.")]
     public string Slug { get; set; } = null!;
 
     [JsonPropertyName("content")]
-    [Required(ErrorMessage = "Content không được để trống.")]
+    [Required(ErrorMessage = "Nội dung không được để trống.")]
     public string Content { get; set; } = null!;
 
     [JsonPropertyName("summary")]

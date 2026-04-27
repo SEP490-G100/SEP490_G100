@@ -1,39 +1,37 @@
-using Microsoft.EntityFrameworkCore;
-using Nanny_BackEnd.Data;
 using Nanny_BackEnd.DTOs.Review;
+using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Models;
-using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class ReviewService
+public class ReviewService : IReviewService
 {
-    private readonly ReviewRepository _reviewRepo;
-    private readonly Sep490NannyDbContext _db;
+    private readonly IReviewRepository _reviewRepo;
+    private readonly IHiringRepository _hiringRepo;
+    private readonly IUserRepository _userRepo;
 
-    // HiringRecord.Status = 2 nghĩa là Completed (xác nhận theo CHECK constraint DB: 0–5)
-    private const int HiringRecordCompleted = 2;
-
-    public ReviewService(ReviewRepository reviewRepo, Sep490NannyDbContext db)
+    public ReviewService(
+        IReviewRepository reviewRepo,
+        IHiringRepository hiringRepo,
+        IUserRepository userRepository)
     {
         _reviewRepo = reviewRepo;
-        _db = db;
+        _hiringRepo = hiringRepo;
+        _userRepo = userRepository;
     }
 
     /// <summary>Tạo đánh giá từ Parent cho Nanny sau khi hợp đồng hoàn thành.</summary>
     public async Task<ReviewDto> CreateReviewAsync(Guid parentUserId, CreateReviewRequest request)
     {
-        var hiringRecord = await _db.HiringRecords
-            .Include(h => h.ParentProfile)
-            .Include(h => h.NannyProfile)
-                .ThenInclude(n => n.User)
-            .FirstOrDefaultAsync(h => h.Id == request.HiringRecordId && !h.IsDeleted)
+        var hiringRecord = await _hiringRepo.GetHiringRecordByIdAsync(request.HiringRecordId)
             ?? throw new KeyNotFoundException("Không tìm thấy hợp đồng thuê.");
 
         if (hiringRecord.ParentProfile.UserId != parentUserId)
             throw new UnauthorizedAccessException("Bạn không có quyền đánh giá hợp đồng này.");
 
-        if (hiringRecord.Status != HiringRecordCompleted)
+        if (hiringRecord.Status != (int)HiringRecordStatus.Completed)
             throw new InvalidOperationException("Chỉ có thể đánh giá sau khi hợp đồng hoàn thành.");
 
         if (await _reviewRepo.ExistsAsync(request.HiringRecordId, parentUserId))
@@ -56,7 +54,8 @@ public class ReviewService
         _reviewRepo.Add(review);
         await _reviewRepo.SaveChangesAsync();
 
-        var reviewer = await _db.Users.FirstAsync(u => u.Id == parentUserId);
+        var reviewer = await _userRepo.FindByIdAsync(parentUserId)
+            ?? throw new KeyNotFoundException("Không tìm thấy người dùng.");
         return MapToDto(review, reviewer);
     }
 
@@ -83,21 +82,8 @@ public class ReviewService
     /// <summary>Lấy các HiringRecord đã hoàn thành mà Parent chưa đánh giá.</summary>
     public async Task<List<ReviewableHiringRecordDto>> GetReviewableHiringRecordsAsync(Guid parentUserId)
     {
-        var reviewedIds = await _db.Reviews
-            .Where(r => r.ReviewerUserId == parentUserId && !r.IsDeleted)
-            .Select(r => r.HiringRecordId)
-            .ToListAsync();
-
-        var records = await _db.HiringRecords
-            .Include(h => h.NannyProfile).ThenInclude(n => n.User)
-            .Include(h => h.ParentProfile)
-            .Where(h =>
-                h.ParentProfile.UserId == parentUserId &&
-                h.Status == HiringRecordCompleted &&
-                !h.IsDeleted &&
-                !reviewedIds.Contains(h.Id))
-            .OrderByDescending(h => h.EndDate)
-            .ToListAsync();
+        var reviewedIds = await _reviewRepo.GetHiringRecordIdsByReviewerAsync(parentUserId);
+        var records = await _hiringRepo.GetCompletedUnreviewedHiringsForParentAsync(parentUserId, reviewedIds);
 
         return records.Select(h => new ReviewableHiringRecordDto
         {
@@ -106,6 +92,21 @@ public class ReviewService
             NannyAvatarUrl = h.NannyProfile.User.AvatarUrl,
             StartDate = h.StartDate,
             EndDate = h.EndDate,
+        }).ToList();
+    }
+
+    /// <summary>Lấy tất cả đánh giá mà Parent đã gửi.</summary>
+    public async Task<List<MyReviewDto>> GetMyReviewsAsync(Guid reviewerUserId)
+    {
+        var reviews = await _reviewRepo.GetByReviewerAsync(reviewerUserId);
+        return reviews.Select(r => new MyReviewDto
+        {
+            Id = r.Id,
+            Rating = r.Rating,
+            Comment = r.Comment,
+            NannyName = $"{r.RevieweeUser.FirstName} {r.RevieweeUser.LastName}".Trim(),
+            NannyAvatarUrl = r.RevieweeUser.AvatarUrl,
+            CreatedAt = r.CreatedAt,
         }).ToList();
     }
 

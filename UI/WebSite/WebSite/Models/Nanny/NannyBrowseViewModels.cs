@@ -1,4 +1,4 @@
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace WebSite.Models.Nanny;
 
@@ -22,7 +22,7 @@ public class NannySearchRequestViewModel
     public int? TimeSlot { get; set; }
     public string? SkillIds { get; set; }
     public int Page { get; set; } = 1;
-    public int PageSize { get; set; } = 20;
+    public int PageSize { get; set; } = 100;
 }
 
 public class NannyBrowseApiResponse
@@ -144,9 +144,6 @@ public class NannyDetailViewModel : NannyListItemViewModel
     [JsonPropertyName("maxTravelDistance")]
     public int? MaxTravelDistance { get; set; }
 
-    [JsonPropertyName("profileCompleteness")]
-    public int ProfileCompleteness { get; set; }
-
     [JsonPropertyName("verifiedAt")]
     public DateTime? VerifiedAt { get; set; }
 }
@@ -183,3 +180,4 @@ public class NannyAvailabilitySlotViewModel
     [JsonPropertyName("timeSlotLabel")]
     public string TimeSlotLabel { get; set; } = "";
 }
+

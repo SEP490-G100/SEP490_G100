@@ -1,6 +1,6 @@
-const JOB_TYPES = { 1: 'Full-time', 2: 'Part-time', 3: 'Qua dem' };
-const MODERATION_LABELS = { 0: 'Dang cho duyet', 1: 'Da bi tu choi', 2: 'Cong khai' };
-const POST_STATUS_LABELS = { 1: 'Cong khai', 2: 'An bai dang' };
+﻿const JOB_TYPES = { 1: 'Toàn thời gian', 2: 'Bán thời gian', 3: 'Qua đêm' };
+const MODERATION_LABELS = { 0: 'Đang chờ duyệt', 1: 'Đã bị từ chối', 2: 'Công khai' };
+const POST_STATUS_LABELS = { 1: 'Công khai', 2: 'Ẩn bài đăng' };
 
 let map;
 let markers = [];
@@ -26,15 +26,25 @@ const ownedJobIds = new Set();
 const appliedJobIds = new Set();
 let ownedJobsLoaded = false;
 
-const DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
-const ROW_LABELS = ['Morning', 'Afternoon', 'Evening', 'Night'];
+const DAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+const ROW_LABELS = ['Sáng', 'Chiều', 'Tối', 'Đêm'];
+const SCHEDULE_PRESET_VALUES = Object.freeze({
+  MORNING_AFTERNOON: 'morning-afternoon',
+  AFTERNOON_EVENING: 'afternoon-evening',
+  WEEKDAY_ONLY: 'weekday-only',
+  ALL_WEEK: 'all-week'
+});
 
 const GEO_FALLBACK = {
-  'Ho Chi Minh': { lat: 10.776, lng: 106.701, radius: 7000, zoom: 11 },
-  'Thanh pho Ho Chi Minh': { lat: 10.776, lng: 106.701, radius: 7000, zoom: 11 },
-  'Ha Noi': { lat: 21.028, lng: 105.854, radius: 7000, zoom: 11 },
-  'Da Nang': { lat: 16.054, lng: 108.202, radius: 6500, zoom: 11 }
+  'ho chi minh': { lat: 10.776, lng: 106.701, radius: 7000, zoom: 11 },
+  'ha noi': { lat: 21.028, lng: 105.854, radius: 7000, zoom: 11 },
+  'da nang': { lat: 16.054, lng: 108.202, radius: 6500, zoom: 11 },
+  'can tho': { lat: 10.045, lng: 105.746, radius: 6500, zoom: 11 }
 };
+
+let pendingComplainJob = null;
+let isSubmittingJobComplain = false;
+let complainEditorsInitialized = false;
 
 function loadLocationData() {
   if (locationDataPromise) return locationDataPromise;
@@ -273,12 +283,15 @@ function bindLocationInputs(prefix) {
   cityInput.addEventListener('change', () => handleCityChange(prefix));
 }
 
-function attachSelectPicker(prefix, kind, selectId, inputId, emptyLabel, onValueChanged) {
+function attachSelectPicker(prefix, kind, selectId, inputId, emptyLabel, onValueChanged, alwaysShowAllOnOpen = false) {
   const select = document.getElementById(selectId);
   const input = document.getElementById(inputId);
   if (!select || !input || input.dataset.acReady === 'true') return;
 
   input.dataset.acReady = 'true';
+  // Non-location pickers are click-to-select only.
+  input.readOnly = true;
+  input.setAttribute('aria-readonly', 'true');
   input.parentElement?.classList.add('autocomplete-field');
 
   const dropdown = document.createElement('ul');
@@ -326,18 +339,22 @@ function attachSelectPicker(prefix, kind, selectId, inputId, emptyLabel, onValue
     });
   };
 
+  const openPickerQuery = () => {
+    const currentValue = input.value.trim();
+    const shouldOpenAll = alwaysShowAllOnOpen
+      || !currentValue
+      || select.value === ''
+      || normalizeText(currentValue) === normalizedEmptyLabel;
+    return shouldOpenAll ? '' : currentValue;
+  };
+
   syncFromSelect();
   input.addEventListener('focus', () => {
-    const currentValue = input.value.trim();
-    const shouldOpenAll = !currentValue || select.value === '' || normalizeText(currentValue) === normalizedEmptyLabel;
-    renderOptions(shouldOpenAll ? '' : currentValue);
+    renderOptions(openPickerQuery());
   });
   input.addEventListener('click', () => {
-    const currentValue = input.value.trim();
-    const shouldOpenAll = !currentValue || select.value === '' || normalizeText(currentValue) === normalizedEmptyLabel;
-    renderOptions(shouldOpenAll ? '' : currentValue);
+    renderOptions(openPickerQuery());
   });
-  input.addEventListener('input', () => renderOptions(input.value.trim()));
   input.addEventListener('blur', () => {
     setTimeout(() => {
       hideAutocomplete(prefix, kind);
@@ -352,7 +369,7 @@ function syncSelectPickerTexts() {
 
 function attachCreateSelectPickers() {
   attachSelectPicker('cf', 'typePicker', 'cf-type', 'cf-typeText', 'Chọn loại công việc');
-  attachSelectPicker('cf', 'childPicker', 'cf-childProfileId', 'cf-childProfileText', 'Chọn trẻ', () => handleCreateChildChange());
+  attachSelectPicker('cf', 'childPicker', 'cf-childProfileId', 'cf-childProfileText', 'Chọn bé thứ 1', () => handleCreateChildChange(), true);
   attachSelectPicker('cf', 'skillPicker', 'cf-skillSelect', 'cf-skillSelectText', 'Chọn kỹ năng cần yêu cầu');
 }
 
@@ -385,25 +402,80 @@ function escapeJs(value) {
   return String(value ?? '').replaceAll('\\', '\\\\').replaceAll("'", "\\'");
 }
 
+function buildScheduleByPreset(preset) {
+  const slots = [];
+  const addSlot = (dayOfWeek, timeSlot) => {
+    slots.push({ dayOfWeek, timeSlot });
+  };
+  const addAllSlotsOfDay = (dayOfWeek) => {
+    for (let timeSlot = 0; timeSlot < 4; timeSlot += 1) {
+      addSlot(dayOfWeek, timeSlot);
+    }
+  };
+
+  switch (preset) {
+    case SCHEDULE_PRESET_VALUES.MORNING_AFTERNOON:
+      for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek += 1) {
+        addSlot(dayOfWeek, 0);
+        addSlot(dayOfWeek, 1);
+      }
+      break;
+    case SCHEDULE_PRESET_VALUES.AFTERNOON_EVENING:
+      for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek += 1) {
+        addSlot(dayOfWeek, 1);
+        addSlot(dayOfWeek, 2);
+      }
+      break;
+    case SCHEDULE_PRESET_VALUES.WEEKDAY_ONLY:
+      for (let dayOfWeek = 0; dayOfWeek < 5; dayOfWeek += 1) {
+        addAllSlotsOfDay(dayOfWeek);
+      }
+      break;
+    case SCHEDULE_PRESET_VALUES.ALL_WEEK:
+      for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek += 1) {
+        addAllSlotsOfDay(dayOfWeek);
+      }
+      break;
+    default:
+      break;
+  }
+
+  return slots;
+}
+
+function applySchedulePreset(collection, preset) {
+  if (!Array.isArray(collection) || !preset) return false;
+  const slots = buildScheduleByPreset(preset);
+  if (!slots.length) return false;
+  collection.splice(0, collection.length, ...slots);
+  return true;
+}
+
+function setSchedulePresetValue(selectId, value) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+  select.value = value;
+}
+
 function formatSalary(value) {
-  if (!value) return 'Khong xac dinh';
+  if (!value) return 'Không xác định';
   const number = Number(value);
-  if (!Number.isFinite(number) || number <= 0) return 'Khong xac dinh';
+  if (!Number.isFinite(number) || number <= 0) return 'Không xác định';
   return new Intl.NumberFormat('vi-VN').format(number) + ' VND';
 }
 
 function formatSalaryRange(min, max, negotiable) {
-  if (negotiable) return 'Thuong luong';
+  if (negotiable) return 'Thỏa thuận';
   if (min && max) return `${formatSalary(min)} - ${formatSalary(max)}`;
-  if (min) return `Tu ${formatSalary(min)}`;
-  if (max) return `Den ${formatSalary(max)}`;
-  return 'Khong xac dinh';
+  if (min) return `Từ ${formatSalary(min)}`;
+  if (max) return `Đến ${formatSalary(max)}`;
+  return 'Không xác định';
 }
 
 function getJobPlanLabel(job) {
   const code = String(job?.subscriptionPlanCode || '').trim().toUpperCase();
-  if (code === 'PRO') return 'Parent Pro';
-  if (code === 'PLUS') return 'Parent Plus';
+  if (code === 'PRO') return 'Phụ huynh Pro';
+  if (code === 'PLUS') return 'Phụ huynh Plus';
   return '';
 }
 
@@ -416,9 +488,9 @@ function renderJobBenefitBadges(job) {
   }
 
   if (job?.searchPriority) {
-    badges.push('<span class="px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold">Uu tien tim kiem</span>');
+    badges.push('<span class="px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold">Ưu tiên tìm kiếm</span>');
   } else if (job?.featuredBadge) {
-    badges.push('<span class="px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold">Tin noi bat</span>');
+    badges.push('<span class="px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold">Tin nổi bật</span>');
   }
 
   return badges.join('');
@@ -463,10 +535,10 @@ function initMoneyInputs() {
 }
 
 function formatAgeRange(min, max) {
-  if (min && max) return `${min} - ${max} tuoi`;
-  if (min) return `Tu ${min} tuoi`;
-  if (max) return `Den ${max} tuoi`;
-  return 'Khong yeu cau';
+  if (min && max) return `${min} - ${max} tuổi`;
+  if (min) return `Từ ${min} tuổi`;
+  if (max) return `Đến ${max} tuổi`;
+  return 'Không yêu cầu';
 }
 
 function notifyToast(message, type = 'info') {
@@ -523,7 +595,7 @@ function updateJobFavoriteUi(jobId, isFavorite) {
   document.querySelectorAll(`.job-save-btn[data-job-id="${normalizedId}"]`).forEach((button) => {
     button.classList.toggle('active', !!isFavorite);
     button.setAttribute('aria-pressed', isFavorite ? 'true' : 'false');
-    button.title = isFavorite ? 'Bo luu bai dang' : 'Luu bai dang';
+    button.title = isFavorite ? 'Bỏ lưu bài đăng' : 'Lưu bài đăng';
     button.setAttribute('aria-label', button.title);
     const icon = button.querySelector('.material-icons-round');
     if (icon) icon.textContent = isFavorite ? 'bookmark' : 'bookmark_border';
@@ -543,12 +615,12 @@ async function toggleJobFavorite(jobId, event) {
   event?.stopPropagation?.();
 
   if (!isLoggedIn()) {
-    notifyToast('Vui long dang nhap de luu bai dang.', 'warning');
+    notifyToast('Vui lòng đăng nhập để lưu bài đăng.', 'error');
     return;
   }
 
   if (!isNannyRole()) {
-    notifyToast('Chi Nanny moi co quyen luu bai dang.', 'warning');
+    notifyToast('Chỉ bảo mẫu mới có quyền lưu bài đăng.', 'error');
     return;
   }
 
@@ -562,7 +634,7 @@ async function toggleJobFavorite(jobId, event) {
     const isSuccess = !!(json?.success || payload?.success);
 
     if (!isSuccess) {
-      notifyToast(json?.message || 'Khong the cap nhat luu bai dang.', 'error');
+      notifyToast(json?.message || 'Không thể cập nhật lưu bài đăng.', 'error');
       return;
     }
 
@@ -572,16 +644,17 @@ async function toggleJobFavorite(jobId, event) {
 
     setJobFavoriteState(jobId, favoriteState);
     notifyToast(
-      payload?.message || json?.message || (favoriteState ? 'Da luu bai dang.' : 'Da bo luu bai dang.'),
-      favoriteState ? 'success' : 'info'
+      payload?.message || json?.message || (favoriteState ? 'Đã lưu bài đăng.' : 'Đã bỏ lưu bài đăng.'),
+      'success'
     );
   } catch {
-    notifyToast('Khong the cap nhat luu bai dang.', 'error');
+    notifyToast('Không thể cập nhật lưu bài đăng.', 'error');
   }
 }
 
 async function loadOwnedJobs() {
-  if (!isLoggedIn()) {
+  // MyJobs is Parent-only — skip for Nanny/unauthenticated users to avoid 403 console noise
+  if (!isLoggedIn() || (typeof IS_PARENT !== 'undefined' && !IS_PARENT)) {
     setOwnedJobs([]);
     ownedJobsLoaded = true;
     return;
@@ -608,10 +681,230 @@ function canApplyJob(job) {
   return moderationStatus === 2 && postStatus === 1;
 }
 
+function canComplainJob(job) {
+  if (!isLoggedIn() || !job?.id) return false;
+  if (canEditJob(job)) return false;
+  return true;
+}
+
+function extractPlainText(html) {
+  const div = document.createElement('div');
+  div.innerHTML = String(html ?? '');
+  return (div.textContent || div.innerText || '').replace(/\s+/g, ' ').trim();
+}
+
+function getComplainEditorContent(editorId) {
+  if (typeof tinymce !== 'undefined') {
+    const editor = tinymce.get(editorId);
+    if (editor) return editor.getContent();
+  }
+  const input = document.getElementById(editorId);
+  return input ? (input.value || '') : '';
+}
+
+function setComplainEditorContent(editorId, value) {
+  if (typeof tinymce !== 'undefined') {
+    const editor = tinymce.get(editorId);
+    if (editor) {
+      editor.setContent(value || '');
+      return;
+    }
+  }
+  const input = document.getElementById(editorId);
+  if (input) input.value = value || '';
+}
+
+function appendToComplainEvidence(htmlSnippet) {
+  if (!htmlSnippet) return;
+
+  if (typeof tinymce !== 'undefined') {
+    const editor = tinymce.get('jobComplainEvidence');
+    if (editor) {
+      editor.insertContent(htmlSnippet);
+      return;
+    }
+  }
+
+  const evidenceEl = document.getElementById('jobComplainEvidence');
+  if (!evidenceEl) return;
+  evidenceEl.value = `${evidenceEl.value || ''}\n${extractPlainText(htmlSnippet)}`.trim();
+}
+
+function ensureComplainEditorsInitialized() {
+  if (complainEditorsInitialized) return;
+  if (typeof tinymce === 'undefined') return;
+
+  tinymce.init({
+    selector: '#jobComplainReason',
+    license_key: 'gpl',
+    menubar: false,
+    branding: false,
+    plugins: 'lists code',
+    toolbar: 'undo redo | bold italic underline | bullist numlist | removeformat | code',
+    height: 160,
+    statusbar: false,
+    content_style: 'body{font-family:Segoe UI,Arial,sans-serif;font-size:14px;line-height:1.6;}'
+  });
+
+  tinymce.init({
+    selector: '#jobComplainEvidence',
+    license_key: 'gpl',
+    menubar: false,
+    branding: false,
+    plugins: 'link lists code image media',
+    toolbar: 'undo redo | bold italic underline | bullist numlist | link image media | removeformat | code',
+    height: 220,
+    automatic_uploads: true,
+    images_upload_handler: function (blobInfo) {
+      return uploadSingleComplainImageForTiny(blobInfo);
+    },
+    file_picker_types: 'image media',
+    file_picker_callback: function (callback, _value, meta) {
+      handleComplainTinyFilePicker(callback, meta);
+    },
+    statusbar: false,
+    content_style: 'body{font-family:Segoe UI,Arial,sans-serif;font-size:14px;line-height:1.6;} img,video{max-width:100%;height:auto;border-radius:8px;}'
+  });
+
+  complainEditorsInitialized = true;
+}
+
+async function uploadComplainMediaFiles(files, endpoint, emptyMessage) {
+  if (!files || !files.length) throw new Error(emptyMessage);
+
+  const formData = new FormData();
+  Array.from(files).forEach((file) => formData.append('files', file));
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    credentials: 'same-origin',
+    body: formData
+  });
+  const raw = await response.text();
+  let result = null;
+
+  if (raw) {
+    try {
+      result = JSON.parse(raw);
+    } catch {
+      if (response.redirected && response.url && response.url.includes('/Auth/Login')) {
+        throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      }
+      throw new Error('Máy chủ trả về dữ liệu không hợp lệ khi tải media.');
+    }
+  }
+
+  if (!response.ok) {
+    throw new Error(result?.message || `Tải media thất bại (HTTP ${response.status}).`);
+  }
+
+  if (!result?.success || !result?.data?.urls || !Array.isArray(result.data.urls) || result.data.urls.length === 0) {
+    throw new Error(result?.message || 'Tải media thất bại.');
+  }
+
+  return result.data.urls;
+}
+
+function pickLocalComplainFile(accept, multiple = true) {
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = accept;
+    input.multiple = !!multiple;
+    input.onchange = () => {
+      const files = input.files ? Array.from(input.files) : [];
+      resolve(multiple ? files : (files[0] || null));
+    };
+    input.click();
+  });
+}
+
+function uploadSingleComplainImageForTiny(blobInfo) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const urls = await uploadComplainMediaFiles(
+        [blobInfo.blob()],
+        '/Report/UploadReportMedia?mediaType=image',
+        'Vui lòng chọn ít nhất một ảnh.'
+      );
+      resolve(urls[0]);
+    } catch (error) {
+      reject({ message: error?.message || 'Không thể tải ảnh lên.' });
+    }
+  });
+}
+
+function handleComplainTinyFilePicker(callback, meta) {
+  const isImage = meta.filetype === 'image';
+  const accept = isImage
+    ? 'image/*'
+    : 'video/mp4,video/webm,video/ogg,video/quicktime,.mp4,.webm,.ogg,.mov';
+  const endpoint = isImage
+    ? '/Report/UploadReportMedia?mediaType=image'
+    : '/Report/UploadReportMedia?mediaType=video';
+
+  pickLocalComplainFile(accept, false).then(async (file) => {
+    if (!file) return;
+
+    try {
+      const urls = await uploadComplainMediaFiles([file], endpoint, 'Vui lòng chọn tệp để tải lên.');
+      const url = urls[0];
+      if (isImage) callback(url, { alt: file.name || 'image' });
+      else callback(url, { source2: '', poster: '' });
+    } catch (error) {
+      notifyToast(error?.message || 'Không thể tải tệp media lên.', 'error');
+    }
+  });
+}
+
+const complainMediaUploadConfig = {
+  image: {
+    accept: 'image/*',
+    endpoint: '/Report/UploadReportMedia?mediaType=image',
+    emptyMessage: 'Vui lòng chọn ít nhất một ảnh.',
+    successMessage: 'Tải ảnh lên thành công.',
+    failedMessage: 'Không thể tải ảnh lên.',
+    buildHtml: (url) => `<p><img src="${url}" alt="Ảnh kèm khiếu nại" /></p>`
+  },
+  video: {
+    accept: 'video/mp4,video/webm,video/ogg,video/quicktime,.mp4,.webm,.ogg,.mov',
+    endpoint: '/Report/UploadReportMedia?mediaType=video',
+    emptyMessage: 'Vui lòng chọn ít nhất một video.',
+    successMessage: 'Tải video lên thành công.',
+    failedMessage: 'Không thể tải video lên.',
+    buildHtml: (url) => `<p><video controls preload="metadata" src="${url}"></video></p>`
+  }
+};
+
+async function uploadComplainLocalMedia(mediaType) {
+  const cfg = complainMediaUploadConfig[mediaType];
+  if (!cfg) return;
+
+  try {
+    const files = await pickLocalComplainFile(cfg.accept, true);
+    if (!files.length) return;
+
+    const urls = await uploadComplainMediaFiles(files, cfg.endpoint, cfg.emptyMessage);
+    urls.forEach((url) => appendToComplainEvidence(cfg.buildHtml(url)));
+    notifyToast(cfg.successMessage, 'success');
+  } catch (error) {
+    notifyToast(error?.message || cfg.failedMessage, 'error');
+  }
+}
+
+async function uploadComplainLocalImages() {
+  await uploadComplainLocalMedia('image');
+}
+
+async function uploadComplainLocalVideos() {
+  await uploadComplainLocalMedia('video');
+}
+
 function updatePreviewActionButtons(job) {
   const editBtn = document.getElementById('pv-editBtn');
   const applyBtn = document.getElementById('pv-applyBtn');
   const applyTextEl = document.getElementById('pv-applyBtnText');
+  const complainBtn = document.getElementById('pv-complainBtn');
 
   if (editBtn) {
     const canEditByOwner = canEditJob(job);
@@ -632,13 +925,23 @@ function updatePreviewActionButtons(job) {
       applyBtn.classList.toggle('cursor-not-allowed', applied);
       applyBtn.dataset.jobId = job.id;
       applyBtn.onclick = (event) => applyJob(job.id, event);
-      if (applyTextEl) applyTextEl.textContent = applied ? 'Da ung tuyen' : 'Ung tuyen ngay';
+      if (applyTextEl) applyTextEl.textContent = applied ? 'Đã ứng tuyển' : 'Ứng tuyển ngay';
     } else {
       applyBtn.disabled = false;
       applyBtn.classList.remove('opacity-60', 'cursor-not-allowed');
       applyBtn.onclick = null;
       applyBtn.removeAttribute('data-job-id');
-      if (applyTextEl) applyTextEl.textContent = 'Ung tuyen ngay';
+      if (applyTextEl) applyTextEl.textContent = 'Ứng tuyển ngay';
+    }
+  }
+
+  if (complainBtn) {
+    const canComplain = canComplainJob(job);
+    complainBtn.classList.toggle('hidden', !canComplain);
+    if (canComplain) {
+      complainBtn.onclick = (event) => openJobComplainModal(job, event);
+    } else {
+      complainBtn.onclick = null;
     }
   }
 }
@@ -647,37 +950,42 @@ async function applyJob(jobId, event) {
   event?.preventDefault?.();
   event?.stopPropagation?.();
 
+  const realtimeToastType = 'job-application-submitted';
+
   if (!isLoggedIn()) {
-    notifyToast('Vui long dang nhap de ung tuyen bai dang.', 'warning');
+    notifyToast('Vui lòng đăng nhập để ứng tuyển bài đăng.', 'error');
     window.location.href = '/Auth/Login';
     return;
   }
 
   if (!isNannyRole()) {
-    notifyToast('Chi Nanny moi co quyen ung tuyen bai dang.', 'warning');
+    notifyToast('Chỉ bảo mẫu mới có quyền ứng tuyển bài đăng.', 'error');
     return;
   }
 
   if (!jobId) {
-    notifyToast('Khong tim thay bai dang de ung tuyen.', 'error');
+    notifyToast('Không tìm thấy bài đăng để ứng tuyển.', 'error');
     return;
   }
 
   if (isJobApplied(jobId)) {
-    notifyToast('Ban da gui don ung tuyen cho bai dang nay.', 'info');
+    notifyToast('Bạn đã gửi đơn ứng tuyển cho bài đăng này.', 'error');
     return;
   }
 
   const applyBtn = document.getElementById('pv-applyBtn');
   const applyTextEl = document.getElementById('pv-applyBtnText');
-  const previousText = applyTextEl?.textContent || 'Ung tuyen ngay';
+  const previousText = applyTextEl?.textContent || 'Ứng tuyển ngay';
 
   try {
     if (applyBtn) {
       applyBtn.disabled = true;
       applyBtn.classList.add('opacity-60', 'cursor-not-allowed');
     }
-    if (applyTextEl) applyTextEl.textContent = 'Dang gui...';
+    if (applyTextEl) applyTextEl.textContent = 'Đang gửi...';
+
+    window.__nmNotificationToastSuppressType = realtimeToastType;
+    window.__nmNotificationToastSuppressUntil = Date.now() + 5000;
 
     const response = await fetch(`/Search/ApplyJob?jobPostingId=${encodeURIComponent(jobId)}`, {
       method: 'POST',
@@ -688,7 +996,11 @@ async function applyJob(jobId, event) {
     const isSuccess = !!(json?.success || payload?.success);
 
     if (!isSuccess) {
-      notifyToast(json?.message || payload?.message || 'Khong the ung tuyen bai dang.', 'error');
+      if (String(window.__nmNotificationToastSuppressType || '').trim().toLowerCase() === realtimeToastType) {
+        window.__nmNotificationToastSuppressType = '';
+        window.__nmNotificationToastSuppressUntil = 0;
+      }
+      notifyToast(json?.message || payload?.message || 'Không thể ứng tuyển bài đăng.', 'error');
       if (applyBtn) {
         applyBtn.disabled = false;
         applyBtn.classList.remove('opacity-60', 'cursor-not-allowed');
@@ -701,15 +1013,130 @@ async function applyJob(jobId, event) {
     const activeJob = currentJobs.find((job) => normalizeGuid(job?.id) === normalizeGuid(jobId));
     if (activeJob) updatePreviewActionButtons(activeJob);
 
-    notifyToast('Gui don thanh cong. Vui long cho Parent phan hoi.', 'success');
+    notifyToast(payload?.message || json?.message || 'Gửi đơn thành công. Vui lòng chờ phụ huynh phản hồi.', 'success');
     window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
   } catch {
-    notifyToast('Khong the ung tuyen bai dang.', 'error');
+    if (String(window.__nmNotificationToastSuppressType || '').trim().toLowerCase() === realtimeToastType) {
+      window.__nmNotificationToastSuppressType = '';
+      window.__nmNotificationToastSuppressUntil = 0;
+    }
+    notifyToast('Không thể ứng tuyển bài đăng.', 'error');
     if (applyBtn) {
       applyBtn.disabled = false;
       applyBtn.classList.remove('opacity-60', 'cursor-not-allowed');
     }
     if (applyTextEl) applyTextEl.textContent = previousText;
+  }
+}
+
+function openJobComplainModal(job, event) {
+  event?.preventDefault?.();
+  event?.stopPropagation?.();
+
+  if (!isLoggedIn()) {
+    notifyToast('Vui lòng đăng nhập để gửi khiếu nại.', 'error');
+    window.location.href = '/Auth/Login';
+    return;
+  }
+
+  if (!canComplainJob(job)) {
+    notifyToast('Bạn không thể khiếu nại bài đăng của chính mình.', 'error');
+    return;
+  }
+
+  pendingComplainJob = job;
+  isSubmittingJobComplain = false;
+  ensureComplainEditorsInitialized();
+
+  const targetEl = document.getElementById('jobComplainTarget');
+  const jobPostingIdInput = document.getElementById('jobComplainJobPostingId');
+  if (targetEl) targetEl.textContent = job?.title ? `Bài đăng: ${job.title}` : 'Bài đăng';
+  if (jobPostingIdInput) jobPostingIdInput.value = job?.id || '';
+
+  setComplainEditorContent('jobComplainReason', '');
+  setComplainEditorContent('jobComplainEvidence', '');
+
+  const submitBtn = document.getElementById('jobComplainSubmitBtn');
+  if (submitBtn) {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Gửi khiếu nại';
+  }
+
+  document.getElementById('jobComplainModal')?.classList.add('show');
+}
+
+function closeJobComplainModal() {
+  document.getElementById('jobComplainModal')?.classList.remove('show');
+  const jobPostingIdInput = document.getElementById('jobComplainJobPostingId');
+  if (jobPostingIdInput) jobPostingIdInput.value = '';
+  pendingComplainJob = null;
+  isSubmittingJobComplain = false;
+}
+
+async function submitJobComplain() {
+  if (!pendingComplainJob?.id) {
+    notifyToast('Không tìm thấy bài đăng cần khiếu nại.', 'error');
+    return;
+  }
+
+  const reasonEl = document.getElementById('jobComplainReason');
+  const submitBtn = document.getElementById('jobComplainSubmitBtn');
+
+  const reasonHtml = getComplainEditorContent('jobComplainReason');
+  const evidenceHtml = getComplainEditorContent('jobComplainEvidence');
+  const reason = extractPlainText(reasonHtml);
+  const evidence = String(evidenceHtml || '').trim();
+
+  if (reason.length < 5) {
+    notifyToast('Lý do khiếu nại phải có ít nhất 5 ký tự.', 'error');
+    if (typeof tinymce !== 'undefined' && tinymce.get('jobComplainReason')) tinymce.get('jobComplainReason').focus();
+    else reasonEl?.focus();
+    return;
+  }
+
+  if (isSubmittingJobComplain) return;
+  isSubmittingJobComplain = true;
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Đang gửi...';
+  }
+
+  try {
+    const response = await fetch(`/Search/ComplainJobPosting?jobPostingId=${encodeURIComponent(pendingComplainJob.id)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        reason,
+        evidence: evidence || null
+      })
+    });
+
+    const json = await response.json();
+    const payload = json?.raw && typeof json.raw === 'object' ? json.raw : json;
+    const isSuccess = !!(json?.success || payload?.success);
+
+    if (!isSuccess) {
+      notifyToast(json?.message || payload?.message || 'Không thể gửi khiếu nại bài đăng.', 'error');
+      isSubmittingJobComplain = false;
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Gửi khiếu nại';
+      }
+      return;
+    }
+
+    closeJobComplainModal();
+    notifyToast('Gửi khiếu nại thành công.', 'success');
+    window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
+  } catch {
+    notifyToast('Không thể gửi khiếu nại bài đăng.', 'error');
+    isSubmittingJobComplain = false;
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Gửi khiếu nại';
+    }
   }
 }
 
@@ -755,10 +1182,26 @@ function initMap() {
   const mapEl = document.getElementById('map');
   if (map || !mapEl || typeof L === 'undefined') return;
   map = L.map('map', { zoomControl: true }).setView([10.776, 106.701], 11);
+  window.__leafletMap = map;   // expose for rec panel (window.map = DOM element, not usable)
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; CartoDB',
     maxZoom: 19
   }).addTo(map);
+
+  map.whenReady(() => {
+    try {
+      map.invalidateSize({ animate: false });
+    } catch (_) {
+      /* ignore */
+    }
+  });
+  setTimeout(() => {
+    try {
+      map?.invalidateSize({ animate: false });
+    } catch (_) {
+      /* ignore */
+    }
+  }, 0);
 
   map.on('moveend', () => {
     if (suppressNextMapSearch) {
@@ -794,7 +1237,8 @@ function getAreaPresentation(job) {
     };
   }
 
-  const fallback = GEO_FALLBACK[job?.city] || GEO_FALLBACK['Ho Chi Minh'];
+  const cityKey = normalizeAdministrativeName(job?.city || '');
+  const fallback = GEO_FALLBACK[cityKey] || GEO_FALLBACK['ho chi minh'];
   return { ...fallback };
 }
 
@@ -804,6 +1248,32 @@ function clearMapMarkers() {
     item.circle?.remove();
   });
   markers = [];
+}
+
+// Helper for rec panel to push markers into the shared markers array
+function pushRecMarker(item) { markers.push(item); }
+
+// Helper for rec panel to suppress the map's moveend search (window.xxx ≠ let var)
+function setSuppressNextSearch() { suppressNextMapSearch = true; }
+
+/** Tránh lỗi Leaflet layerPointToContainerPoint khi mở popup trước khi map/container sẵn sàng. */
+function safeOpenMapPopup(marker) {
+  if (!marker || !map) return;
+  try {
+    map.invalidateSize({ animate: false });
+  } catch (_) {
+    /* ignore */
+  }
+  requestAnimationFrame(() => {
+    try {
+      const c = map.getContainer?.();
+      if (!c || !c.isConnected) return;
+      if (marker.getMap?.() !== map) return;
+      marker.openPopup();
+    } catch (_) {
+      /* ignore */
+    }
+  });
 }
 
 function setMarkerHover(idx, active, openPopup = false) {
@@ -816,7 +1286,9 @@ function setMarkerHover(idx, active, openPopup = false) {
     fillOpacity: active ? 0.18 : 0.1,
     weight: active ? 2 : 1
   });
-  if (openPopup && active) markerData.marker?.openPopup();
+  if (openPopup && active) {
+    safeOpenMapPopup(markerData.marker);
+  }
 }
 
 function highlightOnMap(idx) {
@@ -829,7 +1301,7 @@ function highlightOnMap(idx) {
 
 function renderReadOnlySchedule(slots) {
   if (!Array.isArray(slots) || !slots.length) {
-    return '<span class="text-sm text-gray-400">Chua chon lich cu the.</span>';
+    return '<span class="text-sm text-gray-400">Chưa chọn lịch cụ thể.</span>';
   }
   const selectedSet = new Set(slots.map((slot) => `${slot.dayOfWeek}-${slot.timeSlot}`));
   let html = '<div class="schedule-grid schedule-grid--readonly"><div></div>';
@@ -850,17 +1322,24 @@ function renderJobs(jobs) {
   const resultCount = document.getElementById('resultCount');
   if (!list || !resultCount) return;
 
-  resultCount.textContent = `${jobs.length} tin dang`;
+  resultCount.textContent = `${jobs.length} tin đăng`;
   clearMapMarkers();
+  if (map) {
+    try { map.invalidateSize({ animate: false }); } catch (_) {}
+  }
 
   if (!jobs.length) {
     list.innerHTML = `
       <div class="rounded-[24px] border border-dashed border-slate-200 bg-white px-6 py-16 text-center text-slate-500">
         <span class="material-icons-round text-[34px] text-orange-300">search_off</span>
-        <h3 class="mt-3 text-lg font-bold text-slate-900">Khong tim thay bai dang</h3>
-        <p class="mt-2 text-sm text-slate-500">Thu tim o thanh pho khac hoac doi tu khoa.</p>
+        <h3 class="mt-3 text-lg font-bold text-slate-900">Không tìm thấy bài đăng</h3>
+        <p class="mt-2 text-sm text-slate-500">Thử tìm ở thành phố khác hoặc đổi từ khoá.</p>
       </div>`;
     return;
+  }
+
+  if (!map) {
+    initMap();
   }
 
   list.innerHTML = jobs.map((job, idx) => `
@@ -868,8 +1347,8 @@ function renderJobs(jobs) {
              data-idx="${idx}" data-id="${escapeHtml(job.id)}">
       <div class="flex items-start justify-between gap-3">
         <div class="min-w-0">
-          <h3 class="text-[18px] leading-6 font-extrabold text-slate-900">${escapeHtml(job.title || 'Tin dang')}</h3>
-          <p class="mt-2 text-sm font-semibold text-slate-500">${escapeHtml(job.parentName || 'Phu huynh')}</p>
+          <h3 class="text-[18px] leading-6 font-extrabold text-slate-900">${escapeHtml(job.title || 'Tin đăng')}</h3>
+          <p class="mt-2 text-sm font-semibold text-slate-500">${escapeHtml(job.parentName || 'Phụ huynh')}</p>
         </div>
         <div class="job-card__head-right">
           <span class="shrink-0 rounded-full bg-orange-50 px-3 py-1 text-xs font-extrabold text-orange-700">${escapeHtml(formatSalaryRange(job.salaryMin, job.salaryMax, job.salaryNegotiable))}</span>
@@ -878,47 +1357,49 @@ function renderJobs(jobs) {
                     class="job-save-btn ${job.isFavorite ? 'active' : ''}"
                     data-job-id="${escapeHtml(normalizeGuid(job.id))}"
                     aria-pressed="${job.isFavorite ? 'true' : 'false'}"
-                    aria-label="${job.isFavorite ? 'Bo luu bai dang' : 'Luu bai dang'}"
-                    title="${job.isFavorite ? 'Bo luu bai dang' : 'Luu bai dang'}"
+                    aria-label="${job.isFavorite ? 'Bỏ lưu bài đăng' : 'Lưu bài đăng'}"
+                    title="${job.isFavorite ? 'Bỏ lưu bài đăng' : 'Lưu bài đăng'}"
                     onclick="toggleJobFavorite('${escapeJs(job.id)}', event)">
               <span class="material-icons-round">${job.isFavorite ? 'bookmark' : 'bookmark_border'}</span>
             </button>` : ''}
         </div>
       </div>
-      <p class="mt-3 text-sm font-semibold text-orange-600">${escapeHtml([job.location, job.district, job.city].filter(Boolean).join(', ') || 'Chua cap nhat dia diem')}</p>
-      <p class="mt-3 text-sm leading-6 text-slate-500 line-clamp-2">${escapeHtml(job.description || 'Khong co mo ta.')}</p>
+      <p class="mt-3 text-sm font-semibold text-orange-600">${escapeHtml([job.location, job.district, job.city].filter(Boolean).join(', ') || 'Chưa cập nhật địa điểm')}</p>
+      <p class="mt-3 text-sm leading-6 text-slate-500 line-clamp-2">${escapeHtml(job.description || 'Không có mô tả.')}</p>
       <div class="mt-4 flex flex-wrap gap-2">
         ${renderJobBenefitBadges(job)}
-        <span class="px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold">${escapeHtml(JOB_TYPES[job.jobType] || 'Khac')}</span>
-        <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">${escapeHtml(MODERATION_LABELS[job.moderationStatus] || 'Dang cap nhat')}</span>
-        <span class="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold">${job.numberOfChildren ? `${job.numberOfChildren} be` : 'Chua ro'}</span>
-        ${isNannyRole() && isJobApplied(job.id) ? '<span class="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold">Da ung tuyen</span>' : ''}
+        <span class="px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold">${escapeHtml(JOB_TYPES[job.jobType] || 'Khác')}</span>
+        <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">${escapeHtml(MODERATION_LABELS[job.moderationStatus] || 'Đang cập nhật')}</span>
+        <span class="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold">${job.numberOfChildren ? `${job.numberOfChildren} bé` : 'Chưa rõ'}</span>
+        ${isNannyRole() && isJobApplied(job.id) ? '<span class="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold">Đã ứng tuyển</span>' : ''}
       </div>
     </article>`).join('');
 
-  jobs.forEach((job) => {
-    const point = getAreaPresentation(job);
-    const icon = L.divIcon({
-      className: '',
-      html: `
+  if (map && typeof L !== 'undefined') {
+    jobs.forEach((job) => {
+      const point = getAreaPresentation(job);
+      const icon = L.divIcon({
+        className: '',
+        html: `
         <div class="job-map-marker">
           <span class="job-map-marker__halo"></span>
           <span class="job-map-marker__pin"><span class="job-map-marker__core"></span></span>
         </div>`,
-      iconSize: [26, 34],
-      iconAnchor: [13, 28]
+        iconSize: [26, 34],
+        iconAnchor: [13, 28]
+      });
+      const marker = L.marker([point.lat, point.lng], { icon }).addTo(map);
+      const circle = L.circle([point.lat, point.lng], {
+        radius: point.radius,
+        color: '#fdba74',
+        fillColor: '#fdba74',
+        fillOpacity: 0.1,
+        weight: 1
+      }).addTo(map);
+      marker.bindPopup(`<div class="text-sm font-semibold text-slate-700">${escapeHtml(job.title || 'Tin đăng')}</div><div class="text-xs text-slate-500 mt-1">Khu vực gần đúng</div>`);
+      markers.push({ marker, circle, point, element: marker.getElement() });
     });
-    const marker = L.marker([point.lat, point.lng], { icon }).addTo(map);
-    const circle = L.circle([point.lat, point.lng], {
-      radius: point.radius,
-      color: '#fdba74',
-      fillColor: '#fdba74',
-      fillOpacity: 0.1,
-      weight: 1
-    }).addTo(map);
-    marker.bindPopup(`<div class="text-sm font-semibold text-slate-700">${escapeHtml(job.title || 'Tin dang')}</div><div class="text-xs text-slate-500 mt-1">Khu vuc gan dung</div>`);
-    markers.push({ marker, circle, point, element: marker.getElement() });
-  });
+  }
 
   list.querySelectorAll('.job-card').forEach((card) => {
     const idx = Number(card.dataset.idx);
@@ -966,10 +1447,134 @@ function setProfileFields(prefix, child) {
   if (specialNeeds) specialNeeds.value = child?.specialNeeds || '';
 }
 
+function normalizeChildrenCount(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 1;
+  return Math.min(10, Math.max(1, Math.trunc(parsed)));
+}
+
+function getTotalChildProfiles(collection) {
+  return Array.isArray(collection) ? collection.length : 0;
+}
+
+/**
+ * @param {string} selectId
+ * @param {number} totalProfiles - số hồ sơ bé đang có (0 = chưa tải / chưa có)
+ * @param {number|string} [preferredValue] - giá trị mong muốn (sẽ clamp trong 1..max)
+ */
+function ensureChildrenCountOptions(selectId, totalProfiles, preferredValue) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+
+  const total = Number(totalProfiles) || 0;
+  const max = total > 0 ? Math.min(10, total) : 1;
+  const rawPreferred = preferredValue ?? select.value ?? 1;
+  const preferred = normalizeChildrenCount(rawPreferred);
+  const clamped = Math.min(Math.max(preferred, 1), max);
+
+  select.innerHTML = '';
+  for (let i = 1; i <= max; i += 1) {
+    const opt = document.createElement('option');
+    opt.value = String(i);
+    opt.textContent = `${i} bé`;
+    select.appendChild(opt);
+  }
+  select.value = String(clamped);
+
+  if (total <= 0) {
+    select.disabled = true;
+    select.setAttribute('aria-readonly', 'true');
+  } else {
+    select.disabled = false;
+    select.removeAttribute('aria-readonly');
+  }
+}
+
 function getSelectedChild(prefix) {
   const childId = document.getElementById(`${prefix}-childProfileId`)?.value;
   const collection = prefix === 'cf' ? createChildren : editChildren;
   return collection.find((child) => String(child.id).toLowerCase() === String(childId).toLowerCase()) || null;
+}
+
+function getCreateSelectedChildren(requiredCount) {
+  const count = normalizeChildrenCount(requiredCount);
+  if (!Array.isArray(createChildren) || createChildren.length === 0) return [];
+
+  const selected = [];
+  const selectedIds = new Set();
+  const tryAddChild = (childId) => {
+    const normalizedId = String(childId || '').toLowerCase();
+    if (!normalizedId || selectedIds.has(normalizedId)) return;
+    const child = createChildren.find((item) => String(item.id).toLowerCase() === normalizedId);
+    if (!child) return;
+    selectedIds.add(normalizedId);
+    selected.push(child);
+  };
+
+  tryAddChild(document.getElementById('cf-childProfileId')?.value || '');
+
+  for (let idx = 0; idx < createChildren.length && selected.length < count; idx += 1) {
+    const fallbackId = String(createChildren[idx]?.id || '').toLowerCase();
+    if (!fallbackId || selectedIds.has(fallbackId)) continue;
+    selectedIds.add(fallbackId);
+    selected.push(createChildren[idx]);
+  }
+
+  return selected;
+}
+
+function renderCreateExtraChildProfiles() {
+  const container = document.getElementById('cf-extraChildProfiles');
+  if (!container) return;
+
+  const requiredCount = normalizeChildrenCount(document.getElementById('cf-children')?.value || 1);
+  if (requiredCount <= 1) {
+    container.innerHTML = '';
+    return;
+  }
+
+  const selectedChildren = getCreateSelectedChildren(requiredCount);
+  let html = '';
+
+  for (let idx = 1; idx < requiredCount; idx += 1) {
+    const child = selectedChildren[idx] || null;
+    const displayIndex = idx + 1;
+
+    if (!child) {
+      html += `
+        <div class="child-profile-panel child-profile-panel--missing">
+          <div class="child-profile-panel__head">
+            <p class="child-profile-panel__title">Bé thứ ${displayIndex}</p>
+          </div>
+          <p class="child-profile-panel__empty">Chưa đủ hồ sơ bé để hiển thị thông tin cho bé này.</p>
+        </div>`;
+      continue;
+    }
+
+    html += `
+      <div class="child-profile-panel">
+        <div class="child-profile-panel__head">
+          <p class="child-profile-panel__title">Bé thứ ${displayIndex}</p>
+          <span class="child-profile-panel__badge">${escapeHtml(child.label || `Bé ${displayIndex}`)}</span>
+        </div>
+        <div class="child-profile-grid">
+          <div class="child-profile-field">
+            <span class="child-profile-field__label">Đặc điểm</span>
+            <p class="child-profile-field__value">${escapeHtml(child.characteristic || 'Chưa cập nhật')}</p>
+          </div>
+          <div class="child-profile-field">
+            <span class="child-profile-field__label">Nhóm tuổi</span>
+            <p class="child-profile-field__value">${escapeHtml(child.birthTypeLabel || 'Chưa cập nhật')}</p>
+          </div>
+          <div class="child-profile-field child-profile-field--full">
+            <span class="child-profile-field__label">Nhu cầu đặc biệt</span>
+            <p class="child-profile-field__value">${escapeHtml(child.specialNeeds || 'Không có')}</p>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  container.innerHTML = html;
 }
 
 function renderChildren(prefix, selectedChildId) {
@@ -978,23 +1583,50 @@ function renderChildren(prefix, selectedChildId) {
   const collection = prefix === 'cf' ? createChildren : editChildren;
   select.innerHTML = collection.length
     ? collection.map((child) => `<option value="${escapeHtml(child.id)}">${escapeHtml(child.label)}</option>`).join('')
-    : '<option value="">Chua co Child Profile</option>';
+    : '<option value="">Chưa có hồ sơ bé</option>';
   if (selectedChildId) select.value = selectedChildId;
   syncSelectPickerTexts();
   setProfileFields(prefix, getSelectedChild(prefix));
+  if (prefix === 'cf') handleCreateChildrenCountChange();
 }
 
 function applyPrefill(prefix, data, selectedChildId) {
-  const childrenInput = document.getElementById(`${prefix}-children`);
-  if (childrenInput && (!childrenInput.value || Number(childrenInput.value) < 1)) {
-    childrenInput.value = data?.numberOfChildren || 1;
-  }
   const collection = prefix === 'cf' ? createChildren : editChildren;
-  collection.splice(0, collection.length, ...((data?.children) || []));
-  renderChildren(prefix, selectedChildId || data?.selectedChildProfileId);
+  const rawChildren = data?.children ?? data?.Children;
+  const childrenList = Array.isArray(rawChildren) ? rawChildren : [];
+  collection.splice(0, collection.length, ...childrenList);
+  const childrenInput = document.getElementById(`${prefix}-children`);
+  if (childrenInput) {
+    const totalChildren = getTotalChildProfiles(collection);
+    if (prefix === 'cf') {
+      const rawNum = data?.numberOfChildren ?? data?.NumberOfChildren;
+      const preferredFromData = rawNum != null ? normalizeChildrenCount(rawNum) : null;
+      const preferredCount = totalChildren > 0
+        ? (preferredFromData != null ? Math.min(preferredFromData, totalChildren) : totalChildren)
+        : normalizeChildrenCount(rawNum ?? childrenInput.value ?? 1);
+      ensureChildrenCountOptions('cf-children', totalChildren, preferredCount);
+    } else {
+      const preferredCount = totalChildren > 0
+        ? totalChildren
+        : normalizeChildrenCount(data?.numberOfChildren ?? data?.NumberOfChildren ?? childrenInput.value ?? 1);
+      childrenInput.value = String(normalizeChildrenCount(preferredCount));
+    }
+  }
+  renderChildren(prefix, selectedChildId || data?.selectedChildProfileId || data?.SelectedChildProfileId);
 }
 
 function handleCreateChildChange() {
+  setProfileFields('cf', getSelectedChild('cf'));
+  handleCreateChildrenCountChange();
+}
+
+function handleCreateChildrenCountChange() {
+  const countInput = document.getElementById('cf-children');
+  if (!countInput) return;
+
+  const totalChildren = getTotalChildProfiles(createChildren);
+  ensureChildrenCountOptions('cf-children', totalChildren, countInput.value);
+  renderCreateExtraChildProfiles();
   setProfileFields('cf', getSelectedChild('cf'));
 }
 
@@ -1025,13 +1657,43 @@ function toggleScheduleValue(collection, dayOfWeek, timeSlot) {
 }
 
 function toggleCreateSchedule(dayOfWeek, timeSlot) {
+  setSchedulePresetValue('cf-schedulePreset', '');
   toggleScheduleValue(createSchedule, dayOfWeek, timeSlot);
   renderScheduleGrid('cf-schedule', createSchedule, 'toggleCreateSchedule');
 }
 
 function toggleEditSchedule(dayOfWeek, timeSlot) {
+  setSchedulePresetValue('ef-schedulePreset', '');
   toggleScheduleValue(editSchedule, dayOfWeek, timeSlot);
   renderScheduleGrid('ef-schedule', editSchedule, 'toggleEditSchedule');
+}
+
+function handleCreateSchedulePresetChange() {
+  const select = document.getElementById('cf-schedulePreset');
+  if (!select) return;
+  if (!applySchedulePreset(createSchedule, select.value)) return;
+  renderScheduleGrid('cf-schedule', createSchedule, 'toggleCreateSchedule');
+}
+
+function handleEditSchedulePresetChange() {
+  const select = document.getElementById('ef-schedulePreset');
+  if (!select) return;
+  if (!applySchedulePreset(editSchedule, select.value)) return;
+  renderScheduleGrid('ef-schedule', editSchedule, 'toggleEditSchedule');
+}
+
+function bindSchedulePresetHandlers() {
+  const createPreset = document.getElementById('cf-schedulePreset');
+  if (createPreset && createPreset.dataset.boundPreset !== 'true') {
+    createPreset.dataset.boundPreset = 'true';
+    createPreset.addEventListener('change', handleCreateSchedulePresetChange);
+  }
+
+  const editPreset = document.getElementById('ef-schedulePreset');
+  if (editPreset && editPreset.dataset.boundPreset !== 'true') {
+    editPreset.dataset.boundPreset = 'true';
+    editPreset.addEventListener('change', handleEditSchedulePresetChange);
+  }
 }
 
 function renderSkillCollection(containerId, collection, removeHandlerName) {
@@ -1089,6 +1751,20 @@ function setEditStatus(status) {
   setStatusToggle('ef-statusToggle', 'ef-status', status);
 }
 
+function getCreateSubmitButton() {
+  return document.querySelector('#createModal .modal-footer .modal-btn-primary');
+}
+
+function setCreateSubmitState(isSubmitting) {
+  isSubmittingCreate = isSubmitting;
+  const submitBtn = getCreateSubmitButton();
+  if (!submitBtn) return;
+
+  submitBtn.disabled = isSubmitting;
+  submitBtn.textContent = isSubmitting ? 'Đang gửi...' : 'Đăng bài';
+  submitBtn.setAttribute('aria-busy', isSubmitting ? 'true' : 'false');
+}
+
 async function openCreate() {
   if (!isLoggedIn()) {
     window.location.href = '/Auth/Login';
@@ -1102,7 +1778,9 @@ async function openCreate() {
   createSkills = [];
   createSchedule = [];
   createChildren = [];
+  setSchedulePresetValue('cf-schedulePreset', '');
   setCreateStatus(1);
+  ensureChildrenCountOptions('cf-children', 0, 1);
   renderSkillCollection('cf-skills', createSkills, 'removeCreateSkill');
   renderScheduleGrid('cf-schedule', createSchedule, 'toggleCreateSchedule');
   applyPrefill('cf', {}, null);
@@ -1110,25 +1788,37 @@ async function openCreate() {
   try {
     const res = await fetch('/Search/Prefill', { credentials: 'same-origin' });
     const json = await res.json();
-    if (json.success && json.data) applyPrefill('cf', json.data, json.data.selectedChildProfileId);
+    if (json.success && json.data) {
+      const d = json.data;
+      applyPrefill('cf', d, d.selectedChildProfileId ?? d.SelectedChildProfileId);
+    }
   } catch { }
 
+  handleCreateChildrenCountChange();
+
   syncSelectPickerTexts();
+  setCreateSubmitState(false);
   document.getElementById('createModal')?.classList.add('show');
 }
 
 function closeCreate() {
   document.getElementById('createModal')?.classList.remove('show');
-  isSubmittingCreate = false;
+  setCreateSubmitState(false);
 }
 
 function getCreatePayload() {
+  const totalChildren = getTotalChildProfiles(createChildren);
+  const countFromUi = normalizeChildrenCount(document.getElementById('cf-children')?.value || 1);
+  const numberOfChildren = totalChildren > 0 ? Math.min(countFromUi, totalChildren) : countFromUi;
+  const selectedChildren = getCreateSelectedChildren(numberOfChildren);
+  const childProfileIds = selectedChildren.map((c) => c.id).filter(Boolean);
   return {
     title: document.getElementById('cf-title')?.value.trim() || '',
     description: document.getElementById('cf-desc')?.value.trim() || '',
     jobType: Number(document.getElementById('cf-type')?.value || 1),
-    numberOfChildren: Number(document.getElementById('cf-children')?.value || 1),
-    childProfileId: document.getElementById('cf-childProfileId')?.value || null,
+    numberOfChildren,
+    childProfileId: selectedChildren[0]?.id || document.getElementById('cf-childProfileId')?.value || null,
+    childProfileIds,
     salaryMin: parseMoneyInput(document.getElementById('cf-salMin')?.value),
     salaryMax: parseMoneyInput(document.getElementById('cf-salMax')?.value),
     salaryNegotiable: !!document.getElementById('cf-negotiable')?.checked,
@@ -1144,14 +1834,43 @@ function getCreatePayload() {
 }
 
 function validatePayload(payload) {
-  if (!payload.title || payload.title.length < 5) return 'Tieu de bai dang phai tu 5 ky tu tro len.';
-  if (!payload.description || payload.description.length < 10) return 'Mo ta chi tiet phai tu 10 ky tu tro len.';
-  if (!payload.childProfileId) return 'Vui long chon tre tu Child Profile.';
-  if (!payload.location || payload.location.length < 3) return 'Vui long nhap dia chi chi tiet.';
-  if (!payload.city) return 'Vui long nhap thanh pho.';
-  if (!payload.district) return 'Vui long nhap phuong/xa.';
-  if (!Array.isArray(payload.skills) || !payload.skills.length) return 'Vui long chon it nhat 1 ky nang.';
-  if (!Array.isArray(payload.scheduleSlots) || !payload.scheduleSlots.length) return 'Vui long chon it nhat 1 khung lich.';
+  const minimumSalary = 8000000;
+  const maximumSalary = 50000000;
+  const totalChildren = getTotalChildProfiles(createChildren);
+  if (!payload.title || payload.title.length < 5) return 'Tiêu đề bài đăng phải từ 5 ký tự trở lên.';
+  if (!payload.description || payload.description.length < 10) return 'Mô tả chi tiết phải từ 10 ký tự trở lên.';
+  if (totalChildren < 1) {
+    return 'Vui lòng tạo ít nhất 1 hồ sơ bé trước khi đăng bài.';
+  }
+  if (totalChildren > 10) {
+    return 'Tối đa 10 hồ sơ bé có thể được sử dụng cho một bài đăng.';
+  }
+  if (!Number.isFinite(payload.numberOfChildren) || payload.numberOfChildren < 1 || payload.numberOfChildren > 10) {
+    return 'Số trẻ cần chăm phải từ 1 đến 10.';
+  }
+  if (payload.numberOfChildren > totalChildren) {
+    return `Số trẻ cần chăm không được vượt quá số hồ sơ bé hiện có (${totalChildren} bé).`;
+  }
+  const selectedForCount = getCreateSelectedChildren(payload.numberOfChildren);
+  if (selectedForCount.length !== payload.numberOfChildren) {
+    return 'Vui lòng chọn đủ hồ sơ bé cho từng trẻ.';
+  }
+  if (!payload.childProfileId) return 'Vui lòng chọn hồ sơ bé.';
+        if (!payload.salaryNegotiable && payload.salaryMin == null) return 'Vui lòng nhập lương từ trong khoảng 8.000.000 - 50.000.000 VND hoặc bật lương thỏa thuận.';
+  if (payload.salaryMin != null && (!Number.isFinite(payload.salaryMin) || payload.salaryMin < minimumSalary || payload.salaryMin > maximumSalary)) {
+            return 'Lương từ phải trong khoảng 8.000.000 - 50.000.000 VND.';
+  }
+  if (payload.salaryMax != null && (!Number.isFinite(payload.salaryMax) || payload.salaryMax < minimumSalary || payload.salaryMax > maximumSalary)) {
+            return 'Đến phải trong khoảng 8.000.000 - 50.000.000 VND.';
+  }
+  if (payload.salaryMin != null && payload.salaryMax != null && payload.salaryMin > payload.salaryMax) {
+            return 'Lương từ không được lớn hơn Đến.';
+  }
+  if (!payload.location || payload.location.length < 3) return 'Vui lòng nhập địa chỉ chi tiết.';
+  if (!payload.city) return 'Vui lòng nhập thành phố.';
+  if (!payload.district) return 'Vui lòng nhập phường/xã.';
+  if (!Array.isArray(payload.skills) || !payload.skills.length) return 'Vui lòng chọn ít nhất 1 kỹ năng.';
+  if (!Array.isArray(payload.scheduleSlots) || !payload.scheduleSlots.length) return 'Vui lòng chọn ít nhất 1 khung lịch.';
   return '';
 }
 
@@ -1169,12 +1888,7 @@ async function submitCreate() {
     return;
   }
 
-  isSubmittingCreate = true;
-  const submitBtn = document.querySelector('#createModal .modal-btn-primary');
-  if (submitBtn) {
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Dang gui...';
-  }
+  setCreateSubmitState(true);
 
   try {
     const res = await fetch('/Search/CreateJob', {
@@ -1185,33 +1899,36 @@ async function submitCreate() {
     });
     const json = await res.json();
     if (!json.success) {
-      notifyToast(json.message || 'Dang bai that bai');
-      isSubmittingCreate = false;
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Dang bai';
-      }
+      notifyToast(json.message || 'Đăng bài thất bại');
+      setCreateSubmitState(false);
       return;
     }
 
     closeCreate();
-    notifyToast('Bai dang da duoc tao va dang cho moderator duyet');
+    window.__nmNotificationToastSuppressType = 'job-posting-pending';
+    window.__nmNotificationToastSuppressUntil = Date.now() + 5000;
+    const successToast = 'Bài đăng đã được tạo và đang chờ kiểm duyệt viên duyệt.';
+    const fallbackScheduledAt = Date.now();
+    window.setTimeout(() => {
+      const lastType = String(window.__nmLastRealtimeNotificationType || '').trim().toLowerCase();
+      const lastAt = Number(window.__nmLastRealtimeNotificationAt || 0);
+      const receivedRealtime = lastType === 'job-posting-pending' && lastAt >= fallbackScheduledAt - 3000;
+      if (!receivedRealtime) {
+        notifyToast(successToast);
+      }
+    }, 900);
     window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
     doSearch();
   } catch {
-    notifyToast('Loi ket noi server');
-    isSubmittingCreate = false;
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Dang bai';
-    }
+    notifyToast('Lỗi kết nối máy chủ.');
+    setCreateSubmitState(false);
   }
 }
 
 async function openEdit(job) {
   if (!job?.id) return;
   if (!canEditJob(job)) {
-    notifyToast('Ban khong co quyen chinh sua bai dang nay.');
+    notifyToast('Bạn không có quyền chỉnh sửa bài đăng này.');
     return;
   }
   window.location.href = `/Search/Edit/${job.id}`;
@@ -1225,7 +1942,7 @@ function closeEdit() {
 async function submitEdit() {
   if (editingJobId) {
     if (!ownedJobIds.has(normalizeGuid(editingJobId))) {
-      notifyToast('Ban khong co quyen chinh sua bai dang nay.');
+      notifyToast('Bạn không có quyền chỉnh sửa bài đăng này.');
       return;
     }
     window.location.href = `/Search/Edit/${editingJobId}`;
@@ -1235,45 +1952,184 @@ async function submitEdit() {
 async function deleteJob() {
   if (!editingJobId) return;
   if (!ownedJobIds.has(normalizeGuid(editingJobId))) {
-    notifyToast('Ban khong co quyen xoa bai dang nay.');
+    notifyToast('Bạn không có quyền xóa bài đăng này.');
     return;
   }
-  if (!confirm('Ban co chac muon xoa bai dang nay?')) return;
+  if (!confirm('Bạn có chắc muốn xóa bài đăng này?')) return;
   try {
     const res = await fetch(`/Search/DeleteJob/${editingJobId}`, { method: 'DELETE', credentials: 'same-origin' });
     const json = await res.json();
     if (!json.success) {
-      notifyToast(json.message || 'Xoa that bai');
+      notifyToast(json.message || 'Xóa thất bại');
       return;
     }
     closeEdit();
-    notifyToast('Da xoa bai dang');
+    notifyToast('Đã xóa bài đăng.');
     doSearch();
   } catch {
-    notifyToast('Loi ket noi server');
+    notifyToast('Lỗi kết nối máy chủ.');
   }
+}
+
+function renderPreviewChildProfiles(job, childProfilesInput) {
+  const container = document.getElementById('pv-childProfiles');
+  if (!container) return;
+
+  const childProfiles = Array.isArray(childProfilesInput) ? childProfilesInput.filter(Boolean) : [];
+  const hasAggregateFallback = Boolean(job?.characteristic || job?.birthTypeLabel || job?.specialNeeds);
+  const fallbackChildren = childProfiles.length
+    ? childProfiles
+    : (hasAggregateFallback
+      ? [{
+          label: 'Bé 1',
+          characteristic: job?.characteristic || '',
+          birthTypeLabel: job?.birthTypeLabel || '',
+          specialNeeds: job?.specialNeeds || ''
+        }]
+      : []);
+  const requiredCount = normalizeChildrenCount(job?.numberOfChildren || fallbackChildren.length || 1);
+
+  if (!fallbackChildren.length && !job?.numberOfChildren) {
+    container.innerHTML = '';
+    container.classList.add('hidden');
+    return;
+  }
+
+  let html = '';
+  for (let idx = 0; idx < requiredCount; idx += 1) {
+    const child = fallbackChildren[idx] || null;
+    const displayIndex = idx + 1;
+
+    if (!child) {
+      html += `
+        <div class="child-profile-panel child-profile-panel--missing child-profile-panel--preview">
+          <div class="child-profile-panel__head">
+          <p class="child-profile-panel__title">Bé thứ ${displayIndex}</p>
+          </div>
+          <p class="child-profile-panel__empty">Chưa thấy hồ sơ trẻ cho bé này.</p>
+        </div>`;
+      continue;
+    }
+
+    html += `
+      <div class="child-profile-panel child-profile-panel--preview">
+        <div class="child-profile-panel__head">
+          <p class="child-profile-panel__title">Bé thứ ${displayIndex}</p>
+          <span class="child-profile-panel__badge">${escapeHtml(child.label || `Bé ${displayIndex}`)}</span>
+        </div>
+        <div class="child-profile-grid">
+          <div class="child-profile-field">
+            <span class="child-profile-field__label">Đặc điểm</span>
+            <p class="child-profile-field__value">${escapeHtml(child.characteristic || 'Chưa cập nhật')}</p>
+          </div>
+          <div class="child-profile-field">
+            <span class="child-profile-field__label">Nhóm tuổi</span>
+            <p class="child-profile-field__value">${escapeHtml(child.birthTypeLabel || 'Chưa cập nhật')}</p>
+          </div>
+          <div class="child-profile-field child-profile-field--full">
+            <span class="child-profile-field__label">Nhu cầu đặc biệt</span>
+            <p class="child-profile-field__value">${escapeHtml(child.specialNeeds || 'Không có')}</p>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  container.innerHTML = html;
+  container.classList.remove('hidden');
+}
+
+function renderPreviewChildProfiles(job, childProfilesInput) {
+  const container = document.getElementById('pv-childProfiles');
+  if (!container) return;
+
+  const childProfiles = Array.isArray(childProfilesInput) ? childProfilesInput.filter(Boolean) : [];
+  const hasAggregateFallback = Boolean(job?.characteristic || job?.birthTypeLabel || job?.specialNeeds);
+  const fallbackChildren = childProfiles.length
+    ? childProfiles
+    : (hasAggregateFallback
+      ? [{
+          label: 'Be 1',
+          characteristic: job?.characteristic || '',
+          birthTypeLabel: job?.birthTypeLabel || '',
+          specialNeeds: job?.specialNeeds || ''
+        }]
+      : []);
+  const requiredCount = normalizeChildrenCount(job?.numberOfChildren || fallbackChildren.length || 1);
+
+  if (!fallbackChildren.length && !job?.numberOfChildren) {
+    container.innerHTML = '';
+    container.classList.add('hidden');
+    return;
+  }
+
+  let html = '';
+  for (let idx = 0; idx < requiredCount; idx += 1) {
+    const child = fallbackChildren[idx] || null;
+    const displayIndex = idx + 1;
+
+    if (!child) {
+      html += `
+        <div class="child-profile-panel child-profile-panel--missing child-profile-panel--preview">
+          <div class="child-profile-panel__head">
+          <p class="child-profile-panel__title">Bé thứ ${displayIndex}</p>
+          </div>
+          <p class="child-profile-panel__empty">Chưa có hồ sơ của bé này.</p>
+        </div>`;
+      continue;
+    }
+
+    html += `
+      <div class="child-profile-panel child-profile-panel--preview">
+        <div class="child-profile-panel__head">
+          <p class="child-profile-panel__title">Bé thứ ${displayIndex}</p>
+          <span class="child-profile-panel__badge">${escapeHtml(child.label || `Bé ${displayIndex}`)}</span>
+        </div>
+        <div class="child-profile-grid">
+          <div class="child-profile-field">
+            <span class="child-profile-field__label">Đặc điểm</span>
+            <p class="child-profile-field__value">${escapeHtml(child.characteristic || 'Chưa cập nhật')}</p>
+          </div>
+          <div class="child-profile-field">
+            <span class="child-profile-field__label">Nhóm tuổi</span>
+            <p class="child-profile-field__value">${escapeHtml(child.birthTypeLabel || 'Chưa cập nhật')}</p>
+          </div>
+          <div class="child-profile-field child-profile-field--full">
+            <span class="child-profile-field__label">Nhu cầu đặc biệt</span>
+            <p class="child-profile-field__value">${escapeHtml(child.specialNeeds || 'Không có')}</p>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  container.innerHTML = html;
+  container.classList.remove('hidden');
 }
 
 function openPreview(job) {
   if (!job) return;
   editingJobId = job.id;
-  document.getElementById('pv-title').textContent = job.title || 'Tin dang';
-  document.getElementById('pv-parentName').textContent = job.parentName || 'Phu huynh';
+  const childProfiles = Array.isArray(job.children) ? job.children : [];
+  const birthTypeText = childProfiles.length > 1
+    ? `${childProfiles.length} bé (xem chi tiết bên dưới)`
+    : (childProfiles[0]?.birthTypeLabel || job.birthTypeLabel || 'Chưa cập nhật');
+  document.getElementById('pv-title').textContent = job.title || 'Tin đăng';
+  document.getElementById('pv-parentName').textContent = job.parentName || 'Phụ huynh';
   const premiumBadges = document.getElementById('pv-premiumBadges');
   if (premiumBadges) premiumBadges.innerHTML = renderJobBenefitBadges(job);
-  document.getElementById('pv-type').textContent = JOB_TYPES[job.jobType] || 'Khac';
+  document.getElementById('pv-type').textContent = JOB_TYPES[job.jobType] || 'Khác';
   document.getElementById('pv-sal').textContent = formatSalaryRange(job.salaryMin, job.salaryMax, job.salaryNegotiable);
-  document.getElementById('pv-status').textContent = POST_STATUS_LABELS[job.status] || 'Dang cap nhat';
-  document.getElementById('pv-loc').textContent = [job.location, job.district, job.city].filter(Boolean).join(', ') || 'Chua cap nhat';
-  document.getElementById('pv-kids').textContent = job.numberOfChildren ? `${job.numberOfChildren} be` : 'Chua cap nhat';
-  document.getElementById('pv-characteristic').textContent = job.characteristic || 'Chua cap nhat';
-  document.getElementById('pv-birthType').textContent = job.birthTypeLabel || 'Chua cap nhat';
-  document.getElementById('pv-specialNeeds').textContent = job.specialNeeds || 'Khong co';
+  document.getElementById('pv-status').textContent = POST_STATUS_LABELS[job.status] || 'Đang cập nhật';
+  document.getElementById('pv-loc').textContent = [job.location, job.district, job.city].filter(Boolean).join(', ') || 'Chưa cập nhật';
+  document.getElementById('pv-kids').textContent = job.numberOfChildren ? `${job.numberOfChildren} bé` : 'Chưa cập nhật';
+  document.getElementById('pv-characteristic').textContent = job.characteristic || 'Chưa cập nhật';
+  document.getElementById('pv-birthType').textContent = birthTypeText;
+  document.getElementById('pv-specialNeeds').textContent = job.specialNeeds || 'Không có';
   document.getElementById('pv-ageRange').textContent = formatAgeRange(job.minNannyAge, job.maxNannyAge);
-  document.getElementById('pv-coords').textContent = job.latitude && job.longitude ? `${job.latitude}, ${job.longitude}` : 'Khu vuc gan dung';
-  document.getElementById('pv-distance').textContent = job.distanceKm ? `${job.distanceKm.toFixed(1)} km` : 'Chua xac dinh';
-  document.getElementById('pv-desc').textContent = job.description || 'Khong co mo ta';
-  document.getElementById('pv-moderation').textContent = MODERATION_LABELS[job.moderationStatus] || 'Dang cap nhat';
+  document.getElementById('pv-coords').textContent = job.latitude && job.longitude ? `${job.latitude}, ${job.longitude}` : 'Khu vực gần đúng';
+  document.getElementById('pv-distance').textContent = job.distanceKm ? `${job.distanceKm.toFixed(1)} km` : 'Chưa xác định';
+  document.getElementById('pv-desc').textContent = job.description || 'Không có mô tả';
+  document.getElementById('pv-moderation').textContent = MODERATION_LABELS[job.moderationStatus] || 'Đang cập nhật';
+  renderPreviewChildProfiles(job, childProfiles);
   const noteEl = document.getElementById('pv-note');
   noteEl.textContent = job.moderationNote || '';
   noteEl.classList.toggle('hidden', !job.moderationNote);
@@ -1281,7 +2137,7 @@ function openPreview(job) {
   const skillsEl = document.getElementById('pv-skills');
   skillsEl.innerHTML = (job.skills && job.skills.length)
     ? job.skills.map((skill) => `<span class="px-3 py-1 rounded-full bg-white text-orange-700 text-xs font-bold border border-orange-100">${escapeHtml(skill)}</span>`).join('')
-    : '<span class="text-sm text-slate-400">Chua co ky nang yeu cau.</span>';
+    : '<span class="text-sm text-slate-400">Chưa có kỹ năng yêu cầu.</span>';
 
   document.getElementById('pv-schedule').innerHTML = renderReadOnlySchedule(job.scheduleSlots || []);
 
@@ -1304,6 +2160,38 @@ function handleEditCityChange() {
   handleCityChange('ef');
 }
 
+function bindClickOnlySelect(selectElement) {
+  if (!selectElement || selectElement.dataset.clickOnlyBound === 'true') return;
+
+  selectElement.dataset.clickOnlyBound = 'true';
+  selectElement.style.caretColor = 'transparent';
+  let previousValue = selectElement.value;
+
+  const emitSelectionChangeIfNeeded = () => {
+    if (selectElement.value === previousValue) return;
+    previousValue = selectElement.value;
+    selectElement.dispatchEvent(new Event('input', { bubbles: true }));
+    selectElement.dispatchEvent(new Event('change', { bubbles: true }));
+  };
+
+  selectElement.addEventListener('keydown', (event) => {
+    if (event.key === 'Tab') return;
+    event.preventDefault();
+  });
+  selectElement.addEventListener('mousedown', () => {
+    previousValue = selectElement.value;
+  });
+  selectElement.addEventListener('click', () => {
+    window.setTimeout(emitSelectionChangeIfNeeded, 0);
+  });
+}
+
+function bindCreateJobPostingClickOnlySelects() {
+  document.querySelectorAll('#createForm select').forEach((selectElement) => {
+    bindClickOnlySelect(selectElement);
+  });
+}
+
 async function bootstrapSearchPage() {
   ['cf-city', 'cf-district', 'ef-city', 'ef-district', 'cf-typeText', 'cf-childProfileText', 'cf-skillSelectText'].forEach((id) => {
     document.getElementById(id)?.setAttribute('autocomplete', 'off');
@@ -1313,6 +2201,14 @@ async function bootstrapSearchPage() {
   });
 
   attachCreateSelectPickers();
+  bindCreateJobPostingClickOnlySelects();
+  bindSchedulePresetHandlers();
+  const createChildrenInput = document.getElementById('cf-children');
+  if (createChildrenInput && createChildrenInput.dataset.bindChildrenCount !== 'true') {
+    createChildrenInput.dataset.bindChildrenCount = 'true';
+    createChildrenInput.addEventListener('change', handleCreateChildrenCountChange);
+    createChildrenInput.addEventListener('input', handleCreateChildrenCountChange);
+  }
   initMoneyInputs();
   initMap();
   loadLocationData();
@@ -1332,4 +2228,3 @@ window.addEventListener('pageshow', () => {
     bootstrapSearchPage();
   }
 });
-

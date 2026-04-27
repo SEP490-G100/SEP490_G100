@@ -1,0 +1,205 @@
+﻿@model WebSite.Models.Verification.VerificationRequestDetailDto
+@{
+    Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
+    ViewData["Title"] = "Chi tiết yêu cầu xác minh";
+
+    var isPending = Model.Status == 1;
+    var fullAddress = string.Join(", ", new[] { Model.NannyAddress, Model.NannyWard, Model.NannyDistrict, Model.NannyCity }
+        .Where(value => !string.IsNullOrWhiteSpace(value)));
+    var genderLabel = Model.NannyGender switch { 1 => "Nam", 2 => "Nữ" , 3 => "Khác" , _ => "Chưa xác định" };
+    var salaryTypeLabel = Model.SalaryType == 1 ? "Theo giờ" : "Theo tháng";
+    var requestTypeLabel = Model.RequestType switch
+    {
+        2 => "Giấy khám sức khỏe",
+        3 => "Bằng cấp / Chứng chỉ",
+        _ => "Căn cước công dân"
+    };
+    var identityDocuments = Model.Documents.Where(doc => doc.DocumentType == (int)WebSite.Enums.VerificationDocumentType.IdentityCard).ToList();
+    var degreeDocuments = Model.Documents.Where(doc => doc.DocumentType == (int)WebSite.Enums.VerificationDocumentType.DegreeCertificate).ToList();
+    var healthDocuments = Model.Documents.Where(doc => doc.DocumentType == (int)WebSite.Enums.VerificationDocumentType.HealthCertificate).ToList();
+}
+
+<div class="flex items-center gap-2 text-sm text-gray-400 mb-6">
+    <a href="/Moderator/ManageNannyVerification" class="hover:text-orange-500 transition-colors font-semibold">Quản lý xác minh</a>
+    <span class="material-icons-round text-base">chevron_right</span>
+    <span class="text-gray-600 font-semibold">@Model.FullName</span>
+</div>
+
+<div class="content-card p-6 sm:p-7 mb-6 fade-in-up overflow-hidden" style="background:linear-gradient(135deg,#FFFBEB 0%,#FFF7ED 45%,#FFFFFF 100%); border:1px solid #FED7AA;">
+    <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+        <div class="flex items-start gap-4">
+            @if (!string.IsNullOrEmpty(Model.NannyAvatarUrl))
+            {
+                <img src="@Model.NannyAvatarUrl" alt="@Model.FullName" class="w-20 h-20 rounded-2xl object-cover border border-orange-100 shadow-sm" />
+            }
+            else
+            {
+                <div class="w-20 h-20 rounded-2xl bg-orange-100 text-orange-500 flex items-center justify-center border border-orange-200">
+                    <span class="material-icons-round text-4xl">person</span>
+                </div>
+            }
+
+            <div class="min-w-0">
+                <h1 class="text-2xl font-bold text-gray-900 break-words">@Model.FullName</h1>
+                <p class="text-sm text-gray-500 break-all">@(string.IsNullOrWhiteSpace(Model.NannyEmail) ? "-" : Model.NannyEmail)</p>
+                <div class="flex flex-wrap gap-2 mt-3">
+                    <span class="badge @Model.StatusClass">@Model.StatusLabel</span>
+                    <span class="badge bg-orange-100 text-orange-700">@requestTypeLabel</span>
+                    <span class="badge badge-nanny">Bảo mẫu</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-sm text-gray-600 space-y-1">
+            <p><span class="font-semibold">Ngày nộp:</span> @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</p>
+            <p><span class="font-semibold">Ngày duyệt:</span> @(Model.ReviewedAt.HasValue ? Model.ReviewedAt.Value.ToString("dd/MM/yyyy HH:mm") : "-")</p>
+            <p><span class="font-semibold">Người duyệt:</span> @(string.IsNullOrWhiteSpace(Model.ReviewedByName) ? "-" : Model.ReviewedByName)</p>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-5">
+    <div class="xl:col-span-4 space-y-5">
+        <div class="content-card p-5">
+            <h2 class="font-bold text-gray-900 mb-4">Thông tin cơ bản</h2>
+            <div class="space-y-3 text-sm">
+                <p><span class="font-semibold">Điện thoại:</span> @(Model.NannyPhoneNumber ?? "-")</p>
+                <p><span class="font-semibold">Ngày sinh:</span> @(Model.NannyDateOfBirth.HasValue ? Model.NannyDateOfBirth.Value.ToString("dd/MM/yyyy") : "-")</p>
+                <p><span class="font-semibold">Giới tính:</span> @genderLabel</p>
+                <p><span class="font-semibold">Kinh nghiệm:</span> @(Model.YearsOfExperience.HasValue ? $"{Model.YearsOfExperience} năm" : "-")</p>
+                <p><span class="font-semibold">Học vấn:</span> @Model.EducationLabel</p>
+                <p><span class="font-semibold">Mức lương mong muốn:</span> @(Model.ExpectedSalaryMin?.ToString("N0") ?? "-") - @(Model.ExpectedSalaryMax?.ToString("N0") ?? "-") VND (@salaryTypeLabel)</p>
+                <p><span class="font-semibold">Địa chỉ:</span> @(string.IsNullOrWhiteSpace(fullAddress) ? "-" : fullAddress)</p>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.Bio))
+        {
+            <div class="content-card p-5">
+                <h2 class="font-bold text-gray-900 mb-3">Giới thiệu</h2>
+                <p class="text-sm leading-7 text-gray-600">@Model.Bio</p>
+            </div>
+        }
+
+        @if (Model.Status == 3 && !string.IsNullOrWhiteSpace(Model.RejectionReason))
+        {
+            <div class="content-card p-5 border-l-4 border-red-400">
+                <h2 class="font-bold text-red-600 mb-2">Lý do từ chối</h2>
+                <p class="text-sm leading-7 text-gray-600">@Model.RejectionReason</p>
+            </div>
+        }
+    </div>
+
+    <div class="xl:col-span-8 space-y-5">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div class="content-card p-5 fade-in-up lg:col-span-2">
+                <div class="flex items-center justify-between gap-3 mb-4">
+                    <div class="flex items-center gap-2">
+                        <span class="material-icons-round text-orange-500 text-lg">description</span>
+                        <h2 class="font-bold text-gray-900">Tài liệu đã nộp</h2>
+                    </div>
+                    <span class="text-xs text-gray-500">@(Model.Documents?.Count ?? 0) tài liệu</span>
+                </div>
+
+                @foreach (var documentGroup in new[]
+                {
+                    new { Title = "CCCD", Documents = identityDocuments },
+                    new { Title = "Bằng cấp/Chứng chỉ", Documents = degreeDocuments },
+                    new { Title = "Giấy khám sức khỏe", Documents = healthDocuments }
+                })
+                {
+                    <div class="mb-5">
+                        <h3 class="font-semibold text-gray-800 mb-2">@documentGroup.Title (@documentGroup.Documents.Count)</h3>
+                        @if (!documentGroup.Documents.Any())
+                        {
+                            <div class="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-400">Không có tệp tin.</div>
+                        }
+                        else
+                        {
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                @foreach (var doc in documentGroup.Documents)
+                                {
+                                    <div class="rounded-2xl border border-gray-100 bg-white p-4">
+                                        <p class="font-semibold text-gray-800 break-all">@doc.FileName</p>
+                                        <p class="text-xs text-gray-400 mt-1">Loại: @doc.TypeLabel</p>
+                                        <p class="text-xs text-gray-400">Kích thước: @(string.IsNullOrEmpty(doc.FileSizeLabel) ? "-" : doc.FileSizeLabel)</p>
+                                        <p class="text-xs text-gray-400">Ngày cấp: @(doc.ExpiryDate.HasValue ? doc.ExpiryDate.Value.ToString("dd/MM/yyyy") : "-")</p>
+                                        <a href="@doc.DocumentUrl" target="_blank" rel="noopener"
+                                           class="inline-flex items-center gap-1 mt-3 rounded-xl bg-blue-50 border border-blue-200 px-3 py-2 text-xs font-semibold text-blue-600 hover:bg-blue-100">
+                                            <span class="material-icons-round text-sm">open_in_new</span>
+                                            Xem tài liệu
+                                        </a>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        @if (isPending)
+        {
+            <div class="content-card p-6">
+                <h2 class="font-bold text-gray-900 mb-5">Quyết định kiểm duyệt</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <form method="post" action="/Moderator/ReviewVerification/@Model.Id"
+                          onsubmit="return confirm('Bạn chắc chắn duyệt yêu cầu này?')">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="action" value="2" />
+                        <input type="hidden" name="nannyUserId" value="@Model.NannyUserId" />
+                        <button type="submit"
+                                class="w-full flex items-center justify-center gap-2 px-5 py-4 rounded-2xl font-bold text-white text-sm"
+                                style="background:linear-gradient(135deg,#10B981,#059669);">
+                            <span class="material-icons-round text-lg">check_circle</span>
+                            Duyệt xác minh
+                        </button>
+                    </form>
+
+                    <button type="button" onclick="document.getElementById('rejectPanel').classList.toggle('hidden')"
+                            class="w-full flex items-center justify-center gap-2 px-5 py-4 rounded-2xl font-bold text-sm text-white"
+                            style="background:linear-gradient(135deg,#EF4444,#DC2626);">
+                        <span class="material-icons-round text-lg">cancel</span>
+                        Từ chối xác minh    
+                    </button>
+                </div>
+
+                <div id="rejectPanel" class="hidden mt-5 rounded-2xl border border-red-100 bg-red-50/60 p-4">
+                    <form method="post" action="/Moderator/ReviewVerification/@Model.Id" onsubmit="return validateReject()">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="action" value="3" />
+                        <input type="hidden" name="nannyUserId" value="@Model.NannyUserId" />
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Lý do từ chối <span class="text-red-500">*</span>
+                        </label>
+                        <textarea id="rejectionReason" name="rejectionReason" rows="4"
+                                  placeholder="Vui lòng cung cấp lý do từ chối rõ ràng..."
+                                  class="w-full border border-red-100 rounded-2xl px-4 py-3 text-sm text-gray-700 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 resize-none transition-all"></textarea>
+                        <button type="submit"
+                                class="mt-4 inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white"
+                                style="background:linear-gradient(135deg,#EF4444,#DC2626);">
+                            <span class="material-icons-round text-base">send</span>
+                            Gửi từ chối
+                        </button>
+                    </form>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function validateReject() {
+        var reason = document.getElementById('rejectionReason').value.trim();
+        if (!reason) {
+            if (typeof window.showToast === 'function') {
+                window.showToast('Vui lòng nhập lý do từ chối trước khi lưu.', { type: 'error' });
+            }
+            return false;
+        }
+
+        return confirm('Từ chối xác minh này với lý do đã cung cấp?');
+    }
+</script>
+}

@@ -1,16 +1,16 @@
 using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
+using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Models;
 
 namespace Nanny_BackEnd.Repositories;
 
-public class BlogRepository
+public class BlogRepository : IBlogRepository
 {
     private readonly Sep490NannyDbContext _db;
     public BlogRepository(Sep490NannyDbContext db) => _db = db;
 
-    /// <summary>Paginated list with optional status, isDeleted, categoryId filter and sort.</summary>
-    public async Task<(List<Blog> Items, int TotalCount)> GetPagedAsync(
+    public async Task<(List<Blog> Items, int TotalCount)> GetBlogListAsync(
         string? search, int page, int pageSize,
         int? status = null, bool? isDeleted = null, Guid? categoryId = null,
         string? sort = null)

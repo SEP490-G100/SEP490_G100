@@ -1,14 +1,28 @@
 using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
+using Nanny_BackEnd.Enums;
+using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Models;
 
 namespace Nanny_BackEnd.Repositories;
 
-public class HiringRepository
+public class HiringRepository : IHiringRepository
 {
     private readonly Sep490NannyDbContext _db;
 
     public HiringRepository(Sep490NannyDbContext db) => _db = db;
+
+    public async Task<List<ContractTemplate>> GetActiveContractTemplatesAsync() =>
+        await _db.ContractTemplates
+            .Where(t => !t.IsDeleted && t.IsActive)
+            .OrderByDescending(t => t.UpdatedAt ?? t.CreatedAt)
+            .ThenBy(t => t.Name)
+            .ToListAsync();
+
+    public async Task<ContractTemplate?> GetActiveContractTemplateByIdAsync(Guid id) =>
+        await _db.ContractTemplates
+            .Where(t => t.Id == id && !t.IsDeleted && t.IsActive)
+            .FirstOrDefaultAsync();
 
     public async Task<JobPosting?> GetJobPostingByIdAsync(Guid jobPostingId) =>
         await _db.JobPostings
@@ -57,6 +71,17 @@ public class HiringRepository
                 .ThenInclude(n => n.User)
             .ToListAsync();
 
+    public async Task<List<JobApplication>> GetOtherPendingApplicantsAsync(Guid jobPostingId, Guid excludedJobAppId) =>
+        await _db.JobApplications
+            .Where(a =>
+                a.JobPostingId == jobPostingId &&
+                a.Id != excludedJobAppId &&
+                a.Status == 0 &&
+                !a.IsDeleted)
+            .Include(a => a.NannyProfile)
+                .ThenInclude(n => n.User)
+            .ToListAsync();
+
     public async Task<HiringRecord?> GetHiringRecordByIdAsync(Guid id) =>
         await _db.HiringRecords
             .Where(h => h.Id == id && !h.IsDeleted)
@@ -67,6 +92,21 @@ public class HiringRepository
             .Include(h => h.NannyProfile)
                 .ThenInclude(n => n.User)
             .FirstOrDefaultAsync();
+
+    public async Task<List<HiringRecord>> GetCompletedUnreviewedHiringsForParentAsync(
+        Guid parentUserId,
+        IReadOnlyCollection<Guid> reviewedHiringRecordIds) =>
+        await _db.HiringRecords
+            .Where(h =>
+                h.ParentProfile.UserId == parentUserId &&
+                h.Status == (int)HiringRecordStatus.Completed &&
+                !h.IsDeleted &&
+                !reviewedHiringRecordIds.Contains(h.Id))
+            .Include(h => h.NannyProfile)
+                .ThenInclude(n => n.User)
+            .Include(h => h.ParentProfile)
+            .OrderByDescending(h => h.EndDate)
+            .ToListAsync();
 
     public async Task<HiringRecord?> GetLatestHiringRecordByJobApplicationIdAsync(Guid jobApplicationId) =>
         await _db.HiringRecords
@@ -89,17 +129,6 @@ public class HiringRepository
         await _db.ParentProfiles
             .Where(p => p.UserId == userId && !p.IsDeleted)
             .Include(p => p.User)
-            .FirstOrDefaultAsync();
-
-    public async Task<List<ContractTemplate>> GetActiveTemplatesAsync() =>
-        await _db.ContractTemplates
-            .Where(t => t.IsActive && !t.IsDeleted)
-            .OrderBy(t => t.Name)
-            .ToListAsync();
-
-    public async Task<ContractTemplate?> GetTemplateByIdAsync(Guid templateId) =>
-        await _db.ContractTemplates
-            .Where(t => t.Id == templateId && t.IsActive && !t.IsDeleted)
             .FirstOrDefaultAsync();
 
     public async Task<Conversation?> FindOneToOneConversationAsync(Guid userA, Guid userB) =>

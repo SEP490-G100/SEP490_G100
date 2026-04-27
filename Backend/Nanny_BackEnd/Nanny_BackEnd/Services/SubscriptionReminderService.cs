@@ -1,3 +1,5 @@
+using Nanny_BackEnd.Services.Interfaces;
+
 namespace Nanny_BackEnd.Services;
 
 public class SubscriptionReminderService : BackgroundService
@@ -20,7 +22,7 @@ public class SubscriptionReminderService : BackgroundService
             try
             {
                 using var scope = _scopeFactory.CreateScope();
-                var notificationService = scope.ServiceProvider.GetRequiredService<NotificationService>();
+                var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
 
                 var createdCount = await notificationService.createSubscriptionExpiryReminders();
                 if (createdCount > 0)

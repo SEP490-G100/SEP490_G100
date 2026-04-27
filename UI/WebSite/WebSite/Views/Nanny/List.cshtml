@@ -22,11 +22,11 @@
             @if (User.IsInRole("Parent") && (User.Identity?.IsAuthenticated ?? false))
             {
                 <div class="rec-tab-bar">
-                    <button id="nannyTabAll" class="rec-tab active" onclick="switchNannyTab('all')">
+                    <button id="nannyTabAll" class="rec-tab active" type="button" onclick="switchNannyTab('all')">
                         <span class="material-icons-round">list</span>Tất cả
                     </button>
-                    <button id="nannyTabRec" class="rec-tab" onclick="switchNannyTab('rec')">
-                        <span class="material-icons-round">auto_awesome</span>Gợi ý
+                    <button id="nannyTabRec" class="rec-tab rec-tab--smart" type="button" onclick="switchNannyTab('rec')">
+                        <span class="material-icons-round">auto_awesome</span>Gợi ý thông minh
                     </button>
                 </div>
             }
@@ -36,25 +36,21 @@
                 <input id="nannyKeyword" type="text" placeholder="Tìm theo tên, kỹ năng hoặc mô tả..." oninput="debounceNannySearch()" />
             </div>
             <div class="nanny-toolbar__actions">
-                <button type="button" class="nanny-filter-trigger" onclick="openNannyFilters()">
-                    <span class="material-icons-round text-[18px]">tune</span>
-                    Bộ lọc
-                </button>
                 @if (isParent)
                 {
-                    <a href="/Nanny/Favorites" class="nanny-filter-trigger">
+                    <a href="/Nanny/Favorites" class="nanny-toolbar-link">
                         <span class="material-icons-round text-[18px]">favorite</span>
-                        Nanny yêu thích
+                        Bảo mẫu yêu thích
                     </a>
-                    <a href="/Nanny/ContactRequests" class="nanny-filter-trigger">
+                    <a href="/Nanny/ContactRequests" class="nanny-toolbar-link">
                         <span class="material-icons-round text-[18px]">contact_phone</span>
-                        Contact request
+                        Yêu cầu liên hệ
                     </a>
                 }
                 <span id="nannyResultCount" class="nanny-toolbar__count">Đang tải...</span>
                 <a href="/Subscription" class="nanny-upgrade-btn">
                     <span class="material-icons-round text-[18px]">workspace_premium</span>
-                    Upgrade
+                    Gói đăng ký
                 </a>
             </div>
         </div>
@@ -68,7 +64,7 @@
             {
                 <div id="recNannyPanel" class="rec-panel">
                     <div class="rec-panel__header">
-                        <span class="rec-panel__label">Gợi ý nanny cho:</span>
+                        <span class="rec-panel__label">Gợi ý bảo mẫu cho:</span>
                         <select id="recJobSelect" class="rec-panel__select" onchange="loadRecNannies(this.value)">
                             <option value="">— Chọn bài đăng —</option>
                         </select>
@@ -76,7 +72,7 @@
                     <div id="recNannyContent">
                         <div class="rec-panel__loading" style="padding:20px">
                             <span class="material-icons-round" style="font-size:20px;opacity:.4">arrow_upward</span>
-                            Chọn bài đăng để xem nanny phù hợp
+                            Chọn bài đăng để xem bảo mẫu phù hợp
                         </div>
                     </div>
                 </div>
@@ -90,118 +86,6 @@
     </div>
 </div>
 
-<div id="nannyFilterModal" class="nmodal fixed inset-0 z-50 bg-black/40 backdrop-blur-sm items-center justify-center px-4" onclick="if(event.target===this)closeNannyFilters()">
-    <div class="nmodal-box nanny-filter-modal bg-white rounded-2xl w-full max-w-4xl shadow-2xl relative">
-        <div class="nanny-filter-modal__header">
-            <div>
-                <p class="nanny-filter-modal__kicker">Bộ lọc tìm kiếm</p>
-                <h2 class="nanny-filter-modal__title">Tìm nanny phù hợp nhanh hơn</h2>
-                <p class="nanny-filter-modal__subtitle">Chọn khu vực, kỹ năng, độ tuổi, kinh nghiệm và khoảng lương để thu hẹp danh sách hồ sơ.</p>
-            </div>
-            <button type="button" onclick="closeNannyFilters()" class="nanny-detail-close material-icons-round">close</button>
-        </div>
-        <div class="nanny-filter-modal__body">
-            <div class="nanny-filter-groups">
-                <section class="nanny-filter-group">
-                    <div class="nanny-filter-group__head">
-                        <span class="material-icons-round">location_on</span>
-                        <div>
-                            <h3>Khu vực làm việc</h3>
-                            <p>Chọn tỉnh/thành phố và quận/huyện theo dữ liệu hành chính mới nhất.</p>
-                        </div>
-                    </div>
-                    <div class="nanny-toolbar__filters nanny-toolbar__filters--modal">
-                        <div class="nanny-filter-field">
-                            <label for="nannyCity">Thành phố/Tỉnh</label>
-                            <input id="nannyCity" type="text" class="nanny-filter" placeholder="Nhập để gợi ý thành phố" autocomplete="off" />
-                        </div>
-                        <div class="nanny-filter-field">
-                            <label for="nannyDistrict">Quận/Huyện</label>
-                            <input id="nannyDistrict" type="text" class="nanny-filter" placeholder="Chọn quận/huyện phù hợp" autocomplete="off" />
-                        </div>
-                    </div>
-                </section>
-
-                <section class="nanny-filter-group">
-                    <div class="nanny-filter-group__head">
-                        <span class="material-icons-round">payments</span>
-                        <div>
-                            <h3>Kinh nghiệm và mức lương</h3>
-                            <p>Lọc theo số năm kinh nghiệm, độ tuổi và khoảng lương mong muốn.</p>
-                        </div>
-                    </div>
-                    <div class="nanny-toolbar__filters nanny-toolbar__filters--modal nanny-toolbar__filters--modal-compact">
-                        <div class="nanny-filter-field">
-                            <label for="nannyExperience">Kinh nghiệm từ</label>
-                            <input id="nannyExperience" type="number" min="0" class="nanny-filter nanny-filter--sm" placeholder="Ví dụ: 3" />
-                        </div>
-                        <div class="nanny-filter-field">
-                            <label for="nannyAgeMin">Tuổi từ</label>
-                            <input id="nannyAgeMin" type="number" min="18" class="nanny-filter nanny-filter--sm" placeholder="Ví dụ: 25" />
-                        </div>
-                        <div class="nanny-filter-field">
-                            <label for="nannySalaryMin">Lương từ</label>
-                            <input id="nannySalaryMin" type="number" min="0" step="500000" class="nanny-filter nanny-filter--sm" placeholder="Ví dụ: 8000000" />
-                        </div>
-                        <div class="nanny-filter-field">
-                            <label for="nannySalaryMax">Lương đến</label>
-                            <input id="nannySalaryMax" type="number" min="0" step="500000" class="nanny-filter nanny-filter--sm" placeholder="Ví dụ: 15000000" />
-                        </div>
-                    </div>
-                </section>
-
-                <section class="nanny-filter-group">
-                    <div class="nanny-filter-group__head">
-                        <span class="material-icons-round">verified</span>
-                        <div>
-                            <h3>Kỹ năng và xác minh</h3>
-                            <p>Thu hẹp danh sách theo kỹ năng nổi bật và trạng thái xác minh.</p>
-                        </div>
-                    </div>
-                    <div class="nanny-toolbar__filters nanny-toolbar__filters--modal">
-                        <div class="nanny-filter-field">
-                            <label for="nannySkillText">Kỹ năng</label>
-                            <input id="nannySkillText" type="text" class="nanny-filter" placeholder="Tất cả kỹ năng" autocomplete="off" />
-                            <select id="nannySkillId" class="nanny-filter nanny-filter--native" tabindex="-1" aria-hidden="true">
-                                <option value="">Tất cả kỹ năng</option>
-                                @foreach (var skill in Model.SkillOptions)
-                                {
-                                    <option value="@skill.SkillId">@skill.SkillName</option>
-                                }
-                            </select>
-                        </div>
-                        <div class="nanny-filter-field">
-                            <label for="nannyVerificationText">Xác minh</label>
-                            <input id="nannyVerificationText" type="text" class="nanny-filter" placeholder="Tất cả trạng thái" autocomplete="off" />
-                            <select id="nannyVerification" class="nanny-filter nanny-filter--native" tabindex="-1" aria-hidden="true">
-                                <option value="">Tất cả trạng thái</option>
-                                <option value="2">Đã duyệt</option>
-                                <option value="1">Đang chờ</option>
-                                <option value="0">Chưa gửi</option>
-                            </select>
-                        </div>
-                    </div>
-                </section>
-
-                <section class="nanny-filter-group">
-                    <div class="nanny-filter-group__head">
-                        <span class="material-icons-round">calendar_month</span>
-                        <div>
-                            <h3>Lịch rảnh theo ngày</h3>
-                            <p>Chọn một hoặc nhiều khung giờ để lọc nanny có lịch phù hợp.</p>
-                        </div>
-                    </div>
-                    <div id="nannyScheduleFilter" class="nanny-filter-schedule"></div>
-                </section>
-            </div>
-        </div>
-        <div class="nanny-filter-modal__footer">
-            <button type="button" class="nanny-filter-btn nanny-filter-btn--ghost" onclick="resetNannyFilters()">Đặt lại</button>
-            <button type="button" class="nanny-filter-btn nanny-filter-btn--primary" onclick="applyNannyFilters()">Áp dụng bộ lọc</button>
-        </div>
-    </div>
-</div>
-
 <div id="nannyDetailModal" class="nmodal fixed inset-0 z-50 bg-black/50 backdrop-blur-sm items-center justify-center px-4" onclick="if(event.target===this)closeNannyDetail()">
     <div class="nmodal-box nanny-detail-box bg-white rounded-[32px] w-full max-w-4xl shadow-2xl relative">
         <div class="modal-scroll">
@@ -210,7 +94,7 @@
             </div>
             <div class="nanny-detail-header">
                 <div class="nanny-detail-hero">
-                    <img id="nd-avatar" src="/img/nanny-logo.jpg" alt="Avatar nanny" class="nanny-detail-avatar" />
+                    <img id="nd-avatar" src="/img/nanny-logo.jpg" alt="Ảnh đại diện bảo mẫu" class="nanny-detail-avatar" />
                     <div class="nanny-detail-hero__content">
                         <div class="nanny-detail-badge" id="nd-verify">Đang cập nhật</div>
                         <h2 id="nd-name">Tên bảo mẫu</h2>
@@ -244,7 +128,6 @@
                         <div><span>Liên hệ</span><strong id="nd-phone">Gửi request contact để kết nối trực tiếp</strong></div>
                         <div><span>Khu vực</span><strong id="nd-address">Chưa cập nhật</strong></div>
                         <div><span>Bán kính di chuyển</span><strong id="nd-travel">Chưa cập nhật</strong></div>
-                        <div><span>Độ hoàn thiện hồ sơ</span><strong id="nd-completeness">0%</strong></div>
                     </div>
                 </section>
 
@@ -264,16 +147,16 @@
                 {
                     <button type="button" id="nd-contactBtn" class="nanny-detail-view-btn" onclick="nannyHiringContact()">
                         <span class="material-icons-round">chat</span>
-                        Lien he Nanny
+                        Liên hệ bảo mẫu
                     </button>
                     <button type="button" id="nd-hireBtn" class="nanny-detail-view-btn" onclick="nannyHiringHire()">
                         <span class="material-icons-round">handshake</span>
-                        Thue Nanny
+                        Thuê bảo mẫu
                     </button>
                 }
                 <button type="button" id="nd-viewProfileBtn" class="nanny-detail-view-btn" onclick="viewNannyProfileDetail(event)">
                     <span class="material-icons-round">visibility</span>
-                    Xem chi tiet ho so Nanny
+                    Xem chi tiết hồ sơ bảo mẫu
                 </button>
             </div>
         </div>
@@ -307,71 +190,138 @@
 
     // Lưu dữ liệu rec để dùng cho map
     window.recNannies = [];
+    let recUpgradeRequired = false;
 
     function renderRecNannyCard(n, idx) {
-        const pct = Math.round((n.finalScore ?? 0) * 100);
+        const pct   = Math.round((n.finalScore ?? 0) * 100);
         const color = pct >= 80 ? '#16a34a' : pct >= 60 ? '#f97316' : '#6b7280';
-        const exp  = n.yearsOfExperience != null ? `<span class="rec-chip rec-chip--distance">${n.yearsOfExperience} năm KN</span>` : '';
+        const exp   = n.yearsOfExperience != null
+            ? `<span class="rec-chip rec-chip--distance">${n.yearsOfExperience} năm KN</span>` : '';
         const rating = n.averageRating != null
-            ? `<span class="rec-stars"><span class="material-icons-round" style="font-size:13px">star</span>${n.averageRating.toFixed(1)}</span>`
+            ? `<span class="rec-chip rec-chip--salary"><span class="material-icons-round" style="font-size:11px">star</span>${Number(n.averageRating).toFixed(1)}</span>`
             : '';
         const dist = n.distanceKm != null
             ? `<span class="rec-chip rec-chip--distance"><span class="material-icons-round" style="font-size:11px">near_me</span>${n.distanceKm.toFixed(1)} km</span>`
             : '';
         const badgeCls = `rec-badge rec-badge--${n.matchTier || 'ok'}`;
-        const skills = (n.skills || []).slice(0, 4).map(s =>
-            `<span class="rec-chip rec-chip--skill">${escNRec(s.skillName ?? s)}</span>`).join('');
+        const skills   = (n.skills || []).slice(0, 4)
+            .map(s => `<span class="rec-chip rec-chip--skill">${escNRec(s.skillName ?? s)}</span>`).join('');
+
+        // Avatar circle — show image or initials fallback
+        const initials = (n.fullName || '?').split(' ').map(w => w[0]).slice(-2).join('').toUpperCase();
+        const avatarHtml = n.avatarUrl
+            ? `<img src="${escNRec(n.avatarUrl)}" alt="" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid #e2e8f0">`
+            : `<div style="width:44px;height:44px;border-radius:50%;background:#e0e7ff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#6366f1;flex-shrink:0">${initials}</div>`;
+
+        // Score breakdown sub-components
+        const semPct  = Math.round((n.semanticScore  ?? 0) * 100);
+        const salPct  = Math.round((n.salaryScore    ?? 0) * 100);
+        const distPct = Math.round((n.distanceScore  ?? 0) * 100);
 
         return `
         <div class="rec-card rec-card--clickable" data-rec-idx="${idx}"
              onclick="openNannyDetail('${escNRec(n.nannyProfileId)}')">
             <div class="rec-card-header">
-                <div class="rec-score-ring" style="--score-color:${color}">
-                    <span class="rec-score-value" style="color:${color}">${pct}%</span>
-                </div>
-                <div class="rec-card-meta">
-                    <h3 class="rec-card-title">${escNRec(n.fullName)}</h3>
-                    <p class="rec-card-sub">${rating} ${exp}</p>
+                <div style="flex-shrink:0">${avatarHtml}</div>
+                <div class="rec-card-meta" style="min-width:0">
+                    <div class="rec-card-meta__top">
+                        <h3 class="rec-card-title">${escNRec(n.fullName)}</h3>
+                        <span class="rec-score-badge" style="--score-color:${color}">${pct}%</span>
+                    </div>
+                    <p class="rec-card-sub" style="margin-top:2px">${rating}${exp ? ' ' + exp : ''}</p>
                 </div>
             </div>
             <div class="rec-card-chips">
-                ${dist}
-                ${skills}
+                ${dist}${skills}
+            </div>
+            <div class="rec-score-breakdown" onclick="event.stopPropagation(); toggleNannyBreakdown(this)">
+                <div class="rec-score-breakdown__toggle">
+                    <span class="material-icons-round rec-score-breakdown__icon">info_outline</span>
+                    <span>Thông số gợi ý chi tiết</span>
+                    <span class="material-icons-round rec-score-breakdown__chevron">expand_more</span>
+                </div>
+                <div class="rec-score-breakdown__body">
+                    <div class="rec-score-breakdown__row">
+                        <span class="rec-score-breakdown__label">Mức lương</span>
+                        <div class="rec-mini-bar"><div class="rec-mini-bar__fill" style="width:${salPct}%;background:#8b5cf6"></div></div>
+                        <span class="rec-score-breakdown__val">${salPct}%</span>
+                    </div>
+                    <div class="rec-score-breakdown__row">
+                        <span class="rec-score-breakdown__label">Khoảng cách</span>
+                        <div class="rec-mini-bar"><div class="rec-mini-bar__fill" style="width:${distPct}%;background:#0ea5e9"></div></div>
+                        <span class="rec-score-breakdown__val">${distPct}%</span>
+                    </div>
+                    <div class="rec-score-breakdown__row">
+                        <span class="rec-score-breakdown__label">Các tiêu chí khác</span>
+                        <div class="rec-mini-bar"><div class="rec-mini-bar__fill" style="width:${semPct}%;background:#3b82f6"></div></div>
+                        <span class="rec-score-breakdown__val">${semPct}%</span>
+                    </div>
+                </div>
             </div>
             <div class="rec-card-footer">
-                <span class="rec-ai-badge"><span class="material-icons-round" style="font-size:13px">auto_awesome</span>AI Gợi ý</span>
+                <span class="rec-ai-badge"><span class="material-icons-round" style="font-size:13px">auto_awesome</span>Hệ thống gợi ý</span>
                 <span class="${badgeCls}">${escNRec(n.matchLabel || '')}</span>
             </div>
         </div>`;
     }
 
+    function toggleNannyBreakdown(el) {
+        const body    = el.querySelector('.rec-score-breakdown__body');
+        const chevron = el.querySelector('.rec-score-breakdown__chevron');
+        const isOpen  = el.classList.contains('open');
+        el.classList.toggle('open', !isOpen);
+        body.style.display      = isOpen ? 'none' : 'flex';
+        chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+    }
+
     function plotRecNannyMarkers(nannies) {
         if (typeof clearNannyMarkers === 'function') clearNannyMarkers();
-        if (!window.nannyMap || !window.L) return;
+        // __leafletNannyMap is set by nanny-list.js; window.nannyMap = DOM element (browser quirk)
+        const leafletMap = window.__leafletNannyMap;
+        if (!leafletMap || typeof L === 'undefined') return;
+        // Ensure map knows its current container dimensions before adding layers
+        try { leafletMap.invalidateSize({ animate: false }); } catch (_) {}
         nannies.forEach((n, idx) => {
             if (!n.latitude || !n.longitude) return;
-            const pct = Math.round((n.finalScore ?? 0) * 100);
-            const color = pct >= 80 ? '#16a34a' : pct >= 60 ? '#f97316' : '#6b7280';
-            const el = document.createElement('div');
-            el.className = 'nanny-marker';
-            el.innerHTML = `<span style="font-size:11px;font-weight:800;color:${color}">${pct}%</span>`;
-            el.style.cssText = `background:#fff;border:2px solid ${color};border-radius:999px;padding:2px 7px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.15);cursor:pointer`;
-            const marker = window.L.marker([n.latitude, n.longitude], {
-                icon: window.L.divIcon({ html: el, className: '', iconAnchor: [20, 12] })
-            }).addTo(window.nannyMap);
-            marker.bindPopup(`<div style="font-size:.82rem;font-weight:700">${n.fullName}</div><div style="font-size:.75rem;color:#64748b">${pct}% phù hợp</div>`);
-            const circle = window.L.circle([n.latitude, n.longitude], {
-                radius: 600, color: '#fdba74', fillColor: '#fdba74',
-                fillOpacity: 0.1, weight: 1
-            }).addTo(window.nannyMap);
-            window.nannyMarkers.push({ marker, circle, point: { lat: n.latitude, lng: n.longitude, zoom: 14 }, element: el });
+            try {
+                const recIcon = L.divIcon({
+                    className: '',
+                    html: `<div class="nanny-map-marker">
+                        <span class="nanny-map-marker__halo"></span>
+                        <span class="nanny-map-marker__pin"><span class="nanny-map-marker__core"></span></span>
+                    </div>`,
+                    iconSize: [28, 36],
+                    iconAnchor: [14, 30]
+                });
+                const marker = L.marker([n.latitude, n.longitude], { icon: recIcon }).addTo(leafletMap);
+                marker.bindPopup(`<div style="font-size:.82rem;font-weight:700">${escNRec(n.fullName)}</div><div style="font-size:.75rem;color:#64748b">Gợi ý từ hệ thống</div>`);
+                const circle = L.circle([n.latitude, n.longitude], {
+                    radius: 600, color: '#fdba74', fillColor: '#fdba74',
+                    fillOpacity: 0.1, weight: 1
+                }).addTo(leafletMap);
+                if (typeof pushRecNannyMarker === 'function')
+                    pushRecNannyMarker({ marker, circle, point: { lat: n.latitude, lng: n.longitude, zoom: 14 }, element: marker.getElement() });
+            } catch (markerErr) {
+                console.warn('[rec-nanny] marker error at idx', idx, markerErr);
+            }
         });
-        // Fit map to rec markers
+        // Fit map — skip far outliers (same logic as rec job markers)
         const valid = nannies.filter(n => n.latitude && n.longitude);
-        if (valid.length && window.nannyMap) {
-            const bounds = window.L.latLngBounds(valid.map(n => [n.latitude, n.longitude]));
-            window.suppressNextNannyMapMove = true;
-            window.nannyMap.fitBounds(bounds, { padding: [32, 32], maxZoom: 14 });
+        if (valid.length) {
+            try {
+                const top  = valid.slice(0, 5);
+                const cLat = top.reduce((s, n) => s + n.latitude, 0) / top.length;
+                const cLng = top.reduce((s, n) => s + n.longitude, 0) / top.length;
+                const nearby = valid.filter(n =>
+                    Math.abs(n.latitude - cLat) < 1.5 && Math.abs(n.longitude - cLng) < 1.5);
+                const fitSet = nearby.length ? nearby : top;
+                const bounds = L.latLngBounds(fitSet.map(n => [n.latitude, n.longitude]));
+                if (typeof setSuppressNextNannySearch === 'function') setSuppressNextNannySearch();
+                // animate:false avoids mid-animation layer re-projection (layerPointToContainerPoint null)
+                leafletMap.fitBounds(bounds, { padding: [48, 48], maxZoom: 13, animate: false });
+            } catch (boundsErr) {
+                console.warn('[rec-nanny] fitBounds error', boundsErr);
+            }
         }
     }
 
@@ -390,6 +340,7 @@
     function loadRecNannies(jobId) {
         const content = document.getElementById('recNannyContent');
         if (!content) return;
+        if (recUpgradeRequired) return;
         if (!jobId) {
             if (typeof clearNannyMarkers === 'function') clearNannyMarkers();
             content.innerHTML = `<div class="rec-panel__loading" style="padding:20px">
@@ -404,12 +355,13 @@
             .then(r => r.json())
             .then(res => {
                 if (res.requiresUpgrade) {
+                    recUpgradeRequired = true;
                     if (typeof clearNannyMarkers === 'function') clearNannyMarkers();
                     window.recNannies = [];
                     content.innerHTML = `
                     <div class="rec-upgrade-prompt">
                         <span class="material-icons-round rec-upgrade-icon">auto_awesome</span>
-                        <h3 class="rec-upgrade-title">Tính năng dành cho gói Plus / Pro</h3>
+                        <h3 class="rec-upgrade-title">Tính năng dành cho gói trả phí</h3>
                         <p class="rec-upgrade-desc">Nâng cấp để AI tự động gợi ý những bảo mẫu phù hợp nhất với yêu cầu công việc của bạn.</p>
                         <a href="/Subscription" class="rec-upgrade-btn">
                             <span class="material-icons-round">rocket_launch</span>Nâng cấp ngay
@@ -421,7 +373,7 @@
                     if (typeof clearNannyMarkers === 'function') clearNannyMarkers();
                     content.innerHTML = `<div class="rec-panel__empty">
                         <span class="material-icons-round">person_search</span>
-                        <p>Chưa tìm được nanny phù hợp cho bài đăng này.</p>
+                        <p>Chưa tìm được bảo mẫu phù hợp cho bài đăng này.</p>
                     </div>`;
                 } else {
                     window.recNannies = res.data;

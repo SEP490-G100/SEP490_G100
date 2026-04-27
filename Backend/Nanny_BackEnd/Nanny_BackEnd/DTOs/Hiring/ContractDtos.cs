@@ -1,7 +1,5 @@
 namespace Nanny_BackEnd.DTOs.Hiring;
 
-// ─── Task 1: DTOs cho Contract List & Detail ─────────────────────────────────
-
 public class ContractListItemDto
 {
     public Guid ContractId { get; set; }
@@ -13,56 +11,15 @@ public class ContractListItemDto
     public string? NannyAvatar { get; set; }
     public DateOnly StartDate { get; set; }
     public DateOnly? EndDate { get; set; }
-    /// <summary>
-    /// HiringRecord.Status: 0=Pending, 1=Active, 2=Declined, 3=Cancelled, 4=Completed
-    /// </summary>
     public int HiringStatus { get; set; }
-    /// <summary>
-    /// Contract.Status: 0=Draft, 1=Signed
-    /// </summary>
     public int ContractStatus { get; set; }
-    public bool SignedByParent { get; set; }
-    public bool SignedByNanny { get; set; }
+    public string? PdfUrl { get; set; }
     public DateTime CreatedAt { get; set; }
 }
 
-public class ContractDetailDto
+public class SaveContractStoragePdfRequestDto
 {
-    // Thông tin định danh
-    public Guid ContractId { get; set; }
-    public Guid HiringRecordId { get; set; }
-    public string TemplateName { get; set; } = string.Empty;
-
-    // Công việc
-    public string JobTitle { get; set; } = string.Empty;
-    public DateOnly StartDate { get; set; }
-    public DateOnly? EndDate { get; set; }
-    public int? ContractDuration { get; set; }
-
-    // Phụ huynh
-    public string ParentName { get; set; } = string.Empty;
-    public string? ParentAvatar { get; set; }
-    public string? ParentPhone { get; set; }
-    public string? ParentEmail { get; set; }
-    public string? ParentAddress { get; set; }
-
-    // Bảo mẫu
-    public string NannyName { get; set; } = string.Empty;
-    public string? NannyAvatar { get; set; }
-    public string? NannyPhone { get; set; }
-    public string? NannyEmail { get; set; }
-    public string? NannyAddress { get; set; }
-
-    // Nội dung hợp đồng (đã render token)
-    public string ContractContent { get; set; } = string.Empty;
-
-    // Trạng thái ký
-    public bool SignedByParent { get; set; }
-    public bool SignedByNanny { get; set; }
-    public DateTime? SignedAt { get; set; }
-    public int HiringStatus { get; set; }
-    public int ContractStatus { get; set; }
-    public DateTime CreatedAt { get; set; }
+    public string PdfUrl { get; set; } = string.Empty;
 }
 
 public class ContractListResponseDto
@@ -70,4 +27,65 @@ public class ContractListResponseDto
     public List<ContractListItemDto> Active { get; set; } = new();
     public List<ContractListItemDto> Pending { get; set; } = new();
     public List<ContractListItemDto> History { get; set; } = new();
+}
+
+public class ContractDetailDto
+{
+    public Guid ContractId { get; set; }
+    public Guid HiringRecordId { get; set; }
+    public Guid? ContractTemplateId { get; set; }
+    public string ContractContent { get; set; } = string.Empty;
+    public Dictionary<string, string> FieldValues { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    public int ContractStatus { get; set; }
+    public bool SignedByParent { get; set; }
+    public bool SignedByNanny { get; set; }
+    public DateOnly StartDate { get; set; }
+    public DateOnly? EndDate { get; set; }
+    public string ParentName { get; set; } = string.Empty;
+    public string ParentPhone { get; set; } = string.Empty;
+    public string ParentEmail { get; set; } = string.Empty;
+    public string NannyName { get; set; } = string.Empty;
+    public string NannyPhone { get; set; } = string.Empty;
+    public string NannyEmail { get; set; } = string.Empty;
+    public string CurrentUserRole { get; set; } = string.Empty;
+    public bool CanParentConfirmInfo { get; set; }
+    public bool CanNannyConfirmInfo { get; set; }
+    public bool CanParentFinalConfirm { get; set; }
+    public bool IsReadOnly { get; set; }
+}
+
+public class ContractParentFillRequestDto
+{
+    public string ParentName { get; set; } = string.Empty;
+    public string ParentDob { get; set; } = string.Empty;
+    public string ParentIdentityNumber { get; set; } = string.Empty;
+    public string ParentIdentityIssueDate { get; set; } = string.Empty;
+    public string ParentIdentityIssuePlace { get; set; } = string.Empty;
+    public string ParentPermanentAddress { get; set; } = string.Empty;
+    public string ParentCurrentAddress { get; set; } = string.Empty;
+    public string ParentPhone { get; set; } = string.Empty;
+    public string ParentEmail { get; set; } = string.Empty;
+    public string ContractDurationMonths { get; set; } = string.Empty;
+    public string ProbationStartDate { get; set; } = string.Empty;
+    public string ProbationEndDate { get; set; } = string.Empty;
+    public string WorkAddress { get; set; } = string.Empty;
+    public string SalaryAmount { get; set; } = string.Empty;
+    public string ProbationSalaryAmount { get; set; } = string.Empty;
+    public string AllowanceAmount { get; set; } = string.Empty;
+    public string BankAccountNumber { get; set; } = string.Empty;
+    public string BankName { get; set; } = string.Empty;
+    public string SalaryReceivedDate { get; set; } = string.Empty;
+    public string MealPerDay { get; set; } = string.Empty;
+}
+
+public class ContractNannyFillRequestDto
+{
+    public string NannyName { get; set; } = string.Empty;
+    public string NannyDob { get; set; } = string.Empty;
+    public string NannyIdentityNumber { get; set; } = string.Empty;
+    public string NannyIdentityIssueDate { get; set; } = string.Empty;
+    public string NannyIdentityIssuePlace { get; set; } = string.Empty;
+    public string NannyPermanentAddress { get; set; } = string.Empty;
+    public string NannyCurrentAddress { get; set; } = string.Empty;
+    public string NannyPhone { get; set; } = string.Empty;
 }

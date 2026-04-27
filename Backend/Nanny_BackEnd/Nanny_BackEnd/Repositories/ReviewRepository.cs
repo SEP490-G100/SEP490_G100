@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Nanny_BackEnd.Data;
+using Nanny_BackEnd.Repositories.Interfaces;
 using Nanny_BackEnd.Models;
 
 namespace Nanny_BackEnd.Repositories;
 
-public class ReviewRepository
+public class ReviewRepository : IReviewRepository
 {
     private readonly Sep490NannyDbContext _db;
 
@@ -39,6 +40,19 @@ public class ReviewRepository
             .Where(r => r.RevieweeUserId == revieweeUserId && !r.IsDeleted && r.IsVisible)
             .Select(r => (double?)r.Rating)
             .AverageAsync();
+
+    public async Task<List<Review>> GetByReviewerAsync(Guid reviewerUserId)
+        => await _db.Reviews
+            .Where(r => r.ReviewerUserId == reviewerUserId && !r.IsDeleted)
+            .Include(r => r.RevieweeUser)
+            .OrderByDescending(r => r.CreatedAt)
+            .ToListAsync();
+
+    public async Task<List<Guid>> GetHiringRecordIdsByReviewerAsync(Guid reviewerUserId) =>
+        await _db.Reviews
+            .Where(r => r.ReviewerUserId == reviewerUserId && !r.IsDeleted)
+            .Select(r => r.HiringRecordId)
+            .ToListAsync();
 
     public void Add(Review review) => _db.Reviews.Add(review);
 

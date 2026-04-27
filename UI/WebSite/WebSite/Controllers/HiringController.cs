@@ -1,7 +1,14 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
+using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using WebSite.Hubs;
+using WebSite.Models;
+using WebSite.Models.Contract;
 
 namespace WebSite.Controllers;
 
@@ -10,10 +17,87 @@ namespace WebSite.Controllers;
 public class HiringController : Controller
 {
     private readonly HttpClient _http;
+    private readonly IHubContext<NotificationHub> _notificationHub;
+    private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
 
-    public HiringController(IHttpClientFactory httpFactory)
+    public HiringController(IHttpClientFactory httpFactory, IHubContext<NotificationHub> notificationHub)
     {
         _http = httpFactory.CreateClient("BackendApi");
+        _notificationHub = notificationHub;
+    }
+
+    [HttpGet("ViewHiringHistory")]
+    public IActionResult ViewHiringHistory()
+    {
+        if (!User.IsInRole("Parent") && !User.IsInRole("Nanny"))
+            return RedirectToAction("Index", "Home");
+
+        return View("~/Views/Hiring/ViewHiringHistory.cshtml");
+    }
+
+    [HttpGet("ContractTemplates")]
+    public async Task<IActionResult> ContractTemplates()
+    {
+        SetBearerToken();
+        return await Proxy(() => _http.GetAsync("/api/hiring/contract-templates"));
+    }
+
+    [HttpGet("ContractTemplatePreview/{templateId:guid}")]
+    public async Task<IActionResult> ContractTemplatePreview(Guid templateId)
+    {
+        SetBearerToken();
+        var response = await _http.GetAsync($"/api/hiring/contract-templates/{templateId}");
+        if (!response.IsSuccessStatusCode)
+            return Content("Không thể tải nội dung mẫu hợp đồng.");
+
+        var body = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(string.IsNullOrWhiteSpace(body) ? "{}" : body);
+        if (!doc.RootElement.TryGetProperty("success", out var successEl) || !successEl.GetBoolean())
+            return Content("Không thể tải nội dung mẫu hợp đồng.");
+
+        if (!doc.RootElement.TryGetProperty("data", out var dataEl) || dataEl.ValueKind != JsonValueKind.Object)
+            return Content("Không thể tải nội dung mẫu hợp đồng.");
+
+        var title = dataEl.TryGetProperty("name", out var nameEl) ? (nameEl.GetString() ?? "Mau hop dong") : "Mau hop dong";
+        var version = dataEl.TryGetProperty("version", out var versionEl) ? (versionEl.GetString() ?? "") : "";
+        var content = dataEl.TryGetProperty("content", out var contentEl) ? (contentEl.GetString() ?? "") : "";
+        content = Regex.Replace(content, @"\{\{\s*[^{}]+\s*\}\}", "...", RegexOptions.CultureInvariant);
+
+        ViewBag.TemplateTitle = title;
+        ViewBag.TemplateVersion = version;
+        ViewBag.TemplateContent = content;
+        return View("~/Views/Hiring/ContractTemplatePreview.cshtml");
+    }
+
+    [HttpGet("Api/History")]
+    public async Task<IActionResult> HistoryApi()
+    {
+        if (!User.IsInRole("Parent") && !User.IsInRole("Nanny"))
+            return StatusCode(403, new { success = false, message = "Bạn không có quyền xem lịch sử thuê." });
+
+        SetBearerToken();
+        try
+        {
+            var response = await _http.GetAsync("/api/contracts");
+            if (!response.IsSuccessStatusCode)
+                return await Proxy(() => Task.FromResult(response));
+
+            var body = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResult<ContractListResponseViewModel>>(body, JsonOpts);
+            var grouped = result?.Data ?? new ContractListResponseViewModel();
+
+            var merged = grouped.Active
+                .Concat(grouped.Pending)
+                .Concat(grouped.History)
+                .OrderByDescending(item => item.CreatedAt)
+                .ToList();
+
+            return Json(new { success = true, data = merged });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { success = false, message = ex.Message, data = Array.Empty<object>() });
+        }
     }
 
     [HttpGet("{jobPostingId:guid}/Applicants")]
@@ -42,21 +126,39 @@ public class HiringController : Controller
     [HttpPost("{jobPostingId:guid}/Applicants/{jobAppId:guid}/Hire")]
     public async Task<IActionResult> Hire(Guid jobPostingId, Guid jobAppId)
     {
-        SetBearerToken();
-        var body = await ReadBodyAsync();
-        return await Proxy(() => _http.PostAsync(
-            $"/api/hiring/{jobPostingId}/applicants/{jobAppId}/hire",
-            JsonContent(body)));
+        try
+        {
+            SetBearerToken();
+            var body = await ReadBodyAsync();
+            var response = await _http.PostAsync(
+                $"/api/hiring/{jobPostingId}/applicants/{jobAppId}/hire",
+                JsonContent(body));
+
+            return await ProxyWithRealtimeHireAsync(response);
+        }
+        catch (Exception)
+        {
+            return new JsonResult(new { success = false, message = "Không thể kết nối máy chủ lúc này. Vui lòng thử lại." }) { StatusCode = 500 };
+        }
     }
 
     [HttpPost("ContactRequests/{contactRequestId:guid}/Hire")]
     public async Task<IActionResult> HireFromContactRequest(Guid contactRequestId)
     {
-        SetBearerToken();
-        var body = await ReadBodyAsync();
-        return await Proxy(() => _http.PostAsync(
-            $"/api/hiring/contact-requests/{contactRequestId}/hire",
-            JsonContent(body)));
+        try
+        {
+            SetBearerToken();
+            var body = await ReadBodyAsync();
+            var response = await _http.PostAsync(
+                $"/api/hiring/contact-requests/{contactRequestId}/hire",
+                JsonContent(body));
+
+            return await ProxyWithRealtimeHireAsync(response);
+        }
+        catch (Exception)
+        {
+            return new JsonResult(new { success = false, message = "Không thể kết nối máy chủ lúc này. Vui lòng thử lại." }) { StatusCode = 500 };
+        }
     }
 
     [HttpGet("Record")]
@@ -76,11 +178,113 @@ public class HiringController : Controller
             JsonContent(body)));
     }
 
-    [HttpGet("Templates")]
-    public async Task<IActionResult> Templates()
+    [HttpPost("Records/{hiringRecordId:guid}/Complete")]
+    public async Task<IActionResult> Complete(Guid hiringRecordId)
     {
         SetBearerToken();
-        return await Proxy(() => _http.GetAsync("/api/hiring/templates"));
+        return await Proxy(() => _http.PostAsync(
+            $"/api/hiring/records/{hiringRecordId}/complete",
+            EmptyJson()));
+    }
+
+    private async Task<IActionResult> ProxyWithRealtimeHireAsync(HttpResponseMessage response)
+    {
+        var body = await response.Content.ReadAsStringAsync();
+        var content = string.IsNullOrWhiteSpace(body) ? "{}" : body;
+
+        if (response.IsSuccessStatusCode &&
+            TryParseHireRealtimePayload(content, out var parentUserId, out var nannyUserId, out var parentName))
+        {
+            var resolvedParentName = string.IsNullOrWhiteSpace(parentName)
+                ? BuildParentNameFromClaims()
+                : parentName.Trim();
+
+            if (nannyUserId != Guid.Empty)
+            {
+                await _notificationHub.Clients.Group($"user:{nannyUserId}").SendAsync("notification:new", new
+                {
+                    type = "hiring-confirmed-nanny",
+                    title = "Thông báo từ NannyMatch",
+                    message = $"Bố mẹ {resolvedParentName} đã thuê bạn.",
+                    toastType = "success"
+                });
+            }
+
+            if (parentUserId != Guid.Empty)
+            {
+                await _notificationHub.Clients.Group($"user:{parentUserId}").SendAsync("notification:new", new
+                {
+                    type = "hiring-confirmed-parent",
+                    title = "Thông báo từ NannyMatch",
+                    message = "Bạn đã xác nhận thuê bảo mẫu thành công.",
+                    toastType = "success"
+                });
+            }
+        }
+
+        return new ContentResult
+        {
+            Content = content,
+            ContentType = "application/json",
+            StatusCode = (int)response.StatusCode
+        };
+    }
+
+    private static bool TryParseHireRealtimePayload(string json, out Guid parentUserId, out Guid nannyUserId, out string parentName)
+    {
+        parentUserId = Guid.Empty;
+        nannyUserId = Guid.Empty;
+        parentName = string.Empty;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            if (root.TryGetProperty("success", out var successEl) && successEl.ValueKind == JsonValueKind.False)
+                return false;
+
+            if (!root.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Object)
+                return false;
+
+            if (data.TryGetProperty("parentUserId", out var parentUserIdEl) &&
+                parentUserIdEl.ValueKind == JsonValueKind.String)
+            {
+                Guid.TryParse(parentUserIdEl.GetString(), out parentUserId);
+            }
+
+            if (data.TryGetProperty("nannyUserId", out var nannyUserIdEl) &&
+                nannyUserIdEl.ValueKind == JsonValueKind.String)
+            {
+                Guid.TryParse(nannyUserIdEl.GetString(), out nannyUserId);
+            }
+
+            if (data.TryGetProperty("parentName", out var parentNameEl) &&
+                parentNameEl.ValueKind == JsonValueKind.String)
+            {
+                parentName = parentNameEl.GetString() ?? string.Empty;
+            }
+
+            return parentUserId != Guid.Empty || nannyUserId != Guid.Empty;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private string BuildParentNameFromClaims()
+    {
+        var firstName = User.FindFirstValue(ClaimTypes.GivenName) ?? string.Empty;
+        var lastName = User.FindFirstValue(ClaimTypes.Surname) ?? string.Empty;
+        var fullName = $"{firstName} {lastName}".Trim();
+
+        if (!string.IsNullOrWhiteSpace(fullName))
+            return fullName;
+
+        return User.FindFirstValue(ClaimTypes.Name)
+            ?? User.FindFirstValue(ClaimTypes.Email)
+            ?? "Nguoi dung";
     }
 
     private void SetBearerToken()
@@ -114,9 +318,9 @@ public class HiringController : Controller
                 StatusCode = (int)response.StatusCode
             };
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            return new JsonResult(new { success = false, message = ex.Message }) { StatusCode = 500 };
+            return new JsonResult(new { success = false, message = "Không thể kết nối máy chủ lúc này. Vui lòng thử lại." }) { StatusCode = 500 };
         }
     }
 }

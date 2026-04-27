@@ -2,8 +2,8 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nanny_BackEnd.DTOs.Profile;
-using Nanny_BackEnd.Repositories;
-using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Enums;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Controllers;
 
@@ -12,13 +12,11 @@ namespace Nanny_BackEnd.Controllers;
 [Authorize]
 public class ParentOnboardingController : ControllerBase
 {
-    private readonly ProfileService _profileService;
-    private readonly ParentRepository _parentRepo;
+    private readonly IProfileService _profileService;
 
-    public ParentOnboardingController(ProfileService profileService, ParentRepository parentRepo)
+    public ParentOnboardingController(IProfileService profileService)
     {
         _profileService = profileService;
-        _parentRepo = parentRepo;
     }
 
     [HttpPut("profile")]
@@ -27,26 +25,7 @@ public class ParentOnboardingController : ControllerBase
         try
         {
             var userId = GetCurrentUserId();
-            var parentProfile = await _parentRepo.FindByUserIdAsync(userId);
-            if (parentProfile == null)
-            {
-                parentProfile = new Models.ParentProfile
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = userId,
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedBy = userId
-                };
-                _parentRepo.Add(parentProfile);
-            }
-
-            parentProfile.FamilyDescription = request.FamilyDescription;
-            parentProfile.NumberOfChildren = request.NumberOfChildren;
-            parentProfile.UpdatedAt = DateTime.UtcNow;
-            parentProfile.UpdatedBy = userId;
-
-            await _parentRepo.SaveChangesAsync();
-
+            await _profileService.UpdateParentOnboardingProfileAsync(userId, request);
             return Ok(new { success = true, message = "Cập nhật hồ sơ parent thành công." });
         }
         catch (InvalidOperationException ex)
@@ -64,7 +43,7 @@ public class ParentOnboardingController : ControllerBase
             var createRequest = new CreateChildProfileRequest
             {
                 Characteristic = request.Characteristic,
-                ChildAgeGroup = (Enums.ChildAgeGroup?)request.ChildAgeGroup,
+                ChildAgeGroup = (ChildAgeGroup?)request.ChildAgeGroup,
                 SpecialNeeds = request.SpecialNeeds,
                 Notes = request.Notes
             };

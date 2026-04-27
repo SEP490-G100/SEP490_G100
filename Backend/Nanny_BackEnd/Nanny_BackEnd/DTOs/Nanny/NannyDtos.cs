@@ -127,9 +127,6 @@ public class NannyDetailResponse : NannyListItemResponse
     [JsonPropertyName("maxTravelDistance")]
     public int? MaxTravelDistance { get; set; }
 
-    [JsonPropertyName("profileCompleteness")]
-    public int ProfileCompleteness { get; set; }
-
     [JsonPropertyName("verifiedAt")]
     public DateTime? VerifiedAt { get; set; }
 

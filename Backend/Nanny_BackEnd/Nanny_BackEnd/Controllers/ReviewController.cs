@@ -1,10 +1,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Nanny_BackEnd.Data;
 using Nanny_BackEnd.DTOs.Review;
-using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Controllers;
 
@@ -12,13 +10,13 @@ namespace Nanny_BackEnd.Controllers;
 [Route("api/reviews")]
 public class ReviewController : ControllerBase
 {
-    private readonly ReviewService _reviewSvc;
-    private readonly Sep490NannyDbContext _db;
+    private readonly IReviewService _reviewSvc;
+    private readonly IProfileService _profileService;
 
-    public ReviewController(ReviewService reviewSvc, Sep490NannyDbContext db)
+    public ReviewController(IReviewService reviewSvc, IProfileService profileService)
     {
         _reviewSvc = reviewSvc;
-        _db = db;
+        _profileService = profileService;
     }
 
     /// <summary>GET /api/reviews/nanny/{nannyUserId} — public, lấy đánh giá của nanny</summary>
@@ -45,6 +43,18 @@ public class ReviewController : ControllerBase
         if (parent is null) return BadRequest(Fail("Tài khoản hiện tại không phải Phụ Huynh."));
 
         var result = await _reviewSvc.GetReviewableHiringRecordsAsync(userId.Value);
+        return Ok(Success(result, result.Count));
+    }
+
+    /// <summary>GET /api/reviews/mine — lấy tất cả đánh giá parent đã gửi</summary>
+    [Authorize]
+    [HttpGet("mine")]
+    public async Task<IActionResult> GetMine()
+    {
+        var userId = getCurrentUserId();
+        if (!userId.HasValue) return Unauthorized(Fail("Chưa đăng nhập."));
+
+        var result = await _reviewSvc.GetMyReviewsAsync(userId.Value);
         return Ok(Success(result, result.Count));
     }
 
@@ -89,7 +99,7 @@ public class ReviewController : ControllerBase
     }
 
     private async Task<Models.ParentProfile?> getParent(Guid userId)
-        => await _db.ParentProfiles.FirstOrDefaultAsync(p => p.UserId == userId && !p.IsDeleted);
+        => await _profileService.GetParentProfileByUserIdAsync(userId);
 
     private static object Success(object data, int? total = null) =>
         total.HasValue

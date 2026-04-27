@@ -1,0 +1,652 @@
+@{
+    ViewData["Title"] = "Câu hỏi thường gặp – NannyMatch";
+}
+
+<!-- ══ HERO ═══════════════════════════════════════════════════════════ -->
+<section class="relative overflow-hidden"
+         style="background: linear-gradient(160deg, #fff7ed 0%, #fef9f0 55%, #f9fafb 100%); padding: 72px 0 64px">
+    <!-- Orbs -->
+    <div style="position:absolute;top:-80px;right:-80px;width:420px;height:420px;background:radial-gradient(circle,rgba(251,191,36,.18) 0%,transparent 70%);pointer-events:none"></div>
+    <div style="position:absolute;bottom:-60px;left:-60px;width:320px;height:320px;background:radial-gradient(circle,rgba(249,115,22,.10) 0%,transparent 70%);pointer-events:none"></div>
+
+    <div class="max-w-2xl mx-auto px-6 text-center" style="position:relative;z-index:1">
+        <!-- Badge -->
+        <div style="display:inline-flex;align-items:center;gap:6px;background:#ffedd5;color:#ea580c;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:6px 14px;border-radius:99px;margin-bottom:20px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            Trung tâm hỗ trợ
+        </div>
+
+        <!-- Heading -->
+        <h1 style="font-family:'Quicksand',sans-serif;font-size:clamp(2rem,5vw,3rem);font-weight:800;color:#111827;line-height:1.15;margin-bottom:14px">
+            Chúng tôi có thể<br>
+            <span class="gradient-text">giúp gì cho bạn?</span>
+        </h1>
+        <p style="color:#6b7280;font-size:.95rem;margin-bottom:32px;line-height:1.7">
+            Tổng hợp <strong style="color:#374151">11 câu hỏi</strong> thường gặp nhất từ phụ huynh và bảo mẫu.
+        </p>
+
+        <!-- Search -->
+        <div style="position:relative;max-width:520px;margin:0 auto">
+            <!-- Icon SVG (không phụ thuộc Material Icons) -->
+            <svg style="position:absolute;left:18px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:#9ca3af;pointer-events:none;flex-shrink:0"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input id="faqSearch" type="text" placeholder="Nhập từ khóa tìm kiếm..."
+                   oninput="searchFaq(this.value)"
+                   style="width:100%;padding:14px 46px 14px 48px;border-radius:16px;border:1.5px solid #e5e7eb;background:#fff;font-size:.9rem;color:#111827;box-shadow:0 4px 24px rgba(0,0,0,.07);outline:none;transition:border-color .2s,box-shadow .2s;box-sizing:border-box"
+                   onfocus="this.style.borderColor='#f97316';this.style.boxShadow='0 4px 24px rgba(249,115,22,.15)'"
+                   onblur="this.style.borderColor='#e5e7eb';this.style.boxShadow='0 4px 24px rgba(0,0,0,.07)'" />
+            <button id="faqSearchClear" onclick="clearSearch()"
+                    style="display:none;position:absolute;right:16px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:2px;color:#9ca3af;line-height:1">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+</section>
+
+<!-- ══ MAIN CONTENT ════════════════════════════════════════════════════ -->
+<section style="background:#f9fafb;padding:48px 0 72px">
+    <div class="max-w-5xl mx-auto px-6 lg:px-8">
+
+        <!-- ── Category cards ── -->
+        <div id="categoryCards" style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:36px">
+
+            <button onclick="filterFaq('all')" id="tab-all"
+                    class="faq-cat-btn faq-cat-active"
+                    style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 8px;border-radius:16px;border:2px solid #f97316;background:#fff7ed;cursor:pointer;transition:all .2s">
+                <span style="width:36px;height:36px;border-radius:10px;background:#ffedd5;display:flex;align-items:center;justify-content:center">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+                    </svg>
+                </span>
+                <span style="font-size:12px;font-weight:700;color:#374151">Tất cả</span>
+                <span class="faq-cat-count" style="font-size:10px;font-weight:700;background:#f97316;color:#fff;padding:2px 8px;border-radius:99px">11</span>
+            </button>
+
+            <button onclick="filterFaq('general')" id="tab-general"
+                    class="faq-cat-btn"
+                    style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 8px;border-radius:16px;border:2px solid #e5e7eb;background:#fff;cursor:pointer;transition:all .2s">
+                <span style="width:36px;height:36px;border-radius:10px;background:#eff6ff;display:flex;align-items:center;justify-content:center">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                </span>
+                <span style="font-size:12px;font-weight:700;color:#374151">Chung</span>
+                <span class="faq-cat-count" style="font-size:10px;font-weight:700;background:#eff6ff;color:#3b82f6;padding:2px 8px;border-radius:99px">3</span>
+            </button>
+
+            <button onclick="filterFaq('parent')" id="tab-parent"
+                    class="faq-cat-btn"
+                    style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 8px;border-radius:16px;border:2px solid #e5e7eb;background:#fff;cursor:pointer;transition:all .2s">
+                <span style="width:36px;height:36px;border-radius:10px;background:#f5f3ff;display:flex;align-items:center;justify-content:center">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                </span>
+                <span style="font-size:12px;font-weight:700;color:#374151">Phụ huynh</span>
+                <span class="faq-cat-count" style="font-size:10px;font-weight:700;background:#f5f3ff;color:#7c3aed;padding:2px 8px;border-radius:99px">3</span>
+            </button>
+
+            <button onclick="filterFaq('nanny')" id="tab-nanny"
+                    class="faq-cat-btn"
+                    style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 8px;border-radius:16px;border:2px solid #e5e7eb;background:#fff;cursor:pointer;transition:all .2s">
+                <span style="width:36px;height:36px;border-radius:10px;background:#fdf2f8;display:flex;align-items:center;justify-content:center">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#db2777" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                    </svg>
+                </span>
+                <span style="font-size:12px;font-weight:700;color:#374151">Bảo mẫu</span>
+                <span class="faq-cat-count" style="font-size:10px;font-weight:700;background:#fdf2f8;color:#db2777;padding:2px 8px;border-radius:99px">2</span>
+            </button>
+
+            <button onclick="filterFaq('payment')" id="tab-payment"
+                    class="faq-cat-btn"
+                    style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 8px;border-radius:16px;border:2px solid #e5e7eb;background:#fff;cursor:pointer;transition:all .2s">
+                <span style="width:36px;height:36px;border-radius:10px;background:#ecfdf5;display:flex;align-items:center;justify-content:center">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+                    </svg>
+                </span>
+                <span style="font-size:12px;font-weight:700;color:#374151">Thanh toán</span>
+                <span class="faq-cat-count" style="font-size:10px;font-weight:700;background:#ecfdf5;color:#059669;padding:2px 8px;border-radius:99px">3</span>
+            </button>
+        </div>
+
+        <!-- ── Two-column layout ── -->
+        <div style="display:grid;grid-template-columns:1fr 320px;gap:24px;align-items:start">
+
+            <!-- Accordion column -->
+            <div>
+                <!-- Section label -->
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+                    <p id="faqSectionLabel" style="font-size:.8rem;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em">Tất cả câu hỏi</p>
+                    <span id="faqCount" style="font-size:.8rem;color:#9ca3af;font-weight:500">11 câu hỏi</span>
+                </div>
+
+                <div class="space-y-2" id="faqAccordion">
+
+                    <!-- Q: general -->
+                    <div class="faq-item" data-category="general" data-q="NannyMatch hoạt động như thế nào nền tảng">
+                        <div class="faq-card">
+                            <button onclick="toggleFaq(this)" class="faq-btn" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:18px 20px;text-align:left;background:none;border:none;cursor:pointer;gap:12px">
+                                <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
+                                    <span style="width:28px;height:28px;border-radius:8px;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.3" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                    </span>
+                                    <span style="font-weight:600;font-size:.875rem;color:#111827;line-height:1.45">NannyMatch hoạt động như thế nào?</span>
+                                </div>
+                                <svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;transition:transform .25s ease">
+                                    <polyline points="6 9 12 15 18 9"/>
+                                </svg>
+                            </button>
+                            <div class="faq-answer-wrapper" style="display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease">
+                                <div style="overflow:hidden">
+                                    <div style="padding:0 20px 18px 52px">
+                                        <p style="font-size:.85rem;color:#6b7280;line-height:1.75">Bạn tạo hồ sơ, tìm kiếm bảo mẫu phù hợp theo khu vực và tiêu chí, xem hồ sơ đã được xác minh, nhắn tin trực tiếp, rồi sắp xếp buổi gặp mặt trước khi đặt lịch chính thức. Toàn bộ quy trình an toàn và minh bạch.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="faq-item" data-category="general" data-q="NannyMatch khác tìm bảo mẫu truyền thống môi giới">
+                        <div class="faq-card">
+                            <button onclick="toggleFaq(this)" class="faq-btn" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:18px 20px;text-align:left;background:none;border:none;cursor:pointer;gap:12px">
+                                <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
+                                    <span style="width:28px;height:28px;border-radius:8px;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.3" stroke-linecap="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
+                                    </span>
+                                    <span style="font-weight:600;font-size:.875rem;color:#111827;line-height:1.45">NannyMatch có khác gì so với tìm bảo mẫu truyền thống?</span>
+                                </div>
+                                <svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2.2" stroke-linecap="round" style="flex-shrink:0;transition:transform .25s ease"><polyline points="6 9 12 15 18 9"/></svg>
+                            </button>
+                            <div class="faq-answer-wrapper" style="display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease">
+                                <div style="overflow:hidden">
+                                    <div style="padding:0 20px 18px 52px">
+                                        <p style="font-size:.85rem;color:#6b7280;line-height:1.75">Mọi bảo mẫu trên NannyMatch đều được xác minh danh tính, có hồ sơ minh bạch với đánh giá thực từ gia đình trước. Bạn không cần qua trung gian hay trả phí môi giới — tất cả giao tiếp và thỏa thuận diễn ra trực tiếp, nhanh chóng và an toàn hơn.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="faq-item" data-category="general" data-q="NannyMatch hoạt động tại thành phố khu vực địa lý">
+                        <div class="faq-card">
+                            <button onclick="toggleFaq(this)" class="faq-btn" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:18px 20px;text-align:left;background:none;border:none;cursor:pointer;gap:12px">
+                                <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
+                                    <span style="width:28px;height:28px;border-radius:8px;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.3" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                    </span>
+                                    <span style="font-weight:600;font-size:.875rem;color:#111827;line-height:1.45">NannyMatch có hoạt động tại thành phố của tôi không?</span>
+                                </div>
+                                <svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2.2" stroke-linecap="round" style="flex-shrink:0;transition:transform .25s ease"><polyline points="6 9 12 15 18 9"/></svg>
+                            </button>
+                            <div class="faq-answer-wrapper" style="display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease">
+                                <div style="overflow:hidden">
+                                    <div style="padding:0 20px 18px 52px">
+                                        <p style="font-size:.85rem;color:#6b7280;line-height:1.75">NannyMatch hỗ trợ tìm kiếm theo vị trí địa lý trên toàn quốc. Bạn có thể lọc theo tỉnh/thành phố và quận/huyện để tìm bảo mẫu gần nhà. Cộng đồng đang phát triển mạnh tại Hà Nội, TP.HCM, Đà Nẵng và các đô thị lớn.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Q: parent -->
+                    <div class="faq-item" data-category="parent" data-q="bảo mẫu kiểm tra lý lịch xác minh danh tính CCCD">
+                        <div class="faq-card">
+                            <button onclick="toggleFaq(this)" class="faq-btn" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:18px 20px;text-align:left;background:none;border:none;cursor:pointer;gap:12px">
+                                <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
+                                    <span style="width:28px;height:28px;border-radius:8px;background:#f5f3ff;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2.3" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                    </span>
+                                    <span style="font-weight:600;font-size:.875rem;color:#111827;line-height:1.45">Bảo mẫu có được kiểm tra lý lịch không?</span>
+                                </div>
+                                <svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2.2" stroke-linecap="round" style="flex-shrink:0;transition:transform .25s ease"><polyline points="6 9 12 15 18 9"/></svg>
+                            </button>
+                            <div class="faq-answer-wrapper" style="display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease">
+                                <div style="overflow:hidden">
+                                    <div style="padding:0 20px 18px 52px">
+                                        <p style="font-size:.85rem;color:#6b7280;line-height:1.75">Có. Mọi bảo mẫu đều trải qua quy trình xác minh danh tính theo nhiều bước, bao gồm kiểm tra CCCD/hộ chiếu và đánh giá từ các gia đình trước. Chúng tôi cam kết tính minh bạch và an toàn.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="faq-item" data-category="parent" data-q="không hài lòng bảo mẫu hỗ trợ can thiệp">
+                        <div class="faq-card">
+                            <button onclick="toggleFaq(this)" class="faq-btn" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:18px 20px;text-align:left;background:none;border:none;cursor:pointer;gap:12px">
+                                <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
+                                    <span style="width:28px;height:28px;border-radius:8px;background:#f5f3ff;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2.3" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                                    </span>
+                                    <span style="font-weight:600;font-size:.875rem;color:#111827;line-height:1.45">Làm sao nếu tôi không hài lòng với bảo mẫu?</span>
+                                </div>
+                                <svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2.2" stroke-linecap="round" style="flex-shrink:0;transition:transform .25s ease"><polyline points="6 9 12 15 18 9"/></svg>
+                            </button>
+                            <div class="faq-answer-wrapper" style="display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease">
+                                <div style="overflow:hidden">
+                                    <div style="padding:0 20px 18px 52px">
+                                        <p style="font-size:.85rem;color:#6b7280;line-height:1.75">Bạn có thể tìm bảo mẫu khác bất kỳ lúc nào. Nếu có vấn đề nghiêm trọng, đội ngũ hỗ trợ sẵn sàng can thiệp trong vòng 24 giờ. Phụ huynh luôn được đặt lên hàng đầu.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="faq-item" data-category="parent" data-q="đăng bài tuyển bảo mẫu đăng tin tuyển dụng">
+                        <div class="faq-card">
+                            <button onclick="toggleFaq(this)" class="faq-btn" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:18px 20px;text-align:left;background:none;border:none;cursor:pointer;gap:12px">
+                                <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
+                                    <span style="width:28px;height:28px;border-radius:8px;background:#f5f3ff;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2.3" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                                    </span>
+                                    <span style="font-weight:600;font-size:.875rem;color:#111827;line-height:1.45">Tôi có thể đăng bài tuyển bảo mẫu như thế nào?</span>
+                                </div>
+                                <svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2.2" stroke-linecap="round" style="flex-shrink:0;transition:transform .25s ease"><polyline points="6 9 12 15 18 9"/></svg>
+                            </button>
+                            <div class="faq-answer-wrapper" style="display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease">
+                                <div style="overflow:hidden">
+                                    <div style="padding:0 20px 18px 52px">
+                                        <p style="font-size:.85rem;color:#6b7280;line-height:1.75">Sau khi đăng ký tài khoản phụ huynh, bạn vào <strong style="color:#374151">Hồ sơ → Đăng bài tuyển dụng</strong>, điền mô tả công việc, lịch làm việc, mức lương và khu vực. Bài đăng hiển thị với bảo mẫu phù hợp trong vòng vài phút.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Q: nanny -->
+                    <div class="faq-item" data-category="nanny" data-q="bảo mẫu đăng ký tạo hồ sơ khó dễ">
+                        <div class="faq-card">
+                            <button onclick="toggleFaq(this)" class="faq-btn" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:18px 20px;text-align:left;background:none;border:none;cursor:pointer;gap:12px">
+                                <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
+                                    <span style="width:28px;height:28px;border-radius:8px;background:#fdf2f8;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#db2777" stroke-width="2.3" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+                                    </span>
+                                    <span style="font-weight:600;font-size:.875rem;color:#111827;line-height:1.45">Bảo mẫu đăng ký có khó không?</span>
+                                </div>
+                                <svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2.2" stroke-linecap="round" style="flex-shrink:0;transition:transform .25s ease"><polyline points="6 9 12 15 18 9"/></svg>
+                            </button>
+                            <div class="faq-answer-wrapper" style="display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease">
+                                <div style="overflow:hidden">
+                                    <div style="padding:0 20px 18px 52px">
+                                        <p style="font-size:.85rem;color:#6b7280;line-height:1.75">Rất đơn giản! Chỉ cần 5 phút để tạo hồ sơ, tải ảnh và xác minh danh tính. Sau khi được phê duyệt, hồ sơ của bạn sẽ xuất hiện trước hàng nghìn gia đình đang tìm kiếm.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="faq-item" data-category="nanny" data-q="hồ sơ bảo mẫu hiển thị ai quyền riêng tư bảo mật">
+                        <div class="faq-card">
+                            <button onclick="toggleFaq(this)" class="faq-btn" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:18px 20px;text-align:left;background:none;border:none;cursor:pointer;gap:12px">
+                                <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
+                                    <span style="width:28px;height:28px;border-radius:8px;background:#fdf2f8;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#db2777" stroke-width="2.3" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    </span>
+                                    <span style="font-weight:600;font-size:.875rem;color:#111827;line-height:1.45">Hồ sơ bảo mẫu của tôi sẽ hiển thị với ai?</span>
+                                </div>
+                                <svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2.2" stroke-linecap="round" style="flex-shrink:0;transition:transform .25s ease"><polyline points="6 9 12 15 18 9"/></svg>
+                            </button>
+                            <div class="faq-answer-wrapper" style="display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease">
+                                <div style="overflow:hidden">
+                                    <div style="padding:0 20px 18px 52px">
+                                        <p style="font-size:.85rem;color:#6b7280;line-height:1.75">Hồ sơ hiển thị cho các phụ huynh đang tìm kiếm trong khu vực. Chỉ thông tin bạn cho phép (tên, ảnh, kinh nghiệm, mức lương) mới được công khai — số điện thoại và địa chỉ được bảo vệ cho đến khi hai bên đồng ý kết nối.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Q: payment -->
+                    <div class="faq-item" data-category="payment" data-q="chi phí giá tiền bao nhiêu miễn phí gói trả phí">
+                        <div class="faq-card">
+                            <button onclick="toggleFaq(this)" class="faq-btn" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:18px 20px;text-align:left;background:none;border:none;cursor:pointer;gap:12px">
+                                <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
+                                    <span style="width:28px;height:28px;border-radius:8px;background:#ecfdf5;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.3" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                                    </span>
+                                    <span style="font-weight:600;font-size:.875rem;color:#111827;line-height:1.45">Chi phí sử dụng NannyMatch là bao nhiêu?</span>
+                                </div>
+                                <svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2.2" stroke-linecap="round" style="flex-shrink:0;transition:transform .25s ease"><polyline points="6 9 12 15 18 9"/></svg>
+                            </button>
+                            <div class="faq-answer-wrapper" style="display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease">
+                                <div style="overflow:hidden">
+                                    <div style="padding:0 20px 18px 52px">
+                                        <p style="font-size:.85rem;color:#6b7280;line-height:1.75">Đăng ký và xem hồ sơ cơ bản hoàn toàn miễn phí. Gói trả phí từ <strong style="color:#374151">99.000đ/tháng</strong> để mở khóa nhắn tin không giới hạn, bộ lọc nâng cao và huy hiệu xác minh ưu tiên.
+                                            <a asp-controller="Subscription" asp-action="Index" style="color:#f97316;font-weight:600;text-decoration:none;margin-left:4px">Xem chi tiết →</a></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="faq-item" data-category="payment" data-q="hủy gói trả phí bất kỳ lúc nào hợp đồng">
+                        <div class="faq-card">
+                            <button onclick="toggleFaq(this)" class="faq-btn" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:18px 20px;text-align:left;background:none;border:none;cursor:pointer;gap:12px">
+                                <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
+                                    <span style="width:28px;height:28px;border-radius:8px;background:#ecfdf5;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.3" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                                    </span>
+                                    <span style="font-weight:600;font-size:.875rem;color:#111827;line-height:1.45">Tôi có thể hủy gói trả phí bất kỳ lúc nào không?</span>
+                                </div>
+                                <svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2.2" stroke-linecap="round" style="flex-shrink:0;transition:transform .25s ease"><polyline points="6 9 12 15 18 9"/></svg>
+                            </button>
+                            <div class="faq-answer-wrapper" style="display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease">
+                                <div style="overflow:hidden">
+                                    <div style="padding:0 20px 18px 52px">
+                                        <p style="font-size:.85rem;color:#6b7280;line-height:1.75">Hoàn toàn có thể. Không có hợp đồng dài hạn. Bạn có thể hủy gói trả phí bất cứ lúc nào trong phần cài đặt tài khoản, gói sẽ tiếp tục có hiệu lực đến hết chu kỳ đã thanh toán.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="faq-item" data-category="payment" data-q="phương thức thanh toán VietQR ví điện tử ngân hàng">
+                        <div class="faq-card">
+                            <button onclick="toggleFaq(this)" class="faq-btn" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:18px 20px;text-align:left;background:none;border:none;cursor:pointer;gap:12px">
+                                <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
+                                    <span style="width:28px;height:28px;border-radius:8px;background:#ecfdf5;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.3" stroke-linecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                                    </span>
+                                    <span style="font-weight:600;font-size:.875rem;color:#111827;line-height:1.45">NannyMatch hỗ trợ những phương thức thanh toán nào?</span>
+                                </div>
+                                <svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2.2" stroke-linecap="round" style="flex-shrink:0;transition:transform .25s ease"><polyline points="6 9 12 15 18 9"/></svg>
+                            </button>
+                            <div class="faq-answer-wrapper" style="display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease">
+                                <div style="overflow:hidden">
+                                    <div style="padding:0 20px 18px 52px">
+                                        <p style="font-size:.85rem;color:#6b7280;line-height:1.75">Chúng tôi hỗ trợ <strong style="color:#374151">chuyển khoản ngân hàng (VietQR)</strong> và các ví điện tử phổ biến. Giao dịch được mã hóa và xử lý an toàn qua cổng thanh toán tích hợp.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Empty state -->
+                <div id="faqEmpty" style="display:none;text-align:center;padding:56px 24px;background:#fff;border-radius:20px;border:1.5px dashed #e5e7eb;margin-top:8px">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5" stroke-linecap="round" style="margin:0 auto 12px">
+                        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        <line x1="8" y1="11" x2="14" y2="11"/>
+                    </svg>
+                    <p style="font-weight:600;color:#6b7280;margin-bottom:4px">Không tìm thấy kết quả</p>
+                    <p style="font-size:.8rem;color:#9ca3af;margin-bottom:16px">Thử từ khóa khác hoặc chọn danh mục</p>
+                    <button onclick="clearSearch()" style="font-size:.82rem;font-weight:600;color:#f97316;background:none;border:none;cursor:pointer;text-decoration:underline">Xem tất cả câu hỏi</button>
+                </div>
+            </div>
+
+            <!-- ── Sidebar ── -->
+            <div style="position:sticky;top:88px;display:flex;flex-direction:column;gap:16px">
+
+                <!-- Contact -->
+                <div style="background:linear-gradient(135deg,#f97316,#f59e0b);border-radius:20px;padding:24px;color:#fff">
+                    <div style="width:40px;height:40px;background:rgba(255,255,255,.2);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:14px">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    </div>
+                    <h3 style="font-weight:700;font-size:.95rem;margin-bottom:6px">Vẫn còn thắc mắc?</h3>
+                    <p style="font-size:.8rem;opacity:.85;line-height:1.6;margin-bottom:16px">Đội ngũ hỗ trợ phản hồi trong vòng <strong>24 giờ</strong>.</p>
+                    <a asp-controller="Communication" asp-action="Index" class="faq-contact-btn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        Nhắn tin ngay
+                    </a>
+                </div>
+
+                <!-- Quick links -->
+                <div style="background:#fff;border-radius:20px;border:1.5px solid #f3f4f6;padding:20px">
+                    <p style="font-size:.75rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px">Truy cập nhanh</p>
+                    <div style="display:flex;flex-direction:column;gap:4px">
+                        <a asp-controller="Auth" asp-action="Register"
+                           style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;text-decoration:none;transition:background .15s"
+                           onmouseover="this.style.background='#fff7ed'" onmouseout="this.style.background='transparent'">
+                            <span style="width:32px;height:32px;background:#ffedd5;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2.3" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                            </span>
+                            <div>
+                                <p style="font-size:.82rem;font-weight:600;color:#111827">Đăng ký miễn phí</p>
+                                <p style="font-size:.72rem;color:#9ca3af">Tạo tài khoản ngay</p>
+                            </div>
+                        </a>
+                        <a asp-controller="Subscription" asp-action="Index"
+                           style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;text-decoration:none;transition:background .15s"
+                           onmouseover="this.style.background='#fff7ed'" onmouseout="this.style.background='transparent'">
+                            <span style="width:32px;height:32px;background:#fef9c3;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ca8a04" stroke-width="2.3" stroke-linecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                            </span>
+                            <div>
+                                <p style="font-size:.82rem;font-weight:600;color:#111827">Bảng giá</p>
+                                <p style="font-size:.72rem;color:#9ca3af">Xem các gói thành viên</p>
+                            </div>
+                        </a>
+                        <a asp-controller="Nanny" asp-action="List"
+                           style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;text-decoration:none;transition:background .15s"
+                           onmouseover="this.style.background='#fff7ed'" onmouseout="this.style.background='transparent'">
+                            <span style="width:32px;height:32px;background:#fdf2f8;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#db2777" stroke-width="2.3" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            </span>
+                            <div>
+                                <p style="font-size:.82rem;font-weight:600;color:#111827">Tìm bảo mẫu</p>
+                                <p style="font-size:.72rem;color:#9ca3af">Duyệt hồ sơ ngay</p>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div style="background:#fff;border-radius:20px;border:1.5px solid #f3f4f6;padding:20px">
+                    <p style="font-size:.75rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px">NannyMatch trong số liệu</p>
+                    <div style="display:flex;flex-direction:column;gap:14px">
+                        <div>
+                            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+                                <span style="font-size:.78rem;color:#6b7280">Gia đình tin dùng</span>
+                                <span style="font-size:.82rem;font-weight:700;color:#111827">7M+</span>
+                            </div>
+                            <div style="height:5px;background:#f3f4f6;border-radius:99px;overflow:hidden">
+                                <div style="width:90%;height:100%;background:linear-gradient(90deg,#f97316,#f59e0b);border-radius:99px"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+                                <span style="font-size:.78rem;color:#6b7280">Bảo mẫu đã xác minh</span>
+                                <span style="font-size:.82rem;font-weight:700;color:#111827">50K+</span>
+                            </div>
+                            <div style="height:5px;background:#f3f4f6;border-radius:99px;overflow:hidden">
+                                <div style="width:72%;height:100%;background:linear-gradient(90deg,#7c3aed,#db2777);border-radius:99px"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+                                <span style="font-size:.78rem;color:#6b7280">Đánh giá trung bình</span>
+                                <span style="font-size:.82rem;font-weight:700;color:#111827">4.8 ⭐</span>
+                            </div>
+                            <div style="height:5px;background:#f3f4f6;border-radius:99px;overflow:hidden">
+                                <div style="width:96%;height:100%;background:linear-gradient(90deg,#f59e0b,#f97316);border-radius:99px"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+<script>
+(function () {
+    // ── Accordion aria init ────────────────────────────────────────
+    document.querySelectorAll('#faqAccordion .faq-item').forEach((item, i) => {
+        const btn   = item.querySelector('.faq-btn');
+        const panel = item.querySelector('.faq-answer-wrapper');
+        const id    = 'faq-panel-' + i;
+        panel.id    = id;
+        panel.setAttribute('role', 'region');
+        btn.setAttribute('aria-expanded', 'false');
+        btn.setAttribute('aria-controls', id);
+    });
+
+    // ── Accordion ──────────────────────────────────────────────────
+    function toggleFaq(btn) {
+        const wrapper = btn.nextElementSibling;
+        const chevron = btn.querySelector('.faq-chevron');
+        const isOpen  = wrapper.style.gridTemplateRows === '1fr';
+
+        // Close all
+        document.querySelectorAll('#faqAccordion .faq-answer-wrapper').forEach(w => {
+            w.style.gridTemplateRows = '0fr';
+        });
+        document.querySelectorAll('#faqAccordion .faq-chevron').forEach(c => {
+            c.style.transform = 'rotate(0deg)';
+        });
+        document.querySelectorAll('#faqAccordion .faq-card').forEach(c => {
+            c.style.borderLeftColor = 'transparent';
+        });
+        document.querySelectorAll('#faqAccordion .faq-btn').forEach(b => {
+            b.setAttribute('aria-expanded', 'false');
+        });
+
+        // Open clicked
+        if (!isOpen) {
+            wrapper.style.gridTemplateRows = '1fr';
+            chevron.style.transform = 'rotate(180deg)';
+            btn.closest('.faq-card').style.borderLeftColor = '#f97316';
+            btn.setAttribute('aria-expanded', 'true');
+        }
+    }
+
+    // ── Search ─────────────────────────────────────────────────────
+    function searchFaq(q) {
+        const kw    = q.trim().toLowerCase();
+        const items = document.querySelectorAll('.faq-item');
+        const clear = document.getElementById('faqSearchClear');
+        let shown   = 0;
+
+        // Close all first
+        document.querySelectorAll('.faq-answer-wrapper').forEach(w => w.style.gridTemplateRows = '0fr');
+        document.querySelectorAll('.faq-chevron').forEach(c => c.style.transform = 'rotate(0deg)');
+
+        clear.style.display = kw ? 'block' : 'none';
+
+        if (kw) {
+            document.querySelectorAll('.faq-cat-btn').forEach(b => b.classList.remove('faq-cat-active'));
+            document.querySelectorAll('.faq-cat-btn').forEach(b => applyInactiveStyle(b));
+        } else {
+            activateTab('tab-all');
+        }
+
+        items.forEach(item => {
+            const text  = item.dataset.q || '';
+            const match = !kw || text.toLowerCase().includes(kw);
+            item.style.display = match ? '' : 'none';
+            if (match) shown++;
+        });
+
+        document.getElementById('faqCount').textContent = shown + ' câu hỏi';
+        document.getElementById('faqEmpty').style.display = shown === 0 ? 'block' : 'none';
+    }
+
+    function clearSearch() {
+        document.getElementById('faqSearch').value = '';
+        searchFaq('');
+    }
+
+    // ── Category filter ────────────────────────────────────────────
+    const catLabels = { all:'Tất cả câu hỏi', general:'Câu hỏi chung', parent:'Câu hỏi phụ huynh', nanny:'Câu hỏi bảo mẫu', payment:'Thanh toán & Gói' };
+
+    function filterFaq(cat) {
+        const items = document.querySelectorAll('.faq-item');
+        const input = document.getElementById('faqSearch');
+        if (input) { input.value = ''; document.getElementById('faqSearchClear').style.display = 'none'; }
+
+        document.querySelectorAll('.faq-answer-wrapper').forEach(w => w.style.gridTemplateRows = '0fr');
+        document.querySelectorAll('.faq-chevron').forEach(c => c.style.transform = 'rotate(0deg)');
+        document.querySelectorAll('.faq-card').forEach(c => c.style.borderLeftColor = 'transparent');
+
+        let shown = 0;
+        items.forEach(item => {
+            const match = cat === 'all' || item.dataset.category === cat;
+            item.style.display = match ? '' : 'none';
+            if (match) shown++;
+        });
+
+        document.querySelectorAll('.faq-cat-btn').forEach(b => applyInactiveStyle(b));
+        activateTab('tab-' + cat);
+
+        document.getElementById('faqSectionLabel').textContent = catLabels[cat] || 'Câu hỏi';
+        document.getElementById('faqCount').textContent = shown + ' câu hỏi';
+        document.getElementById('faqEmpty').style.display = shown === 0 ? 'block' : 'none';
+    }
+
+    function applyInactiveStyle(btn) {
+        btn.style.borderColor = '#e5e7eb';
+        btn.style.background  = '#fff';
+        const count = btn.querySelector('.faq-cat-count');
+        if (count) count.style.background = count.dataset.bg || count.style.background;
+        btn.classList.remove('faq-cat-active');
+    }
+
+    function activateTab(id) {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        btn.style.borderColor = '#f97316';
+        btn.style.background  = '#fff7ed';
+        btn.classList.add('faq-cat-active');
+        const count = btn.querySelector('.faq-cat-count');
+        if (count) { count.dataset.bg = count.style.background; count.style.background = '#f97316'; count.style.color = '#fff'; }
+    }
+
+    // Expose page-level handlers to window (required by inline onclick/oninput)
+    window.toggleFaq  = toggleFaq;
+    window.searchFaq  = searchFaq;
+    window.clearSearch = clearSearch;
+    window.filterFaq  = filterFaq;
+}());
+</script>
+<style>
+    .faq-card {
+        background: #fff;
+        border-radius: 16px;
+        border: 1.5px solid #f3f4f6;
+        border-left: 3px solid transparent;
+        overflow: hidden;
+        transition: border-color .2s, box-shadow .2s;
+        margin-bottom: 8px;
+    }
+    .faq-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,.06); }
+    .faq-btn:hover { background: #fff7ed; }
+
+    .faq-cat-btn:hover { border-color: #fdba74 !important; background: #fff7ed !important; }
+    .faq-cat-active { border-color: #f97316 !important; background: #fff7ed !important; }
+
+    .faq-contact-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        background: #fff;
+        color: #ea580c;
+        font-weight: 700;
+        font-size: .82rem;
+        padding: 10px;
+        border-radius: 12px;
+        text-decoration: none;
+        transition: opacity .15s;
+    }
+    .faq-contact-btn:hover { opacity: .9; color: #ea580c; }
+
+    /* Mobile: stack layout */
+    @@media (max-width: 767px) {
+        #categoryCards { grid-template-columns: repeat(3, 1fr) !important; }
+        .max-w-5xl > section > div > div:last-child,
+        div[style*="grid-template-columns:1fr 320px"] {
+            grid-template-columns: 1fr !important;
+        }
+    }
+</style>
+}

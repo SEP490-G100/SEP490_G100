@@ -1,7 +1,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Nanny_BackEnd.Services;
+using Nanny_BackEnd.DTOs.Hiring;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Controllers;
 
@@ -10,16 +11,16 @@ namespace Nanny_BackEnd.Controllers;
 [Route("api/contracts")]
 public class ContractController : ControllerBase
 {
-    private readonly ContractService _service;
+    private readonly IContractService _service;
 
-    public ContractController(ContractService service) => _service = service;
+    public ContractController(IContractService service) => _service = service;
 
     [HttpGet]
     public async Task<IActionResult> GetMyContracts()
     {
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
-            return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+            return Unauthorized(Fail("Không xác định được người dùng."));
 
         try
         {
@@ -32,16 +33,52 @@ public class ContractController : ControllerBase
         }
     }
 
-    [HttpGet("{contractId:guid}")]
-    public async Task<IActionResult> GetContractDetail(Guid contractId)
+    [HttpGet("templates")]
+    public async Task<IActionResult> GetActiveContractTemplates()
+    {
+        try
+        {
+            var result = await _service.GetActiveContractTemplatesAsync();
+            return Ok(OkResult(result));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, Fail(ex.Message));
+        }
+    }
+
+    [HttpGet("templates/{templateId:guid}")]
+    public async Task<IActionResult> GetTemplatePreview(Guid templateId)
+    {
+        try
+        {
+            var result = await _service.GetContractTemplatePreviewAsync(templateId);
+            return Ok(OkResult(result));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(Fail(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(Fail(ex.Message));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, Fail(ex.Message));
+        }
+    }
+
+    [HttpGet("detail")]
+    public async Task<IActionResult> GetContractDetail([FromQuery] Guid? contractId, [FromQuery] Guid? hiringRecordId)
     {
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
-            return Unauthorized(Fail("Khong xac dinh duoc nguoi dung."));
+            return Unauthorized(Fail("Không xác định được người dùng."));
 
         try
         {
-            var result = await _service.GetContractDetailAsync(contractId, userId.Value);
+            var result = await _service.GetContractDetailAsync(userId.Value, contractId, hiringRecordId);
             return Ok(OkResult(result));
         }
         catch (UnauthorizedAccessException)
@@ -51,6 +88,160 @@ public class ContractController : ControllerBase
         catch (KeyNotFoundException ex)
         {
             return NotFound(Fail(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(Fail(ex.Message));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, Fail(ex.Message));
+        }
+    }
+
+    [HttpPatch("{contractId:guid}/parent-confirm-info")]
+    public async Task<IActionResult> ParentConfirmInfo(Guid contractId, [FromBody] ContractParentFillRequestDto request)
+    {
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue)
+            return Unauthorized(Fail("Không xác định được người dùng."));
+
+        try
+        {
+            var result = await _service.ParentConfirmInfoAsync(contractId, userId.Value, request);
+            return Ok(OkResult(result, "Parent da xac nhan thong tin hop dong."));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(Fail(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(Fail(ex.Message));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, Fail(ex.Message));
+        }
+    }
+
+    [HttpPatch("{contractId:guid}/nanny-confirm-info")]
+    public async Task<IActionResult> NannyConfirmInfo(Guid contractId, [FromBody] ContractNannyFillRequestDto request)
+    {
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue)
+            return Unauthorized(Fail("Không xác định được người dùng."));
+
+        try
+        {
+            var result = await _service.NannyConfirmInfoAsync(contractId, userId.Value, request);
+            return Ok(OkResult(result, "Nanny da xac nhan thong tin hop dong."));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(Fail(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(Fail(ex.Message));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, Fail(ex.Message));
+        }
+    }
+
+    [HttpPost("{contractId:guid}/parent-final-confirm")]
+    public async Task<IActionResult> ParentFinalConfirm(Guid contractId)
+    {
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue)
+            return Unauthorized(Fail("Không xác định được người dùng."));
+
+        try
+        {
+            var result = await _service.ParentFinalConfirmAsync(contractId, userId.Value);
+            return Ok(OkResult(result, "Parent da xac nhan hoan tat hop dong."));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(Fail(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(Fail(ex.Message));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, Fail(ex.Message));
+        }
+    }
+
+    [HttpGet("{contractId:guid}/download")]
+    public async Task<IActionResult> DownloadContractPdf(Guid contractId)
+    {
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue)
+            return Unauthorized(Fail("Không xác định được người dùng."));
+
+        try
+        {
+            var (content, fileName) = await _service.DownloadContractPdfAsync(contractId, userId.Value);
+            return File(content, "application/pdf", fileName);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(Fail(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(Fail(ex.Message));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, Fail(ex.Message));
+        }
+    }
+
+    [HttpPatch("{contractId:guid}/storage-file")]
+    public async Task<IActionResult> SaveStorageFile(Guid contractId, [FromBody] SaveContractStoragePdfRequestDto request)
+    {
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue)
+            return Unauthorized(Fail("Không xác định được người dùng."));
+
+        try
+        {
+            var result = await _service.SaveContractStoragePdfAsync(contractId, userId.Value, request);
+            return Ok(OkResult(result, "Lưu file hợp đồng thành công."));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(Fail(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(Fail(ex.Message));
         }
         catch (Exception ex)
         {

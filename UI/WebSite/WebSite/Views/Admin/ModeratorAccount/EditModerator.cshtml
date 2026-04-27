@@ -1,0 +1,274 @@
+@model WebSite.Models.Account.AccountDto
+@{
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+    ViewData["Title"] = "Chỉnh Sửa Kiểm Duyệt Viên";
+    var avatarColors = new[] { "#F97316","#EA580C","#F59E0B","#FBBF24","#FCD34D" };
+    var avatarBg = avatarColors[Math.Abs(Model.Id.GetHashCode()) % avatarColors.Length];
+    var statusLabel = Model.Status == 1 ? "Hoạt Động" : "Vô Hiệu Hóa";
+}
+
+<!-- ====================================================
+     PAGE HEADER
+     ==================================================== -->
+<div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
+    <div>
+        <span class="section-label">Hành Động Quản Trị</span>
+        <h1 class="page-title mt-2">
+            Chỉnh Sửa <span class="gradient-text">Kiểm Duyệt Viên</span>
+        </h1>
+        <p class="page-subtitle">Xem và cập nhật cài đặt tài khoản kiểm duyệt viên.</p>
+    </div>
+    <a href="/Admin/ManageModerators" class="btn-outline flex-shrink-0">
+        <span class="material-icons-round text-base">arrow_back</span>
+        Quay Lại Danh Sách
+    </a>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 fade-in-up">
+        <span class="material-icons-round text-base">error_outline</span>
+        @TempData["Error"]
+    </div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 fade-in-up">
+        <span class="material-icons-round text-base">check_circle_outline</span>
+        @TempData["Success"]
+    </div>
+}
+
+<form method="post" action="/Admin/EditModerator/@Model.Id">
+    @Html.AntiForgeryToken()
+
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+
+        <!-- =============================================
+             LEFT PANEL — Detail fields (2 / 3 width)
+             ============================================= -->
+        <div class="xl:col-span-2 space-y-5">
+
+            <!-- ── Identity Info (Read-only) ── -->
+            <div class="content-card p-0 fade-in-up">
+                <div class="card-header">
+                    <div class="flex items-center gap-2">
+                        <span class="material-icons-round text-orange-400">info</span>
+                        <h2>Thông Tin Tài Khoản <span class="text-xs text-gray-400 font-normal ml-1">(chỉ xem)</span></h2>
+                    </div>
+                </div>
+                <div class="p-5 space-y-3">
+                    <div class="field-group">
+                        <label class="field-label">Email</label>
+                        <div class="field-readonly">
+                            <span class="material-icons-round text-gray-300 text-base">email</span>
+                            @Model.Email
+                            @if (!Model.EmailConfirmed)
+                            {
+                                <span class="ml-2 text-[10px] text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">Chưa xác nhận</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="field-group">
+                            <label class="field-label">Mã Tài Khoản</label>
+                            <div class="field-readonly font-mono text-xs break-all">@Model.Id</div>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Đã Tạo</label>
+                            <div class="field-readonly text-xs">
+                                <span class="material-icons-round text-gray-300 text-base">calendar_today</span>
+                                @Model.CreatedAt.ToString("dd MMM yyyy, HH:mm")
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Account Settings (Editable) ── -->
+            <div class="content-card p-0 fade-in-up" style="animation-delay:.05s;">
+                <div class="card-header">
+                    <div class="flex items-center gap-2">
+                        <span class="material-icons-round text-orange-400">edit</span>
+                        <h2>Thông Tin Kiểm Duyệt Viên <span class="text-xs text-gray-500 font-semibold ml-1">chỉ xem</span></h2>
+                    </div>
+                </div>
+                <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                    <!-- First Name -->
+                    <div class="field-group">
+                        <label class="field-label">Họ</label>
+                        <input type="text" value="@Model.FirstName"
+                               class="search-input w-full bg-gray-50 text-gray-500 cursor-not-allowed" readonly />
+                    </div>
+
+                    <!-- Last Name -->
+                    <div class="field-group">
+                        <label class="field-label">Tên</label>
+                        <input type="text" value="@Model.LastName"
+                               class="search-input w-full bg-gray-50 text-gray-500 cursor-not-allowed" readonly />
+                    </div>
+
+                    <!-- Phone -->
+                    <div class="field-group sm:col-span-2">
+                        <label class="field-label">
+                            Số Điện Thoại
+                        </label>
+                        <div class="relative">
+                            <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-base pointer-events-none">phone</span>
+                            <input type="text"
+                                   value="@((string.IsNullOrWhiteSpace(Model.PhoneNumber) ? "N/A" : Model.PhoneNumber))"
+                                   class="search-input !pl-9 w-full bg-gray-50 text-gray-500 cursor-not-allowed" readonly />
+                        </div>
+                        <p class="text-xs text-gray-400 mt-1">Kiểm duyệt viên có thể cập nhật số điện thoại trong trang hồ sơ cá nhân.</p>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="field-group sm:col-span-2">
+                        <label class="field-label">
+                            Trạng Thái <span class="text-orange-400 text-[10px] ml-1">✏️</span>
+                        </label>
+                        <div class="flex gap-3">
+                            <label class="flex items-center gap-2.5 px-4 py-3 rounded-2xl border-2 cursor-pointer transition-all @(Model.Status == 1 ? "border-emerald-400 bg-emerald-50" : "border-gray-200 bg-gray-50 hover:border-gray-300")"
+                                   id="label-active">
+                                <input type="radio" name="Status" value="1"
+                                       @(Model.Status == 1 ? "checked" : "")
+                                       class="accent-emerald-500"
+                                       onchange="updateStatusLabel(1)" />
+                                <div class="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
+                                <span class="text-sm font-semibold text-gray-700">Hoạt Động</span>
+                            </label>
+                            <label class="flex items-center gap-2.5 px-4 py-3 rounded-2xl border-2 cursor-pointer transition-all @(Model.Status == 2 ? "border-red-400 bg-red-50" : "border-gray-200 bg-gray-50 hover:border-gray-300")"
+                                   id="label-inactive">
+                                <input type="radio" name="Status" value="2"
+                                       @(Model.Status == 2 ? "checked" : "")
+                                       class="accent-red-500"
+                                       onchange="updateStatusLabel(2)" />
+                                <div class="w-2.5 h-2.5 rounded-full bg-red-400"></div>
+                                <span class="text-sm font-semibold text-gray-700">Vô Hiệu Hóa</span>
+                            </label>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <!-- =============================================
+             RIGHT PANEL — Avatar + Summary (1 / 3 width)
+             ============================================= -->
+        <div class="space-y-5">
+
+            <!-- Avatar card -->
+            <div class="content-card p-6 text-center fade-in-up" style="animation-delay:.08s;">
+                <div class="relative inline-block mb-4">
+                    @if (!string.IsNullOrEmpty(Model.AvatarUrl))
+                    {
+                        <img src="@Model.AvatarUrl" alt="@Model.FullName"
+                             class="w-24 h-24 rounded-full object-cover ring-4 ring-orange-100 shadow-lg mx-auto" />
+                    }
+                    else
+                    {
+                        <div class="w-24 h-24 rounded-full flex items-center justify-center text-white text-4xl font-bold ring-4 ring-orange-100 shadow-lg mx-auto"
+                             style="background:@avatarBg;">
+                             @Model.FirstName.Substring(0,1).ToUpper()
+                        </div>
+                    }
+                    <!-- Status dot -->
+                    <div class="absolute bottom-1 right-1 w-5 h-5 rounded-full border-2 border-white @(Model.Status == 1 ? "bg-emerald-400" : "bg-red-400") shadow"></div>
+                </div>
+
+                <h3 class="font-bold text-gray-900 text-lg">@Model.FullName</h3>
+                <p class="text-sm text-gray-400 mt-0.5">@Model.Email</p>
+
+                <div class="flex flex-wrap gap-1.5 justify-center mt-3">
+                    <span class="badge badge-mod">Kiểm Duyệt Viên</span>
+                </div>
+
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <div id="current-status-display"
+                         class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold @(Model.Status == 1 ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-red-50 text-red-700 border border-red-200")">
+                        <div id="status-dot" class="w-2 h-2 rounded-full @(Model.Status == 1 ? "bg-emerald-400" : "bg-red-400")"></div>
+                        <span id="status-text">@statusLabel</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audit Info -->
+            <div class="content-card p-4 fade-in-up" style="animation-delay:.12s;">
+                <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Đăng Nhập Lần Cuối</p>
+                <p class="text-sm text-gray-600 mb-3">@(Model.LastLoginAt.HasValue ? Model.LastLoginAt.Value.ToString("dd MMM yyyy, HH:mm") : "Chưa đăng nhập")</p>
+
+                <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Đã Tạo</p>
+                <p class="text-sm text-gray-600">@Model.CreatedAt.ToString("dd MMM yyyy, HH:mm")</p>
+            </div>
+
+            <!-- Save / Cancel buttons -->
+            <div class="content-card p-4 space-y-2.5 fade-in-up" style="animation-delay:.15s;">
+                <button type="submit" class="btn-primary w-full justify-center">
+                    <span class="material-icons-round text-base">save</span>
+                    Lưu Thay Đổi
+                </button>
+                <a href="/Admin/ManageModerators" class="btn-outline w-full justify-center">
+                    <span class="material-icons-round text-base">close</span>
+                    Hủy
+                </a>
+            </div>
+
+        </div>
+    </div>
+</form>
+
+<!-- Inline styles for field groups -->
+<style>
+.field-group { display: flex; flex-direction: column; gap: .4rem; }
+.field-label {
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: #9CA3AF;
+}
+.field-readonly {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    background: #F9FAFB;
+    border: 1px solid #F3F4F6;
+    border-radius: .85rem;
+    padding: .6rem .9rem;
+    font-size: .875rem;
+    color: #374151;
+    min-height: 2.6rem;
+}
+</style>
+
+@section Scripts {
+<script>
+function updateStatusLabel(val) {
+    var display = document.getElementById('current-status-display');
+    var dot     = document.getElementById('status-dot');
+    var text    = document.getElementById('status-text');
+    var avatarDot = document.querySelector('.absolute.bottom-1.right-1');
+
+    if (val === 1) {
+        display.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold bg-emerald-50 text-emerald-700 border border-emerald-200';
+        dot.className     = 'w-2 h-2 rounded-full bg-emerald-400';
+        text.textContent  = 'Hoạt Động';
+        if (avatarDot) avatarDot.className = avatarDot.className.replace('bg-red-400', 'bg-emerald-400');
+
+        document.getElementById('label-active').className   = document.getElementById('label-active').className.replace('border-gray-200 bg-gray-50 hover:border-gray-300', 'border-emerald-400 bg-emerald-50');
+        document.getElementById('label-inactive').className = document.getElementById('label-inactive').className.replace('border-red-400 bg-red-50', 'border-gray-200 bg-gray-50 hover:border-gray-300');
+    } else {
+        display.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold bg-red-50 text-red-700 border border-red-200';
+        dot.className     = 'w-2 h-2 rounded-full bg-red-400';
+        text.textContent  = 'Vô Hiệu Hóa';
+        if (avatarDot) avatarDot.className = avatarDot.className.replace('bg-emerald-400', 'bg-red-400');
+
+        document.getElementById('label-inactive').className = document.getElementById('label-inactive').className.replace('border-gray-200 bg-gray-50 hover:border-gray-300', 'border-red-400 bg-red-50');
+        document.getElementById('label-active').className   = document.getElementById('label-active').className.replace('border-emerald-400 bg-emerald-50', 'border-gray-200 bg-gray-50 hover:border-gray-300');
+    }
+}
+</script>
+}

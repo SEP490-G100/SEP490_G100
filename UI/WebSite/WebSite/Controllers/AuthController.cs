@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Linq;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -15,6 +16,7 @@ namespace WebSite.Controllers;
 public class AuthController : Controller
 {
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
+    private const string NannyOnboardingCompletedSessionKey = "NannyOnboardingCompleted";
 
     private readonly HttpClient _http;
     private readonly IConfiguration _config;
@@ -28,12 +30,37 @@ public class AuthController : Controller
     [HttpGet]
     public IActionResult Login(string? returnUrl = null)
     {
+        if (User.Identity?.IsAuthenticated == true && IsRestrictedArea(returnUrl) && !CanAccessRestrictedArea(User, returnUrl))
+            return RedirectToAction(nameof(AccessDenied), new { returnUrl });
+
         if (User.Identity?.IsAuthenticated == true)
-            return LocalRedirect(returnUrl ?? "/");
+        {
+            if (!string.IsNullOrWhiteSpace(returnUrl))
+                return LocalRedirect(returnUrl);
+
+            if (User.IsInRole("Admin"))
+                return Redirect("/Admin/Dashboard");
+
+            if (User.IsInRole("Moderator"))
+                return Redirect("/Moderator/Dashboard");
+
+            return RedirectToAction("Index", "Home");
+        }
 
         ViewBag.ReturnUrl = returnUrl;
         SetGoogleClientId();
         return View();
+    }
+
+    [HttpGet]
+    public IActionResult AccessDenied(string? returnUrl = null)
+    {
+        if (User.Identity?.IsAuthenticated != true)
+            return RedirectToAction(nameof(Login), new { returnUrl });
+
+        Response.StatusCode = StatusCodes.Status403Forbidden;
+        ViewBag.ReturnUrl = returnUrl;
+        return View("~/Views/Auth/AccessDenied.cshtml");
     }
 
     [HttpPost, ValidateAntiForgeryToken]
@@ -60,19 +87,36 @@ public class AuthController : Controller
 
         var loginData = result.Data!;
         await SignInUserAsync(loginData);
+        var normalizedRoles = normalizeRoles(loginData.User.Roles);
 
-        // --- Staff roles: skip onboarding, redirect directly to their dashboards ---
-        if (loginData.User.Roles.Contains("Admin", StringComparer.OrdinalIgnoreCase))
+        if (isAdminArea(returnUrl))
+        {
+            if (hasRole(normalizedRoles, "Admin"))
+                return LocalRedirect(returnUrl!);
+            if (hasRole(normalizedRoles, "Moderator"))
+                return Redirect("/Moderator/Dashboard");
+
+            return RedirectToAction(nameof(AccessDenied), new { returnUrl });
+        }
+
+        if (isModeratorArea(returnUrl))
+        {
+            if (hasRole(normalizedRoles, "Moderator"))
+                return LocalRedirect(returnUrl!);
+            if (hasRole(normalizedRoles, "Admin"))
+                return Redirect("/Admin/Dashboard");
+
+            return RedirectToAction(nameof(AccessDenied), new { returnUrl });
+        }
+
+        if (hasRole(normalizedRoles, "Admin"))
             return Redirect("/Admin/Dashboard");
-        if (loginData.User.Roles.Contains("Moderator", StringComparer.OrdinalIgnoreCase))
+        if (hasRole(normalizedRoles, "Moderator"))
             return Redirect("/Moderator/Dashboard");
 
-        // Nếu user chưa có role (đặc biệt case đăng ký/đăng nhập Google lần đầu),
-        // luôn bắt buộc chọn role trước khi chạy onboarding theo role.
-        if (loginData.User?.Roles == null || !loginData.User.Roles.Any())
+   
+        if (!normalizedRoles.Any())
             return RedirectToAction("ChooseRole", "Auth");
-
-        // Sau khi đăng nhập, kiểm tra trạng thái onboarding (kèm Bearer token)
         try
         {
             var obRequest = new HttpRequestMessage(HttpMethod.Get, "/api/onboarding/status")
@@ -82,12 +126,12 @@ public class AuthController : Controller
             var ob = 
                 await _http.SendAsync(obRequest);
             var obResult = await ReadApiResult<OnboardingStatusViewModel>(ob);
+            SyncNannyOnboardingCompletedSession(obResult?.Data, normalizedRoles);
             if (obResult?.Data != null && obResult.Data.RequiresOnboarding && obResult.Data.NextStep != "Completed")
                 return RedirectToAction("Start", "Onboarding");
         }
         catch
         {
-            // Nếu có lỗi khi gọi onboarding, bỏ qua và cho vào trang đích mặc định
         }
 
         return LocalRedirect(returnUrl ?? "/");
@@ -99,6 +143,10 @@ public class AuthController : Controller
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Register(RegisterViewModel model)
     {
+        model.PhoneNumber = NormalizePhoneNumber(model.PhoneNumber);
+        if (!string.IsNullOrWhiteSpace(model.PhoneNumber) && !IsValidPhoneNumber(model.PhoneNumber))
+            ModelState.AddModelError(nameof(model.PhoneNumber), "Số điện thoại phải gồm 10 chữ số và bắt đầu bằng 0.");
+
         if (!ModelState.IsValid) { SetGoogleClientId(); return View(model); }
 
         try
@@ -107,6 +155,7 @@ public class AuthController : Controller
             {
                 model.FirstName,
                 model.LastName,
+                PhoneNumber = string.IsNullOrWhiteSpace(model.PhoneNumber) ? null : model.PhoneNumber.Trim(),
                 model.Email,
                 model.Password,
                 model.ConfirmPassword
@@ -133,29 +182,48 @@ public class AuthController : Controller
     }
 
     [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> GoogleLogin(string idToken)
+    public async Task<IActionResult> GoogleLogin(string idToken, string? returnUrl = null)
     {
         var response = await _http.PostAsJsonAsync("/api/auth/google", new { idToken });
         var result = await ReadApiResult<LoginResponseDto>(response);
 
         if (result == null || !result.Success)
         {
-            TempData["Error"] = result?.Message ?? "Đăng nhập Google thất bại.";
+            TempData["AuthError"] = result?.Message ?? "Đăng nhập Google thất bại.";
             return RedirectToAction("Login");
         }
 
         var loginData = result.Data!;
         await SignInUserAsync(loginData);
+        var normalizedRoles = normalizeRoles(loginData.User.Roles);
 
-        // --- Staff roles: skip onboarding, redirect directly to their dashboards ---
-        if (loginData.User.Roles.Contains("Admin", StringComparer.OrdinalIgnoreCase))
+        if (isAdminArea(returnUrl))
+        {
+            if (hasRole(normalizedRoles, "Admin"))
+                return LocalRedirect(returnUrl!);
+            if (hasRole(normalizedRoles, "Moderator"))
+                return Redirect("/Moderator/Dashboard");
+
+            return RedirectToAction(nameof(AccessDenied), new { returnUrl });
+        }
+
+        if (isModeratorArea(returnUrl))
+        {
+            if (hasRole(normalizedRoles, "Moderator"))
+                return LocalRedirect(returnUrl!);
+            if (hasRole(normalizedRoles, "Admin"))
+                return Redirect("/Admin/Dashboard");
+
+            return RedirectToAction(nameof(AccessDenied), new { returnUrl });
+        }
+
+        if (hasRole(normalizedRoles, "Admin"))
             return Redirect("/Admin/Dashboard");
-        if (loginData.User.Roles.Contains("Moderator", StringComparer.OrdinalIgnoreCase))
+        if (hasRole(normalizedRoles, "Moderator"))
             return Redirect("/Moderator/Dashboard");
 
-        // Nếu user chưa có role (đặc biệt case đăng ký Google lần đầu),
-        // luôn bắt buộc chọn role trước khi chạy onboarding theo role.
-        if (loginData.User?.Roles == null || !loginData.User.Roles.Any())
+   
+        if (!normalizedRoles.Any())
             return RedirectToAction("ChooseRole", "Auth");
 
         try
@@ -166,6 +234,7 @@ public class AuthController : Controller
             };
             var ob = await _http.SendAsync(obRequest);
             var obResult = await ReadApiResult<OnboardingStatusViewModel>(ob);
+            SyncNannyOnboardingCompletedSession(obResult?.Data, normalizedRoles);
             if (obResult?.Data != null && obResult.Data.RequiresOnboarding && obResult.Data.NextStep != "Completed")
                 return RedirectToAction("Start", "Onboarding");
         }
@@ -182,7 +251,13 @@ public class AuthController : Controller
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
     {
+        model.Email = NormalizeEmail(model.Email);
         if (!ModelState.IsValid) return View(model);
+        if (!IsValidEmail(model.Email))
+        {
+            ModelState.AddModelError(nameof(model.Email), "Email không hợp lệ.");
+            return View(model);
+        }
 
         var response = await _http.PostAsJsonAsync("/api/auth/forgot-password", new { model.Email });
         var result = await ReadApiResult(response);
@@ -200,9 +275,15 @@ public class AuthController : Controller
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> ResendForgotPasswordOtp(string email)
     {
+        email = NormalizeEmail(email);
         if (string.IsNullOrWhiteSpace(email))
         {
             TempData["Error"] = "Không xác định được email. Vui lòng thử lại từ đầu.";
+            return RedirectToAction("ForgotPassword");
+        }
+        if (!IsValidEmail(email))
+        {
+            TempData["Error"] = "Email không hợp lệ. Vui lòng kiểm tra lại.";
             return RedirectToAction("ForgotPassword");
         }
 
@@ -210,7 +291,10 @@ public class AuthController : Controller
         var result   = await ReadApiResult(response);
 
         if (result == null || !result.Success)
+        {
             TempData["Error"] = result?.Message ?? "Gửi lại mã OTP thất bại. Vui lòng thử lại.";
+            return RedirectToAction("ForgotPassword");
+        }
         else
             TempData["Success"] = "Đã gửi lại mã OTP. Vui lòng kiểm tra email (kể cả hộp thư spam).";
 
@@ -224,7 +308,13 @@ public class AuthController : Controller
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
     {
+        model.Email = NormalizeEmail(model.Email);
         if (!ModelState.IsValid) return View(model);
+        if (!IsValidEmail(model.Email))
+        {
+            ModelState.AddModelError(nameof(model.Email), "Email không hợp lệ.");
+            return View(model);
+        }
 
         var response = await _http.PostAsJsonAsync("/api/auth/reset-password", new
         {
@@ -239,7 +329,7 @@ public class AuthController : Controller
             return View(model);
         }
 
-        TempData["Success"] = "Đặt lại mật khẩu thành công. Vui lòng đăng nhập.";
+        TempData["AuthSuccess"] = "Đặt lại mật khẩu thành công. Vui lòng đăng nhập.";
         return RedirectToAction("Login");
     }
 
@@ -281,12 +371,12 @@ public class AuthController : Controller
             return View(model);
         }
 
-        // Xoá session đang giữ token Pending để buộc đăng nhập lại với token mới (đã kích hoạt)
-        // Nếu không làm bước này, Login GET sẽ phát hiện cookie cũ và redirect thẳng "/" bỏ qua onboarding
+        // Xóa session đang giữ token Pending để buộc đăng nhập lại với token mới (đã kích hoạt)
+        // Nếu không làm bước này, đăng nhập GET sẽ phát hiện cookie cũ và redirect thẳng "/" bỏ qua onboarding
         HttpContext.Session.Clear();
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
-        TempData["Success"] = "Xác thực email thành công! Vui lòng đăng nhập để tiếp tục.";
+        TempData["AuthSuccess"] = "Xác thực email thành công! Vui lòng đăng nhập để tiếp tục.";
         return RedirectToAction("Login");
     }
 
@@ -294,11 +384,23 @@ public class AuthController : Controller
     /// Cho phép user chọn vai trò (Nanny hoặc Parent) khi lần đầu tiên đăng nhập
     /// </summary>
     [Authorize, HttpGet]
-    public IActionResult ChooseRole() => View();
+    public async Task<IActionResult> ChooseRole()
+    {
+        if (await HasOnboardingRoleAsync())
+            return RedirectToAction("Start", "Onboarding");
+
+        return View();
+    }
 
     [Authorize, HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> ChooseRole(string role)
     {
+        if (await HasOnboardingRoleAsync())
+        {
+            TempData["Info"] = "Bạn đã chọn vai trò trước đó.";
+            return RedirectToAction("Start", "Onboarding");
+        }
+
         if (string.IsNullOrEmpty(role) || (role != "Nanny" && role != "Parent"))
         {
             ModelState.AddModelError("", "Vui lòng chọn một vai trò hợp lệ.");
@@ -308,7 +410,7 @@ public class AuthController : Controller
         var token = HttpContext.Session.GetString("AccessToken");
         if (string.IsNullOrEmpty(token))
         {
-            TempData["Error"] = "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.";
+            TempData["AuthError"] = "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.";
             return RedirectToAction("Login");
         }
 
@@ -329,13 +431,14 @@ public class AuthController : Controller
                 return View();
             }
 
-            // Backend trả về token mới chứa role đã cập nhật → refresh session + cookie claims
+            // Backend trả về token mới chứa role đã cập nhật -> refresh session + cookie claims
             if (result.Data != null)
             {
                 await SignInUserAsync(result.Data);
             }
 
             // Sau khi set role thành công, chuyển hướng tới Onboarding/Start
+            HttpContext.Session.Remove(NannyOnboardingCompletedSessionKey);
             return RedirectToAction("Start", "Onboarding");
         }
         catch (Exception ex)
@@ -395,13 +498,18 @@ public class AuthController : Controller
 
     private async Task SignInUserAsync(LoginResponseDto data)
     {
+        var normalizedRoles = normalizeRoles(data.User.Roles);
+
         HttpContext.Session.SetString("AccessToken", data.AccessToken);
         HttpContext.Session.SetString("RefreshToken", data.RefreshToken);
         HttpContext.Session.SetString("TokenExpiresAt", data.ExpiresAt.ToString("O"));
-        if (data.User.Roles.Any(r => r.Equals("Nanny", StringComparison.OrdinalIgnoreCase)))
+        if (hasRole(normalizedRoles, "Nanny"))
             HttpContext.Session.SetString("ShowNannyVerifyPrompt", "1");
         else
             HttpContext.Session.Remove("ShowNannyVerifyPrompt");
+
+        if (!hasRole(normalizedRoles, "Nanny"))
+            HttpContext.Session.Remove(NannyOnboardingCompletedSessionKey);
 
         var claims = new List<Claim>
         {
@@ -412,7 +520,11 @@ public class AuthController : Controller
             new("AuthProvider", data.User.AuthProvider),
         };
 
-        foreach (var role in data.User.Roles)
+        var avatarUrl = NormalizeAvatarUrl(data.User.AvatarUrl);
+        if (!string.IsNullOrWhiteSpace(avatarUrl))
+            claims.Add(new Claim("AvatarUrl", avatarUrl));
+
+        foreach (var role in normalizedRoles)
             claims.Add(new Claim(ClaimTypes.Role, role));
 
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -421,8 +533,155 @@ public class AuthController : Controller
             new ClaimsPrincipal(identity));
     }
 
+    private string? NormalizeAvatarUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return url;
+
+        if (Uri.TryCreate(url, UriKind.Absolute, out _))
+            return url;
+
+        var apiBaseUrl = (_config["ApiSettings:BaseUrl"] ?? string.Empty).TrimEnd('/');
+        if (string.IsNullOrWhiteSpace(apiBaseUrl))
+            return url;
+
+        if (url.StartsWith("~/", StringComparison.Ordinal))
+            url = url[1..];
+
+        return url.StartsWith("/", StringComparison.Ordinal)
+            ? apiBaseUrl + url
+            : apiBaseUrl + "/" + url.TrimStart('/');
+    }
+
     private bool IsGoogleUser() =>
         User.FindFirst("AuthProvider")?.Value?.Equals("google", StringComparison.OrdinalIgnoreCase) == true;
+
+    private static bool IsRestrictedArea(string? returnUrl)
+    {
+        if (string.IsNullOrWhiteSpace(returnUrl))
+            return false;
+
+        return isAdminArea(returnUrl) || isModeratorArea(returnUrl);
+    }
+
+    private static bool CanAccessRestrictedArea(ClaimsPrincipal principal, string? returnUrl)
+    {
+        if (string.IsNullOrWhiteSpace(returnUrl))
+            return true;
+
+        if (returnUrl.StartsWith("/Admin", StringComparison.OrdinalIgnoreCase))
+            return principal.IsInRole("Admin");
+
+        if (returnUrl.StartsWith("/Moderator", StringComparison.OrdinalIgnoreCase))
+            return principal.IsInRole("Moderator");
+
+        return true;
+    }
+
+    private static bool CanAccessRestrictedArea(IEnumerable<string> roles, string? returnUrl)
+    {
+        if (string.IsNullOrWhiteSpace(returnUrl))
+            return true;
+
+        var normalizedRoles = normalizeRoles(roles);
+
+        if (isAdminArea(returnUrl))
+            return hasRole(normalizedRoles, "Admin");
+
+        if (isModeratorArea(returnUrl))
+            return hasRole(normalizedRoles, "Moderator");
+
+        return true;
+    }
+
+    private static bool isAdminArea(string? returnUrl) =>
+        !string.IsNullOrWhiteSpace(returnUrl) &&
+        returnUrl.StartsWith("/Admin", StringComparison.OrdinalIgnoreCase);
+
+    private static bool isModeratorArea(string? returnUrl) =>
+        !string.IsNullOrWhiteSpace(returnUrl) &&
+        returnUrl.StartsWith("/Moderator", StringComparison.OrdinalIgnoreCase);
+
+    private static List<string> normalizeRoles(IEnumerable<string>? roles) =>
+        (roles ?? [])
+            .Where(static role => !string.IsNullOrWhiteSpace(role))
+            .Select(static role => role.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    private static bool hasRole(IEnumerable<string> roles, string roleName) =>
+        roles.Any(role => string.Equals(role, roleName, StringComparison.OrdinalIgnoreCase));
+
+    private bool HasOnboardingRoleInClaims() =>
+        User.IsInRole("Parent") || User.IsInRole("Nanny");
+
+    private async Task<bool> HasOnboardingRoleAsync()
+    {
+        if (HasOnboardingRoleInClaims())
+            return true;
+
+        var token = HttpContext.Session.GetString("AccessToken");
+        if (string.IsNullOrWhiteSpace(token))
+            return false;
+
+        try
+        {
+            var req = new HttpRequestMessage(HttpMethod.Get, "/api/onboarding/status")
+            {
+                Headers = { Authorization = new AuthenticationHeaderValue("Bearer", token) }
+            };
+            var response = await _http.SendAsync(req);
+            var result = await ReadApiResult<OnboardingStatusViewModel>(response);
+            var role = result?.Data?.Role;
+
+            return string.Equals(role, "Parent", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(role, "Nanny", StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool IsCompletedNannyOnboardingStatus(OnboardingStatusViewModel status) =>
+        string.Equals(status.Role, "Nanny", StringComparison.OrdinalIgnoreCase) &&
+        (!status.RequiresOnboarding || string.Equals(status.NextStep, "Completed", StringComparison.OrdinalIgnoreCase));
+
+    private void SyncNannyOnboardingCompletedSession(OnboardingStatusViewModel? status, IEnumerable<string>? roles)
+    {
+        var normalizedRoles = normalizeRoles(roles);
+        var hasNannyRole = hasRole(normalizedRoles, "Nanny");
+
+        if (status != null && IsCompletedNannyOnboardingStatus(status))
+        {
+            HttpContext.Session.SetString(NannyOnboardingCompletedSessionKey, "1");
+            return;
+        }
+
+        if (!hasNannyRole)
+        {
+            HttpContext.Session.Remove(NannyOnboardingCompletedSessionKey);
+            return;
+        }
+
+        if (status != null && string.Equals(status.Role, "Nanny", StringComparison.OrdinalIgnoreCase))
+            HttpContext.Session.Remove(NannyOnboardingCompletedSessionKey);
+    }
+
+    private static string? NormalizePhoneNumber(string? phoneNumber) =>
+        string.IsNullOrWhiteSpace(phoneNumber) ? null : phoneNumber.Trim();
+
+    private static bool IsValidPhoneNumber(string phoneNumber) =>
+        Regex.IsMatch(phoneNumber, @"^0\d{9}$");
+
+    private static string NormalizeEmail(string? email) =>
+        string.IsNullOrWhiteSpace(email) ? string.Empty : email.Trim();
+
+    private static bool IsValidEmail(string email) =>
+        Regex.IsMatch(
+            email,
+            @"^(?!.*\.\.)(?!\.)(?!.*\.$)[A-Za-z0-9._%+\-']+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$",
+            RegexOptions.IgnoreCase);
 
     private void SetGoogleClientId() =>
         ViewBag.GoogleClientId = _config["Google:ClientId"];
@@ -463,7 +722,7 @@ public class AuthController : Controller
             if (result?.Success == true && result.Data != null)
                 await SignInUserAsync(result.Data);
         }
-        catch { /* silent — không block main flow */ }
+        catch { /* silent - không block main flow */ }
     }
 
     private static async Task<ApiResult?> ReadApiResult(HttpResponseMessage response) =>

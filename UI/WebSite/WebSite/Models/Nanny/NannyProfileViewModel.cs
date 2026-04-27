@@ -1,8 +1,11 @@
+using System.ComponentModel.DataAnnotations;
+using WebSite.Validation;
+
 namespace WebSite.Models.Nanny;
 
 using WebSite.Enums;
 
-public class NannyProfileViewModel
+public class NannyProfileViewModel : IValidatableObject
 {
     public string? Bio { get; set; }
     public int? YearsOfExperience { get; set; }
@@ -10,5 +13,13 @@ public class NannyProfileViewModel
     public decimal? ExpectedSalaryMin { get; set; }
     public decimal? ExpectedSalaryMax { get; set; }
     public int? MaxTravelDistance { get; set; }
-}
 
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext) =>
+        SalaryValidationRules.Validate(
+            ExpectedSalaryMin,
+            ExpectedSalaryMax,
+            nameof(ExpectedSalaryMin),
+            nameof(ExpectedSalaryMax),
+            "Lương từ",
+            "Đến");
+}

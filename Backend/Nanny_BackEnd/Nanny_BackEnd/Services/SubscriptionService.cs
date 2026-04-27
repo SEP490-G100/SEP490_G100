@@ -1,41 +1,52 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nanny_BackEnd.DTOs.Subscription;
+using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
-using Nanny_BackEnd.Repositories;
+using Nanny_BackEnd.Repositories.Interfaces;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Services;
 
-public class SubscriptionService
+public class SubscriptionService : ISubscriptionService
 {
-    private readonly SubscriptionRepository _subscriptionRepo;
-    private readonly NotificationService _notificationService;
-    private readonly CassoService _cassoService;
-    private readonly PayOsService _payOsService;
+    private readonly ISubscriptionRepository _subscriptionRepo;
+    private readonly IUserRepository _userRepo;
+    private readonly INotificationService _notificationService;
+    private readonly ICassoService _cassoService;
+    private readonly IPayOsService _payOsService;
     private readonly PayOsOptions _payOsOptions;
+    private readonly ILogger<SubscriptionService> _logger;
 
     public SubscriptionService(
-        SubscriptionRepository subscriptionRepo,
-        NotificationService notificationService,
-        CassoService cassoService,
-        PayOsService payOsService,
-        IOptions<PayOsOptions> payOsOptions)
+        ISubscriptionRepository subscriptionRepo,
+        IUserRepository userRepository,
+        INotificationService notificationService,
+        ICassoService cassoService,
+        IPayOsService payOsService,
+        IOptions<PayOsOptions> payOsOptions,
+        ILogger<SubscriptionService> logger)
     {
         _subscriptionRepo = subscriptionRepo;
+        _userRepo = userRepository;
         _notificationService = notificationService;
         _cassoService = cassoService;
         _payOsService = payOsService;
         _payOsOptions = payOsOptions.Value;
+        _logger = logger;
     }
 
     public async Task<List<SubscriptionPlanResponse>> getPlans()
     {
         var plans = await _subscriptionRepo.getActivePlans();
-        return plans.Select(mapPlan).ToList();
+        return plans
+            .Select(mapPlan)
+            .ToList();
     }
 
     public async Task<SubscriptionPlanResponse?> getPlanByCode(string code)
@@ -44,7 +55,9 @@ public class SubscriptionService
         var plans = await _subscriptionRepo.getActivePlans();
         var plan = plans.FirstOrDefault(p =>
             string.Equals(buildPlanCode(p), normalizedCode, StringComparison.OrdinalIgnoreCase));
-        return plan == null ? null : mapPlan(plan);
+        if (plan == null)
+            return null;
+        return mapPlan(plan);
     }
 
     public async Task<UserSubscriptionResponse?> getCurrentSubscription(Guid userId)
@@ -75,14 +88,14 @@ public class SubscriptionService
         await expireOldSubscriptions(userId);
 
         var plan = await _subscriptionRepo.findPlanById(request.SubscriptionPlanId)
-            ?? throw new KeyNotFoundException("Khong tim thay goi subscription hoac goi da ngung hoat dong.");
+            ?? throw new KeyNotFoundException("Không tìm thấy gói subscription hoặc gói đã ngừng hoạt động.");
 
         var planResponse = mapPlan(plan);
         await validatePlanOwnership(userId, planResponse.TargetRole);
 
         var currentSubscription = await _subscriptionRepo.findCurrentSubscription(userId, DateTime.UtcNow);
         if (currentSubscription != null)
-            throw new InvalidOperationException("Ban dang co goi subscription con hieu luc. Vui long huy hoac cho goi hien tai het han.");
+            throw new InvalidOperationException("Bạn đang có gói subscription còn hiệu lực. Vui lòng hủy hoặc chờ gói hiện tại hết hạn.");
 
         var nowUtc = DateTime.UtcNow;
         var transaction = new Transaction
@@ -127,18 +140,22 @@ public class SubscriptionService
         await expirePendingTransactions(userId);
 
         var plan = await _subscriptionRepo.findPlanById(request.SubscriptionPlanId)
-            ?? throw new KeyNotFoundException("Khong tim thay goi subscription hoac goi da ngung hoat dong.");
+            ?? throw new KeyNotFoundException("Không tìm thấy gói subscription hoặc gói đã ngừng hoạt động.");
 
         var planResponse = mapPlan(plan);
         await validatePlanOwnership(userId, planResponse.TargetRole);
 
         var currentSubscription = await _subscriptionRepo.findCurrentSubscription(userId, DateTime.UtcNow);
         if (currentSubscription != null)
-            throw new InvalidOperationException("Ban dang co goi subscription con hieu luc. Vui long huy hoac cho goi hien tai het han.");
+            throw new InvalidOperationException("Bạn đang có gói subscription còn hiệu lực. Vui lòng hủy hoặc chờ gói hiện tại hết hạn.");
 
         var existingPendingTransaction = await findReusablePendingTransaction(userId, planResponse.Code);
         if (existingPendingTransaction != null)
-            return await buildPaymentSessionResponse(plan, existingPendingTransaction);
+        {
+            var reusableSession = await tryBuildReusablePaymentSession(plan, existingPendingTransaction, userId);
+            if (reusableSession != null)
+                return reusableSession;
+        }
 
         var nowUtc = DateTime.UtcNow;
         var orderCode = await generateUniqueOrderCode();
@@ -176,7 +193,7 @@ public class SubscriptionService
     public async Task<SubscriptionPaymentStatusResponse> getPaymentStatus(Guid userId, Guid transactionId)
     {
         var transaction = await _subscriptionRepo.findTransactionById(transactionId, userId)
-            ?? throw new KeyNotFoundException("Khong tim thay giao dich thanh toan.");
+            ?? throw new KeyNotFoundException("Không tìm thấy giao dịch thanh toán.");
 
         await reconcilePendingTransaction(transaction);
 
@@ -204,10 +221,10 @@ public class SubscriptionService
     public async Task<MarkSubscriptionTransferredResponse> markTransferred(Guid userId, Guid transactionId)
     {
         var transaction = await _subscriptionRepo.findTransactionById(transactionId, userId)
-            ?? throw new KeyNotFoundException("Khong tim thay giao dich thanh toan.");
+            ?? throw new KeyNotFoundException("Không tìm thấy giao dịch thanh toán.");
 
         if (transaction.Type != 1)
-            throw new InvalidOperationException("Chi ho tro xac nhan giao dich subscription.");
+            throw new InvalidOperationException("Chỉ hỗ trợ xác nhận giao dịch subscription.");
 
         if (await _subscriptionRepo.hasAnySubscriptionLinkedToTransaction(transaction.Id) || transaction.Status == 2)
         {
@@ -216,18 +233,18 @@ public class SubscriptionService
                 TransactionId = transaction.Id,
                 TransactionStatus = 2,
                 TransactionStatusLabel = getTransactionStatusLabel(2),
-                Message = "Giao dich da thanh cong truoc do."
+                Message = "Giao dịch đã thành công trước đó."
             };
         }
 
         if (transaction.Status == 3)
-            throw new InvalidOperationException("Giao dich da that bai hoac het han. Vui long tao giao dich moi.");
+            throw new InvalidOperationException("Giao dịch đã thất bại hoặc hết hạn. Vui lòng tạo giao dịch mới.");
 
         if (transaction.Status == 1 && isPendingTransactionExpired(transaction, DateTime.UtcNow))
         {
             markTransactionFailed(transaction, DateTime.UtcNow);
             await _subscriptionRepo.saveChanges();
-            throw new InvalidOperationException("Giao dich da het han. Vui long tao QR moi.");
+            throw new InvalidOperationException("Giao dịch đã hết hạn. Vui lòng tạo QR mới.");
         }
 
         var nowUtc = DateTime.UtcNow;
@@ -253,8 +270,8 @@ public class SubscriptionService
             TransactionStatus = transaction.Status,
             TransactionStatusLabel = getTransactionStatusLabel(transaction.Status),
             Message = transaction.Status == 2
-                ? "He thong da doi soat va kich hoat goi subscription."
-                : "Da ghi nhan ban xac nhan chuyen khoan va dang doi doi soat."
+                ? "Hệ thống đã đối soát và kích hoạt gói subscription."
+                : "Đã ghi nhận bạn xác nhận chuyển khoản và đang đợi đối soát."
         };
     }
 
@@ -299,7 +316,7 @@ public class SubscriptionService
         return result.IsSuccess ? 1 : 0;
     }
 
-    public async Task<SubscriptionBenefitResponse> getBenefitsForParentProfile(Guid parentProfileId)
+    public virtual async Task<SubscriptionBenefitResponse> getBenefitsForParentProfile(Guid parentProfileId)
     {
         var subscription = await _subscriptionRepo.findCurrentSubscriptionByParentProfile(parentProfileId, DateTime.UtcNow);
         if (subscription?.SubscriptionPlan == null)
@@ -311,7 +328,7 @@ public class SubscriptionService
             : SubscriptionBenefitResponse.FreeParent;
     }
 
-    public async Task<SubscriptionBenefitResponse> getBenefitsForNannyProfile(Guid nannyProfileId)
+    public virtual async Task<SubscriptionBenefitResponse> getBenefitsForNannyProfile(Guid nannyProfileId)
     {
         var subscription = await _subscriptionRepo.findCurrentSubscriptionByNannyProfile(nannyProfileId, DateTime.UtcNow);
         if (subscription?.SubscriptionPlan == null)
@@ -323,15 +340,14 @@ public class SubscriptionService
             : SubscriptionBenefitResponse.FreeNanny;
     }
 
-    public async Task<bool> hasActiveParentSubscription(Guid parentProfileId)
+    public virtual async Task<bool> hasActiveParentSubscription(Guid parentProfileId)
     {
         var subscription = await _subscriptionRepo.findCurrentSubscriptionByParentProfile(parentProfileId, DateTime.UtcNow);
         if (subscription?.SubscriptionPlan == null)
             return false;
 
         var targetRole = mapPlan(subscription.SubscriptionPlan).TargetRole;
-        return string.Equals(targetRole, "Parent", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(targetRole, "Unknown", StringComparison.OrdinalIgnoreCase);
+        return string.Equals(targetRole, "Parent", StringComparison.OrdinalIgnoreCase);
     }
 
     public async Task<UserSubscriptionResponse> cancelCurrentSubscription(Guid userId)
@@ -339,7 +355,7 @@ public class SubscriptionService
         await expireOldSubscriptions(userId);
 
         var subscription = await _subscriptionRepo.findCurrentSubscription(userId, DateTime.UtcNow)
-            ?? throw new KeyNotFoundException("Ban khong co goi subscription dang hoat dong.");
+            ?? throw new KeyNotFoundException("Bạn không có gói subscription đang hoạt động.");
 
         var nowUtc = DateTime.UtcNow;
         subscription.Status = 2;
@@ -350,6 +366,180 @@ public class SubscriptionService
 
         await _subscriptionRepo.saveChanges();
         return mapSubscription(subscription);
+    }
+
+    public async Task<AdminSubscriptionPlanListResponse> getAdminPlans(
+        string? search,
+        string? targetRole,
+        bool? isActive,
+        int page,
+        int pageSize)
+    {
+        var plans = await _subscriptionRepo.getAdminPlansIncludingDeleted();
+        var normalizedTargetRole = string.IsNullOrWhiteSpace(targetRole)
+            ? null
+            : SubscriptionPlanMetadataHelper.NormalizeTargetRole(targetRole);
+        var normalizedSearch = search?.Trim();
+
+        var projected = plans
+            .Select(plan => new
+            {
+                Plan = plan,
+                PlanResponse = mapPlan(plan)
+            })
+            .Where(item =>
+                string.IsNullOrWhiteSpace(normalizedSearch) ||
+                item.Plan.Name.Contains(normalizedSearch, StringComparison.OrdinalIgnoreCase) ||
+                item.PlanResponse.Code.Contains(normalizedSearch, StringComparison.OrdinalIgnoreCase))
+            .Where(item =>
+                string.IsNullOrWhiteSpace(normalizedTargetRole) ||
+                string.Equals(item.PlanResponse.TargetRole, normalizedTargetRole, StringComparison.OrdinalIgnoreCase))
+            .Where(item => !isActive.HasValue || item.Plan.IsActive == isActive.Value)
+            .OrderBy(item => item.Plan.SortOrder)
+            .ThenBy(item => item.Plan.Price)
+            .ThenBy(item => item.Plan.Name)
+            .ToList();
+
+        page = Math.Max(1, page);
+        pageSize = Math.Max(1, pageSize);
+        var totalCount = projected.Count;
+        var pagedItems = projected.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+        var items = new List<AdminSubscriptionPlanListItemResponse>(pagedItems.Count);
+        foreach (var item in pagedItems)
+        {
+            items.Add(new AdminSubscriptionPlanListItemResponse
+            {
+                Id = item.Plan.Id,
+                Code = item.PlanResponse.Code,
+                TargetRole = item.PlanResponse.TargetRole,
+                Name = item.Plan.Name,
+                Price = item.Plan.Price,
+                DurationDays = item.Plan.DurationDays,
+                SortOrder = item.Plan.SortOrder,
+                IsActive = item.Plan.IsActive,
+                FeatureCount = item.PlanResponse.Features.Count,
+                ActiveSubscriberCount = await _subscriptionRepo.countActiveSubscriptionsByPlan(item.Plan.Id, DateTime.UtcNow),
+                CanUseRecommendation = item.Plan.CanUseRecommendation,
+                CreatedAt = item.Plan.CreatedAt
+            });
+        }
+
+        return new AdminSubscriptionPlanListResponse
+        {
+            Items = items,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+            TotalPages = totalCount == 0 ? 1 : (int)Math.Ceiling(totalCount / (double)pageSize)
+        };
+    }
+
+    public async Task<AdminSubscriptionPlanDetailResponse?> getAdminPlanDetail(Guid id)
+    {
+        var plan = await _subscriptionRepo.findAdminPlanByIdIncludingDeleted(id);
+        if (plan == null)
+            return null;
+
+        var planResponse = mapPlan(plan);
+        return new AdminSubscriptionPlanDetailResponse
+        {
+            Id = plan.Id,
+            Code = planResponse.Code,
+            TargetRole = planResponse.TargetRole,
+            Name = plan.Name,
+            Description = plan.Description,
+            Price = plan.Price,
+            DurationDays = plan.DurationDays,
+            Features = planResponse.Features,
+            SortOrder = plan.SortOrder,
+            Benefits = planResponse.Benefits,
+            IsActive = plan.IsActive,
+            ActiveSubscriberCount = await _subscriptionRepo.countActiveSubscriptionsByPlan(plan.Id, DateTime.UtcNow),
+            CanUseRecommendation = plan.CanUseRecommendation,
+            CreatedAt = plan.CreatedAt,
+            UpdatedAt = plan.UpdatedAt
+        };
+    }
+
+    public async Task<AdminSubscriptionPlanDetailResponse> createAdminPlan(Guid adminUserId, AdminSubscriptionPlanUpsertRequest request)
+    {
+        validateAdminPlanRequest(request);
+
+        var normalizedName = request.Name.Trim();
+
+        var nowUtc = DateTime.UtcNow;
+        var nextSortOrder = await _subscriptionRepo.getNextSubscriptionPlanSortOrder();
+        var plan = new SubscriptionPlan
+        {
+            Id = Guid.NewGuid(),
+            Name = normalizedName,
+            Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
+            Price = request.Price,
+            DurationDays = request.DurationDays,
+            Features = serializeAdminPlanMetadataToFeaturesColumn(request),
+            CanUseRecommendation = request.CanUseRecommendation,
+            IsActive = true,
+            SortOrder = nextSortOrder,
+            CreatedAt = nowUtc,
+            CreatedBy = adminUserId,
+            IsDeleted = false
+        };
+
+        _subscriptionRepo.addPlan(plan);
+        await _subscriptionRepo.saveChanges();
+
+        return await getAdminPlanDetail(plan.Id)
+            ?? throw new InvalidOperationException("Không thể tạo gói subscription.");
+    }
+
+    public async Task<AdminSubscriptionPlanDetailResponse> updateAdminPlan(Guid id, Guid adminUserId, AdminSubscriptionPlanUpsertRequest request)
+    {
+        validateAdminPlanRequest(request);
+
+        var plan = await _subscriptionRepo.findAdminPlanByIdIncludingDeleted(id)
+            ?? throw new KeyNotFoundException("Không tìm thấy gói subscription.");
+
+        var normalizedName = request.Name.Trim();
+
+        plan.Name = normalizedName;
+        plan.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
+        plan.Price = request.Price;
+        plan.DurationDays = request.DurationDays;
+        plan.SortOrder = request.SortOrder;
+        plan.Features = serializeAdminPlanMetadataToFeaturesColumn(request);
+        plan.CanUseRecommendation = request.CanUseRecommendation;
+        plan.UpdatedAt = DateTime.UtcNow;
+        plan.UpdatedBy = adminUserId;
+
+        await _subscriptionRepo.saveChanges();
+
+        return await getAdminPlanDetail(plan.Id)
+            ?? throw new InvalidOperationException("Không thể cập nhật gói subscription.");
+    }
+
+    public async Task toggleAdminPlanStatus(Guid id, Guid adminUserId, bool isActive)
+    {
+        var plan = await _subscriptionRepo.findAdminPlanByIdIncludingDeleted(id)
+            ?? throw new KeyNotFoundException("Không tìm thấy gói subscription.");
+
+        var targetIsDeleted = !isActive;
+        if (plan.IsActive == isActive && plan.IsDeleted == targetIsDeleted)
+            return;
+
+        plan.IsActive = isActive;
+        plan.IsDeleted = targetIsDeleted;
+        plan.UpdatedAt = DateTime.UtcNow;
+        plan.UpdatedBy = adminUserId;
+        await _subscriptionRepo.saveChanges();
+    }
+
+    private async Task<SubscriptionPlan?> findActivePlanEntityByCodeAsync(string code)
+    {
+        var normalizedCode = normalizeCode(code);
+        var plans = await _subscriptionRepo.getActivePlans();
+        return plans.FirstOrDefault(p =>
+            string.Equals(buildPlanCode(p), normalizedCode, StringComparison.OrdinalIgnoreCase));
     }
 
     private async Task<Transaction?> findReusablePendingTransaction(Guid userId, string planCode)
@@ -389,6 +579,35 @@ public class SubscriptionService
             await _subscriptionRepo.saveChanges();
 
         return reusable;
+    }
+
+    private async Task<SubscriptionPaymentSessionResponse?> tryBuildReusablePaymentSession(
+        SubscriptionPlan plan,
+        Transaction transaction,
+        Guid userId)
+    {
+        try
+        {
+            var session = await buildPaymentSessionResponse(plan, transaction);
+            if (!string.IsNullOrWhiteSpace(session.QrPayload))
+                return session;
+
+            _logger.LogWarning(
+                "Pending transaction {TransactionId} could not recover valid PayOS QR payload. Marking as failed and creating a new session.",
+                transaction.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Failed to rebuild pending payment session for transaction {TransactionId}. Marking as failed and creating a new session.",
+                transaction.Id);
+        }
+
+        markTransactionFailed(transaction, DateTime.UtcNow);
+        transaction.UpdatedBy = userId;
+        await _subscriptionRepo.saveChanges();
+        return null;
     }
 
     private async Task<SubscriptionPaymentSessionResponse> buildPaymentSessionResponse(SubscriptionPlan plan, Transaction transaction)
@@ -452,7 +671,7 @@ public class SubscriptionService
         int orderCode)
     {
         if (orderCode <= 0)
-            throw new InvalidOperationException("Ma giao dich PayOS khong hop le.");
+            throw new InvalidOperationException("Mã giao dịch PayOS không hợp lệ.");
 
         var existingInstruction = await _payOsService.getPaymentInstruction(orderCode);
         if (existingInstruction != null)
@@ -509,9 +728,6 @@ public class SubscriptionService
         if (transactionStatus == 3)
             return "FAILED";
 
-        if (transactionStatus == 5)
-            return "WAITING_REVIEW";
-
         if (string.Equals(providerStatus, "PAID", StringComparison.OrdinalIgnoreCase))
             return "SUCCESS";
 
@@ -534,7 +750,7 @@ public class SubscriptionService
             return new TransferConfirmationResult
             {
                 Status = "NOT_FOUND",
-                Message = "Khong tim thay giao dich thanh toan."
+                Message = "Không tìm thấy giao dịch thanh toán."
             };
         }
 
@@ -548,14 +764,14 @@ public class SubscriptionService
             result.IsSuccess = true;
             result.SubscriptionActivated = true;
             result.Status = "ALREADY_PROCESSED";
-            result.Message = "Giao dich da duoc xu ly truoc do.";
+            result.Message = "Giao dịch đã được xử lý trước đó.";
             return result;
         }
 
         if (transaction.Status == 3)
         {
             result.Status = "FAILED";
-            result.Message = "Giao dich da o trang thai that bai.";
+            result.Message = "Giao dịch đã ở trạng thái thất bại.";
             return result;
         }
 
@@ -566,7 +782,7 @@ public class SubscriptionService
             await _subscriptionRepo.saveChanges();
 
             result.Status = "FAILED";
-            result.Message = "Callback noi bo tra ve trang thai that bai.";
+            result.Message = "Callback nội bộ trả về trạng thái thất bại.";
             return result;
         }
 
@@ -578,7 +794,7 @@ public class SubscriptionService
             await _subscriptionRepo.saveChanges();
 
             result.Status = "AMOUNT_MISMATCH";
-            result.Message = "So tien callback khong khop voi giao dich dang cho.";
+            result.Message = "Số tiền callback không khớp với giao dịch đang chờ.";
             return result;
         }
 
@@ -595,7 +811,7 @@ public class SubscriptionService
             await _subscriptionRepo.saveChanges();
 
             result.Status = "ACTIVATION_FAILED";
-            result.Message = "Khong kich hoat duoc goi subscription tu callback noi bo.";
+            result.Message = "Không kích hoạt được gói subscription từ callback nội bộ.";
             return result;
         }
 
@@ -604,7 +820,7 @@ public class SubscriptionService
         result.IsSuccess = true;
         result.SubscriptionActivated = true;
         result.Status = "SUCCESS";
-        result.Message = "Da kich hoat subscription tu callback noi bo.";
+        result.Message = "Đã kích hoạt subscription từ callback nội bộ.";
         return result;
     }
 
@@ -646,8 +862,8 @@ public class SubscriptionService
 
         await _notificationService.createNotification(
             transaction.UserId,
-            $"Dang ky goi {plan.Name} thanh cong",
-            $"Ban da thanh toan thanh cong goi {plan.Name}. Goi cua ban co hieu luc den {subscription.EndDate:dd/MM/yyyy}.",
+            $"Đăng ký gói {plan.Name} thành công",
+            $"Bạn đã thanh toán thành công gói {plan.Name}. Gói của bạn có hiệu lực đến {subscription.EndDate:dd/MM/yyyy}.",
             NotificationTypes.SubscriptionPurchased,
             subscription.Id,
             "UserSubscription",
@@ -656,6 +872,7 @@ public class SubscriptionService
         return true;
     }
 
+    
     private static void markTransactionFailed(Transaction transaction, DateTime nowUtc)
     {
         transaction.Status = 3;
@@ -691,6 +908,12 @@ public class SubscriptionService
         instruction.BankId = firstNonEmpty(instruction.BankId, extractMetadataValue(transaction.Description, "PAYOS_BANK"));
         instruction.AccountNumber = firstNonEmpty(instruction.AccountNumber, extractMetadataValue(transaction.Description, "PAYOS_ACC"));
         instruction.AccountName = firstNonEmpty(instruction.AccountName, extractMetadataValue(transaction.Description, "PAYOS_NAME"));
+        instruction.CheckoutUrl = firstNonEmpty(instruction.CheckoutUrl, extractMetadataValue(transaction.Description, "PAYOS_CHECKOUT"));
+        instruction.QrPayload = firstNonEmpty(instruction.QrPayload, extractMetadataValue(transaction.Description, "PAYOS_QR"));
+
+        if (!string.IsNullOrWhiteSpace(instruction.QrPayload))
+            instruction.QrCodeUrl = buildQrImageUrl(instruction.QrPayload);
+
         return instruction;
     }
 
@@ -704,7 +927,12 @@ public class SubscriptionService
         transaction.Description = appendMetadataValue(transaction.Description, "PAYOS_BANK", instruction.BankId);
         transaction.Description = appendMetadataValue(transaction.Description, "PAYOS_ACC", instruction.AccountNumber);
         transaction.Description = appendMetadataValue(transaction.Description, "PAYOS_NAME", instruction.AccountName);
+        transaction.Description = appendMetadataValue(transaction.Description, "PAYOS_CHECKOUT", instruction.CheckoutUrl);
+        transaction.Description = appendMetadataValue(transaction.Description, "PAYOS_QR", instruction.QrPayload);
     }
+
+    private static string buildQrImageUrl(string payload) =>
+        $"https://api.qrserver.com/v1/create-qr-code/?size=320x320&data={Uri.EscapeDataString(payload)}";
 
     private static string appendMetadataValue(string? description, string key, string? value)
     {
@@ -759,14 +987,35 @@ public class SubscriptionService
         await _subscriptionRepo.saveChanges();
     }
 
+   
     private static SubscriptionPlanResponse mapPlan(SubscriptionPlan plan)
     {
-        var features = splitFeatures(plan.Features);
-        var targetRole = inferTargetRole(plan, features);
+        var metadata = SubscriptionPlanMetadataHelper.TryParse(plan.Features);
+        var hasStructuredMetadata = !string.IsNullOrWhiteSpace(plan.Features) &&
+                                    plan.Features.TrimStart().StartsWith("{", StringComparison.Ordinal);
+
+        var features = metadata?.Features?.Count > 0
+            ? SubscriptionPlanMetadataHelper.NormalizeFeatures(metadata.Features)
+            : hasStructuredMetadata
+                ? []
+                : splitFeatures(plan.Features);
+
+        var targetRole = hasStructuredMetadata && !string.IsNullOrWhiteSpace(metadata?.TargetRole)
+            ? SubscriptionPlanMetadataHelper.NormalizeTargetRole(metadata!.TargetRole)
+            : inferTargetRole(plan, features);
+
+        var code = hasStructuredMetadata && !string.IsNullOrWhiteSpace(metadata?.Code)
+            ? metadata!.Code
+            : buildPlanCode(plan);
+
+        var benefits = hasStructuredMetadata && metadata?.Benefits != null
+            ? metadata.Benefits
+            : inferBenefits(plan, targetRole, features);
+
         return new SubscriptionPlanResponse
         {
             Id = plan.Id,
-            Code = buildPlanCode(plan),
+            Code = code,
             TargetRole = targetRole,
             Name = plan.Name,
             Description = plan.Description,
@@ -774,7 +1023,7 @@ public class SubscriptionService
             DurationDays = plan.DurationDays,
             Features = features,
             SortOrder = plan.SortOrder,
-            Benefits = inferBenefits(plan, targetRole, features)
+            Benefits = benefits
         };
     }
 
@@ -819,27 +1068,27 @@ public class SubscriptionService
 
     private static string getSubscriptionStatusLabel(int status) => status switch
     {
-        1 => "Dang hoat dong",
-        2 => "Da huy",
-        3 => "Het han",
-        _ => "Khong xac dinh"
+        (int)UserSubscriptionStatus.Active    => "Đang hoạt động",
+        (int)UserSubscriptionStatus.Cancelled => "Đã hủy",
+        (int)UserSubscriptionStatus.Inactive  => "Hết hạn",
+        _ => "Không xác định"
     };
 
     private static string getTransactionStatusLabel(int status) => status switch
     {
-        1 => "Cho thanh toan",
-        5 => "Dang cho xet duyet",
-        2 => "Thanh cong",
-        3 => "That bai",
-        4 => "Da hoan tien",
-        _ => "Khong xac dinh"
+        1 => "Chờ thanh toán",
+        5 => "Đang xử lý thanh toán",
+        2 => "Thành công",
+        3 => "Thất bại",
+        4 => "Đã hoàn tiền",
+        _ => "Không xác định"
     };
 
     private static string getTransactionTypeLabel(int type) => type switch
     {
-        0 => "Nap tien",
-        1 => "Thanh toan subscription",
-        _ => "Khac"
+        0 => "Nạp tiền",
+        1 => "Thanh toán subscription",
+        _ => "Khác"
     };
 
     private static int generateOrderCode()
@@ -861,7 +1110,7 @@ public class SubscriptionService
             await Task.Delay(5);
         }
 
-        throw new InvalidOperationException("Khong tao duoc ma giao dich thanh toan duy nhat. Vui long thu lai.");
+        throw new InvalidOperationException("Không tạo được mã giao dịch thanh toán duy nhất. Vui lòng thử lại.");
     }
 
     private static string buildPaymentContent(string planCode, int orderCode) => $"NM {planCode} {orderCode}";
@@ -889,6 +1138,42 @@ public class SubscriptionService
         return int.TryParse(parts[2], out var orderCode) ? orderCode : null;
     }
 
+   
+
+    private static string serializeFeaturesForStorage(IEnumerable<string> features) =>
+        JsonSerializer.Serialize(SubscriptionPlanMetadataHelper.NormalizeFeatures(features));
+
+    private static string serializeAdminPlanMetadataToFeaturesColumn(AdminSubscriptionPlanUpsertRequest request)
+    {
+        var name = request.Name.Trim();
+        var code = SubscriptionPlanMetadataHelper.NormalizeCode(null, request.TargetRole, name);
+        var target = SubscriptionPlanMetadataHelper.NormalizeTargetRole(request.TargetRole);
+        var metadata = new SubscriptionPlanMetadata
+        {
+            Code = code,
+            TargetRole = target,
+            Features = SubscriptionPlanMetadataHelper.NormalizeFeatures(request.Features),
+            Benefits = new SubscriptionBenefitResponse
+            {
+                MonthlyJobPostLimit = request.Benefits.MonthlyJobPostLimit,
+                MonthlyApplicationLimit = request.Benefits.MonthlyApplicationLimit,
+                FeaturedBadge = request.Benefits.FeaturedBadge,
+                SearchPriority = request.Benefits.SearchPriority,
+                ListingDurationDays = request.Benefits.ListingDurationDays,
+                CanUseRecommendation = request.CanUseRecommendation
+            }
+        };
+        return SubscriptionPlanMetadataHelper.Serialize(metadata);
+    }
+
+    private static void validateAdminPlanRequest(AdminSubscriptionPlanUpsertRequest request)
+    {
+        request.Features = SubscriptionPlanMetadataHelper.NormalizeFeatures(request.Features);
+
+        if (request.Features.Count == 0)
+            throw new InvalidOperationException("Phải có ít nhất 1 feature cho gói subscription.");
+    }
+
     private static List<string>? tryParseJsonFeatures(string features)
     {
         try
@@ -906,7 +1191,7 @@ public class SubscriptionService
         if (string.Equals(targetRole, "Parent", StringComparison.OrdinalIgnoreCase))
         {
             if (!await _subscriptionRepo.hasParentProfile(userId))
-                throw new InvalidOperationException("Tai khoan hien tai khong phai Parent nen khong the mua goi nay.");
+                throw new InvalidOperationException("Tài khoản hiện tại không phải Parent nên không thể mua gói này.");
 
             return;
         }
@@ -914,13 +1199,13 @@ public class SubscriptionService
         if (string.Equals(targetRole, "Nanny", StringComparison.OrdinalIgnoreCase))
         {
             if (!await _subscriptionRepo.hasNannyProfile(userId))
-                throw new InvalidOperationException("Tai khoan hien tai khong phai Nanny nen khong the mua goi nay.");
+                throw new InvalidOperationException("Tài khoản hiện tại không phải Nanny nên không thể mua gói này.");
 
             return;
         }
 
         if (!await _subscriptionRepo.hasParentProfile(userId) && !await _subscriptionRepo.hasNannyProfile(userId))
-            throw new InvalidOperationException("Tai khoan hien tai khong hop le de mua goi subscription.");
+            throw new InvalidOperationException("Tài khoản hiện tại không hợp lệ để mua gói subscription.");
     }
 
     private static SubscriptionBenefitResponse inferBenefits(
@@ -936,7 +1221,7 @@ public class SubscriptionService
             FeaturedBadge = containsAny(textSamples, "badge", "featured", "noi bat"),
             SearchPriority = containsAny(textSamples, "uu tien", "priority", "tim kiem"),
             ListingDurationDays = inferListingDurationDays(textSamples, plan.DurationDays),
-            CanUseRecommendation = true
+            CanUseRecommendation = plan.CanUseRecommendation
         };
 
         if (string.Equals(targetRole, "Parent", StringComparison.OrdinalIgnoreCase))

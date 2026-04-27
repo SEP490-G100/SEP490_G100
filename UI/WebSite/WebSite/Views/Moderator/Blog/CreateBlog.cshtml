@@ -1,27 +1,25 @@
-@using WebSite.Enums
+﻿@using WebSite.Enums
 @model WebSite.Models.Blog.CreateBlogRequest
 @{
     Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
-    ViewData["Title"] = "Create Blog";
+    ViewData["Title"] = "Thêm bài viết";
     var categories = ViewBag.Categories as List<WebSite.Models.Blog.BlogCategoryOption>
                      ?? new List<WebSite.Models.Blog.BlogCategoryOption>();
 }
 
-<!-- PAGE HEADER -->
 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
     <div>
         <h1 class="page-title mt-2">
-            Create <span class="gradient-text">Blog</span>
+            Thêm <span class="gradient-text">bài viết</span>
         </h1>
-        <p class="page-subtitle">Fill in the details to publish a new blog article.</p>
+        <p class="page-subtitle">Nhập thông tin chi tiết để xuất bản bài viết blog mới.</p>
     </div>
     <a href="/Moderator/ManageBlog" class="btn-outline flex-shrink-0 flex items-center gap-1">
         <span class="material-icons-round text-base">arrow_back</span>
-        Back to List
+        Quay lại danh sách
     </a>
 </div>
 
-<!-- Alerts -->
 @if (TempData["Error"] != null)
 {
     <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 fade-in-up">
@@ -33,89 +31,94 @@
 <form method="post" action="/Moderator/CreateBlog" id="createBlogForm">
     @Html.AntiForgeryToken()
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-
-        <!-- LEFT: Main content -->
         <div class="lg:col-span-2 flex flex-col gap-5">
-
-            <!-- Title & Slug card -->
             <div class="content-card p-6 fade-in-up">
                 <h2 class="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
                     <span class="material-icons-round text-indigo-400 text-base">title</span>
-                    Basic Info
+                    Thông tin cơ bản
                 </h2>
 
-                <!-- Title -->
                 <div class="mb-4">
                     <label class="block text-sm font-semibold text-gray-700 mb-1.5">
-                        Title <span class="text-red-500">*</span>
+                        Tiêu đề <span class="text-red-500">*</span>
                     </label>
                     <input id="titleInput" name="Title" type="text" value="@(Model?.Title ?? "")"
-                           placeholder="Enter blog title..."
+                           placeholder="Nhập tiêu đề bài viết..."
                            class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 transition"
                            oninput="autoSlug(this.value)" />
-                    <p id="titleError" class="text-red-500 text-xs mt-1 hidden">Title không được để trống.</p>
+                    <p id="titleError" class="text-red-500 text-xs mt-1 hidden">Tiêu đề không được để trống.</p>
                 </div>
 
-                <!-- Slug -->
                 <div class="mb-4">
                     <label class="block text-sm font-semibold text-gray-700 mb-1.5">
-                        Slug <span class="text-red-500">*</span>
+                        Đường dẫn (Slug) <span class="text-red-500">*</span>
                     </label>
                     <input id="slugInput" name="Slug" type="text" value="@(Model?.Slug ?? "")"
                            placeholder="blog-slug-url"
                            class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-mono focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 transition" />
-                    <p id="slugError" class="text-red-500 text-xs mt-1 hidden">Slug không được để trống.</p>
+                    <p id="slugError" class="text-red-500 text-xs mt-1 hidden">Đường dẫn không được để trống.</p>
                 </div>
 
-                <!-- Summary -->
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Summary</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Tóm tắt</label>
                     <textarea name="Summary" rows="2"
-                              placeholder="Short description of the blog (optional)..."
+                              placeholder="Mô tả súc tích nội dung bài viết (không bắt buộc)..."
                               class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 transition resize-none">@(Model?.Summary ?? "")</textarea>
                 </div>
             </div>
 
-            <!-- Content -->
             <div class="content-card p-6 fade-in-up" style="animation-delay:.05s;">
-                <h2 class="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                    <span class="material-icons-round text-indigo-400 text-base">edit_note</span>
-                    Content <span class="text-red-500">*</span>
-                </h2>
-                <textarea id="contentInput" name="Content" rows="18"
-                          placeholder="Write your blog content here..."
-                          class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 transition resize-y">@(Model?.Content ?? "")</textarea>
-                <p id="contentError" class="text-red-500 text-xs mt-1 hidden">Content không được để trống.</p>
+                <div class="flex items-center justify-between gap-3 mb-4">
+                    <h2 class="text-sm font-bold text-gray-700 flex items-center gap-2">
+                        <span class="material-icons-round text-indigo-400 text-base">edit_note</span>
+                        Nội dung <span class="text-red-500">*</span>
+                    </h2>
+                    <span class="text-xs text-gray-400">Hỗ trợ thẻ HTML và hình ảnh</span>
+                </div>
+
+                <div>
+                    <textarea id="contentInput" name="Content" rows="18"
+                              placeholder="Nhập nội dung bài viết của bạn tại đây..."
+                              class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 transition resize-y">@(Model?.Content ?? "")</textarea>
+                    <p id="contentError" class="text-red-500 text-xs mt-1 hidden">Nội dung bài viết không được để trống.</p>
+                    <p class="text-xs text-gray-400 mt-2">Sử dụng thanh công cụ TinyMCE để tải lên hình ảnh/video hoặc chèn URL phương tiện.</p>
+
+                    <div class="mt-4 rounded-2xl border border-gray-200 bg-white overflow-hidden">
+                        <div class="flex items-center justify-between gap-2 border-b border-gray-100 px-4 py-3 bg-gray-50">
+                            <h3 class="text-sm font-bold text-gray-700 flex items-center gap-2">
+                                <span class="material-icons-round text-indigo-400 text-base">preview</span>
+                                Bản xem trước
+                            </h3>
+                            <span class="text-xs text-gray-400">Hiển thị nội dung HTML, hình ảnh và video</span>
+                        </div>
+                        <div id="contentPreview" class="p-4 min-h-[220px] max-h-[560px] overflow-y-auto text-sm leading-7 text-gray-700 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-2xl [&_img]:my-4 [&_video]:max-w-full [&_video]:rounded-2xl [&_video]:my-4 [&_video]:bg-black [&_p]:mb-3 [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-3 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:mb-3 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- RIGHT: Settings -->
         <div class="flex flex-col gap-5">
-
-            <!-- Publish Settings -->
             <div class="content-card p-6 fade-in-up" style="animation-delay:.08s;">
                 <h2 class="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
                     <span class="material-icons-round text-indigo-400 text-base">settings</span>
-                    Settings
+                    Tùy chọn
                 </h2>
 
-                <!-- Status -->
                 <div class="mb-4">
-                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Status</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Trạng thái</label>
                     <select name="Status"
                             class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-indigo-400 transition appearance-none">
-                        <option value="@((int)BlogStatus.Draft)" selected="@(Model?.Status == BlogStatus.Draft ? "selected" : null)">Draft</option>
-                        <option value="@((int)BlogStatus.Published)" selected="@(Model?.Status == BlogStatus.Published ? "selected" : null)">Published</option>
-                        <option value="@((int)BlogStatus.Archived)" selected="@(Model?.Status == BlogStatus.Archived ? "selected" : null)">Archived</option>
+                        <option value="@((int)BlogStatus.Draft)" selected="@(Model?.Status == BlogStatus.Draft ? "selected" : null)">Bản nháp</option>
+                        <option value="@((int)BlogStatus.Published)" selected="@(Model?.Status == BlogStatus.Published ? "selected" : null)">Xuất bản</option>
+                        <option value="@((int)BlogStatus.Archived)" selected="@(Model?.Status == BlogStatus.Archived ? "selected" : null)">Lưu trữ</option>
                     </select>
                 </div>
 
-                <!-- Category -->
                 <div class="mb-4">
-                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Category</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Danh mục</label>
                     <select name="CategoryId"
                             class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-indigo-400 transition appearance-none">
-                        <option value="">— No Category —</option>
+                        <option value="">— Không có danh mục —</option>
                         @foreach (var cat in categories)
                         {
                             <option value="@cat.Id" selected="@(Model?.CategoryId == cat.Id ? "selected" : null)">@cat.Name</option>
@@ -123,24 +126,21 @@
                     </select>
                 </div>
 
-                <!-- ThumbnailUrl -->
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Thumbnail URL</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Ảnh bìa (URL)</label>
                     <input name="ThumbnailUrl" type="url" value="@(Model?.ThumbnailUrl ?? "")"
                            placeholder="https://example.com/image.jpg"
                            class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-indigo-400 transition" />
                 </div>
             </div>
 
-            <!-- Submit -->
             <div class="content-card p-5 fade-in-up" style="animation-delay:.1s;">
-                <button type="button" onclick="submitForm()"
-                        class="btn-primary w-full justify-center">
+                <button type="button" onclick="submitForm()" class="btn-primary w-full justify-center">
                     <span class="material-icons-round text-base">save</span>
-                    Create Blog
+                    Thêm bài viết
                 </button>
                 <a href="/Moderator/ManageBlog" class="btn-outline w-full justify-center mt-3">
-                    Cancel
+                    Hủy
                 </a>
             </div>
         </div>
@@ -148,27 +148,194 @@
 </form>
 
 @section Scripts {
+<script src="~/lib/tinymce/tinymce.min.js" asp-append-version="true"></script>
 <script>
 function autoSlug(title) {
-    var slug = title.toLowerCase()
-        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-        .replace(/đ/g, 'd').replace(/\s+/g, '-')
-        .replace(/[^a-z0-9\-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    var slug = String(title || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/đ/g, 'd')
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9\-]/g, '')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
     document.getElementById('slugInput').value = slug;
 }
 
+function getEditor() {
+    return (typeof tinymce !== 'undefined') ? tinymce.get('contentInput') : null;
+}
+
+function syncEditorToTextarea() {
+    var editor = getEditor();
+    if (editor) {
+        editor.save();
+    }
+}
+
+function getContentValue() {
+    var editor = getEditor();
+    if (editor) {
+        return editor.getContent();
+    }
+    return getContentInput().value;
+}
+
 function submitForm() {
-    var valid = true;
-    var title   = document.getElementById('titleInput').value.trim();
-    var slug    = document.getElementById('slugInput').value.trim();
-    var content = document.getElementById('contentInput').value.trim();
+    syncEditorToTextarea();
+    var title = document.getElementById('titleInput').value.trim();
+    var slug = document.getElementById('slugInput').value.trim();
+    var content = getContentValue().trim();
 
     document.getElementById('titleError').classList.toggle('hidden', !!title);
-    document.getElementById('slugError').classList.toggle('hidden',  !!slug);
+    document.getElementById('slugError').classList.toggle('hidden', !!slug);
     document.getElementById('contentError').classList.toggle('hidden', !!content);
 
     if (!title || !slug || !content) return;
     document.getElementById('createBlogForm').submit();
 }
+
+function getCsrfToken() {
+    return document.querySelector('#createBlogForm input[name="__RequestVerificationToken"]').value;
+}
+
+function getContentInput() {
+    return document.getElementById('contentInput');
+}
+
+function getContentPreview() {
+    return document.getElementById('contentPreview');
+}
+
+function renderContentPreview() {
+    var content = getContentValue().trim();
+    var preview = getContentPreview();
+
+    if (!content) {
+        preview.innerHTML = '<p class="text-sm text-gray-400 italic">Bản xem trước của bài viết sẽ hiển thị tại đây, bao gồm cả hình ảnh và video minh họa.</p>';
+        return;
+    }
+
+    preview.innerHTML = content;
+}
+
+async function uploadMediaFiles(files, endpoint, emptyMessage) {
+    if (!files || !files.length) {
+        throw new Error(emptyMessage);
+    }
+    var formData = new FormData();
+    Array.from(files).forEach(function(file) {
+        formData.append('files', file);
+    });
+    formData.append('__RequestVerificationToken', getCsrfToken());
+    var response = await fetch(endpoint, { method: 'POST', body: formData });
+    var result = await response.json();
+    if (!result.success || !result.data || !Array.isArray(result.data.urls) || result.data.urls.length === 0) {
+        throw new Error(result.message || 'Tải lên thất bại.');
+    }
+    return result.data.urls;
+}
+
+function pickLocalFile(accept) {
+    return new Promise(function(resolve) {
+        var input = document.createElement('input');
+        input.type = 'file';
+        input.accept = accept;
+        input.onchange = function() {
+            resolve((input.files && input.files.length > 0) ? input.files[0] : null);
+        };
+        input.click();
+    });
+}
+
+function getBlogMediaEndpoint(isImage) {
+    return isImage
+        ? '/Moderator/UploadBlogContentMedia?mediaType=image'
+        : '/Moderator/UploadBlogContentMedia?mediaType=video';
+}
+
+function uploadSingleImageForTiny(blobInfo) {
+    return new Promise(async function(resolve, reject) {
+        try {
+            var urls = await uploadMediaFiles(
+                [blobInfo.blob()],
+                getBlogMediaEndpoint(true),
+                'Vui lòng chọn ít nhất một ảnh.'
+            );
+            resolve(urls[0]);
+        } catch (error) {
+            reject({ message: error.message || 'Không thể tải ảnh lên.' });
+        }
+    });
+}
+
+function handleTinyFilePicker(callback, meta) {
+    var isImage = meta.filetype === 'image';
+    var accept = isImage
+        ? 'image/*'
+        : 'video/mp4,video/webm,video/ogg,video/quicktime,.mp4,.webm,.ogg,.mov';
+    var endpoint = getBlogMediaEndpoint(isImage);
+
+    pickLocalFile(accept).then(async function(file) {
+        if (!file) return;
+        try {
+            var urls = await uploadMediaFiles([file], endpoint, 'Vui lòng chọn tệp để tải lên.');
+            var url = urls[0];
+            if (isImage) {
+                callback(url, { alt: file.name || 'Ảnh' });
+            } else {
+                callback(url, { source2: '', poster: '' });
+            }
+            if (typeof window.showToast === 'function') {
+                window.showToast('Đã tải phương tiện lên thành công.', { type: 'success' });
+            }
+        } catch (error) {
+            if (typeof window.showToast === 'function') {
+                window.showToast(error.message || 'Không thể tải tệp phương tiện lên.', { type: 'error' });
+            }
+        }
+    });
+}
+
+function initTinyMce() {
+    if (typeof tinymce === 'undefined') return;
+
+    tinymce.init({
+        selector: '#contentInput',
+        license_key: 'gpl',
+        menubar: false,
+        height: 520,
+        branding: false,
+        plugins: 'link lists table code fullscreen autoresize image media',
+        toolbar: 'undo redo | blocks | bold italic underline | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist | link image media | removeformat | code fullscreen',
+        content_style: 'body{font-family:Segoe UI,Arial,sans-serif;font-size:14px;line-height:1.7;} img,video{max-width:100%;height:auto;border-radius:12px;}',
+        automatic_uploads: true,
+        images_upload_handler: function(blobInfo) {
+            return uploadSingleImageForTiny(blobInfo);
+        },
+        file_picker_types: 'image media',
+        file_picker_callback: function(callback, value, meta) {
+            handleTinyFilePicker(callback, meta);
+        },
+        setup: function(editor) {
+            editor.on('init', function() {
+                syncEditorToTextarea();
+                renderContentPreview();
+            });
+            editor.on('input change undo redo setcontent', function() {
+                syncEditorToTextarea();
+                renderContentPreview();
+            });
+        }
+    });
+}
+
+getContentInput().addEventListener('input', function() {
+    renderContentPreview();
+});
+
+initTinyMce();
+renderContentPreview();
 </script>
 }

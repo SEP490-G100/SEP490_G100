@@ -1,0 +1,85 @@
+@model WebSite.Models.Admin.AdminNotificationFormViewModel
+@{
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+    ViewData["Title"] = "Tạo thông báo";
+    var availableRoles = ViewBag.AdminNotificationRoles as List<string> ?? new List<string>();
+}
+
+<div class="flex items-center justify-between gap-4 mb-7 fade-in-up">
+    <div>
+        <span class="section-label">Quản lý thông báo</span>
+        <h1 class="page-title mt-2">Tạo <span class="gradient-text">thông báo</span></h1>
+        <p class="page-subtitle">Gửi thông báo đến toàn bộ người dùng hoặc một nhóm vai trò cụ thể với chuông và toast thời gian thực.</p>
+    </div>
+    <a href="/Admin/ManageAdminNotification" class="btn-outline">
+        <span class="material-icons-round text-base">arrow_back</span>
+        Quay lại danh sách
+    </a>
+</div>
+
+<form method="post" action="/Admin/CreateAdminNotification" class="space-y-6" id="createAdminNotificationForm">
+    @Html.AntiForgeryToken()
+    <div class="content-card p-6 fade-in-up">
+        <div asp-validation-summary="All" class="mb-4 text-sm text-red-600"></div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div class="field-group lg:col-span-2">
+                <label asp-for="Title" class="field-label"></label>
+                <input asp-for="Title" class="search-input !pl-4" maxlength="200" required />
+                <span asp-validation-for="Title" class="text-xs text-red-500"></span>
+            </div>
+
+            <div class="field-group lg:col-span-2">
+                <label asp-for="TargetRole" class="field-label">Vai trò nhận thông báo</label>
+                <select asp-for="TargetRole" class="search-input !pl-4" id="targetRoleSelect" required>
+                    <option value="All">Tất cả vai trò</option>
+                    @foreach (var role in availableRoles)
+                    {
+                        var roleLabel = role switch { "Parent" => "Phụ huynh", "Nanny" => "Bảo mẫu", "Moderator" => "Kiểm duyệt viên", _ => role };
+                        <option value="@role">@roleLabel</option>
+                    }
+                </select>
+                <span asp-validation-for="TargetRole" class="text-xs text-red-500"></span>
+            </div>
+
+            <div class="field-group lg:col-span-2">
+                <label asp-for="Content" class="field-label"></label>
+                <textarea asp-for="Content" class="search-input !pl-4 !h-52 py-3" maxlength="1000" required></textarea>
+                <span asp-validation-for="Content" class="text-xs text-red-500"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex justify-end gap-3 fade-in-up">
+        <a href="/Admin/ManageAdminNotification" class="btn-outline">Hủy</a>
+        <button type="submit" class="btn-primary">
+            <span class="material-icons-round text-base">campaign</span>
+            Tạo thông báo
+        </button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const form = document.getElementById('createAdminNotificationForm');
+            const targetRoleSelect = document.getElementById('targetRoleSelect');
+            const titleInput = document.getElementById('Title');
+            const contentInput = document.getElementById('Content');
+
+            if (!form || !targetRoleSelect || !titleInput || !contentInput) return;
+
+            const validateForm = () => {
+                titleInput.setCustomValidity(titleInput.value.trim().length >= 2 ? '' : 'Vui lòng nhập tiêu đề.');
+                contentInput.setCustomValidity(contentInput.value.trim().length >= 2 ? '' : 'Vui lòng nhập nội dung thông báo.');
+                targetRoleSelect.setCustomValidity(targetRoleSelect.value ? '' : 'Vui lòng chọn vai trò nhận thông báo.');
+            };
+
+            targetRoleSelect.addEventListener('change', validateForm);
+            titleInput.addEventListener('input', validateForm);
+            contentInput.addEventListener('input', validateForm);
+            form.addEventListener('submit', validateForm);
+        })();
+    </script>
+}

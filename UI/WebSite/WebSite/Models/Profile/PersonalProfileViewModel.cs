@@ -1,4 +1,4 @@
-namespace WebSite.Models.Profile
+﻿namespace WebSite.Models.Profile
 {
     public class PersonalProfileViewModel
     {
@@ -12,6 +12,12 @@ namespace WebSite.Models.Profile
         public string? PhoneNumber { get; set; }
         public string? AvatarUrl { get; set; }
         public DateOnly? DateOfBirth { get; set; }
+        private int? _age;
+        public int? Age
+        {
+            get => _age ?? CalculateAge(DateOfBirth);
+            set => _age = value;
+        }
         public int? Gender { get; set; }
         public string? Address { get; set; }
         public string? City { get; set; }
@@ -41,11 +47,14 @@ namespace WebSite.Models.Profile
         public int? MaxTravelDistance { get; set; }
         public string? VerificationStatus { get; set; }
         public int? VerificationStatusCode { get; set; }
+        public bool HasHealthCertificate { get; set; }
         public decimal? AverageRating { get; set; }
         public int? TotalReviews { get; set; }
         public List<NannySkillItemViewModel>? Skills { get; set; }
         public List<NannyAvailabilityItemViewModel>? Availabilities { get; set; }
         public List<NannyCertificateItemViewModel>? Certificates { get; set; }
+        public List<ReviewItemViewModel> Reviews { get; set; } = new();
+        public int ReviewTotalCount { get; set; }
 
         public string VerificationStatusLabel =>
             string.IsNullOrWhiteSpace(VerificationStatus) ? "Chưa được xác thực" : VerificationStatus!;
@@ -53,18 +62,30 @@ namespace WebSite.Models.Profile
         public string AverageRatingLabel =>
             AverageRating.HasValue ? AverageRating.Value.ToString("0.##") : "0";
 
-        public int? Age
+        private static int? CalculateAge(DateOnly? dateOfBirth)
         {
-            get
-            {
-                if (!DateOfBirth.HasValue) return null;
-                var today = DateOnly.FromDateTime(DateTime.Today);
-                var dob = DateOfBirth.Value;
-                var age = today.Year - dob.Year;
-                if (dob > today.AddYears(-age)) age--;
-                return age;
-            }
+            if (!dateOfBirth.HasValue)
+                return null;
+
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var dob = dateOfBirth.Value;
+            var age = today.Year - dob.Year;
+            if (dob > today.AddYears(-age))
+                age--;
+
+            return age >= 0 ? age : null;
         }
+    }
+
+    public class ReviewItemViewModel
+    {
+        public Guid Id { get; set; }
+        public int Rating { get; set; }
+        public string? Comment { get; set; }
+        public string ReviewerName { get; set; } = "";
+        public string? ReviewerAvatarUrl { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public string Stars => new string('\u2605', Rating) + new string('\u2606', 5 - Rating);
     }
 
     public class NannySkillItemViewModel
@@ -90,3 +111,4 @@ namespace WebSite.Models.Profile
         public int VerificationStatus { get; set; }
     }
 }
+

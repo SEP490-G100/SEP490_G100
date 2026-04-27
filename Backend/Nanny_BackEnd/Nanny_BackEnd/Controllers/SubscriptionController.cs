@@ -2,7 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nanny_BackEnd.DTOs.Subscription;
-using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
 
 namespace Nanny_BackEnd.Controllers;
 
@@ -10,14 +10,14 @@ namespace Nanny_BackEnd.Controllers;
 [Route("api/subscriptions")]
 public class SubscriptionController : ControllerBase
 {
-    private readonly SubscriptionService _subscriptionService;
-    private readonly CassoService _cassoService;
-    private readonly PayOsService _payOsService;
+    private readonly ISubscriptionService _subscriptionService;
+    private readonly ICassoService _cassoService;
+    private readonly IPayOsService _payOsService;
 
     public SubscriptionController(
-        SubscriptionService subscriptionService,
-        CassoService cassoService,
-        PayOsService payOsService)
+        ISubscriptionService subscriptionService,
+        ICassoService cassoService,
+        IPayOsService payOsService)
     {
         _subscriptionService = subscriptionService;
         _cassoService = cassoService;
@@ -38,7 +38,7 @@ public class SubscriptionController : ControllerBase
     {
         var plan = await _subscriptionService.getPlanByCode(code);
         return plan == null
-            ? NotFound(fail("Không tìm thấy gói subscription yêu cầu."))
+            ? NotFound(fail("Không tìm thấy gói dịch vụ yêu cầu."))
             : Ok(success(plan));
     }
 
@@ -72,7 +72,7 @@ public class SubscriptionController : ControllerBase
     {
         var userId = getCurrentUserId();
         if (!userId.HasValue)
-            return Unauthorized(fail("Khong xac dinh duoc nguoi dung hien tai."));
+            return Unauthorized(fail("Không xác định được người dùng hiện tại."));
 
         var history = await _subscriptionService.getTransactionHistory(userId.Value);
         return Ok(success(history, history.Count));
@@ -95,7 +95,7 @@ public class SubscriptionController : ControllerBase
             return Ok(new
             {
                 success = true,
-                message = "Đăng ký gói subscription thành công.",
+                message = "Đăng ký gói dịch vụ thành công.",
                 data = subscription
             });
         }
@@ -112,7 +112,7 @@ public class SubscriptionController : ControllerBase
 
         var userId = getCurrentUserId();
         if (!userId.HasValue)
-            return Unauthorized(fail("Khong xac dinh duoc nguoi dung hien tai."));
+            return Unauthorized(fail("Không xác định được người dùng hiện tại."));
 
         request.ClientIp ??= HttpContext.Connection.RemoteIpAddress?.ToString();
 
@@ -122,7 +122,7 @@ public class SubscriptionController : ControllerBase
             return Ok(new
             {
                 success = true,
-                message = "Da tao phien thanh toan subscription thanh cong.",
+                message = "Đã tạo phiên thanh toán gói dịch vụ thành công.",
                 data = session
             });
         }
@@ -136,7 +136,7 @@ public class SubscriptionController : ControllerBase
     {
         var userId = getCurrentUserId();
         if (!userId.HasValue)
-            return Unauthorized(fail("Khong xac dinh duoc nguoi dung hien tai."));
+            return Unauthorized(fail("Không xác định được người dùng hiện tại."));
 
         try
         {
@@ -152,7 +152,7 @@ public class SubscriptionController : ControllerBase
     {
         var userId = getCurrentUserId();
         if (!userId.HasValue)
-            return Unauthorized(fail("Khong xac dinh duoc nguoi dung hien tai."));
+            return Unauthorized(fail("Không xác định được người dùng hiện tại."));
 
         try
         {
@@ -168,7 +168,7 @@ public class SubscriptionController : ControllerBase
     public async Task<IActionResult> PayOsWebhook([FromBody] PayOsWebhookRequest request)
     {
         if (!_payOsService.isWebhookValid(request))
-            return Unauthorized(fail("PayOS signature khong hop le."));
+            return Unauthorized(fail("Chữ ký PayOS không hợp lệ."));
 
         var processed = await _subscriptionService.handlePayOsWebhook(request);
         return Ok(new { success = true, processed });
@@ -180,7 +180,7 @@ public class SubscriptionController : ControllerBase
     {
         var secureToken = Request.Headers["secure-token"].FirstOrDefault();
         if (!_cassoService.isWebhookAuthorized(secureToken))
-            return Unauthorized(fail("Casso secure token khong hop le."));
+            return Unauthorized(fail("Secure token của Casso không hợp lệ."));
 
         var processed = await _subscriptionService.handleCassoWebhook(request);
         return Ok(new { success = true, processed });
@@ -200,11 +200,118 @@ public class SubscriptionController : ControllerBase
             return Ok(new
             {
                 success = true,
-                message = "Hủy gói subscription hiện tại thành công.",
+                message = "Hủy gói dịch vụ hiện tại thành công.",
                 data = subscription
             });
         }
         catch (KeyNotFoundException ex) { return NotFound(fail(ex.Message)); }
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpGet("/api/Admin/admin-view-subscription-plan-list")]
+    public async Task<IActionResult> AdminViewSubscriptionPlanList(
+        [FromQuery] string? search = null,
+        [FromQuery] string? targetRole = null,
+        [FromQuery] bool? isActive = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 3)
+    {
+        var result = await _subscriptionService.getAdminPlans(
+            search,
+            targetRole,
+            isActive,
+            page,
+            pageSize);
+
+        return Ok(new { success = true, data = result });
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpGet("/api/Admin/admin-view-subscription-plan-detail/{id:guid}")]
+    public async Task<IActionResult> AdminViewSubscriptionPlanDetail(Guid id)
+    {
+        var plan = await _subscriptionService.getAdminPlanDetail(id);
+        return plan == null
+            ? NotFound(new { success = false, message = "Không tìm thấy gói dịch vụ." })
+            : Ok(new { success = true, data = plan });
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpPost("/api/Admin/admin-create-subscription-plan")]
+    public async Task<IActionResult> AdminCreateSubscriptionPlan([FromBody] AdminSubscriptionPlanUpsertRequest request)
+    {
+        var adminUserId = getCurrentUserId();
+        if (!adminUserId.HasValue)
+            return Unauthorized(new { success = false, message = "Khong xac dinh duoc admin hien tai." });
+
+        try
+        {
+            var plan = await _subscriptionService.createAdminPlan(adminUserId.Value, request);
+            return Ok(new { success = true, message = "Tạo gói dịch vụ thành công.", data = plan });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpPatch("/api/Admin/admin-update-subscription-plan/{id:guid}")]
+    public async Task<IActionResult> AdminUpdateSubscriptionPlan(Guid id, [FromBody] AdminSubscriptionPlanUpsertRequest request)
+    {
+        var adminUserId = getCurrentUserId();
+        if (!adminUserId.HasValue)
+            return Unauthorized(new { success = false, message = "Khong xac dinh duoc admin hien tai." });
+
+        try
+        {
+            var plan = await _subscriptionService.updateAdminPlan(id, adminUserId.Value, request);
+            return Ok(new { success = true, message = "Cập nhật gói dịch vụ thành công.", data = plan });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { success = false, message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpPatch("/api/Admin/admin-update-subscription-plan-status/{id:guid}")]
+    public async Task<IActionResult> AdminUpdateSubscriptionPlanStatus(
+        Guid id,
+        [FromBody] AdminSubscriptionPlanStatusRequest? request,
+        [FromQuery] bool? isActive)
+    {
+        var adminUserId = getCurrentUserId();
+        if (!adminUserId.HasValue)
+            return Unauthorized(new { success = false, message = "Khong xac dinh duoc admin hien tai." });
+
+        var targetIsActive = isActive ?? request?.IsActive;
+        if (!targetIsActive.HasValue)
+            return BadRequest(new { success = false, message = "Thiếu trạng thái kích hoạt của gói dịch vụ." });
+
+        try
+        {
+            await _subscriptionService.toggleAdminPlanStatus(
+                id,
+                adminUserId.Value,
+                targetIsActive.Value);
+
+            return Ok(new
+            {
+                success = true,
+                message = targetIsActive.Value
+                    ? "Đã kích hoạt gói dịch vụ."
+                    : "Đã vô hiệu hóa gói dịch vụ."
+            });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { success = false, message = ex.Message });
+        }
     }
 
     private Guid? getCurrentUserId()

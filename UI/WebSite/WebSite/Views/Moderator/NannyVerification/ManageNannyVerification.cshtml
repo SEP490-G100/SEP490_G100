@@ -1,0 +1,193 @@
+@model WebSite.Models.Verification.VerificationRequestListResponse
+@{
+    Layout = "~/Views/Moderator/_ModeratorLayout.cshtml";
+    ViewData["Title"] = "Xác minh bảo mẫu";
+
+    var currentSearch = ViewBag.Search as string ?? "";
+    var currentStatus = ViewBag.Status as int?;
+    var currentRequestType = ViewBag.RequestType as int?;
+    var currentPage = Model?.Page ?? 1;
+    var totalPages = Model?.TotalPages ?? 1;
+    var items = Model?.Items ?? new List<WebSite.Models.Verification.VerificationRequestListDto>();
+}
+
+<div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
+    <div>
+        <span class="section-label">Quản lý xác minh</span>
+        <h1 class="page-title mt-2">
+            Xác minh <span class="gradient-text">Bảo mẫu</span>
+        </h1>
+        <p class="page-subtitle">Xem xét hồ sơ bảo mẫu và phê duyệt hoặc từ chối yêu cầu xác minh.</p>
+    </div>
+    <div class="flex gap-2 text-sm">
+        <span class="badge badge-pending px-3 py-1.5">Tổng số @(Model?.TotalCount ?? 0)</span>
+    </div>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm flex items-center gap-2 fade-in-up">
+        <span class="material-icons-round text-base">error_outline</span>
+        @TempData["Error"]
+    </div>
+}
+
+<form method="get" action="/Moderator/ManageNannyVerification" id="filterForm" class="mod-filter-form">
+    <div class="content-card p-4 mb-5 fade-in-up" style="animation-delay:.05s;">
+        <div class="flex flex-col md:flex-row gap-3">
+            <div class="relative flex-1">
+                <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">search</span>
+                <input name="search" type="text" value="@currentSearch"
+                       placeholder="Tìm theo tên hoặc email..."
+                       class="search-input pl-9 w-full border border-gray-200 rounded-xl px-4 py-2 font-medium"
+                       onkeydown="if(event.key==='Enter'){this.form.submit();}" />
+            </div>
+
+            <div class="relative">
+                <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">category</span>
+                <select name="requestType" onchange="this.form.submit()"
+                        class="search-input md:w-52 !pl-9 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
+                    <option value="">Tất cả loại hồ sơ</option>
+                    <option value="1" selected="@(currentRequestType == 1 ? "selected" : null)">Căn cước công dân</option>
+                    <option value="2" selected="@(currentRequestType == 2 ? "selected" : null)">Giấy khám sức khỏe</option>
+                    <option value="3" selected="@(currentRequestType == 3 ? "selected" : null)">Bằng cấp / Chứng chỉ</option>
+                </select>
+            </div>
+
+            <div class="relative">
+                <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">toggle_on</span>
+                <select name="status" onchange="this.form.submit()"
+                        class="search-input md:w-44 !pl-9 cursor-pointer appearance-none border border-gray-200 rounded-xl px-4 py-2 font-medium">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="1" selected="@(currentStatus == 1 ? "selected" : null)">Đang chờ</option>
+                    <option value="2" selected="@(currentStatus == 2 ? "selected" : null)">Đã duyệt</option>
+                    <option value="3" selected="@(currentStatus == 3 ? "selected" : null)">Đã từ chối</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn-primary flex-shrink-0 flex items-center gap-1">
+                <span class="material-icons-round text-base">search</span>
+                Tìm kiếm
+            </button>
+        </div>
+    </div>
+</form>
+
+<div class="content-card overflow-hidden fade-in-up" style="animation-delay:.1s;">
+    <div class="card-header">
+        <span class="text-sm text-gray-500">
+            Hiển thị <span class="font-bold text-gray-800">@items.Count</span>
+            trên <span class="font-bold text-gray-800">@(Model?.TotalCount ?? 0)</span> yêu cầu
+        </span>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full mod-table">
+            <thead>
+                <tr>
+                    <th class="text-left">#</th>
+                    <th class="text-left">Bảo mẫu</th>
+                    <th class="text-left">Email</th>
+                    <th class="text-left">Loại hồ sơ</th>
+                    <th class="text-left">Ngày cấp</th>
+                    <th class="text-left">Ngày nộp</th>
+                    <th class="text-left">Trạng thái</th>
+                    <th class="text-center">Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!items.Any())
+                {
+                    <tr>
+                        <td colspan="8" class="text-center py-16 text-gray-400">
+                            <span class="material-icons-round text-5xl mb-3 block text-gray-200">verified_user</span>
+                            <p class="font-semibold text-gray-400">Không tìm thấy yêu cầu xác minh.</p>
+                            <p class="text-xs text-gray-300 mt-1">Thử điều chỉnh bộ lọc.</p>
+                        </td>
+                    </tr>
+                }
+                @{ int rowNum = ((currentPage - 1) * (Model?.PageSize > 0 ? Model.PageSize : 10)) + 1; }
+                @foreach (var item in items)
+                {
+                    var avatarColors = new[] { "#F97316", "#3B82F6", "#8B5CF6", "#10B981", "#F59E0B", "#EF4444", "#EC4899", "#6366F1" };
+                    var avatarBg = avatarColors[Math.Abs(item.NannyUserId.GetHashCode()) % avatarColors.Length];
+
+                    <tr class="account-row">
+                        <td class="text-gray-300 text-xs font-mono">@rowNum</td>
+                        <td>
+                            <div class="flex items-center gap-3">
+                                @if (!string.IsNullOrEmpty(item.NannyAvatarUrl))
+                                {
+                                    <img src="@item.NannyAvatarUrl" alt="@item.FullName"
+                                         class="user-avatar object-cover" style="background:@avatarBg;" />
+                                }
+                                else
+                                {
+                                    <div class="user-avatar" style="background:@avatarBg;">
+                                        @item.FullName.FirstOrDefault().ToString().ToUpper()
+                                    </div>
+                                }
+                                <span class="font-bold text-gray-800">@item.FullName</span>
+                            </div>
+                        </td>
+                        <td class="text-gray-500 text-sm">@item.NannyEmail</td>
+                        <td class="text-gray-500 text-sm">
+                            <span class="badge @(item.RequestType == 2 ? "bg-emerald-100 text-emerald-700" : item.RequestType == 3 ? "bg-blue-100 text-blue-700" : "bg-orange-100 text-orange-700")">
+                                @item.RequestTypeLabel
+                            </span>
+                        </td>
+                        <td class="text-gray-500 text-sm">@item.IssueDateLabel</td>
+                        <td class="text-gray-500 text-xs">@item.CreatedAt.ToString("dd/MM/yyyy")</td>
+                        <td><span class="badge @item.StatusClass">@item.StatusLabel</span></td>
+                        <td class="text-center">
+                            <a href="/Moderator/ViewNannyVerificationDetail/@item.Id"
+                               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-orange-50 text-orange-600 border border-orange-200 hover:bg-orange-100 transition-all">
+                                <span class="material-icons-round text-sm">visibility</span>
+                                Xem xét
+                            </a>
+                        </td>
+                    </tr>
+                    rowNum++;
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="flex items-center justify-between px-6 py-4 border-t border-gray-50">
+        <span class="text-sm text-gray-400">
+            Trang <span class="font-bold text-gray-600">@currentPage</span>
+            / <span class="font-bold text-gray-600">@totalPages</span>
+        </span>
+        <div class="flex gap-1.5">
+            @if (currentPage > 1)
+            {
+                <a href="?search=@currentSearch&status=@currentStatus&requestType=@currentRequestType&page=@(currentPage - 1)" class="page-btn">
+                    <span class="material-icons-round text-sm">chevron_left</span>
+                </a>
+            }
+            else
+            {
+                <button class="page-btn opacity-30 cursor-not-allowed" disabled>
+                    <span class="material-icons-round text-sm">chevron_left</span>
+                </button>
+            }
+            @for (int p = Math.Max(1, currentPage - 2); p <= Math.Min(totalPages, currentPage + 2); p++)
+            {
+                <a href="?search=@currentSearch&status=@currentStatus&requestType=@currentRequestType&page=@p"
+                   class="page-btn @(p == currentPage ? "active" : "")">@p</a>
+            }
+            @if (currentPage < totalPages)
+            {
+                <a href="?search=@currentSearch&status=@currentStatus&requestType=@currentRequestType&page=@(currentPage + 1)" class="page-btn">
+                    <span class="material-icons-round text-sm">chevron_right</span>
+                </a>
+            }
+            else
+            {
+                <button class="page-btn opacity-30 cursor-not-allowed" disabled>
+                    <span class="material-icons-round text-sm">chevron_right</span>
+                </button>
+            }
+        </div>
+    </div>
+</div>

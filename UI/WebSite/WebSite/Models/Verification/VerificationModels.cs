@@ -1,13 +1,14 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace WebSite.Models.Verification;
 
 public class SubmitVerificationRequestViewModel
 {
-    [Required(ErrorMessage = "Bắt buộc phải tải lên tài liệu xác minh.")]
-    public List<IFormFile> Files { get; set; } = new();
+    public List<IFormFile> IdentityCardFiles { get; set; } = new();
+    public List<IFormFile> CertificateFiles { get; set; } = new();
+    public List<IFormFile> HealthCertificateFiles { get; set; } = new();
+    public DateTime? IdentityCardIssueDate { get; set; }
+    public DateTime? CertificateIssueDate { get; set; }
+    public DateTime? HealthCertificateIssueDate { get; set; }
 
-    // Read-only info for display on the form
     public string NannyFirstName { get; set; } = string.Empty;
     public string NannyLastName { get; set; } = string.Empty;
     public string NannyEmail { get; set; } = string.Empty;
@@ -21,7 +22,10 @@ public class VerificationRequestListViewModel
 {
     public Guid Id { get; set; }
     public Guid NannyProfileId { get; set; }
-    public int Status { get; set; } // 1=Pending, 2=Approved, 3=Rejected
+    public int Status { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? ReviewedAt { get; set; }
+    public Guid? ReviewedBy { get; set; }
+    public string? ReviewedByName { get; set; }
+    public string? RejectionReason { get; set; }
 }

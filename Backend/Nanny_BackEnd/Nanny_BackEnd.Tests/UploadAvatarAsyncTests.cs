@@ -1,0 +1,197 @@
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
+using Nanny_BackEnd.Models;
+using Nanny_BackEnd.Repositories.Interfaces;
+using Nanny_BackEnd.Services;
+using Nanny_BackEnd.Services.Interfaces;
+
+namespace Nanny_BackEnd.Tests;
+
+/// <summary>
+/// <see cref="Nanny_BackEnd.Controllers.ProfileController.UploadAvatar"/> →
+/// <see cref="ProfileService.UploadAvatarAsync"/>.
+/// </summary>
+public class UploadAvatarAsyncTests
+{
+
+    private readonly Mock<IUserRepository> _mockUser;
+    private readonly Mock<IParentRepository> _mockParent;
+    private readonly Mock<IChildRepository> _mockChild;
+    private readonly Mock<INannyProfileRepository> _mockNannyProfile;
+    private readonly Mock<INannySkillRepository> _mockNannySkill;
+    private readonly Mock<INannyCertificateRepository> _mockNannyCert;
+    private readonly Mock<INannyAvailabilityRepository> _mockNannyAvail;
+    private readonly Mock<IVerificationRequestRepository> _mockVerification;
+    private readonly Mock<IWebHostEnvironment> _mockEnv;
+    private readonly Mock<IGeocodingService> _mockGeo;
+    private readonly Mock<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory> _mockScope;
+    private readonly ProfileService _sut;
+
+    public UploadAvatarAsyncTests()
+    {
+        _mockUser = new Mock<IUserRepository>();
+        _mockParent = new Mock<IParentRepository>();
+        _mockChild = new Mock<IChildRepository>();
+        _mockNannyProfile = new Mock<INannyProfileRepository>();
+        _mockNannySkill = new Mock<INannySkillRepository>();
+        _mockNannyCert = new Mock<INannyCertificateRepository>();
+        _mockNannyAvail = new Mock<INannyAvailabilityRepository>();
+        _mockVerification = new Mock<IVerificationRequestRepository>();
+        _mockEnv = new Mock<IWebHostEnvironment>();
+        _mockGeo = new Mock<IGeocodingService>();
+        _mockScope = new Mock<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>();
+        _sut = new ProfileService(
+            _mockUser.Object,
+            _mockParent.Object,
+            _mockChild.Object,
+            _mockNannyProfile.Object,
+            _mockNannySkill.Object,
+            _mockNannyCert.Object,
+            _mockNannyAvail.Object,
+            _mockVerification.Object,
+            _mockEnv.Object,
+            _mockGeo.Object,
+            _mockScope.Object,
+            NullLogger<ProfileService>.Instance);
+    }
+
+
+    private const string ExtNotAllowedMessage        = "Chỉ chấp nhận file ảnh .jpg, .jpeg hoặc .png.";
+    private const string ContentTypeNotAllowedMessage = "Chỉ chấp nhận ảnh JPEG/PNG hợp lệ.";
+    private const string FileTooLargeMessage          = "File ảnh không được vượt quá 5MB.";
+
+    private static IFormFile MakeFile(string fileName, string? contentType, long length)
+    {
+        var mock = new Mock<IFormFile>();
+        mock.Setup(f => f.FileName).Returns(fileName);
+        mock.Setup(f => f.ContentType).Returns(() => contentType!);
+        mock.Setup(f => f.Length).Returns(length);
+        mock.Setup(f => f.CopyToAsync(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+            .Returns((Stream dest, CancellationToken _) =>
+            {
+                var buffer = new byte[8192];
+                for (var remaining = length; remaining > 0;)
+                {
+                    var n = (int)Math.Min(remaining, buffer.Length);
+                    dest.Write(buffer, 0, n);
+                    remaining -= n;
+                }
+
+                return Task.CompletedTask;
+            });
+        return mock.Object;
+    }
+
+    private static User UserEntity(Guid id) => new()
+    {
+        Id = id,
+        Email = "u@test.local",
+        FirstName = "A",
+        LastName = "B"
+    };
+
+    [Fact]
+    public async Task UserNotFound_Throws()
+    {
+        var id = Guid.NewGuid();
+        _mockUser.Setup(u => u.FindByIdAsync(id)).ReturnsAsync((User?)null);
+        var file = MakeFile("a.jpg", "image/jpeg", 10);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.UploadAvatarAsync(id, file));
+
+    }
+
+    [Fact]
+    public async Task DisallowedExtension_Throws()
+    {
+        var id = Guid.NewGuid();
+        _mockUser.Setup(u => u.FindByIdAsync(id)).ReturnsAsync(UserEntity(id));
+        var file = MakeFile("x.gif", "image/gif", 10);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.UploadAvatarAsync(id, file));
+
+        Assert.Equal(ExtNotAllowedMessage, ex.Message);
+        _mockUser.Verify(u => u.SaveChangesAsync(), Times.Never);
+    }
+
+    [Fact]
+    public async Task DisallowedContentType_Throws()
+    {
+        var id = Guid.NewGuid();
+        _mockUser.Setup(u => u.FindByIdAsync(id)).ReturnsAsync(UserEntity(id));
+        var file = MakeFile("x.jpg", "image/gif", 10);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.UploadAvatarAsync(id, file));
+
+        Assert.Equal(ContentTypeNotAllowedMessage, ex.Message);
+        _mockUser.Verify(u => u.SaveChangesAsync(), Times.Never);
+    }
+
+    [Fact]
+    public async Task NullOrEmptyContentType_Throws()
+    {
+        var id = Guid.NewGuid();
+        _mockUser.Setup(u => u.FindByIdAsync(id)).ReturnsAsync(UserEntity(id));
+        var file = MakeFile("x.png", null, 10);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.UploadAvatarAsync(id, file));
+
+        Assert.Equal(ContentTypeNotAllowedMessage, ex.Message);
+    }
+
+    // Condition: dung lượng > 5MB.
+    [Fact]
+    public async Task ExceedsMaxSize_Throws()
+    {
+        var id = Guid.NewGuid();
+        _mockUser.Setup(u => u.FindByIdAsync(id)).ReturnsAsync(UserEntity(id));
+        var over = 5L * 1024 * 1024 + 1;
+        var file = MakeFile("x.jpg", "image/jpeg", over);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.UploadAvatarAsync(id, file));
+
+        Assert.Equal(FileTooLargeMessage, ex.Message);
+        _mockUser.Verify(u => u.SaveChangesAsync(), Times.Never);
+    }
+
+    [Fact]
+    public async Task Success_WritesFile_UpdatesUser_ReturnsUrl()
+    {
+        var webRoot = Path.Combine(Path.GetTempPath(), "nanny-avatar-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(webRoot);
+        try
+        {
+            _mockEnv.Setup(e => e.WebRootPath).Returns(webRoot);
+            var id = Guid.NewGuid();
+            var user = UserEntity(id);
+            _mockUser.Setup(u => u.FindByIdAsync(id)).ReturnsAsync(user);
+            _mockUser.Setup(u => u.SaveChangesAsync()).Returns(Task.CompletedTask);
+            var file = MakeFile("Photo.JPEG", "image/jpeg", 128);
+
+            var url = await _sut.UploadAvatarAsync(id, file);
+
+            var expectedName = $"{id}.jpeg";
+            var path = Path.Combine(webRoot, "uploads", "avatars", expectedName);
+            Assert.True(File.Exists(path), $"Expected file at {path}");
+            Assert.Equal(user.AvatarUrl, url);
+            Assert.Contains($"/uploads/avatars/{expectedName}?t=", url, StringComparison.Ordinal);
+            Assert.Equal(id, user.UpdatedBy);
+            Assert.NotNull(user.UpdatedAt);
+            _mockUser.Verify(u => u.SaveChangesAsync(), Times.Once);
+        }
+        finally
+        {
+            try
+            {
+                if (Directory.Exists(webRoot))
+                    Directory.Delete(webRoot, recursive: true);
+            }
+            catch
+            {
+                // best-effort cleanup on temp dir
+            }
+        }
+    }
+}
