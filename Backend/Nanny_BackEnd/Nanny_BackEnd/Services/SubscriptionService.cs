@@ -159,7 +159,11 @@ public class SubscriptionService : ISubscriptionService
 
         var existingPendingTransaction = await findReusablePendingTransaction(userId, planResponse.Code);
         if (existingPendingTransaction != null)
-            return await buildPaymentSessionResponse(plan, existingPendingTransaction);
+        {
+            var reusableSession = await tryBuildReusablePaymentSession(plan, existingPendingTransaction, userId);
+            if (reusableSession != null)
+                return reusableSession;
+        }
 
         var nowUtc = DateTime.UtcNow;
         var orderCode = await generateUniqueOrderCode();
@@ -692,6 +696,35 @@ public class SubscriptionService : ISubscriptionService
         return reusable;
     }
 
+    private async Task<SubscriptionPaymentSessionResponse?> tryBuildReusablePaymentSession(
+        SubscriptionPlan plan,
+        Transaction transaction,
+        Guid userId)
+    {
+        try
+        {
+            var session = await buildPaymentSessionResponse(plan, transaction);
+            if (!string.IsNullOrWhiteSpace(session.QrPayload))
+                return session;
+
+            _logger.LogWarning(
+                "Pending transaction {TransactionId} could not recover valid PayOS QR payload. Marking as failed and creating a new session.",
+                transaction.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Failed to rebuild pending payment session for transaction {TransactionId}. Marking as failed and creating a new session.",
+                transaction.Id);
+        }
+
+        markTransactionFailed(transaction, DateTime.UtcNow);
+        transaction.UpdatedBy = userId;
+        await _subscriptionRepo.saveChanges();
+        return null;
+    }
+
     private async Task<SubscriptionPaymentSessionResponse> buildPaymentSessionResponse(SubscriptionPlan plan, Transaction transaction)
     {
         var orderCode = int.TryParse(transaction.PaymentGatewayTransactionId, out var parsedOrderCode)
@@ -990,6 +1023,12 @@ public class SubscriptionService : ISubscriptionService
         instruction.BankId = firstNonEmpty(instruction.BankId, extractMetadataValue(transaction.Description, "PAYOS_BANK"));
         instruction.AccountNumber = firstNonEmpty(instruction.AccountNumber, extractMetadataValue(transaction.Description, "PAYOS_ACC"));
         instruction.AccountName = firstNonEmpty(instruction.AccountName, extractMetadataValue(transaction.Description, "PAYOS_NAME"));
+        instruction.CheckoutUrl = firstNonEmpty(instruction.CheckoutUrl, extractMetadataValue(transaction.Description, "PAYOS_CHECKOUT"));
+        instruction.QrPayload = firstNonEmpty(instruction.QrPayload, extractMetadataValue(transaction.Description, "PAYOS_QR"));
+
+        if (!string.IsNullOrWhiteSpace(instruction.QrPayload))
+            instruction.QrCodeUrl = buildQrImageUrl(instruction.QrPayload);
+
         return instruction;
     }
 
@@ -1003,7 +1042,12 @@ public class SubscriptionService : ISubscriptionService
         transaction.Description = appendMetadataValue(transaction.Description, "PAYOS_BANK", instruction.BankId);
         transaction.Description = appendMetadataValue(transaction.Description, "PAYOS_ACC", instruction.AccountNumber);
         transaction.Description = appendMetadataValue(transaction.Description, "PAYOS_NAME", instruction.AccountName);
+        transaction.Description = appendMetadataValue(transaction.Description, "PAYOS_CHECKOUT", instruction.CheckoutUrl);
+        transaction.Description = appendMetadataValue(transaction.Description, "PAYOS_QR", instruction.QrPayload);
     }
+
+    private static string buildQrImageUrl(string payload) =>
+        $"https://api.qrserver.com/v1/create-qr-code/?size=320x320&data={Uri.EscapeDataString(payload)}";
 
     private static string appendMetadataValue(string? description, string key, string? value)
     {
