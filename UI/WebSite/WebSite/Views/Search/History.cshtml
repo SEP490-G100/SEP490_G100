@@ -144,7 +144,7 @@
             align-items: center;
             justify-content: center;
             min-height: 2rem;
-            padding: 0 .86rem;
+            padding: 0.35rem 0.9rem;
             border-radius: 999px;
             background: linear-gradient(135deg, #fff7ed, #ffedd5);
             color: #c2410c;
@@ -152,6 +152,16 @@
             font-weight: 800;
             border: 1px solid #fed7aa;
             white-space: nowrap;
+            flex-shrink: 0;
+            line-height: 1.2;
+        }
+
+        /* Tránh co badge khiến chữ lương bị cắt dòng giữa chừng */
+        .history-card-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-shrink: 0;
         }
 
         .history-note-box {
@@ -625,11 +635,21 @@
             }
         };
 
-        const formatSalary = (value) => value ? `${(Number(value) / 1000).toFixed(0)}k/giờ` : 'Không xác định';
-        const formatSalaryRange = (min, max) => {
-            if (min && max) return `${formatSalary(min)} - ${formatSalary(max)}`;
-            if (min) return `Từ ${formatSalary(min)}`;
-            if (max) return `Đến ${formatSalary(max)}`;
+        const formatMoneyVnd = (value) => {
+            if (value == null || value === '') return 'Không xác định';
+            const n = Number(value);
+            if (!Number.isFinite(n) || n <= 0) return 'Không xác định';
+            return new Intl.NumberFormat('vi-VN').format(n) + ' VND';
+        };
+
+        /** Đồng bộ kiểu hiển thị lương với trang tìm kiếm (VND). */
+        const formatSalaryRange = (min, max, negotiable) => {
+            if (negotiable) return 'Thỏa thuận';
+            const hasMin = min != null && min !== '' && Number.isFinite(Number(min)) && Number(min) > 0;
+            const hasMax = max != null && max !== '' && Number.isFinite(Number(max)) && Number(max) > 0;
+            if (hasMin && hasMax) return `${formatMoneyVnd(min)} – ${formatMoneyVnd(max)}`;
+            if (hasMin) return `Từ ${formatMoneyVnd(min)}`;
+            if (hasMax) return `Đến ${formatMoneyVnd(max)}`;
             return 'Không xác định';
         };
 
@@ -781,7 +801,7 @@
                                 </div>
                                 <div class="history-request-info">
                                     <p class="font-bold text-slate-500">Lương mong muốn</p>
-                                    <p class="mt-1 font-semibold text-slate-700">${escapeHtml(formatSalaryRange(item?.nanny?.expectedSalaryMin, item?.nanny?.expectedSalaryMax))}</p>
+                                    <p class="mt-1 font-semibold text-slate-700">${escapeHtml(formatSalaryRange(item?.nanny?.expectedSalaryMin, item?.nanny?.expectedSalaryMax, false))}</p>
                                 </div>
                             </div>
                             <div class="mt-3 flex items-center justify-end gap-2">
@@ -973,7 +993,7 @@
             document.getElementById('jobAppAppliedAt').textContent = `Ngày ứng tuyển: ${formatDateTime(application.appliedAt)}`;
             document.getElementById('jobAppPhone').textContent = application?.nanny?.phoneNumber || 'Chưa cập nhật';
             document.getElementById('jobAppExperience').textContent = application?.nanny?.yearsOfExperience ? `${application.nanny.yearsOfExperience} năm` : 'Chưa cập nhật';
-            document.getElementById('jobAppSalary').textContent = formatSalaryRange(application?.nanny?.expectedSalaryMin, application?.nanny?.expectedSalaryMax);
+            document.getElementById('jobAppSalary').textContent = formatSalaryRange(application?.nanny?.expectedSalaryMin, application?.nanny?.expectedSalaryMax, false);
             document.getElementById('jobAppRejectReasonDisplay').textContent = application?.rejectionReason || 'Chưa có.';
 
             const viewProfileBtn = document.getElementById('jobAppViewProfileBtn');
@@ -1103,9 +1123,11 @@
                                     </div>
                                     <p class="mt-2 text-sm text-slate-500">${escapeHtml([job.location, job.district, job.city].filter(Boolean).join(', ') || 'Chưa cập nhật địa điểm')}</p>
                                 </div>
-                                <div class="flex items-center gap-3">
-                                    <div class="history-salary-badge">
-                                        ${job.salaryNegotiable ? 'Thỏa thuận' : escapeHtml(formatSalaryRange(job.salaryMin, job.salaryMax))}
+                                <div class="history-card-actions">
+                                    <div class="history-salary-badge" title="Mức lương đã đăng">
+                                        ${job.salaryNegotiable
+                                            ? 'Thỏa thuận'
+                                            : escapeHtml(formatSalaryRange(job.salaryMin, job.salaryMax, false))}
                                     </div>
                                     ${[0, 2].includes(Number(job.moderationStatus)) ? `
                                         <a href="/Search/Edit/${job.id}"

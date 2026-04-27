@@ -21,10 +21,7 @@ public class RecommendationController : ControllerBase
         _embedSvc = embedSvc;
     }
 
-    // ──────────────────────────────────────────────────────────────
-    // 1. Read Models (Admin / Moderator)
-    // ──────────────────────────────────────────────────────────────
-
+    // Read Models (Admin / Moderator)
     [Authorize(Roles = "Admin,Moderator")]
     [HttpGet("read-model/nanny/{nannyProfileId:guid}")]
     public async Task<IActionResult> GetNannyReadModel(Guid nannyProfileId)
@@ -59,10 +56,7 @@ public class RecommendationController : ControllerBase
         return Ok(Success(list, list.Count));
     }
 
-    // ──────────────────────────────────────────────────────────────
-    // 2. Re-embed Triggers (Admin / Moderator)
-    // ──────────────────────────────────────────────────────────────
-
+    // Re-embed Triggers (Admin / Moderator)
     [Authorize(Roles = "Admin,Moderator")]
     [HttpPost("reembed/nanny/{nannyProfileId:guid}")]
     public async Task<IActionResult> ReembedNanny(Guid nannyProfileId)
@@ -127,10 +121,7 @@ public class RecommendationController : ControllerBase
         }
     }
 
-    // ──────────────────────────────────────────────────────────────
-    // 3. Recommendation Endpoints
-    // ──────────────────────────────────────────────────────────────
-
+    // Recommendation Endpoints
     [Authorize]
     [HttpGet("nannies-for-job/{jobId:guid}")]
     public async Task<IActionResult> GetNanniesForJob(
@@ -173,10 +164,7 @@ public class RecommendationController : ControllerBase
         return Ok(Success(results, results.Count));
     }
 
-    // ──────────────────────────────────────────────────────────────
-    // 4. Scoring Config (Admin only)
-    // ──────────────────────────────────────────────────────────────
-
+    // Scoring Config (Admin only)
     [Authorize(Roles = "Admin")]
     [HttpGet("config/weights")]
     public async Task<IActionResult> GetWeights()
@@ -216,10 +204,7 @@ public class RecommendationController : ControllerBase
         }
     }
 
-    // ──────────────────────────────────────────────────────────────
     // Helpers
-    // ──────────────────────────────────────────────────────────────
-
     private Guid? GetCurrentUserId()
     {
         var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value

@@ -54,9 +54,6 @@ public class SubscriptionPlanViewModel
 
     [JsonPropertyName("benefits")]
     public SubscriptionBenefitViewModel Benefits { get; set; } = new();
-
-    [JsonPropertyName("isTrial")]
-    public bool IsTrial { get; set; }
 }
 
 public class SubscriptionTransactionViewModel
@@ -225,7 +222,6 @@ public class SubscriptionPageViewModel
     public List<SubscriptionTransactionViewModel> Transactions { get; set; } = [];
     public UserSubscriptionViewModel? CurrentSubscription { get; set; }
     public bool HasActiveSubscription => CurrentSubscription?.IsActive == true;
-    public bool IsTrialActive => HasActiveSubscription && CurrentSubscription!.Plan.IsTrial;
     public bool IsParent => string.Equals(CurrentRole, "Parent", StringComparison.OrdinalIgnoreCase);
     public bool IsNanny => string.Equals(CurrentRole, "Nanny", StringComparison.OrdinalIgnoreCase);
     public bool SupportsSubscription => IsParent || IsNanny;
