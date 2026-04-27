@@ -47,6 +47,21 @@ public class HiringOfferDetailDto
     public DateTime? SignedAt { get; set; }
 }
 
+public class ContractTemplateOptionDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Version { get; set; } = string.Empty;
+}
+
+public class ContractTemplatePreviewDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Version { get; set; } = string.Empty;
+    public string Content { get; set; } = string.Empty;
+}
+
 public class NannyHireContextDto
 {
     public bool CanHire { get; set; }

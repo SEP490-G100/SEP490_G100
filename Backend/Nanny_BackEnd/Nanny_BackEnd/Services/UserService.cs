@@ -220,8 +220,9 @@ public class UserService : IUserService
     {
         if (string.IsNullOrWhiteSpace(request.Email) || !request.Email.Contains('@'))
             return (false, 400, "Email không hợp lệ.", null);
-        if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 8)
-            return (false, 400, "Mật khẩu phải có ít nhất 8 ký tự.", null);
+        if (string.IsNullOrWhiteSpace(request.Password) ||
+            !Regex.IsMatch(request.Password, @"^(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$"))
+            return (false, 400, "Mat khau phai co it nhat 8 ky tu, it nhat 1 ky tu in hoa va 1 ky tu dac biet.", null);
         if (!string.IsNullOrWhiteSpace(request.PhoneNumber) &&
             !Regex.IsMatch(request.PhoneNumber.Trim(), @"^\d{10,11}$"))
             return (false, 400, "Số điện thoại phải là 10-11 chữ số.", null);

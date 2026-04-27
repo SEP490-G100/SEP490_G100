@@ -111,13 +111,12 @@ public class CreateAdminPlanTests
         Assert.Equal(adminId, added.CreatedBy);
         Assert.NotEqual(Guid.Empty, added.Id);
 
-        // Features are stored as structured metadata JSON (code, targetRole, features, benefits, isTrial).
+        // Features are stored as structured metadata JSON (code, targetRole, features, benefits).
         var meta = SubscriptionPlanMetadataHelper.TryParse(added.Features);
         Assert.NotNull(meta);
         Assert.Equal(2, meta!.Features.Count);
         Assert.Contains("Parent benefit", meta.Features);
         Assert.Contains("Extra", meta.Features);
-        Assert.False(meta.IsTrial);
 
         Assert.Equal(added.Id, result.Id);
         Assert.Equal("Gói Mới", result.Name);

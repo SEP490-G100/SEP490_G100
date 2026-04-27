@@ -8,7 +8,6 @@ public class SubscriptionPlanMetadata
 {
     public string Code { get; set; } = "";
     public string TargetRole { get; set; } = "";
-    public bool IsTrial { get; set; }
     public List<string> Features { get; set; } = [];
     public SubscriptionBenefitResponse Benefits { get; set; } = new();
 }
@@ -31,8 +30,7 @@ public static class SubscriptionPlanMetadataHelper
             if (metadata != null &&
                 (!string.IsNullOrWhiteSpace(metadata.TargetRole) ||
                  !string.IsNullOrWhiteSpace(metadata.Code) ||
-                 metadata.Features.Count > 0 ||
-                 metadata.IsTrial))
+                 metadata.Features.Count > 0))
             {
                 metadata.Features = NormalizeFeatures(metadata.Features);
                 return metadata;

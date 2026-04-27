@@ -35,7 +35,4 @@ public interface ISubscriptionService
     Task<AdminSubscriptionPlanDetailResponse> createAdminPlan(Guid adminUserId, AdminSubscriptionPlanUpsertRequest request);
     Task<AdminSubscriptionPlanDetailResponse> updateAdminPlan(Guid id, Guid adminUserId, AdminSubscriptionPlanUpsertRequest request);
     Task toggleAdminPlanStatus(Guid id, Guid adminUserId, bool isActive);
-
-    /// <summary>Tặng gói dùng thử lần đầu nếu đủ điều kiện (từ onboarding). Không ném ngoại lệ ra ngoài — lỗi/lệch cấu hình sẽ nuốt nội bộ.</summary>
-    Task tryGrantWelcomeTrialAsync(Guid userId, string role);
 }

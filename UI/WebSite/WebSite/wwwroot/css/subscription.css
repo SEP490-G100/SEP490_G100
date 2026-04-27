@@ -86,6 +86,10 @@
     color: #111827;
 }
 
+.sub-hero-copy > h1:first-child {
+    margin-top: 0;
+}
+
 .sub-hero p,
 .sub-status-card p,
 .sub-section-head p,
@@ -119,22 +123,6 @@
     margin-bottom: 10px;
     font-size: 32px;
     font-weight: 800;
-}
-
-.sub-trial-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 3px 10px;
-    margin-left: 10px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    background: rgba(251, 191, 36, 0.22);
-    color: #fcd34d;
-    border: 1px solid rgba(251, 191, 36, 0.4);
-    border-radius: 999px;
-    vertical-align: middle;
 }
 
 .sub-status-metrics {
@@ -189,6 +177,13 @@
     font-weight: 800;
     letter-spacing: 0.08em;
     text-transform: uppercase;
+}
+
+.sub-section-label--plans {
+    margin-bottom: 0;
+    padding: 10px 16px;
+    font-size: 16px;
+    letter-spacing: 0.1em;
 }
 
 .sub-section-head h2,
@@ -325,6 +320,17 @@
 .current-card {
     transform: translateY(-4px);
     box-shadow: 0 22px 52px rgba(249, 115, 22, 0.18);
+}
+
+/* Gói Basic: giữ cùng bề ngang bảng gói, không nâng cả thẻ (tránh lệch so gói trả phí) */
+.sub-grid .free-card.current-card {
+    transform: none;
+    box-shadow: 0 22px 52px rgba(249, 115, 22, 0.18);
+}
+
+/* Căn cùng mốc từ mô tả xuống: mô tả gói Basic ngắn hơn gói trả phí */
+.sub-grid .plan-top p {
+    min-height: calc(1.7em * 3);
 }
 
 .plan-top {
@@ -479,13 +485,6 @@
     line-height: 1.45;
 }
 
-.plan-lock-note {
-    margin: -4px 0 14px;
-    font-size: 12px;
-    color: #9a3412;
-    font-weight: 700;
-}
-
 .accent-card .plan-list-lock {
     border-color: rgba(251, 191, 36, 0.35);
     background: rgba(17, 24, 39, 0.48);
@@ -501,8 +500,7 @@
     color: #fde68a;
 }
 
-.accent-card .plan-list-lock-overlay p,
-.accent-card .plan-lock-note {
+.accent-card .plan-list-lock-overlay p {
     color: #fef3c7;
 }
 

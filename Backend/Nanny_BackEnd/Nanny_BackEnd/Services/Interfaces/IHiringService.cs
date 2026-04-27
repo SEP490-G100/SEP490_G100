@@ -4,6 +4,8 @@ namespace Nanny_BackEnd.Services.Interfaces;
 
 public interface IHiringService
 {
+    Task<List<ContractTemplateOptionDto>> GetContractTemplatesAsync();
+    Task<ContractTemplatePreviewDto> GetContractTemplatePreviewAsync(Guid templateId);
     Task<List<JobApplicantDto>> GetApplicantsAsync(Guid jobPostingId, Guid parentUserId);
     Task ApproveApplicantAsync(Guid jobPostingId, Guid jobAppId, Guid parentUserId);
     Task<NannyHireContextDto> GetNannyHireContextAsync(Guid jobPostingId, Guid jobAppId, Guid parentUserId);

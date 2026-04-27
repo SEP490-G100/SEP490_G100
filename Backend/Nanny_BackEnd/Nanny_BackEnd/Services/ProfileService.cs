@@ -29,7 +29,6 @@ public class ProfileService : IProfileService
     private readonly IWebHostEnvironment _env;
     private readonly IGeocodingService _geo;
     private readonly IServiceScopeFactory _scopeFactory;
-    private readonly ISubscriptionService _subscriptionService;
     private readonly ILogger<ProfileService> _logger;
 
     public ProfileService(
@@ -44,7 +43,6 @@ public class ProfileService : IProfileService
         IWebHostEnvironment env,
         IGeocodingService geo,
         IServiceScopeFactory scopeFactory,
-        ISubscriptionService subscriptionService,
         ILogger<ProfileService> logger)
     {
         _userRepo = userRepo;
@@ -58,7 +56,6 @@ public class ProfileService : IProfileService
         _env = env;
         _geo = geo;
         _scopeFactory = scopeFactory;
-        _subscriptionService = subscriptionService;
         _logger = logger;
     }
 
@@ -781,8 +778,6 @@ public class ProfileService : IProfileService
         parentProfile.UpdatedBy = userId;
 
         await _parentRepo.SaveChangesAsync();
-
-        await _subscriptionService.tryGrantWelcomeTrialAsync(userId, "Parent");
     }
 
     private ChildProfileDto MapToChildDto(ChildProfile c) => new ChildProfileDto

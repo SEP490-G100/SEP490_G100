@@ -97,18 +97,25 @@ public class RecommendationController : Controller
 
             var items = (result?.Data ?? new()).Select(n => new
             {
-                nannyProfileId  = n.NannyProfileId,
-                fullName        = n.FullName,
-                avatarUrl       = n.AvatarUrl,
-                bio             = n.Bio,
+                nannyProfileId    = n.NannyProfileId,
+                fullName          = n.FullName,
+                avatarUrl         = n.AvatarUrl,
+                bio               = n.Bio,
                 yearsOfExperience = n.YearsOfExperience,
-                averageRating   = n.AverageRating,
-                totalReviews    = n.TotalReviews,
-                distanceKm      = n.DistanceKm,
-                skills          = n.Skills?.Select(s => s.SkillName).ToList(),
-                finalScore      = n.FinalScore,
-                matchLabel      = MatchLabel(n.FinalScore),
-                matchTier       = MatchTier(n.FinalScore)
+                averageRating     = n.AverageRating,
+                totalReviews      = n.TotalReviews,
+                distanceKm        = n.DistanceKm,
+                latitude          = n.Latitude,
+                longitude         = n.Longitude,
+                skills            = n.Skills?.Select(s => s.SkillName).ToList(),
+                semanticScore     = n.SemanticScore,
+                salaryScore       = n.SalaryScore,
+                distanceScore     = n.DistanceScore,
+                hybridScore       = n.HybridScore,
+                businessBoost     = n.BusinessBoost,
+                finalScore        = n.FinalScore,
+                matchLabel        = MatchLabel(n.FinalScore),
+                matchTier         = MatchTier(n.FinalScore)
             });
 
             return Json(new { success = true, data = items });
@@ -119,7 +126,7 @@ public class RecommendationController : Controller
         }
     }
 
-    // ── Admin: batch re-embed ────────────────────────────────
+    // Admin: batch re-embed
     [Authorize(Roles = "Admin,Moderator")]
     [HttpPost]
     public async Task<IActionResult> ReembedBatch()
@@ -137,8 +144,7 @@ public class RecommendationController : Controller
         }
     }
 
-    // ── Helpers ──────────────────────────────────────────────
-
+    // Helpers
     private static string MatchLabel(double score) => score switch
     {
         >= 0.82 => "Rất phù hợp",
@@ -154,7 +160,7 @@ public class RecommendationController : Controller
     };
 }
 
-// ── Internal DTOs cho deserialize backend response ──────────
+// Internal DTOs cho deserialize backend response
 internal class JobRecommendItem
 {
     public Guid JobId { get; set; }
@@ -187,7 +193,14 @@ internal class NannyRecommendItem
     public decimal? AverageRating { get; set; }
     public int TotalReviews { get; set; }
     public double? DistanceKm { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
     public List<SkillItem>? Skills { get; set; }
+    public double SemanticScore { get; set; }
+    public double SalaryScore { get; set; }
+    public double DistanceScore { get; set; }
+    public double HybridScore { get; set; }
+    public double BusinessBoost { get; set; }
     public double FinalScore { get; set; }
 }
 

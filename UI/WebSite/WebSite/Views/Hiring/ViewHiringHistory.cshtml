@@ -1,7 +1,6 @@
-﻿@{
+@{
     var isParent = User.IsInRole("Parent");
-    ViewData["Title"] = isParent ? "Lich su thue bao mau" : "Lich su duoc thue";
-    var sampleContractUrl = "https://docs.google.com/document/d/1ix5IfIKIZFrmjspvv9Z-MBKNrk0Yh7Un/edit?usp=sharing&ouid=109977210644916932805&rtpof=true&sd=true";
+    ViewData["Title"] = isParent ? "Lịch sử thuê bảo mẫu" : "Lịch sử được thuê";
 }
 
 <section class="mx-auto max-w-6xl px-4 py-8 md:py-10">
@@ -9,20 +8,6 @@
         <div class="border-b border-orange-100 px-5 py-5 md:px-7">
             <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-orange-500">@(isParent ? "Khu vực phụ huynh" : "Khu vực bảo mẫu")</p>
             <h1 class="mt-1 text-2xl font-bold text-slate-900">@(isParent ? "Lịch sử thuê bảo mẫu" : "Lịch sử được thuê")</h1>
-            <p class="mt-2 text-sm text-slate-600">
-                Đây là hợp đồng mẫu chúng tôi tham khảo từ nguồn Thư Viện Pháp Luật. Chúng tôi không chịu trách nhiệm về các điều khoản, quy định trong hợp đồng. 
-                Mong bố mẹ và bảo mẫu sẽ tham khảo và đi tới thỏa thuận phù hợp cho cả hai bên.
-            </p>
-            <div class="mt-4 flex flex-wrap items-center gap-3">
-                <a href="@sampleContractUrl" target="_blank" rel="noopener"
-                   class="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-orange-500 to-orange-400 px-4 py-2 text-sm font-bold text-white shadow-sm hover:from-orange-600 hover:to-orange-500">
-                    Sử dụng hợp đồng mẫu
-                </a>
-                <p class="text-sm text-slate-600">
-                    Nếu bạn muốn lưu trữ hợp đồng của bạn, hãy tải lên hợp đồng
-                    <a href="/Contract" target="_blank" rel="noopener noreferrer" class="font-bold text-orange-600 hover:text-orange-700 hover:underline">tại đây</a>.
-                </p>
-            </div>
         </div>
 
         <div class="px-5 pb-6 pt-5 md:px-7">
@@ -37,12 +22,10 @@
 @section Scripts {
     <script>
         (() => {
-            const isParent = @(isParent ? "true" : "false");
-            const isNanny = !isParent;
             const stateEl = document.getElementById('hiringHistoryState');
             const listEl = document.getElementById('hiringHistoryList');
             const focusHiringRecordId = new URLSearchParams(window.location.search).get('hiringRecordId');
-            const actionLocks = new Set();
+            const isParentRole = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(isParent));
 
             const esc = (value) => String(value ?? '')
                 .replaceAll('&', '&amp;')
@@ -51,141 +34,38 @@
                 .replaceAll('"', '&quot;')
                 .replaceAll("'", '&#39;');
 
-            const fmtDate = (value) => value ? new Date(`${value}T00:00:00`).toLocaleDateString('vi-VN') : 'Chua xac dinh';
-            const fmtDateTime = (value) => value ? new Date(value).toLocaleString('vi-VN') : 'Chua xac dinh';
-
-            const statusLabel = (status) => {
-                const s = Number(status);
-                if (s === 0) return { text: 'Đang chờ bảo mẫu phản hồi', css: 'bg-amber-50 text-amber-700 border-amber-200' };
-                if (s === 1) return { text: 'Đang hoạt động', css: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
-                if (s === 2) return { text: 'Đã từ chối', css: 'bg-rose-50 text-rose-700 border-rose-200' };
-                if (s === 3) return { text: 'Đã hủy', css: 'bg-slate-100 text-slate-700 border-slate-200' };
-                if (s === 4) return { text: 'Đã hoàn thành', css: 'bg-indigo-50 text-indigo-700 border-indigo-200' };
-                return { text: 'Không xác định', css: 'bg-slate-100 text-slate-700 border-slate-200' };
-            };
+            const fmtDate = (value) => value ? new Date(`${value}T00:00:00`).toLocaleDateString('vi-VN') : 'Chưa xác định';
+            const fmtDateTime = (value) => value ? new Date(value).toLocaleString('vi-VN') : 'Chưa xác định';
 
             const showToast = (message, type = 'info') => {
                 if (typeof window.showToast === 'function') {
-                    window.showToast(message, { type });
+                    window.showToast(message, { type, duration: 4500 });
                     return;
                 }
                 alert(message);
             };
 
-            const getErrorMessage = async (response) => {
-                try {
-                    const json = await response.json();
-                    return json?.message || 'Thao tác thất bại.';
-                } catch {
-                    return 'Thao tác thất bại.';
-                }
+            const statusLabel = (status) => {
+                const s = Number(status);
+                if (s === 0) return { text: 'Đang chờ', css: 'bg-amber-50 text-amber-700 border-amber-200' };
+                if (s === 1) return { text: 'Đang hoạt động', css: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
+                if (s === 4) return { text: 'Đã hoàn thành', css: 'bg-indigo-50 text-indigo-700 border-indigo-200' };
+                if (s === 2) return { text: 'Đã từ chối', css: 'bg-rose-50 text-rose-700 border-rose-200' };
+                if (s === 3) return { text: 'Đã hủy', css: 'bg-slate-100 text-slate-700 border-slate-200' };
+                return { text: 'Không xác định', css: 'bg-slate-100 text-slate-700 border-slate-200' };
             };
 
-            const postJson = async (url, body) => {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify(body || {})
-                });
+            const canCompleteHiring = (item) => {
+                if (!isParentRole) return false;
+                if (Number(item?.hiringStatus) !== 1) return false;
+                if (!item?.endDate) return false;
 
-                if (!response.ok) {
-                    throw new Error(await getErrorMessage(response));
-                }
+                const endDate = new Date(`${item.endDate}T00:00:00`);
+                if (Number.isNaN(endDate.getTime())) return false;
 
-                const json = await response.json();
-                if (json?.success === false) {
-                    throw new Error(json?.message || 'Thao tác thất bại.');
-                }
-            };
-
-            const postEmpty = async (url) => {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    credentials: 'include'
-                });
-
-                if (!response.ok) {
-                    throw new Error(await getErrorMessage(response));
-                }
-
-                const json = await response.json();
-                if (json?.success === false) {
-                    throw new Error(json?.message || 'Thao tác thất bại.');
-                }
-            };
-
-            const runWithLock = async (hiringRecordId, action) => {
-                if (!hiringRecordId || actionLocks.has(hiringRecordId)) return false;
-                actionLocks.add(hiringRecordId);
-                listEl.style.pointerEvents = 'none';
-                try {
-                    await action();
-                    return true;
-                } finally {
-                    actionLocks.delete(hiringRecordId);
-                    listEl.style.pointerEvents = '';
-                }
-            };
-
-            const handleAccept = async (hiringRecordId) => {
-                try {
-                    const done = await runWithLock(hiringRecordId, async () => {
-                        await postJson(`/Hiring/Records/${encodeURIComponent(hiringRecordId)}/Respond`, { action: 'accept' });
-                    });
-                    if (!done) return;
-                    showToast('Bạn đã chấp nhận đề nghị việc làm.', 'success');
-                    await loadHistory();
-                } catch (error) {
-                    showToast(error.message || 'Không thể chấp nhận đề nghị.', 'error');
-                }
-            };
-
-            const handleComplete = async (hiringRecordId) => {
-                if (!window.confirm('Bạn có chắc muốn xác nhận hoàn thành công việc này không?')) return;
-
-                try {
-                    const done = await runWithLock(hiringRecordId, async () => {
-                        await postEmpty(`/Hiring/Records/${encodeURIComponent(hiringRecordId)}/Complete`);
-                    });
-                    if (!done) return;
-                    showToast('Bạn đã xác nhận hoàn thành công việc.', 'success');
-                    await loadHistory();
-                } catch (error) {
-                    showToast(error.message || 'Không thể xác nhận hoàn thành công việc.', 'error');
-                }
-            };
-
-            window.__hiringHistoryAccept = handleAccept;
-            window.__hiringHistoryComplete = handleComplete;
-
-            const renderActionButtons = (item) => {
-                const status = Number(item.hiringStatus);
-                const id = esc(item.hiringRecordId);
-                const buttons = [];
-
-                if (isNanny && status === 0) {
-                    buttons.push(`
-                        <button type="button"
-                                onclick="window.__hiringHistoryAccept('${id}')"
-                                class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-xs font-extrabold shadow-sm hover:opacity-90"
-                                style="background-color:#10b981;color:#ffffff;border:1px solid #059669;opacity:1;">
-                            Chấp nhận đề nghị
-                        </button>`);
-                }
-
-                if (isParent && status === 1) {
-                    buttons.push(`
-                        <button type="button"
-                                onclick="window.__hiringHistoryComplete('${id}')"
-                                class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-xs font-extrabold shadow-sm hover:opacity-90"
-                                style="background-color:#4f46e5;color:#ffffff;border:1px solid #4338ca;opacity:1;">
-                            Hoàn thành thuê
-                        </button>`);
-                }
-
-                if (!buttons.length) return '';
-                return `<div class="mt-3 flex flex-wrap justify-end gap-2">${buttons.join('')}</div>`;
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                return endDate <= today;
             };
 
             const renderItem = (item) => {
@@ -193,32 +73,69 @@
                 const focusClass = focusHiringRecordId && item.hiringRecordId === focusHiringRecordId
                     ? 'ring-2 ring-orange-300 border-orange-300'
                     : 'border-orange-100';
-                const hasContractPdf = !!String(item.pdfUrl || '').trim();
+                const contractId = item.contractId ? esc(item.contractId) : '';
+                const hasContract = !!contractId;
 
                 return `
                     <article id="hiring-${esc(item.hiringRecordId)}" class="rounded-2xl border ${focusClass} bg-gradient-to-b from-white to-orange-50/40 p-4 shadow-sm">
                         <div class="flex flex-wrap items-center justify-between gap-3">
                             <div>
-                                <p class="text-base font-bold text-slate-900">${esc(item.jobTitle || 'Cong viec')}</p>
-                                <p class="mt-1 text-xs font-semibold text-slate-500">Tao luc: ${fmtDateTime(item.createdAt)}</p>
+                                <p class="text-base font-bold text-slate-900">${esc(item.jobTitle || 'Công việc')}</p>
+                                <p class="mt-1 text-xs font-semibold text-slate-500">Tạo lúc: ${fmtDateTime(item.createdAt)}</p>
                             </div>
                             <span class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-extrabold ${badge.css}">${badge.text}</span>
                         </div>
+
                         <div class="mt-3 grid gap-1 text-sm text-slate-700">
-                            <p><span class="font-bold text-slate-800">Parent:</span> ${esc(item.parentName || '...')}</p>
-                            <p><span class="font-bold text-slate-800">Nanny:</span> ${esc(item.nannyName || '...')}</p>
-                            <p><span class="font-bold text-slate-800">Thoi gian:</span> ${fmtDate(item.startDate)} - ${fmtDate(item.endDate)}</p>
-                            <p><span class="font-bold text-slate-800">File PDF hop dong:</span> ${hasContractPdf ? 'Da tai len' : 'Chua tai len'}</p>
+                            <p><span class="font-bold text-slate-800">Bố mẹ:</span> ${esc(item.parentName || '...')}</p>
+                            <p><span class="font-bold text-slate-800">Bảo mẫu:</span> ${esc(item.nannyName || '...')}</p>
+                            <p><span class="font-bold text-slate-800">Thời gian:</span> ${fmtDate(item.startDate)} - ${fmtDate(item.endDate)}</p>
                         </div>
-                        ${hasContractPdf ? `
-                            <div class="mt-3 flex justify-end">
-                                <a href="${esc(item.pdfUrl)}" target="_blank" rel="noopener"
-                                   class="inline-flex items-center justify-center rounded-xl border border-orange-200 bg-white px-4 py-2 text-xs font-extrabold text-orange-600 hover:bg-orange-50">
-                                    Xem file PDF hop dong
-                                </a>
-                            </div>` : ''}
-                        ${renderActionButtons(item)}
+
+                        <div class="mt-3 flex flex-wrap justify-end gap-2">
+                            ${hasContract ? `
+                            <a href="/Contract/ViewContractDetail?contractId=${contractId}"
+                               class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-extrabold text-slate-700 hover:bg-slate-50">
+                                Xem chi tiết hợp đồng
+                            </a>` : ''}
+                            ${hasContract ? `
+                            <a href="/Contract/Api/${contractId}/Download"
+                               class="inline-flex items-center justify-center rounded-xl border border-orange-200 bg-white px-4 py-2 text-xs font-extrabold text-orange-600 hover:bg-orange-50">
+                                Tải xuống hợp đồng
+                            </a>` : ''}
+                            ${canCompleteHiring(item) ? `
+                            <button type="button"
+                                    class="js-complete-hiring inline-flex items-center justify-center rounded-xl px-4 py-2 text-xs font-extrabold"
+                                    style="background-color:#16a34a;color:#ffffff;border:1px solid #86efac;"
+                                    data-hiring-record-id="${esc(item.hiringRecordId)}">
+                                Hoàn thành hợp đồng thuê
+                            </button>` : ''}
+                        </div>
                     </article>`;
+            };
+
+            const completeHiring = async (hiringRecordId) => {
+                const confirmed = window.confirm('Bạn có chắc muốn hoàn thành hợp đồng thuê này không?');
+                if (!confirmed) return;
+
+                try {
+                    const res = await fetch(`/Hiring/Records/${encodeURIComponent(hiringRecordId)}/Complete`, {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: '{}'
+                    });
+
+                    const json = await res.json().catch(() => ({}));
+                    if (!res.ok || !json?.success) {
+                        throw new Error(json?.message || 'Không thể hoàn thành hợp đồng thuê.');
+                    }
+
+                    showToast('Bạn đã chuyển trạng thái thuê sang Đã hoàn thành.', 'success');
+                    await loadHistory();
+                } catch (err) {
+                    showToast(String(err?.message || 'Không thể hoàn thành hợp đồng thuê.'), 'error');
+                }
             };
 
             const loadHistory = async () => {
@@ -252,6 +169,19 @@
                     listEl.classList.add('hidden');
                 }
             };
+
+            listEl.addEventListener('click', async (event) => {
+                const target = event.target;
+                if (!(target instanceof HTMLElement)) return;
+
+                const btn = target.closest('.js-complete-hiring');
+                if (!(btn instanceof HTMLButtonElement)) return;
+
+                const hiringRecordId = btn.dataset.hiringRecordId;
+                if (!hiringRecordId) return;
+
+                await completeHiring(hiringRecordId);
+            });
 
             loadHistory();
         })();

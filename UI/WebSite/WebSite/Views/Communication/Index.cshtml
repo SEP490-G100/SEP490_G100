@@ -239,8 +239,52 @@
 
         .chat-header-actions {
             display: flex;
+            align-items: center;
             gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
         }
+
+        .chat-header-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 700;
+            font-family: 'Quicksand', sans-serif;
+            border: 1.5px solid #e5e7eb;
+            background: #fff;
+            color: #374151;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all .18s ease;
+        }
+
+            .chat-header-pill:hover:not(:disabled) {
+                color: #ea580c;
+                background: #fff7ed;
+                border-color: #fed7aa;
+            }
+
+            .chat-header-pill--primary {
+                background: linear-gradient(135deg,#f97316,#ea580c);
+                color: #fff;
+                border-color: transparent;
+                box-shadow: 0 4px 12px rgba(249,115,22,.22);
+            }
+
+                .chat-header-pill--primary:hover:not(:disabled) {
+                    transform: translateY(-1px);
+                    box-shadow: 0 8px 18px rgba(249,115,22,.3);
+                }
+
+            .chat-header-pill:disabled {
+                opacity: .45;
+                cursor: not-allowed;
+                transform: none;
+            }
 
         .chat-action-btn {
             display: flex;
@@ -753,6 +797,7 @@
                     </div>
                 </div>
                 <div class="chat-header-actions">
+                    <button type="button" class="chat-header-pill" id="btnChatViewProfile" disabled title="Xem trang cá nhân đối phương">Xem trang cá nhân</button>
                     <button type="button" class="chat-action-btn danger" id="btnBlockConv" title="Khóa hội thoại" aria-label="Khóa hoặc mở khóa hội thoại">
                         <span class="material-icons-round" style="font-size:18px;">block</span>
                     </button>
@@ -839,6 +884,29 @@
             } catch { /* ignore */ }
         }
 
+        function hasValidOtherUserId() {
+            const uid = activeConvData?.otherUserId;
+            if (uid == null || uid === '') return false;
+            const s = String(uid).toLowerCase();
+            return s !== '00000000-0000-0000-0000-000000000000';
+        }
+
+        function getOtherUserProfileUrl() {
+            if (!hasValidOtherUserId()) return '';
+            return '/Profile/ViewUser?userId=' + encodeURIComponent(String(activeConvData.otherUserId));
+        }
+
+        function updateChatHeaderActionButtons() {
+            const can = hasValidOtherUserId();
+            const v = document.getElementById('btnChatViewProfile');
+            if (v) v.disabled = !can;
+        }
+
+        function goToOtherUserProfile() {
+            const href = getOtherUserProfileUrl();
+            if (href) window.location.href = href;
+        }
+
         /** Đồng bộ DB (ReadAt) — badge header / danh sách hội thoại cập nhật đúng. */
         async function markConversationReadOnServer(convId) {
             if (!convId) return;
@@ -890,6 +958,7 @@
 
             document.getElementById('sendBtn').addEventListener('click', sendMessage);
             document.getElementById('btnBlockConv').addEventListener('click', toggleBlock);
+            document.getElementById('btnChatViewProfile')?.addEventListener('click', goToOtherUserProfile);
 
             // Close context menus on outsiđ click
             document.addEventListener('click', () => {
@@ -982,6 +1051,8 @@
 
             document.getElementById('chatMessages').innerHTML = '<div style="text-align:center;padding:40px;"><div class="spin"></div></div>';
             document.getElementById('headerName').textContent = conv?.dataset?.name ?? '...';
+            activeConvData = null;
+            updateChatHeaderActionButtons();
 
             await loadMessages(id);
             resetUnreadCount(id);
@@ -1010,6 +1081,7 @@
                     otherUserId: data.otherUserId,
                     otherUserName: data.otherUserName
                 };
+                updateChatHeaderActionButtons();
 
                 updateBlockUI(data.isBlocked);
                 const messages = data.messages ?? [];
@@ -1357,7 +1429,7 @@
 
         async function goToContractDetailByHiringRecord(hiringRecordId) {
             if (!hiringRecordId) return;
-            window.open(`/Hiring/ViewHiringHistory?hiringRecordId=${encodeURIComponent(hiringRecordId)}`, '_blank', 'noopener');
+            window.open(`/Contract/ViewContractDetail?hiringRecordId=${encodeURIComponent(hiringRecordId)}`, '_blank', 'noopener');
         }
 
         function renderHiringOfferCard(message, isMine) {

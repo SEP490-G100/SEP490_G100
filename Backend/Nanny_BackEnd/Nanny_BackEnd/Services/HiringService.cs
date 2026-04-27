@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using Nanny_BackEnd.DTOs.Communication;
 using Nanny_BackEnd.DTOs.Hiring;
 using Nanny_BackEnd.Enums;
@@ -14,18 +13,37 @@ public class HiringService : IHiringService
     private readonly IHiringRepository _repo;
     private readonly ICommunicationService _commSvc;
 
-    // Constructor dùng cho DI (Production) — được chọn bởi ASP.NET DI
-    [ActivatorUtilitiesConstructor]
     public HiringService(IHiringRepository repo, ICommunicationService commSvc)
     {
         _repo = repo;
         _commSvc = commSvc;
     }
 
-    // Constructor dùng cho Test (tương thích với GetApplicantsTests)
-    public HiringService(IHiringRepository repo, CommunicationService _svc) => _repo = repo;
+    public async Task<List<ContractTemplateOptionDto>> GetContractTemplatesAsync()
+    {
+        var templates = await _repo.GetActiveContractTemplatesAsync();
+        return templates.Select(t => new ContractTemplateOptionDto
+        {
+            Id = t.Id,
+            Name = t.Name,
+            Version = t.Version
+        }).ToList();
+    }
 
-   
+    public async Task<ContractTemplatePreviewDto> GetContractTemplatePreviewAsync(Guid templateId)
+    {
+        var template = await _repo.GetActiveContractTemplateByIdAsync(templateId)
+            ?? throw new KeyNotFoundException("Không tìm thấy mẫu hợp đồng.");
+
+        return new ContractTemplatePreviewDto
+        {
+            Id = template.Id,
+            Name = template.Name,
+            Version = template.Version,
+            Content = template.Content ?? string.Empty
+        };
+    }
+
     public async Task<List<JobApplicantDto>> GetApplicantsAsync(Guid jobPostingId, Guid parentUserId)
     {
         var job = await _repo.GetJobPostingByIdAsync(jobPostingId)
@@ -109,43 +127,14 @@ public class HiringService : IHiringService
             ?? throw new InvalidOperationException("Không tìm thấy thông tin bảo mẫu.");
 
         var now = DateTime.UtcNow;
-
-        var hiringRecord = new HiringRecord
-        {
-            Id = Guid.NewGuid(),
-            JobApplicationId = app.Id,
-            ParentProfileId = parentProfile.Id,
-            NannyProfileId = nannyProfile.Id,
-            ContractTemplateId = null,
-            StartDate = dto.StartDate,
-            EndDate = dto.EndDate,
-            ContractDuration = null,
-            Status = (int)HiringRecordStatus.Pending,
-            ParentConfirmedAt = now,
-            CreatedAt = now,
-            CreatedBy = parentUserId,
-            IsDeleted = false
-        };
-        _repo.AddHiringRecord(hiringRecord);
-
-        var contract = new Contract
-        {
-            Id = Guid.NewGuid(),
-            HiringRecordId = hiringRecord.Id,
-            ContractTemplateId = null,
-            ContractContent = BuildSimpleContractContent(
-                GetDisplayName(parentProfile.User),
-                GetDisplayName(nannyProfile.User),
-                dto.StartDate,
-                dto.EndDate),
-            SignedByParent = false,
-            SignedByNanny = false,
-            Status = 0,
-            CreatedAt = now,
-            CreatedBy = parentUserId,
-            IsDeleted = false
-        };
-        _repo.AddContract(contract);
+        var (hiringRecord, contract) = CreatePendingHiringAndContract(
+            app,
+            parentProfile,
+            nannyProfile,
+            parentUserId,
+            dto.StartDate,
+            dto.EndDate,
+            now);
 
         var others = await _repo.GetOtherActiveApplicantsAsync(jobPostingId, jobAppId);
         foreach (var other in others)
@@ -303,42 +292,14 @@ public class HiringService : IHiringService
         };
         _repo.AddJobApplication(directJobApplication);
 
-        var hiringRecord = new HiringRecord
-        {
-            Id = Guid.NewGuid(),
-            JobApplicationId = directJobApplication.Id,
-            ParentProfileId = parentProfile.Id,
-            NannyProfileId = nannyProfile.Id,
-            ContractTemplateId = null,
-            StartDate = dto.StartDate,
-            EndDate = dto.EndDate,
-            ContractDuration = null,
-            Status = (int)HiringRecordStatus.Pending,
-            ParentConfirmedAt = now,
-            CreatedAt = now,
-            CreatedBy = parentUserId,
-            IsDeleted = false
-        };
-        _repo.AddHiringRecord(hiringRecord);
-
-        var contract = new Contract
-        {
-            Id = Guid.NewGuid(),
-            HiringRecordId = hiringRecord.Id,
-            ContractTemplateId = null,
-            ContractContent = BuildSimpleContractContent(
-                GetDisplayName(parentProfile.User),
-                GetDisplayName(nannyProfile.User),
-                dto.StartDate,
-                dto.EndDate),
-            SignedByParent = false,
-            SignedByNanny = false,
-            Status = 0,
-            CreatedAt = now,
-            CreatedBy = parentUserId,
-            IsDeleted = false
-        };
-        _repo.AddContract(contract);
+        var (hiringRecord, contract) = CreatePendingHiringAndContract(
+            directJobApplication,
+            parentProfile,
+            nannyProfile,
+            parentUserId,
+            dto.StartDate,
+            dto.EndDate,
+            now);
 
         var nannyUserId = nannyProfile.UserId;
 
@@ -535,8 +496,14 @@ public class HiringService : IHiringService
             throw new UnauthorizedAccessException("Bạn không có quyền hoàn thành hợp đồng này.");
 
         if (hiringRecord.Status != (int)HiringRecordStatus.Active)
-            throw new InvalidOperationException("Chi co the hoan thanh hop dong dang hoat dong.");
+            throw new InvalidOperationException("Chỉ có thể hoàn thành hợp đồng đang hoạt động.");
 
+        if (!hiringRecord.EndDate.HasValue)
+            throw new InvalidOperationException("Chưa đến hạn kết thúc hợp đồng thuê.");
+
+        var todayBusinessDate = GetBusinessTodayDate();
+        if (hiringRecord.EndDate.Value > todayBusinessDate)
+            throw new InvalidOperationException("Chỉ được hoàn thành khi hợp đồng đã đến hạn kết thúc.");
         var now = DateTime.UtcNow;
         hiringRecord.Status = (int)HiringRecordStatus.Completed;
         hiringRecord.UpdatedAt = now;
@@ -590,17 +557,107 @@ public class HiringService : IHiringService
             throw new ArgumentException("Ngày kết thúc phải lớn hơn ngày bắt đầu.");
     }
 
-    private static string BuildSimpleContractContent(
-        string parentName,
-        string nannyName,
+    private (HiringRecord HiringRecord, Contract Contract) CreatePendingHiringAndContract(
+        JobApplication jobApplication,
+        ParentProfile parentProfile,
+        NannyProfile nannyProfile,
+        Guid parentUserId,
+        DateOnly startDate,
+        DateOnly? endDate,
+        DateTime nowUtc)
+    {
+        var contractDurationMonths = CalculateContractDurationMonths(startDate, endDate);
+
+        var hiringRecord = new HiringRecord
+        {
+            Id = Guid.NewGuid(),
+            JobApplicationId = jobApplication.Id,
+            ParentProfileId = parentProfile.Id,
+            NannyProfileId = nannyProfile.Id,
+            StartDate = startDate,
+            EndDate = endDate,
+            ContractDuration = contractDurationMonths,
+            Status = (int)HiringRecordStatus.Pending,
+            ParentConfirmedAt = nowUtc,
+            CreatedAt = nowUtc,
+            CreatedBy = parentUserId,
+            IsDeleted = false
+        };
+        _repo.AddHiringRecord(hiringRecord);
+
+        var contract = new Contract
+        {
+            Id = Guid.NewGuid(),
+            HiringRecordId = hiringRecord.Id,
+            ContractContent = BuildHardcodedContractContent(
+                jobApplication.JobPosting,
+                parentProfile.User,
+                nannyProfile.User,
+                startDate,
+                endDate),
+            SignedByParent = false,
+            SignedByNanny = false,
+            Status = 0,
+            CreatedAt = nowUtc,
+            CreatedBy = parentUserId,
+            IsDeleted = false
+        };
+        _repo.AddContract(contract);
+
+        return (hiringRecord, contract);
+    }
+
+    private static string BuildHardcodedContractContent(
+        JobPosting? jobPosting,
+        User? parentUser,
+        User? nannyUser,
         DateOnly startDate,
         DateOnly? endDate)
     {
-        var safeParentName = string.IsNullOrWhiteSpace(parentName) ? "..." : parentName.Trim();
-        var safeNannyName = string.IsNullOrWhiteSpace(nannyName) ? "..." : nannyName.Trim();
-        var safeEndDate = endDate.HasValue ? endDate.Value.ToString("dd/MM/yyyy") : "...";
+        // Contract content is hardcoded in backend and persisted directly into ContractContent.
+        var durationMonths = CalculateContractDurationMonths(startDate, endDate);
 
-        return $"Hợp đồng giữa Bố mẹ {safeParentName} và bảo mẫu {safeNannyName}, ngày bắt đầu là: {startDate:dd/MM/yyyy}, ngày kết thúc là: {safeEndDate}.";
+        var values = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["StartDate"] = startDate.ToString("dd/MM/yyyy"),
+            ["EndDate"] = endDate?.ToString("dd/MM/yyyy") ?? string.Empty,
+            ["ContractDurationMonths"] = durationMonths.ToString(),
+            ["JobDescription"] = string.IsNullOrWhiteSpace(jobPosting?.Description) ? string.Empty : jobPosting!.Description.Trim(),
+            ["WorkAddress"] = string.IsNullOrWhiteSpace(jobPosting?.Location) ? string.Empty : jobPosting.Location.Trim(),
+            ["ParentName"] = GetDisplayName(parentUser),
+            ["ParentPhone"] = parentUser?.PhoneNumber,
+            ["ParentEmail"] = parentUser?.Email,
+            ["NannyName"] = GetDisplayName(nannyUser),
+            ["NannyPhone"] = nannyUser?.PhoneNumber,
+            ["NannyEmail"] = nannyUser?.Email
+        };
+
+        return RenderTemplateWithValues(ContractTemplateDefaults.DefaultContent, values);
+    }
+
+    private static string RenderTemplateWithValues(string template, IDictionary<string, string?> values)
+    {
+        var content = template ?? string.Empty;
+        foreach (var pair in values)
+        {
+            if (string.IsNullOrWhiteSpace(pair.Key))
+                continue;
+
+            var token = $"{{{{{pair.Key.Trim()}}}}}";
+            var value = string.IsNullOrWhiteSpace(pair.Value) ? "..." : pair.Value.Trim();
+            content = content.Replace(token, value, StringComparison.OrdinalIgnoreCase);
+        }
+
+        return content.Replace("[[CENTER]]", string.Empty, StringComparison.Ordinal);
+    }
+
+    private static int CalculateContractDurationMonths(DateOnly startDate, DateOnly? endDate)
+    {
+        if (!endDate.HasValue)
+            return 1;
+
+        var totalDays = (endDate.Value.ToDateTime(TimeOnly.MinValue) - startDate.ToDateTime(TimeOnly.MinValue)).TotalDays;
+        return Math.Max(1, (int)Math.Ceiling(totalDays / 30d));
     }
 
     private static string GetDisplayName(User? user)
@@ -608,5 +665,19 @@ public class HiringService : IHiringService
         if (user == null) return "Người dùng";
         var fullName = $"{user.FirstName} {user.LastName}".Trim();
         return string.IsNullOrWhiteSpace(fullName) ? user.Email : fullName;
+    }
+
+    private static DateOnly GetBusinessTodayDate()
+    {
+        try
+        {
+            var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+            var nowInVietnam = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamTimeZone);
+            return DateOnly.FromDateTime(nowInVietnam.Date);
+        }
+        catch
+        {
+            return DateOnly.FromDateTime(DateTime.Now.Date);
+        }
     }
 }

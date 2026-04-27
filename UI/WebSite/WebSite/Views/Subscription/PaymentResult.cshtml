@@ -15,26 +15,26 @@
         var isFailed = !isCancelled && Model.PaymentStatus?.TransactionStatus == 3;
         var state = isCancelled ? "cancelled" : isSuccess ? "success" : isFailed ? "failed" : "pending";
         var statusLabel = Model.PaymentStatus?.TransactionStatusLabel ?? (isCancelled ? "Đã hủy" : "Chờ thanh toán");
-        var planLabel = Model.PaymentStatus?.PlanName ?? "Gói đăng ký";
+        var planLabel = Model.PaymentStatus?.PlanName ?? "Gói dịch vụ";
         var resultTitle = isCancelled
-            ? "Bạn đã hủy giao dịch"
+            ? "Đã bỏ qua giao dịch"
             : isSuccess
                 ? "Thanh toán thành công"
                 : isFailed
-                    ? "Thanh toán thất bại"
-                    : "Chờ thanh toán";
+                    ? "Giao dịch không thành công"
+                    : "Đang xác nhận thanh toán";
         var resultDescription = isCancelled
-            ? "Giao dịch chưa hoàn tất. Bạn có thể quay lại trang gói đăng ký để tạo giao dịch mới."
+            ? "Bạn rời khỏi bước thanh toán. Vào lại trang gói nếu muốn thử lần nữa."
             : isSuccess
-                ? "Gói đăng ký của bạn đã được kích hoạt và sẵn sàng sử dụng."
+                ? "Gói đã được kích hoạt. Bạn có thể dùng quyền lợi theo mô tả gói."
                 : isFailed
-                    ? "Hệ thống xác nhận thanh toán nội bộ không thành công. Bạn có thể tạo giao dịch mới."
-                    : "Hệ thống sẽ tự động kiểm tra kết quả thanh toán từ PayOS. Nếu thông báo thanh toán về chậm, trạng thái sẽ được cập nhật trong ít giây.";
+                    ? "Chưa ghi nhận thanh toán thành công. Bạn có thể tạo giao dịch mới từ trang gói."
+                    : "Chúng tôi sẽ xác nhận với PayOS. Nếu bạn vừa chuyển khoản, vui lòng đợi vài phút rồi tải lại trang.";
     }
 
     <section class="sub-result-hero">
         <article class="sub-result-overview">
-            <div class="sub-role">Kết quả thanh toán</div>
+            <div class="sub-role">Sau khi thanh toán</div>
             <h1 id="paymentResultTitle">@resultTitle</h1>
             <p id="paymentResultDescription">@resultDescription</p>
 
@@ -57,22 +57,22 @@
         <div class="sub-result-action-head">
             <span class="sub-section-label">Thanh toán</span>
             <h2>Thông tin giao dịch</h2>
-            <p>Nếu thông báo thanh toán về chậm, trang sẽ tiếp tục kiểm tra và cập nhật kết quả cho bạn.</p>
+            <p>Trang có thể tự cập nhật khi PayOS gửi kết quả. Nếu vẫn “Chờ” sau vài phút, hãy tải lại trang.</p>
         </div>
 
         <div class="sub-result-facts">
             <div class="sub-result-fact">
-                <span>Trạng thái hiện tại</span>
+                <span>Trạng thái</span>
                 <b id="paymentResultStatusText">@statusLabel</b>
             </div>
             <div class="sub-result-fact">
-                <span>Gói đăng ký</span>
+                <span>Tên gói</span>
                 <b id="paymentResultPlanText">@planLabel</b>
             </div>
         </div>
 
         <div class="sub-result-actions">
-            <a href="@Url.Action("Index", "Subscription")" class="sub-primary-btn sub-result-btn">Quay lại trang gói</a>
+            <a href="@Url.Action("Index", "Subscription")" class="sub-primary-btn sub-result-btn">Về trang gói dịch vụ</a>
             <a href="@Url.Action("Index", "Home")" class="sub-secondary-btn sub-result-btn">Về trang chủ</a>
         </div>
     </section>

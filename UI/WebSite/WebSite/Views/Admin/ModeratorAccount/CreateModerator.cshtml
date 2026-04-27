@@ -4,12 +4,9 @@
     ViewData["Title"] = "Tạo Kiểm Duyệt Viên";
 }
 
-<!-- ====================================================
-     PAGE HEADER
-     ==================================================== -->
 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7 fade-in-up">
     <div>
-        <span class="section-label">🛡️ Hành Động Quản Trị</span>
+        <span class="section-label">Hành Động Quản Trị</span>
         <h1 class="page-title mt-2">
             Tạo <span class="gradient-text">Kiểm Duyệt Viên</span>
         </h1>
@@ -29,17 +26,11 @@
     </div>
 }
 
-<form method="post" action="/Admin/CreateModerator" onsubmit="return validateForm()">
+<form method="post" action="/Admin/CreateModerator">
     @Html.AntiForgeryToken()
 
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-
-        <!-- =============================================
-             LEFT PANEL — Input fields (2 / 3 width)
-             ============================================= -->
         <div class="xl:col-span-2 space-y-5">
-
-            <!-- ── Account Credentials ── -->
             <div class="content-card p-0 fade-in-up">
                 <div class="card-header">
                     <div class="flex items-center gap-2">
@@ -47,42 +38,38 @@
                         <h2>Thông Tin Đăng Nhập <span class="text-xs text-red-500 font-semibold ml-1">* bắt buộc</span></h2>
                     </div>
                 </div>
-                <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-                    <!-- Email -->
+                <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="field-group sm:col-span-2">
-                        <label class="field-label">Email <span class="text-red-400">*</span></label>
+                        <label asp-for="Email" class="field-label">Email <span class="text-red-400">*</span></label>
                         <div class="relative">
                             <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-base pointer-events-none">email</span>
-                            <input id="emailInput" name="Email" type="email" value="@Model.Email"
-                                   placeholder="moderator@nannymatch.vn" required
-                                   class="search-input !pl-9 w-full" />
+                            <input asp-for="Email" id="emailInput" type="email" placeholder="moderator@nannymatch.vn" class="search-input !pl-9 w-full" />
                         </div>
+                        <span asp-validation-for="Email" class="text-xs text-red-500 mt-1"></span>
                     </div>
 
-                    <!-- Password -->
                     <div class="field-group sm:col-span-2">
-                        <label class="field-label">Mật Khẩu <span class="text-red-400">*</span></label>
+                        <label asp-for="Password" class="field-label">Mật Khẩu <span class="text-red-400">*</span></label>
                         <div class="relative">
                             <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-base pointer-events-none">lock_outline</span>
-                            <input id="passwordInput" name="Password" type="password"
-                                   placeholder="Tối thiểu 8 ký tự" required
-                                   oninput="validatePassword(this)"
+                            <input asp-for="Password"
+                                   id="passwordInput"
+                                   type="password"
+                                   autocomplete="new-password"
+                                   placeholder="Toi thieu 8 ky tu, co 1 ky tu in hoa va 1 ky tu dac biet"
                                    class="search-input !pl-9 w-full pr-10" />
-                            <button type="button" onclick="togglePassword()"
+                            <button type="button"
+                                    onclick="togglePassword()"
                                     class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none">
                                 <span id="pwdIcon" class="material-icons-round text-base">visibility</span>
                             </button>
                         </div>
-                        <p id="password-error" class="text-xs text-red-500 mt-1 hidden">
-                            Mật khẩu phải có ít nhất 8 ký tự.
-                        </p>
+                        <span asp-validation-for="Password" class="text-xs text-red-500 mt-1"></span>
                     </div>
-
                 </div>
             </div>
 
-            <!-- ── Personal Info ── -->
             <div class="content-card p-0 fade-in-up" style="animation-delay:.05s;">
                 <div class="card-header">
                     <div class="flex items-center gap-2">
@@ -90,49 +77,45 @@
                         <h2>Thông Tin Cá Nhân</h2>
                     </div>
                 </div>
+
                 <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-                    <!-- First Name -->
                     <div class="field-group">
-                        <label class="field-label">Họ <span class="text-red-400">*</span></label>
-                        <input name="FirstName" type="text" value="@Model.FirstName" required
-                               placeholder="ví dụ: Nguyễn" class="search-input w-full" />
+                        <label asp-for="FirstName" class="field-label">Họ <span class="text-red-400">*</span></label>
+                        <input asp-for="FirstName" id="firstNameInput" type="text" placeholder="Ví dụ: Nguyễn" class="search-input w-full" />
+                        <span asp-validation-for="FirstName" class="text-xs text-red-500 mt-1"></span>
                     </div>
 
-                    <!-- Last Name -->
                     <div class="field-group">
-                        <label class="field-label">Tên <span class="text-red-400">*</span></label>
-                        <input name="LastName" type="text" value="@Model.LastName" required
-                               placeholder="ví dụ: An" class="search-input w-full" />
+                        <label asp-for="LastName" class="field-label">Tên <span class="text-red-400">*</span></label>
+                        <input asp-for="LastName" id="lastNameInput" type="text" placeholder="Ví dụ: An" class="search-input w-full" />
+                        <span asp-validation-for="LastName" class="text-xs text-red-500 mt-1"></span>
                     </div>
 
-                    <!-- Phone Number -->
                     <div class="field-group sm:col-span-2">
-                        <label class="field-label">Số Điện Thoại <span class="text-gray-400 text-xs normal-case ml-1">(không bắt buộc)</span></label>
+                        <label asp-for="PhoneNumber" class="field-label">
+                            Số Điện Thoại
+                            <span class="text-gray-400 text-xs normal-case ml-1">(không bắt buộc)</span>
+                        </label>
                         <div class="relative">
                             <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-base pointer-events-none">phone</span>
-                            <input id="phoneInput" name="PhoneNumber" type="tel"
-                                   value="@Model.PhoneNumber" placeholder="10–11 chữ số"
+                            <input asp-for="PhoneNumber"
+                                   id="phoneInput"
+                                   type="tel"
+                                   placeholder="10-11 chữ số"
                                    pattern="^[0-9]{10,11}$"
-                                   maxlength="11" oninput="validatePhone(this)"
+                                   maxlength="11"
+                                   oninput="validatePhone(this)"
                                    class="search-input !pl-9 w-full" />
                         </div>
                         <p id="phone-error" class="text-xs text-red-500 mt-1 hidden">
-                            Số điện thoại phải có 10–11 chữ số (chỉ chữa số).
+                            Số điện thoại phải có 10-11 chữ số (chỉ chứa số).
                         </p>
                     </div>
-
                 </div>
             </div>
-
         </div>
 
-        <!-- =============================================
-             RIGHT PANEL — Summary info (1 / 3 width)
-             ============================================= -->
         <div class="space-y-5">
-
-            <!-- Summary card -->
             <div class="content-card p-6 text-center fade-in-up" style="animation-delay:.08s;">
                 <div class="w-20 h-20 rounded-full bg-orange-50 flex items-center justify-center text-orange-300 ring-4 ring-orange-50 mb-4 mx-auto dashed-border">
                     <span class="material-icons-round text-3xl">add_photo_alternate</span>
@@ -146,7 +129,6 @@
                 </div>
             </div>
 
-            <!-- Save / Cancel buttons -->
             <div class="content-card p-4 space-y-2.5 fade-in-up" style="animation-delay:.12s;">
                 <button type="submit" class="btn-primary w-full justify-center">
                     <span class="material-icons-round text-base">person_add</span>
@@ -164,7 +146,6 @@
                     Mặc định, tài khoản kiểm duyệt viên mới được tạo với trạng thái <strong class="text-orange-900">Hoạt Động</strong> và có thể đăng nhập ngay bằng thông tin đã cung cấp.
                 </p>
             </div>
-
         </div>
     </div>
 </form>
@@ -181,63 +162,39 @@
 .dashed-border {
     border: 2px dashed #FED7AA;
 }
+input.input-validation-error {
+    border-color: #f87171 !important;
+}
 </style>
 
 @section Scripts {
-<script>
-function validatePhone(input) {
-    var val = input.value.replace(/\D/g, ''); // strip non-digits
-    input.value = val;                         // auto-strip letters
-    var err = document.getElementById('phone-error');
-    if (val.length > 0 && (val.length < 10 || val.length > 11)) {
-        err.classList.remove('hidden');
-        input.classList.add('!border-red-400');
-    } else {
-        err.classList.add('hidden');
-        input.classList.remove('!border-red-400');
-    }
-}
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function validatePhone(input) {
+            var val = input.value.replace(/\D/g, '');
+            input.value = val;
 
-function validatePassword(input) {
-    var err = document.getElementById('password-error');
-    if (input.value.length > 0 && input.value.length < 8) {
-        err.classList.remove('hidden');
-        input.classList.add('!border-red-400');
-    } else {
-        err.classList.add('hidden');
-        input.classList.remove('!border-red-400');
-    }
-}
+            var err = document.getElementById('phone-error');
+            if (val.length > 0 && (val.length < 10 || val.length > 11)) {
+                err.classList.remove('hidden');
+                input.classList.add('!border-red-400');
+            } else {
+                err.classList.add('hidden');
+                input.classList.remove('!border-red-400');
+            }
+        }
 
-function togglePassword() {
-    var input = document.getElementById('passwordInput');
-    var icon = document.getElementById('pwdIcon');
-    if (input.type === 'password') {
-        input.type = 'text';
-        icon.textContent = 'visibility_off';
-    } else {
-        input.type = 'password';
-        icon.textContent = 'visibility';
-    }
-}
+        function togglePassword() {
+            var input = document.getElementById('passwordInput');
+            var icon = document.getElementById('pwdIcon');
 
-function validateForm() {
-    var phone = document.getElementById('phoneInput').value;
-    var pwd = document.getElementById('passwordInput').value;
-
-    if (pwd.length < 8) {
-        document.getElementById('password-error').classList.remove('hidden');
-        document.getElementById('passwordInput').focus();
-        return false;
-    }
-
-    if (phone.length > 0 && !/^[0-9]{10,11}$/.test(phone)) {
-        document.getElementById('phone-error').classList.remove('hidden');
-        document.getElementById('phoneInput').focus();
-        return false;
-    }
-
-    return true;
-}
-</script>
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.textContent = 'visibility_off';
+            } else {
+                input.type = 'password';
+                icon.textContent = 'visibility';
+            }
+        }
+    </script>
 }
