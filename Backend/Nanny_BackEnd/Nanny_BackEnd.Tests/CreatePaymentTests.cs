@@ -180,4 +180,145 @@ public class CreatePaymentTests
         Assert.Equal(3, added!.Status);
         _mockRepo.Verify(r => r.saveChanges(), Times.AtLeast(2));
     }
+
+    [Fact]
+    public async Task ReusePendingSession_WhenLookupMissingQrPayload_UsesStoredQrMetadata()
+    {
+        var userId = Guid.NewGuid();
+        var planId = Guid.NewGuid();
+        var plan = ParentishPlan(planId);
+        var existingOrderCode = 223344556;
+        var existingTransactionId = Guid.NewGuid();
+        const string qrPayload = "00020101021238570010A000000727012700069704360110123456789012345802VN53037045405199005802VN5912NANNYMATCH6005HANOI6304ABCD";
+
+        _mockRepo.Setup(r => r.getExpiredActiveSubscriptions(userId, It.IsAny<DateTime>()))
+            .ReturnsAsync(new List<UserSubscription>());
+
+        var pending = new List<Transaction>
+        {
+            new()
+            {
+                Id = existingTransactionId,
+                UserId = userId,
+                Amount = plan.Price,
+                PaymentGatewayTransactionId = existingOrderCode.ToString(),
+                Status = 1,
+                Type = 1,
+                CreatedAt = DateTime.UtcNow,
+                Description = $"NM GOI_PHU_HUYNH_CAN_DANG_BAI {existingOrderCode} | PAYOS_BANK:VCB | PAYOS_ACC:0123456789 | PAYOS_NAME:NANNYMATCH | PAYOS_QR:{qrPayload}"
+            }
+        };
+        _mockRepo.Setup(r => r.getPendingSubscriptionTransactions(userId))
+            .ReturnsAsync(pending);
+
+        _mockRepo.Setup(r => r.findPlanById(planId)).ReturnsAsync(plan);
+        _mockRepo.Setup(r => r.hasParentProfile(userId)).ReturnsAsync(true);
+        _mockRepo.Setup(r => r.findCurrentSubscription(userId, It.IsAny<DateTime>()))
+            .ReturnsAsync((UserSubscription?)null);
+        _mockRepo.Setup(r => r.saveChanges()).Returns(Task.CompletedTask);
+
+        _mockPayOs.Setup(p => p.getPaymentInstruction(existingOrderCode))
+            .ReturnsAsync(new PayOsPaymentInstruction
+            {
+                OrderCode = existingOrderCode,
+                Amount = plan.Price,
+                TransferContent = $"NM{existingOrderCode}",
+                QrPayload = "",
+                QrCodeUrl = "https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=https%3A%2F%2Fpay.payos.vn%2Fweb%2Fold",
+                CheckoutUrl = "https://pay.payos.vn/web/old",
+                BankId = "",
+                AccountNumber = "",
+                AccountName = "",
+                PaymentLinkId = "pl-old",
+                Status = "PENDING",
+                ExpiresAt = DateTime.UtcNow.AddMinutes(10)
+            });
+
+        var result = await _sut.createPayment(userId, Req(planId));
+
+        Assert.Equal(existingTransactionId, result.TransactionId);
+        Assert.Equal(qrPayload, result.QrPayload);
+        Assert.Contains(Uri.EscapeDataString(qrPayload), result.QrCodeUrl);
+        _mockPayOs.Verify(p => p.createPaymentInstruction(It.IsAny<Guid>(), It.IsAny<int>(), It.IsAny<decimal>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ReusePendingSession_WhenQrCannotBeRecovered_CreatesNewSession()
+    {
+        var userId = Guid.NewGuid();
+        var planId = Guid.NewGuid();
+        var plan = ParentishPlan(planId);
+        var oldOrderCode = 334455667;
+        var oldTransaction = new Transaction
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            Amount = plan.Price,
+            PaymentGatewayTransactionId = oldOrderCode.ToString(),
+            Status = 1,
+            Type = 1,
+            CreatedAt = DateTime.UtcNow,
+            Description = $"NM GOI_PHU_HUYNH_CAN_DANG_BAI {oldOrderCode} | PAYOS_BANK:VCB | PAYOS_ACC:0123456789 | PAYOS_NAME:NANNYMATCH"
+        };
+
+        _mockRepo.Setup(r => r.getExpiredActiveSubscriptions(userId, It.IsAny<DateTime>()))
+            .ReturnsAsync(new List<UserSubscription>());
+        _mockRepo.Setup(r => r.getPendingSubscriptionTransactions(userId))
+            .ReturnsAsync(new List<Transaction> { oldTransaction });
+        _mockRepo.Setup(r => r.findPlanById(planId)).ReturnsAsync(plan);
+        _mockRepo.Setup(r => r.hasParentProfile(userId)).ReturnsAsync(true);
+        _mockRepo.Setup(r => r.findCurrentSubscription(userId, It.IsAny<DateTime>()))
+            .ReturnsAsync((UserSubscription?)null);
+        _mockRepo.Setup(r => r.existsGatewayTransactionCode(It.IsAny<string>())).ReturnsAsync(false);
+        _mockRepo.Setup(r => r.saveChanges()).Returns(Task.CompletedTask);
+
+        _mockPayOs.Setup(p => p.getPaymentInstruction(It.IsAny<int>()))
+            .ReturnsAsync((int orderCode) =>
+                orderCode == oldOrderCode
+                    ? new PayOsPaymentInstruction
+                    {
+                        OrderCode = oldOrderCode,
+                        Amount = plan.Price,
+                        TransferContent = $"NM{oldOrderCode}",
+                        QrPayload = "",
+                        QrCodeUrl = "https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=https%3A%2F%2Fpay.payos.vn%2Fweb%2Fold",
+                        CheckoutUrl = "https://pay.payos.vn/web/old",
+                        BankId = "",
+                        AccountNumber = "",
+                        AccountName = "",
+                        PaymentLinkId = "pl-old",
+                        Status = "PENDING",
+                        ExpiresAt = DateTime.UtcNow.AddMinutes(10)
+                    }
+                    : null);
+
+        _mockPayOs.Setup(p => p.createPaymentInstruction(It.IsAny<Guid>(), It.IsAny<int>(), It.IsAny<decimal>(), It.IsAny<string>()))
+            .ReturnsAsync((Guid tid, int orderCode, decimal amount, string planName) => new PayOsPaymentInstruction
+            {
+                OrderCode = orderCode,
+                Amount = amount,
+                TransferContent = "PAY-NEW",
+                QrPayload = "NEW_QR_PAYLOAD",
+                QrCodeUrl = "https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=NEW_QR_PAYLOAD",
+                CheckoutUrl = "https://pay.payos.vn/web/new",
+                BankId = "VCB",
+                AccountNumber = "0123",
+                AccountName = "NANNYMATCH",
+                PaymentLinkId = "pl-new",
+                Status = "PENDING",
+                ExpiresAt = DateTime.UtcNow.AddMinutes(15)
+            });
+
+        Transaction? newTransaction = null;
+        _mockRepo.Setup(r => r.addTransaction(It.IsAny<Transaction>()))
+            .Callback<Transaction>(t => newTransaction = t);
+
+        var result = await _sut.createPayment(userId, Req(planId));
+
+        Assert.Equal(3, oldTransaction.Status);
+        Assert.NotNull(newTransaction);
+        Assert.Equal(newTransaction!.Id, result.TransactionId);
+        Assert.Equal("NEW_QR_PAYLOAD", result.QrPayload);
+        _mockRepo.Verify(r => r.addTransaction(It.IsAny<Transaction>()), Times.Once);
+    }
 }

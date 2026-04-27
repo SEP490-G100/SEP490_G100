@@ -3,6 +3,9 @@
     ViewData["Title"] = "Gửi yêu cầu xác minh";
     var returnUrl = Context.Request.Query["returnUrl"].ToString();
     var backUrl = Url.Action("NannyGetVerificationRequestList", "VerificationRequest") ?? "/VerificationRequest/NannyGetVerificationRequestList";
+    var utcToday = DateTime.UtcNow.Date;
+    var todayIso = utcToday.ToString("yyyy-MM-dd");
+    var healthCertificateMinIso = utcToday.AddMonths(-12).ToString("yyyy-MM-dd");
     if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
     {
         backUrl = returnUrl;
@@ -13,7 +16,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
             <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">Gửi yêu cầu xác minh</h1>
-            <p class="text-gray-600 dark:text-gray-400">Tách riêng 3 loại yêu cầu: căn cước công dân, chứng chỉ bằng cấp và giấy khám sức khỏe.</p>
+            <p class="text-gray-600 dark:text-gray-400">Có 3 loại hồ sơ xác minh: căn cước công dân và giấy khám sức khỏe là bắt buộc, bằng cấp/chứng chỉ là tùy chọn.</p>
         </div>
         <a href="@backUrl"
            class="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-medium transition-colors">
@@ -74,17 +77,17 @@
                     <li class="nav-item" role="presentation">
                         <button type="button"
                                 class="nav-link px-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-600 font-semibold"
-                                data-target="degree-certificate-panel"
+                                data-target="health-certificate-panel"
                                 aria-selected="false">
-                            Chứng chỉ bằng cấp
+                            Giấy khám sức khỏe
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button type="button"
                                 class="nav-link px-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-600 font-semibold"
-                                data-target="health-certificate-panel"
+                                data-target="degree-certificate-panel"
                                 aria-selected="false">
-                            Giấy khám sức khỏe
+                            Chứng chỉ bằng cấp
                         </button>
                     </li>
                 </ul>
@@ -95,7 +98,7 @@
                             <span class="material-icons-round text-orange-500 text-2xl">badge</span>
                             <div class="min-w-0 flex-1">
                                 <h3 class="text-lg font-bold text-gray-900 dark:text-white">Tải lên căn cước công dân <span class="text-red-500">*</span></h3>
-                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Tải ảnh hoặc file PDF rõ nét của căn cước công dân. Bạn có thể chọn nhiều file nếu cần mặt trước và mặt sau.</p>
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Đây là tài liệu bắt buộc. Tải ảnh hoặc file PDF rõ nét của căn cước công dân; bạn có thể chọn nhiều file nếu cần mặt trước và mặt sau.</p>
                             </div>
                         </div>
                         <div class="mt-4 relative border-2 border-dashed border-orange-200 dark:border-gray-600 rounded-xl bg-white/70 dark:bg-gray-700/30 p-8 sm:p-10 text-center hover:bg-orange-50 dark:hover:bg-gray-700 transition-colors group cursor-pointer"
@@ -117,6 +120,8 @@
                         </label>
                         <input asp-for="IdentityCardIssueDate"
                                type="date"
+                               min="1900-01-01"
+                               max="@todayIso"
                                class="w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100" />
                         <span asp-validation-for="IdentityCardIssueDate" class="mt-2 block text-sm text-red-600"></span>
                     </div>
@@ -135,8 +140,8 @@
                         <div class="flex items-start gap-3">
                             <span class="material-icons-round text-orange-500 text-2xl">school</span>
                             <div class="min-w-0 flex-1">
-                                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Tải lên bằng cấp và chứng chỉ <span class="text-red-500">*</span></h3>
-                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Tải ảnh hoặc file PDF bằng cấp/chứng chỉ để gửi yêu cầu xác minh tài liệu chuyên môn.</p>
+                                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Tải lên bằng cấp và chứng chỉ</h3>
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Mục này là tùy chọn, có thể nộp hoặc không nộp. Nếu có bằng cấp/chứng chỉ, bạn nên nộp để tăng độ tin cậy hồ sơ.</p>
                             </div>
                         </div>
                         <div class="mt-4 relative border-2 border-dashed border-orange-200 dark:border-gray-600 rounded-xl bg-white/70 dark:bg-gray-700/30 p-8 sm:p-10 text-center hover:bg-orange-50 dark:hover:bg-gray-700 transition-colors group cursor-pointer"
@@ -154,10 +159,12 @@
 
                     <div class="rounded-2xl border border-orange-200 dark:border-gray-700 bg-orange-50/60 dark:bg-gray-900/30 p-5 sm:p-6">
                         <label asp-for="CertificateIssueDate" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                            Ngày cấp bằng cấp/chứng chỉ <span class="text-red-500">*</span>
+                            Ngày cấp bằng cấp/chứng chỉ
                         </label>
                         <input asp-for="CertificateIssueDate"
                                type="date"
+                               min="1900-01-01"
+                               max="@todayIso"
                                class="w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100" />
                         <span asp-validation-for="CertificateIssueDate" class="mt-2 block text-sm text-red-600"></span>
                     </div>
@@ -177,7 +184,7 @@
                             <span class="material-icons-round text-orange-500 text-2xl">medical_services</span>
                             <div class="min-w-0 flex-1">
                                 <h3 class="text-lg font-bold text-gray-900 dark:text-white">Tải lên giấy khám sức khỏe <span class="text-red-500">*</span></h3>
-                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Đây là tài liệu bắt buộc. Hệ thống chấp nhận ảnh hoặc file PDF rõ nét, tối đa 5MB mỗi file.</p>
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Đây là tài liệu bắt buộc (cùng với căn cước công dân). Hệ thống chấp nhận ảnh hoặc file PDF rõ nét, tối đa 5MB mỗi file.</p>
                             </div>
                         </div>
                         <div class="mt-4 relative border-2 border-dashed border-orange-200 dark:border-gray-600 rounded-xl bg-white/70 dark:bg-gray-700/30 p-8 sm:p-10 text-center hover:bg-orange-50 dark:hover:bg-gray-700 transition-colors group cursor-pointer"
@@ -199,6 +206,8 @@
                         </label>
                         <input asp-for="HealthCertificateIssueDate"
                                type="date"
+                               min="@healthCertificateMinIso"
+                               max="@todayIso"
                                class="w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100" />
                         <span asp-validation-for="HealthCertificateIssueDate" class="mt-2 block text-sm text-red-600"></span>
                     </div>
@@ -412,5 +421,153 @@
                 showError(errorId, errorMessages[0]);
             }
         }
+
+        (() => {
+            const form = document.querySelector('form[enctype="multipart/form-data"]');
+            if (!form) {
+                return;
+            }
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const minDate = new Date("1900-01-01T00:00:00");
+            const healthCertificateMinDate = new Date(today);
+            healthCertificateMinDate.setMonth(healthCertificateMinDate.getMonth() - 12);
+
+            const actionConfigs = {
+                nannysubmitprofileverificationrequest: {
+                    dateInputId: "IdentityCardIssueDate",
+                    dateFieldName: "IdentityCardIssueDate",
+                    fileInputId: "IdentityCardFiles",
+                    fileErrorId: "identityCardError",
+                    fileRequiredMessage: "Bạn phải tải ảnh cho mục căn cước công dân.",
+                    emptyDateMessage: "Bạn phải chọn ngày cấp cho căn cước công dân.",
+                    futureDateMessage: "Ngày cấp của căn cước công dân không được lớn hơn ngày hiện tại.",
+                    invalidDateMessage: "Ngày cấp của căn cước công dân không hợp lệ.",
+                    minAllowedDate: minDate,
+                    tooOldDateMessage: "Ngày cấp của căn cước công dân không hợp lệ."
+                },
+                nannysubmitdegreecertificaterequest: {
+                    dateInputId: "CertificateIssueDate",
+                    dateFieldName: "CertificateIssueDate",
+                    fileInputId: "CertificateFiles",
+                    fileErrorId: "certificateError",
+                    fileRequiredMessage: "Nếu muốn gửi yêu cầu bằng cấp/chứng chỉ, bạn phải tải lên ít nhất một file.",
+                    emptyDateMessage: "Nếu muốn gửi yêu cầu bằng cấp/chứng chỉ, bạn phải chọn ngày cấp.",
+                    futureDateMessage: "Ngày cấp của bằng cấp/chứng chỉ không được lớn hơn ngày hiện tại.",
+                    invalidDateMessage: "Ngày cấp của bằng cấp/chứng chỉ không hợp lệ.",
+                    minAllowedDate: minDate,
+                    tooOldDateMessage: "Ngày cấp của bằng cấp/chứng chỉ không hợp lệ."
+                },
+                nannysubmithealthcertificaterequest: {
+                    dateInputId: "HealthCertificateIssueDate",
+                    dateFieldName: "HealthCertificateIssueDate",
+                    fileInputId: "HealthCertificateFiles",
+                    fileErrorId: "healthCertificateError",
+                    fileRequiredMessage: "Bạn phải upload ảnh cho mục giấy khám sức khỏe.",
+                    emptyDateMessage: "Bạn phải chọn ngày cấp cho giấy khám sức khỏe.",
+                    futureDateMessage: "Ngày cấp của giấy khám sức khỏe không được lớn hơn ngày hiện tại.",
+                    invalidDateMessage: "Ngày cấp của giấy khám sức khỏe không hợp lệ.",
+                    minAllowedDate: healthCertificateMinDate,
+                    tooOldDateMessage: "Ngày cấp của giấy khám sức khỏe phải trong vòng 12 tháng gần nhất."
+                }
+            };
+
+            const setDateValidationMessage = (fieldName, message) => {
+                const validationElement = document.querySelector(`[data-valmsg-for='${fieldName}']`);
+                if (!validationElement) {
+                    return;
+                }
+
+                if (!message) {
+                    validationElement.textContent = "";
+                    validationElement.classList.remove("field-validation-error");
+                    validationElement.classList.add("field-validation-valid");
+                    return;
+                }
+
+                validationElement.textContent = message;
+                validationElement.classList.remove("field-validation-valid");
+                validationElement.classList.add("field-validation-error");
+            };
+
+            const parseActionKey = (event) => {
+                const submitter = event.submitter;
+                if (!submitter) {
+                    return "";
+                }
+
+                const formAction = (submitter.getAttribute("formaction") || "").toLowerCase();
+                return Object.keys(actionConfigs).find((key) => formAction.includes(key)) || "";
+            };
+
+            const parseInputDate = (value) => {
+                if (!value) {
+                    return null;
+                }
+
+                const parsed = new Date(`${value}T00:00:00`);
+                if (Number.isNaN(parsed.getTime())) {
+                    return null;
+                }
+                return parsed;
+            };
+
+            form.addEventListener("submit", (event) => {
+                const actionKey = parseActionKey(event);
+                if (!actionKey) {
+                    return;
+                }
+
+                const config = actionConfigs[actionKey];
+                let firstErrorMessage = "";
+                let hasError = false;
+
+                setDateValidationMessage(config.dateFieldName, "");
+                showError(config.fileErrorId, "");
+
+                const selectedFileCount = store[config.fileInputId]?.files?.length ?? 0;
+                if (selectedFileCount === 0) {
+                    hasError = true;
+                    firstErrorMessage = firstErrorMessage || config.fileRequiredMessage;
+                    showError(config.fileErrorId, config.fileRequiredMessage);
+                }
+
+                const dateInput = document.getElementById(config.dateInputId);
+                const dateValue = dateInput?.value?.trim() ?? "";
+                if (!dateValue) {
+                    hasError = true;
+                    firstErrorMessage = firstErrorMessage || config.emptyDateMessage;
+                    setDateValidationMessage(config.dateFieldName, config.emptyDateMessage);
+                } else {
+                    const date = parseInputDate(dateValue);
+                    if (!date) {
+                        hasError = true;
+                        firstErrorMessage = firstErrorMessage || config.invalidDateMessage;
+                        setDateValidationMessage(config.dateFieldName, config.invalidDateMessage);
+                    } else if (date > today) {
+                        hasError = true;
+                        firstErrorMessage = firstErrorMessage || config.futureDateMessage;
+                        setDateValidationMessage(config.dateFieldName, config.futureDateMessage);
+                    } else if (date < (config.minAllowedDate || minDate)) {
+                        hasError = true;
+                        const tooOldMessage = config.tooOldDateMessage || config.invalidDateMessage;
+                        firstErrorMessage = firstErrorMessage || tooOldMessage;
+                        setDateValidationMessage(config.dateFieldName, tooOldMessage);
+                    }
+                }
+
+                if (!hasError) {
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+
+                if (firstErrorMessage && typeof window.showToast === "function") {
+                    window.showToast(firstErrorMessage, { type: "error" });
+                }
+            });
+        })();
     </script>
 }
