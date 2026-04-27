@@ -28,7 +28,6 @@ public class UpdatePersonalInfoAsyncTests
     private readonly Mock<IWebHostEnvironment> _mockEnv;
     private readonly Mock<IGeocodingService> _mockGeo;
     private readonly Mock<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory> _mockScope;
-    private readonly Mock<ISubscriptionService> _mockSub;
     private readonly ProfileService _sut;
 
     public UpdatePersonalInfoAsyncTests()
@@ -44,9 +43,6 @@ public class UpdatePersonalInfoAsyncTests
         _mockEnv = new Mock<IWebHostEnvironment>();
         _mockGeo = new Mock<IGeocodingService>();
         _mockScope = new Mock<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>();
-        _mockSub = new Mock<ISubscriptionService>();
-        _mockSub.Setup(s => s.tryGrantWelcomeTrialAsync(It.IsAny<Guid>(), It.IsAny<string>())).Returns(Task.CompletedTask);
-
         _sut = new ProfileService(
             _mockUser.Object,
             _mockParent.Object,
@@ -59,7 +55,6 @@ public class UpdatePersonalInfoAsyncTests
             _mockEnv.Object,
             _mockGeo.Object,
             _mockScope.Object,
-            _mockSub.Object,
             NullLogger<ProfileService>.Instance);
     }
 

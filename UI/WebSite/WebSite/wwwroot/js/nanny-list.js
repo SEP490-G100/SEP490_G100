@@ -901,6 +901,21 @@ function initNannyMap() {
     maxZoom: 19
   }).addTo(nannyMap);
 
+  nannyMap.whenReady(() => {
+    try {
+      nannyMap.invalidateSize({ animate: false });
+    } catch (_) {
+      /* ignore */
+    }
+  });
+  setTimeout(() => {
+    try {
+      nannyMap?.invalidateSize({ animate: false });
+    } catch (_) {
+      /* ignore */
+    }
+  }, 0);
+
   nannyMap.on('moveend', () => {
     if (suppressNextNannyMapMove) {
       suppressNextNannyMapMove = false;
@@ -968,6 +983,26 @@ function clearNannyMarkers() {
 function pushRecNannyMarker(item) { nannyMarkers.push(item); }
 function setSuppressNextNannySearch() { suppressNextNannyMapMove = true; }
 
+/** Tránh Leaflet gọi layerPointToContainerPoint khi map/container chưa sẵn (openPopup trực tiếp dễ lỗi). */
+function safeOpenNannyPopup(marker) {
+  if (!marker || !nannyMap) return;
+  try {
+    nannyMap.invalidateSize({ animate: false });
+  } catch (_) {
+    /* ignore */
+  }
+  requestAnimationFrame(() => {
+    try {
+      const c = nannyMap.getContainer?.();
+      if (!c || !c.isConnected) return;
+      if (marker.getMap?.() !== nannyMap) return;
+      marker.openPopup();
+    } catch (_) {
+      /* ignore */
+    }
+  });
+}
+
 function setNannyMarkerHover(idx, active, openPopup = false) {
   const markerData = nannyMarkers[idx];
   if (!markerData) return;
@@ -978,8 +1013,9 @@ function setNannyMarkerHover(idx, active, openPopup = false) {
     fillOpacity: active ? 0.18 : 0.1,
     weight: active ? 2 : 1
   });
-  if (active && openPopup) markerData.marker?.openPopup();
-  if (!active) markerData.marker?.closePopup();
+  if (openPopup && active) {
+    safeOpenNannyPopup(markerData.marker);
+  }
 }
 
 function focusNannyMarker(idx) {
@@ -987,7 +1023,7 @@ function focusNannyMarker(idx) {
   if (!markerData || !nannyMap) return;
   suppressNextNannyMapMove = true;
   nannyMap.flyTo([markerData.point.lat, markerData.point.lng], markerData.point.zoom || 13, { duration: 0.4 });
-  setNannyMarkerHover(idx, true, true);
+  setNannyMarkerHover(idx, true, false);
 }
 
 function renderNannyCards(items, options = {}) {
@@ -1010,6 +1046,10 @@ function renderNannyCards(items, options = {}) {
         <p>Thử thay đổi từ khóa, khu vực hoặc kỹ năng để mở rộng kết quả.</p>
       </div>`;
     return;
+  }
+
+  if (!nannyMap) {
+    initNannyMap();
   }
 
   list.innerHTML = items.map((profile, idx) => {
@@ -1054,35 +1094,37 @@ function renderNannyCards(items, options = {}) {
       </article>`;
   }).join('');
 
-  items.forEach((profile, idx) => {
-    const point = getNannyPoint(profile, idx);
-    const icon = L.divIcon({
-      className: '',
-      html: `
+  if (nannyMap && typeof L !== 'undefined') {
+    items.forEach((profile, idx) => {
+      const point = getNannyPoint(profile, idx);
+      const icon = L.divIcon({
+        className: '',
+        html: `
         <div class="nanny-map-marker">
           <span class="nanny-map-marker__halo"></span>
           <span class="nanny-map-marker__pin"><span class="nanny-map-marker__core"></span></span>
         </div>`,
-      iconSize: [28, 36],
-      iconAnchor: [14, 30]
-    });
+        iconSize: [28, 36],
+        iconAnchor: [14, 30]
+      });
 
-    const marker = L.marker([point.lat, point.lng], { icon }).addTo(nannyMap);
-    const circle = L.circle([point.lat, point.lng], {
-      radius: point.radius,
-      color: '#fdba74',
-      fillColor: '#fdba74',
-      fillOpacity: 0.1,
-      weight: 1
-    }).addTo(nannyMap);
+      const marker = L.marker([point.lat, point.lng], { icon }).addTo(nannyMap);
+      const circle = L.circle([point.lat, point.lng], {
+        radius: point.radius,
+        color: '#fdba74',
+        fillColor: '#fdba74',
+        fillOpacity: 0.1,
+        weight: 1
+      }).addTo(nannyMap);
 
-    marker.bindPopup(`
+      marker.bindPopup(`
       <div class="text-sm font-semibold text-slate-700">${escapeHtml(profile.fullName || 'Bảo mẫu')}</div>
       <div class="text-xs text-slate-500 mt-1">${escapeHtml([profile.district, profile.city].filter(Boolean).join(', ') || 'Chưa cập nhật khu vực')}</div>
     `);
 
-    nannyMarkers.push({ marker, circle, point, element: marker.getElement() });
-  });
+      nannyMarkers.push({ marker, circle, point, element: marker.getElement() });
+    });
+  }
 
   if (fitToMarkers && nannyMap && nannyMarkers.length) {
     const bounds = L.latLngBounds(
@@ -1098,7 +1140,7 @@ function renderNannyCards(items, options = {}) {
 
   list.querySelectorAll('.nanny-card').forEach((card) => {
     const idx = Number(card.dataset.idx);
-    card.addEventListener('mouseenter', () => setNannyMarkerHover(idx, true, true));
+    card.addEventListener('mouseenter', () => setNannyMarkerHover(idx, true, false));
     card.addEventListener('mouseleave', () => setNannyMarkerHover(idx, false, false));
     card.addEventListener('click', () => {
       list.querySelectorAll('.nanny-card').forEach((item) => item.classList.remove('active'));
@@ -1334,3 +1376,13 @@ if (document.readyState === 'loading') {
 } else {
   bootstrapNannyListPage();
 }
+
+window.addEventListener('pageshow', () => {
+  try {
+    if (nannyMap) {
+      nannyMap.invalidateSize({ animate: false });
+    }
+  } catch (_) {
+    /* ignore */
+  }
+});

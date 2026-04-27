@@ -58,9 +58,6 @@ public class AdminSubscriptionPlanUpsertRequest
     public AdminSubscriptionPlanBenefitRequest Benefits { get; set; } = new();
 
     public bool CanUseRecommendation { get; set; }
-
-    /// <summary>Đánh dấu gói dùng thử (welcome / không bán công khai trên getPlans). Lưu trong metadata JSON Features.</summary>
-    public bool IsTrial { get; set; }
 }
 
 public class AdminSubscriptionPlanStatusRequest

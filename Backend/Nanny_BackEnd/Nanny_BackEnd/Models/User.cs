@@ -57,8 +57,6 @@ public partial class User
 
     public bool IsDeleted { get; set; }
 
-    public DateTime? WelcomeTrialUsedAt { get; set; }
-
     public virtual ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
 
     public virtual ICollection<Blog> Blogs { get; set; } = new List<Blog>();

@@ -22,11 +22,11 @@
             @if (User.IsInRole("Parent") && (User.Identity?.IsAuthenticated ?? false))
             {
                 <div class="rec-tab-bar">
-                    <button id="nannyTabAll" class="rec-tab active" onclick="switchNannyTab('all')">
+                    <button id="nannyTabAll" class="rec-tab active" type="button" onclick="switchNannyTab('all')">
                         <span class="material-icons-round">list</span>Tất cả
                     </button>
-                    <button id="nannyTabRec" class="rec-tab" onclick="switchNannyTab('rec')">
-                        <span class="material-icons-round">auto_awesome</span>Gợi ý
+                    <button id="nannyTabRec" class="rec-tab rec-tab--smart" type="button" onclick="switchNannyTab('rec')">
+                        <span class="material-icons-round">auto_awesome</span>Gợi ý thông minh
                     </button>
                 </div>
             }
@@ -400,21 +400,23 @@
         nannies.forEach((n, idx) => {
             if (!n.latitude || !n.longitude) return;
             try {
-                const pct = Math.round((n.finalScore ?? 0) * 100);
-                const color = pct >= 80 ? '#16a34a' : pct >= 60 ? '#f97316' : '#6b7280';
-                const el = document.createElement('div');
-                el.innerHTML = `<span style="font-size:11px;font-weight:800;color:${color}">${pct}%</span>`;
-                el.style.cssText = `background:#fff;border:2px solid ${color};border-radius:999px;padding:2px 7px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.15);cursor:pointer`;
-                const marker = L.marker([n.latitude, n.longitude], {
-                    icon: L.divIcon({ html: el, className: '', iconAnchor: [20, 12] })
-                }).addTo(leafletMap);
-                marker.bindPopup(`<div style="font-size:.82rem;font-weight:700">${escNRec(n.fullName)}</div><div style="font-size:.75rem;color:#64748b">${pct}% phù hợp</div>`);
+                const recIcon = L.divIcon({
+                    className: '',
+                    html: `<div class="nanny-map-marker">
+                        <span class="nanny-map-marker__halo"></span>
+                        <span class="nanny-map-marker__pin"><span class="nanny-map-marker__core"></span></span>
+                    </div>`,
+                    iconSize: [28, 36],
+                    iconAnchor: [14, 30]
+                });
+                const marker = L.marker([n.latitude, n.longitude], { icon: recIcon }).addTo(leafletMap);
+                marker.bindPopup(`<div style="font-size:.82rem;font-weight:700">${escNRec(n.fullName)}</div><div style="font-size:.75rem;color:#64748b">Gợi ý từ hệ thống</div>`);
                 const circle = L.circle([n.latitude, n.longitude], {
                     radius: 600, color: '#fdba74', fillColor: '#fdba74',
                     fillOpacity: 0.1, weight: 1
                 }).addTo(leafletMap);
                 if (typeof pushRecNannyMarker === 'function')
-                    pushRecNannyMarker({ marker, circle, point: { lat: n.latitude, lng: n.longitude, zoom: 14 }, element: el });
+                    pushRecNannyMarker({ marker, circle, point: { lat: n.latitude, lng: n.longitude, zoom: 14 }, element: marker.getElement() });
             } catch (markerErr) {
                 console.warn('[rec-nanny] marker error at idx', idx, markerErr);
             }

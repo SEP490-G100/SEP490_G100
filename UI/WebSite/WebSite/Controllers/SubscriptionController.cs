@@ -98,7 +98,7 @@ public class SubscriptionController : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        TempData["SubscriptionSuccess"] = "Đã hủy gói hiện tại.";
+        TempData["SubscriptionSuccess"] = "Đã dừng gói. Bạn có thể mua gói khác khi cần.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -386,19 +386,6 @@ public class SubscriptionController : Controller
         if (currentResult?.Success == true)
             page.CurrentSubscription = currentResult.Data;
 
-        // Gói dùng thử không có trong /plans — chỉ gộp khi *chính user* đang dùng gói đó để hiển thị thẻ "Đang sử dụng";
-        // phụ huynh/bảo mẫu khác không thấy gói trial trong danh sách, không mua được từ trang này.
-        if (page.CurrentSubscription is { IsActive: true, Plan.IsTrial: true } sub &&
-            roleMatches(sub.Plan, role) &&
-            !page.Plans.Any(p => p.Id == sub.Plan.Id))
-        {
-            page.Plans = page.Plans
-                .Append(sub.Plan)
-                .OrderBy(p => p.SortOrder)
-                .ThenBy(p => p.Price)
-                .ToList();
-        }
-
         var transactionResponse = await _http.GetAsync("/api/subscriptions/transactions");
         var transactionResult = await readApiResult<List<SubscriptionTransactionViewModel>>(transactionResponse);
         if (transactionResult?.Success == true && transactionResult.Data != null)
@@ -440,7 +427,6 @@ public class SubscriptionController : Controller
         sortOrder = model.SortOrder,
         features = model.GetFeatures(),
         canUseRecommendation = model.CanUseRecommendation,
-        isTrial = model.IsTrial,
         benefits = new
         {
             monthlyJobPostLimit = model.MonthlyJobPostLimit,
@@ -511,16 +497,16 @@ public class SubscriptionController : Controller
 
     private static string getHeadline(string role) => role switch
     {
-        "Parent" => "Chọn gói đăng tin phù hợp cho gia đình",
-        "Nanny" => "Chọn gói ứng tuyển phù hợp cho hồ sơ của bạn",
-        _ => "Gói đăng ký NannyMatch"
+        "Parent" => "Các gói dành cho phụ huynh",
+        "Nanny" => "Các gói dành cho bảo mẫu",
+        _ => "Gói đăng ký dịch vụ"
     };
 
     private static string getSummary(string role) => role switch
     {
-        "Parent" => "Các gói đăng ký được lấy trực tiếp từ hệ thống quản trị, giúp phụ huynh mở rộng quyền đăng tin và tăng khả năng tiếp cận bảo mẫu.",
-        "Nanny" => "Các gói đăng ký được lấy trực tiếp từ hệ thống quản trị, giúp bảo mẫu tăng quyền ứng tuyển và cải thiện độ nổi bật của hồ sơ.",
-        _ => "Đăng nhập bằng tài khoản phụ huynh hoặc bảo mẫu để xem các gói phù hợp."
+        "Parent" => "Nâng cấp khi cần nhiều bài đăng hơn, thời gian hiển thị dài hơn và ưu tiên xuất hiện trước bảo mẫu. Giá và quyền lợi cập nhật theo từng thời điểm trên hệ thống.",
+        "Nanny" => "Nâng cấp để ứng tuyển nhiều hơn mỗi tháng và tăng độ nổi bật hồ sơ. Giá và quyền lợi cập nhật theo từng thời điểm trên hệ thống.",
+        _ => "Vui lòng đăng nhập bằng tài khoản phụ huynh hoặc bảo mẫu để xem gói phù hợp."
     };
 
     private static SubscriptionBenefitViewModel getFreeBenefits(string role) => role switch
@@ -548,17 +534,17 @@ public class SubscriptionController : Controller
     {
         "Parent" =>
         [
-            "Tối đa 1 bài đăng đang hoạt động cùng lúc",
-            "Mỗi bài đăng có thời gian hiển thị 7 ngày",
-            "Không có huy hiệu nổi bật",
-            "Không ưu tiên trong kết quả tìm kiếm"
+            "Tối đa 1 tin đang hiển thị cùng lúc",
+            "Mỗi tin hiển thị tối đa 7 ngày",
+            "Bài đăng không kèm huy hiệu nổi bật",
+            "Vị trí tìm kiếm: mức cơ bản, không ưu tiên"
         ],
         "Nanny" =>
         [
-            "Tối đa 2 lượt ứng tuyển mỗi tháng theo thiết lập miễn phí hiện tại",
-            "Hồ sơ hiển thị cơ bản",
-            "Không có huy hiệu nổi bật",
-            "Không ưu tiên trong kết quả tìm kiếm"
+            "Tối đa 2 lượt ứng tuyển mỗi tháng (gói miễn phí)",
+            "Hồ sơ hiển thị dạng thường",
+            "Hồ sơ không kèm huy hiệu nổi bật",
+            "Vị trí tìm kiếm: mức cơ bản, không ưu tiên"
         ],
         _ => []
     };

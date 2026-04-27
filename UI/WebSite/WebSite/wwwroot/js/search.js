@@ -1188,6 +1188,21 @@ function initMap() {
     maxZoom: 19
   }).addTo(map);
 
+  map.whenReady(() => {
+    try {
+      map.invalidateSize({ animate: false });
+    } catch (_) {
+      /* ignore */
+    }
+  });
+  setTimeout(() => {
+    try {
+      map?.invalidateSize({ animate: false });
+    } catch (_) {
+      /* ignore */
+    }
+  }, 0);
+
   map.on('moveend', () => {
     if (suppressNextMapSearch) {
       suppressNextMapSearch = false;
@@ -1241,6 +1256,26 @@ function pushRecMarker(item) { markers.push(item); }
 // Helper for rec panel to suppress the map's moveend search (window.xxx ≠ let var)
 function setSuppressNextSearch() { suppressNextMapSearch = true; }
 
+/** Tránh lỗi Leaflet layerPointToContainerPoint khi mở popup trước khi map/container sẵn sàng. */
+function safeOpenMapPopup(marker) {
+  if (!marker || !map) return;
+  try {
+    map.invalidateSize({ animate: false });
+  } catch (_) {
+    /* ignore */
+  }
+  requestAnimationFrame(() => {
+    try {
+      const c = map.getContainer?.();
+      if (!c || !c.isConnected) return;
+      if (marker.getMap?.() !== map) return;
+      marker.openPopup();
+    } catch (_) {
+      /* ignore */
+    }
+  });
+}
+
 function setMarkerHover(idx, active, openPopup = false) {
   const markerData = markers[idx];
   if (!markerData) return;
@@ -1251,7 +1286,9 @@ function setMarkerHover(idx, active, openPopup = false) {
     fillOpacity: active ? 0.18 : 0.1,
     weight: active ? 2 : 1
   });
-  if (openPopup && active) markerData.marker?.openPopup();
+  if (openPopup && active) {
+    safeOpenMapPopup(markerData.marker);
+  }
 }
 
 function highlightOnMap(idx) {
@@ -1301,6 +1338,10 @@ function renderJobs(jobs) {
     return;
   }
 
+  if (!map) {
+    initMap();
+  }
+
   list.innerHTML = jobs.map((job, idx) => `
     <article class="job-card rounded-[26px] border border-orange-100 bg-white p-5 mb-4 shadow-[0_10px_30px_rgba(15,23,42,.04)]"
              data-idx="${idx}" data-id="${escapeHtml(job.id)}">
@@ -1334,29 +1375,31 @@ function renderJobs(jobs) {
       </div>
     </article>`).join('');
 
-  jobs.forEach((job) => {
-    const point = getAreaPresentation(job);
-    const icon = L.divIcon({
-      className: '',
-      html: `
+  if (map && typeof L !== 'undefined') {
+    jobs.forEach((job) => {
+      const point = getAreaPresentation(job);
+      const icon = L.divIcon({
+        className: '',
+        html: `
         <div class="job-map-marker">
           <span class="job-map-marker__halo"></span>
           <span class="job-map-marker__pin"><span class="job-map-marker__core"></span></span>
         </div>`,
-      iconSize: [26, 34],
-      iconAnchor: [13, 28]
+        iconSize: [26, 34],
+        iconAnchor: [13, 28]
+      });
+      const marker = L.marker([point.lat, point.lng], { icon }).addTo(map);
+      const circle = L.circle([point.lat, point.lng], {
+        radius: point.radius,
+        color: '#fdba74',
+        fillColor: '#fdba74',
+        fillOpacity: 0.1,
+        weight: 1
+      }).addTo(map);
+      marker.bindPopup(`<div class="text-sm font-semibold text-slate-700">${escapeHtml(job.title || 'Tin đăng')}</div><div class="text-xs text-slate-500 mt-1">Khu vực gần đúng</div>`);
+      markers.push({ marker, circle, point, element: marker.getElement() });
     });
-    const marker = L.marker([point.lat, point.lng], { icon }).addTo(map);
-    const circle = L.circle([point.lat, point.lng], {
-      radius: point.radius,
-      color: '#fdba74',
-      fillColor: '#fdba74',
-      fillOpacity: 0.1,
-      weight: 1
-    }).addTo(map);
-    marker.bindPopup(`<div class="text-sm font-semibold text-slate-700">${escapeHtml(job.title || 'Tin đăng')}</div><div class="text-xs text-slate-500 mt-1">Khu vực gần đúng</div>`);
-    markers.push({ marker, circle, point, element: marker.getElement() });
-  });
+  }
 
   list.querySelectorAll('.job-card').forEach((card) => {
     const idx = Number(card.dataset.idx);

@@ -22,7 +22,6 @@ public class OnboardingService : IOnboardingService
     private readonly INannySkillRepository _nannySkillRepo;
     private readonly INannyAvailabilityRepository _nannyAvailabilityRepo;
     private readonly IJobRepository _jobRepo;
-    private readonly ISubscriptionService _subscriptionService;
     private readonly ILogger<OnboardingService> _logger;
 
     public OnboardingService(
@@ -33,7 +32,6 @@ public class OnboardingService : IOnboardingService
         INannySkillRepository nannySkillRepo,
         INannyAvailabilityRepository nannyAvailabilityRepo,
         IJobRepository jobRepo,
-        ISubscriptionService subscriptionService,
         ILogger<OnboardingService> logger)
     {
         _userRepo = userRepo;
@@ -43,7 +41,6 @@ public class OnboardingService : IOnboardingService
         _nannySkillRepo = nannySkillRepo;
         _nannyAvailabilityRepo = nannyAvailabilityRepo;
         _jobRepo = jobRepo;
-        _subscriptionService = subscriptionService;
         _logger = logger;
     }
 
@@ -258,8 +255,6 @@ public class OnboardingService : IOnboardingService
             _logger.LogError(ex, "Lỗi lưu hồ sơ onboarding nanny cho UserId={UserId}", userId);
             throw new InvalidOperationException(BuildFriendlyDbUpdateMessage(ex));
         }
-
-        await _subscriptionService.tryGrantWelcomeTrialAsync(userId, "Nanny");
 
         return profile;
     }

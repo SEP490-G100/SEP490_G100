@@ -21,11 +21,11 @@
         @if (User.IsInRole("Nanny"))
         {
             <div class="rec-tab-bar">
-                <button id="tabAll" class="rec-tab active" onclick="switchSearchTab('all')">
+                <button id="tabAll" class="rec-tab active" type="button" onclick="switchSearchTab('all')">
                     <span class="material-icons-round">list</span>Tất cả
                 </button>
-                <button id="tabRec" class="rec-tab" onclick="switchSearchTab('rec')">
-                    <span class="material-icons-round">auto_awesome</span>Gợi ý
+                <button id="tabRec" class="rec-tab rec-tab--smart" type="button" onclick="switchSearchTab('rec')">
+                    <span class="material-icons-round">auto_awesome</span>Gợi ý thông minh
                 </button>
             </div>
         }
@@ -774,21 +774,23 @@ function plotRecJobMarkers(jobs) {
     jobs.forEach((j, idx) => {
         if (!j.latitude || !j.longitude) return;
         try {
-            const pct = Math.round((j.finalScore ?? 0) * 100);
-            const color = recScoreColor(pct);
-            const el = document.createElement('div');
-            el.innerHTML = `<span style="font-size:11px;font-weight:800;color:${color}">${pct}%</span>`;
-            el.style.cssText = `background:#fff;border:2px solid ${color};border-radius:999px;padding:2px 7px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.15);cursor:pointer`;
-            const marker = L.marker([j.latitude, j.longitude], {
-                icon: L.divIcon({ html: el, className: '', iconAnchor: [20, 12] })
-            }).addTo(leafletMap);
-            marker.bindPopup(`<div style="font-size:.82rem;font-weight:700">${escRecHtml(j.title)}</div><div style="font-size:.75rem;color:#64748b">${pct}% phù hợp</div>`);
+            const recIcon = L.divIcon({
+                className: '',
+                html: `<div class="job-map-marker">
+                    <span class="job-map-marker__halo"></span>
+                    <span class="job-map-marker__pin"><span class="job-map-marker__core"></span></span>
+                </div>`,
+                iconSize: [26, 34],
+                iconAnchor: [13, 28]
+            });
+            const marker = L.marker([j.latitude, j.longitude], { icon: recIcon }).addTo(leafletMap);
+            marker.bindPopup(`<div style="font-size:.82rem;font-weight:700">${escRecHtml(j.title)}</div><div style="font-size:.75rem;color:#64748b">Gợi ý từ hệ thống</div>`);
             const circle = L.circle([j.latitude, j.longitude], {
                 radius: 600, color: '#fdba74', fillColor: '#fdba74',
                 fillOpacity: 0.1, weight: 1
             }).addTo(leafletMap);
             if (typeof pushRecMarker === 'function')
-                pushRecMarker({ marker, circle, point: { lat: j.latitude, lng: j.longitude, zoom: 14 }, element: el });
+                pushRecMarker({ marker, circle, point: { lat: j.latitude, lng: j.longitude, zoom: 14 }, element: marker.getElement() });
         } catch (markerErr) {
             console.warn('[rec-job] marker error at idx', idx, markerErr);
         }

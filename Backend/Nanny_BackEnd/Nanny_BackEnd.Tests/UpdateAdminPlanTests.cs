@@ -136,7 +136,6 @@ public class AdminUpdateSubscriptionPlanAsyncTests
         Assert.Equal(2, meta!.Features.Count);
         Assert.Contains("Nang 1", meta.Features);
         Assert.Contains("Nang 2", meta.Features);
-        Assert.False(meta.IsTrial);
 
         Assert.Equal(id, r.Id);
         Assert.Equal("Nanny Pro", r.Name);

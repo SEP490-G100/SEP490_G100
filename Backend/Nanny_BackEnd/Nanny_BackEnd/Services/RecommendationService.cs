@@ -325,7 +325,18 @@ public class RecommendationService : IRecommendationService
     // Score components
     // ──────────────────────────────────────────────────────────────
 
-    /// <summary>Salary score: range overlap ratio. Soft floor khi không overlap.</summary>
+    /// <summary>
+    /// Điểm lương: kỳ vọng bảo mẫu [nLo,nHi] so với mức tin [jLo,jHi].
+    ///
+    /// Ngữ nghĩa (nanny-centric): "Job này có thể trả bảo mẫu đến bao nhiêu % kỳ vọng?"
+    ///   score = (min(jHi, nHi) − nLo) / (nHi − nLo)
+    ///
+    /// - jLo ≥ nHi  : job trả vượt toàn bộ trần kỳ vọng → 1.0
+    ///                (ví dụ bảo mẫu kỳ vọng 8–11tr, tin 20–30tr)
+    /// - jHi < nLo  : job không đạt sàn tối thiểu → soft penalty (0.05–0.35)
+    /// - Overlap     : reachable = min(jHi, nHi) − nLo  → score = reachable / nannyRange
+    ///                (ví dụ bảo mẫu 8–11tr, tin 10–30tr → reachable=3/3 → 1.0)
+    /// </summary>
     private static double CalcSalaryScore(
         decimal? nannyMin, decimal? nannyMax,
         decimal? jobMin,   decimal? jobMax,
@@ -335,30 +346,41 @@ public class RecommendationService : IRecommendationService
             (!jobMin.HasValue  && !jobMax.HasValue))
             return 0.8;
 
-        var nMin = (double)(nannyMin ?? nannyMax!.Value * 0.8m);
-        var nMax = (double)(nannyMax ?? nannyMin!.Value * 1.2m);
-        var jMin = (double)(jobMin   ?? jobMax!.Value  * 0.8m);
-        var jMax = (double)(jobMax   ?? jobMin!.Value  * 1.2m);
+        double nLo = (double)(nannyMin ?? nannyMax!.Value * 0.8m);
+        double nHi = (double)(nannyMax ?? nannyMin!.Value * 1.2m);
+        double jLo = (double)(jobMin   ?? jobMax!.Value  * 0.8m);
+        double jHi = (double)(jobMax   ?? jobMin!.Value  * 1.2m);
 
-        double overlapStart = Math.Max(nMin, jMin);
-        double overlapEnd   = Math.Min(nMax, jMax);
-        double overlap      = Math.Max(0, overlapEnd - overlapStart);
+        if (nLo > nHi) (nLo, nHi) = (nHi, nLo);
+        if (jLo > jHi) (jLo, jHi) = (jHi, jLo);
 
-        double jobRange = Math.Max(1, jMax - jMin);
-        double score    = Math.Min(1.0, overlap / jobRange);
-
-        if (overlap == 0)
+        // Case 1: sàn tin đã ≥ trần kỳ vọng → job trả vượt hoàn toàn → 1.0
+        if (jLo >= nHi)
         {
-            double gap = nMin > jMax
-                ? (nMin - jMax) / jMax
-                : (jMin - nMax) / Math.Max(1, jMax);
-            score = Math.Max(0.05, 0.4 - gap * 0.5);
+            return salaryNegotiable ? 1.0 : 1.0; // luôn 1.0 dù negotiable hay không
         }
 
-        if (salaryNegotiable)
-            score = Math.Min(1.0, score * 1.2);
+        // Case 2: trần tin < sàn kỳ vọng → job không đủ → soft penalty
+        if (jHi < nLo)
+        {
+            double gap   = (nLo - jHi) / Math.Max(1.0, nLo);
+            double score = Math.Max(0.05, 0.35 - gap * 0.45);
+            if (salaryNegotiable) score = Math.Min(1.0, score * 1.2);
+            return score;
+        }
 
-        return score;
+        // Case 3: có giao cắt — đo từ sàn kỳ vọng bảo mẫu đến mức cao nhất job có thể trả
+        // reachable = min(jHi, nHi) − nLo
+        //   → nếu jHi ≥ nHi: job đáp ứng được toàn bộ kỳ vọng → 1.0
+        //   → nếu jHi < nHi: job chỉ đáp ứng được một phần trên của kỳ vọng
+        double reachable  = Math.Min(jHi, nHi) - nLo;
+        double nannyRange = Math.Max(1.0, nHi - nLo);
+        double score2     = reachable > 0
+            ? Math.Min(1.0, reachable / nannyRange)
+            : 0.4;
+
+        if (salaryNegotiable) score2 = Math.Min(1.0, score2 * 1.2);
+        return score2;
     }
 
     /// <summary>
