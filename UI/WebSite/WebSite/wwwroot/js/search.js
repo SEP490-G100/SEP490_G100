@@ -1866,7 +1866,9 @@ function validatePayload(payload) {
   if (payload.salaryMin != null && payload.salaryMax != null && payload.salaryMin > payload.salaryMax) {
             return 'Lương từ không được lớn hơn Đến.';
   }
-  if (!payload.location || payload.location.length < 3) return 'Vui lòng nhập địa chỉ chi tiết.';
+  if (payload.location && (payload.location.length < 3 || payload.location.length > 300)) {
+    return 'Địa chỉ (nếu nhập) phải từ 3 đến 300 ký tự.';
+  }
   if (!payload.city) return 'Vui lòng nhập thành phố.';
   if (!payload.district) return 'Vui lòng nhập phường/xã.';
   if (!Array.isArray(payload.skills) || !payload.skills.length) return 'Vui lòng chọn ít nhất 1 kỹ năng.';

@@ -20,6 +20,7 @@ public class NannyBasicInfoController : Controller
     private readonly IAzureBlobStorageService _blobStorageService;
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
     private const string NannyOnboardingCompletedSessionKey = "NannyOnboardingCompleted";
+    private const int MaxAddressLength = 500;
 
     public NannyBasicInfoController(
         IHttpClientFactory httpFactory,
@@ -409,8 +410,8 @@ public class NannyBasicInfoController : Controller
             if (!string.IsNullOrWhiteSpace(model.PhoneNumber) && !IsValidPhoneNumber(model.PhoneNumber))
                 ModelState.AddModelError(nameof(model.PhoneNumber), "Số điện thoại không hợp lệ (9-15 chữ số, cho phép dấu +).");
 
-            if (string.IsNullOrWhiteSpace(model.Address))
-                ModelState.AddModelError(nameof(model.Address), "Vui lòng nhập địa chỉ chi tiết.");
+            if (!string.IsNullOrWhiteSpace(model.Address) && model.Address.Length > MaxAddressLength)
+                ModelState.AddModelError(nameof(model.Address), $"Địa chỉ không được vượt quá {MaxAddressLength} ký tự.");
 
             if (string.IsNullOrWhiteSpace(model.City) || string.IsNullOrWhiteSpace(model.District))
                 ModelState.AddModelError(string.Empty, "Vui lòng chọn đầy đủ Tỉnh/Thành và Quận/Huyện/Phường.");

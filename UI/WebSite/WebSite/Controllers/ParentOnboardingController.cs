@@ -568,9 +568,7 @@ public class ParentOnboardingController : Controller
         model.District = NormalizeOptionalText(model.District);
         model.Ward = NormalizeOptionalText(model.Ward);
 
-        if (string.IsNullOrWhiteSpace(model.Address))
-            ModelState.AddModelError(nameof(model.Address), "Vui lòng nhập địa chỉ chi tiết.");
-        else if (!IsValidLength(model.Address, MaxAddressLength))
+        if (!IsValidLength(model.Address, MaxAddressLength))
             ModelState.AddModelError(nameof(model.Address), $"Địa chỉ không được vượt quá {MaxAddressLength} ký tự.");
 
         if (string.IsNullOrWhiteSpace(model.City) || string.IsNullOrWhiteSpace(model.District))
