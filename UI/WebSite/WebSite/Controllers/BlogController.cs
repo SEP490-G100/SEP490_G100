@@ -127,7 +127,7 @@ public class BlogController : Controller
         var normalized = mediaType?.Trim().ToLowerInvariant();
         if (normalized is not ("image" or "video"))
         {
-            return Json(new { success = false, message = "Loai phuong tien khong hop le. Chi ho tro anh/video." });
+            return Json(new { success = false, message = "Loại phương tiện không hợp lệ. Chỉ hỗ trợ ảnh/video." });
         }
 
         var type = normalized == "video" ? BlobMediaType.Video : BlobMediaType.Image;
@@ -171,7 +171,7 @@ public class BlogController : Controller
             ViewBag.IsDeleted = "";
             ViewBag.CategoryId = "";
             ViewBag.Categories = new List<BlogCategoryOption>();
-            TempData["Error"] = "Khong the tai danh sach bai viet.";
+            TempData["Error"] = "Không thể tải danh sách bài viết.";
             return View("~/Views/Moderator/Blog/ManageBlog.cshtml", new BlogListResponse { Page = page, PageSize = pageSize });
         }
     }
@@ -192,7 +192,7 @@ public class BlogController : Controller
         if (string.IsNullOrWhiteSpace(model.Title) || string.IsNullOrWhiteSpace(model.Slug)
             || string.IsNullOrWhiteSpace(model.Content))
         {
-            TempData["Error"] = "Title, Slug va Content khong duoc de trong.";
+            TempData["Error"] = "Title, Slug và Content không được để trống.";
             ViewBag.Categories = await FetchBlogCategoriesAsync();
             return View("~/Views/Moderator/Blog/CreateBlog.cshtml", model);
         }
@@ -226,14 +226,14 @@ public class BlogController : Controller
                 return RedirectToAction(nameof(ManageBlog), new
                 {
                     toastType = "success",
-                    toastMessage = "Ban da tao bai blog thanh cong"
+                    toastMessage = "Bạn đã tạo bài blog thành công"
                 });
             }
-            TempData["Error"] = result?.Message ?? "Tao bai viet that bai.";
+            TempData["Error"] = result?.Message ?? "Tạo bài viết thất bại.";
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"Loi ket noi: {ex.Message}";
+            TempData["Error"] = $"Lỗi kết nối: {ex.Message}";
         }
 
         ViewBag.Categories = await FetchBlogCategoriesAsync();
@@ -257,7 +257,7 @@ public class BlogController : Controller
 
             if (result?.Success != true || result.Data == null)
             {
-                TempData["Error"] = "Khong tim thay bai viet.";
+                TempData["Error"] = "Không tìm thấy bài viết.";
                 return RedirectToAction(nameof(ManageBlog));
             }
 
@@ -266,7 +266,7 @@ public class BlogController : Controller
         }
         catch
         {
-            TempData["Error"] = "Khong the tai bai viet.";
+            TempData["Error"] = "Không thể tải bài viết.";
             return RedirectToAction(nameof(ManageBlog));
         }
     }
@@ -279,7 +279,7 @@ public class BlogController : Controller
         if (string.IsNullOrWhiteSpace(model.Title) || string.IsNullOrWhiteSpace(model.Slug)
             || string.IsNullOrWhiteSpace(model.Content))
         {
-            TempData["Error"] = "Title, Slug va Content khong duoc de trong.";
+            TempData["Error"] = "Title, Slug và Content không được để trống.";
             ViewBag.Categories = await FetchBlogCategoriesAsync();
             var blogReq = new HttpRequestMessage(HttpMethod.Get, $"/api/Blog/moderator-view-blog-detail/{id}");
             var token2 = HttpContext.Session.GetString("AccessToken");
@@ -328,15 +328,15 @@ public class BlogController : Controller
                 return RedirectToAction(nameof(ManageBlog), new
                 {
                     toastType = "success",
-                    toastMessage = "Ban da chinh sua bai blog thanh cong"
+                    toastMessage = "Bạn đã chỉnh sửa bài blog thành công"
                 });
             }
 
-            TempData["Error"] = result?.Message ?? "Cap nhat that bai.";
+            TempData["Error"] = result?.Message ?? "Cập nhật thất bại.";
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"Loi ket noi: {ex.Message}";
+            TempData["Error"] = $"Lỗi kết nối: {ex.Message}";
         }
 
         ViewBag.Categories = await FetchBlogCategoriesAsync();
@@ -346,7 +346,7 @@ public class BlogController : Controller
             return RedirectToAction(nameof(ManageBlog), new
             {
                 toastType = "error",
-                toastMessage = "Khong the tai lai bai blog de chinh sua"
+                toastMessage = "Không thể tải lại bài blog để chỉnh sửa"
             });
         }
 
@@ -387,11 +387,11 @@ public class BlogController : Controller
                 });
             }
 
-            TempData["Error"] = result?.Message ?? "Thao tac that bai.";
+            TempData["Error"] = result?.Message ?? "Thao tác thất bại.";
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"Loi ket noi: {ex.Message}";
+            TempData["Error"] = $"Lỗi kết nối: {ex.Message}";
         }
 
         return RedirectToAction(nameof(ManageBlog));
@@ -441,7 +441,7 @@ public class BlogController : Controller
         var mediaLabel = mediaType == BlobMediaType.Video ? "video" : "anh";
         if (files == null || files.Count == 0)
         {
-            return Json(new { success = false, message = $"Vui long chon it nhat mot {mediaLabel}." });
+                return Json(new { success = false, message = $"Vui lòng chọn ít nhất một {mediaLabel}." });
         }
 
         try
@@ -453,13 +453,13 @@ public class BlogController : Controller
                 cancellationToken);
             if (uploadedUrls.Count == 0)
             {
-                return Json(new { success = false, message = $"Khong co {mediaLabel} hop le de tai len." });
+                return Json(new { success = false, message = $"Không có {mediaLabel} hợp lệ để tải lên." });
             }
 
             return Json(new
             {
                 success = true,
-                message = uploadedUrls.Count == 1 ? $"Upload {mediaLabel} thanh cong." : $"Upload cac {mediaLabel} thanh cong.",
+                    message = uploadedUrls.Count == 1 ? $"Upload {mediaLabel} thành công." : $"Upload các {mediaLabel} thành công.",
                 data = new
                 {
                     urls = uploadedUrls
@@ -468,7 +468,7 @@ public class BlogController : Controller
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = $"Khong the tai len {mediaLabel} blog: {ex.Message}" });
+                return Json(new { success = false, message = $"Không thể tải lên {mediaLabel} blog: {ex.Message}" });
         }
     }
 

@@ -52,7 +52,7 @@ public class JobPostingController : Controller
             return View("~/Views/Moderator/JobPosting/ManageJobPosting.cshtml", result?.Data);
         }
 
-        TempData["Error"] = "Khong the tai danh sach tin dang.";
+            TempData["Error"] = "Không thể tải danh sách tin đăng.";
         return View("~/Views/Moderator/JobPosting/ManageJobPosting.cshtml", new JobPostingListResponse());
     }
 
@@ -70,7 +70,7 @@ public class JobPostingController : Controller
 
             if (result?.Success != true || result.Data == null)
             {
-                TempData["Error"] = result?.Message ?? "Khong tim thay tin dang.";
+            TempData["Error"] = result?.Message ?? "Không tìm thấy tin đăng.";
                 return RedirectToAction(nameof(ManageJobPosting));
             }
 
@@ -78,7 +78,7 @@ public class JobPostingController : Controller
         }
         catch
         {
-            TempData["Error"] = "Khong the tai chi tiet tin dang.";
+            TempData["Error"] = "Không thể tải chi tiết tin đăng.";
             return RedirectToAction(nameof(ManageJobPosting));
         }
     }

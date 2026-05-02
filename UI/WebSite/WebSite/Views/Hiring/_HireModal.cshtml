@@ -111,9 +111,9 @@
         const startDate = startInput.value;
         const endDate = endInput.value;
         const today = new Date().toISOString().slice(0, 10);
-        if (!startDate) return 'Vui long chon ngay bat dau.';
-        if (!endDate) return 'Vui long chon ngay ket thuc.';
-        if (startDate < today) return 'Ngay bat dau khong duoc truoc ngay hien tai.';
+        if (!startDate) return 'Vui lòng chọn ngày bắt đầu.';
+        if (!endDate) return 'Vui lòng chọn ngày kết thúc.';
+        if (startDate < today) return 'Ngày bắt đầu không được trước ngày hiện tại.';
         if (endDate <= startDate) return 'Ngay ket thuc phai lon hon ngay bat dau.';
         return '';
     };
@@ -209,7 +209,7 @@
                 : '/Communication';
             window.open(chatUrl, '_blank', 'noopener');
         } catch {
-            setError('Loi ket noi. Vui long thu lai.');
+                    setError('Lỗi kết nối. Vui lòng thử lại.');
         } finally {
             updateConfirmState();
             confirmBtn.innerHTML = '<span class="material-icons-round text-base">handshake</span> Xac nhan thue';

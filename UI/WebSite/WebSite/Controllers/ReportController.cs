@@ -625,7 +625,7 @@ public class ReportController : Controller
                     ? (isActive
                         ? "Bạn đã kích hoạt phản ánh thành công"
                         : "Bạn đã vô hiệu hóa phản ánh thành công")
-                    : (result?.Message ?? "Thao tac that bai.")
+                        : (result?.Message ?? "Thao tác thất bại.")
             });
         }
         catch (Exception ex)
