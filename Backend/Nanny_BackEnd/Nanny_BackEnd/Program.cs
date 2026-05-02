@@ -1,7 +1,10 @@
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
@@ -43,6 +46,36 @@ builder.Services.AddControllers(options =>
         options.JsonSerializerOptions.Converters.Add(new DateOnlyJsonConverter());
     });
 builder.Services.AddMemoryCache();
+
+// Rate limiting — giới hạn tần suất gửi tin nhắn: 30 tin/phút/user
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddPolicy("send-message", context =>
+    {
+        var userId = context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                  ?? context.User?.FindFirst("sub")?.Value
+                  ?? "anonymous";
+        return RateLimitPartition.GetFixedWindowLimiter(userId, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 30,
+            Window = TimeSpan.FromMinutes(1),
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            QueueLimit = 0
+        });
+    });
+
+    options.OnRejected = async (context, token) =>
+    {
+        context.HttpContext.Response.StatusCode = 429;
+        context.HttpContext.Response.Headers.RetryAfter = "60";
+        await context.HttpContext.Response.WriteAsJsonAsync(new
+        {
+            success = false,
+            code = "RATE_LIMIT_EXCEEDED",
+            message = "Bạn gửi tin nhắn quá nhanh. Vui lòng thử lại sau 1 phút."
+        }, token);
+    };
+});
 
 // SignalR (built-in, không cần package)
 builder.Services.AddSignalR(options =>
@@ -244,6 +277,7 @@ app.UseRouting();
 app.UseCors("RestApi");
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 app.MapControllers();
 app.MapHealthChecks("/health");
 
