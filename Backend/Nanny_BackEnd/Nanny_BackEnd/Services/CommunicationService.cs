@@ -305,6 +305,14 @@ public class CommunicationService : ICommunicationService
         return (participant.IsBlocked, participant.IsHidden, participant.IsBlocked ? participant.UpdatedBy : null);
     }
 
+    // ─── Kiểm tra membership ─────────────────────────────────────────────────
+
+    public async Task<bool> IsParticipantAsync(Guid conversationId, Guid userId)
+    {
+        var participant = await _repo.GetParticipantAsync(conversationId, userId);
+        return participant != null;
+    }
+
     // ─── Mapping helpers ─────────────────────────────────────────────────────
 
     private static ConversationDto mapConversation(Conversation c, Guid currentUserId)

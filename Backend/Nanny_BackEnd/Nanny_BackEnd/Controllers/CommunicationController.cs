@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.SignalR;
 using Nanny_BackEnd.DTOs.Communication;
 using Nanny_BackEnd.DTOs.Report;
@@ -97,6 +98,7 @@ public class CommunicationController : ControllerBase
 
     // POST /api/communication/conversations/{id}/messages
     [HttpPost("conversations/{id:guid}/messages")]
+    [EnableRateLimiting("send-message")]
     public async Task<IActionResult> SendMessage(Guid id, [FromBody] SendMessageDto dto)
     {
         var userId = getCurrentUserId();
