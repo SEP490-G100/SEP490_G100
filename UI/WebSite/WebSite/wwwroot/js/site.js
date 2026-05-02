@@ -13,6 +13,7 @@
     success: 'success',
     ok: 'success',
     'thanh cong': 'success',
+    'thành công': 'success',
     thanhcong: 'success',
     warning: 'warning',
     warn: 'warning',
@@ -21,9 +22,11 @@
     error: 'error',
     err: 'error',
     loi: 'error',
+    'lỗi': 'error',
     failed: 'error',
     failure: 'error',
     'that bai': 'error',
+    'thất bại': 'error',
     thatbai: 'error'
   };
   const VARIANT_BY_TYPE = {
