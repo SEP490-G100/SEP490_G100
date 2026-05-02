@@ -43,7 +43,7 @@ public class AccountController : Controller
         }
         catch
         {
-            TempData["Error"] = "Khong the tai danh sach dieu hanh vien.";
+            TempData["Error"] = "Không thể tải danh sách điều hành viên.";
             return View("~/Views/Admin/ModeratorAccount/ManageModerators.cshtml", new AccountListResponse());
         }
     }
@@ -104,16 +104,16 @@ public class AccountController : Controller
                     new
                     {
                         toastType = "success",
-                        toastMessage = result.Message ?? "Tao tai khoan dieu hanh vien thanh cong."
+                        toastMessage = result.Message ?? "Tạo tài khoản điều hành viên thành công."
                     });
             }
 
-            TempData["Error"] = result?.Message ?? "Tao tai khoan dieu hanh vien that bai.";
+            TempData["Error"] = result?.Message ?? "Tạo tài khoản điều hành viên thất bại.";
             return View("~/Views/Admin/ModeratorAccount/CreateModerator.cshtml", model);
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"Loi ket noi: {ex.Message}";
+            TempData["Error"] = $"Lỗi kết nối: {ex.Message}";
             return View("~/Views/Admin/ModeratorAccount/CreateModerator.cshtml", model);
         }
     }
@@ -131,7 +131,7 @@ public class AccountController : Controller
             var result = JsonSerializer.Deserialize<ApiResult<AccountDto>>(json, JsonOpts);
             if (result?.Success != true || result.Data == null)
             {
-                TempData["Error"] = "Khong tim thay dieu hanh vien.";
+                TempData["Error"] = "Không tìm thấy điều hành viên.";
                 return RedirectToAction(nameof(ManageModerators));
             }
 
@@ -139,7 +139,7 @@ public class AccountController : Controller
         }
         catch
         {
-            TempData["Error"] = "Loi ket noi.";
+                TempData["Error"] = "Lỗi kết nối.";
             return RedirectToAction(nameof(ManageModerators));
         }
     }
@@ -178,16 +178,16 @@ public class AccountController : Controller
                     new
                     {
                         toastType = "success",
-                        toastMessage = "Da thay doi thong tin tai khoan thanh cong"
+                        toastMessage = "Đã thay đổi thông tin tài khoản thành công"
                     });
             }
 
-            TempData["Error"] = result?.Message ?? "Cap nhat that bai.";
+            TempData["Error"] = result?.Message ?? "Cập nhật thất bại.";
             return RedirectToAction(nameof(EditModerator), new { id });
         }
         catch (Exception ex)
         {
-            TempData["Error"] = $"Loi ket noi: {ex.Message}";
+            TempData["Error"] = $"Lỗi kết nối: {ex.Message}";
             return RedirectToAction(nameof(EditModerator), new { id });
         }
     }
@@ -253,7 +253,7 @@ public class AccountController : Controller
 
         if (result == null)
         {
-            TempData["Error"] = "Khong the tai danh sach tai khoan. Vui long thu lai.";
+            TempData["Error"] = "Không thể tải danh sách tài khoản. Vui lòng thử lại.";
             result = new AccountListResponse();
         }
 
@@ -286,7 +286,7 @@ public class AccountController : Controller
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = $"Loi ket noi: {ex.Message}" });
+                return Json(new { success = false, message = $"Lỗi kết nối: {ex.Message}" });
         }
     }
 
@@ -304,7 +304,7 @@ public class AccountController : Controller
             var result = JsonSerializer.Deserialize<ApiResult<AccountDto>>(json, JsonOpts);
             if (result?.Success != true || result.Data == null)
             {
-                TempData["Error"] = "Khong tim thay tai khoan.";
+                TempData["Error"] = "Không tìm thấy tài khoản.";
                 return RedirectToAction(nameof(ManageAccount));
             }
 
@@ -312,7 +312,7 @@ public class AccountController : Controller
         }
         catch
         {
-            TempData["Error"] = "Loi ket noi den API.";
+                TempData["Error"] = "Lỗi kết nối đến API.";
             return RedirectToAction(nameof(ManageAccount));
         }
     }

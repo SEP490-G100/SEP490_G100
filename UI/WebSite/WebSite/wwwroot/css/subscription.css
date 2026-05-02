@@ -638,6 +638,10 @@
     color: #6b7280;
     font-size: 15px;
     font-weight: 600;
+    line-height: 1.5;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .sub-trans-facts {
@@ -672,6 +676,8 @@
 
 .sub-trans-fact-code {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .sub-trans-meta {

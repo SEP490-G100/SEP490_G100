@@ -55,16 +55,12 @@
         .Where(c => c != null)
         .ToList();
 
-    string MaskPhone(string? phone)
+    string DisplayPhone(string? phone)
     {
         if (string.IsNullOrWhiteSpace(phone))
             return "Chưa cập nhật";
-
-        var digits = new string(phone.Where(char.IsDigit).ToArray());
-        if (digits.Length < 7)
-            return "••••••";
-
-        return $"{digits[..2]}•••••{digits[^2..]}";
+        
+        return phone;
     }
 
     string EducationLabel(int? level) => level switch
@@ -490,7 +486,7 @@
                         </div>
                         <div class="profile-detail-item">
                             <div class="label">Điện thoại</div>
-                            <div class="value @(!string.IsNullOrWhiteSpace(Model.PhoneNumber) ? "phone-obscured" : "")">@MaskPhone(Model.PhoneNumber)</div>
+                            <div class="value">@DisplayPhone(Model.PhoneNumber)</div>
                         </div>
                         <div class="profile-detail-item">
                             <div class="label">Địa chỉ</div>

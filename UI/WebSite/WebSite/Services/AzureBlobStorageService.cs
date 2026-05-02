@@ -57,7 +57,7 @@ public class AzureBlobStorageService : IAzureBlobStorageService
         ValidateContainerName(_options.UserAvatarContainerName, "UserAvatarContainerName");
 
         if (file == null || file.Length == 0)
-            throw new InvalidOperationException("File avatar khong hop le.");
+            throw new InvalidOperationException("File avatar không hợp lệ.");
 
         var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
         if (!IsSupportedImage(file.ContentType, fileExtension))
@@ -74,7 +74,7 @@ public class AzureBlobStorageService : IAzureBlobStorageService
         ValidateContainerName(_options.ContractContainerName, "ContractContainerName");
 
         if (file == null || file.Length == 0)
-            throw new InvalidOperationException("File hop dong khong hop le.");
+            throw new InvalidOperationException("File hợp đồng không hợp lệ.");
 
         var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
         if (!IsSupportedPdf(file.ContentType, fileExtension))
@@ -107,7 +107,7 @@ public class AzureBlobStorageService : IAzureBlobStorageService
             if (!isValidType)
             {
                 var mediaLabel = mediaType == BlobMediaType.Video ? "video" : "anh";
-                throw new InvalidOperationException($"File '{file.FileName}' khong phai dinh dang {mediaLabel} hop le.");
+            throw new InvalidOperationException($"File '{file.FileName}' không phải định dạng {mediaLabel} hợp lệ.");
             }
 
             var mediaFolder = mediaType == BlobMediaType.Video ? "video" : "image";
@@ -171,7 +171,7 @@ public class AzureBlobStorageService : IAzureBlobStorageService
         {
             BlobStorageContainerKind.BlogMedia => _options.BlogMediaContainerName,
             BlobStorageContainerKind.ReportMedia => _options.ReportMediaContainerName,
-            _ => throw new InvalidOperationException("Loai container media khong hop le.")
+            _ => throw new InvalidOperationException("Loại container media không hợp lệ.")
         };
 
     private static string GetVerificationFolderName(VerificationDocumentType documentType) => documentType switch
