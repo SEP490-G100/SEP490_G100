@@ -20,4 +20,5 @@ public interface ICommunicationService
     Task ReportMessageAsync(Guid messageId, Guid reporterUserId, ReportMessageDto dto);
     Task<(bool IsBlocked, bool IsHidden, Guid? BlockedByUserId)> UpdateConversationStatusAsync(
         Guid conversationId, Guid userId, UpdateConversationStatusDto dto);
+    Task<bool> IsParticipantAsync(Guid conversationId, Guid userId);
 }

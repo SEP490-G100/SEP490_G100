@@ -220,13 +220,28 @@ public class JobRepository : IJobRepository
             .CountAsync();
     }
 
-    public async Task<int> countActiveJobPostings(Guid parentProfileId) =>
-        await _db.JobPostings
+    public async Task<int> countActiveJobPostings(Guid parentProfileId)
+    {
+        var nowUtc = DateTime.UtcNow;
+        return await _db.JobPostings
             .Where(j =>
                 j.ParentProfileId == parentProfileId &&
                 !j.IsDeleted &&
-                j.Status == (int)JobPostingStatus.Public)
+                j.Status == (int)JobPostingStatus.Public &&
+                j.ModerationStatus == (int)JobPostingModerationStatus.Approved &&
+                j.ExpiresAt.HasValue &&
+                j.ExpiresAt.Value >= nowUtc)
             .CountAsync();
+    }
+
+    public async Task<List<JobPosting>> GetApprovedPublicJobsMissingExpiryAsync() =>
+        await _db.JobPostings
+            .Where(j => !j.IsDeleted
+                && j.Status == (int)JobPostingStatus.Public
+                && j.ModerationStatus == (int)JobPostingModerationStatus.Approved
+                && j.PublishedAt.HasValue
+                && !j.ExpiresAt.HasValue)
+            .ToListAsync();
 
     public async Task hideExpiredPostings()
     {

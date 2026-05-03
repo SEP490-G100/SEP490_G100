@@ -104,7 +104,7 @@
                         const contractId = btn.getAttribute('data-upload-btn');
                         const input = document.querySelector(`[data-file-input="${contractId}"]`);
                         if (!input || !input.files || !input.files.length) {
-                            setMessage(contractId, 'Vui long chon file PDF hop dong.', true);
+                                setMessage(contractId, 'Vui lòng chọn file PDF hợp đồng.', true);
                             return;
                         }
 
@@ -134,14 +134,14 @@
                             const json = await response.json();
 
                             if (!response.ok || !json?.success) {
-                                setMessage(contractId, json?.message || 'Khong luu duoc file PDF hop dong.', true);
+                                        setMessage(contractId, json?.message || 'Không lưu được file PDF hợp đồng.', true);
                                 return;
                             }
 
-                            setMessage(contractId, 'Luu hop dong thanh cong.', false);
+                                        setMessage(contractId, 'Lưu hợp đồng thành công.', false);
                             loadData();
                         } catch {
-                            setMessage(contractId, 'Loi ket noi. Vui long thu lai.', true);
+                                setMessage(contractId, 'Lỗi kết nối. Vui lòng thử lại.', true);
                         } finally {
                             btn.disabled = false;
                             btn.textContent = original;

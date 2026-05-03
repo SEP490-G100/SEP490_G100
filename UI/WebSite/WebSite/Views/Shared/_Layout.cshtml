@@ -1251,7 +1251,7 @@
                                     if (message) {
                                         return {
                                             message,
-                                            type: payload.toastType || 'success'
+                                            type: payload.toastType || payload.type || ''
                                         };
                                     }
 
@@ -1713,6 +1713,8 @@
 
     <!--=============FOOTER================-->
 
+@if (ViewData["HideFooter"] is not true)
+{
     <footer class="bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 pt-20 pb-10 border-t border-gray-200/60 dark:border-gray-800/60 mt-0">
         <div class="max-w-7xl mx-auto px-6 lg:px-10">
             <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-10 lg:gap-14 mb-16">
@@ -1798,7 +1800,7 @@
             </div>
         </div>
     </footer>
-
+}
 
     <!-- ━━━ NANNY LOADER OVERLAY (chỉ hiện ở trang chủ) ━━━ -->
     @if (isHomePage)
@@ -1907,7 +1909,7 @@
         (() => {
             const params = new URLSearchParams(window.location.search);
             const toastMessage = params.get('toastMessage');
-            const toastType = params.get('toastType') || 'success';
+            const toastType = params.get('toastType');
 
             if (!toastMessage || typeof window.showToast !== 'function') {
                 return;

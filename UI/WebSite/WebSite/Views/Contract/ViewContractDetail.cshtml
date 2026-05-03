@@ -351,7 +351,7 @@
                     if (!raw) return;
                     sessionStorage.removeItem(reloadToastKey);
                     const toast = JSON.parse(raw);
-                    if (toast?.message) showToast(toast.message, toast.type || 'success');
+                    if (toast?.message) showToast(toast.message, toast.type || '');
                 } catch { }
             };
 
@@ -612,3 +612,4 @@
         })();
     </script>
 }
+

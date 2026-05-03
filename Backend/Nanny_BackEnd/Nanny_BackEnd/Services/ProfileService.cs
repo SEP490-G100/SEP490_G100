@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.SqlClient;
@@ -110,46 +110,54 @@ public class ProfileService : IProfileService
         if (requesterUserId.HasValue && requesterUserId.Value == targetUserId)
             return profile;
 
-        var isTargetParent = profile.Roles.Any(r => r.Equals("parent", StringComparison.OrdinalIgnoreCase));
-        var isTargetNanny = profile.Roles.Any(r => r.Equals("nanny", StringComparison.OrdinalIgnoreCase));
-
-        // Parent profile remains private for public view.
-        if (isTargetParent)
-        {
-            profile.Email = string.Empty;
-            profile.PhoneNumber = null;
-            profile.DateOfBirth = null;
-            profile.Age = null;
-            profile.Address = null;
-            profile.Ward = null;
-            profile.Latitude = null;
-            profile.Longitude = null;
-            profile.FamilyDescription = null;
-            profile.NumberOfChildren = null;
-            profile.Children = null;
-            profile.SpecialNeeds = null;
-            profile.Notes = null;
-            profile.Characteristic = null;
-            profile.ChildAgeGroup = null;
-        }
-        else if (isTargetNanny)
-        {
-            // Keep basic contact/location + DOB for age display on nanny detail page.
-            // Phone privacy will be handled by UI masking in read-only view.
-        }
-        else
-        {
-            profile.Email = string.Empty;
-            profile.PhoneNumber = null;
-            profile.DateOfBirth = null;
-            profile.Age = null;
-            profile.Address = null;
-            profile.Ward = null;
-            profile.Latitude = null;
-            profile.Longitude = null;
-        }
+        // Public view policy:
+        // - Keep all fields public except phone/address.
+        // - Obfuscate phone/address for any viewer who is not the profile owner.
+        profile.PhoneNumber = MaskPhoneForPublic(profile.PhoneNumber);
+        profile.Address = MaskAddressForPublic(profile.Address);
 
         return profile;
+    }
+
+    private static string? MaskPhoneForPublic(string? phoneNumber)
+    {
+        if (string.IsNullOrWhiteSpace(phoneNumber))
+            return phoneNumber;
+
+        var digits = new string(phoneNumber.Where(char.IsDigit).ToArray());
+        if (digits.Length == 0)
+            return "••••";
+
+        if (digits.Length <= 4)
+            return new string('•', digits.Length);
+
+        var visibleStart = Math.Min(2, digits.Length / 2);
+        var visibleEnd = Math.Min(2, digits.Length - visibleStart);
+        var maskedCount = digits.Length - visibleStart - visibleEnd;
+
+        if (maskedCount <= 0)
+            return digits;
+
+        return $"{digits[..visibleStart]}{new string('•', maskedCount)}{digits[^visibleEnd..]}";
+    }
+
+    private static string? MaskAddressForPublic(string? address)
+    {
+        if (string.IsNullOrWhiteSpace(address))
+            return address;
+
+        var normalized = address.Trim();
+        if (normalized.Length <= 4)
+            return new string('•', normalized.Length);
+
+        var visiblePrefix = Math.Min(3, normalized.Length - 1);
+        var visibleSuffix = Math.Min(2, normalized.Length - visiblePrefix);
+        var maskedCount = normalized.Length - visiblePrefix - visibleSuffix;
+
+        if (maskedCount <= 0)
+            return normalized;
+
+        return $"{normalized[..visiblePrefix]}{new string('•', maskedCount)}{normalized[^visibleSuffix..]}";
     }
 
     private async Task<PersonalProfileDto> BuildProfileDtoAsync(Guid userId)
