@@ -48,7 +48,7 @@ public class JobService : IJobService
         bool canSeeNannyOnlyJobs = false,
         Guid? currentNannyProfileId = null)
     {
-        await _jobRepo.hideExpiredPostings();
+        await EnsurePublicJobExpiryStateAsync();
         if (filters.PageSize > 50) filters.PageSize = 50;
         if (filters.Page < 1) filters.Page = 1;
 
@@ -62,7 +62,7 @@ public class JobService : IJobService
 
     public async Task<List<SearchJobResponse>> getMyJobs(Guid parentProfileId)
     {
-        await _jobRepo.hideExpiredPostings();
+        await EnsurePublicJobExpiryStateAsync();
         var jobs = await _jobRepo.getListPosting(parentProfileId);
         return jobs.Select(j => mapToListItem(j)).ToList();
     }
@@ -73,7 +73,7 @@ public class JobService : IJobService
         int pageSize = 20,
         Guid? currentUserId = null)
     {
-        await _jobRepo.hideExpiredPostings();
+        await EnsurePublicJobExpiryStateAsync();
         var (jobs, totalCount) = await _favoriteRepo.getFavoriteJobs(nannyProfileId, page, pageSize);
         var favoriteJobIds = jobs.Select(job => job.Id).ToHashSet();
         var mapped = jobs.Select(job => mapToListItem(job, null, null, currentUserId, favoriteJobIds)).ToList();
@@ -82,14 +82,14 @@ public class JobService : IJobService
 
     public async Task<List<SearchJobResponse>> searchByTitle(string? title)
     {
-        await _jobRepo.hideExpiredPostings();
+        await EnsurePublicJobExpiryStateAsync();
         var jobs = await _jobRepo.searchByTitle(title);
         return jobs.Select(j => mapToListItem(j)).ToList();
     }
 
     public async Task<JobPostingDetailResponse> getDetail(Guid jobId)
     {
-        await _jobRepo.hideExpiredPostings();
+        await EnsurePublicJobExpiryStateAsync();
         var job = await _jobRepo.viewDetailPosting(jobId)
             ?? throw new KeyNotFoundException("Không tìm thấy tin đăng hoặc tin đã bị xóa.");
         return mapToDetail(job);
@@ -162,6 +162,7 @@ public class JobService : IJobService
         var hasActiveParentSubscription = await _subscriptionService.hasActiveParentSubscription(parentProfileId);
         if (!hasActiveParentSubscription)
         {
+            await EnsurePublicJobExpiryStateAsync();
             var activePostingCount = await _jobRepo.countActiveJobPostings(parentProfileId);
             if (activePostingCount >= freeParentPostingLimit)
                 throw new InvalidOperationException(
@@ -208,7 +209,7 @@ public class JobService : IJobService
             MaxNannyAge = req.MaxNannyAge,
             Latitude = lat,
             Longitude = lng,
-            ExpiresAt = nowUtc.AddDays(benefits.ListingDurationDays),
+            ExpiresAt = null,
             Status = req.Status,
             ModerationStatus = (int)JobPostingModerationStatus.Pending,
             ModerationNote = null,
@@ -308,14 +309,12 @@ public class JobService : IJobService
         {
             job.PublishedAt = null;
             job.ClosedAt = null;
+            job.ExpiresAt = null;
             job.ModerationStatus = (int)JobPostingModerationStatus.Pending;
             job.ModerationNote = null;
             job.ModeratedAt = null;
             job.ModeratedBy = null;
         }
-
-        if (job.ExpiresAt == null || job.ExpiresAt < nowUtc)
-            job.ExpiresAt = nowUtc.AddDays(benefits.ListingDurationDays);
 
         await syncRequirements(job, req.Skills, parentProfile.UserId);
         await syncScheduleRequirements(job, req.ScheduleSlots, parentProfile.UserId);
@@ -343,6 +342,17 @@ public class JobService : IJobService
         job.ClosedAt = approved
             ? (job.Status == (int)JobPostingStatus.Hidden ? nowUtc : null)
             : nowUtc;
+
+        if (approved && job.Status == (int)JobPostingStatus.Public)
+        {
+            var benefits = await _subscriptionService.getBenefitsForParentProfile(job.ParentProfileId);
+            var listingDurationDays = Math.Max(1, benefits.ListingDurationDays);
+            job.ExpiresAt = nowUtc.AddDays(listingDurationDays);
+        }
+        else
+        {
+            job.ExpiresAt = null;
+        }
 
         await _jobRepo.updateJobPosting(job);
 
@@ -763,6 +773,37 @@ public class JobService : IJobService
 
         return (null, SubscriptionBenefitResponse.FreeParent);
     }
+
+    private async Task EnsurePublicJobExpiryStateAsync()
+    {
+        var missingExpiryJobs = await _jobRepo.GetApprovedPublicJobsMissingExpiryAsync();
+        if (missingExpiryJobs.Count > 0)
+        {
+            var nowUtc = DateTime.UtcNow;
+            var benefitCache = new Dictionary<Guid, int>();
+
+            foreach (var job in missingExpiryJobs)
+            {
+                if (!job.PublishedAt.HasValue)
+                    continue;
+
+                if (!benefitCache.TryGetValue(job.ParentProfileId, out var listingDurationDays))
+                {
+                    var benefits = await _subscriptionService.getBenefitsForParentProfile(job.ParentProfileId);
+                    listingDurationDays = Math.Max(1, benefits.ListingDurationDays);
+                    benefitCache[job.ParentProfileId] = listingDurationDays;
+                }
+
+                job.ExpiresAt = job.PublishedAt.Value.AddDays(listingDurationDays);
+                job.UpdatedAt = nowUtc;
+            }
+
+            await _jobRepo.SaveChangesAsync();
+        }
+
+        await _jobRepo.hideExpiredPostings();
+    }
+
     public async Task<(List<SearchJobResponse> Items, int TotalCount)> GetModeratorJobsAsync(
         int? status,
         int? moderationStatus,
@@ -792,11 +833,22 @@ public class JobService : IJobService
         {
             job.PublishedAt = job.Status == (int)JobPostingStatus.Public ? nowUtc : null;
             job.ClosedAt = job.Status == (int)JobPostingStatus.Hidden ? nowUtc : null;
+            if (job.Status == (int)JobPostingStatus.Public)
+            {
+                var benefits = await _subscriptionService.getBenefitsForParentProfile(job.ParentProfileId);
+                var listingDurationDays = Math.Max(1, benefits.ListingDurationDays);
+                job.ExpiresAt = nowUtc.AddDays(listingDurationDays);
+            }
+            else
+            {
+                job.ExpiresAt = null;
+            }
         }
         else
         {
             job.PublishedAt = null;
             job.ClosedAt = nowUtc;
+            job.ExpiresAt = null;
         }
 
         await _jobRepo.updateJobPosting(job);

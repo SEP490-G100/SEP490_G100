@@ -64,6 +64,7 @@ public class GetPublicProfileAsyncTests
         FirstName = "F",
         LastName = "L",
         PhoneNumber = "0900000000",
+        Address = "123 Nguyen Trai",
         DateOfBirth = new DateOnly(1988, 3, 15),
         City = "HCM",
         District = "Q1",
@@ -128,7 +129,7 @@ public class GetPublicProfileAsyncTests
     }
 
     [Fact]
-    public async Task OtherParentViewer_StripsPrivateAndFamilyFields()
+    public async Task OtherParentViewer_MasksPhoneAndAddress_AndKeepsRemainingFieldsPublic()
     {
         var target = Guid.NewGuid();
         var requester = Guid.NewGuid();
@@ -138,25 +139,23 @@ public class GetPublicProfileAsyncTests
 
         var dto = await _sut.GetPublicProfileAsync(requester, target);
 
-        Assert.Equal(string.Empty, dto.Email);
-        Assert.Null(dto.PhoneNumber);
-        Assert.Null(dto.DateOfBirth);
-        Assert.Null(dto.Age);
-        Assert.Null(dto.Address);
-        Assert.Null(dto.Ward);
-        Assert.Null(dto.Latitude);
-        Assert.Null(dto.Longitude);
-        Assert.Null(dto.FamilyDescription);
-        Assert.Null(dto.NumberOfChildren);
-        Assert.Null(dto.Children);
-        Assert.Null(dto.SpecialNeeds);
-        Assert.Null(dto.Notes);
-        Assert.Null(dto.Characteristic);
-        Assert.Null(dto.ChildAgeGroup);
+        Assert.Equal("09••••••00", dto.PhoneNumber);
+        Assert.Equal("123••••••••••ai", dto.Address);
 
+        Assert.Equal("parent@x.com", dto.Email);
+        Assert.NotNull(dto.DateOfBirth);
+        Assert.NotNull(dto.Age);
+        Assert.Equal("P1", dto.Ward);
+        Assert.Equal(10.5m, dto.Latitude);
+        Assert.Equal(106.5m, dto.Longitude);
+        Assert.Equal(1, dto.NumberOfChildren);
+        Assert.NotNull(dto.Children);
+        Assert.NotNull(dto.SpecialNeeds);
+        Assert.NotNull(dto.Notes);
+        Assert.NotNull(dto.Characteristic);
+        Assert.NotNull(dto.ChildAgeGroup);
         Assert.Equal("F", dto.FirstName);
         Assert.Equal("L", dto.LastName);
-        // City / District are not cleared by this branch in ProfileService.
         Assert.Equal("HCM", dto.City);
         Assert.Equal("Q1", dto.District);
     }
@@ -188,15 +187,16 @@ public class GetPublicProfileAsyncTests
         var dto = await _sut.GetPublicProfileAsync(requester, target);
 
         Assert.Equal("parent@x.com", dto.Email);
-        Assert.Equal("0900000000", dto.PhoneNumber);
+        Assert.Equal("09••••••00", dto.PhoneNumber);
         Assert.NotNull(dto.DateOfBirth);
+        Assert.Equal("123••••••••••ai", dto.Address);
         Assert.Equal("P1", dto.Ward);
         Assert.Equal(10.5m, dto.Latitude);
         Assert.Equal(106.5m, dto.Longitude);
     }
 
     [Fact]
-    public async Task OtherViewer_NeitherParentNorNanny_StripsCorePII()
+    public async Task OtherViewer_NeitherParentNorNanny_MasksPhoneAndAddress_AndKeepsOtherFields()
     {
         var target = Guid.NewGuid();
         var requester = Guid.NewGuid();
@@ -206,14 +206,14 @@ public class GetPublicProfileAsyncTests
 
         var dto = await _sut.GetPublicProfileAsync(requester, target);
 
-        Assert.Equal(string.Empty, dto.Email);
-        Assert.Null(dto.PhoneNumber);
-        Assert.Null(dto.DateOfBirth);
-        Assert.Null(dto.Age);
-        Assert.Null(dto.Address);
-        Assert.Null(dto.Ward);
-        Assert.Null(dto.Latitude);
-        Assert.Null(dto.Longitude);
+        Assert.Equal("09••••••00", dto.PhoneNumber);
+        Assert.Equal("123••••••••••ai", dto.Address);
+        Assert.Equal("parent@x.com", dto.Email);
+        Assert.NotNull(dto.DateOfBirth);
+        Assert.NotNull(dto.Age);
+        Assert.Equal("P1", dto.Ward);
+        Assert.Equal(10.5m, dto.Latitude);
+        Assert.Equal(106.5m, dto.Longitude);
         Assert.Equal("F", dto.FirstName);
     }
 }

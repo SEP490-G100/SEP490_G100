@@ -629,7 +629,7 @@
                 const createdAt = Number(parsed?.createdAt || 0);
                 if (!createdAt || Date.now() - createdAt > 60000) return;
 
-                showHistoryToast(parsed?.message || 'Cập nhật bài đăng thành công.', parsed?.type || 'success');
+                showHistoryToast(parsed?.message || 'Cập nhật bài đăng thành công.', parsed?.type || '');
             } catch {
                 // Ignore invalid storage payloads.
             }
@@ -688,9 +688,9 @@
         };
 
         const formatDateTime = (value) => {
-            if (!value) return 'Chua cap nhat';
+        if (!value) return 'Chưa cập nhật';
             const parsed = new Date(value);
-            if (Number.isNaN(parsed.getTime())) return 'Chua cap nhat';
+        if (Number.isNaN(parsed.getTime())) return 'Chưa cập nhật';
             return parsed.toLocaleString('vi-VN', {
                 year: 'numeric',
                 month: '2-digit',
@@ -1276,3 +1276,4 @@
         window.setTimeout(consumeHistoryToast, 120);
     })();
 </script>
+

@@ -85,8 +85,8 @@
 
                                     <div class="nm-col-12">
                                         <div class="nm-field">
-                                            <label asp-for="Address" class="nm-label">Địa chỉ chi tiết <span class="required">*</span></label>
-                                            <input asp-for="Address" id="Address" class="nm-input" placeholder="Số nhà, tên đường..." />
+                                            <label asp-for="Address" class="nm-label">Địa chỉ chi tiết (có thể nhập hoặc không)</label>
+                                            <input asp-for="Address" id="Address" class="nm-input" placeholder="Số nhà, tên đường... (có thể bỏ trống)" />
                                             <span asp-validation-for="Address" class="nm-error"></span>
                                         </div>
                                     </div>
@@ -554,8 +554,9 @@
                 isValid = isValid && fullNameOk;
             }
 
-            var addressOk = !!(addressInput && addressInput.value.trim());
-            setValidationMessage('Address', addressOk ? '' : 'Vui lòng nhập địa chỉ chi tiết.');
+            var addressValue = addressInput ? addressInput.value.trim() : '';
+            var addressOk = !addressValue || addressValue.length <= 500;
+            setValidationMessage('Address', addressOk ? '' : 'Địa chỉ không được vượt quá 500 ký tự.');
             isValid = isValid && addressOk;
 
             var cityOk = !!(cityInput && cityInput.value.trim());
