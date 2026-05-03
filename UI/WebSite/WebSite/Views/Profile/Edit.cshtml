@@ -326,7 +326,7 @@
                 if (!msg) return;
 
                 if (typeof window.showToast === "function") {
-                    window.showToast(msg, { type: type || "success" });
+                    window.showToast(msg, { type: type || '' });
                 }
             }
 
@@ -946,3 +946,4 @@
         });
     </script>
 }
+
