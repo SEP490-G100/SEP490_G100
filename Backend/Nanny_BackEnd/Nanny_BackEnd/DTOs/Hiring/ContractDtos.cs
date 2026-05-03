@@ -72,6 +72,7 @@ public class ContractParentFillRequestDto
     public string SalaryAmount { get; set; } = string.Empty;
     public string ProbationSalaryAmount { get; set; } = string.Empty;
     public string AllowanceAmount { get; set; } = string.Empty;
+    public string PaymentMethod { get; set; } = string.Empty;
     public string BankAccountNumber { get; set; } = string.Empty;
     public string BankName { get; set; } = string.Empty;
     public string SalaryReceivedDate { get; set; } = string.Empty;

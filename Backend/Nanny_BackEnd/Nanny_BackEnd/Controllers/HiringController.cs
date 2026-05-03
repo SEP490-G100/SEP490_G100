@@ -15,32 +15,6 @@ public class HiringController : ControllerBase
 
     public HiringController(IHiringService service) => _service = service;
 
-    [HttpGet("contract-templates")]
-    public async Task<IActionResult> GetContractTemplates()
-    {
-        try
-        {
-            var result = await _service.GetContractTemplatesAsync();
-            return Ok(OkResult(result));
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, Fail(ex.Message));
-        }
-    }
-
-    [HttpGet("contract-templates/{templateId:guid}")]
-    public async Task<IActionResult> GetContractTemplatePreview(Guid templateId)
-    {
-        try
-        {
-            var result = await _service.GetContractTemplatePreviewAsync(templateId);
-            return Ok(OkResult(result));
-        }
-        catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
-        catch (Exception ex) { return StatusCode(500, Fail(ex.Message)); }
-    }
-
     [HttpGet("{jobPostingId:guid}/applicants")]
     public async Task<IActionResult> GetApplicants(Guid jobPostingId)
     {
@@ -53,8 +27,8 @@ public class HiringController : ControllerBase
             return Ok(OkResult(result));
         }
         catch (UnauthorizedAccessException) { return Forbid(); }
-        catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
-        catch (Exception ex) { return StatusCode(500, Fail(ex.Message)); }
+        catch (KeyNotFoundException) { return NotFound(Fail("Không tìm thấy bài đăng hoặc danh sách ứng viên.")); }
+        catch (Exception) { return StatusCode(500, Fail("Đã xảy ra lỗi hệ thống. Vui lòng thử lại.")); }
     }
 
     [HttpPost("{jobPostingId:guid}/applicants/{jobAppId:guid}/approve")]
@@ -66,13 +40,13 @@ public class HiringController : ControllerBase
         try
         {
             await _service.ApproveApplicantAsync(jobPostingId, jobAppId, userId.Value);
-            return Ok(OkResult("Da dong y ung vien. Vui long vao ho so bao mau de chon thue."));
+            return Ok(OkResult("Đã đồng ý ứng viên. Vui lòng vào hồ sơ bảo mẫu để chọn thuê."));
         }
         catch (UnauthorizedAccessException) { return Forbid(); }
-        catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
-        catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
-        catch (ArgumentException ex) { return BadRequest(Fail(ex.Message)); }
-        catch (Exception ex) { return StatusCode(500, Fail(ex.Message)); }
+        catch (KeyNotFoundException) { return NotFound(Fail("Không tìm thấy đơn ứng tuyển.")); }
+        catch (InvalidOperationException) { return BadRequest(Fail("Ứng viên này đã được xử lý trước đó.")); }
+        catch (ArgumentException) { return BadRequest(Fail("Dữ liệu không hợp lệ.")); }
+        catch (Exception) { return StatusCode(500, Fail("Đã xảy ra lỗi hệ thống. Vui lòng thử lại.")); }
     }
 
     [HttpGet("{jobPostingId:guid}/applicants/{jobAppId:guid}/nanny-context")]
@@ -86,8 +60,8 @@ public class HiringController : ControllerBase
             var result = await _service.GetNannyHireContextAsync(jobPostingId, jobAppId, userId.Value);
             return Ok(OkResult(result));
         }
-        catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
-        catch (Exception ex) { return StatusCode(500, Fail(ex.Message)); }
+        catch (KeyNotFoundException) { return NotFound(Fail("Không tìm thấy đơn ứng tuyển.")); }
+        catch (Exception) { return StatusCode(500, Fail("Đã xảy ra lỗi hệ thống. Vui lòng thử lại.")); }
     }
 
     [HttpPost("{jobPostingId:guid}/applicants/{jobAppId:guid}/hire")]
@@ -102,10 +76,10 @@ public class HiringController : ControllerBase
             return Ok(OkResult(result));
         }
         catch (UnauthorizedAccessException) { return Forbid(); }
-        catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
-        catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
-        catch (ArgumentException ex) { return BadRequest(Fail(ex.Message)); }
-        catch (Exception ex) { return StatusCode(500, Fail(GetDeepestMessage(ex))); }
+        catch (KeyNotFoundException) { return NotFound(Fail("Không tìm thấy dữ liệu thuê.")); }
+        catch (InvalidOperationException) { return BadRequest(Fail("Không thể tạo đề nghị thuê cho ứng viên này.")); }
+        catch (ArgumentException) { return BadRequest(Fail("Ngày bắt đầu/kết thúc không hợp lệ.")); }
+        catch (Exception) { return StatusCode(500, Fail("Đã xảy ra lỗi hệ thống. Vui lòng thử lại.")); }
     }
 
     [HttpPost("contact-requests/{contactRequestId:guid}/hire")]
@@ -120,10 +94,10 @@ public class HiringController : ControllerBase
             return Ok(OkResult(result));
         }
         catch (UnauthorizedAccessException) { return Forbid(); }
-        catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
-        catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
-        catch (ArgumentException ex) { return BadRequest(Fail(ex.Message)); }
-        catch (Exception ex) { return StatusCode(500, Fail(GetDeepestMessage(ex))); }
+        catch (KeyNotFoundException) { return NotFound(Fail("Không tìm thấy yêu cầu liên hệ để tạo thuê.")); }
+        catch (InvalidOperationException) { return BadRequest(Fail("Không thể tạo đề nghị thuê từ yêu cầu này.")); }
+        catch (ArgumentException) { return BadRequest(Fail("Ngày bắt đầu/kết thúc không hợp lệ.")); }
+        catch (Exception) { return StatusCode(500, Fail("Đã xảy ra lỗi hệ thống. Vui lòng thử lại.")); }
     }
 
     [HttpGet("records/{hiringRecordId:guid}")]
@@ -138,26 +112,8 @@ public class HiringController : ControllerBase
             return Ok(OkResult(result));
         }
         catch (UnauthorizedAccessException) { return Forbid(); }
-        catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
-        catch (Exception ex) { return StatusCode(500, Fail(ex.Message)); }
-    }
-
-    [HttpPost("records/{hiringRecordId:guid}/respond")]
-    public async Task<IActionResult> RespondToOffer(Guid hiringRecordId, [FromBody] RespondToOfferDto dto)
-    {
-        var userId = GetCurrentUserId();
-        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
-
-        try
-        {
-            await _service.RespondToOfferAsync(hiringRecordId, userId.Value, dto);
-            return Ok(OkResult("Bao mau da chap nhan de nghi viec lam."));
-        }
-        catch (UnauthorizedAccessException) { return Forbid(); }
-        catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
-        catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
-        catch (ArgumentException ex) { return BadRequest(Fail(ex.Message)); }
-        catch (Exception ex) { return StatusCode(500, Fail(ex.Message)); }
+        catch (KeyNotFoundException) { return NotFound(Fail("Không tìm thấy đề nghị việc làm.")); }
+        catch (Exception) { return StatusCode(500, Fail("Đã xảy ra lỗi hệ thống. Vui lòng thử lại.")); }
     }
 
     [HttpPost("records/{hiringRecordId:guid}/complete")]
@@ -169,12 +125,12 @@ public class HiringController : ControllerBase
         try
         {
             await _service.CompleteHiringAsync(hiringRecordId, userId.Value);
-            return Ok(OkResult("Hop dong da duoc danh dau hoan thanh."));
+            return Ok(OkResult("Hợp đồng đã được đánh dấu hoàn thành."));
         }
         catch (UnauthorizedAccessException) { return Forbid(); }
-        catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
-        catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
-        catch (Exception ex) { return StatusCode(500, Fail(ex.Message)); }
+        catch (KeyNotFoundException) { return NotFound(Fail("Không tìm thấy hợp đồng thuê.")); }
+        catch (InvalidOperationException) { return BadRequest(Fail("Chỉ được hoàn thành khi hợp đồng đã đến hạn kết thúc.")); }
+        catch (Exception) { return StatusCode(500, Fail("Đã xảy ra lỗi hệ thống. Vui lòng thử lại.")); }
     }
 
     private Guid? GetCurrentUserId()
@@ -186,12 +142,4 @@ public class HiringController : ControllerBase
     private static object OkResult(object? data, string? message = null) => new { success = true, message, data };
     private static object Fail(string message) => new { success = false, message };
 
-    private static string GetDeepestMessage(Exception ex)
-    {
-        var current = ex;
-        while (current.InnerException != null)
-            current = current.InnerException;
-
-        return current.Message;
-    }
 }
