@@ -19,31 +19,6 @@ public class HiringService : IHiringService
         _commSvc = commSvc;
     }
 
-    public async Task<List<ContractTemplateOptionDto>> GetContractTemplatesAsync()
-    {
-        var templates = await _repo.GetActiveContractTemplatesAsync();
-        return templates.Select(t => new ContractTemplateOptionDto
-        {
-            Id = t.Id,
-            Name = t.Name,
-            Version = t.Version
-        }).ToList();
-    }
-
-    public async Task<ContractTemplatePreviewDto> GetContractTemplatePreviewAsync(Guid templateId)
-    {
-        var template = await _repo.GetActiveContractTemplateByIdAsync(templateId)
-            ?? throw new KeyNotFoundException("Không tìm thấy mẫu hợp đồng.");
-
-        return new ContractTemplatePreviewDto
-        {
-            Id = template.Id,
-            Name = template.Name,
-            Version = template.Version,
-            Content = template.Content ?? string.Empty
-        };
-    }
-
     public async Task<List<JobApplicantDto>> GetApplicantsAsync(Guid jobPostingId, Guid parentUserId)
     {
         var job = await _repo.GetJobPostingByIdAsync(jobPostingId)
@@ -394,97 +369,6 @@ public class HiringService : IHiringService
             CreatedAt = hiringRecord.CreatedAt,
             SignedAt = contract?.SignedAt
         };
-    }
-
-    public async Task RespondToOfferAsync(Guid hiringRecordId, Guid nannyUserId, RespondToOfferDto dto)
-    {
-        var hiringRecord = await _repo.GetHiringRecordByIdAsync(hiringRecordId)
-            ?? throw new KeyNotFoundException("Không tìm thấy thông tin tuyển dụng.");
-
-        if (hiringRecord.NannyProfile?.UserId != nannyUserId)
-            throw new UnauthorizedAccessException("Bạn không có quyền phản hồi đề nghị này.");
-
-        var action = (dto.Action ?? string.Empty).Trim();
-        if (string.IsNullOrWhiteSpace(action))
-            throw new ArgumentException("Hành động không hợp lệ. Vui lòng chọn 'accept'.");
-
-        if (hiringRecord.Status != (int)HiringRecordStatus.Pending)
-            throw new InvalidOperationException("Đề nghị này đã được xử lý trước đó.");
-
-        var contract = await _repo.GetContractByHiringRecordIdAsync(hiringRecordId)
-            ?? throw new InvalidOperationException("Không tìm thấy hợp đồng liên quan.");
-
-        var now = DateTime.UtcNow;
-        var parentUserId = hiringRecord.ParentProfile?.UserId ?? Guid.Empty;
-        var jobApp = hiringRecord.JobApplication;
-        var jobPosting = jobApp?.JobPosting;
-
-        if (action.Equals("accept", StringComparison.OrdinalIgnoreCase))
-        {
-            hiringRecord.Status = (int)HiringRecordStatus.Active;
-            hiringRecord.NannyConfirmedAt = now;
-
-            contract.SignedByNanny = false;
-            contract.SignedAt = null;
-            contract.Status = 0;
-
-            if (jobApp != null)
-            {
-                jobApp.Status = 2;
-                jobApp.UpdatedAt = now;
-                jobApp.UpdatedBy = nannyUserId;
-            }
-
-            if (jobPosting != null)
-            {
-                jobPosting.Status = 2;
-                jobPosting.ClosedAt = now;
-                jobPosting.UpdatedAt = now;
-                jobPosting.UpdatedBy = nannyUserId;
-            }
-
-            if (jobPosting != null && jobApp != null)
-            {
-                var otherPendingApplications = await _repo.GetOtherPendingApplicantsAsync(jobPosting.Id, jobApp.Id);
-                foreach (var pendingApplication in otherPendingApplications)
-                {
-                    pendingApplication.Status = 2;
-                pendingApplication.RejectionReason = "Vị trí đã được bảo mẫu khác chấp nhận đề nghị.";
-                    pendingApplication.ReviewedAt = now;
-                    pendingApplication.UpdatedAt = now;
-                    pendingApplication.UpdatedBy = nannyUserId;
-                }
-            }
-
-            if (parentUserId != Guid.Empty)
-            {
-                _repo.AddNotification(new Notification
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = parentUserId,
-                    Title = "Bảo mẫu đã chấp nhận đề nghị!",
-                    Content = $"{GetDisplayName(hiringRecord.NannyProfile?.User)} đã chấp nhận đề nghị.",
-                    Type = NotificationTypes.HiringAccepted,
-                    IsRead = false,
-                    RelatedEntityId = hiringRecord.Id,
-                    RelatedEntityType = "HiringRecord",
-                    CreatedAt = now,
-                    CreatedBy = nannyUserId,
-                    IsDeleted = false
-                });
-            }
-        }
-        else
-        {
-            throw new ArgumentException("Hành động không hợp lệ. Vui lòng chọn 'accept'.");
-        }
-
-        hiringRecord.UpdatedAt = now;
-        hiringRecord.UpdatedBy = nannyUserId;
-        contract.UpdatedAt = now;
-        contract.UpdatedBy = nannyUserId;
-
-        await _repo.SaveChangesAsync();
     }
 
     public async Task CompleteHiringAsync(Guid hiringRecordId, Guid parentUserId)

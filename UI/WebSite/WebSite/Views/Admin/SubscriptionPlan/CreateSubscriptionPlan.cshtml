@@ -43,12 +43,22 @@
             </div>
             <div class="field-group">
                 <label asp-for="Price" class="field-label"></label>
-                <input asp-for="Price" type="number" min="0" step="1000" class="search-input !pl-4" required />
+                <input asp-for="Price"
+                       type="number"
+                       class="search-input !pl-4"
+                       data-val-number="Nhập giá gói là bội số của 1000"
+                       data-val-range="Nhập giá gói là bội số của 1000"
+                       required />
                 <span asp-validation-for="Price" class="text-xs text-red-500"></span>
             </div>
             <div class="field-group">
                 <label asp-for="DurationDays" class="field-label">Thời Hạn (Ngày)</label>
-                <input asp-for="DurationDays" type="number" min="1" max="3650" class="search-input !pl-4" required />
+                <input asp-for="DurationDays"
+                       type="number"
+                       class="search-input !pl-4"
+                       data-val-number="Nhập chữ số nguyên dương lớn hơn hoặc bằng 1."
+                       data-val-range="Nhập chữ số nguyên dương lớn hơn hoặc bằng 1."
+                       required />
                 <span asp-validation-for="DurationDays" class="text-xs text-red-500"></span>
             </div>
             <input asp-for="SortOrder" type="hidden" />
@@ -75,17 +85,32 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
             <div class="field-group">
                 <label asp-for="MonthlyJobPostLimit" class="field-label">Giới Hạn Đăng Tin Hàng Tháng</label>
-                <input asp-for="MonthlyJobPostLimit" type="number" min="0" class="search-input !pl-4" required />
+                <input asp-for="MonthlyJobPostLimit"
+                       type="number"
+                       class="search-input !pl-4"
+                       data-val-number="Nhập chữ số nguyên dương lớn hơn hoặc bằng 0."
+                       data-val-range="Nhập chữ số nguyên dương lớn hơn hoặc bằng 0."
+                       required />
                 <span asp-validation-for="MonthlyJobPostLimit" class="text-xs text-red-500"></span>
             </div>
             <div class="field-group">
                 <label asp-for="MonthlyApplicationLimit" class="field-label">Giới Hạn Ứng Tuyển Hàng Tháng</label>
-                <input asp-for="MonthlyApplicationLimit" type="number" min="0" class="search-input !pl-4" required />
+                <input asp-for="MonthlyApplicationLimit"
+                       type="number"
+                       class="search-input !pl-4"
+                       data-val-number="Nhập chữ số nguyên dương lớn hơn hoặc bằng 0."
+                       data-val-range="Nhập chữ số nguyên dương lớn hơn hoặc bằng 0."
+                       required />
                 <span asp-validation-for="MonthlyApplicationLimit" class="text-xs text-red-500"></span>
             </div>
             <div class="field-group">
                 <label asp-for="ListingDurationDays" class="field-label">Thời Hạn Hiển Thị (Ngày)</label>
-                <input asp-for="ListingDurationDays" type="number" min="0" max="3650" class="search-input !pl-4" required />
+                <input asp-for="ListingDurationDays"
+                       type="number"
+                       class="search-input !pl-4"
+                       data-val-number="Nhập chữ số nguyên dương lớn hơn hoặc bằng 0."
+                       data-val-range="Nhập chữ số nguyên dương lớn hơn hoặc bằng 0."
+                       required />
                 <span asp-validation-for="ListingDurationDays" class="text-xs text-red-500"></span>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:col-span-2">
@@ -120,7 +145,8 @@
         (() => {
             const form = document.querySelector('form[action="/Admin/CreateSubscriptionPlan"]');
             const featureInput = document.getElementById('FeatureLines');
-            if (!form || !featureInput) return;
+            const priceInput = document.getElementById('Price');
+            if (!form || !featureInput || !priceInput) return;
 
             const validateFeatures = () => {
                 const hasFeature = featureInput.value
@@ -131,8 +157,28 @@
                 featureInput.setCustomValidity(hasFeature ? '' : 'Vui lòng nhập ít nhất một tính năng.');
             };
 
+            const validatePrice = () => {
+                const raw = priceInput.value?.trim() ?? '';
+                if (!raw) {
+                    priceInput.setCustomValidity('Giá gói là bắt buộc');
+                    return;
+                }
+
+                const num = Number(raw);
+                if (!Number.isFinite(num) || num < 0 || num % 1000 !== 0) {
+                    priceInput.setCustomValidity('Nhập giá gói là bội số của 1000');
+                    return;
+                }
+
+                priceInput.setCustomValidity('');
+            };
+
             featureInput.addEventListener('input', validateFeatures);
-            form.addEventListener('submit', () => validateFeatures());
+            priceInput.addEventListener('input', validatePrice);
+            form.addEventListener('submit', () => {
+                validateFeatures();
+                validatePrice();
+            });
         })();
     </script>
 }
