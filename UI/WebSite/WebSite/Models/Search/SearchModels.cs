@@ -290,9 +290,9 @@ public class JobPostingDetailResponse
 
     public string StatusLabel => Status switch
     {
-        1 => "Public",
-        2 => "Hidden",
-        _ => "Unknown"
+        1 => "Công khai",
+        2 => "Đã ẩn",
+        _ => "Không xác định"
     };
 
     public string StatusClass => Status switch
@@ -304,10 +304,10 @@ public class JobPostingDetailResponse
 
     public string ModerationStatusLabel => ModerationStatus switch
     {
-        0 => "Pending",
-        1 => "Rejected",
-        2 => "Approved",
-        _ => "Unknown"
+        0 => "Đang chờ",
+        1 => "Đã từ chối",
+        2 => "Đã duyệt",
+        _ => "Không xác định"
     };
 
     public string ModerationStatusClass => ModerationStatus switch

@@ -15,6 +15,20 @@ public class HiringController : ControllerBase
 
     public HiringController(IHiringService service) => _service = service;
 
+    [HttpGet("records")]
+    public async Task<IActionResult> GetMyHiringRecords()
+    {
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
+
+        try
+        {
+            var result = await _service.GetMyHiringRecordsAsync(userId.Value);
+            return Ok(OkResult(result));
+        }
+        catch (Exception) { return StatusCode(500, Fail("Đã xảy ra lỗi hệ thống. Vui lòng thử lại.")); }
+    }
+
     [HttpGet("{jobPostingId:guid}/applicants")]
     public async Task<IActionResult> GetApplicants(Guid jobPostingId)
     {
@@ -113,6 +127,74 @@ public class HiringController : ControllerBase
         }
         catch (UnauthorizedAccessException) { return Forbid(); }
         catch (KeyNotFoundException) { return NotFound(Fail("Không tìm thấy đề nghị việc làm.")); }
+        catch (Exception) { return StatusCode(500, Fail("Đã xảy ra lỗi hệ thống. Vui lòng thử lại.")); }
+    }
+
+    [HttpPost("records/{hiringRecordId:guid}/cancel")]
+    public async Task<IActionResult> CancelHiringRequest(Guid hiringRecordId)
+    {
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
+
+        try
+        {
+            await _service.CancelHiringRequestAsync(hiringRecordId, userId.Value);
+            return Ok(OkResult("Bạn đã hủy yêu cầu thuê thành công."));
+        }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (KeyNotFoundException) { return NotFound(Fail("Không tìm thấy yêu cầu thuê.")); }
+        catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
+        catch (Exception) { return StatusCode(500, Fail("Đã xảy ra lỗi hệ thống. Vui lòng thử lại.")); }
+    }
+
+    [HttpPost("records/{hiringRecordId:guid}/accept")]
+    public async Task<IActionResult> AcceptHiringRequest(Guid hiringRecordId)
+    {
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
+
+        try
+        {
+            await _service.RespondHiringRequestAsync(hiringRecordId, userId.Value, isAccepted: true);
+            return Ok(OkResult("Bạn đã chấp nhận yêu cầu thuê."));
+        }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (KeyNotFoundException) { return NotFound(Fail("Không tìm thấy yêu cầu thuê.")); }
+        catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
+        catch (Exception) { return StatusCode(500, Fail("Đã xảy ra lỗi hệ thống. Vui lòng thử lại.")); }
+    }
+
+    [HttpPost("records/{hiringRecordId:guid}/decline")]
+    public async Task<IActionResult> DeclineHiringRequest(Guid hiringRecordId)
+    {
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
+
+        try
+        {
+            await _service.RespondHiringRequestAsync(hiringRecordId, userId.Value, isAccepted: false);
+            return Ok(OkResult("Bạn đã từ chối yêu cầu thuê."));
+        }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (KeyNotFoundException) { return NotFound(Fail("Không tìm thấy yêu cầu thuê.")); }
+        catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
+        catch (Exception) { return StatusCode(500, Fail("Đã xảy ra lỗi hệ thống. Vui lòng thử lại.")); }
+    }
+
+    [HttpPost("records/{hiringRecordId:guid}/create-contract")]
+    public async Task<IActionResult> CreateContract(Guid hiringRecordId)
+    {
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue) return Unauthorized(Fail("Không xác định được người dùng."));
+
+        try
+        {
+            var contractId = await _service.CreateContractForHiringAsync(hiringRecordId, userId.Value);
+            return Ok(OkResult(new { contractId }, "Hợp đồng đã được tạo thành công."));
+        }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (KeyNotFoundException) { return NotFound(Fail("Không tìm thấy bản ghi thuê.")); }
+        catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
         catch (Exception) { return StatusCode(500, Fail("Đã xảy ra lỗi hệ thống. Vui lòng thử lại.")); }
     }
 

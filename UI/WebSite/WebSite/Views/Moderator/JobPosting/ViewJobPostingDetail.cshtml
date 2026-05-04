@@ -8,6 +8,7 @@
     var hasSpecialNeeds = !string.IsNullOrWhiteSpace(Model.SpecialNeeds);
     var hasSkills = Model.Skills.Any();
     var hasSchedule = Model.ScheduleSlots.Any();
+    var hasChildren = Model.Children != null && Model.Children.Any();
     var dayLabels = new[] { "Hai", "Ba", "Tư", "Năm", "Sáu", "Bảy", "CN" };
     var rowLabels = new[] { "Sáng", "Chiều", "Tối", "Đêm" };
     var moderationBadgeClass = Model.ModerationStatus switch
@@ -57,10 +58,6 @@
             <div class="rounded-2xl bg-white/90 border border-blue-100 px-4 py-3 min-w-[180px]">
                 <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Ngày tạo</p>
                 <p class="font-bold text-gray-800 mt-1">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</p>
-            </div>
-            <div class="rounded-2xl bg-white/90 border border-blue-100 px-4 py-3 min-w-[180px]">
-                <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Lượt nộp đơn</p>
-                <p class="font-bold text-gray-800 mt-1">@Model.ApplicationCount</p>
             </div>
             <a href="/Moderator/ManageJobPosting" class="btn-outline self-start">
                 <span class="material-icons-round text-base">arrow_back</span>
@@ -168,17 +165,33 @@
             <div class="content-card p-5 fade-in-up">
                 <div class="flex items-center gap-2 mb-4">
                     <span class="material-icons-round text-blue-500 text-lg">family_restroom</span>
-                    <h2 class="font-bold text-gray-900">Ghi chú chăm sóc</h2>
+                    <h2 class="font-bold text-gray-900">Thông tin các bé</h2>
                 </div>
                 <div class="space-y-3">
-                    <div class="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
-                        <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Đặc điểm</p>
-                        <p class="font-semibold text-gray-700 mt-1">@(Model.Characteristic ?? "-")</p>
-                    </div>
-                    <div class="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
-                        <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Nhu cầu đặc biệt</p>
-                        <p class="font-semibold text-gray-700 mt-1">@(hasSpecialNeeds ? Model.SpecialNeeds : "-")</p>
-                    </div>
+                    @if (hasChildren)
+                    {
+                        var childIndex = 1;
+                        foreach (var child in Model.Children!)
+                        {
+                            <div class="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                                <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Bé @childIndex @(string.IsNullOrWhiteSpace(child.Label) ? "" : $"- {child.Label}")</p>
+                                <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold mt-3">Đặc điểm</p>
+                                <p class="font-semibold text-gray-700 mt-1">@(string.IsNullOrWhiteSpace(child.Characteristic) ? "-" : child.Characteristic)</p>
+                                <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold mt-3">Nhu cầu đặc biệt</p>
+                                <p class="font-semibold text-gray-700 mt-1">@(string.IsNullOrWhiteSpace(child.SpecialNeeds) ? "-" : child.SpecialNeeds)</p>
+                            </div>
+                            childIndex++;
+                        }
+                    }
+                    else
+                    {
+                        <div class="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                            <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Đặc điểm</p>
+                            <p class="font-semibold text-gray-700 mt-1">@(Model.Characteristic ?? "-")</p>
+                            <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold mt-3">Nhu cầu đặc biệt</p>
+                            <p class="font-semibold text-gray-700 mt-1">@(hasSpecialNeeds ? Model.SpecialNeeds : "-")</p>
+                        </div>
+                    }
                 </div>
             </div>
 
@@ -226,49 +239,45 @@
 
         @if (canReview)
         {
-        <div class="content-card p-6 fade-in-up">
-            <div class="flex items-center gap-2 mb-5">
-                <span class="material-icons-round text-blue-500 text-lg">gavel</span>
-                <h2 class="font-bold text-gray-900">Quyết định kiểm duyệt</h2>
+            <div class="content-card p-6 fade-in-up">
+                <div class="flex items-center gap-2 mb-5">
+                    <span class="material-icons-round text-blue-500 text-lg">gavel</span>
+                    <h2 class="font-bold text-gray-900">Quyết định kiểm duyệt</h2>
+                </div>
+
+                <form id="jobPostingReviewForm" asp-action="ReviewJobPosting" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <input type="hidden" id="jobPostingAction" name="action" value="" />
+                    <input type="hidden" name="parentUserId" value="@Model.ParentUserId" />
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+                        <button type="button"
+                                id="jobPostingApproveBtn"
+                                onclick="submitJobPostingReview(2)"
+                                class="w-full flex items-center justify-center gap-2 px-5 py-4 rounded-2xl font-bold text-white text-sm transition-all hover:scale-[1.01] active:scale-[0.99]"
+                                style="background:linear-gradient(135deg,#10B981,#059669); box-shadow:0 4px 14px rgba(16,185,129,0.35);">
+                            <span class="material-icons-round text-lg">check_circle</span>
+                            <span class="job-posting-action-label">Duyệt bài đăng</span>
+                        </button>
+
+                        <button type="button"
+                                id="jobPostingRejectBtn"
+                                onclick="submitJobPostingReview(1)"
+                                class="w-full flex items-center justify-center gap-2 px-5 py-4 rounded-2xl font-bold text-sm text-white transition-all hover:scale-[1.01] active:scale-[0.99]"
+                                style="background:linear-gradient(135deg,#EF4444,#DC2626); box-shadow:0 4px 14px rgba(239,68,68,0.35);">
+                            <span class="material-icons-round text-lg">cancel</span>
+                            <span class="job-posting-action-label">Từ chối bài đăng</span>
+                        </button>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-xs font-bold text-gray-400 uppercase mb-2 tracking-wider">Ghi chú của Kiểm duyệt viên</label>
+                        <textarea id="jobPostingNote" name="note" rows="4" placeholder="Nhập phản hồi kiểm duyệt cho phụ huynh..."
+                                  class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none resize-none transition-all">@Model.ModerationNote</textarea>
+                    </div>
+                </form>
             </div>
-
-            <form id="jobPostingReviewForm" asp-action="ReviewJobPosting" method="post">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="id" value="@Model.Id" />
-                <input type="hidden" id="jobPostingAction" name="action" value="" />
-                <input type="hidden" name="parentUserId" value="@Model.ParentUserId" />
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
-                    <button type="button"
-                            id="jobPostingApproveBtn"
-                            onclick="submitJobPostingReview(2)"
-                            class="w-full flex items-center justify-center gap-2 px-5 py-4 rounded-2xl font-bold text-white text-sm transition-all hover:scale-[1.01] active:scale-[0.99]"
-                            style="background:linear-gradient(135deg,#10B981,#059669); box-shadow:0 4px 14px rgba(16,185,129,0.35);">
-                        <span class="material-icons-round text-lg">check_circle</span>
-                        <span class="job-posting-action-label">Duyệt bài đăng</span>
-                    </button>
-
-                    <button type="button"
-                            id="jobPostingRejectBtn"
-                            onclick="submitJobPostingReview(1)"
-                            class="w-full flex items-center justify-center gap-2 px-5 py-4 rounded-2xl font-bold text-sm text-white transition-all hover:scale-[1.01] active:scale-[0.99]"
-                            style="background:linear-gradient(135deg,#EF4444,#DC2626); box-shadow:0 4px 14px rgba(239,68,68,0.35);">
-                        <span class="material-icons-round text-lg">cancel</span>
-                        <span class="job-posting-action-label">Từ chối bài đăng</span>
-                    </button>
-                </div>
-
-                <div class="mb-6">
-                    <label class="block text-xs font-bold text-gray-400 uppercase mb-2 tracking-wider">Ghi chú nội bộ / Phản hồi</label>
-                    <textarea id="jobPostingNote" name="note" rows="4" placeholder="Nhập phản hồi kiểm duyệt cho phụ huynh..."
-                              class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none resize-none transition-all">@Model.ModerationNote</textarea>
-                </div>
-
-                <div class="flex flex-col sm:flex-row gap-3">
-                    <a href="/Moderator/ManageJobPosting" class="btn-outline justify-center">Hủy bỏ</a>
-                </div>
-            </form>
-        </div>
         }
         else
         {
@@ -419,30 +428,6 @@
         approveBtn.style.opacity = '0.65';
         rejectBtn.style.opacity = '0.65';
         form.submit();
-    }
-
-    function validateJobPostingReviewForm() {
-        return true;
-        var action = document.getElementById('jobPostingAction').value;
-        var note = document.getElementById('jobPostingNote').value.trim();
-
-        if (!action) {
-            if (typeof window.showToast === 'function') {
-                    window.showToast('Vui lòng chọn Duyệt hoặc Từ chối trước khi lưu.', { type: 'error' });
-            }
-            return false;
-        }
-
-        if (action === '1' && !note) {
-            if (typeof window.showToast === 'function') {
-                    window.showToast('Vui lòng nhập lý do từ chối trước khi lưu.', { type: 'error' });
-            }
-            return false;
-        }
-
-        return confirm(action === '2'
-            ? 'Xác nhận duyệt bài đăng này?'
-            : 'Xác nhận từ chối bài đăng với lý do đã nhập?');
     }
 </script>
 }

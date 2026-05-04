@@ -10,6 +10,7 @@ public interface IHiringRepository
     Task<ContactRequest?> GetAcceptedContactRequestAsync(Guid contactRequestId);
     Task<List<JobApplication>> GetOtherActiveApplicantsAsync(Guid jobPostingId, Guid excludedJobAppId);
     Task<HiringRecord?> GetHiringRecordByIdAsync(Guid id);
+    Task<List<HiringRecord>> GetHiringRecordsByUserIdAsync(Guid userId);
     Task<List<HiringRecord>> GetCompletedUnreviewedHiringsForParentAsync(
         Guid parentUserId,
         IReadOnlyCollection<Guid> reviewedHiringRecordIds);

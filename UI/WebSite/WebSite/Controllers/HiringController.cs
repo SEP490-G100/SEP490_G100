@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using WebSite.Hubs;
 using WebSite.Models;
-using WebSite.Models.Contract;
+using WebSite.Models.Hiring;
 
 namespace WebSite.Controllers;
 
@@ -43,21 +43,13 @@ public class HiringController : Controller
         SetBearerToken();
         try
         {
-            var response = await _http.GetAsync("/api/contracts");
+            var response = await _http.GetAsync("/api/hiring/records");
             if (!response.IsSuccessStatusCode)
                 return await Proxy(() => Task.FromResult(response));
 
             var body = await response.Content.ReadAsStringAsync();
-            var result = JsonSerializer.Deserialize<ApiResult<ContractListResponseViewModel>>(body, JsonOpts);
-            var grouped = result?.Data ?? new ContractListResponseViewModel();
-
-            var merged = grouped.Active
-                .Concat(grouped.Pending)
-                .Concat(grouped.History)
-                .OrderByDescending(item => item.CreatedAt)
-                .ToList();
-
-            return Json(new { success = true, data = merged });
+            var result = JsonSerializer.Deserialize<ApiResult<List<HiringRecordListItemViewModel>>>(body, JsonOpts);
+            return Json(new { success = true, data = result?.Data ?? new List<HiringRecordListItemViewModel>() });
         }
         catch (Exception ex)
         {
@@ -126,12 +118,48 @@ public class HiringController : Controller
         }
     }
 
+    [HttpPost("Records/{hiringRecordId:guid}/CreateContract")]
+    public async Task<IActionResult> CreateContract(Guid hiringRecordId)
+    {
+        SetBearerToken();
+        return await Proxy(() => _http.PostAsync(
+            $"/api/hiring/records/{hiringRecordId}/create-contract",
+            EmptyJson()));
+    }
+
     [HttpPost("Records/{hiringRecordId:guid}/Complete")]
     public async Task<IActionResult> Complete(Guid hiringRecordId)
     {
         SetBearerToken();
         return await Proxy(() => _http.PostAsync(
             $"/api/hiring/records/{hiringRecordId}/complete",
+            EmptyJson()));
+    }
+
+    [HttpPost("Records/{hiringRecordId:guid}/Cancel")]
+    public async Task<IActionResult> Cancel(Guid hiringRecordId)
+    {
+        SetBearerToken();
+        return await Proxy(() => _http.PostAsync(
+            $"/api/hiring/records/{hiringRecordId}/cancel",
+            EmptyJson()));
+    }
+
+    [HttpPost("Records/{hiringRecordId:guid}/Accept")]
+    public async Task<IActionResult> Accept(Guid hiringRecordId)
+    {
+        SetBearerToken();
+        return await Proxy(() => _http.PostAsync(
+            $"/api/hiring/records/{hiringRecordId}/accept",
+            EmptyJson()));
+    }
+
+    [HttpPost("Records/{hiringRecordId:guid}/Decline")]
+    public async Task<IActionResult> Decline(Guid hiringRecordId)
+    {
+        SetBearerToken();
+        return await Proxy(() => _http.PostAsync(
+            $"/api/hiring/records/{hiringRecordId}/decline",
             EmptyJson()));
     }
 
