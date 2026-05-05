@@ -124,7 +124,7 @@ public class ReviewJobApplicationAsyncTests
     }
 
     [Fact]
-    public async Task Accept_ReturnsSuccess_NoNotification()
+    public async Task Accept_ReturnsSuccess_SendsNotificationToNanny()
     {
         var app = PendingApplication();
         _mockAppRepo.Setup(x => x.GetParentProfileIdByUserIdAsync(_parentUserId))
@@ -142,9 +142,14 @@ public class ReviewJobApplicationAsyncTests
         Assert.NotNull(app.ReviewedAt);
         _mockAppRepo.Verify(x => x.SaveChangesAsync(), Times.Once);
         _mockNotif.Verify(n => n.createNotification(
-            It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(),
-            It.IsAny<int>(), It.IsAny<Guid?>(), It.IsAny<string?>(), It.IsAny<Guid?>()),
-            Times.Never);
+            _nannyUserId,
+            It.Is<string>(title => title.Contains("chấp nhận")),
+            It.Is<string>(content => content.Contains(app.JobPosting.Title)),
+            Nanny_BackEnd.Helpers.NotificationTypes.JobApplicationApproved,
+            app.Id,
+            "JobApplication",
+            _parentUserId),
+            Times.Once);
     }
 
     [Fact]
