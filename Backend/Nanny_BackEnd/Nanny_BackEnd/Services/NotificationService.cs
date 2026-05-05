@@ -504,6 +504,8 @@ public class NotificationService : INotificationService
                 "/Nanny/ContactRequests",
             NotificationTypes.HiringConfirmed =>
                 "/Hiring/ViewHiringHistory",
+            NotificationTypes.JobPostingExpired when notification.RelatedEntityId.HasValue =>
+                $"/Search/History?jobId={notification.RelatedEntityId.Value}",
             _ => null
         };
     }
