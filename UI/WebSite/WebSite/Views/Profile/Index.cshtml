@@ -32,7 +32,8 @@
     var verificationCode = Model.VerificationStatusCode ?? 0;
     var isIdentityVerified = verificationCode == 2;
     var hasUploadedHealthDocument = Model.HasHealthCertificate;
-    var hideEmailInParentNannyView = isReadOnly && isNanny && User.IsInRole("Parent");
+    var hideEmailInParentNannyView = isReadOnly &&
+        ((isNanny && User.IsInRole("Parent")) || (isParent && User.IsInRole("Nanny")));
     var areaText = string.Join(", ", new[] { Model.Ward, Model.District, Model.City }.Where(v => !string.IsNullOrWhiteSpace(v)));
     var viCulture = System.Globalization.CultureInfo.GetCultureInfo("vi-VN");
     var displayEmail = string.IsNullOrWhiteSpace(Model.Email) ? "Chưa cập nhật" : Model.Email;
