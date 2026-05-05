@@ -79,6 +79,26 @@ public class HiringService : IHiringService
         app.ReviewedAt = now;
         app.UpdatedAt = now;
         app.UpdatedBy = parentUserId;
+
+        var nannyUserId = app.NannyProfile?.UserId ?? Guid.Empty;
+        if (nannyUserId != Guid.Empty)
+        {
+            _repo.AddNotification(new Notification
+            {
+                Id = Guid.NewGuid(),
+                UserId = nannyUserId,
+                Title = "Đơn ứng tuyển được chấp nhận",
+                Content = $"Parent đã chấp nhận đơn ứng tuyển của bạn cho bài đăng \"{app.JobPosting?.Title ?? "Công việc"}\".",
+                Type = NotificationTypes.JobApplicationApproved,
+                IsRead = false,
+                RelatedEntityId = app.Id,
+                RelatedEntityType = "JobApplication",
+                CreatedAt = now,
+                CreatedBy = parentUserId,
+                IsDeleted = false
+            });
+        }
+
         await _repo.SaveChangesAsync();
     }
 
