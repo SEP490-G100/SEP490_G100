@@ -55,6 +55,7 @@ public interface IJobService
     Task<JobPostingDetailResponse> ModeratorViewJobDetailAsync(Guid jobId);
     Task ModeratorReviewJobAsync(Guid jobId, Guid moderatorUserId, ModerateJobPostingRequest request);
     Task ModeratorDeactivateJobAsync(Guid jobId, Guid moderatorUserId);
+    Task ToggleJobVisibilityAsync(Guid jobId, Guid parentProfileId);
     Task<BackfillJobCoordinatesResult> BackfillJobCoordinatesAsync(
         BackfillJobCoordinatesRequest request,
         Guid? actorUserId = null,

@@ -249,6 +249,26 @@ public class SearchController : Controller
         }
     }
 
+    // ── POST /Search/ToggleVisibility?id={id} ──────────────
+    [HttpPost]
+    [Authorize]
+    public async Task<IActionResult> ToggleVisibility(Guid id)
+    {
+        if (!isParentRole())
+            return StatusCode(403, new { success = false, message = "Bạn không có quyền thao tác bài đăng này." });
+
+        SetAuthHeader();
+        try
+        {
+            var response = await _http.PostAsync($"/api/job-postings/{id}/toggle-visibility", null);
+            return await ProxyApiResponse(response);
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
     // ── DELETE /Search/DeleteJob/{id} ───────────────────────
     [HttpDelete]
     [Authorize]

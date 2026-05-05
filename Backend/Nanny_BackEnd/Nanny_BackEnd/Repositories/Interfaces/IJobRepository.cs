@@ -27,7 +27,7 @@ public interface IJobRepository
     Task<int> countJobPostingsInCurrentMonth(Guid parentProfileId);
     Task<int> countActiveJobPostings(Guid parentProfileId);
     Task<List<JobPosting>> GetApprovedPublicJobsMissingExpiryAsync();
-    Task hideExpiredPostings();
+    Task<List<JobPosting>> hideExpiredPostings();
     Task<(List<JobPosting> Items, int TotalCount)> GetModeratorJobPostingsAsync(
         int? status,
         int? moderationStatus,

@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
+using Nanny_BackEnd.DTOs.Subscription;
 using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Models;
 using Nanny_BackEnd.Repositories;
@@ -32,6 +33,8 @@ public class ReviewJobTests
             mockSubRepo.Object, mockUserRepo.Object, _mockNotif.Object, mockCasso.Object,
             mockPayOs.Object,   Options.Create(new PayOsOptions()),
             NullLogger<SubscriptionService>.Instance);
+        mockSubSvc.Setup(s => s.getBenefitsForParentProfile(It.IsAny<Guid>()))
+            .ReturnsAsync(new SubscriptionBenefitResponse { ListingDurationDays = 30, MonthlyJobPostLimit = 5 });
         var mockScope     = new Mock<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>();
 
         _sut = new JobService(

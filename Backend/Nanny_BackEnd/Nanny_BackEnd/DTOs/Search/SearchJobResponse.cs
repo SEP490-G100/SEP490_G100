@@ -37,6 +37,8 @@ public class SearchJobResponse
     public string? ModerationNote { get; set; }
     public DateTime? ModeratedAt { get; set; }
     public DateTime? PublishedAt { get; set; }
+    /// <summary>Thời điểm hết hiệu lực hiển thị tin (đã duyệt + công khai).</summary>
+    public DateTime? ExpiresAt { get; set; }
     public double? DistanceKm { get; set; }
     public string? SubscriptionPlanCode { get; set; }
     public bool FeaturedBadge { get; set; }
