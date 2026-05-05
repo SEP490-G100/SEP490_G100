@@ -46,7 +46,7 @@ public static class EnumDisplayHelper
         {
             VerificationStatus.NotSubmitted => "Chưa gửi",
             VerificationStatus.Pending => "Đang chờ duyệt",
-            VerificationStatus.Approved => "Đã duyệt",
+            VerificationStatus.Approved => "Đã xác minh danh tính",
             VerificationStatus.Rejected => "Bị từ chối",
             _ => status.ToString()
         };
