@@ -159,7 +159,7 @@ public class UpdatePersonalInfoAsyncTests
     }
 
     [Fact]
-    public async Task Nanny_Age30OrUnder_Throws()
+    public async Task Nanny_UnderMinAge_Throws()
     {
         var id = Guid.NewGuid();
         var today = DateOnly.FromDateTime(DateTime.Today);
@@ -186,7 +186,7 @@ public class UpdatePersonalInfoAsyncTests
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.UpdatePersonalInfoAsync(id, req));
 
-        Assert.Equal("Nanny phải lớn hơn 30 tuổi.", ex.Message);
+        Assert.Equal("Nanny phải đủ 20 tuổi trở lên.", ex.Message);
     }
 
     [Fact]

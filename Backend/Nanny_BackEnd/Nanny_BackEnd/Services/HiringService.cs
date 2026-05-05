@@ -133,41 +133,9 @@ public class HiringService : IHiringService
             dto.EndDate,
             now);
 
-        var others = await _repo.GetOtherActiveApplicantsAsync(jobPostingId, jobAppId);
-        foreach (var other in others)
-        {
-            other.Status = 3;
-            other.RejectionReason = "Vị trí đã được tuyển dụng.";
-            other.ReviewedAt = now;
-            other.UpdatedAt = now;
-            other.UpdatedBy = parentUserId;
-        }
-
         var nannyUserId = nannyProfile.UserId;
 
         AddHiringConfirmedNotifications(hiringRecord.Id, nannyUserId, parentUserId, GetDisplayName(parentProfile.User), now);
-
-        foreach (var other in others)
-        {
-            var otherUserId = other.NannyProfile?.UserId;
-            if (!otherUserId.HasValue || otherUserId.Value == Guid.Empty)
-                continue;
-
-            _repo.AddNotification(new Notification
-            {
-                Id = Guid.NewGuid(),
-                UserId = otherUserId.Value,
-                Title = "Đơn ứng tuyển không được chọn",
-                Content = "Vị trí đã được tuyển dụng bởi ứng viên khác.",
-                Type = NotificationTypes.JobApplicationRejected,
-                IsRead = false,
-                RelatedEntityId = other.JobPostingId,
-                RelatedEntityType = "JobPosting",
-                CreatedAt = now,
-                CreatedBy = parentUserId,
-                IsDeleted = false
-            });
-        }
 
         await _repo.SaveChangesAsync();
 
@@ -180,7 +148,7 @@ public class HiringService : IHiringService
             ParentUserId = parentUserId,
             NannyUserId = nannyUserId,
             ParentName = GetDisplayName(parentProfile.User),
-            BatchRejectedCount = others.Count
+            BatchRejectedCount = 0
         };
     }
 

@@ -400,8 +400,8 @@ public class NannyBasicInfoController : Controller
 
                 var age = today.Year - dob.Year;
                 if (dob > today.AddYears(-age)) age--;
-                if (age <= 30)
-                    ModelState.AddModelError(nameof(model.DateOfBirth), "Bảo mẫu phải lớn hơn 30 tuổi.");
+                if (age < 20)
+                    ModelState.AddModelError(nameof(model.DateOfBirth), "Bảo mẫu phải đủ 20 tuổi trở lên.");
             }
 
             if (model.Gender == null)
