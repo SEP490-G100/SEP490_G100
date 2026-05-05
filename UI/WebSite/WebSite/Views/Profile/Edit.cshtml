@@ -7,7 +7,7 @@
     var avatarUrlJson = System.Text.Json.JsonSerializer.Serialize(avatarUrl);
     var isNanny = Model.IsNanny;
     var dobMax = (isNanny
-        ? DateOnly.FromDateTime(DateTime.Today.AddYears(-31))
+        ? DateOnly.FromDateTime(DateTime.Today.AddYears(-20))
         : DateOnly.FromDateTime(DateTime.Today))
         .ToString("yyyy-MM-dd");
 }
@@ -59,7 +59,7 @@
                                 <input asp-for="DateOfBirth" asp-format="{0:yyyy-MM-dd}" id="DateOfBirth" type="date" max="@dobMax" class="form-input" />
                                 @if (isNanny)
                                 {
-                                    <p id="dobHint" class="text-xs text-slate-500 mt-1">Yêu cầu: Bảo mẫu phải lớn hơn 30 tuổi.</p>
+                                    <p id="dobHint" class="text-xs text-slate-500 mt-1">Yêu cầu: Bảo mẫu phải đủ 20 tuổi trở lên.</p>
                                 }
                                 <p id="dobError" class="hidden text-xs text-red-600 mt-1"></p>
                             </div>
@@ -562,8 +562,8 @@
                 var age = today.getFullYear() - dob.getFullYear();
                 var monthDiff = today.getMonth() - dob.getMonth();
                 if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) age--;
-                if (age <= 30) {
-                    showDobError("Bảo mẫu phải lớn hơn 30 tuổi.");
+                if (age < 20) {
+                    showDobError("Bảo mẫu phải đủ 20 tuổi trở lên.");
                     return false;
                 }
                 clearDobError();

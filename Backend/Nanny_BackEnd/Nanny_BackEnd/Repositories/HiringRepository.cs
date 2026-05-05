@@ -48,17 +48,6 @@ public class HiringRepository : IHiringRepository
                 .ThenInclude(n => n.User)
             .FirstOrDefaultAsync();
 
-    public async Task<List<JobApplication>> GetOtherActiveApplicantsAsync(Guid jobPostingId, Guid excludedJobAppId) =>
-        await _db.JobApplications
-            .Where(a =>
-                a.JobPostingId == jobPostingId &&
-                a.Id != excludedJobAppId &&
-                (a.Status == 0 || a.Status == 1) &&
-                !a.IsDeleted)
-            .Include(a => a.NannyProfile)
-                .ThenInclude(n => n.User)
-            .ToListAsync();
-
     public async Task<HiringRecord?> GetHiringRecordByIdAsync(Guid id) =>
         await _db.HiringRecords
             .Where(h => h.Id == id && !h.IsDeleted)

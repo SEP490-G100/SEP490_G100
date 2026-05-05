@@ -16,6 +16,7 @@ namespace Nanny_BackEnd.Services;
 public class ProfileService : IProfileService
 {
     private const int MinParentAge = 18;
+    private const int MinNannyAge = 20;
     private const int MaxParentChildren = 20;
 
     private readonly IUserRepository _userRepo;
@@ -417,8 +418,8 @@ public class ProfileService : IProfileService
                 throw new InvalidOperationException("Nanny phải nhập ngày sinh.");
 
             var age = CalculateAge(dobToValidate.Value, today);
-            if (age <= 30)
-                throw new InvalidOperationException("Nanny phải lớn hơn 30 tuổi.");
+            if (age < MinNannyAge)
+                throw new InvalidOperationException($"Nanny phải đủ {MinNannyAge} tuổi trở lên.");
         }
 
         // Map required core fields
