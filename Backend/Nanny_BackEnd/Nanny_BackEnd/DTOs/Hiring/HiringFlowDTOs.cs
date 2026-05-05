@@ -6,11 +6,6 @@ public class ConfirmHiringDto
     public DateOnly? EndDate { get; set; }
 }
 
-public class RespondToOfferDto
-{
-    public string Action { get; set; } = string.Empty;
-}
-
 public class JobApplicantDto
 {
     public Guid JobApplicationId { get; set; }
@@ -30,7 +25,7 @@ public class JobApplicantDto
 public class HiringOfferDetailDto
 {
     public Guid HiringRecordId { get; set; }
-    public Guid ContractId { get; set; }
+    public Guid? ContractId { get; set; }
     public Guid JobPostingId { get; set; }
     public string JobPostingTitle { get; set; } = string.Empty;
     public string ParentName { get; set; } = string.Empty;
@@ -47,21 +42,6 @@ public class HiringOfferDetailDto
     public DateTime? SignedAt { get; set; }
 }
 
-public class ContractTemplateOptionDto
-{
-    public Guid Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string Version { get; set; } = string.Empty;
-}
-
-public class ContractTemplatePreviewDto
-{
-    public Guid Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string Version { get; set; } = string.Empty;
-    public string Content { get; set; } = string.Empty;
-}
-
 public class NannyHireContextDto
 {
     public bool CanHire { get; set; }
@@ -73,10 +53,24 @@ public class NannyHireContextDto
     public string? NannyAvatar { get; set; }
 }
 
+public class HiringRecordListItemDto
+{
+    public Guid HiringRecordId { get; set; }
+    public Guid? ContractId { get; set; }
+    public string JobTitle { get; set; } = string.Empty;
+    public string ParentName { get; set; } = string.Empty;
+    public string? ParentAvatar { get; set; }
+    public string NannyName { get; set; } = string.Empty;
+    public string? NannyAvatar { get; set; }
+    public DateOnly StartDate { get; set; }
+    public DateOnly? EndDate { get; set; }
+    public int HiringStatus { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
 public class HiringConfirmedDto
 {
     public Guid HiringRecordId { get; set; }
-    public Guid ContractId { get; set; }
     public Guid ConversationId { get; set; }
     public Guid ParentUserId { get; set; }
     public Guid NannyUserId { get; set; }

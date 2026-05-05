@@ -157,12 +157,14 @@ public class AdminSubscriptionPlanFormViewModel
     public string TargetRole { get; set; } = "Parent";
 
     [Display(Name = "Giá gói")]
-    [Range(typeof(decimal), "0", "999999999")]
-    public decimal Price { get; set; }
+    [Required(ErrorMessage = "Giá gói là bắt buộc")]
+    [Range(typeof(decimal), "0", "999999999", ErrorMessage = "Nhập giá gói là bội số của 1000")]
+    public decimal? Price { get; set; }
 
     [Display(Name = "Thời hạn sử dụng")]
-    [Range(1, 3650)]
-    public int DurationDays { get; set; }
+    [Required(ErrorMessage = "Thời hạn là bắt buộc")]
+    [Range(1, 3650, ErrorMessage = "Nhập chữ số nguyên dương lớn hơn hoặc bằng 1.")]
+    public int? DurationDays { get; set; }
 
     [Display(Name = "Thứ tự sắp xếp")]
     [Range(1, 999)]
@@ -173,20 +175,23 @@ public class AdminSubscriptionPlanFormViewModel
     public string FeatureLines { get; set; } = "";
 
     [Display(Name = "Giới hạn đăng bài mỗi tháng")]
-    [Range(0, 1000)]
-    public int MonthlyJobPostLimit { get; set; }
+    [Required(ErrorMessage = "Giới Hạn Đăng Tin Hàng Tháng là bắt buộc")]
+    [Range(0, 1000, ErrorMessage = "Nhập chữ số nguyên dương lớn hơn hoặc bằng 0.")]
+    public int? MonthlyJobPostLimit { get; set; }
 
     [Display(Name = "Giới hạn ứng tuyển mỗi tháng")]
-    [Range(0, 1000)]
-    public int MonthlyApplicationLimit { get; set; }
+    [Required(ErrorMessage = "Giới Hạn Ứng Tuyển Hàng Tháng  là bắt buộc")]
+    [Range(0, 1000, ErrorMessage = "Nhập chữ số nguyên dương lớn hơn hoặc bằng 0.")]
+    public int? MonthlyApplicationLimit { get; set; }
 
     public bool FeaturedBadge { get; set; }
 
     public bool SearchPriority { get; set; }
 
     [Display(Name = "Số ngày hiển thị bài đăng")]
-    [Range(0, 3650)]
-    public int ListingDurationDays { get; set; }
+    [Required(ErrorMessage = "Thời Hạn Hiển Thị là bắt buộc")]
+    [Range(0, 3650, ErrorMessage = "Nhập chữ số nguyên dương lớn hơn hoặc bằng 0.")]
+    public int? ListingDurationDays { get; set; }
 
     public bool CanUseRecommendation { get; set; }
 

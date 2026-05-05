@@ -2,13 +2,12 @@
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using WebSite.Hubs;
 using WebSite.Models;
-using WebSite.Models.Contract;
+using WebSite.Models.Hiring;
 
 namespace WebSite.Controllers;
 
@@ -35,40 +34,6 @@ public class HiringController : Controller
         return View("~/Views/Hiring/ViewHiringHistory.cshtml");
     }
 
-    [HttpGet("ContractTemplates")]
-    public async Task<IActionResult> ContractTemplates()
-    {
-        SetBearerToken();
-        return await Proxy(() => _http.GetAsync("/api/hiring/contract-templates"));
-    }
-
-    [HttpGet("ContractTemplatePreview/{templateId:guid}")]
-    public async Task<IActionResult> ContractTemplatePreview(Guid templateId)
-    {
-        SetBearerToken();
-        var response = await _http.GetAsync($"/api/hiring/contract-templates/{templateId}");
-        if (!response.IsSuccessStatusCode)
-            return Content("Không thể tải nội dung mẫu hợp đồng.");
-
-        var body = await response.Content.ReadAsStringAsync();
-        using var doc = JsonDocument.Parse(string.IsNullOrWhiteSpace(body) ? "{}" : body);
-        if (!doc.RootElement.TryGetProperty("success", out var successEl) || !successEl.GetBoolean())
-            return Content("Không thể tải nội dung mẫu hợp đồng.");
-
-        if (!doc.RootElement.TryGetProperty("data", out var dataEl) || dataEl.ValueKind != JsonValueKind.Object)
-            return Content("Không thể tải nội dung mẫu hợp đồng.");
-
-        var title = dataEl.TryGetProperty("name", out var nameEl) ? (nameEl.GetString() ?? "Mau hop dong") : "Mau hop dong";
-        var version = dataEl.TryGetProperty("version", out var versionEl) ? (versionEl.GetString() ?? "") : "";
-        var content = dataEl.TryGetProperty("content", out var contentEl) ? (contentEl.GetString() ?? "") : "";
-        content = Regex.Replace(content, @"\{\{\s*[^{}]+\s*\}\}", "...", RegexOptions.CultureInvariant);
-
-        ViewBag.TemplateTitle = title;
-        ViewBag.TemplateVersion = version;
-        ViewBag.TemplateContent = content;
-        return View("~/Views/Hiring/ContractTemplatePreview.cshtml");
-    }
-
     [HttpGet("Api/History")]
     public async Task<IActionResult> HistoryApi()
     {
@@ -78,21 +43,13 @@ public class HiringController : Controller
         SetBearerToken();
         try
         {
-            var response = await _http.GetAsync("/api/contracts");
+            var response = await _http.GetAsync("/api/hiring/records");
             if (!response.IsSuccessStatusCode)
                 return await Proxy(() => Task.FromResult(response));
 
             var body = await response.Content.ReadAsStringAsync();
-            var result = JsonSerializer.Deserialize<ApiResult<ContractListResponseViewModel>>(body, JsonOpts);
-            var grouped = result?.Data ?? new ContractListResponseViewModel();
-
-            var merged = grouped.Active
-                .Concat(grouped.Pending)
-                .Concat(grouped.History)
-                .OrderByDescending(item => item.CreatedAt)
-                .ToList();
-
-            return Json(new { success = true, data = merged });
+            var result = JsonSerializer.Deserialize<ApiResult<List<HiringRecordListItemViewModel>>>(body, JsonOpts);
+            return Json(new { success = true, data = result?.Data ?? new List<HiringRecordListItemViewModel>() });
         }
         catch (Exception ex)
         {
@@ -161,21 +118,13 @@ public class HiringController : Controller
         }
     }
 
-    [HttpGet("Record")]
-    public async Task<IActionResult> Record([FromQuery] Guid hiringRecordId)
+    [HttpPost("Records/{hiringRecordId:guid}/CreateContract")]
+    public async Task<IActionResult> CreateContract(Guid hiringRecordId)
     {
         SetBearerToken();
-        return await Proxy(() => _http.GetAsync($"/api/hiring/records/{hiringRecordId}"));
-    }
-
-    [HttpPost("Records/{hiringRecordId:guid}/Respond")]
-    public async Task<IActionResult> Respond(Guid hiringRecordId)
-    {
-        SetBearerToken();
-        var body = await ReadBodyAsync();
         return await Proxy(() => _http.PostAsync(
-            $"/api/hiring/records/{hiringRecordId}/respond",
-            JsonContent(body)));
+            $"/api/hiring/records/{hiringRecordId}/create-contract",
+            EmptyJson()));
     }
 
     [HttpPost("Records/{hiringRecordId:guid}/Complete")]
@@ -184,6 +133,33 @@ public class HiringController : Controller
         SetBearerToken();
         return await Proxy(() => _http.PostAsync(
             $"/api/hiring/records/{hiringRecordId}/complete",
+            EmptyJson()));
+    }
+
+    [HttpPost("Records/{hiringRecordId:guid}/Cancel")]
+    public async Task<IActionResult> Cancel(Guid hiringRecordId)
+    {
+        SetBearerToken();
+        return await Proxy(() => _http.PostAsync(
+            $"/api/hiring/records/{hiringRecordId}/cancel",
+            EmptyJson()));
+    }
+
+    [HttpPost("Records/{hiringRecordId:guid}/Accept")]
+    public async Task<IActionResult> Accept(Guid hiringRecordId)
+    {
+        SetBearerToken();
+        return await Proxy(() => _http.PostAsync(
+            $"/api/hiring/records/{hiringRecordId}/accept",
+            EmptyJson()));
+    }
+
+    [HttpPost("Records/{hiringRecordId:guid}/Decline")]
+    public async Task<IActionResult> Decline(Guid hiringRecordId)
+    {
+        SetBearerToken();
+        return await Proxy(() => _http.PostAsync(
+            $"/api/hiring/records/{hiringRecordId}/decline",
             EmptyJson()));
     }
 

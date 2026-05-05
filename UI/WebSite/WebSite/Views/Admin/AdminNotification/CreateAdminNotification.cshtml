@@ -20,8 +20,6 @@
 <form method="post" action="/Admin/CreateAdminNotification" class="space-y-6" id="createAdminNotificationForm">
     @Html.AntiForgeryToken()
     <div class="content-card p-6 fade-in-up">
-        <div asp-validation-summary="All" class="mb-4 text-sm text-red-600"></div>
-
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
             <div class="field-group lg:col-span-2">
                 <label asp-for="Title" class="field-label"></label>

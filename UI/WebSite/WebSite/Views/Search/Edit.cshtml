@@ -111,13 +111,6 @@
                                 <label class="form-label">Độ tuổi bảo mẫu đến</label>
                                 <input type="number" id="ef-maxAge" class="form-input" min="18" max="80" />
                             </div>
-                            <div>
-                                <label class="form-label">Trạng thái bài đăng</label>
-                                <div class="status-toggle" id="ef-statusToggle">
-                                    <button type="button" class="status-option active" data-status="1">Công khai</button>
-                                    <button type="button" class="status-option" data-status="2">Ẩn bài đăng</button>
-                                </div>
-                            </div>
                         </div>
                     </div>
 
@@ -224,6 +217,7 @@ const autocompleteDropdowns = new Map();
 const selectPickerSyncFns = [];
 let initialFormSignature = '';
 let hasLoadedEditData = false;
+let pendingExpiredRenewal = false;
 let isSubmittingEdit = false;
 let currentModerationStatus = null;
 let locationTree = [];
@@ -482,7 +476,7 @@ function applyEditDraft(draft) {
         }
 
         if ([1, 2].includes(Number(draft.status))) {
-            setEditStatus(Number(draft.status));
+            setEditPostingStatus(Number(draft.status));
         }
 
         editSkills = normalizeDraftSkills(draft.skills);
@@ -868,11 +862,11 @@ function showNotice(message, kind) {
     box.classList.remove('hidden');
 }
 
-function setEditStatus(status) {
-    document.getElementById('ef-status').value = String(status);
-    document.querySelectorAll('#ef-statusToggle .status-option').forEach((button) => {
-        button.classList.toggle('active', Number(button.dataset.status) === status);
-    });
+function setEditPostingStatus(status) {
+    const n = Number(status);
+    const resolved = n === 2 ? 2 : 1;
+    const el = document.getElementById('ef-status');
+    if (el) el.value = String(resolved);
     updateSubmitState();
 }
 
@@ -1087,7 +1081,7 @@ function validateEditPayload(payload) {
     }
 
     if (![1, 2].includes(Number(payload?.status))) {
-        return { message: 'Trạng thái bài đăng không hợp lệ.', fieldId: 'ef-statusToggle' };
+        return { message: 'Trạng thái bài đăng không hợp lệ.', fieldId: 'ef-minAge' };
     }
 
     return null;
@@ -1095,6 +1089,7 @@ function validateEditPayload(payload) {
 
 function isFormDirty() {
     if (!hasLoadedEditData) return false;
+    if (pendingExpiredRenewal) return true;
     return getCurrentFormSignature() !== initialFormSignature;
 }
 
@@ -1204,7 +1199,9 @@ async function loadEditPage() {
         handleLocationCityChange('ef', document.getElementById('ef-city').value);
         document.getElementById('ef-minAge').value = job.minNannyAge || '';
         document.getElementById('ef-maxAge').value = job.maxNannyAge || '';
-        setEditStatus(Number(job.status) || 1);
+        const rawPostingStatus = Number(job.status);
+        pendingExpiredRenewal = rawPostingStatus === 3;
+        setEditPostingStatus(rawPostingStatus === 3 ? 1 : rawPostingStatus === 2 ? 2 : 1);
         syncSelectPickerTexts();
 
         editSkills = Array.isArray(job.skills) ? [...job.skills] : [];
@@ -1214,7 +1211,12 @@ async function loadEditPage() {
         renderScheduleGrid();
         setProfileFields(getSelectedChild());
 
-        if (Number(job.moderationStatus) === 0) {
+        if (pendingExpiredRenewal) {
+            showNotice(
+                'Bài đăng đã hết hạn hiển thị. Nhấn Lưu để gửi duyệt lại; sau khi duyệt, tin sẽ công khai theo gói đăng ký.',
+                'warn'
+            );
+        } else if (Number(job.moderationStatus) === 0) {
             showNotice('Bài đăng này đang chờ kiểm duyệt. Bạn vẫn có thể chỉnh sửa và lưu lại bài đăng.', 'warn');
         } else if (Number(job.moderationStatus) === 2) {
             showNotice('Nếu bạn chỉnh sửa bài đăng công khai và lưu lại, bài đăng sẽ quay về trạng thái chờ kiểm duyệt.', 'info');
@@ -1254,10 +1256,6 @@ document.getElementById('ef-addSkill')?.addEventListener('click', () => {
 document.querySelectorAll('#editPageForm input, #editPageForm textarea, #editPageForm select').forEach((element) => {
     element.addEventListener('input', updateSubmitState);
     element.addEventListener('change', updateSubmitState);
-});
-
-document.querySelectorAll('#ef-statusToggle .status-option').forEach((button) => {
-    button.addEventListener('click', () => setEditStatus(Number(button.dataset.status)));
 });
 
 document.getElementById('editPageForm')?.addEventListener('submit', async (event) => {
@@ -1344,6 +1342,7 @@ document.getElementById('editPageForm')?.addEventListener('submit', async (event
         const successMessage = currentModerationStatus === 0
             ? 'Đã cập nhật bài đăng đang chờ kiểm duyệt.'
             : (payloadResult?.message || 'Cập nhật thành công. Bài đăng đã được gửi kiểm duyệt lại.');
+        pendingExpiredRenewal = false;
         clearEditDraft();
         pushHistoryToast(successMessage, 'success');
         shouldKeepDisabledForRedirect = true;

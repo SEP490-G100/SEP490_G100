@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -18,6 +19,8 @@ public class GetDetailTests
         var mockHttp = new Mock<System.Net.Http.IHttpClientFactory>();
 
         _mockJobRepo = new Mock<IJobRepository>();
+        _mockJobRepo.Setup(r => r.GetApprovedPublicJobsMissingExpiryAsync()).ReturnsAsync(new List<JobPosting>());
+        _mockJobRepo.Setup(r => r.hideExpiredPostings()).ReturnsAsync(new List<JobPosting>());
 
         var mockFavRepo      = new Mock<IFavoriteRepository>();
         var mockGeo          = new Mock<GeocodingService>(mockHttp.Object);
@@ -46,7 +49,6 @@ public class GetDetailTests
     public async Task NotFound()
     {
         var jobId = Guid.NewGuid();
-        _mockJobRepo.Setup(r => r.hideExpiredPostings()).Returns(Task.CompletedTask);
         _mockJobRepo.Setup(r => r.viewDetailPosting(jobId)).ReturnsAsync((JobPosting?)null);
 
         var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.getDetail(jobId));
@@ -62,7 +64,6 @@ public class GetDetailTests
             // ParentProfile = null → null-safe trong mapToDetail
         };
 
-        _mockJobRepo.Setup(r => r.hideExpiredPostings()).Returns(Task.CompletedTask);
         _mockJobRepo.Setup(r => r.viewDetailPosting(jobId)).ReturnsAsync(job);
 
         var result = await _sut.getDetail(jobId);
