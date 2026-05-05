@@ -522,6 +522,8 @@ public class NotificationService : INotificationService
                 "/Hiring/ViewHiringHistory",
             NotificationTypes.HiringCompleted =>
                 "/Hiring/ViewHiringHistory",
+            NotificationTypes.JobPostingExpired when notification.RelatedEntityId.HasValue =>
+                $"/Search/History?jobId={notification.RelatedEntityId.Value}",
             _ => null
         };
     }

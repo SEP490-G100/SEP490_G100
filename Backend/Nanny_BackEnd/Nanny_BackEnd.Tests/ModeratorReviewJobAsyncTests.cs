@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Moq;
 using Nanny_BackEnd.DTOs.JobPosting;
+using Nanny_BackEnd.DTOs.Subscription;
 using Nanny_BackEnd.Enums;
 using Nanny_BackEnd.Helpers;
 using Nanny_BackEnd.Models;
@@ -29,6 +30,8 @@ public class ModeratorReviewJobAsyncTests
         var mockFavoriteRepo = new Mock<IFavoriteRepository>();
         var mockGeo = new Mock<IGeocodingService>();
         var mockSubscriptionService = new Mock<ISubscriptionService>();
+        mockSubscriptionService.Setup(s => s.getBenefitsForParentProfile(It.IsAny<Guid>()))
+            .ReturnsAsync(new SubscriptionBenefitResponse { ListingDurationDays = 30, MonthlyJobPostLimit = 5 });
         var mockScopeFactory = new Mock<IServiceScopeFactory>();
         var mockLogger = new Mock<ILogger<JobService>>();
 

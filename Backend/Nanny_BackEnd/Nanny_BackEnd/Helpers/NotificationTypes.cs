@@ -28,8 +28,12 @@ public static class NotificationTypes
     public const int HiringDeclined = 17;
     public const int HiringCompleted = 18;
     public const int HiringConfirmed = 19;
+<<<<<<< Huy
     public const int HiringCancelled = 20;
     public const int ContractCreated = 21;
+=======
+    public const int JobPostingExpired = 20;
+>>>>>>> develop
     public const int ModeratorBroadcast = 99;
 
     public static string getLabel(int type) => type switch
@@ -60,8 +64,12 @@ public static class NotificationTypes
         HiringDeclined => "Đề nghị việc làm bị từ chối",
         HiringCompleted => "Hợp đồng đã hoàn thành",
         HiringConfirmed => "Xác nhận thuê bảo mẫu",
+<<<<<<< Huy
         HiringCancelled => "Đề nghị thuê đã bị hủy",
         ContractCreated => "Hợp đồng đã được tạo",
+=======
+        JobPostingExpired => "Tin đăng hết hạn hiển thị",
+>>>>>>> develop
         ModeratorBroadcast => "Thông báo từ Moderator",
         _ => "Thông báo hệ thống"
     };

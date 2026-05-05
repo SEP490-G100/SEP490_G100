@@ -51,7 +51,8 @@ public class NannySubmitVerificationRequestAsyncTests
         DocumentType = (int)VerificationDocumentType.IdentityCard,
         DocumentUrl = "https://x/a.pdf",
         FileName = "a.pdf",
-        FileSize = 10
+        FileSize = 10,
+        ExpiryDate = DateTime.UtcNow.Date
     };
 
     [Fact]
@@ -134,12 +135,21 @@ public class NannySubmitVerificationRequestAsyncTests
         var (ok, msg) = await _sut.NannySubmitVerificationRequestAsync(userId, new SubmitVerificationRequestDto
         {
             RequestType = (int)VerificationRequestType.HealthCertificate,
-            HealthCertificateExpiryDate = null,
-            Documents = new List<UploadedVerificationDocumentDto> { OneDoc() }
+            Documents = new List<UploadedVerificationDocumentDto>
+            {
+                new()
+                {
+                    DocumentType = (int)VerificationDocumentType.HealthCertificate,
+                    DocumentUrl = "https://x/h.pdf",
+                    FileName = "h.pdf",
+                    FileSize = 10,
+                    ExpiryDate = null
+                }
+            }
         });
 
         Assert.False(ok);
-        Assert.Equal("Ban phai nhap ngay het han cho giay kham suc khoe.", msg);
+        Assert.Equal("Bạn phải chọn ngày cấp cho tài liệu xác minh.", msg);
     }
 
     [Fact]

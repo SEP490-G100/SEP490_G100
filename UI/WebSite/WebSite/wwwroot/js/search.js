@@ -1,6 +1,6 @@
 ﻿const JOB_TYPES = { 1: 'Toàn thời gian', 2: 'Bán thời gian', 3: 'Qua đêm' };
-const MODERATION_LABELS = { 0: 'Đang chờ duyệt', 1: 'Đã bị từ chối', 2: 'Công khai' };
-const POST_STATUS_LABELS = { 1: 'Công khai', 2: 'Ẩn bài đăng' };
+const MODERATION_LABELS = { 0: 'Đang chờ duyệt', 1: 'Đã bị từ chối', 2: 'Đã duyệt' };
+const POST_STATUS_LABELS = { 1: 'Công khai', 2: 'Ẩn bài đăng', 3: 'Hết hạn' };
 
 let map;
 let markers = [];
@@ -1734,23 +1734,6 @@ function removeEditSkill(value) {
   renderSkillCollection('ef-skills', editSkills, 'removeEditSkill');
 }
 
-function setStatusToggle(toggleId, hiddenInputId, status) {
-  const hiddenInput = document.getElementById(hiddenInputId);
-  if (hiddenInput) hiddenInput.value = String(status);
-  document.querySelectorAll(`#${toggleId} .status-option`).forEach((button, index) => {
-    const optionStatus = index === 0 ? 1 : 2;
-    button.classList.toggle('active', optionStatus === status);
-  });
-}
-
-function setCreateStatus(status) {
-  setStatusToggle('cf-statusToggle', 'cf-status', status);
-}
-
-function setEditStatus(status) {
-  setStatusToggle('ef-statusToggle', 'ef-status', status);
-}
-
 function getCreateSubmitButton() {
   return document.querySelector('#createModal .modal-footer .modal-btn-primary');
 }
@@ -1779,7 +1762,8 @@ async function openCreate() {
   createSchedule = [];
   createChildren = [];
   setSchedulePresetValue('cf-schedulePreset', '');
-  setCreateStatus(1);
+  const cfStatus = document.getElementById('cf-status');
+  if (cfStatus) cfStatus.value = '1';
   ensureChildrenCountOptions('cf-children', 0, 1);
   renderSkillCollection('cf-skills', createSkills, 'removeCreateSkill');
   renderScheduleGrid('cf-schedule', createSchedule, 'toggleCreateSchedule');
@@ -2130,11 +2114,7 @@ function openPreview(job) {
   document.getElementById('pv-coords').textContent = job.latitude && job.longitude ? `${job.latitude}, ${job.longitude}` : 'Khu vực gần đúng';
   document.getElementById('pv-distance').textContent = job.distanceKm ? `${job.distanceKm.toFixed(1)} km` : 'Chưa xác định';
   document.getElementById('pv-desc').textContent = job.description || 'Không có mô tả';
-  document.getElementById('pv-moderation').textContent = MODERATION_LABELS[job.moderationStatus] || 'Đang cập nhật';
   renderPreviewChildProfiles(job, childProfiles);
-  const noteEl = document.getElementById('pv-note');
-  noteEl.textContent = job.moderationNote || '';
-  noteEl.classList.toggle('hidden', !job.moderationNote);
 
   const skillsEl = document.getElementById('pv-skills');
   skillsEl.innerHTML = (job.skills && job.skills.length)
