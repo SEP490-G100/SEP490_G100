@@ -12,18 +12,6 @@ public class HiringRepository : IHiringRepository
 
     public HiringRepository(Sep490NannyDbContext db) => _db = db;
 
-    public async Task<List<ContractTemplate>> GetActiveContractTemplatesAsync() =>
-        await _db.ContractTemplates
-            .Where(t => !t.IsDeleted && t.IsActive)
-            .OrderByDescending(t => t.UpdatedAt ?? t.CreatedAt)
-            .ThenBy(t => t.Name)
-            .ToListAsync();
-
-    public async Task<ContractTemplate?> GetActiveContractTemplateByIdAsync(Guid id) =>
-        await _db.ContractTemplates
-            .Where(t => t.Id == id && !t.IsDeleted && t.IsActive)
-            .FirstOrDefaultAsync();
-
     public async Task<JobPosting?> GetJobPostingByIdAsync(Guid jobPostingId) =>
         await _db.JobPostings
             .Where(j => j.Id == jobPostingId && !j.IsDeleted)
@@ -71,17 +59,6 @@ public class HiringRepository : IHiringRepository
                 .ThenInclude(n => n.User)
             .ToListAsync();
 
-    public async Task<List<JobApplication>> GetOtherPendingApplicantsAsync(Guid jobPostingId, Guid excludedJobAppId) =>
-        await _db.JobApplications
-            .Where(a =>
-                a.JobPostingId == jobPostingId &&
-                a.Id != excludedJobAppId &&
-                a.Status == 0 &&
-                !a.IsDeleted)
-            .Include(a => a.NannyProfile)
-                .ThenInclude(n => n.User)
-            .ToListAsync();
-
     public async Task<HiringRecord?> GetHiringRecordByIdAsync(Guid id) =>
         await _db.HiringRecords
             .Where(h => h.Id == id && !h.IsDeleted)
@@ -108,6 +85,21 @@ public class HiringRepository : IHiringRepository
             .OrderByDescending(h => h.EndDate)
             .ToListAsync();
 
+    public async Task<List<HiringRecord>> GetHiringRecordsByUserIdAsync(Guid userId) =>
+        await _db.HiringRecords
+            .Where(h =>
+                !h.IsDeleted &&
+                (h.ParentProfile.UserId == userId || h.NannyProfile.UserId == userId))
+            .Include(h => h.JobApplication)
+                .ThenInclude(a => a.JobPosting)
+            .Include(h => h.ParentProfile)
+                .ThenInclude(p => p.User)
+            .Include(h => h.NannyProfile)
+                .ThenInclude(n => n.User)
+            .Include(h => h.Contracts)
+            .OrderByDescending(h => h.CreatedAt)
+            .ToListAsync();
+
     public async Task<HiringRecord?> GetLatestHiringRecordByJobApplicationIdAsync(Guid jobApplicationId) =>
         await _db.HiringRecords
             .Where(h => h.JobApplicationId == jobApplicationId && !h.IsDeleted)
@@ -130,24 +122,6 @@ public class HiringRepository : IHiringRepository
             .Where(p => p.UserId == userId && !p.IsDeleted)
             .Include(p => p.User)
             .FirstOrDefaultAsync();
-
-    public async Task<Conversation?> FindOneToOneConversationAsync(Guid userA, Guid userB) =>
-        await _db.Conversations
-            .Where(c =>
-                !c.IsDeleted &&
-                c.Type == 1 &&
-                c.ConversationParticipants.Count(p => !p.IsDeleted) == 2 &&
-                c.ConversationParticipants.Any(p => p.UserId == userA && !p.IsDeleted) &&
-                c.ConversationParticipants.Any(p => p.UserId == userB && !p.IsDeleted))
-            .Include(c => c.ConversationParticipants.Where(p => !p.IsDeleted))
-            .FirstOrDefaultAsync();
-
-    public void AddConversation(Conversation conversation) => _db.Conversations.Add(conversation);
-
-    public void AddConversationParticipant(ConversationParticipant participant) =>
-        _db.ConversationParticipants.Add(participant);
-
-    public void AddMessage(Message message) => _db.Messages.Add(message);
 
     public void AddNotification(Notification notification) => _db.Notifications.Add(notification);
 

@@ -573,7 +573,7 @@ function applyMessageDeleted(messageId, conversationId) {
 
 async function goToContractDetailByHiringRecord(hiringRecordId) {
     if (!hiringRecordId) return;
-    window.open(`/Contract/ViewContractDetail?hiringRecordId=${encodeURIComponent(hiringRecordId)}`, '_blank', 'noopener');
+    window.open(`/Hiring/ViewHiringHistory?hiringRecordId=${encodeURIComponent(hiringRecordId)}`, '_blank', 'noopener');
 }
 
 function renderHiringOfferCard(message, isMine) {

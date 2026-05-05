@@ -502,8 +502,28 @@ public class NotificationService : INotificationService
                 "/Nanny/ContactRequests",
             NotificationTypes.ContactRequestRejected =>
                 "/Nanny/ContactRequests",
+            NotificationTypes.HiringConfirmed when notification.RelatedEntityId.HasValue =>
+                $"/Hiring/ViewHiringHistory?hiringRecordId={notification.RelatedEntityId.Value}",
+            NotificationTypes.HiringAccepted when notification.RelatedEntityId.HasValue =>
+                $"/Hiring/ViewHiringHistory?hiringRecordId={notification.RelatedEntityId.Value}",
+            NotificationTypes.HiringDeclined when notification.RelatedEntityId.HasValue =>
+                $"/Hiring/ViewHiringHistory?hiringRecordId={notification.RelatedEntityId.Value}",
+            NotificationTypes.HiringCancelled when notification.RelatedEntityId.HasValue =>
+                $"/Hiring/ViewHiringHistory?hiringRecordId={notification.RelatedEntityId.Value}",
+            NotificationTypes.HiringCompleted when notification.RelatedEntityId.HasValue =>
+                $"/Hiring/ViewHiringHistory?hiringRecordId={notification.RelatedEntityId.Value}",
             NotificationTypes.HiringConfirmed =>
                 "/Hiring/ViewHiringHistory",
+            NotificationTypes.HiringAccepted =>
+                "/Hiring/ViewHiringHistory",
+            NotificationTypes.HiringDeclined =>
+                "/Hiring/ViewHiringHistory",
+            NotificationTypes.HiringCancelled =>
+                "/Hiring/ViewHiringHistory",
+            NotificationTypes.HiringCompleted =>
+                "/Hiring/ViewHiringHistory",
+            NotificationTypes.JobPostingExpired when notification.RelatedEntityId.HasValue =>
+                $"/Search/History?jobId={notification.RelatedEntityId.Value}",
             _ => null
         };
     }

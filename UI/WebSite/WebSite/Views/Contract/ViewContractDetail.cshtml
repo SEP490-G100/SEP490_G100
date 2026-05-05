@@ -73,6 +73,8 @@
             const btnParentConfirm = document.getElementById('btnParentConfirm');
             const btnNannyConfirm = document.getElementById('btnNannyConfirm');
             const btnParentFinalConfirm = document.getElementById('btnParentFinalConfirm');
+            const PAYMENT_METHOD_CASH_TOKEN = 'PaymentMethodCash';
+            const PAYMENT_METHOD_BANK_TOKEN = 'PaymentMethodBank';
 
             const parentFields = {
                 ParentName: 'parentName',
@@ -90,6 +92,7 @@
                 SalaryAmount: 'salaryAmount',
                 ProbationSalaryAmount: 'probationSalaryAmount',
                 AllowanceAmount: 'allowanceAmount',
+                PaymentMethod: 'paymentMethod',
                 BankAccountNumber: 'bankAccountNumber',
                 BankName: 'bankName',
                 SalaryReceivedDate: 'salaryReceivedDate',
@@ -122,6 +125,7 @@
                 'NannyDOB',
                 'NannyIdentityIssueDate'
             ]);
+            const moneyFieldSet = new Set(['SalaryAmount', 'ProbationSalaryAmount', 'AllowanceAmount']);
 
             const fieldLabelMap = {
                 ParentName: 'Họ tên bố/mẹ',
@@ -139,6 +143,7 @@
                 SalaryAmount: 'Mức lương chính',
                 ProbationSalaryAmount: 'Mức lương thử việc',
                 AllowanceAmount: 'Phụ cấp đi lại/điện thoại',
+                PaymentMethod: 'Phương thức trả lương',
                 BankAccountNumber: 'Số tài khoản',
                 BankName: 'Ngân hàng',
                 SalaryReceivedDate: 'Trả vào ngày',
@@ -224,16 +229,25 @@
                 return `${yyyy}-${mm}-${dd}`;
             };
 
+            const formatVndAmount = (value) => {
+                const digits = String(value ?? '').replace(/\D/g, '');
+                if (!digits) return '';
+                return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            };
+
             const parsePositiveNumber = (value) => {
-                const normalized = String(value ?? '').trim().replaceAll(',', '.');
+                // Strip Vietnamese thousand-separator dots and commas before parsing
+                const normalized = String(value ?? '').trim().replaceAll('.', '').replaceAll(',', '');
                 if (!normalized) return null;
                 const n = Number(normalized);
                 if (!Number.isFinite(n)) return null;
                 return n;
             };
 
-            const validateRequiredFields = (fieldMap, payload) => {
+            const validateRequiredFields = (fieldMap, payload, optionalFieldKeys = []) => {
+                const optionalSet = new Set(optionalFieldKeys);
                 for (const [fieldKey, propName] of Object.entries(fieldMap)) {
+                    if (optionalSet.has(fieldKey)) continue;
                     const value = String(payload[propName] ?? '').trim();
                     if (!value) return `${getFieldLabel(fieldKey)} là bắt buộc.`;
                 }
@@ -241,8 +255,21 @@
             };
 
             const validateParentPayload = (payload) => {
-                const requiredError = validateRequiredFields(parentFields, payload);
+                const requiredError = validateRequiredFields(parentFields, payload, ['BankAccountNumber', 'BankName']);
                 if (requiredError) return requiredError;
+
+                const paymentMethod = String(payload.paymentMethod || '').trim().toLowerCase();
+                if (!paymentMethod) {
+                    return 'Vui lòng chọn phương thức trả lương.';
+                }
+                if (paymentMethod === 'banktransfer') {
+                    if (!String(payload.bankAccountNumber || '').trim()) {
+                        return 'Số tài khoản là bắt buộc khi chọn chuyển khoản.';
+                    }
+                    if (!String(payload.bankName || '').trim()) {
+                        return 'Ngân hàng là bắt buộc khi chọn chuyển khoản.';
+                    }
+                }
 
                 if (!/^\d{10,11}$/.test(payload.parentPhone || '')) {
                     return 'Điện thoại liên hệ (bố/mẹ) phải là dãy số 10-11 ký tự.';
@@ -252,11 +279,19 @@
                     return 'Email (bố/mẹ) không đúng định dạng.';
                 }
 
+                const parentDob = parseFlexibleDate(payload.parentDob);
                 const parentIssueDate = parseFlexibleDate(payload.parentIdentityIssueDate);
                 const probationStartDate = parseFlexibleDate(payload.probationStartDate);
                 const probationEndDate = parseFlexibleDate(payload.probationEndDate);
-                if (!parentIssueDate || !probationStartDate || !probationEndDate) {
+                if (!parentDob || !parentIssueDate || !probationStartDate || !probationEndDate) {
                     return 'Ngày tháng không hợp lệ.';
+                }
+
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const minParentDob = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+                if (parentDob > minParentDob) {
+                    return 'Bố/mẹ phải từ 18 tuổi trở lên.';
                 }
 
                 const probationDiffDays = Math.floor((probationEndDate - probationStartDate) / (1000 * 60 * 60 * 24));
@@ -302,6 +337,13 @@
                 const nannyIssueDate = parseFlexibleDate(payload.nannyIdentityIssueDate);
                 if (!nannyDob || !nannyIssueDate) {
                     return 'Ngày tháng không hợp lệ.';
+                }
+
+                const todayNanny = new Date();
+                todayNanny.setHours(0, 0, 0, 0);
+                const minNannyDob = new Date(todayNanny.getFullYear() - 18, todayNanny.getMonth(), todayNanny.getDate());
+                if (nannyDob > minNannyDob) {
+                    return 'Bảo mẫu phải từ 18 tuổi trở lên.';
                 }
 
                 if (!/^\d{10,11}$/.test(payload.nannyPhone || '')) {
@@ -364,7 +406,11 @@
                 return normalized;
             };
 
-            const contractContent = String(parsedStored.templateContent || contractContentRaw || '');
+            const contractContentBase = String(parsedStored.templateContent || contractContentRaw || '');
+            const contractContent = contractContentBase.replace(
+                /Trả lương bằng:\s*(?:\[\s*[xX ]\s*\]\s*)?Tiền mặt\.\s*(?:\[\s*[xX ]\s*\]\s*)?Chuyển khoản:/i,
+                `Trả lương bằng: {{${PAYMENT_METHOD_CASH_TOKEN}}} Tiền mặt. {{${PAYMENT_METHOD_BANK_TOKEN}}} Chuyển khoản:`
+            );
 
             const fieldState = {
                 ...sanitizeFieldMap(parsedStored.fieldValues),
@@ -376,6 +422,9 @@
             if (!fieldState.NannyName && nannyName) fieldState.NannyName = nannyName;
             if (!fieldState.NannyPhone && nannyPhone) fieldState.NannyPhone = nannyPhone;
             if (!fieldState.NannyEmail && nannyEmail) fieldState.NannyEmail = nannyEmail;
+            if (!fieldState.PaymentMethod) {
+                fieldState.PaymentMethod = (fieldState.BankAccountNumber || fieldState.BankName) ? 'BankTransfer' : 'Cash';
+            }
 
             const resolveDisplayValue = (fieldKey) => {
                 const value = normalizeFieldValue(fieldState[fieldKey]);
@@ -413,10 +462,24 @@
                     const staticText = contractContent.slice(cursor, tokenStart);
                     html += processStaticText(staticText);
 
-                    if (editableFieldSet.has(fieldKey)) {
+                    if (fieldKey === PAYMENT_METHOD_CASH_TOKEN || fieldKey === PAYMENT_METHOD_BANK_TOKEN) {
+                        const paymentMethod = String(fieldState.PaymentMethod || '').toLowerCase();
+                        const isCashToken = fieldKey === PAYMENT_METHOD_CASH_TOKEN;
+                        const isChecked = isCashToken
+                            ? paymentMethod === 'cash'
+                            : paymentMethod === 'banktransfer';
+                        const canEditPaymentMethod = !isReadOnly && normalizedRole === 'parent';
+                        html += `<input type="checkbox"
+                                       class="payment-method-toggle"
+                                       data-payment-method="${isCashToken ? 'Cash' : 'BankTransfer'}"
+                                       ${isChecked ? 'checked' : ''}
+                                       ${canEditPaymentMethod ? '' : 'disabled'}
+                                       style="width:16px;height:16px;vertical-align:middle;margin:0 6px 0 2px;cursor:${canEditPaymentMethod ? 'pointer' : 'default'};" />`;
+                    } else if (editableFieldSet.has(fieldKey)) {
                         const isDateField = dateFieldSet.has(fieldKey);
+                        const isMoneyField = moneyFieldSet.has(fieldKey);
                         const currentRaw = normalizeFieldValue(fieldState[fieldKey]);
-                        const current = isDateField ? toInputDateValue(currentRaw) : currentRaw;
+                        const current = isDateField ? toInputDateValue(currentRaw) : (isMoneyField ? formatVndAmount(currentRaw) : currentRaw);
                         const inputType = isDateField ? 'date' : 'text';
 
                         html += `<input type="${inputType}"
@@ -443,12 +506,38 @@
                 });
             };
 
+            const syncPaymentMethod = (value) => {
+                const normalized = String(value || '').trim();
+                fieldState.PaymentMethod = normalized;
+                const toggles = editorEl.querySelectorAll('input.payment-method-toggle');
+                toggles.forEach((toggleEl) => {
+                    if (!(toggleEl instanceof HTMLInputElement)) return;
+                    const method = String(toggleEl.dataset.paymentMethod || '');
+                    toggleEl.checked = !!normalized && method.toLowerCase() === normalized.toLowerCase();
+                });
+            };
+
             editorEl.addEventListener('input', (event) => {
                 const target = event.target;
                 if (!(target instanceof HTMLInputElement)) return;
                 const fieldKey = target.dataset.field;
                 if (!fieldKey) return;
-                syncFieldValue(fieldKey, target.value);
+
+                if (moneyFieldSet.has(fieldKey)) {
+                    const formatted = formatVndAmount(target.value);
+                    target.value = formatted;
+                    syncFieldValue(fieldKey, formatted);
+                } else {
+                    syncFieldValue(fieldKey, target.value);
+                }
+            });
+
+            editorEl.addEventListener('change', (event) => {
+                const target = event.target;
+                if (!(target instanceof HTMLInputElement)) return;
+                if (!target.classList.contains('payment-method-toggle')) return;
+                const method = String(target.dataset.paymentMethod || '');
+                syncPaymentMethod(target.checked ? method : '');
             });
 
             const buildPayload = (fieldMap) => {

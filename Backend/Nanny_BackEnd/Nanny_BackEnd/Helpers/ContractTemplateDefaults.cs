@@ -40,7 +40,10 @@ Mức lương này áp dụng sau khi Bên B đã đạt yêu cầu thử việc
 Tiền thưởng Lễ, Tết, Lương tháng thứ 13: Sẽ do Bên A quyết định dựa trên mức độ hoàn thành công việc, thái độ làm việc của Bên B và tình hình tài chính của gia đình.
 Phụ cấp đi lại/điện thoại (nếu có): {{AllowanceAmount}} VNĐ/tháng.
 3.4. Hình thức và thời hạn trả lương:
-Trả lương bằng: Tiền mặt. Chuyển khoản: Chuyển khoản vào Số tài khoản: {{BankAccountNumber}} Ngân hàng: {{BankName}}
+Trả lương bằng: Tiền mặt. Chuyển khoản:
+Chuyển khoản vào:
+Số tài khoản: {{BankAccountNumber}}
+Ngân hàng: {{BankName}}
 Thời hạn trả lương: Trả vào ngày {{SalaryReceivedDate}} hàng tháng. Nếu ngày trả lương trùng vào ngày nghỉ lễ, tết, cuối tuần thì có thể trả trước hoặc sau đó tối đa không quá 03 ngày.
 Điều 4. THỜI GIỜ LÀM VIỆC VÀ THỜI GIỜ NGHỈ NGƠI
 4.1. Thời giờ làm việc: Theo thỏa thuận giữa hai bên.

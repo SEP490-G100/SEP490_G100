@@ -8,15 +8,15 @@
                     class="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 transition-colors hover:text-slate-600">
                 <span class="material-icons-round text-base">close</span>
             </button>
-            <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-orange-500">Tuyen dung</p>
-            <h2 class="mt-1 text-xl font-bold text-slate-900">Thue bao mau</h2>
+            <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-orange-500">Tuyển dụng</p>
+            <h2 class="mt-1 text-xl font-bold text-slate-900">Thuê bảo mẫu</h2>
             <p id="hireModalNannyName" class="mt-1 text-sm text-slate-500"></p>
         </div>
 
         <div class="space-y-4 px-6 py-5">
             <div>
                 <label for="hireStartDate" class="mb-1 block text-sm font-bold text-slate-700">
-                    Ngay bat dau <span class="text-rose-500">*</span>
+                    Ngày bắt đầu <span class="text-rose-500">*</span>
                 </label>
                 <input type="date"
                        id="hireStartDate"
@@ -26,7 +26,7 @@
 
             <div>
                 <label for="hireEndDate" class="mb-1 block text-sm font-bold text-slate-700">
-                    Ngay ket thuc <span class="text-rose-500">*</span>
+                    Ngày kết thúc <span class="text-rose-500">*</span>   
                 </label>
                 <input type="date"
                        id="hireEndDate"
@@ -49,7 +49,7 @@
                     disabled
                     class="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-orange-400 px-6 font-bold text-white shadow-lg shadow-orange-200 transition-all hover:from-orange-600 hover:to-orange-500 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:from-orange-500 disabled:hover:to-orange-400">
                 <span class="material-icons-round text-base">handshake</span>
-                Xac nhan thue
+                Xác nhận thuê
             </button>
         </div>
     </div>
@@ -114,7 +114,8 @@
         if (!startDate) return 'Vui lòng chọn ngày bắt đầu.';
         if (!endDate) return 'Vui lòng chọn ngày kết thúc.';
         if (startDate < today) return 'Ngày bắt đầu không được trước ngày hiện tại.';
-        if (endDate <= startDate) return 'Ngay ket thuc phai lon hon ngay bat dau.';
+            if (endDate <= startDate) return 'Ngày kết thúc phải lớn hơn ngày bắt đầu.';
+          
         return '';
     };
 
@@ -124,7 +125,7 @@
             !!endInput.value &&
             endInput.value <= startInput.value;
 
-        setEndDateInlineError(hasEndDateOrderError ? 'Ngay ket thuc phai lon hon ngay bat dau.' : '');
+            setEndDateInlineError(hasEndDateOrderError ? 'Ngày kết thúc phải lớn hơn ngày bắt đầu.' : '');
         confirmBtn.disabled = !!getValidationError();
     };
 
@@ -135,7 +136,7 @@
         const hireNannyNameEl = document.getElementById('hireModalNannyName');
         if (hireNannyNameEl) {
             const normalizedNannyName = decodeHtmlEntities(nannyName);
-            hireNannyNameEl.textContent = normalizedNannyName ? `Bao mau: ${normalizedNannyName}` : '';
+            hireNannyNameEl.textContent = normalizedNannyName ? `Bảo mẫu: ${normalizedNannyName}` : '';
         }
 
         startInput.value = today;
