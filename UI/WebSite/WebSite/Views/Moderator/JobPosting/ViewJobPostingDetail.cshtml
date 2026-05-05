@@ -173,14 +173,16 @@
                         var childIndex = 1;
                         foreach (var child in Model.Children!)
                         {
-                            <div class="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                            <div class="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3"
+                                 data-child-card="true"
+                                 data-child-label="@child.Label"
+                                 data-child-age-group="@child.BirthTypeLabel">
                                 <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Bé @childIndex @(string.IsNullOrWhiteSpace(child.Label) ? "" : $"- {child.Label}")</p>
                                 <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold mt-3">Đặc điểm</p>
                                 <p class="font-semibold text-gray-700 mt-1">@(string.IsNullOrWhiteSpace(child.Characteristic) ? "-" : child.Characteristic)</p>
                                 <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold mt-3">Nhu cầu đặc biệt</p>
                                 <p class="font-semibold text-gray-700 mt-1">@(string.IsNullOrWhiteSpace(child.SpecialNeeds) ? "-" : child.SpecialNeeds)</p>
                             </div>
-                            childIndex++;
                         }
                     }
                     else
@@ -390,6 +392,38 @@
 
 @section Scripts {
 <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('[data-child-card="true"]').forEach(function (card) {
+            var label = (card.getAttribute('data-child-label') || '').trim();
+            var ageGroup = (card.getAttribute('data-child-age-group') || '').trim();
+            var firstTextLine = card.querySelector('p');
+
+            if (firstTextLine && firstTextLine.textContent && firstTextLine.textContent.trim().startsWith('B')) {
+                firstTextLine.remove();
+            }
+
+            var detailHeading = card.querySelector('p.text-xs.uppercase');
+            var insertBeforeNode = detailHeading || card.firstChild;
+
+            if (label) {
+                var labelEl = document.createElement('p');
+                labelEl.className = 'text-xs uppercase tracking-wide text-gray-400 font-semibold';
+                labelEl.textContent = label;
+                card.insertBefore(labelEl, insertBeforeNode);
+            }
+
+            var ageTitleEl = document.createElement('p');
+            ageTitleEl.className = 'text-xs uppercase tracking-wide text-gray-400 font-semibold mt-3';
+            ageTitleEl.textContent = 'Nhóm tuổi';
+            card.insertBefore(ageTitleEl, insertBeforeNode);
+
+            var ageValueEl = document.createElement('p');
+            ageValueEl.className = 'font-semibold text-gray-700 mt-1';
+            ageValueEl.textContent = ageGroup || '-';
+            card.insertBefore(ageValueEl, insertBeforeNode);
+        });
+    });
+
     function submitJobPostingReview(action) {
         var form = document.getElementById('jobPostingReviewForm');
         var actionInput = document.getElementById('jobPostingAction');
