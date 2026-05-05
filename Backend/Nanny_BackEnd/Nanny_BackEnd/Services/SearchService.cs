@@ -377,17 +377,23 @@ public class SearchService : ISearchService
         await _jobAppRepo.SaveChangesAsync();
 
         var nannyUserId = application.NannyProfile?.UserId ?? Guid.Empty;
-        if (nannyUserId != Guid.Empty && !isApproved)
+        if (nannyUserId != Guid.Empty)
         {
             var title = "Đơn ứng tuyển bị từ chối";
             var content =
                 $"Parent đã từ chối đơn ứng tuyển của bạn cho bài đăng \"{application.JobPosting.Title}\". Lý do: {application.RejectionReason}";
 
+            if (isApproved)
+            {
+                title = "Đơn ứng tuyển được chấp nhận";
+                content = $"Parent đã chấp nhận đơn ứng tuyển của bạn cho bài đăng \"{application.JobPosting.Title}\".";
+            }
+
             await _notificationService.createNotification(
                 nannyUserId,
                 title,
                 content,
-                NotificationTypes.JobApplicationRejected,
+                isApproved ? NotificationTypes.JobApplicationApproved : NotificationTypes.JobApplicationRejected,
                 application.Id,
                 "JobApplication",
                 userId);

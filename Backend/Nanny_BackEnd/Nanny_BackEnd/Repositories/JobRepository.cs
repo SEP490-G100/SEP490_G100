@@ -220,15 +220,30 @@ public class JobRepository : IJobRepository
             .CountAsync();
     }
 
-    public async Task<int> countActiveJobPostings(Guid parentProfileId) =>
-        await _db.JobPostings
+    public async Task<int> countActiveJobPostings(Guid parentProfileId)
+    {
+        var nowUtc = DateTime.UtcNow;
+        return await _db.JobPostings
             .Where(j =>
                 j.ParentProfileId == parentProfileId &&
                 !j.IsDeleted &&
-                j.Status == (int)JobPostingStatus.Public)
+                j.Status == (int)JobPostingStatus.Public &&
+                j.ModerationStatus == (int)JobPostingModerationStatus.Approved &&
+                j.ExpiresAt.HasValue &&
+                j.ExpiresAt.Value >= nowUtc)
             .CountAsync();
+    }
 
-    public async Task hideExpiredPostings()
+    public async Task<List<JobPosting>> GetApprovedPublicJobsMissingExpiryAsync() =>
+        await _db.JobPostings
+            .Where(j => !j.IsDeleted
+                && j.Status == (int)JobPostingStatus.Public
+                && j.ModerationStatus == (int)JobPostingModerationStatus.Approved
+                && j.PublishedAt.HasValue
+                && !j.ExpiresAt.HasValue)
+            .ToListAsync();
+
+    public async Task<List<JobPosting>> hideExpiredPostings()
     {
         var nowUtc = DateTime.UtcNow;
         var expiredJobs = await _db.JobPostings
@@ -239,16 +254,17 @@ public class JobRepository : IJobRepository
             .ToListAsync();
 
         if (expiredJobs.Count == 0)
-            return;
+            return expiredJobs;
 
         foreach (var job in expiredJobs)
         {
-            job.Status = (int)JobPostingStatus.Hidden;
+            job.Status = (int)JobPostingStatus.Expired;
             job.ClosedAt = nowUtc;
             job.UpdatedAt = nowUtc;
         }
 
         await _db.SaveChangesAsync();
+        return expiredJobs;
     }
 
     public async Task<(List<JobPosting> Items, int TotalCount)> GetModeratorJobPostingsAsync(

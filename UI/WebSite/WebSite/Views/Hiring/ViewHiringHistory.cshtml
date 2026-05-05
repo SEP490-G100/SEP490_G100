@@ -47,13 +47,18 @@
 
             const statusLabel = (status) => {
                 const s = Number(status);
-                if (s === 0) return { text: 'Đang chờ', css: 'bg-amber-50 text-amber-700 border-amber-200' };
-                if (s === 1) return { text: 'Đang hoạt động', css: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
-                if (s === 4) return { text: 'Đã hoàn thành', css: 'bg-indigo-50 text-indigo-700 border-indigo-200' };
+                if (s === 0) return { text: 'Đang chờ phản hồi', css: 'bg-amber-50 text-amber-700 border-amber-200' };
+                if (s === 1) return { text: 'Đang thuê', css: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
                 if (s === 2) return { text: 'Đã từ chối', css: 'bg-rose-50 text-rose-700 border-rose-200' };
                 if (s === 3) return { text: 'Đã hủy', css: 'bg-slate-100 text-slate-700 border-slate-200' };
+                if (s === 4) return { text: 'Đã hoàn thành', css: 'bg-indigo-50 text-indigo-700 border-indigo-200' };
                 return { text: 'Không xác định', css: 'bg-slate-100 text-slate-700 border-slate-200' };
             };
+
+            const canCancelHiring = (item) => isParentRole && Number(item?.hiringStatus) === 0;
+            const canNannyRespond = (item) => !isParentRole && Number(item?.hiringStatus) === 0;
+            const canCreateContract = (item) => isParentRole && Number(item?.hiringStatus) === 1 && !item?.contractId;
+            const canViewContract = (item) => !!item?.contractId;
 
             const canCompleteHiring = (item) => {
                 if (!isParentRole) return false;
@@ -68,16 +73,73 @@
                 return endDate <= today;
             };
 
+            const actionEndpointByType = (type, hiringRecordId) => {
+                if (type === 'cancel') return `/Hiring/Records/${encodeURIComponent(hiringRecordId)}/Cancel`;
+                if (type === 'accept') return `/Hiring/Records/${encodeURIComponent(hiringRecordId)}/Accept`;
+                if (type === 'decline') return `/Hiring/Records/${encodeURIComponent(hiringRecordId)}/Decline`;
+                if (type === 'complete') return `/Hiring/Records/${encodeURIComponent(hiringRecordId)}/Complete`;
+                return '';
+            };
+
+            const actionTexts = {
+                cancel: {
+                    confirm: 'Bạn có chắc muốn hủy yêu cầu thuê này không?',
+                    success: 'Bạn đã hủy yêu cầu thuê thành công.'
+                },
+                accept: {
+                    confirm: 'Bạn có chắc muốn đồng ý yêu cầu thuê này không?',
+                    success: 'Bạn đã chấp nhận yêu cầu thuê.'
+                },
+                decline: {
+                    confirm: 'Bạn có chắc muốn từ chối yêu cầu thuê này không?',
+                    success: 'Bạn đã từ chối yêu cầu thuê.'
+                },
+                complete: {
+                    confirm: 'Bạn có chắc muốn hoàn thành hợp đồng thuê này không?',
+                    success: 'Bạn đã chuyển trạng thái thuê sang Đã hoàn thành.'
+                }
+            };
+
+            const runHiringAction = async (type, hiringRecordId) => {
+                const actionText = actionTexts[type];
+                if (!actionText) return;
+
+                const confirmed = window.confirm(actionText.confirm);
+                if (!confirmed) return;
+
+                try {
+                    const endpoint = actionEndpointByType(type, hiringRecordId);
+                    const res = await fetch(endpoint, {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: '{}'
+                    });
+
+                    const json = await res.json().catch(() => ({}));
+                    if (!res.ok || !json?.success) {
+                        throw new Error(json?.message || 'Không thể xử lý yêu cầu.');
+                    }
+
+                    showToast(actionText.success, 'success');
+                    window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
+                    await loadHistory();
+                } catch (err) {
+                    showToast(String(err?.message || 'Không thể xử lý yêu cầu.'), 'error');
+                }
+            };
+
             const renderItem = (item) => {
                 const badge = statusLabel(item.hiringStatus);
                 const focusClass = focusHiringRecordId && item.hiringRecordId === focusHiringRecordId
                     ? 'ring-2 ring-orange-300 border-orange-300'
                     : 'border-orange-100';
+
+                const hiringRecordId = esc(item.hiringRecordId);
                 const contractId = item.contractId ? esc(item.contractId) : '';
-                const hasContract = !!contractId;
 
                 return `
-                    <article id="hiring-${esc(item.hiringRecordId)}" class="rounded-2xl border ${focusClass} bg-gradient-to-b from-white to-orange-50/40 p-4 shadow-sm">
+                    <article id="hiring-${hiringRecordId}" class="rounded-2xl border ${focusClass} bg-gradient-to-b from-white to-orange-50/40 p-4 shadow-sm">
                         <div class="flex flex-wrap items-center justify-between gap-3">
                             <div>
                                 <p class="text-base font-bold text-slate-900">${esc(item.jobTitle || 'Công việc')}</p>
@@ -92,50 +154,56 @@
                             <p><span class="font-bold text-slate-800">Thời gian:</span> ${fmtDate(item.startDate)} - ${fmtDate(item.endDate)}</p>
                         </div>
 
-                        <div class="mt-3 flex flex-wrap justify-end gap-2">
-                            ${hasContract ? `
+                        <div style="margin-top:0.75rem;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:0.5rem;">
+                            ${canCancelHiring(item) ? `
+                            <button type="button"
+                                    class="js-cancel-hiring"
+                                    style="display:inline-flex;align-items:center;justify-content:center;border-radius:0.75rem;border:1px solid #fecaca;background:#fff;padding:0.5rem 1rem;font-size:0.75rem;font-weight:800;color:#e11d48;cursor:pointer;"
+                                    data-hiring-record-id="${hiringRecordId}">
+                                Hủy yêu cầu
+                            </button>` : ''}
+
+                            ${canNannyRespond(item) ? `
+                            <button type="button"
+                                    class="js-decline-hiring"
+                                    style="display:inline-flex;align-items:center;justify-content:center;border-radius:0.75rem;border:1px solid #cbd5e1;background:#fff;padding:0.5rem 1rem;font-size:0.75rem;font-weight:800;color:#334155;cursor:pointer;"
+                                    data-hiring-record-id="${hiringRecordId}">
+                                Từ chối
+                            </button>
+                            <button type="button"
+                                    class="js-accept-hiring"
+                                    style="display:inline-flex;align-items:center;justify-content:center;border-radius:0.75rem;border:1px solid #a7f3d0;background:#fff;padding:0.5rem 1rem;font-size:0.75rem;font-weight:800;color:#047857;cursor:pointer;"
+                                    data-hiring-record-id="${hiringRecordId}">
+                                Đồng ý
+                            </button>` : ''}
+
+                            ${canCreateContract(item) ? `
+                            <button type="button"
+                                    class="js-create-contract"
+                                    style="display:inline-flex;align-items:center;justify-content:center;border-radius:0.75rem;border:1px solid #cbd5e1;background:#fff;padding:0.5rem 1rem;font-size:0.75rem;font-weight:800;color:#334155;cursor:pointer;"
+                                    data-hiring-record-id="${hiringRecordId}">
+                                Tạo hợp đồng
+                            </button>` : ''}
+
+                            ${canViewContract(item) ? `
                             <a href="/Contract/ViewContractDetail?contractId=${contractId}"
-                               class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-extrabold text-slate-700 hover:bg-slate-50">
-                                Xem chi tiết hợp đồng
-                            </a>` : ''}
-                            ${hasContract ? `
+                               style="display:inline-flex;align-items:center;justify-content:center;border-radius:0.75rem;border:1px solid #cbd5e1;background:#fff;padding:0.5rem 1rem;font-size:0.75rem;font-weight:800;color:#334155;text-decoration:none;">
+                                ${isParentRole ? 'Xem hợp đồng' : 'Xem chi tiết hợp đồng'}
+                            </a>
                             <a href="/Contract/Api/${contractId}/Download"
-                               class="inline-flex items-center justify-center rounded-xl border border-orange-200 bg-white px-4 py-2 text-xs font-extrabold text-orange-600 hover:bg-orange-50">
+                               style="display:inline-flex;align-items:center;justify-content:center;border-radius:0.75rem;border:1px solid #fed7aa;background:#fff;padding:0.5rem 1rem;font-size:0.75rem;font-weight:800;color:#ea580c;text-decoration:none;">
                                 Tải xuống hợp đồng
                             </a>` : ''}
+
                             ${canCompleteHiring(item) ? `
                             <button type="button"
-                                    class="js-complete-hiring inline-flex items-center justify-center rounded-xl px-4 py-2 text-xs font-extrabold"
-                                    style="background-color:#16a34a;color:#ffffff;border:1px solid #86efac;"
-                                    data-hiring-record-id="${esc(item.hiringRecordId)}">
+                                    class="js-complete-hiring"
+                                    style="display:inline-flex;align-items:center;justify-content:center;border-radius:0.75rem;background:#059669;padding:0.5rem 1rem;font-size:0.75rem;font-weight:800;color:#fff;cursor:pointer;border:none;"
+                                    data-hiring-record-id="${hiringRecordId}">
                                 Hoàn thành hợp đồng thuê
                             </button>` : ''}
                         </div>
                     </article>`;
-            };
-
-            const completeHiring = async (hiringRecordId) => {
-                const confirmed = window.confirm('Bạn có chắc muốn hoàn thành hợp đồng thuê này không?');
-                if (!confirmed) return;
-
-                try {
-                    const res = await fetch(`/Hiring/Records/${encodeURIComponent(hiringRecordId)}/Complete`, {
-                        method: 'POST',
-                        credentials: 'include',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: '{}'
-                    });
-
-                    const json = await res.json().catch(() => ({}));
-                    if (!res.ok || !json?.success) {
-                        throw new Error(json?.message || 'Không thể hoàn thành hợp đồng thuê.');
-                    }
-
-                    showToast('Bạn đã chuyển trạng thái thuê sang Đã hoàn thành.', 'success');
-                    await loadHistory();
-                } catch (err) {
-                    showToast(String(err?.message || 'Không thể hoàn thành hợp đồng thuê.'), 'error');
-                }
             };
 
             const loadHistory = async () => {
@@ -174,14 +242,54 @@
                 const target = event.target;
                 if (!(target instanceof HTMLElement)) return;
 
-                const btn = target.closest('.js-complete-hiring');
-                if (!(btn instanceof HTMLButtonElement)) return;
+                const actionButton = target.closest('button');
+                if (!(actionButton instanceof HTMLButtonElement)) return;
 
-                const hiringRecordId = btn.dataset.hiringRecordId;
+                const hiringRecordId = actionButton.dataset.hiringRecordId;
                 if (!hiringRecordId) return;
 
-                await completeHiring(hiringRecordId);
+                if (actionButton.classList.contains('js-cancel-hiring')) {
+                    await runHiringAction('cancel', hiringRecordId);
+                    return;
+                }
+
+                if (actionButton.classList.contains('js-accept-hiring')) {
+                    await runHiringAction('accept', hiringRecordId);
+                    return;
+                }
+
+                if (actionButton.classList.contains('js-decline-hiring')) {
+                    await runHiringAction('decline', hiringRecordId);
+                    return;
+                }
+
+                if (actionButton.classList.contains('js-complete-hiring')) {
+                    await runHiringAction('complete', hiringRecordId);
+                    return;
+                }
+
+                if (actionButton.classList.contains('js-create-contract')) {
+                    await createContract(hiringRecordId);
+                }
             });
+
+            const createContract = async (hiringRecordId) => {
+                try {
+                    const res = await fetch(`/Hiring/Records/${encodeURIComponent(hiringRecordId)}/CreateContract`, {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: '{}'
+                    });
+                    const json = await res.json().catch(() => ({}));
+                    if (!res.ok || !json?.success) {
+                        throw new Error(json?.message || 'Không thể tạo hợp đồng.');
+                    }
+                    window.location.href = `/Contract/ViewContractDetail?contractId=${encodeURIComponent(json.data?.contractId)}`;
+                } catch (err) {
+                    showToast(String(err?.message || 'Không thể tạo hợp đồng.'), 'error');
+                }
+            };
 
             loadHistory();
         })();

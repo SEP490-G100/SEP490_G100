@@ -1,4 +1,6 @@
 using System.Net.Http.Headers;
+using System.Globalization;
+using System.Text.RegularExpressions;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
@@ -410,6 +412,28 @@ public class SubscriptionController : Controller
 
     private void ValidateSubscriptionPlanForm(AdminSubscriptionPlanFormViewModel model)
     {
+        ValidatePriceField(model);
+        ValidateIntegerField(
+            fieldName: nameof(model.DurationDays),
+            requiredMessage: "Thời hạn là bắt buộc",
+            invalidMessage: "Nhập chữ số nguyên dương lớn hơn hoặc bằng 1.",
+            minValue: 1);
+        ValidateIntegerField(
+            fieldName: nameof(model.MonthlyJobPostLimit),
+            requiredMessage: "Giới Hạn Đăng Tin Hàng Tháng là bắt buộc",
+            invalidMessage: "Nhập chữ số nguyên dương lớn hơn hoặc bằng 0.",
+            minValue: 0);
+        ValidateIntegerField(
+            fieldName: nameof(model.MonthlyApplicationLimit),
+            requiredMessage: "Giới Hạn Ứng Tuyển Hàng Tháng  là bắt buộc",
+            invalidMessage: "Nhập chữ số nguyên dương lớn hơn hoặc bằng 0.",
+            minValue: 0);
+        ValidateIntegerField(
+            fieldName: nameof(model.ListingDurationDays),
+            requiredMessage: "Thời Hạn Hiển Thị là bắt buộc",
+            invalidMessage: "Nhập chữ số nguyên dương lớn hơn hoặc bằng 0.",
+            minValue: 0);
+
         if (string.IsNullOrWhiteSpace(model.Description))
             ModelState.AddModelError(nameof(model.Description), "Vui lòng nhập mô tả.");
 
@@ -417,23 +441,88 @@ public class SubscriptionController : Controller
             ModelState.AddModelError(nameof(model.FeatureLines), "Vui lòng nhập ít nhất một tính năng.");
     }
 
+    private void ValidatePriceField(AdminSubscriptionPlanFormViewModel model)
+    {
+        var fieldName = nameof(model.Price);
+        ModelState.Remove(fieldName);
+
+        var rawValue = GetRawFormValue(fieldName);
+        if (string.IsNullOrWhiteSpace(rawValue))
+        {
+            ModelState.AddModelError(fieldName, "Giá gói là bắt buộc");
+            return;
+        }
+
+        if (!TryParseDecimal(rawValue, out var parsedValue) || parsedValue < 0 || parsedValue % 1000 != 0)
+        {
+            ModelState.AddModelError(fieldName, "Nhập giá gói là bội số của 1000");
+            return;
+        }
+
+        model.Price = parsedValue;
+    }
+
+    private void ValidateIntegerField(string fieldName, string requiredMessage, string invalidMessage, int minValue)
+    {
+        ModelState.Remove(fieldName);
+
+        var rawValue = GetRawFormValue(fieldName);
+        if (string.IsNullOrWhiteSpace(rawValue))
+        {
+            ModelState.AddModelError(fieldName, requiredMessage);
+            return;
+        }
+
+        // Reject signed values like "-0" for non-negative integer fields.
+        if (!isValidUnsignedIntegerFormat(rawValue))
+        {
+            ModelState.AddModelError(fieldName, invalidMessage);
+            return;
+        }
+
+        if (!int.TryParse(rawValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsedValue) || parsedValue < minValue)
+        {
+            ModelState.AddModelError(fieldName, invalidMessage);
+        }
+    }
+
+    private string GetRawFormValue(string fieldName)
+    {
+        if (!Request.HasFormContentType)
+            return string.Empty;
+
+        return Request.Form.TryGetValue(fieldName, out var values)
+            ? values.ToString().Trim()
+            : string.Empty;
+    }
+
+    private static bool TryParseDecimal(string input, out decimal value)
+    {
+        return decimal.TryParse(input, NumberStyles.Number, CultureInfo.InvariantCulture, out value)
+               || decimal.TryParse(input, NumberStyles.Number, CultureInfo.GetCultureInfo("vi-VN"), out value)
+               || decimal.TryParse(input, NumberStyles.Number, CultureInfo.CurrentCulture, out value);
+    }
+
+    private static bool isValidUnsignedIntegerFormat(string input) =>
+        Regex.IsMatch(input.Trim(), @"^\d+$");
+
     private static object BuildSubscriptionPlanPayload(AdminSubscriptionPlanFormViewModel model) => new
     {
         name = model.Name.Trim(),
         description = model.Description.Trim(),
         targetRole = model.TargetRole,
-        price = model.Price,
-        durationDays = model.DurationDays,
+        price = model.Price ?? 0,
+        durationDays = model.DurationDays ?? 0,
         sortOrder = model.SortOrder,
         features = model.GetFeatures(),
         canUseRecommendation = model.CanUseRecommendation,
         benefits = new
         {
-            monthlyJobPostLimit = model.MonthlyJobPostLimit,
-            monthlyApplicationLimit = model.MonthlyApplicationLimit,
+            monthlyJobPostLimit = model.MonthlyJobPostLimit ?? 0,
+            monthlyApplicationLimit = model.MonthlyApplicationLimit ?? 0,
             featuredBadge = model.FeaturedBadge,
             searchPriority = model.SearchPriority,
-            listingDurationDays = model.ListingDurationDays
+            listingDurationDays = model.ListingDurationDays ?? 0
         }
     };
 

@@ -32,6 +32,8 @@
     var verificationCode = Model.VerificationStatusCode ?? 0;
     var isIdentityVerified = verificationCode == 2;
     var hasUploadedHealthDocument = Model.HasHealthCertificate;
+    var hideEmailInParentNannyView = isReadOnly &&
+        ((isNanny && User.IsInRole("Parent")) || (isParent && User.IsInRole("Nanny")));
     var areaText = string.Join(", ", new[] { Model.Ward, Model.District, Model.City }.Where(v => !string.IsNullOrWhiteSpace(v)));
     var viCulture = System.Globalization.CultureInfo.GetCultureInfo("vi-VN");
     var displayEmail = string.IsNullOrWhiteSpace(Model.Email) ? "Chưa cập nhật" : Model.Email;
@@ -410,25 +412,19 @@
             </div>
 
             <div class="space-y-4">
-                @if (isReadOnly && isNanny && (isIdentityVerified || hasUploadedHealthDocument))
+                @if (isReadOnly && isNanny)
                 {
                     <div class="profile-card">
                         <h3>Độ uy tín</h3>
                         <div class="space-y-2 mt-1">
-                            @if (isIdentityVerified)
-                            {
-                                <div class="flex items-center gap-2 rounded-xl px-3 py-2.5 bg-green-50 border border-green-200">
-                                    <span class="material-icons-round text-green-600" style="font-size:18px">verified</span>
-                                    <span class="text-sm font-semibold text-green-700">Đã xác minh danh tính</span>
-                                </div>
-                            }
-                            @if (hasUploadedHealthDocument)
-                            {
-                                <div class="flex items-center gap-2 rounded-xl px-3 py-2.5 bg-green-50 border border-green-200">
-                                    <span class="material-icons-round text-green-600" style="font-size:18px">health_and_safety</span>
-                                    <span class="text-sm font-semibold text-green-700">Đã tải lên giấy khám sức khỏe</span>
-                                </div>
-                            }
+                            <div class="flex items-center gap-2 rounded-xl px-3 py-2.5 @(isIdentityVerified ? "bg-green-50 border border-green-200" : "bg-slate-50 border border-slate-200")">
+                                <span class="material-icons-round @(isIdentityVerified ? "text-green-600" : "text-slate-500")" style="font-size:18px">verified</span>
+                                <span class="text-sm font-semibold @(isIdentityVerified ? "text-green-700" : "text-slate-600")">@(isIdentityVerified ? "Đã xác minh danh tính" : "Chưa xác minh danh tính")</span>
+                            </div>
+                            <div class="flex items-center gap-2 rounded-xl px-3 py-2.5 @(hasUploadedHealthDocument ? "bg-green-50 border border-green-200" : "bg-slate-50 border border-slate-200")">
+                                <span class="material-icons-round @(hasUploadedHealthDocument ? "text-green-600" : "text-slate-500")" style="font-size:18px">health_and_safety</span>
+                                <span class="text-sm font-semibold @(hasUploadedHealthDocument ? "text-green-700" : "text-slate-600")">@(hasUploadedHealthDocument ? "Đã xác minh giấy khám sức khỏe" : "Chưa xác minh giấy khám sức khỏe")</span>
+                            </div>
                         </div>
                     </div>
                 }
@@ -480,10 +476,13 @@
                 <div class="profile-card">
                     <h3>Thông tin liên hệ</h3>
                     <div class="grid grid-cols-1 gap-3">
-                        <div class="profile-detail-item">
-                            <div class="label">Email</div>
-                            <div class="value break-all">@displayEmail</div>
-                        </div>
+                        @if (!hideEmailInParentNannyView)
+                        {
+                            <div class="profile-detail-item">
+                                <div class="label">Email</div>
+                                <div class="value break-all">@displayEmail</div>
+                            </div>
+                        }
                         <div class="profile-detail-item">
                             <div class="label">Điện thoại</div>
                             <div class="value">@DisplayPhone(Model.PhoneNumber)</div>

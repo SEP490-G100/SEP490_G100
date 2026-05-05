@@ -53,6 +53,12 @@
             color: #475569;
         }
 
+        .history-badge--expired {
+            border-color: #fcd34d;
+            background: #fffbeb;
+            color: #92400e;
+        }
+
         .history-job-card--approved {
             border-color: #bbf7d0 !important;
             box-shadow: 0 14px 34px rgba(34, 197, 94, .10);
@@ -66,6 +72,26 @@
         .history-job-card--rejected {
             border-color: #fecaca !important;
             box-shadow: 0 14px 34px rgba(220, 38, 38, .08);
+        }
+
+        .history-job-card--hidden {
+            border-color: #cbd5e1 !important;
+            box-shadow: 0 14px 34px rgba(15, 23, 42, .05);
+        }
+
+        .history-job-card--expired {
+            border-color: #fcd34d !important;
+            box-shadow: 0 14px 34px rgba(245, 158, 11, .10);
+        }
+
+        .history-approval-panel--hidden {
+            border-color: #cbd5e1 !important;
+            background: linear-gradient(180deg, rgba(248, 250, 252, .94), rgba(255, 255, 255, .98));
+        }
+
+        .history-approval-panel--expired {
+            border-color: #fcd34d !important;
+            background: linear-gradient(180deg, rgba(255, 251, 235, .94), rgba(255, 255, 255, .98));
         }
 
         .history-approval-panel--approved {
@@ -381,6 +407,29 @@
             transition: border-color .2s ease, box-shadow .2s ease;
         }
 
+        .history-expired-banner {
+            display: flex;
+            align-items: flex-start;
+            gap: .75rem;
+            padding: .85rem 1.35rem;
+            background: linear-gradient(90deg, #fffbeb 0%, #fef3c7 100%);
+            border-bottom: 1px solid #fcd34d;
+            color: #92400e;
+            font-size: .875rem;
+            line-height: 1.45;
+        }
+
+        .history-expired-banner .material-icons-round {
+            font-size: 1.35rem;
+            flex-shrink: 0;
+            margin-top: .1rem;
+            opacity: .92;
+        }
+
+        .history-expired-banner strong {
+            font-weight: 800;
+        }
+
         .history-review-note textarea:focus {
             border-color: #fb923c;
             box-shadow: 0 0 0 3px rgba(251, 146, 60, .18);
@@ -537,12 +586,13 @@
         const moderationLabels = {
             0: 'Đang chờ duyệt',
             1: 'Đã bị từ chối',
-            2: 'Công khai'
+            2: 'Đã duyệt'
         };
 
         const postStatusLabels = {
             1: 'Công khai',
-            2: 'Ẩn bài đăng'
+            2: 'Ẩn bài đăng',
+            3: 'Hết hạn'
         };
         const moderationBadgeClasses = {
             0: 'history-badge history-badge--pending',
@@ -551,17 +601,26 @@
         };
         const postStatusBadgeClasses = {
             1: 'history-badge history-badge--approved',
-            2: 'history-badge history-badge--hidden'
+            2: 'history-badge history-badge--hidden',
+            3: 'history-badge history-badge--expired'
         };
-        const cardToneClasses = {
-            0: 'history-job-card--pending',
-            1: 'history-job-card--rejected',
-            2: 'history-job-card--approved'
+        const getCardToneClass = (job) => {
+            const mod = Number(job.moderationStatus);
+            if (mod === 0) return 'history-job-card--pending';
+            if (mod === 1) return 'history-job-card--rejected';
+            const st = Number(job.status);
+            if (st === 3) return 'history-job-card--expired';
+            if (st === 2) return 'history-job-card--hidden';
+            return 'history-job-card--approved';
         };
-        const approvalPanelToneClasses = {
-            0: 'history-approval-panel--pending',
-            1: 'history-approval-panel--rejected',
-            2: 'history-approval-panel--approved'
+        const getApprovalPanelToneClass = (job) => {
+            const mod = Number(job.moderationStatus);
+            if (mod === 0) return 'history-approval-panel--pending';
+            if (mod === 1) return 'history-approval-panel--rejected';
+            const st = Number(job.status);
+            if (st === 3) return 'history-approval-panel--expired';
+            if (st === 2) return 'history-approval-panel--hidden';
+            return 'history-approval-panel--approved';
         };
 
         const rowLabels = ['Sáng', 'Chiều', 'Tối', 'Đêm'];
@@ -629,7 +688,7 @@
                 const createdAt = Number(parsed?.createdAt || 0);
                 if (!createdAt || Date.now() - createdAt > 60000) return;
 
-                showHistoryToast(parsed?.message || 'Cập nhật bài đăng thành công.', parsed?.type || 'success');
+                showHistoryToast(parsed?.message || 'Cập nhật bài đăng thành công.', parsed?.type || '');
             } catch {
                 // Ignore invalid storage payloads.
             }
@@ -699,6 +758,35 @@
                 minute: '2-digit'
             });
         };
+
+        const formatHistoryExpiresDisplay = (job) => {
+            if (job.expiresAt) return formatDateTime(job.expiresAt);
+            const mod = Number(job.moderationStatus);
+            if (mod === 0) return 'Áp dụng sau khi duyệt';
+            if (mod === 1) return '—';
+            return 'Chưa có ngày hết hạn';
+        };
+
+        /** Bài không còn hiển thị công khai do hết hạn (hoặc backend đã gán trạng thái Expired). */
+        const jobIsExpiredForNotice = (job) => {
+            const st = Number(job.status);
+            if (st === 3) return true;
+            const mod = Number(job.moderationStatus);
+            if (mod !== 2 || st !== 1 || !job.expiresAt) return false;
+            const t = new Date(job.expiresAt).getTime();
+            return Number.isFinite(t) && t < Date.now();
+        };
+
+        const renderHistoryExpiredBanner = () => `
+            <div class="history-expired-banner" role="alert">
+                <span class="material-icons-round" aria-hidden="true">event_busy</span>
+                <div>
+                    <p class="font-extrabold">Tin đã hết hạn hiển thị</p>
+                    <p class="mt-0.5 text-[0.8125rem] leading-snug opacity-[0.95]">
+                        Bài không còn xuất hiện với bảo mẫu. Chọn <strong>Chỉnh sửa</strong>, kiểm tra nội dung rồi <strong>Lưu</strong> để gửi kiểm duyệt lại.
+                    </p>
+                </div>
+            </div>`;
 
         const renderApplicationBadge = (status) => `
             <span class="${applicationBadgeClasses[Number(status)] || 'history-app-badge history-app-badge--pending'}">
@@ -1107,10 +1195,33 @@
                 body.innerHTML = jobs.map((job) => {
                     const moderationLabel = moderationLabels[job.moderationStatus] || 'Đang cập nhật';
                     const postStatusLabel = postStatusLabels[job.status] || 'Đang cập nhật';
-                    const showPostStatusBadge = String(moderationLabel).trim().toLowerCase() !== String(postStatusLabel).trim().toLowerCase();
+                    const mod = Number(job.moderationStatus);
+                    const st = Number(job.status);
+                    const showPostStatusBadge = mod === 2;
+
+                    const toggleVisibilityBtn = (() => {
+                        if (mod === 2 && st === 1) {
+                            return '<button type="button"'
+                                + ' data-toggle-visibility="' + escapeHtml(job.id) + '"'
+                                + ' onclick="window.__toggleJobVisibility?.(\''+escapeHtml(job.id)+'\')"'
+                                + ' class="inline-flex items-center justify-center gap-1.5 min-h-[40px] px-4 rounded-xl border border-slate-200 bg-white text-slate-600 text-sm font-bold hover:bg-slate-50 transition-all">'
+                                + '<span class="material-icons-round text-base">visibility_off</span> Ẩn bài'
+                                + '</button>';
+                        }
+                        if (mod === 2 && st === 2) {
+                            return '<button type="button"'
+                                + ' data-toggle-visibility="' + escapeHtml(job.id) + '"'
+                                + ' onclick="window.__toggleJobVisibility?.(\''+escapeHtml(job.id)+'\')"'
+                                + ' class="inline-flex items-center justify-center gap-1.5 min-h-[40px] px-4 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 text-sm font-bold hover:bg-emerald-100 transition-all">'
+                                + '<span class="material-icons-round text-base">visibility</span> Hiện lại'
+                                + '</button>';
+                        }
+                        return '';
+                    })();
 
                     return `
-                    <article data-job-id="${escapeHtml(job.id)}" class="history-job-card ${cardToneClasses[Number(job.moderationStatus)] || 'history-job-card--pending'} rounded-[28px] border border-slate-100 bg-white shadow-[0_14px_34px_rgba(15,23,42,.06)] overflow-hidden">
+                    <article data-job-id="${escapeHtml(job.id)}" class="history-job-card ${getCardToneClass(job)} rounded-[28px] border border-slate-100 bg-white shadow-[0_14px_34px_rgba(15,23,42,.06)] overflow-hidden">
+                        ${jobIsExpiredForNotice(job) ? renderHistoryExpiredBanner() : ''}
                         <div class="px-6 py-5 border-b border-slate-100 bg-[linear-gradient(180deg,#ffffff_0%,#fffaf5_100%)]">
                             <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                                 <div>
@@ -1129,11 +1240,12 @@
                                             ? 'Thỏa thuận'
                                             : escapeHtml(formatSalaryRange(job.salaryMin, job.salaryMax, false))}
                                     </div>
-                                    ${[0, 2].includes(Number(job.moderationStatus)) ? `
+                                    ${st !== 3 ? `
                                         <a href="/Search/Edit/${job.id}"
                                            class="inline-flex items-center justify-center min-h-[40px] px-4 rounded-xl border border-orange-200 bg-white text-orange-600 text-sm font-bold hover:bg-orange-50 transition-all">
                                             Chỉnh sửa
                                         </a>` : ''}
+                                    ${toggleVisibilityBtn}
                                 </div>
                             </div>
                         </div>
@@ -1162,7 +1274,7 @@
                                 </div>
                             </div>
 
-                            <div class="history-approval-panel ${approvalPanelToneClasses[Number(job.moderationStatus)] || 'history-approval-panel--pending'} rounded-3xl border border-orange-100 bg-orange-50/40 px-5 py-4">
+                            <div class="history-approval-panel ${getApprovalPanelToneClass(job)} rounded-3xl border border-orange-100 bg-orange-50/40 px-5 py-4">
                                 <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-orange-500">Chi tiết duyệt bài</p>
                                 <div class="mt-4 space-y-3 text-sm text-slate-600">
                                     <div class="flex items-start justify-between gap-4">
@@ -1174,6 +1286,10 @@
                                             <span class="font-bold text-slate-500">Hiển thị</span>
                                             <span class="${postStatusBadgeClasses[Number(job.status)] || 'history-badge history-badge--hidden'}">${escapeHtml(postStatusLabel)}</span>
                                         </div>` : ''}
+                                    <div class="flex items-start justify-between gap-4">
+                                        <span class="font-bold text-slate-500">Ngày hết hạn hiển thị</span>
+                                        <span class="text-right text-slate-700 font-semibold">${escapeHtml(formatHistoryExpiresDisplay(job))}</span>
+                                    </div>
                                     <div>
                                         <p class="font-bold text-slate-500 mb-2">Ghi chú kiểm duyệt viên</p>
                                         <div class="history-note-box text-sm leading-6 text-slate-600">
@@ -1220,6 +1336,7 @@
                 }).join('');
 
                 await preloadApplicationSummaries(jobs);
+                window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
 
                 if (focusJobId) {
                     const target = body.querySelector(`[data-job-id="${focusJobId}"]`);
@@ -1244,6 +1361,33 @@
         window.__openJobApplicationDetail = openJobApplicationDetail;
         window.__closeJobApplicationDetailModal = closeJobApplicationDetailModal;
         window.__submitJobApplicationReview = submitJobApplicationReview;
+        window.__toggleJobVisibility = async (jobId) => {
+            const btn = document.querySelector(`[data-toggle-visibility="${jobId}"]`);
+            if (btn) {
+                btn.disabled = true;
+                const oldHtml = btn.innerHTML;
+                btn.innerHTML = '<span class="material-icons-round animate-spin text-base">sync</span>';
+                try {
+                    const res = await fetch(`/Search/ToggleVisibility?id=${encodeURIComponent(jobId)}`, {
+                        method: 'POST',
+                        credentials: 'same-origin'
+                    });
+                    const json = await res.json();
+                    if (!json?.success) {
+                        showHistoryToast(json?.message || 'Không thể cập nhật trạng thái bài đăng.', 'error');
+                        btn.disabled = false;
+                        btn.innerHTML = oldHtml;
+                        return;
+                    }
+                    showHistoryToast(json?.message || 'Đã cập nhật trạng thái hiển thị.', 'success');
+                    await loadHistoryPage();
+                } catch {
+                    showHistoryToast('Không thể cập nhật trạng thái bài đăng.', 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = oldHtml;
+                }
+            }
+        };
         window.__approveApplicant = async (btn) => {
             const jobAppId = btn?.dataset?.jobappid;
             const jobPostingId = btn?.dataset?.jobpostingid;
@@ -1276,3 +1420,4 @@
         window.setTimeout(consumeHistoryToast, 120);
     })();
 </script>
+

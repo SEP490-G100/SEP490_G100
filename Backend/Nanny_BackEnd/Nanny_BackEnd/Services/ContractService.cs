@@ -65,31 +65,6 @@ public class ContractService : IContractService
         return result;
     }
 
-    public async Task<List<ContractTemplateOptionDto>> GetActiveContractTemplatesAsync()
-    {
-        var templates = await _repo.GetActiveContractTemplatesAsync();
-        return templates.Select(t => new ContractTemplateOptionDto
-        {
-            Id = t.Id,
-            Name = t.Name,
-            Version = t.Version
-        }).ToList();
-    }
-
-    public async Task<ContractTemplatePreviewDto> GetContractTemplatePreviewAsync(Guid templateId)
-    {
-        var template = await _repo.GetActiveContractTemplateByIdAsync(templateId)
-            ?? throw new KeyNotFoundException("Không tìm thấy mẫu hợp đồng.");
-
-        return new ContractTemplatePreviewDto
-        {
-            Id = template.Id,
-            Name = template.Name,
-            Version = template.Version,
-            Content = template.Content ?? string.Empty
-        };
-    }
-
     public async Task<ContractDetailDto> GetContractDetailAsync(Guid userId, Guid? contractId, Guid? hiringRecordId)
     {
         Contract? contract;
@@ -389,6 +364,7 @@ public class ContractService : IContractService
             ["SalaryAmount"] = request.SalaryAmount,
             ["ProbationSalaryAmount"] = request.ProbationSalaryAmount,
             ["AllowanceAmount"] = request.AllowanceAmount,
+            ["PaymentMethod"] = request.PaymentMethod,
             ["BankAccountNumber"] = request.BankAccountNumber,
             ["BankName"] = request.BankName,
             ["SalaryReceivedDate"] = request.SalaryReceivedDate,
@@ -500,7 +476,16 @@ public class ContractService : IContractService
         AssignIfFound(result, "SalaryAmount", GetNthGroup(text, @"3\.1\.\s*Mức lương chính:\s*([^\r\n]*?)\s*VNĐ", 1));
         AssignIfFound(result, "ProbationSalaryAmount", GetNthGroup(text, @"Mức lương thử việc[^:]*:\s*([^\r\n]*?)\s*VNĐ", 1));
         AssignIfFound(result, "AllowanceAmount", GetNthGroup(text, @"Phụ cấp đi lại\/điện thoại\s*\(nếu có\):\s*([^\r\n]*?)\s*VNĐ\/tháng", 1));
-        AssignIfFound(result, "BankAccountNumber", GetNthGroup(text, @"Số tài khoản:\s*(.*?)\s*Ngân hàng:", 1));
+        var paymentMethodBlock = GetNthGroup(text, @"Trả lương bằng:\s*([\s\S]*?)\s*Thời hạn trả lương:", 1);
+        if (!string.IsNullOrWhiteSpace(paymentMethodBlock))
+        {
+            if (Regex.IsMatch(paymentMethodBlock, @"\[\s*[xX]\s*\]\s*Chuyển khoản", RegexOptions.IgnoreCase))
+                result["PaymentMethod"] = "BankTransfer";
+            else if (Regex.IsMatch(paymentMethodBlock, @"\[\s*[xX]\s*\]\s*Tiền mặt", RegexOptions.IgnoreCase))
+                result["PaymentMethod"] = "Cash";
+        }
+
+        AssignIfFound(result, "BankAccountNumber", GetNthGroup(text, @"Số tài khoản:\s*([\s\S]*?)\s*Ngân hàng:", 1));
         AssignIfFound(result, "BankName", GetNthGroup(text, @"Ngân hàng:\s*([^\r\n]*)", 1));
         AssignIfFound(result, "SalaryReceivedDate", GetNthGroup(text, @"Thời hạn trả lương:\s*Trả vào ngày\s*([^\r\n]*?)\s*hàng tháng", 1));
         AssignIfFound(result, "MealPerDay", GetNthGroup(text, @"5\.2\.\s*Ăn uống:\s*Bên A phụ trách\s*([^\r\n]*?)\s*bữa ăn\/ngày", 1));
@@ -582,6 +567,13 @@ public class ContractService : IContractService
             request.WorkAddress,
             GetFieldValue(existingValues, "WorkAddress"),
             contract.HiringRecord?.JobApplication?.JobPosting?.Location);
+        request.PaymentMethod = FirstNonEmpty(
+            request.PaymentMethod,
+            GetFieldValue(existingValues, "PaymentMethod"),
+            string.IsNullOrWhiteSpace(GetFieldValue(existingValues, "BankAccountNumber")) &&
+            string.IsNullOrWhiteSpace(GetFieldValue(existingValues, "BankName"))
+                ? "Cash"
+                : "BankTransfer");
     }
 
     private static void ApplyNannyDefaults(Contract contract, ContractNannyFillRequestDto request, IDictionary<string, string> existingValues)
@@ -646,7 +638,44 @@ public class ContractService : IContractService
             return "...";
         });
 
-        return rendered.Replace("[[CENTER]]", string.Empty, StringComparison.Ordinal);
+        rendered = rendered.Replace("[[CENTER]]", string.Empty, StringComparison.Ordinal);
+
+        var paymentMethod = NormalizePaymentMethod(
+            fieldValues.TryGetValue("PaymentMethod", out var paymentMethodValue)
+                ? paymentMethodValue
+                : string.Empty);
+        var cashMark = string.Equals(paymentMethod, "Cash", StringComparison.OrdinalIgnoreCase) ? "[x]" : "[ ]";
+        var bankMark = string.Equals(paymentMethod, "BankTransfer", StringComparison.OrdinalIgnoreCase) ? "[x]" : "[ ]";
+        rendered = Regex.Replace(
+            rendered,
+            @"Trả lương bằng:\s*(?:\[\s*[xX ]\s*\]\s*)?Tiền mặt\.\s*(?:\[\s*[xX ]\s*\]\s*)?Chuyển khoản:",
+            $"Trả lương bằng: {cashMark} Tiền mặt. {bankMark} Chuyển khoản:",
+            RegexOptions.IgnoreCase);
+
+        return rendered;
+    }
+
+    private static string NormalizePaymentMethod(string? paymentMethod)
+    {
+        var raw = (paymentMethod ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(raw))
+            return string.Empty;
+
+        if (string.Equals(raw, "cash", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(raw, "tienmat", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(raw, "tiền mặt", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Cash";
+        }
+
+        if (string.Equals(raw, "banktransfer", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(raw, "chuyenkhoan", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(raw, "chuyển khoản", StringComparison.OrdinalIgnoreCase))
+        {
+            return "BankTransfer";
+        }
+
+        return string.Empty;
     }
 
     private static void ValidateParentFillRequest(ContractParentFillRequestDto request)
@@ -666,10 +695,17 @@ public class ContractService : IContractService
         RequireField(request.SalaryAmount, "SalaryAmount");
         RequireField(request.ProbationSalaryAmount, "ProbationSalaryAmount");
         RequireField(request.AllowanceAmount, "AllowanceAmount");
-        RequireField(request.BankAccountNumber, "BankAccountNumber");
-        RequireField(request.BankName, "BankName");
         RequireField(request.SalaryReceivedDate, "SalaryReceivedDate");
         RequireField(request.MealPerDay, "MealPerDay");
+
+        var paymentMethod = NormalizePaymentMethod(request.PaymentMethod);
+        if (string.IsNullOrWhiteSpace(paymentMethod))
+            throw new InvalidOperationException("Vui lòng chọn phương thức trả lương.");
+        if (string.Equals(paymentMethod, "BankTransfer", StringComparison.OrdinalIgnoreCase))
+        {
+            RequireField(request.BankAccountNumber, "BankAccountNumber");
+            RequireField(request.BankName, "BankName");
+        }
 
         ValidateDateField(request.ParentDob, "ParentDOB");
         ValidateDateField(request.ParentIdentityIssueDate, "ParentIdentityIssueDate");

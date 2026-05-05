@@ -1,6 +1,6 @@
 ﻿const JOB_TYPES = { 1: 'Toàn thời gian', 2: 'Bán thời gian', 3: 'Qua đêm' };
-const MODERATION_LABELS = { 0: 'Đang chờ duyệt', 1: 'Đã bị từ chối', 2: 'Công khai' };
-const POST_STATUS_LABELS = { 1: 'Công khai', 2: 'Ẩn bài đăng' };
+const MODERATION_LABELS = { 0: 'Đang chờ duyệt', 1: 'Đã bị từ chối', 2: 'Đã duyệt' };
+const POST_STATUS_LABELS = { 1: 'Công khai', 2: 'Ẩn bài đăng', 3: 'Hết hạn' };
 
 let map;
 let markers = [];
@@ -1734,23 +1734,6 @@ function removeEditSkill(value) {
   renderSkillCollection('ef-skills', editSkills, 'removeEditSkill');
 }
 
-function setStatusToggle(toggleId, hiddenInputId, status) {
-  const hiddenInput = document.getElementById(hiddenInputId);
-  if (hiddenInput) hiddenInput.value = String(status);
-  document.querySelectorAll(`#${toggleId} .status-option`).forEach((button, index) => {
-    const optionStatus = index === 0 ? 1 : 2;
-    button.classList.toggle('active', optionStatus === status);
-  });
-}
-
-function setCreateStatus(status) {
-  setStatusToggle('cf-statusToggle', 'cf-status', status);
-}
-
-function setEditStatus(status) {
-  setStatusToggle('ef-statusToggle', 'ef-status', status);
-}
-
 function getCreateSubmitButton() {
   return document.querySelector('#createModal .modal-footer .modal-btn-primary');
 }
@@ -1779,7 +1762,8 @@ async function openCreate() {
   createSchedule = [];
   createChildren = [];
   setSchedulePresetValue('cf-schedulePreset', '');
-  setCreateStatus(1);
+  const cfStatus = document.getElementById('cf-status');
+  if (cfStatus) cfStatus.value = '1';
   ensureChildrenCountOptions('cf-children', 0, 1);
   renderSkillCollection('cf-skills', createSkills, 'removeCreateSkill');
   renderScheduleGrid('cf-schedule', createSchedule, 'toggleCreateSchedule');
@@ -1886,7 +1870,7 @@ async function submitCreate() {
   const payload = getCreatePayload();
   const error = validatePayload(payload);
   if (error) {
-    notifyToast(error);
+    notifyToast(error, 'error');
     return;
   }
 
@@ -1901,7 +1885,7 @@ async function submitCreate() {
     });
     const json = await res.json();
     if (!json.success) {
-      notifyToast(json.message || 'Đăng bài thất bại');
+      notifyToast(json.message || 'Đăng bài thất bại', 'error');
       setCreateSubmitState(false);
       return;
     }
@@ -1916,13 +1900,13 @@ async function submitCreate() {
       const lastAt = Number(window.__nmLastRealtimeNotificationAt || 0);
       const receivedRealtime = lastType === 'job-posting-pending' && lastAt >= fallbackScheduledAt - 3000;
       if (!receivedRealtime) {
-        notifyToast(successToast);
+        notifyToast(successToast, 'success');
       }
     }, 900);
     window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
     doSearch();
   } catch {
-    notifyToast('Lỗi kết nối máy chủ.');
+    notifyToast('Lỗi kết nối máy chủ.', 'error');
     setCreateSubmitState(false);
   }
 }
@@ -1930,7 +1914,7 @@ async function submitCreate() {
 async function openEdit(job) {
   if (!job?.id) return;
   if (!canEditJob(job)) {
-    notifyToast('Bạn không có quyền chỉnh sửa bài đăng này.');
+    notifyToast('Bạn không có quyền chỉnh sửa bài đăng này.', 'error');
     return;
   }
   window.location.href = `/Search/Edit/${job.id}`;
@@ -1944,7 +1928,7 @@ function closeEdit() {
 async function submitEdit() {
   if (editingJobId) {
     if (!ownedJobIds.has(normalizeGuid(editingJobId))) {
-      notifyToast('Bạn không có quyền chỉnh sửa bài đăng này.');
+      notifyToast('Bạn không có quyền chỉnh sửa bài đăng này.', 'error');
       return;
     }
     window.location.href = `/Search/Edit/${editingJobId}`;
@@ -1954,7 +1938,7 @@ async function submitEdit() {
 async function deleteJob() {
   if (!editingJobId) return;
   if (!ownedJobIds.has(normalizeGuid(editingJobId))) {
-    notifyToast('Bạn không có quyền xóa bài đăng này.');
+    notifyToast('Bạn không có quyền xóa bài đăng này.', 'error');
     return;
   }
   if (!confirm('Bạn có chắc muốn xóa bài đăng này?')) return;
@@ -1962,14 +1946,14 @@ async function deleteJob() {
     const res = await fetch(`/Search/DeleteJob/${editingJobId}`, { method: 'DELETE', credentials: 'same-origin' });
     const json = await res.json();
     if (!json.success) {
-      notifyToast(json.message || 'Xóa thất bại');
+      notifyToast(json.message || 'Xóa thất bại', 'error');
       return;
     }
     closeEdit();
-    notifyToast('Đã xóa bài đăng.');
+    notifyToast('Đã xóa bài đăng.', 'success');
     doSearch();
   } catch {
-    notifyToast('Lỗi kết nối máy chủ.');
+    notifyToast('Lỗi kết nối máy chủ.', 'error');
   }
 }
 
@@ -2130,11 +2114,7 @@ function openPreview(job) {
   document.getElementById('pv-coords').textContent = job.latitude && job.longitude ? `${job.latitude}, ${job.longitude}` : 'Khu vực gần đúng';
   document.getElementById('pv-distance').textContent = job.distanceKm ? `${job.distanceKm.toFixed(1)} km` : 'Chưa xác định';
   document.getElementById('pv-desc').textContent = job.description || 'Không có mô tả';
-  document.getElementById('pv-moderation').textContent = MODERATION_LABELS[job.moderationStatus] || 'Đang cập nhật';
   renderPreviewChildProfiles(job, childProfiles);
-  const noteEl = document.getElementById('pv-note');
-  noteEl.textContent = job.moderationNote || '';
-  noteEl.classList.toggle('hidden', !job.moderationNote);
 
   const skillsEl = document.getElementById('pv-skills');
   skillsEl.innerHTML = (job.skills && job.skills.length)

@@ -127,8 +127,6 @@ public class AuthController : Controller
                 await _http.SendAsync(obRequest);
             var obResult = await ReadApiResult<OnboardingStatusViewModel>(ob);
             SyncNannyOnboardingCompletedSession(obResult?.Data, normalizedRoles);
-            if (obResult?.Data != null && obResult.Data.RequiresOnboarding && obResult.Data.NextStep != "Completed")
-                return RedirectToAction("Start", "Onboarding");
         }
         catch
         {
@@ -235,8 +233,6 @@ public class AuthController : Controller
             var ob = await _http.SendAsync(obRequest);
             var obResult = await ReadApiResult<OnboardingStatusViewModel>(ob);
             SyncNannyOnboardingCompletedSession(obResult?.Data, normalizedRoles);
-            if (obResult?.Data != null && obResult.Data.RequiresOnboarding && obResult.Data.NextStep != "Completed")
-                return RedirectToAction("Start", "Onboarding");
         }
         catch
         {

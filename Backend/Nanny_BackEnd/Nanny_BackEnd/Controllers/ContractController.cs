@@ -33,42 +33,6 @@ public class ContractController : ControllerBase
         }
     }
 
-    [HttpGet("templates")]
-    public async Task<IActionResult> GetActiveContractTemplates()
-    {
-        try
-        {
-            var result = await _service.GetActiveContractTemplatesAsync();
-            return Ok(OkResult(result));
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, Fail(ex.Message));
-        }
-    }
-
-    [HttpGet("templates/{templateId:guid}")]
-    public async Task<IActionResult> GetTemplatePreview(Guid templateId)
-    {
-        try
-        {
-            var result = await _service.GetContractTemplatePreviewAsync(templateId);
-            return Ok(OkResult(result));
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(Fail(ex.Message));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(Fail(ex.Message));
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, Fail(ex.Message));
-        }
-    }
-
     [HttpGet("detail")]
     public async Task<IActionResult> GetContractDetail([FromQuery] Guid? contractId, [FromQuery] Guid? hiringRecordId)
     {
