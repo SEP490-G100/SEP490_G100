@@ -577,8 +577,8 @@ public async Task<IActionResult> Edit(EditPersonalInfoViewModel model)
     {
         var age = today.Year - model.DateOfBirth.Value.Year;
         if (model.DateOfBirth.Value > today.AddYears(-age)) age--;
-        if (age <= 30)
-            ModelState.AddModelError(nameof(model.DateOfBirth), "Bảo mẫu phải lớn hơn 30 tuổi.");
+        if (age < 20)
+            ModelState.AddModelError(nameof(model.DateOfBirth), "Bảo mẫu phải đủ 20 tuổi trở lên.");
     }
 
     if (!ModelState.IsValid)

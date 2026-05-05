@@ -8,7 +8,6 @@ public interface IHiringRepository
     Task<List<JobApplication>> GetApplicantsByJobPostingIdAsync(Guid jobPostingId);
     Task<JobApplication?> GetJobApplicationByIdAsync(Guid id);
     Task<ContactRequest?> GetAcceptedContactRequestAsync(Guid contactRequestId);
-    Task<List<JobApplication>> GetOtherActiveApplicantsAsync(Guid jobPostingId, Guid excludedJobAppId);
     Task<HiringRecord?> GetHiringRecordByIdAsync(Guid id);
     Task<List<HiringRecord>> GetHiringRecordsByUserIdAsync(Guid userId);
     Task<List<HiringRecord>> GetCompletedUnreviewedHiringsForParentAsync(
