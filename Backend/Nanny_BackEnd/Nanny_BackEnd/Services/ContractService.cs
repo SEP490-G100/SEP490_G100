@@ -485,7 +485,7 @@ public class ContractService : IContractService
                 result["PaymentMethod"] = "Cash";
         }
 
-        AssignIfFound(result, "BankAccountNumber", GetNthGroup(text, @"Số tài khoản:\s*(.*?)\s*Ngân hàng:", 1));
+        AssignIfFound(result, "BankAccountNumber", GetNthGroup(text, @"Số tài khoản:\s*([\s\S]*?)\s*Ngân hàng:", 1));
         AssignIfFound(result, "BankName", GetNthGroup(text, @"Ngân hàng:\s*([^\r\n]*)", 1));
         AssignIfFound(result, "SalaryReceivedDate", GetNthGroup(text, @"Thời hạn trả lương:\s*Trả vào ngày\s*([^\r\n]*?)\s*hàng tháng", 1));
         AssignIfFound(result, "MealPerDay", GetNthGroup(text, @"5\.2\.\s*Ăn uống:\s*Bên A phụ trách\s*([^\r\n]*?)\s*bữa ăn\/ngày", 1));

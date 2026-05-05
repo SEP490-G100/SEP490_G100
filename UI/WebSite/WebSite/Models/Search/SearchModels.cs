@@ -309,10 +309,10 @@ public class JobPostingDetailResponse
 
     public string ModerationStatusLabel => ModerationStatus switch
     {
-        0 => "Pending",
-        1 => "Rejected",
-        2 => "Approved",
-        _ => "Unknown"
+        0 => "Đang chờ",
+        1 => "Đã từ chối",
+        2 => "Đã duyệt",
+        _ => "Không xác định"
     };
 
     public string ModerationStatusClass => ModerationStatus switch

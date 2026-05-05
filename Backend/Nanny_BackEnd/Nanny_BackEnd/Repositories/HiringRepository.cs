@@ -85,6 +85,21 @@ public class HiringRepository : IHiringRepository
             .OrderByDescending(h => h.EndDate)
             .ToListAsync();
 
+    public async Task<List<HiringRecord>> GetHiringRecordsByUserIdAsync(Guid userId) =>
+        await _db.HiringRecords
+            .Where(h =>
+                !h.IsDeleted &&
+                (h.ParentProfile.UserId == userId || h.NannyProfile.UserId == userId))
+            .Include(h => h.JobApplication)
+                .ThenInclude(a => a.JobPosting)
+            .Include(h => h.ParentProfile)
+                .ThenInclude(p => p.User)
+            .Include(h => h.NannyProfile)
+                .ThenInclude(n => n.User)
+            .Include(h => h.Contracts)
+            .OrderByDescending(h => h.CreatedAt)
+            .ToListAsync();
+
     public async Task<HiringRecord?> GetLatestHiringRecordByJobApplicationIdAsync(Guid jobApplicationId) =>
         await _db.HiringRecords
             .Where(h => h.JobApplicationId == jobApplicationId && !h.IsDeleted)

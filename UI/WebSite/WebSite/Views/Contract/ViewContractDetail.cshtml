@@ -125,6 +125,7 @@
                 'NannyDOB',
                 'NannyIdentityIssueDate'
             ]);
+            const moneyFieldSet = new Set(['SalaryAmount', 'ProbationSalaryAmount', 'AllowanceAmount']);
 
             const fieldLabelMap = {
                 ParentName: 'Họ tên bố/mẹ',
@@ -228,8 +229,15 @@
                 return `${yyyy}-${mm}-${dd}`;
             };
 
+            const formatVndAmount = (value) => {
+                const digits = String(value ?? '').replace(/\D/g, '');
+                if (!digits) return '';
+                return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            };
+
             const parsePositiveNumber = (value) => {
-                const normalized = String(value ?? '').trim().replaceAll(',', '.');
+                // Strip Vietnamese thousand-separator dots and commas before parsing
+                const normalized = String(value ?? '').trim().replaceAll('.', '').replaceAll(',', '');
                 if (!normalized) return null;
                 const n = Number(normalized);
                 if (!Number.isFinite(n)) return null;
@@ -271,11 +279,19 @@
                     return 'Email (bố/mẹ) không đúng định dạng.';
                 }
 
+                const parentDob = parseFlexibleDate(payload.parentDob);
                 const parentIssueDate = parseFlexibleDate(payload.parentIdentityIssueDate);
                 const probationStartDate = parseFlexibleDate(payload.probationStartDate);
                 const probationEndDate = parseFlexibleDate(payload.probationEndDate);
-                if (!parentIssueDate || !probationStartDate || !probationEndDate) {
+                if (!parentDob || !parentIssueDate || !probationStartDate || !probationEndDate) {
                     return 'Ngày tháng không hợp lệ.';
+                }
+
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const minParentDob = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+                if (parentDob > minParentDob) {
+                    return 'Bố/mẹ phải từ 18 tuổi trở lên.';
                 }
 
                 const probationDiffDays = Math.floor((probationEndDate - probationStartDate) / (1000 * 60 * 60 * 24));
@@ -321,6 +337,13 @@
                 const nannyIssueDate = parseFlexibleDate(payload.nannyIdentityIssueDate);
                 if (!nannyDob || !nannyIssueDate) {
                     return 'Ngày tháng không hợp lệ.';
+                }
+
+                const todayNanny = new Date();
+                todayNanny.setHours(0, 0, 0, 0);
+                const minNannyDob = new Date(todayNanny.getFullYear() - 18, todayNanny.getMonth(), todayNanny.getDate());
+                if (nannyDob > minNannyDob) {
+                    return 'Bảo mẫu phải từ 18 tuổi trở lên.';
                 }
 
                 if (!/^\d{10,11}$/.test(payload.nannyPhone || '')) {
@@ -454,8 +477,9 @@
                                        style="width:16px;height:16px;vertical-align:middle;margin:0 6px 0 2px;cursor:${canEditPaymentMethod ? 'pointer' : 'default'};" />`;
                     } else if (editableFieldSet.has(fieldKey)) {
                         const isDateField = dateFieldSet.has(fieldKey);
+                        const isMoneyField = moneyFieldSet.has(fieldKey);
                         const currentRaw = normalizeFieldValue(fieldState[fieldKey]);
-                        const current = isDateField ? toInputDateValue(currentRaw) : currentRaw;
+                        const current = isDateField ? toInputDateValue(currentRaw) : (isMoneyField ? formatVndAmount(currentRaw) : currentRaw);
                         const inputType = isDateField ? 'date' : 'text';
 
                         html += `<input type="${inputType}"
@@ -498,7 +522,14 @@
                 if (!(target instanceof HTMLInputElement)) return;
                 const fieldKey = target.dataset.field;
                 if (!fieldKey) return;
-                syncFieldValue(fieldKey, target.value);
+
+                if (moneyFieldSet.has(fieldKey)) {
+                    const formatted = formatVndAmount(target.value);
+                    target.value = formatted;
+                    syncFieldValue(fieldKey, formatted);
+                } else {
+                    syncFieldValue(fieldKey, target.value);
+                }
             });
 
             editorEl.addEventListener('change', (event) => {
