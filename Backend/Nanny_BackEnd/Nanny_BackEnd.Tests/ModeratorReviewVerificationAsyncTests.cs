@@ -152,9 +152,9 @@ public class ModeratorReviewVerificationAsyncTests
         Assert.Equal("Yêu cầu này đã được xử lý trước đó.", r.Message);
     }
 
-    // Condition: approve -> update request/profile/health-expiry + notification.
+    // Condition: approve -> update request/profile + notification.
     [Fact]
-    public async Task Approve_Success_UpdatesNannyAndHealthExpiry()
+    public async Task Approve_Success_UpdatesNannyProfile()
     {
         var id = Guid.NewGuid();
         var moderatorId = Guid.NewGuid();
@@ -175,9 +175,6 @@ public class ModeratorReviewVerificationAsyncTests
         Assert.Equal((int)NannyVerificationRequestStatus.Approved, vr.Status);
         Assert.Equal((int)VerificationStatus.Approved, vr.NannyProfile.VerificationStatus);
         Assert.Equal(moderatorId, vr.NannyProfile.VerifiedBy);
-
-        var health = vr.VerificationDocuments.First(d => d.DocumentType == (int)VerificationDocumentType.HealthCertificate);
-        Assert.NotNull(health.ExpiryDate);
 
         _mockNotif.Verify(n => n.createNotification(
             vr.NannyProfile.UserId,

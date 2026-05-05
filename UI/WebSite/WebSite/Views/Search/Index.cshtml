@@ -175,14 +175,7 @@
                             <label class="form-label" >Độ tuổi bảo mẫu đến</label>
                             <input type="number" id="cf-maxAge" class="form-input" style="border-radius: 10px;" min="18" max="80" />
                         </div>
-                        <div>
-                            <label class="form-label">Trạng thái bài đăng</label>
-                            <div class="status-toggle" id="cf-statusToggle">
-                                <button type="button" class="status-option active" onclick="setCreateStatus(1)">Công khai</button>
-                                <button type="button" class="status-option" onclick="setCreateStatus(2)">Ẩn bài đăng</button>
-                            </div>
-                            <input type="hidden" id="cf-status" value="1" />
-                        </div>
+                        <input type="hidden" id="cf-status" value="1" />
                     </div>
                 </div>
 
@@ -345,14 +338,7 @@
                             <label class="form-label">Độ tuổi bảo mẫu đến</label>
                             <input type="number" id="ef-maxAge" class="form-input" min="18" max="80" />
                         </div>
-                        <div>
-                            <label class="form-label">Trạng thái bài đăng</label>
-                            <div class="status-toggle" id="ef-statusToggle">
-                                <button type="button" class="status-option active" onclick="setEditStatus(1)">Công khai</button>
-                                <button type="button" class="status-option" onclick="setEditStatus(2)">Ẩn bài đăng</button>
-                            </div>
-                            <input type="hidden" id="ef-status" value="1" />
-                        </div>
+                        <input type="hidden" id="ef-status" value="1" />
                     </div>
                 </div>
 
@@ -499,13 +485,6 @@
                 <section class="search-detail-card search-detail-card--wide">
                     <h3>Lịch ngày muốn tuyển</h3>
                     <div id="pv-schedule"></div>
-                </section>
-                <section class="search-detail-card search-detail-card--wide">
-                    <h3>Trạng thái duyệt</h3>
-                    <div class="search-detail-moderation-box">
-                        <strong id="pv-moderation"></strong>
-                        <p id="pv-note" class="search-detail-note hidden"></p>
-                    </div>
                 </section>
             </div>
             <div id="pv-actionGrid" class="search-detail-bottom-action">

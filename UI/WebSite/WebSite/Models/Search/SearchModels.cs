@@ -117,6 +117,9 @@ public class SearchJobResponse
     [JsonPropertyName("publishedAt")]
     public DateTime? PublishedAt { get; set; }
 
+    [JsonPropertyName("expiresAt")]
+    public DateTime? ExpiresAt { get; set; }
+
     [JsonPropertyName("distanceKm")]
     public double? DistanceKm { get; set; }
 
@@ -292,6 +295,7 @@ public class JobPostingDetailResponse
     {
         1 => "Công khai",
         2 => "Đã ẩn",
+        3 => "Hết hạn",
         _ => "Không xác định"
     };
 
@@ -299,6 +303,7 @@ public class JobPostingDetailResponse
     {
         1 => "badge-active",
         2 => "badge-inactive",
+        3 => "badge-pending",
         _ => "badge-pending"
     };
 

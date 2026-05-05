@@ -64,6 +64,7 @@
                     <option value="">Tất cả trạng thái</option>
                     <option value="1" selected="@(currentStatus == "1" ? "selected" : null)">Công khai</option>
                     <option value="2" selected="@(currentStatus == "2" ? "selected" : null)">Đã ẩn</option>
+                    <option value="3" selected="@(currentStatus == "3" ? "selected" : null)">Hết hạn</option>
                 </select>
             </div>
 
@@ -169,13 +170,17 @@
                             </div>
                         </td>
                         <td class="text-center whitespace-nowrap">
-                            @if (item.Status == 1)
+                            @switch (item.Status)
                             {
-                                <span class="inline-flex items-center rounded-full bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1.5 text-xs font-semibold">Công khai</span>
-                            }
-                            else
-                            {
-                                <span class="inline-flex items-center rounded-full bg-gray-100 text-gray-600 border border-gray-200 px-3 py-1.5 text-xs font-semibold">Đã ẩn</span>
+                                case 1:
+                                    <span class="inline-flex items-center rounded-full bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1.5 text-xs font-semibold">Công khai</span>
+                                    break;
+                                case 3:
+                                    <span class="inline-flex items-center rounded-full bg-amber-50 text-amber-800 border border-amber-200 px-3 py-1.5 text-xs font-semibold">Hết hạn</span>
+                                    break;
+                                default:
+                                    <span class="inline-flex items-center rounded-full bg-gray-100 text-gray-600 border border-gray-200 px-3 py-1.5 text-xs font-semibold">Đã ẩn</span>
+                                    break;
                             }
                         </td>
                         <td class="text-center whitespace-nowrap">

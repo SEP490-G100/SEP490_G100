@@ -174,6 +174,23 @@ public class JobPostingController : ControllerBase
         catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
     }
 
+    [Authorize]
+    [HttpPost("{id:guid}/toggle-visibility")]
+    public async Task<IActionResult> ToggleVisibility(Guid id)
+    {
+        var parent = await getParent();
+        if (parent is null) return BadRequest(Fail("Tài khoản hiện tại không phải Phụ huynh."));
+
+        try
+        {
+            await _jobSvc.ToggleJobVisibilityAsync(id, parent.Id);
+            return Ok(new { success = true, message = "Đã cập nhật trạng thái hiển thị bài đăng." });
+        }
+        catch (KeyNotFoundException ex) { return NotFound(Fail(ex.Message)); }
+        catch (UnauthorizedAccessException ex) { return StatusCode(403, Fail(ex.Message)); }
+        catch (InvalidOperationException ex) { return BadRequest(Fail(ex.Message)); }
+    }
+
     [Authorize(Roles = "Moderator,Admin")]
     [HttpPost("{id:guid}/approve")]
     public async Task<IActionResult> Approve(Guid id, [FromBody] ModerateJobPostingRequest request)

@@ -243,7 +243,7 @@ public class JobRepository : IJobRepository
                 && !j.ExpiresAt.HasValue)
             .ToListAsync();
 
-    public async Task hideExpiredPostings()
+    public async Task<List<JobPosting>> hideExpiredPostings()
     {
         var nowUtc = DateTime.UtcNow;
         var expiredJobs = await _db.JobPostings
@@ -254,16 +254,17 @@ public class JobRepository : IJobRepository
             .ToListAsync();
 
         if (expiredJobs.Count == 0)
-            return;
+            return expiredJobs;
 
         foreach (var job in expiredJobs)
         {
-            job.Status = (int)JobPostingStatus.Hidden;
+            job.Status = (int)JobPostingStatus.Expired;
             job.ClosedAt = nowUtc;
             job.UpdatedAt = nowUtc;
         }
 
         await _db.SaveChangesAsync();
+        return expiredJobs;
     }
 
     public async Task<(List<JobPosting> Items, int TotalCount)> GetModeratorJobPostingsAsync(
