@@ -5,6 +5,7 @@
     success: 'check_circle',
     error: 'error'
   };
+
   const TYPE_ALIASES = {
     info: 'info',
     'thong bao': 'info',
@@ -13,7 +14,6 @@
     success: 'success',
     ok: 'success',
     'thanh cong': 'success',
-    'thành công': 'success',
     thanhcong: 'success',
     warning: 'warning',
     warn: 'warning',
@@ -22,13 +22,15 @@
     error: 'error',
     err: 'error',
     loi: 'error',
-    'lỗi': 'error',
     failed: 'error',
+    fail: 'error',
     failure: 'error',
+    danger: 'error',
+    critical: 'error',
     'that bai': 'error',
-    'thất bại': 'error',
     thatbai: 'error'
   };
+
   const VARIANT_BY_TYPE = {
     info: 'success',
     success: 'success',
@@ -48,12 +50,13 @@
   }
 
   function normalizeOptions(options) {
+    if (typeof options === 'boolean') return { type: options ? 'success' : 'error' };
     if (typeof options === 'string') return { type: options };
     return options || {};
   }
 
   function normalizeTypeKey(rawType) {
-    const type = String(rawType || 'success').trim().toLowerCase();
+    const type = String(rawType || '').trim().toLowerCase();
     const normalized = typeof type.normalize === 'function'
       ? type.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
       : type;
@@ -61,9 +64,38 @@
     return normalized.replace(/\s+/g, ' ');
   }
 
-  function getType(rawType) {
+  function inferTypeFromMessage(message) {
+    const text = normalizeTypeKey(message);
+    if (!text) return 'info';
+
+    const errorHints = [
+      'error', 'err', 'fail', 'failed', 'failure', 'warning',
+      'khong', 'khong the', 'loi', 'that bai', 'tu choi', 'het han', 'khong hop le'
+    ];
+
+    if (errorHints.some((hint) => text.includes(hint))) {
+      return 'error';
+    }
+
+    const successHints = ['success', 'thanh cong', 'da', 'hoan tat'];
+    if (successHints.some((hint) => text.includes(hint))) {
+      return 'success';
+    }
+
+    return 'info';
+  }
+
+  function getType(rawType, message) {
     const typeKey = normalizeTypeKey(rawType);
-    return TYPE_ALIASES[typeKey] || 'success';
+    if (TYPE_ALIASES[typeKey]) {
+      const mappedType = TYPE_ALIASES[typeKey];
+      if (mappedType === 'info') {
+        const inferredType = inferTypeFromMessage(message);
+        return inferredType === 'error' ? 'error' : 'info';
+      }
+      return mappedType;
+    }
+    return inferTypeFromMessage(message);
   }
 
   function getVariant(type) {
@@ -80,7 +112,7 @@
     if (message == null || message === '') return;
 
     const opts = normalizeOptions(options);
-    const type = getType(opts.type);
+    const type = getType(opts.type, message);
     const variant = getVariant(type);
     const duration = getDuration(opts.duration);
     const dismissible = opts.dismissible !== false;

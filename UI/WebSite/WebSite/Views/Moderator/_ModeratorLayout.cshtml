@@ -359,7 +359,7 @@
                 if (message) {
                     return {
                         message,
-                        type: payload.toastType || 'success'
+                        type: payload.toastType || payload.type || ''
                     };
                 }
 
@@ -466,7 +466,7 @@
         (() => {
             const params = new URLSearchParams(window.location.search);
             const toastMessage = params.get('toastMessage');
-            const toastType = params.get('toastType') || 'success';
+            const toastType = params.get('toastType');
 
             if (!toastMessage || typeof window.showToast !== 'function') {
                 return;

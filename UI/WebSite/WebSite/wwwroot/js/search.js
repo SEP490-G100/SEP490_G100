@@ -1886,7 +1886,7 @@ async function submitCreate() {
   const payload = getCreatePayload();
   const error = validatePayload(payload);
   if (error) {
-    notifyToast(error);
+    notifyToast(error, 'error');
     return;
   }
 
@@ -1901,7 +1901,7 @@ async function submitCreate() {
     });
     const json = await res.json();
     if (!json.success) {
-      notifyToast(json.message || 'Đăng bài thất bại');
+      notifyToast(json.message || 'Đăng bài thất bại', 'error');
       setCreateSubmitState(false);
       return;
     }
@@ -1916,13 +1916,13 @@ async function submitCreate() {
       const lastAt = Number(window.__nmLastRealtimeNotificationAt || 0);
       const receivedRealtime = lastType === 'job-posting-pending' && lastAt >= fallbackScheduledAt - 3000;
       if (!receivedRealtime) {
-        notifyToast(successToast);
+        notifyToast(successToast, 'success');
       }
     }, 900);
     window.dispatchEvent(new CustomEvent('nm:notifications-refresh'));
     doSearch();
   } catch {
-    notifyToast('Lỗi kết nối máy chủ.');
+    notifyToast('Lỗi kết nối máy chủ.', 'error');
     setCreateSubmitState(false);
   }
 }
@@ -1930,7 +1930,7 @@ async function submitCreate() {
 async function openEdit(job) {
   if (!job?.id) return;
   if (!canEditJob(job)) {
-    notifyToast('Bạn không có quyền chỉnh sửa bài đăng này.');
+    notifyToast('Bạn không có quyền chỉnh sửa bài đăng này.', 'error');
     return;
   }
   window.location.href = `/Search/Edit/${job.id}`;
@@ -1944,7 +1944,7 @@ function closeEdit() {
 async function submitEdit() {
   if (editingJobId) {
     if (!ownedJobIds.has(normalizeGuid(editingJobId))) {
-      notifyToast('Bạn không có quyền chỉnh sửa bài đăng này.');
+      notifyToast('Bạn không có quyền chỉnh sửa bài đăng này.', 'error');
       return;
     }
     window.location.href = `/Search/Edit/${editingJobId}`;
@@ -1954,7 +1954,7 @@ async function submitEdit() {
 async function deleteJob() {
   if (!editingJobId) return;
   if (!ownedJobIds.has(normalizeGuid(editingJobId))) {
-    notifyToast('Bạn không có quyền xóa bài đăng này.');
+    notifyToast('Bạn không có quyền xóa bài đăng này.', 'error');
     return;
   }
   if (!confirm('Bạn có chắc muốn xóa bài đăng này?')) return;
@@ -1962,14 +1962,14 @@ async function deleteJob() {
     const res = await fetch(`/Search/DeleteJob/${editingJobId}`, { method: 'DELETE', credentials: 'same-origin' });
     const json = await res.json();
     if (!json.success) {
-      notifyToast(json.message || 'Xóa thất bại');
+      notifyToast(json.message || 'Xóa thất bại', 'error');
       return;
     }
     closeEdit();
-    notifyToast('Đã xóa bài đăng.');
+    notifyToast('Đã xóa bài đăng.', 'success');
     doSearch();
   } catch {
-    notifyToast('Lỗi kết nối máy chủ.');
+    notifyToast('Lỗi kết nối máy chủ.', 'error');
   }
 }
 

@@ -127,7 +127,7 @@ public class AuthController : Controller
                 await _http.SendAsync(obRequest);
             var obResult = await ReadApiResult<OnboardingStatusViewModel>(ob);
             SyncNannyOnboardingCompletedSession(obResult?.Data, normalizedRoles);
-            if (obResult?.Data != null && obResult.Data.RequiresOnboarding && obResult.Data.NextStep != "Completed")
+            if (ShouldAutoRedirectToOnboarding(obResult?.Data, normalizedRoles))
                 return RedirectToAction("Start", "Onboarding");
         }
         catch
@@ -235,7 +235,7 @@ public class AuthController : Controller
             var ob = await _http.SendAsync(obRequest);
             var obResult = await ReadApiResult<OnboardingStatusViewModel>(ob);
             SyncNannyOnboardingCompletedSession(obResult?.Data, normalizedRoles);
-            if (obResult?.Data != null && obResult.Data.RequiresOnboarding && obResult.Data.NextStep != "Completed")
+            if (ShouldAutoRedirectToOnboarding(obResult?.Data, normalizedRoles))
                 return RedirectToAction("Start", "Onboarding");
         }
         catch
@@ -646,6 +646,17 @@ public class AuthController : Controller
     private static bool IsCompletedNannyOnboardingStatus(OnboardingStatusViewModel status) =>
         string.Equals(status.Role, "Nanny", StringComparison.OrdinalIgnoreCase) &&
         (!status.RequiresOnboarding || string.Equals(status.NextStep, "Completed", StringComparison.OrdinalIgnoreCase));
+
+    private static bool ShouldAutoRedirectToOnboarding(OnboardingStatusViewModel? status, IEnumerable<string>? roles)
+    {
+        if (status == null || !status.RequiresOnboarding || string.Equals(status.NextStep, "Completed", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        // Chỉ auto-redirect sau login cho Nanny.
+        // Parent vẫn có thể vào onboarding ở lần đầu sau khi chọn role/đăng ký.
+        var normalizedRoles = normalizeRoles(roles);
+        return hasRole(normalizedRoles, "Nanny");
+    }
 
     private void SyncNannyOnboardingCompletedSession(OnboardingStatusViewModel? status, IEnumerable<string>? roles)
     {
