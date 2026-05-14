@@ -1,5 +1,5 @@
 ﻿const JOB_TYPES = { 1: 'Toàn thời gian', 2: 'Bán thời gian', 3: 'Qua đêm' };
-const MODERATION_LABELS = { 0: 'Đang chờ duyệt', 1: 'Đã bị từ chối', 2: 'Công khai' };
+const MODERATION_LABELS = { 0: 'Đang chờ duyệt', 1: 'Đã bị từ chối', 2: 'Đã duyệt' };
 const POST_STATUS_LABELS = { 1: 'Công khai', 2: 'Ẩn bài đăng' };
 
 let map;
